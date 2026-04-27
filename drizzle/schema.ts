@@ -1,28 +1,460 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import {
+  boolean,
+  date,
+  int,
+  json,
+  mysqlEnum,
+  mysqlTable,
+  text,
+  timestamp,
+  varchar,
+} from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
- * Extend this file with additional tables as your product grows.
- * Columns use camelCase to match both database fields and generated types.
+ * Roles: admin = parents (Mom Katy, the user / Ali-side helper),
+ *        tutor = Grandma Marcy + any tutors / helpers
+ *        user (default) = no edit privileges; not used in our home team
  */
 export const users = mysqlTable("users", {
-  /**
-   * Surrogate primary key. Auto-incremented numeric value managed by the database.
-   * Use this for relations between tables.
-   */
   id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  role: mysqlEnum("role", ["user", "tutor", "admin"]).default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
-
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
-// TODO: Add your tables here
+/* -------------------------------------------------------------------------- */
+/*  SUBJECTS                                                                  */
+/* -------------------------------------------------------------------------- */
+export const subjects = mysqlTable("subjects", {
+  id: int("id").autoincrement().primaryKey(),
+  slug: varchar("slug", { length: 32 }).notNull().unique(), // math, ela, science, ss, adventure, choice, catch_up, reading
+  name: varchar("name", { length: 64 }).notNull(),
+  color: varchar("color", { length: 16 }).notNull(), // hex
+  emoji: varchar("emoji", { length: 8 }).notNull(),
+  sortOrder: int("sortOrder").default(0).notNull(),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  DAILY PLANS                                                               */
+/* -------------------------------------------------------------------------- */
+export const dailyPlans = mysqlTable("dailyPlans", {
+  id: int("id").autoincrement().primaryKey(),
+  date: date("date").notNull().unique(),
+  dayType: mysqlEnum("dayType", [
+    "full",
+    "half",
+    "outdoor",
+    "field_trip",
+    "recovery",
+    "off",
+  ]).default("full").notNull(),
+  status: mysqlEnum("status", ["planned", "in_progress", "complete", "skipped"]).default("planned").notNull(),
+  notes: text("notes"),
+  isTemplate: boolean("isTemplate").default(false).notNull(),
+  templateName: varchar("templateName", { length: 128 }),
+  parentPlanId: int("parentPlanId"), // for copies/duplicates
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  SCHEDULE BLOCKS (5 default + optional catch-up + appointments)            */
+/* -------------------------------------------------------------------------- */
+export const scheduleBlocks = mysqlTable("scheduleBlocks", {
+  id: int("id").autoincrement().primaryKey(),
+  planId: int("planId").notNull(),
+  blockType: mysqlEnum("blockType", [
+    "morning_warmup",
+    "math",
+    "adventure",
+    "read_aloud",
+    "choice",
+    "catch_up",
+    "appointment",
+    "custom",
+  ]).notNull(),
+  subjectId: int("subjectId"),
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description"),
+  durationMin: int("durationMin").default(30).notNull(),
+  startTime: varchar("startTime", { length: 8 }), // "09:00", optional flexible
+  sortOrder: int("sortOrder").default(0).notNull(),
+  status: mysqlEnum("status", ["not_started", "in_progress", "complete", "skipped"]).default("not_started").notNull(),
+  completedAt: timestamp("completedAt"),
+  completedByUserId: int("completedByUserId"),
+  grade: varchar("grade", { length: 16 }), // e.g. "A", "85%", "Mastered"
+  notes: text("notes"),
+  ihAssignmentId: int("ihAssignmentId"),
+  adventureId: int("adventureId"),
+  appointmentId: int("appointmentId"),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  BOOK ASSIGNMENTS — physical workbook page references inside a block       */
+/* -------------------------------------------------------------------------- */
+export const bookAssignments = mysqlTable("bookAssignments", {
+  id: int("id").autoincrement().primaryKey(),
+  blockId: int("blockId").notNull(),
+  bookId: int("bookId").notNull(),
+  fromPage: int("fromPage").notNull(),
+  toPage: int("toPage").notNull(),
+  notes: text("notes"),
+  status: mysqlEnum("status", ["assigned", "complete"]).default("assigned").notNull(),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  ADVENTURES LIBRARY (100+ hands-on / outdoor / interest-led activities)    */
+/* -------------------------------------------------------------------------- */
+export const adventures = mysqlTable("adventures", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description").notNull(),
+  subjectSlugs: json("subjectSlugs").$type<string[]>().notNull(), // ["science","math"]
+  topicTags: json("topicTags").$type<string[]>().notNull(), // ["birds","plants","decimals"]
+  interestTags: json("interestTags").$type<string[]>().notNull(), // ["birds","water","outdoor"]
+  minDurationMin: int("minDurationMin").default(30).notNull(),
+  maxDurationMin: int("maxDurationMin").default(90).notNull(),
+  setting: mysqlEnum("setting", ["indoor", "outdoor", "either"]).default("either").notNull(),
+  energyLevel: mysqlEnum("energyLevel", ["low", "medium", "high"]).default("medium").notNull(),
+  materials: json("materials").$type<string[]>().notNull(),
+  instructions: text("instructions").notNull(),
+  ohioStandards: json("ohioStandards").$type<string[]>(),
+  isFavorite: boolean("isFavorite").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  APP LINKS HUB                                                             */
+/* -------------------------------------------------------------------------- */
+export const appLinks = mysqlTable("appLinks", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  url: varchar("url", { length: 500 }).notNull(),
+  category: mysqlEnum("category", ["learning", "creativity", "school", "nature", "reading"]).default("learning").notNull(),
+  emoji: varchar("emoji", { length: 8 }).notNull(),
+  description: text("description"),
+  accountInfo: text("accountInfo"), // username hint, NEVER passwords
+  sortOrder: int("sortOrder").default(0).notNull(),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  BOOKS — physical books on Reagan's bookshelf                              */
+/* -------------------------------------------------------------------------- */
+export const books = mysqlTable("books", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 200 }).notNull(),
+  author: varchar("author", { length: 200 }),
+  type: mysqlEnum("type", ["workbook", "novel", "reference", "audiobook"]).default("workbook").notNull(),
+  subjectSlug: varchar("subjectSlug", { length: 32 }),
+  currentPage: int("currentPage").default(1).notNull(),
+  totalPages: int("totalPages"),
+  notes: text("notes"),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  MOOD LOGS (Green / Yellow / Red zone)                                     */
+/* -------------------------------------------------------------------------- */
+export const moodLogs = mysqlTable("moodLogs", {
+  id: int("id").autoincrement().primaryKey(),
+  planId: int("planId").notNull(),
+  zone: mysqlEnum("zone", ["green", "yellow", "red"]).notNull(),
+  note: text("note"),
+  loggedByUserId: int("loggedByUserId"),
+  loggedAt: timestamp("loggedAt").defaultNow().notNull(),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  TIMELINE / PORTFOLIO EVENTS                                               */
+/* -------------------------------------------------------------------------- */
+export const timelineEvents = mysqlTable("timelineEvents", {
+  id: int("id").autoincrement().primaryKey(),
+  date: date("date").notNull(),
+  eventType: mysqlEnum("eventType", [
+    "completion",
+    "milestone",
+    "creation",
+    "field_trip",
+    "reflection",
+    "adventure",
+  ]).notNull(),
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description"),
+  subjectSlug: varchar("subjectSlug", { length: 32 }),
+  mediaUrl: varchar("mediaUrl", { length: 1000 }),
+  createdByUserId: int("createdByUserId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  NOTIFICATIONS (in-app)                                                    */
+/* -------------------------------------------------------------------------- */
+export const notifications = mysqlTable("notifications", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"), // null = broadcast to all admins
+  type: mysqlEnum("type", ["red_zone", "block_complete", "milestone", "ih_update", "reminder", "info"]).notNull(),
+  title: varchar("title", { length: 200 }).notNull(),
+  body: text("body"),
+  link: varchar("link", { length: 500 }),
+  read: boolean("read").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  IH ASSIGNMENTS — read-only mirror of Indian Hill class assignments        */
+/* -------------------------------------------------------------------------- */
+export const ihAssignments = mysqlTable("ihAssignments", {
+  id: int("id").autoincrement().primaryKey(),
+  sourceTeacher: varchar("sourceTeacher", { length: 100 }).notNull(),
+  sourceClass: varchar("sourceClass", { length: 100 }).notNull(),
+  title: varchar("title", { length: 300 }).notNull(),
+  description: text("description"),
+  postedAt: timestamp("postedAt"),
+  dueDate: date("dueDate"),
+  url: varchar("url", { length: 1000 }),
+  raw: json("raw"),
+  syncedAt: timestamp("syncedAt").defaultNow().notNull(),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  LEARNER PROFILE — single-row settings (id=1) for Reagan                   */
+/* -------------------------------------------------------------------------- */
+export const learnerProfile = mysqlTable("learnerProfile", {
+  id: int("id").autoincrement().primaryKey(),
+  studentName: varchar("studentName", { length: 100 }).default("Reagan").notNull(),
+  gradeLevel: varchar("gradeLevel", { length: 32 }).default("5th Grade").notNull(),
+  accommodations: json("accommodations").$type<string[]>(),
+  triggers: json("triggers").$type<string[]>(),
+  whatWorks: json("whatWorks").$type<string[]>(),
+  whatHarms: json("whatHarms").$type<string[]>(),
+  contacts: json("contacts").$type<{ name: string; role: string; phone?: string; email?: string }[]>(),
+  interests: json("interests").$type<string[]>(),
+  notes: text("notes"),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  SKILLS MASTERY — IEP-style 1-100% rating per skill                        */
+/* -------------------------------------------------------------------------- */
+export const skillsMastery = mysqlTable("skillsMastery", {
+  id: int("id").autoincrement().primaryKey(),
+  subjectSlug: varchar("subjectSlug", { length: 32 }).notNull(),
+  skillName: varchar("skillName", { length: 200 }).notNull(),
+  domain: varchar("domain", { length: 100 }), // e.g. "Numbers & Operations"
+  currentScore: int("currentScore").default(0).notNull(),
+  lastPracticedAt: timestamp("lastPracticedAt"),
+  needsHelp: boolean("needsHelp").default(false).notNull(),
+  sourceData: json("sourceData"),
+  notes: text("notes"),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  WEEKLY TOPICS — what subjects/topics to emphasize each week               */
+/* -------------------------------------------------------------------------- */
+export const weeklyTopics = mysqlTable("weeklyTopics", {
+  id: int("id").autoincrement().primaryKey(),
+  weekStartDate: date("weekStartDate").notNull(),
+  subjectSlug: varchar("subjectSlug", { length: 32 }).notNull(),
+  topics: json("topics").$type<string[]>().notNull(),
+  notes: text("notes"),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  NOTIFICATION RECIPIENTS — emails to send updates to                       */
+/* -------------------------------------------------------------------------- */
+export const notificationRecipients = mysqlTable("notificationRecipients", {
+  id: int("id").autoincrement().primaryKey(),
+  email: varchar("email", { length: 320 }).notNull(),
+  displayName: varchar("displayName", { length: 100 }),
+  role: mysqlEnum("role", ["parent", "grandparent", "tutor", "other"]).default("other").notNull(),
+  optInTypes: json("optInTypes").$type<string[]>(), // ["weekly_packet","red_zone","block_complete","milestone"]
+  active: boolean("active").default(true).notNull(),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  RECURRING APPOINTMENTS                                                    */
+/* -------------------------------------------------------------------------- */
+export const appointments = mysqlTable("appointments", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 200 }).notNull(),
+  contactName: varchar("contactName", { length: 100 }),
+  recurrenceRule: varchar("recurrenceRule", { length: 100 }), // e.g. "weekly:wednesday"
+  startTime: varchar("startTime", { length: 8 }), // "11:00"
+  endTime: varchar("endTime", { length: 8 }), // "12:00"
+  leaveTime: varchar("leaveTime", { length: 8 }), // "10:40"
+  returnTime: varchar("returnTime", { length: 8 }), // "12:30"
+  durationMin: int("durationMin").default(60).notNull(),
+  isProtected: boolean("isProtected").default(true).notNull(),
+  decompressionBufferMin: int("decompressionBufferMin").default(30).notNull(),
+  notes: text("notes"),
+  active: boolean("active").default(true).notNull(),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  IH SCHOOL CALENDAR — days IH is off                                       */
+/* -------------------------------------------------------------------------- */
+export const schoolCalendar = mysqlTable("schoolCalendar", {
+  id: int("id").autoincrement().primaryKey(),
+  date: date("date").notNull().unique(),
+  isOff: boolean("isOff").default(true).notNull(),
+  label: varchar("label", { length: 200 }).notNull(),
+  source: varchar("source", { length: 100 }).default("Indian Hill 2025-26"),
+});
+
+
+/* -------------------------------------------------------------------------- */
+/*  ANIMALS — Reagan's real-life menagerie                                    */
+/* -------------------------------------------------------------------------- */
+export const animals = mysqlTable("animals", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  species: varchar("species", { length: 100 }).notNull(),
+  notes: text("notes"),
+  photoUrl: varchar("photoUrl", { length: 1000 }),
+  dateAdded: date("dateAdded"),
+  isActive: boolean("isActive").default(true).notNull(),
+  sortOrder: int("sortOrder").default(0).notNull(),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  RESCUES — Animal Whisperer's first-class rescue journal                   */
+/* -------------------------------------------------------------------------- */
+export const rescues = mysqlTable("rescues", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 100 }),
+  species: varchar("species", { length: 100 }).notNull(),
+  dateFound: date("dateFound").notNull(),
+  location: varchar("location", { length: 200 }),
+  condition: text("condition"),
+  carePlan: text("carePlan"),
+  outcome: mysqlEnum("outcome", ["in_care", "released", "transferred", "passed", "adopted"]).default("in_care").notNull(),
+  releaseDate: date("releaseDate"),
+  photoUrl: varchar("photoUrl", { length: 1000 }),
+  notes: text("notes"),
+  loggedByUserId: int("loggedByUserId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  BADGES — Whisperer accomplishments                                       */
+/* -------------------------------------------------------------------------- */
+export const badges = mysqlTable("badges", {
+  id: int("id").autoincrement().primaryKey(),
+  slug: varchar("slug", { length: 64 }).notNull().unique(),
+  name: varchar("name", { length: 100 }).notNull(),
+  emoji: varchar("emoji", { length: 8 }).notNull(),
+  description: text("description").notNull(),
+  criteria: text("criteria").notNull(),
+  earned: boolean("earned").default(false).notNull(),
+  earnedAt: timestamp("earnedAt"),
+  progress: int("progress").default(0).notNull(),
+  target: int("target").default(1).notNull(),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  WHISPER SESSIONS — chat history with the AI companion                    */
+/* -------------------------------------------------------------------------- */
+export const whisperSessions = mysqlTable("whisperSessions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"),
+  role: mysqlEnum("role", ["user", "assistant", "system"]).notNull(),
+  content: text("content").notNull(),
+  blockId: int("blockId"),
+  mode: mysqlEnum("mode", ["text", "voice"]).default("text").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  HEART NOTES — Reagan's private journaling space                          */
+/* -------------------------------------------------------------------------- */
+export const heartNotes = mysqlTable("heartNotes", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"),
+  content: text("content").notNull(),
+  whisperResponse: text("whisperResponse"),
+  sharedWithMom: boolean("sharedWithMom").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  ENCOURAGEMENT NOTES — from family adults to Reagan                       */
+/* -------------------------------------------------------------------------- */
+export const encouragementNotes = mysqlTable("encouragementNotes", {
+  id: int("id").autoincrement().primaryKey(),
+  fromName: varchar("fromName", { length: 100 }).notNull(),
+  fromUserId: int("fromUserId"),
+  content: text("content").notNull(),
+  starred: boolean("starred").default(false).notNull(),
+  read: boolean("read").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  EMOTIONAL STRUGGLES — logged only when she struggles                      */
+/* -------------------------------------------------------------------------- */
+export const emotionalStruggles = mysqlTable("emotionalStruggles", {
+  id: int("id").autoincrement().primaryKey(),
+  planId: int("planId"),
+  blockId: int("blockId"),
+  subjectSlug: varchar("subjectSlug", { length: 32 }),
+  topicTag: varchar("topicTag", { length: 100 }),
+  intensity: mysqlEnum("intensity", ["green", "yellow", "red"]).notNull(),
+  description: text("description"),
+  triggers: json("triggers").$type<string[]>(),
+  copingUsed: json("copingUsed").$type<string[]>(),
+  resolved: boolean("resolved").default(false).notNull(),
+  loggedByUserId: int("loggedByUserId"),
+  loggedAt: timestamp("loggedAt").defaultNow().notNull(),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  REAGAN KNOWLEDGE — auto-ingested insights from Gmail/Drive about Reagan   */
+/* -------------------------------------------------------------------------- */
+export const reaganKnowledge = mysqlTable("reaganKnowledge", {
+  id: int("id").autoincrement().primaryKey(),
+  source: mysqlEnum("source", ["gmail", "gdrive", "manual", "chat_history"]).notNull(),
+  sourceTitle: varchar("sourceTitle", { length: 500 }),
+  sourceUrl: varchar("sourceUrl", { length: 1000 }),
+  sourceDate: date("sourceDate"),
+  insightType: mysqlEnum("insightType", [
+    "academic_strength","academic_gap","trigger","accommodation","interest",
+    "medical","social","preference","quote","strategy","context","general"
+  ]).notNull(),
+  insight: text("insight").notNull(),
+  confidence: mysqlEnum("confidence", ["low", "medium", "high"]).default("medium").notNull(),
+  active: boolean("active").default(true).notNull(),
+  sensitive: boolean("sensitive").default(false).notNull(),
+  approvedBy: int("approvedBy"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  SPECIAL DAYS — meteor showers, eclipses, bird days, full moons, etc.      */
+/* -------------------------------------------------------------------------- */
+export const specialDays = mysqlTable("specialDays", {
+  id: int("id").autoincrement().primaryKey(),
+  date: date("date").notNull(),
+  name: varchar("name", { length: 200 }).notNull(),
+  category: mysqlEnum("category", [
+    "astronomy",
+    "nature",
+    "animal",
+    "plant",
+    "seasonal",
+    "spiritual",
+    "service",
+    "quirky",
+    "art",
+  ]).notNull(),
+  description: text("description").notNull(),
+  suggestedActivity: text("suggestedActivity"),
+  interestTags: json("interestTags").$type<string[]>(),
+  viewingTimeNote: varchar("viewingTimeNote", { length: 200 }),
+  isOptional: boolean("isOptional").default(true).notNull(),
+});

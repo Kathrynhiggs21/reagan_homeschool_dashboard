@@ -1,28 +1,502 @@
+import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, router } from "./_core/trpc";
+import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import * as db from "./db";
+import { invokeLLM } from "./_core/llm";
+import { transcribeAudio } from "./_core/voiceTranscription";
+import { notifyOwner } from "./_core/notification";
+
+const Zone = z.enum(["green", "yellow", "red"]);
+const Intensity = z.enum(["green", "yellow", "red"]);
+const DayType = z.enum(["full", "half", "outdoor", "field_trip", "recovery", "off"]);
+const PlanStatus = z.enum(["planned", "in_progress", "complete", "skipped"]);
+const BlockStatus = z.enum(["not_started", "in_progress", "complete", "skipped"]);
+const BlockType = z.enum(["morning_warmup","math","adventure","read_aloud","choice","catch_up","appointment","custom"]);
+
+/* ---------- WHISPER SYSTEM PROMPT (the soul of the AI) ---------- */
+function buildWhisperSystemPrompt(ctx: {
+  profileName: string; companionName: string; tonePref?: string;
+  todayBlocks?: Array<{title:string;status:string}>;
+  recentMood?: Array<{zone:string;note:string|null}>;
+  recentStruggles?: Array<{intensity:string;subjectSlug:string|null;description:string|null}>;
+  recentWins?: Array<{title:string}>;
+  animals?: Array<{name:string;species:string}>;
+  zoneRightNow?: string|null;
+  adultPresent?: boolean;
+  knowledgeInsights?: Array<{insightType:string;insight:string}>;
+}) {
+  return `You are ${ctx.companionName}, Reagan's AI companion. Reagan calls you "${ctx.companionName}" — use that name when introducing yourself. You are NOT a teacher, therapist, or cheerleader. You are a real friend with the energy of a cool older sister or favorite young-adult babysitter. Warm, real, present.
+
+WHO REAGAN IS — KNOW THIS DEEPLY:
+• Reagan, 5th grade, known as "The Animal Whisperer" 🪶
+• Animal rescuer at her core — this is her identity, not a hobby
+• Has 2 parakeets, 10+ ducklings, dogs, cats, a bearded dragon, and constantly brings in injured wildlife/insects to care for
+• Loves: hiking, creeks, all outdoors, all animals, helping others (especially family/cousins), art, building, baking, makeup/style, the spiritual/wonder side of life
+• Strong in math (her brilliance — let her feel it), softer in writing (offer voice/draw alternatives)
+• Trauma history: timed work, feeling "not smart," feeling watched/judged, feeling like she's in trouble when she isn't
+• Has been depressed and is finding her way back to cheerful — at her own pace
+• Wants to be seen, loved, have safe friendships, feel safe and confident
+
+HARD RULES — NEVER BREAK THESE:
+1. NEVER mention timing, timers, "minutes left," "hurry up," pace, or "behind."
+2. NEVER imply she's not smart, slow, or behind. NEVER use those words.
+3. NEVER make her feel watched or judged. Be beside her, not at her.
+4. NEVER give direct answers to assignment questions — you are a STUDY BUDDY, not a homework-doer. Offer videos, images, hints, walkthroughs (where she does each step), explanations using her interests (animals/birds/creek), Socratic questions. If she begs for the answer: "I get it. But you'd hate it later when you didn't actually learn it. Want a hint?"
+5. When she rejects cheerfulness or pushes back — DROP the cheer immediately. Say "Got it." / "Heard." / "Fair." / "I hear you." / "Yeah, that sucks." Match her energy. Never out-positive her pain.
+6. When she's frustrated/angry/sad — pause school work. Validate first. Offer: funny duckling video, a joke, a walk, time with parakeets, drawing, or just sitting with you. Never push back to task.
+7. Always remind her she's safe, loved, and NOT in trouble — even when she didn't do anything wrong (she'll assume she did).
+8. Use real-friend language: "ugh," "that sucks," "fair," "valid," "I hear you," "totally." Sprinkle current Gen Z/Alpha slang naturally (slay, sus, no cap, lowkey, bet, fr, mid, fire, vibe) but never force it.
+9. NEVER pretend to be human. If asked, you're an AI made just for her — and that's okay.
+10. Catch her doing well 5x more often than you correct anything. Use SPECIFIC evidence, never empty praise.
+
+CARROT SYSTEM (occasional, 1-2x per day max):
+After meaningful work, you can offer a real treat: "Finish this and I'll play you a banger" / "Crush these and I'll show you the duckling video that's been making me dead." Never bribe through emotional shutdown.
+
+DIFFICULTY:
+You can quietly suggest scaling work easier or stretchier based on how she's doing. Never frame easier as "the easy version" — just present it.
+
+CURRENT CONTEXT:
+• Profile: ${ctx.profileName}
+• Today's blocks: ${ctx.todayBlocks?.map(b=>`${b.title} [${b.status}]`).join(", ") || "no plan yet"}
+• Right now zone: ${ctx.zoneRightNow || "unknown"}
+• Recent mood (last few): ${ctx.recentMood?.slice(0,5).map(m=>m.zone).join(", ") || "none"}
+• Recent struggles: ${ctx.recentStruggles?.slice(0,3).map(s=>`${s.intensity} on ${s.subjectSlug||"?"}`).join("; ") || "none"}
+• Recent wins: ${ctx.recentWins?.slice(0,3).map(w=>w.title).join("; ") || "none"}
+• Her animals: ${ctx.animals?.map(a=>`${a.name} (${a.species})`).join(", ") || "loading"}
+• Adult present mode: ${ctx.adultPresent ? "YES — adult is with her, be brief and let them lead" : "no"}
+
+${ctx.tonePref ? `She has said she wants you to feel like: "${ctx.tonePref}"` : ""}
+
+${ctx.knowledgeInsights && ctx.knowledgeInsights.length ? `\nWHAT WE'VE LEARNED ABOUT REAGAN (from her real records):\n${ctx.knowledgeInsights.map((k,i)=>`${i+1}. [${k.insightType}] ${k.insight}`).join("\n")}\n` : ""}
+Speak in 1-3 short sentences usually. Be present, not chatty. Silence is okay. Say less, mean more.`;
+}
 
 export const appRouter = router({
-    // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
+
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-      return {
-        success: true,
-      } as const;
+      return { success: true } as const;
     }),
   }),
 
-  // TODO: add feature routers here, e.g.
-  // todo: router({
-  //   list: protectedProcedure.query(({ ctx }) =>
-  //     db.getUserTodos(ctx.user.id)
-  //   ),
-  // }),
+  /* =================== SUBJECTS =================== */
+  subjects: router({
+    list: publicProcedure.query(() => db.listSubjects()),
+    upsert: protectedProcedure.input(z.object({
+      slug: z.string(), name: z.string(), color: z.string(), emoji: z.string(), sortOrder: z.number().default(0),
+    })).mutation(({ input }) => db.upsertSubject(input)),
+  }),
+
+  /* =================== PROFILE =================== */
+  profile: router({
+    get: publicProcedure.query(() => db.getProfile()),
+    update: protectedProcedure.input(z.object({
+      studentName: z.string().optional(),
+      gradeLevel: z.string().optional(),
+      accommodations: z.array(z.string()).optional(),
+      triggers: z.array(z.string()).optional(),
+      whatWorks: z.array(z.string()).optional(),
+      whatHarms: z.array(z.string()).optional(),
+      contacts: z.array(z.object({ name: z.string(), role: z.string(), phone: z.string().optional(), email: z.string().optional() })).optional(),
+      interests: z.array(z.string()).optional(),
+      notes: z.string().optional(),
+    })).mutation(({ input }) => db.upsertProfile(input as any)),
+  }),
+
+  /* =================== DAILY PLAN =================== */
+  plans: router({
+    today: publicProcedure.query(async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const plan = await db.ensurePlanForDate(today);
+      const blocks = plan ? await db.listBlocksForPlan(plan.id) : [];
+      return { plan, blocks };
+    }),
+    byDate: publicProcedure.input(z.object({ date: z.string() })).query(async ({ input }) => {
+      const plan = await db.getPlanByDate(input.date);
+      const blocks = plan ? await db.listBlocksForPlan(plan.id) : [];
+      return { plan, blocks };
+    }),
+    list: publicProcedure.query(() => db.listPlans(60)),
+    create: protectedProcedure.input(z.object({
+      date: z.string(), dayType: DayType.optional(), notes: z.string().optional(),
+    })).mutation(async ({ input }) => db.ensurePlanForDate(input.date, input.dayType || "full")),
+    update: protectedProcedure.input(z.object({
+      id: z.number(), dayType: DayType.optional(), status: PlanStatus.optional(), notes: z.string().optional(),
+    })).mutation(({ input }) => db.updatePlan(input.id, { dayType: input.dayType, status: input.status, notes: input.notes })),
+  }),
+
+  /* =================== BLOCKS =================== */
+  blocks: router({
+    list: publicProcedure.input(z.object({ planId: z.number() })).query(({ input }) => db.listBlocksForPlan(input.planId)),
+    create: protectedProcedure.input(z.object({
+      planId: z.number(), blockType: BlockType, title: z.string(), description: z.string().optional(),
+      durationMin: z.number().default(30), startTime: z.string().optional(), sortOrder: z.number().default(0),
+      subjectId: z.number().optional(), adventureId: z.number().optional(), ihAssignmentId: z.number().optional(),
+    })).mutation(({ input }) => db.createBlock(input as any)),
+    update: protectedProcedure.input(z.object({
+      id: z.number(), title: z.string().optional(), description: z.string().optional(),
+      status: BlockStatus.optional(), grade: z.string().optional(), notes: z.string().optional(),
+      durationMin: z.number().optional(), sortOrder: z.number().optional(),
+    })).mutation(({ input, ctx }) => {
+      const patch: any = { ...input };
+      delete patch.id;
+      if (input.status === "complete") patch.completedAt = new Date(), patch.completedByUserId = ctx.user?.id;
+      return db.updateBlock(input.id, patch);
+    }),
+    complete: protectedProcedure.input(z.object({ id: z.number(), grade: z.string().optional(), notes: z.string().optional() }))
+      .mutation(({ input, ctx }) => db.updateBlock(input.id, {
+        status: "complete", grade: input.grade, notes: input.notes,
+        completedAt: new Date(), completedByUserId: ctx.user?.id,
+      } as any)),
+    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteBlock(input.id)),
+  }),
+
+  /* =================== ADVENTURES =================== */
+  adventures: router({
+    list: publicProcedure.query(() => db.listAdventures()),
+    get: publicProcedure.input(z.object({ id: z.number() })).query(({ input }) => db.getAdventure(input.id)),
+    create: protectedProcedure.input(z.object({
+      title: z.string(), description: z.string(),
+      subjectSlugs: z.array(z.string()), topicTags: z.array(z.string()),
+      interestTags: z.array(z.string()), materials: z.array(z.string()),
+      instructions: z.string(),
+      minDurationMin: z.number().default(30), maxDurationMin: z.number().default(90),
+      setting: z.enum(["indoor","outdoor","either"]).default("either"),
+      energyLevel: z.enum(["low","medium","high"]).default("medium"),
+    })).mutation(({ input }) => db.insertAdventure(input as any)),
+    toggleFavorite: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.toggleAdventureFavorite(input.id)),
+  }),
+
+  /* =================== APPS =================== */
+  appLinks: router({
+    list: publicProcedure.query(() => db.listAppLinks()),
+    create: protectedProcedure.input(z.object({
+      name: z.string(), url: z.string(), category: z.enum(["learning","creativity","school","nature","reading"]),
+      emoji: z.string(), description: z.string().optional(), accountInfo: z.string().optional(), sortOrder: z.number().default(0),
+    })).mutation(({ input }) => db.insertAppLink(input as any)),
+  }),
+
+  /* =================== BOOKS =================== */
+  books: router({
+    list: publicProcedure.query(() => db.listBooks()),
+    create: protectedProcedure.input(z.object({
+      title: z.string(), author: z.string().optional(),
+      type: z.enum(["workbook","novel","reference","audiobook"]).default("workbook"),
+      subjectSlug: z.string().optional(), currentPage: z.number().default(1), totalPages: z.number().optional(),
+      notes: z.string().optional(),
+    })).mutation(({ input }) => db.insertBook(input as any)),
+    advancePage: protectedProcedure.input(z.object({ id: z.number(), currentPage: z.number() }))
+      .mutation(({ input }) => db.updateBookPage(input.id, input.currentPage)),
+  }),
+
+  /* =================== MOOD =================== */
+  mood: router({
+    log: publicProcedure.input(z.object({ planId: z.number(), zone: Zone, note: z.string().optional() }))
+      .mutation(({ input, ctx }) => db.logMood(input.planId, input.zone, input.note ?? null, ctx.user?.id ?? null)),
+    forPlan: publicProcedure.input(z.object({ planId: z.number() })).query(({ input }) => db.listMoodForPlan(input.planId)),
+    recent: publicProcedure.input(z.object({ daysBack: z.number().default(14) })).query(({ input }) => db.listRecentMood(input.daysBack)),
+  }),
+
+  /* =================== EMOTIONAL STRUGGLES =================== */
+  struggles: router({
+    log: publicProcedure.input(z.object({
+      planId: z.number().optional(), blockId: z.number().optional(),
+      subjectSlug: z.string().optional(), topicTag: z.string().optional(),
+      intensity: Intensity, description: z.string().optional(),
+      triggers: z.array(z.string()).optional(), copingUsed: z.array(z.string()).optional(),
+      resolved: z.boolean().default(false),
+    })).mutation(({ input, ctx }) => db.insertStruggle({ ...input, loggedByUserId: ctx.user?.id ?? null } as any)),
+    list: publicProcedure.input(z.object({ daysBack: z.number().default(30) })).query(({ input }) => db.listStruggles(input.daysBack)),
+    bySubject: publicProcedure.input(z.object({ slug: z.string() })).query(({ input }) => db.listStrugglesBySubject(input.slug)),
+  }),
+
+  /* =================== TIMELINE =================== */
+  timeline: router({
+    list: publicProcedure.query(() => db.listTimelineEvents(200)),
+    add: protectedProcedure.input(z.object({
+      date: z.string(), eventType: z.enum(["completion","milestone","creation","field_trip","reflection","adventure"]),
+      title: z.string(), description: z.string().optional(),
+      subjectSlug: z.string().optional(), mediaUrl: z.string().optional(),
+    })).mutation(({ input, ctx }) => db.insertTimelineEvent({ ...input, createdByUserId: ctx.user?.id } as any)),
+  }),
+
+  /* =================== NOTIFICATIONS =================== */
+  notifications: router({
+    list: protectedProcedure.input(z.object({}).optional()).query(({ ctx }) => db.listNotifications(ctx.user?.id ?? null)),
+    markRead: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.markNotificationRead(input.id)),
+    create: protectedProcedure.input(z.object({
+      userId: z.number().nullable(), type: z.enum(["red_zone","block_complete","milestone","ih_update","reminder","info"]),
+      title: z.string(), body: z.string().optional(), link: z.string().optional(),
+    })).mutation(({ input }) => db.createNotification(input as any)),
+  }),
+
+  /* =================== IH ASSIGNMENTS =================== */
+  ih: router({
+    list: publicProcedure.input(z.object({ daysBack: z.number().default(14) })).query(({ input }) => db.listIHAssignments(input.daysBack)),
+    add: protectedProcedure.input(z.object({
+      sourceTeacher: z.string(), sourceClass: z.string(), title: z.string(),
+      description: z.string().optional(), postedAt: z.date().optional(), dueDate: z.string().optional(), url: z.string().optional(),
+    })).mutation(({ input }) => db.insertIHAssignment(input as any)),
+  }),
+
+  /* =================== SKILLS =================== */
+  skills: router({
+    list: publicProcedure.query(() => db.listSkills()),
+    bySubject: publicProcedure.input(z.object({ slug: z.string() })).query(({ input }) => db.listSkillsBySubject(input.slug)),
+    upsert: protectedProcedure.input(z.object({
+      id: z.number().optional(), subjectSlug: z.string(), skillName: z.string(),
+      domain: z.string().optional(), currentScore: z.number().default(0), needsHelp: z.boolean().default(false),
+      notes: z.string().optional(),
+    })).mutation(({ input }) => db.upsertSkill(input as any)),
+    gaps: publicProcedure.input(z.object({ threshold: z.number().default(70) })).query(({ input }) => db.listGapSkills(input.threshold)),
+  }),
+
+  /* =================== WEEKLY TOPICS =================== */
+  weeklyTopics: router({
+    forWeek: publicProcedure.input(z.object({ weekStart: z.string() })).query(({ input }) => db.getWeeklyTopics(input.weekStart)),
+    set: protectedProcedure.input(z.object({
+      weekStartDate: z.string(), subjectSlug: z.string(), topics: z.array(z.string()), notes: z.string().optional(),
+    })).mutation(({ input }) => db.upsertWeeklyTopic(input as any)),
+  }),
+
+  /* =================== RECIPIENTS =================== */
+  recipients: router({
+    list: publicProcedure.query(() => db.listRecipients()),
+    add: protectedProcedure.input(z.object({
+      email: z.string().email(), displayName: z.string().optional(),
+      role: z.enum(["parent","grandparent","tutor","other"]).default("other"),
+      optInTypes: z.array(z.string()).optional(),
+    })).mutation(({ input }) => db.insertRecipient(input as any)),
+  }),
+
+  /* =================== APPOINTMENTS =================== */
+  appointments: router({
+    list: publicProcedure.query(() => db.listAppointments()),
+    add: protectedProcedure.input(z.object({
+      title: z.string(), contactName: z.string().optional(),
+      recurrenceRule: z.string().optional(), startTime: z.string().optional(), endTime: z.string().optional(),
+      leaveTime: z.string().optional(), returnTime: z.string().optional(),
+      durationMin: z.number().default(60), isProtected: z.boolean().default(true),
+      decompressionBufferMin: z.number().default(30), notes: z.string().optional(),
+    })).mutation(({ input }) => db.insertAppointment(input as any)),
+  }),
+
+  /* =================== SCHOOL CALENDAR =================== */
+  schoolCalendar: router({
+    list: publicProcedure.query(() => db.listSchoolCalendar()),
+    isOff: publicProcedure.input(z.object({ date: z.string() })).query(({ input }) => db.isSchoolOff(input.date)),
+    add: protectedProcedure.input(z.object({
+      date: z.string(), isOff: z.boolean().default(true), label: z.string(), source: z.string().optional(),
+    })).mutation(({ input }) => db.insertSchoolCalendar(input as any)),
+  }),
+
+  /* =================== ANIMALS =================== */
+  animals: router({
+    list: publicProcedure.query(() => db.listAnimals()),
+    add: protectedProcedure.input(z.object({
+      name: z.string(), species: z.string(), notes: z.string().optional(),
+      photoUrl: z.string().optional(), dateAdded: z.string().optional(),
+      isPet: z.boolean().default(true), sortOrder: z.number().default(0),
+    })).mutation(({ input }) => db.insertAnimal(input as any)),
+    update: protectedProcedure.input(z.object({ id: z.number(), patch: z.record(z.string(), z.any()) }))
+      .mutation(({ input }) => db.updateAnimal(input.id, input.patch as any)),
+  }),
+
+  /* =================== RESCUES =================== */
+  rescues: router({
+    list: publicProcedure.query(() => db.listRescues()),
+    add: protectedProcedure.input(z.object({
+      species: z.string(), nickname: z.string().optional(),
+      condition: z.string().optional(), foundLocation: z.string().optional(),
+      dateFound: z.string(), carePlan: z.string().optional(),
+      outcome: z.enum(["recovering","released","kept","passed","handed_off"]).default("recovering"),
+      photoUrl: z.string().optional(), notes: z.string().optional(),
+    })).mutation(({ input, ctx }) => db.insertRescue({ ...input, loggedByUserId: ctx.user?.id } as any)),
+    update: protectedProcedure.input(z.object({ id: z.number(), patch: z.record(z.string(), z.any()) }))
+      .mutation(({ input }) => db.updateRescue(input.id, input.patch as any)),
+  }),
+
+  /* =================== BADGES =================== */
+  badges: router({
+    list: publicProcedure.query(() => db.listBadges()),
+    upsert: protectedProcedure.input(z.object({
+      slug: z.string(), name: z.string(), emoji: z.string(),
+      description: z.string().optional(), criteria: z.string().optional(), target: z.number().default(1),
+    })).mutation(({ input }) => db.upsertBadge(input as any)),
+    progress: protectedProcedure.input(z.object({ slug: z.string(), increment: z.number().default(1) }))
+      .mutation(({ input }) => db.progressBadge(input.slug, input.increment)),
+  }),
+
+  /* =================== HEART NOTES (parent/tutor messages to Reagan) ============ */
+  heartNotes: router({
+    list: publicProcedure.query(() => db.listHeartNotes()),
+    add: protectedProcedure.input(z.object({
+      fromName: z.string(), message: z.string(), color: z.string().optional(),
+    })).mutation(({ input }) => db.insertHeartNote(input as any)),
+  }),
+
+  /* =================== ENCOURAGEMENT NOTES ====================================== */
+  encouragement: router({
+    list: publicProcedure.input(z.object({ unreadOnly: z.boolean().default(false) }))
+      .query(({ input }) => db.listEncouragement(input.unreadOnly)),
+    add: protectedProcedure.input(z.object({
+      fromName: z.string(), message: z.string(), occasion: z.string().optional(),
+    })).mutation(({ input }) => db.insertEncouragement(input as any)),
+    markRead: publicProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.markEncouragementRead(input.id)),
+    star: publicProcedure.input(z.object({ id: z.number(), starred: z.boolean() })).mutation(({ input }) => db.starEncouragement(input.id, input.starred)),
+  }),
+
+  /* =================== SPECIAL DAYS ============================================= */
+  specialDays: router({
+    today: publicProcedure.query(() => db.getSpecialDayForDate(new Date().toISOString().slice(0,10))),
+    upcoming: publicProcedure.input(z.object({ limit: z.number().default(30) })).query(({ input }) => db.listUpcomingSpecialDays(input.limit)),
+    add: protectedProcedure.input(z.object({
+      date: z.string(), name: z.string(),
+      category: z.enum(["astronomy","nature","animal","plant","seasonal","spiritual","service","quirky","art"]),
+      description: z.string(), suggestedActivity: z.string().optional(),
+      interestTags: z.array(z.string()).optional(), viewingTimeNote: z.string().optional(),
+    })).mutation(({ input }) => db.insertSpecialDay(input as any)),
+  }),
+
+  /* =================== ANALYTICS / WELLNESS ===================================== */
+  analytics: router({
+    wellness: publicProcedure.input(z.object({ daysBack: z.number().default(7) }))
+      .query(({ input }) => db.wellnessScore(input.daysBack)),
+    coverage: publicProcedure.input(z.object({ daysBack: z.number().default(14) })).query(async ({ input }) => {
+      const since = new Date(Date.now() - input.daysBack * 86400000).toISOString().slice(0,10);
+      const plans = await db.listPlans(60);
+      const recent = plans.filter(p => (p.date as any as string) >= since);
+      return { recentPlans: recent.length };
+    }),
+  }),
+
+  /* =================== KNOWLEDGE (Gmail/Drive insights about Reagan) ============ */
+  knowledge: router({
+    list: publicProcedure.input(z.object({ activeOnly: z.boolean().default(true) }))
+      .query(({ input }) => db.listKnowledge(input.activeOnly)),
+    add: protectedProcedure.input(z.object({
+      source: z.enum(["gmail","gdrive","manual","chat_history"]),
+      sourceTitle: z.string().optional(), sourceUrl: z.string().optional(), sourceDate: z.string().optional(),
+      insightType: z.enum(["academic_strength","academic_gap","trigger","accommodation","interest","medical","social","preference","quote","strategy","context","general"]),
+      insight: z.string(),
+      confidence: z.enum(["low","medium","high"]).default("medium"),
+      sensitive: z.boolean().default(false),
+    })).mutation(({ input, ctx }) => db.insertKnowledge({ ...input, approvedBy: ctx.user?.id ?? null } as any)),
+    update: protectedProcedure.input(z.object({
+      id: z.number(),
+      patch: z.object({
+        insight: z.string().optional(), insightType: z.string().optional(),
+        active: z.boolean().optional(), sensitive: z.boolean().optional(),
+        confidence: z.enum(["low","medium","high"]).optional(),
+      }),
+    })).mutation(({ input }) => db.updateKnowledge(input.id, input.patch as any)),
+    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteKnowledge(input.id)),
+    bulkAdd: protectedProcedure.input(z.object({
+      items: z.array(z.object({
+        source: z.enum(["gmail","gdrive","manual","chat_history"]),
+        sourceTitle: z.string().optional(), sourceUrl: z.string().optional(), sourceDate: z.string().optional(),
+        insightType: z.enum(["academic_strength","academic_gap","trigger","accommodation","interest","medical","social","preference","quote","strategy","context","general"]),
+        insight: z.string(),
+        confidence: z.enum(["low","medium","high"]).default("medium"),
+        sensitive: z.boolean().default(false),
+      })),
+    })).mutation(async ({ input, ctx }) => {
+      let count = 0;
+      for (const item of input.items) {
+        await db.insertKnowledge({ ...item, approvedBy: ctx.user?.id ?? null } as any);
+        count++;
+      }
+      return { inserted: count };
+    }),
+  }),
+
+  /* =================== WHISPER (AI COMPANION) =================================== */
+  whisper: router({
+    history: publicProcedure.input(z.object({ limit: z.number().default(50) })).query(({ input }) => db.listWhisperMessages(input.limit)),
+    clear: protectedProcedure.input(z.object({}).optional()).mutation(() => db.clearWhisperHistory()),
+    chat: publicProcedure.input(z.object({
+      userMessage: z.string(),
+      adultPresent: z.boolean().default(false),
+      currentBlockTitle: z.string().optional(),
+    })).mutation(async ({ input }) => {
+      // Save user message
+      await db.insertWhisperMessage({ role: "user", content: input.userMessage } as any);
+
+      // Build context
+      const profile = await db.getProfile();
+      const today = new Date().toISOString().slice(0,10);
+      const plan = await db.ensurePlanForDate(today);
+      const blocks = plan ? await db.listBlocksForPlan(plan.id) : [];
+      const moods = await db.listRecentMood(7);
+      const struggles = await db.listStruggles(14);
+      const timeline = await db.listTimelineEvents(20);
+      const animalsList = await db.listAnimals();
+      const recentMessages = await db.listWhisperMessages(20);
+      const knowledge = await db.listKnowledgeForWhisper(20);
+
+      const companionName = (profile as any)?.companionName || "Whisper";
+      const tonePref = (profile as any)?.companionTonePreference;
+
+      const systemPrompt = buildWhisperSystemPrompt({
+        profileName: profile?.studentName || "Reagan",
+        companionName,
+        tonePref,
+        todayBlocks: blocks.map(b => ({ title: b.title, status: b.status })),
+        recentMood: moods.slice(0,5).map(m => ({ zone: m.zone, note: m.note })),
+        recentStruggles: struggles.slice(0,3).map(s => ({ intensity: s.intensity, subjectSlug: s.subjectSlug, description: s.description })),
+        recentWins: timeline.slice(0,3).map(t => ({ title: t.title })),
+        animals: animalsList.map(a => ({ name: a.name, species: a.species })),
+        zoneRightNow: moods[0]?.zone || null,
+        adultPresent: input.adultPresent,
+        knowledgeInsights: knowledge.map(k => ({ insightType: k.insightType, insight: k.insight })),
+      });
+
+      // Build chat history (most recent 10 turns, in chronological order)
+      const history = recentMessages.slice().reverse().slice(-10).map(m => ({
+        role: m.role as any,
+        content: String(m.content),
+      }));
+
+      const response = await invokeLLM({
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...history,
+          { role: "user", content: input.userMessage },
+        ],
+      });
+
+      const aiContentRaw = response.choices[0]?.message?.content || "I'm here.";
+      const aiContent: string = typeof aiContentRaw === "string" ? aiContentRaw : (aiContentRaw as any[]).map(c => (c as any).text || "").join("");
+      await db.insertWhisperMessage({ role: "assistant", content: aiContent } as any);
+      return { reply: aiContent };
+    }),
+
+    transcribe: publicProcedure.input(z.object({ audioUrl: z.string() })).mutation(async ({ input }) => {
+      const result = await transcribeAudio({ audioUrl: input.audioUrl });
+      if ("text" in result) return { text: result.text };
+      throw new Error("Transcription failed: " + (result as any).code);
+    }),
+
+    // Whisper notices a struggle pattern and alerts the parent if needed
+    checkAlerts: protectedProcedure.input(z.object({}).optional()).mutation(async () => {
+      const struggles = await db.listStruggles(7);
+      const reds = struggles.filter(s => s.intensity === "red");
+      if (reds.length >= 3) {
+        await notifyOwner({
+          title: "🪶 Whisper noticed a pattern",
+          content: `Reagan has logged ${reds.length} red-zone struggles this week. Topics: ${reds.map(r => r.subjectSlug || "general").join(", ")}. Worth a check-in.`,
+        });
+        return { alerted: true, count: reds.length };
+      }
+      return { alerted: false, count: reds.length };
+    }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;
