@@ -1,6 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { REAGAN_PHOTOS } from "@/lib/reaganPhotos";
 
 export default function Profile() {
   const p = trpc.profile.get.useQuery();
@@ -39,6 +40,18 @@ export default function Profile() {
           </ul>
         </Card>
       )}
+
+      <Card className="cozy-card p-4">
+        <div className="font-display font-semibold mb-3">My photos 📸</div>
+        <p className="text-sm text-muted-foreground mb-3">Pictures of you being you.</p>
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+          {REAGAN_PHOTOS.map((src, i) => (
+            <div key={src} className="aspect-square rounded-xl overflow-hidden border border-amber-200/60 bg-amber-50">
+              <img src={src} alt={`Reagan ${i+1}`} loading="lazy" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+            </div>
+          ))}
+        </div>
+      </Card>
 
       <Card className="cozy-card p-4">
         <div className="font-display font-semibold mb-3">Badges</div>

@@ -65,8 +65,54 @@ export async function ensurePlanForDate(dateStr: string, dayType: any = "full") 
   const existing = await getPlanByDate(dateStr);
   if (existing) return existing;
   const db = getDb();
-  await db.insert(dailyPlans).values({ date: dateStr as any, dayType });
-  return getPlanByDate(dateStr);
+  // Wednesday = therapy day (lighter)
+  const dow = new Date(dateStr + "T00:00:00").getDay();
+  const finalDayType = dow === 3 ? "half" : dayType;
+  await db.insert(dailyPlans).values({ date: dateStr as any, dayType: finalDayType });
+  const plan = await getPlanByDate(dateStr);
+  if (plan) await autoBuildBlocksForPlan(plan.id, dow === 3 ? "therapy" : dayType, dow);
+  return plan;
+}
+
+async function autoBuildBlocksForPlan(planId: number, dayType: string, dow: number) {
+  const db = getDb();
+  const subjs = await db.select().from(subjects);
+  const findSlug = (slug: string) => subjs.find(s => s.slug === slug);
+  const isTherapy = dayType === "therapy";
+
+  const template: Array<{ title: string; description: string; slug?: string; type: string; minutes: number }> = isTherapy ? [
+    { title: "Soft start", description: "Time with the parakeets and ducklings. Just be.", slug: "animal-care", type: "morning_warmup", minutes: 30 },
+    { title: "Easy math warm-up", description: "A few duckling-themed practice problems. No pressure.", slug: "math", type: "math", minutes: 25 },
+    { title: "Choice block", description: "What you want today. Art, makeup, drawing, anything.", slug: "choice", type: "choice", minutes: 30 },
+    { title: "Therapy with Ali", description: "Wednesday session with Ali Hill. Mom will let you know.", slug: undefined, type: "appointment", minutes: 90 },
+    { title: "Lunch + reset", description: "Cozy lunch back home.", slug: undefined, type: "custom", minutes: 30 },
+    { title: "Read-aloud", description: "Tuck Everlasting, snug-in time.", slug: "ela", type: "read_aloud", minutes: 25 },
+    { title: "Adventure of the day", description: "Pick something gentle from the Adventure library.", slug: "science", type: "adventure", minutes: 35 },
+  ] : [
+    { title: "Soft start", description: "Time with the parakeets and ducklings. Just be.", slug: "animal-care", type: "morning_warmup", minutes: 25 },
+    { title: "Math warm-up", description: "A few problems to wake up your math brain. You've got this.", slug: "math", type: "math", minutes: 30 },
+    { title: "Choice block", description: "What you want today. Art, makeup, drawing, anything.", slug: "choice", type: "choice", minutes: 30 },
+    { title: "Brain break", description: "Move, stretch, snack, sit-spot. Your call.", slug: undefined, type: "custom", minutes: 15 },
+    { title: "Reading + writing", description: "Read a chapter, journal one thing. Voice-to-text totally fine.", slug: "ela", type: "read_aloud", minutes: 30 },
+    { title: "Lunch", description: "Eat something good.", slug: undefined, type: "custom", minutes: 30 },
+    { title: "Science adventure", description: "Animals, creek, weather, plants — pick your path.", slug: "science", type: "adventure", minutes: 35 },
+    { title: "Cozy wrap-up", description: "What did today teach you? Anything to log? Or just done.", slug: undefined, type: "catch_up", minutes: 15 },
+  ];
+
+  let order = 0;
+  for (const t of template) {
+    const sub = t.slug ? findSlug(t.slug) : null;
+    await db.insert(scheduleBlocks).values({
+      planId,
+      sortOrder: order++,
+      blockType: t.type as any,
+      title: t.title,
+      description: t.description,
+      subjectId: sub?.id || null,
+      durationMin: t.minutes,
+      status: "not_started" as any,
+    });
+  }
 }
 
 export async function updatePlan(planId: number, patch: Partial<typeof dailyPlans.$inferInsert>) {

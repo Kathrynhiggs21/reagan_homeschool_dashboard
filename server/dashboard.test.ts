@@ -45,6 +45,23 @@ describe("Reagan Dashboard core helpers", () => {
     expect(p1?.id).toBe(p2?.id);
   });
 
+  it("new plan auto-builds default cozy blocks", async () => {
+    const date = "2030-02-15";
+    const p = await db.ensurePlanForDate(date);
+    expect(p).toBeTruthy();
+    const blocks: any[] = await db.listBlocksForPlan(p!.id);
+    expect(blocks.length).toBeGreaterThanOrEqual(7);
+    expect(blocks.some((b: any) => b.title.toLowerCase().includes("choice"))).toBe(true);
+  });
+
+  it("Wednesday plan auto-builds therapy variant with appointment", async () => {
+    const date = "2030-02-20"; // Wednesday
+    const p = await db.ensurePlanForDate(date);
+    expect(p).toBeTruthy();
+    const blocks: any[] = await db.listBlocksForPlan(p!.id);
+    expect(blocks.some((b: any) => b.title.toLowerCase().includes("therapy"))).toBe(true);
+  });
+
   it("knowledge listing works", async () => {
     const k = await db.listKnowledge(true);
     expect(Array.isArray(k)).toBe(true);
