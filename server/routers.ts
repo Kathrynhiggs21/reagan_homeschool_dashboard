@@ -649,7 +649,114 @@ export const appRouter = router({
       }
       return { alerted: false, count: reds.length };
     }),
+   }),
+
+  /* =================== JOURNAL (Reagan's free-form) =================== */
+  journal: router({
+    list: publicProcedure.input(z.object({ limit: z.number().optional() }).optional()).query(({ input }) => db.listJournalEntries(input?.limit ?? 50)),
+    create: publicProcedure.input(z.object({
+      date: z.string(),
+      title: z.string().optional(),
+      body: z.string(),
+      mood: z.string().optional(),
+    })).mutation(({ input }) => db.createJournalEntry(input)),
+    delete: publicProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteJournalEntry(input.id)),
+  }),
+
+  /* =================== HELP LIST (What I'd like help with) =================== */
+  help: router({
+    list: publicProcedure.query(() => db.listHelpList()),
+    create: publicProcedure.input(z.object({
+      title: z.string(),
+      note: z.string().optional(),
+      subjectSlug: z.string().optional(),
+      priority: z.enum(["low","medium","high"]).optional(),
+    })).mutation(({ input }) => db.createHelpItem(input)),
+    update: publicProcedure.input(z.object({ id: z.number(), title: z.string().optional(), note: z.string().optional(), subjectSlug: z.string().optional(), priority: z.enum(["low","medium","high"]).optional(), status: z.enum(["open","in_progress","resolved"]).optional() })).mutation(({ input }) => {
+      const { id, ...rest } = input;
+      return db.updateHelpItem(id, rest as any);
+    }),
+    delete: publicProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteHelpItem(input.id)),
+  }),
+
+  /* =================== TAKE NOTES =================== */
+  notes: router({
+    list: publicProcedure.input(z.object({ subjectSlug: z.string().optional(), limit: z.number().optional() }).optional()).query(({ input }) => db.listTakeNotes(input)),
+    create: publicProcedure.input(z.object({
+      subjectSlug: z.string().optional(),
+      title: z.string().optional(),
+      body: z.string().optional(),
+      strokes: z.any().optional(),
+      pngFileKey: z.string().optional(),
+      pngFileUrl: z.string().optional(),
+      tags: z.array(z.string()).optional(),
+    })).mutation(({ input }) => db.createTakeNote(input as any)),
+    update: publicProcedure.input(z.object({ id: z.number(), subjectSlug: z.string().optional(), title: z.string().optional(), body: z.string().optional(), strokes: z.any().optional(), pngFileKey: z.string().optional(), pngFileUrl: z.string().optional(), tags: z.array(z.string()).optional() })).mutation(({ input }) => {
+      const { id, ...rest } = input;
+      return db.updateTakeNote(id, rest as any);
+    }),
+    delete: publicProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteTakeNote(input.id)),
+  }),
+
+  /* =================== NEEDS WORK TREE =================== */
+  needsWork: router({
+    list: publicProcedure.query(() => db.listNeedsWork()),
+    create: publicProcedure.input(z.object({
+      parentId: z.number().nullable().optional(),
+      subjectSlug: z.string().optional(),
+      title: z.string(),
+      note: z.string().optional(),
+      origin: z.enum(["manual","mastery","struggle","low_grade","external"]).optional(),
+      sortOrder: z.number().optional(),
+      dateAdded: z.string().optional(),
+    })).mutation(({ input }) => db.createNeedsWork(input as any)),
+    update: publicProcedure.input(z.object({ id: z.number(), parentId: z.number().nullable().optional(), subjectSlug: z.string().optional(), title: z.string().optional(), note: z.string().optional(), sortOrder: z.number().optional() })).mutation(({ input }) => {
+      const { id, ...rest } = input;
+      return db.updateNeedsWork(id, rest as any);
+    }),
+    complete: publicProcedure.input(z.object({ id: z.number() })).mutation(({ input, ctx }) => db.completeNeedsWork(input.id, (ctx as any).user?.id)),
+    reopen: publicProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.reopenNeedsWork(input.id)),
+    delete: publicProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteNeedsWork(input.id)),
+  }),
+
+  /* =================== BLOCK GRADES =================== */
+  grades: router({
+    get: publicProcedure.input(z.object({ blockId: z.number() })).query(({ input }) => db.getBlockGrade(input.blockId)),
+    upsert: publicProcedure.input(z.object({
+      blockId: z.number(),
+      subjectSlug: z.string().optional(),
+      score: z.number().min(0).max(100),
+      letter: z.string().optional(),
+      kidLabel: z.enum(["not_yet","getting_there","got_it","mastered"]).optional(),
+      note: z.string().optional(),
+    })).mutation(({ input, ctx }) => db.upsertBlockGrade({ ...input, gradedByUserId: (ctx as any).user?.id })),
+    listAll: publicProcedure.query(() => db.listAllBlockGrades(500)),
+    rolling: publicProcedure.input(z.object({ subjectSlug: z.string() })).query(({ input }) => db.rollingGradeForSubject(input.subjectSlug)),
+  }),
+
+  /* =================== ANSWER KEYS + AUTOGRADE =================== */
+  answerKeys: router({
+    get: publicProcedure.input(z.object({ blockId: z.number() })).query(({ input }) => db.getAnswerKeyForBlock(input.blockId)),
+    upsert: publicProcedure.input(z.object({
+      blockId: z.number(),
+      questions: z.any(),
+      totalPoints: z.number().optional(),
+    })).mutation(({ input }) => db.upsertAnswerKey(input as any)),
+  }),
+
+  /* =================== CURRICULUM ADJUSTMENTS =================== */
+  adjustments: router({
+    list: publicProcedure.input(z.object({ status: z.enum(["proposed","accepted","rejected","applied"]).optional() }).optional()).query(({ input }) => db.listAdjustments(input?.status)),
+    create: publicProcedure.input(z.object({ subjectSlug: z.string(), weekStart: z.string(), suggestion: z.string(), reason: z.string().optional(), affectsTopicId: z.number().optional() })).mutation(({ input }) => db.createAdjustment(input)),
+    decide: publicProcedure.input(z.object({ id: z.number(), status: z.enum(["accepted","rejected","applied"]) })).mutation(({ input, ctx }) => db.decideAdjustment(input.id, input.status, (ctx as any).user?.id)),
+  }),
+
+  /* =================== PRINTABLES HUB =================== */
+  printables: router({
+    listSources: publicProcedure.query(() => db.listPrintableSources()),
+    listFavorites: publicProcedure.query(() => db.listPrintableFavorites()),
+    addFavorite: publicProcedure.input(z.object({ sourceId: z.number(), title: z.string(), url: z.string(), subjectSlug: z.string().optional(), note: z.string().optional() })).mutation(({ input }) => db.addPrintableFavorite(input)),
+    removeFavorite: publicProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deletePrintableFavorite(input.id)),
   }),
 });
-
 export type AppRouter = typeof appRouter;

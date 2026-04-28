@@ -10,6 +10,10 @@ import {
   appointments, schoolCalendar, animals, rescues, badges, whisperSessions,
   heartNotes, encouragementNotes, emotionalStruggles, specialDays,
   reaganKnowledge,
+  journalEntries, helpList, assignmentSubmissions,
+  assignmentAnswerKeys, assignmentSubmissionsAutoGrade,
+  takeNotes, curriculumAdjustments, blockGrades, needsWorkItems,
+  printableSources, printableFavorites,
 } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -485,4 +489,253 @@ export async function updateKnowledge(id: number, patch: Partial<typeof reaganKn
 export async function deleteKnowledge(id: number) {
   const db = getDb();
   await db.delete(reaganKnowledge).where(eq(reaganKnowledge.id, id));
+}
+
+
+/* ============================== JOURNAL =================================== */
+export async function listJournalEntries(limit = 50) {
+  const db = getDb();
+  return db.select().from(journalEntries).orderBy(desc(journalEntries.date), desc(journalEntries.id)).limit(limit);
+}
+export async function createJournalEntry(patch: { date: string; title?: string; body: string; mood?: string }) {
+  const db = getDb();
+  await db.insert(journalEntries).values(patch as any);
+  const rows = await db.select().from(journalEntries).orderBy(desc(journalEntries.id)).limit(1);
+  return rows[0];
+}
+export async function deleteJournalEntry(id: number) {
+  const db = getDb();
+  await db.delete(journalEntries).where(eq(journalEntries.id, id));
+}
+
+/* ============================== HELP LIST ================================= */
+export async function listHelpList() {
+  const db = getDb();
+  return db.select().from(helpList).orderBy(desc(helpList.id));
+}
+export async function createHelpItem(patch: { title: string; note?: string; subjectSlug?: string; priority?: "low"|"medium"|"high" }) {
+  const db = getDb();
+  await db.insert(helpList).values(patch as any);
+}
+export async function updateHelpItem(id: number, patch: Partial<typeof helpList.$inferInsert>) {
+  const db = getDb();
+  await db.update(helpList).set(patch).where(eq(helpList.id, id));
+}
+export async function deleteHelpItem(id: number) {
+  const db = getDb();
+  await db.delete(helpList).where(eq(helpList.id, id));
+}
+
+/* ============================== TAKE NOTES ================================ */
+export async function listTakeNotes(params?: { subjectSlug?: string; limit?: number }) {
+  const db = getDb();
+  const rows = await db.select().from(takeNotes).orderBy(desc(takeNotes.updatedAt)).limit(params?.limit ?? 100);
+  if (params?.subjectSlug) return rows.filter((r) => r.subjectSlug === params.subjectSlug);
+  return rows;
+}
+export async function createTakeNote(patch: { subjectSlug?: string; title?: string; body?: string; strokes?: any; pngFileKey?: string; pngFileUrl?: string; tags?: string[] }) {
+  const db = getDb();
+  await db.insert(takeNotes).values(patch as any);
+  const rows = await db.select().from(takeNotes).orderBy(desc(takeNotes.id)).limit(1);
+  return rows[0];
+}
+export async function updateTakeNote(id: number, patch: Partial<typeof takeNotes.$inferInsert>) {
+  const db = getDb();
+  await db.update(takeNotes).set(patch).where(eq(takeNotes.id, id));
+}
+export async function deleteTakeNote(id: number) {
+  const db = getDb();
+  await db.delete(takeNotes).where(eq(takeNotes.id, id));
+}
+
+/* ============================== ASSIGNMENT ANSWER KEYS ==================== */
+export async function getAnswerKeyForBlock(blockId: number) {
+  const db = getDb();
+  const rows = await db.select().from(assignmentAnswerKeys).where(eq(assignmentAnswerKeys.blockId, blockId)).limit(1);
+  return rows[0] || null;
+}
+export async function upsertAnswerKey(patch: { blockId: number; questions: any; totalPoints?: number }) {
+  const db = getDb();
+  const existing = await getAnswerKeyForBlock(patch.blockId);
+  if (existing) {
+    await db.update(assignmentAnswerKeys).set({ questions: patch.questions, totalPoints: patch.totalPoints ?? 100 } as any).where(eq(assignmentAnswerKeys.id, existing.id));
+  } else {
+    await db.insert(assignmentAnswerKeys).values(patch as any);
+  }
+  return getAnswerKeyForBlock(patch.blockId);
+}
+
+/* ============================== AUTO-GRADE ================================ */
+export async function recordAutoGrade(patch: { submissionId: number; autoScore?: number; autoLetter?: string; autoFeedback?: string; answers?: Record<string,string> }) {
+  const db = getDb();
+  const rows = await db.select().from(assignmentSubmissionsAutoGrade).where(eq(assignmentSubmissionsAutoGrade.submissionId, patch.submissionId)).limit(1);
+  if (rows[0]) {
+    await db.update(assignmentSubmissionsAutoGrade).set(patch as any).where(eq(assignmentSubmissionsAutoGrade.id, rows[0].id));
+  } else {
+    await db.insert(assignmentSubmissionsAutoGrade).values(patch as any);
+  }
+}
+export async function getAutoGrade(submissionId: number) {
+  const db = getDb();
+  const rows = await db.select().from(assignmentSubmissionsAutoGrade).where(eq(assignmentSubmissionsAutoGrade.submissionId, submissionId)).limit(1);
+  return rows[0] || null;
+}
+
+/* ============================== BLOCK GRADES ============================= */
+export async function getBlockGrade(blockId: number) {
+  const db = getDb();
+  const rows = await db.select().from(blockGrades).where(eq(blockGrades.blockId, blockId)).limit(1);
+  return rows[0] || null;
+}
+export async function upsertBlockGrade(patch: { blockId: number; subjectSlug?: string; score: number; letter?: string; kidLabel?: "not_yet"|"getting_there"|"got_it"|"mastered"; note?: string; gradedByUserId?: number }) {
+  const db = getDb();
+  const existing = await getBlockGrade(patch.blockId);
+  // auto derive letter if not set
+  const letter = patch.letter || scoreToLetter(patch.score);
+  const kidLabel = patch.kidLabel || scoreToKidLabel(patch.score);
+  if (existing) {
+    await db.update(blockGrades).set({ ...patch, letter, kidLabel } as any).where(eq(blockGrades.id, existing.id));
+  } else {
+    await db.insert(blockGrades).values({ ...patch, letter, kidLabel } as any);
+  }
+  return getBlockGrade(patch.blockId);
+}
+export async function listBlockGradesBySubject(subjectSlug: string, limit = 100) {
+  const db = getDb();
+  return db.select().from(blockGrades).where(eq(blockGrades.subjectSlug, subjectSlug)).orderBy(desc(blockGrades.gradedAt)).limit(limit);
+}
+export async function listAllBlockGrades(limit = 500) {
+  const db = getDb();
+  return db.select().from(blockGrades).orderBy(desc(blockGrades.gradedAt)).limit(limit);
+}
+
+export function scoreToLetter(s: number): string {
+  if (s >= 90) return "A";
+  if (s >= 80) return "B";
+  if (s >= 70) return "C";
+  if (s >= 60) return "D";
+  return "F";
+}
+export function scoreToKidLabel(s: number): "not_yet"|"getting_there"|"got_it"|"mastered" {
+  if (s >= 90) return "mastered";
+  if (s >= 75) return "got_it";
+  if (s >= 50) return "getting_there";
+  return "not_yet";
+}
+
+/** Rolling grade per subject = avg of blockGrades.score for that subject (last 30) */
+export async function rollingGradeForSubject(subjectSlug: string): Promise<{ score: number | null; letter: string | null; count: number }> {
+  const rows = await listBlockGradesBySubject(subjectSlug, 30);
+  if (rows.length === 0) return { score: null, letter: null, count: 0 };
+  const avg = Math.round(rows.reduce((a, r) => a + (r.score || 0), 0) / rows.length);
+  return { score: avg, letter: scoreToLetter(avg), count: rows.length };
+}
+
+/* ============================== NEEDS WORK ================================ */
+export async function listNeedsWork() {
+  const db = getDb();
+  return db.select().from(needsWorkItems).orderBy(needsWorkItems.sortOrder, needsWorkItems.id);
+}
+export async function createNeedsWork(patch: { parentId?: number | null; subjectSlug?: string; title: string; note?: string; origin?: "manual"|"mastery"|"struggle"|"low_grade"|"external"; sortOrder?: number; dateAdded?: string }) {
+  const db = getDb();
+  const today = new Date().toISOString().slice(0, 10);
+  const result: any = await db.insert(needsWorkItems).values({
+    parentId: patch.parentId ?? null,
+    subjectSlug: patch.subjectSlug,
+    title: patch.title,
+    note: patch.note,
+    origin: patch.origin || "manual",
+    sortOrder: patch.sortOrder ?? 0,
+    dateAdded: patch.dateAdded || today,
+  } as any);
+  const insertId = (result as any)?.[0]?.insertId ?? (result as any)?.insertId;
+  if (insertId) {
+    const [row] = await db.select().from(needsWorkItems).where(eq(needsWorkItems.id, Number(insertId))).limit(1);
+    return row;
+  }
+  const rows = await db.select().from(needsWorkItems).orderBy(desc(needsWorkItems.id)).limit(1);
+  return rows[0];
+}
+export async function updateNeedsWork(id: number, patch: Partial<typeof needsWorkItems.$inferInsert>) {
+  const db = getDb();
+  await db.update(needsWorkItems).set(patch).where(eq(needsWorkItems.id, id));
+}
+export async function completeNeedsWork(id: number, completedByUserId?: number) {
+  const db = getDb();
+  const today = new Date().toISOString().slice(0, 10);
+  await db.update(needsWorkItems).set({ dateCompleted: today, completedByUserId } as any).where(eq(needsWorkItems.id, id));
+}
+export async function reopenNeedsWork(id: number) {
+  const db = getDb();
+  await db.update(needsWorkItems).set({ dateCompleted: null, completedByUserId: null } as any).where(eq(needsWorkItems.id, id));
+}
+export async function deleteNeedsWork(id: number) {
+  const db = getDb();
+  // cascade: delete descendants first (simple one-level loop; deep trees still work via recursion)
+  const all = await listNeedsWork();
+  const toDelete = new Set<number>([id]);
+  let grew = true;
+  while (grew) {
+    grew = false;
+    for (const r of all) {
+      if (r.parentId && toDelete.has(r.parentId) && !toDelete.has(r.id)) {
+        toDelete.add(r.id); grew = true;
+      }
+    }
+  }
+  const ids = Array.from(toDelete.values());
+  for (const targetId of ids) {
+    await db.delete(needsWorkItems).where(eq(needsWorkItems.id, targetId));
+  }
+}
+
+/* ============================== CURRICULUM ADJUSTMENTS ==================== */
+export async function listAdjustments(status?: "proposed"|"accepted"|"rejected"|"applied") {
+  const db = getDb();
+  const rows = await db.select().from(curriculumAdjustments).orderBy(desc(curriculumAdjustments.proposedAt)).limit(200);
+  if (status) return rows.filter((r) => r.status === status);
+  return rows;
+}
+export async function createAdjustment(patch: { subjectSlug: string; weekStart: string; suggestion: string; reason?: string; affectsTopicId?: number }) {
+  const db = getDb();
+  await db.insert(curriculumAdjustments).values(patch as any);
+}
+export async function decideAdjustment(id: number, status: "accepted"|"rejected"|"applied", decidedByUserId?: number) {
+  const db = getDb();
+  await db.update(curriculumAdjustments).set({ status, decidedAt: new Date(), decidedByUserId } as any).where(eq(curriculumAdjustments.id, id));
+}
+
+/* ============================== PRINTABLES ================================ */
+export async function listPrintableSources() {
+  const db = getDb();
+  return db.select().from(printableSources).where(eq(printableSources.isActive, true)).orderBy(printableSources.sortOrder, printableSources.id);
+}
+export async function listPrintableFavorites() {
+  const db = getDb();
+  return db.select().from(printableFavorites).orderBy(desc(printableFavorites.savedAt));
+}
+export async function addPrintableFavorite(patch: { sourceId: number; title: string; url: string; subjectSlug?: string; note?: string }) {
+  const db = getDb();
+  await db.insert(printableFavorites).values(patch as any);
+}
+export async function deletePrintableFavorite(id: number) {
+  const db = getDb();
+  await db.delete(printableFavorites).where(eq(printableFavorites.id, id));
+}
+
+/* ============================== ASSIGNMENT SUBMISSIONS LIST ============== */
+export async function listAssignmentSubmissions(limit = 50) {
+  const db = getDb();
+  return db.select().from(assignmentSubmissions).orderBy(desc(assignmentSubmissions.submittedAt)).limit(limit);
+}
+export async function createAssignmentSubmission(patch: Partial<typeof assignmentSubmissions.$inferInsert>) {
+  const db = getDb();
+  const rows = await db.insert(assignmentSubmissions).values(patch as any);
+  // mysql driver returns insertId on $metadata - need to fetch last row
+  const latest = await db.select().from(assignmentSubmissions).orderBy(desc(assignmentSubmissions.id)).limit(1);
+  return latest[0];
+}
+export async function updateAssignmentSubmission(id: number, patch: Partial<typeof assignmentSubmissions.$inferInsert>) {
+  const db = getDb();
+  await db.update(assignmentSubmissions).set(patch).where(eq(assignmentSubmissions.id, id));
 }

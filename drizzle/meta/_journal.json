@@ -64,6 +64,13 @@
       "when": 1777347759886,
       "tag": "0008_previous_molten_man",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1777348633210,
+      "tag": "0009_motionless_riptide",
+      "breakpoints": true
     }
   ]
 }

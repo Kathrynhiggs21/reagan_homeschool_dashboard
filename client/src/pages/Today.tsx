@@ -6,6 +6,8 @@ import { useWhisper } from "@/contexts/WhisperContext";
 import { useAdultLock } from "@/contexts/AdultLockContext";
 import { useState } from "react";
 import { toast } from "sonner";
+import BlockEditor, { type ExistingBlock } from "@/components/BlockEditor";
+import GradeBlockDialog from "@/components/GradeBlockDialog";
 
 // Neutral classroom mood language + classroom-y icons
 const ZONES = [
@@ -74,6 +76,9 @@ export default function Today() {
   const [helpers, setHelpers] = useState<string[]>([]);
   const [videoOpen, setVideoOpen] = useState(false);
   const animalVideo = trpc.whisper.funnyAnimalVideo.useQuery(undefined, { enabled: videoOpen });
+  // Adult edit state
+  const [blockEditor, setBlockEditor] = useState<{ open: boolean; block?: ExistingBlock }>({ open: false });
+  const [gradeDialog, setGradeDialog] = useState<{ open: boolean; block?: { id: number; title?: string; subjectSlug?: string | null } }>({ open: false });
 
   const today_str = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
   const blocks = today.data?.blocks ?? [];
@@ -193,6 +198,18 @@ export default function Today() {
             <p className="text-sm text-muted-foreground">Adults can build today's plan from the Tutor Handoff page.</p>
           </Card>
         )}
+        {unlocked && planId && (
+          <div className="flex justify-end mb-2">
+            <Button
+              size="sm"
+              variant="outline"
+              className="bg-transparent h-7 text-xs"
+              onClick={() => setBlockEditor({ open: true, block: undefined })}
+            >
+              + Add block
+            </Button>
+          </div>
+        )}
         <div className="space-y-2">
           {blocks.map((b: any, i: number) => {
             const chip = CHIP_COLORS[i % CHIP_COLORS.length];
@@ -228,15 +245,35 @@ export default function Today() {
                       Help
                     </Button>
                     {unlocked && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-7 px-2 text-xs text-neutral-500 hover:bg-white"
-                        onClick={() => setStruggleDialog({ open: true, blockId: b.id, subjectSlug: b.subjectSlug })}
-                        title="Adult-only: log a moment Reagan found hard"
-                      >
-                        Note a struggle
-                      </Button>
+                      <>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs text-neutral-700 hover:bg-white"
+                          onClick={() => setBlockEditor({ open: true, block: b as any })}
+                          title="Adult: edit this block"
+                        >
+                          ✎ Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs text-neutral-700 hover:bg-white"
+                          onClick={() => setGradeDialog({ open: true, block: { id: b.id, title: b.title, subjectSlug: b.subjectSlug } })}
+                          title="Adult: grade this block"
+                        >
+                          🅰 Grade
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs text-neutral-500 hover:bg-white"
+                          onClick={() => setStruggleDialog({ open: true, blockId: b.id, subjectSlug: b.subjectSlug })}
+                          title="Adult-only: log a moment Reagan found hard"
+                        >
+                          Note a struggle
+                        </Button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -361,6 +398,21 @@ export default function Today() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Adult block editor */}
+      <BlockEditor
+        open={blockEditor.open}
+        onOpenChange={(v) => setBlockEditor((s) => ({ ...s, open: v }))}
+        planId={planId}
+        block={blockEditor.block}
+      />
+
+      {/* Grade dialog */}
+      <GradeBlockDialog
+        open={gradeDialog.open}
+        onOpenChange={(v) => setGradeDialog((s) => ({ ...s, open: v }))}
+        block={gradeDialog.block}
+      />
 
       {/* Animal video */}
       <Dialog open={videoOpen} onOpenChange={setVideoOpen}>

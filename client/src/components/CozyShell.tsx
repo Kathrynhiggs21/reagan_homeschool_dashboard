@@ -19,6 +19,7 @@ const KID_NAV: NavItem[] = [
   { to: "/today",     emoji: "📋", label: "Today" },
   { to: "/week",      emoji: "🗓️", label: "This Week" },
   { to: "/bookshelf", emoji: "📚", label: "Bookshelf" },
+  { to: "/notes",     emoji: "📝", label: "Notebook" },
   { to: "/apps",      emoji: "🎒", label: "Apps & Tools" },
   { to: "/profile",   emoji: "🪪", label: "About Me" },
 ];
@@ -33,6 +34,8 @@ const ADULT_NAV: NavItem[] = [
   { to: "/curriculum", emoji: "📖", label: "Curriculum" },
   { to: "/tutor",      emoji: "🤝", label: "Tutor Handoff" },
   { to: "/analytics",  emoji: "📊", label: "Analytics" },
+  { to: "/needs-work", emoji: "🌳", label: "Needs Work" },
+  { to: "/printables", emoji: "📄", label: "Printables" },
   { to: "/knowledge",  emoji: "🧠", label: "Knowledge" },
   { to: "/settings",   emoji: "⚙️", label: "Settings" },
 ];

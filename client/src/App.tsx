@@ -23,6 +23,9 @@ import TutorHandoff from "./pages/TutorHandoff";
 import Knowledge from "./pages/Knowledge";
 import Settings from "@/pages/Settings";
 import Onboarding from "./pages/Onboarding";
+import NeedsWork from "./pages/NeedsWork";
+import Printables from "./pages/Printables";
+import TakeNotes from "./pages/TakeNotes";
 import { trpc } from "@/lib/trpc";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
@@ -70,6 +73,13 @@ function Router() {
         <Route path="/settings">
           <AdultGate><Settings /></AdultGate>
         </Route>
+        <Route path="/needs-work">
+          <AdultGate><NeedsWork /></AdultGate>
+        </Route>
+        <Route path="/printables">
+          <AdultGate><Printables /></AdultGate>
+        </Route>
+        <Route path="/notes" component={TakeNotes} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

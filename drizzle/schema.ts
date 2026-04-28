@@ -518,3 +518,160 @@ export const assignmentSubmissions = mysqlTable("assignmentSubmissions", {
   reviewedByUserId: int("reviewedByUserId"),
   submittedAt: timestamp("submittedAt").defaultNow().notNull(),
 });
+
+/* -------------------------------------------------------------------------- */
+/*  ASSIGNMENT ANSWER KEYS — one row per block that expects gradable answers */
+/* -------------------------------------------------------------------------- */
+export const assignmentAnswerKeys = mysqlTable("assignmentAnswerKeys", {
+  id: int("id").autoincrement().primaryKey(),
+  blockId: int("blockId").notNull(), // scheduleBlocks.id
+  /**
+   * Structured key:
+   *   [{ qId, kind: 'mc'|'text'|'drawn', correct?: string, rubric?: string, points?: number }]
+   * - mc: correct holds the canonical choice id/letter
+   * - text: correct holds the target answer; rubric holds LLM grading guidance
+   * - drawn: rubric tells the LLM-vision grader what to look for in the ink
+   */
+  questions: json("questions").$type<
+    Array<{
+      qId: string;
+      kind: "mc" | "text" | "drawn";
+      prompt?: string;
+      correct?: string;
+      rubric?: string;
+      points?: number;
+    }>
+  >().notNull(),
+  totalPoints: int("totalPoints").default(100).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  TAKE NOTES — Reagan's notebook (typed + drawn)                            */
+/* -------------------------------------------------------------------------- */
+export const takeNotes = mysqlTable("takeNotes", {
+  id: int("id").autoincrement().primaryKey(),
+  subjectSlug: varchar("subjectSlug", { length: 32 }),
+  title: varchar("title", { length: 200 }),
+  /** typed portion (markdown) */
+  body: text("body"),
+  /**
+   * Drawn portion — array of stroke objects in the shape used by perfect-freehand:
+   *   { color: string; size: number; points: [x, y, pressure][] }
+   */
+  strokes: json("strokes").$type<
+    Array<{ color: string; size: number; points: Array<[number, number, number]> }>
+  >(),
+  /** Optional rendered PNG of the drawn portion for quick preview */
+  pngFileKey: varchar("pngFileKey", { length: 500 }),
+  pngFileUrl: varchar("pngFileUrl", { length: 1000 }),
+  tags: json("tags").$type<string[]>(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  CURRICULUM ADJUSTMENTS — adaptive suggestions queue                      */
+/* -------------------------------------------------------------------------- */
+export const curriculumAdjustments = mysqlTable("curriculumAdjustments", {
+  id: int("id").autoincrement().primaryKey(),
+  subjectSlug: varchar("subjectSlug", { length: 32 }).notNull(),
+  weekStart: date("weekStart").notNull(),
+  /** Suggestion the engine wants to apply */
+  suggestion: text("suggestion").notNull(),
+  /** Why it was suggested (mastery drop, recent low grade, trigger, etc.) */
+  reason: text("reason"),
+  /** The topic it replaces / augments in weeklyTopics, if any */
+  affectsTopicId: int("affectsTopicId"),
+  status: mysqlEnum("status", ["proposed", "accepted", "rejected", "applied"])
+    .default("proposed").notNull(),
+  proposedAt: timestamp("proposedAt").defaultNow().notNull(),
+  decidedAt: timestamp("decidedAt"),
+  decidedByUserId: int("decidedByUserId"),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  BLOCK GRADES — adult completion grade per scheduleBlock                  */
+/* -------------------------------------------------------------------------- */
+export const blockGrades = mysqlTable("blockGrades", {
+  id: int("id").autoincrement().primaryKey(),
+  blockId: int("blockId").notNull().unique(),
+  subjectSlug: varchar("subjectSlug", { length: 32 }),
+  /** 0-100 */
+  score: int("score").notNull(),
+  /** Derived letter grade (A/B/C/D/F) saved for display */
+  letter: varchar("letter", { length: 2 }),
+  /** Kid-facing label, never a number */
+  kidLabel: mysqlEnum("kidLabel", ["not_yet", "getting_there", "got_it", "mastered"])
+    .default("got_it").notNull(),
+  note: text("note"),
+  gradedAt: timestamp("gradedAt").defaultNow().notNull(),
+  gradedByUserId: int("gradedByUserId"),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  NEEDS WORK ITEMS — adult-only hierarchical to-do tree                    */
+/* -------------------------------------------------------------------------- */
+export const needsWorkItems = mysqlTable("needsWorkItems", {
+  id: int("id").autoincrement().primaryKey(),
+  /** Self-referencing parent for arbitrary nesting */
+  parentId: int("parentId"),
+  subjectSlug: varchar("subjectSlug", { length: 32 }),
+  title: varchar("title", { length: 300 }).notNull(),
+  note: text("note"),
+  /** Where it came from: auto from mastery drop / struggle / low grade, or 'manual' */
+  origin: mysqlEnum("origin", ["manual", "mastery", "struggle", "low_grade", "external"])
+    .default("manual").notNull(),
+  sortOrder: int("sortOrder").default(0).notNull(),
+  dateAdded: date("dateAdded").notNull(),
+  /** When set, the UI strikes the row and all descendants */
+  dateCompleted: date("dateCompleted"),
+  completedByUserId: int("completedByUserId"),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  PRINTABLE SOURCES — adult-only worksheet hub                              */
+/* -------------------------------------------------------------------------- */
+export const printableSources = mysqlTable("printableSources", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 120 }).notNull(),
+  url: varchar("url", { length: 500 }).notNull(),
+  /** Deep-link search pattern with {q} placeholder, e.g. https://…/search?q={q} */
+  searchUrl: varchar("searchUrl", { length: 500 }),
+  description: text("description"),
+  /** Subject tags as a json array */
+  subjects: json("subjects").$type<string[]>(),
+  /** Grade tags (e.g. ["4","5","6"]) */
+  grades: json("grades").$type<string[]>(),
+  /** "Ohio", "National", "Grade-5", etc. free tag list for filters */
+  tags: json("tags").$type<string[]>(),
+  /** Priority for sorting in UI */
+  sortOrder: int("sortOrder").default(0).notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  PRINTABLE FAVORITES — mom's shortlist, optionally linked to a day block  */
+/* -------------------------------------------------------------------------- */
+export const printableFavorites = mysqlTable("printableFavorites", {
+  id: int("id").autoincrement().primaryKey(),
+  sourceId: int("sourceId").notNull(),
+  title: varchar("title", { length: 300 }).notNull(),
+  url: varchar("url", { length: 1000 }).notNull(),
+  subjectSlug: varchar("subjectSlug", { length: 32 }),
+  note: text("note"),
+  savedAt: timestamp("savedAt").defaultNow().notNull(),
+});
+
+/* Extend assignmentSubmissions with auto-grading fields                      */
+/*   (kept here near the new tables for readability; drizzle will merge).     */
+export const assignmentSubmissionsAutoGrade = mysqlTable("assignmentSubmissionsAutoGrade", {
+  id: int("id").autoincrement().primaryKey(),
+  submissionId: int("submissionId").notNull().unique(),
+  autoScore: int("autoScore"),           // 0-100
+  autoLetter: varchar("autoLetter", { length: 2 }),
+  autoFeedback: text("autoFeedback"),
+  /** answers Reagan submitted, shape matches questions[] by qId */
+  answers: json("answers").$type<Record<string, string>>(),
+  gradedAt: timestamp("gradedAt").defaultNow().notNull(),
+});
