@@ -1,70 +1,84 @@
 /**
  * Subject color system — single source of truth.
- * Used by Today / Week / Tutor / Curriculum / Adventures / Books / Apps to
- * tint full cards in the subject's color so Reagan instantly knows what's what.
+ * Five-subject taxonomy: Math / Science / Social Studies / ELA / Specials + Other fallback.
+ * Palette is groovy-retro bright pastel — chosen so each subject is instantly
+ * distinguishable on the dark chalkboard backdrop.
  *
- * Palette is friendly and high-contrast on the cream chalkboard background.
+ * Palette reference (Daily Schedule Cards, groovy-retro):
+ *   Coral pink   #ff6f91  → ELA (stories, hearts)
+ *   Peach        #ffb07a  → Math (orange-family, numbers)
+ *   Mint green   #7fe3c4  → Science (nature)
+ *   Lavender     #c9a7ff  → Social Studies (history, people)
+ *   Sky blue     #7ec8ff  → Specials (art, music, PE)
+ *   Butter yellow #ffe066 → Other / fallback
  */
 
 export interface SubjectTint {
   slug: string;
   label: string;
   meaning: string;
-  bg: string;       // very soft tint for full card background
-  border: string;   // 4px left-border accent
-  ink: string;      // text/icon color used in headers
+  bg: string;       // bright pastel fill used on the card
+  border: string;   // saturated accent line + 8px left border
+  ink: string;      // deep text/icon color on the pastel fill
   pillBg: string;   // subject pill background
   pillInk: string;  // subject pill text
   emoji: string;
 }
 
+// Bright, saturated pastels — readable on dark chalkboard + sufficient contrast for ink text
 const PALETTE: Record<string, SubjectTint> = {
-  math:    { slug: "math",    label: "Math",         meaning: "Numbers, puzzles, money, time", bg: "#fff4e0", border: "#ff9b3d", ink: "#a14a00", pillBg: "#ff9b3d", pillInk: "#fff", emoji: "🔢" },
-  ela:     { slug: "ela",     label: "Reading & Writing", meaning: "Stories, vocabulary, writing", bg: "#e0eeff", border: "#3b82f6", ink: "#1e3a8a", pillBg: "#3b82f6", pillInk: "#fff", emoji: "📖" },
-  reading: { slug: "reading", label: "Reading",      meaning: "Books, comprehension, read-alouds", bg: "#ffe7d6", border: "#ef4444", ink: "#7a1f1f", pillBg: "#ef4444", pillInk: "#fff", emoji: "📚" },
-  writing: { slug: "writing", label: "Writing",      meaning: "Sentences, journals, stories", bg: "#e0eeff", border: "#3b82f6", ink: "#1e3a8a", pillBg: "#3b82f6", pillInk: "#fff", emoji: "✍️" },
-  science: { slug: "science", label: "Science",      meaning: "Animals, nature, experiments", bg: "#dcf3df", border: "#22c55e", ink: "#1f5132", pillBg: "#22c55e", pillInk: "#fff", emoji: "🔬" },
-  ss:      { slug: "ss",      label: "Social Studies", meaning: "People, history, places, civics", bg: "#fde2e2", border: "#dc2626", ink: "#7a1d1d", pillBg: "#dc2626", pillInk: "#fff", emoji: "🌍" },
-  art:     { slug: "art",     label: "Art",          meaning: "Drawing, color, making things", bg: "#f6e1ff", border: "#a855f7", ink: "#581c87", pillBg: "#a855f7", pillInk: "#fff", emoji: "🎨" },
-  music:   { slug: "music",   label: "Music",        meaning: "Songs, listening, rhythm", bg: "#ffe0f0", border: "#ec4899", ink: "#831843", pillBg: "#ec4899", pillInk: "#fff", emoji: "🎵" },
-  outdoors:{ slug: "outdoors",label: "Outdoors",     meaning: "Move outside, observe, explore", bg: "#dcfce7", border: "#16a34a", ink: "#14532d", pillBg: "#16a34a", pillInk: "#fff", emoji: "🌳" },
-  pe:      { slug: "pe",      label: "PE / Move",    meaning: "Move your body, play, walk", bg: "#dcfce7", border: "#16a34a", ink: "#14532d", pillBg: "#16a34a", pillInk: "#fff", emoji: "🤸" },
-  snack:   { slug: "snack",   label: "Snack",        meaning: "Snack and water break", bg: "#fef3c7", border: "#eab308", ink: "#7c5e00", pillBg: "#eab308", pillInk: "#fff", emoji: "🍎" },
-  break:   { slug: "break",   label: "Break",        meaning: "Brain rest, anything you want", bg: "#fef3c7", border: "#eab308", ink: "#7c5e00", pillBg: "#eab308", pillInk: "#fff", emoji: "💛" },
-  catch_up:{ slug: "catch_up",label: "Catch-up",     meaning: "Finish anything you didn't get to", bg: "#e2e8f0", border: "#64748b", ink: "#1f2937", pillBg: "#64748b", pillInk: "#fff", emoji: "↩️" },
-  adventure:{ slug:"adventure",label:"Adventure",    meaning: "Choose-your-own activity", bg: "#cffafe", border: "#06b6d4", ink: "#0c4a6e", pillBg: "#06b6d4", pillInk: "#fff", emoji: "🗺️" },
-  choice:  { slug: "choice",  label: "Choice",       meaning: "You pick what to do", bg: "#cffafe", border: "#06b6d4", ink: "#0c4a6e", pillBg: "#06b6d4", pillInk: "#fff", emoji: "✨" },
-  wonder:  { slug: "wonder",  label: "Wonder",       meaning: "Wonder moments and curiosity", bg: "#ede9fe", border: "#7c3aed", ink: "#4c1d95", pillBg: "#7c3aed", pillInk: "#fff", emoji: "🌟" },
-  // App categories double as subject colors:
-  academic:{ slug: "academic",label: "Academic",     meaning: "School learning apps", bg: "#e0eeff", border: "#3b82f6", ink: "#1e3a8a", pillBg: "#3b82f6", pillInk: "#fff", emoji: "🧠" },
-  creative:{ slug: "creative",label: "Creative",     meaning: "Make things, draw, build", bg: "#f6e1ff", border: "#a855f7", ink: "#581c87", pillBg: "#a855f7", pillInk: "#fff", emoji: "🎨" },
-  utility: { slug: "utility", label: "Utility",      meaning: "Tools and helpers", bg: "#e2e8f0", border: "#64748b", ink: "#1f2937", pillBg: "#64748b", pillInk: "#fff", emoji: "🛠" },
-  google:  { slug: "google",  label: "Google",       meaning: "Google Classroom, Drive, etc.", bg: "#fef3c7", border: "#eab308", ink: "#7c5e00", pillBg: "#eab308", pillInk: "#fff", emoji: "🅖" },
-  video:   { slug: "video",   label: "Video",        meaning: "Educational videos", bg: "#ffe0f0", border: "#ec4899", ink: "#831843", pillBg: "#ec4899", pillInk: "#fff", emoji: "🎬" },
-  game:    { slug: "game",    label: "Game",         meaning: "Learning games", bg: "#cffafe", border: "#06b6d4", ink: "#0c4a6e", pillBg: "#06b6d4", pillInk: "#fff", emoji: "🎮" },
+  math:     { slug: "math",     label: "Math",           meaning: "Numbers, puzzles, money, time",   bg: "#ffb07a", border: "#ff6a00", ink: "#4a1a00", pillBg: "#ff6a00", pillInk: "#fff", emoji: "🔢" },
+  science:  { slug: "science",  label: "Science",        meaning: "Animals, nature, experiments",    bg: "#7fe3c4", border: "#10b981", ink: "#063c2d", pillBg: "#10b981", pillInk: "#fff", emoji: "🔬" },
+  social:   { slug: "social",   label: "Social Studies", meaning: "People, history, places, civics", bg: "#c9a7ff", border: "#7c3aed", ink: "#2a0e66", pillBg: "#7c3aed", pillInk: "#fff", emoji: "🌍" },
+  ela:      { slug: "ela",      label: "ELA (Reading & Writing)", meaning: "Stories, vocabulary, writing", bg: "#ff9fb2", border: "#e11d6b", ink: "#5a0724", pillBg: "#e11d6b", pillInk: "#fff", emoji: "📖" },
+  specials: { slug: "specials", label: "Specials",       meaning: "Art, music, PE, health",          bg: "#7ec8ff", border: "#1d6fe0", ink: "#062a5c", pillBg: "#1d6fe0", pillInk: "#fff", emoji: "🎨" },
+  other:    { slug: "other",    label: "Other",          meaning: "Everything else",                 bg: "#ffe066", border: "#d4a900", ink: "#4a3600", pillBg: "#d4a900", pillInk: "#fff", emoji: "📌" },
 };
 
-const FALLBACK: SubjectTint = {
-  slug: "default", label: "Other", meaning: "Other / mixed", bg: "#f5f5f4", border: "#a8a29e",
-  ink: "#1f2937", pillBg: "#a8a29e", pillInk: "#fff", emoji: "📌",
+// Legacy slug aliases — any older data points to one of the 5
+const ALIASES: Record<string, string> = {
+  // ELA family
+  reading: "ela", writing: "ela", spelling: "ela", grammar: "ela", vocab: "ela", vocabulary: "ela", phonics: "ela", literature: "ela",
+  // Social Studies family
+  ss: "social", history: "social", geography: "social", civics: "social", government: "social",
+  // Specials family
+  art: "specials", music: "specials", pe: "specials", gym: "specials", health: "specials", dance: "specials",
+  // Other / break / misc (keep Reagan's existing flow visually coherent)
+  snack: "other", break: "other", catch_up: "other", adventure: "other", choice: "other", wonder: "other", outdoors: "science",
+  // App category aliases → map to the 5 visual buckets
+  academic: "ela", creative: "specials", utility: "other", google: "other", video: "specials", game: "other", learning: "ela",
+  school: "ela", nature: "science", creativity: "specials",
 };
 
-export function subjectTint(slug?: string | null): SubjectTint {
-  if (!slug) return FALLBACK;
-  return PALETTE[slug.toLowerCase()] ?? FALLBACK;
+const FALLBACK: SubjectTint = PALETTE.other;
+
+export function resolveSlug(slug?: string | null): string {
+  if (!slug) return "other";
+  const key = slug.toLowerCase();
+  if (PALETTE[key]) return key;
+  if (ALIASES[key]) return ALIASES[key];
+  return "other";
 }
 
-/** Inline style helpers — apply to a card to fully tint it. */
+export function subjectTint(slug?: string | null): SubjectTint {
+  return PALETTE[resolveSlug(slug)] ?? FALLBACK;
+}
+
+/**
+ * Inline style helpers — apply to a card to fully tint it with vibrant fill + 8px accent.
+ * Groovy-retro look: bright pastel body, chunky saturated border, deep ink text.
+ */
 export function tintCardStyle(slug?: string | null): React.CSSProperties {
   const t = subjectTint(slug);
-  // Cast to allow custom CSS vars used by .schedule-row
   return {
     backgroundColor: t.bg,
-    borderLeft: `4px solid ${t.border}`,
+    borderLeft: `8px solid ${t.border}`,
+    color: t.ink,
+    boxShadow: "0 4px 0 rgba(0,0,0,0.18), 0 1px 2px rgba(0,0,0,0.08)",
     ["--row-bg" as any]: t.bg,
     ["--row-fg" as any]: t.ink,
     ["--row-accent" as any]: t.border,
-    ["--row-border" as any]: "rgba(0,0,0,0.08)",
+    ["--row-border" as any]: "rgba(0,0,0,0.14)",
   } as React.CSSProperties;
 }
 
@@ -77,13 +91,10 @@ export function tintPillStyle(slug?: string | null): React.CSSProperties {
   return { backgroundColor: t.pillBg, color: t.pillInk };
 }
 
-/** Visible subjects shown in the Color Key (skips aliases like "writing"). */
+/** Visible subjects shown in the Color Key — exactly 5 + Other. */
 export const COLOR_KEY_SUBJECTS: SubjectTint[] = [
-  PALETTE.math, PALETTE.ela, PALETTE.reading, PALETTE.science, PALETTE.ss,
-  PALETTE.art, PALETTE.music, PALETTE.outdoors, PALETTE.snack, PALETTE.adventure,
-  PALETTE.wonder, PALETTE.catch_up,
+  PALETTE.math, PALETTE.science, PALETTE.social, PALETTE.ela, PALETTE.specials, PALETTE.other,
 ];
 
-export const APP_CATEGORY_KEY: SubjectTint[] = [
-  PALETTE.academic, PALETTE.creative, PALETTE.video, PALETTE.game, PALETTE.google, PALETTE.utility,
-];
+/** App page still uses same 5+1 buckets for consistency. */
+export const APP_CATEGORY_KEY: SubjectTint[] = COLOR_KEY_SUBJECTS;

@@ -684,3 +684,65 @@
 - [x] Onboarding step explains the color key briefly
 - [x] Adult Apps: ✎ Edit lets adult set category (drives card color)
 - [x] Adventures: ✎ Edit lets adult set primary subject (drives card color)
+
+
+## 🎨 5-subject taxonomy + vibrant palette (Round 4b-i)
+- [ ] Collapse to 5 subjects: Math / Science / Social Studies / ELA / Specials (+ Other fallback)
+- [ ] Pick vibrant palette: Math orange, Science green, SocStudies purple, ELA coral, Specials teal, Other gold
+- [ ] Update `subjectColors.ts` palette + accent border 8px, stronger background tint
+- [ ] Update Subject Color Key to exactly 5+1 entries
+- [ ] DB remap: merge History/Geography → social; Reading/Writing/Spelling/Grammar → ela; Music/Art/PE/Health → specials
+- [ ] Remap blocks, skills, skillsMastery, adventures, weeklyTopics to new 5-subject slugs
+- [ ] Smoke-test tints on Today/Week/Curriculum/Adventures/Bookshelf
+
+## 📚 Historical grade import (Round 4b-ii — blocked on user export)
+- [ ] Extend `academicRecords` schema: grade (K/1/2/3/4/5), schoolYear (e.g., 2023-24), term (Q1/Q2/S1/YR), teacher, courseName
+- [ ] Per-subject rolling GPA helper reads schoolYear filter
+- [ ] Academic Record UI: timeline grouped by schoolYear → course → term → assignment
+- [ ] CSV uploader (PowerSchool / Canvas) — file upload, extract via LLM
+- [ ] PDF/screenshot uploader — vision OCR → structured rows
+- [ ] Bulk-insert pipeline with dedupe (by schoolYear+course+term+title hash)
+- [ ] ⚠ User action needed: provide PowerSchool export CSV or PDF report cards for past years
+
+
+## 📚 Google Classroom + IEP ingest (April 28 scope addition)
+
+- [ ] Migration 0014: `classroomAgendas`, `iepGoals`, `iepAccommodations` tables
+- [ ] Script: pull Reagan's Google Classroom feed (every class, Daily Agendas + assignments + due dates)
+- [ ] Script: OCR + LLM-extract Daily Agenda PDFs (like Mr. Froehlich's 04/27/26) → topics + required/optional assignments
+- [ ] Script: find latest IEP in Gmail/Drive, LLM-extract goals + accommodations + present-levels + quarterly progress
+- [ ] Insert Classroom topics into `weeklyTopics` + `classroomAgendas`
+- [ ] Insert IEP content into `iepGoals` + `iepAccommodations` + attach to `learnerProfile`
+- [ ] Analytics: IEP Goals card with progress bars + next-review date
+- [ ] Analytics: "Current Grade-Level" gap per subject based on IEP present-levels
+- [ ] Analytics: IEP qualifier chip on each rolling subject grade ("Meeting IEP goal" / "Approaching" / "Below expected")
+- [ ] Academics page: "Daily Agendas" tab, chronological, with PDF preview
+- [ ] Curriculum page: auto-seed weekly topics from latest Classroom Daily Agendas (adult approves)
+- [ ] Scheduled-task endpoint `/api/scheduled/classroom-ingest` so refresh can be nightly
+- [ ] Scheduled-task endpoint `/api/scheduled/iep-refresh` for quarterly progress reports
+
+
+## Round 4b — Academic + IEP ingestion (in progress)
+- [ ] Apply migration 0014 (classroomAgendas, iepGoals, iepAccommodations, academicSourceRuns)
+- [ ] Read Manus share https://manus.im/share/Q6CGT8xgDNMn4QvxxhVE2L — capture ORP/IEP info + every attached file
+- [ ] PowerSchool IH parent login — scrape every course: grades, assignments, categories, weights -> academicRecords (source=powerschool_ih)
+- [ ] PowerSchool Madeira Q1 — same scrape (source=powerschool_madeira)
+- [ ] Google Drive sweep: My Drive + every Shared Drive + Shared-with-me (Reagan / IHES / IH / MES / Madeira / 5th / teacher-name / IEP / ORP folders)
+- [ ] Google Drive: pull every IEP / ORP / evaluation / progress-report / report-card PDF
+- [ ] Gmail sweep: from:@indianhill.k12.oh.us + from:@madeiracityschools.org, subjects Reagan / IEP / ORP / report card / progress — capture attachments
+- [ ] Google Classroom sweep: active + archived for 2025-26 (Madeira Q1 + IH Q2-Q4) — daily agendas + assignments
+- [ ] FinalForms IH + Madeira — IEP/504 scans, nurse/counselor notes, report-card uploads (guide user if MFA)
+- [ ] Vision+LLM extraction: daily agendas -> topics+assignments; IEP -> goals+accommodations+present-levels+progress; report cards -> grades
+- [ ] Bulk-insert into academicRecords / classroomAgendas / iepGoals / iepAccommodations / weeklyTopics (dedupe source+date+course)
+- [ ] Analytics: IEP goals card w/ progress bars, grade-level-gap per subject, IEP qualifier chips on rolling grades
+- [ ] Academics: Daily Agendas tab, Quarter + Source filters, IEP panel
+- [ ] Curriculum: "Auto-apply adaptive suggestions" toggle (change curriculum based on progress without manual approval)
+- [ ] Save all newly-discovered PDFs to Google Drive / Reagan / IEP + Reagan / Academic Records
+- [ ] Remind user to rotate PowerSchool password after ingestion
+- [ ] Final vitest run + checkpoint
+
+- [ ] Recolor subject palette in groovy-retro pastels inspired by Daily Schedule Cards image (clearly distinct: buttery yellow = Arrival/Morning, coral pink = Math, mint = Planning/Science, lavender = ELA, sky blue = Lunch/Specials, peach = Recess) — update subjectColors.ts + verify tints on Today/Week/Curriculum/Adventures/Bookshelf
+
+- [ ] Apply unified chalkboard dark theme globally (dark green chalkboard background, chalk-dust white text); keep it consistent on every page
+- [ ] Cards on chalkboard use groovy-retro bright pastels (coral, mint, lavender, sky blue, peach, buttery yellow) — each subject obviously distinct
+- [ ] Remove/clean demo seed data: placeholder schedule blocks, fake adventures, test timeline events, lorem book entries (keep vitest .test.ts files)
