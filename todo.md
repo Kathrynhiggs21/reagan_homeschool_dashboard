@@ -451,3 +451,39 @@
 - [x] De-emphasize "Adventures" into a secondary "More" section in sidebar
 - [x] Simplify Today hero (no dotted trim, no extra subtitle, single focal banner)
 - [x] Richer chalk color rotation on rows (pink, yellow, cyan, lime, orange, violet)
+
+## 🎯 Round 4 — Kid-safe + simplified + intro flow
+- [ ] Read Reagan's profile PDF and fold missing history into About Me
+- [ ] Remove green tint from default theme; no dotted trim; no background texture on canvas
+- [ ] White 3D schedule cards on dark canvas; subject color only as left time chip + title accent
+- [ ] Bigger schedule card text; subject-colored titles (not all white)
+- [ ] Subject color system (Reading pink, Math cyan, Science lime, Writing violet, Art orange, Music yellow, PE sky, Snack peach, Wonder white) applied across Today, Week, Adventures, Assignments
+- [ ] Parental 4-digit passcode lock on Curriculum, Tutor Handoff, Analytics, Knowledge Base, Settings
+- [ ] Kid sidebar hides adult pages until unlocked; lock icon shown
+- [ ] Reagan's photo upload on About Me; photo shown in sidebar Classroom nameplate (upper-left)
+- [ ] Curated Adventures: reduce to ~6, add illustration/photo per option, tint by subject color
+- [ ] Add IXL + PowerSchool + Google Classroom + Docs + Slides + Drive + Gmail + YouTube Kids + Khan Academy + Prodigy to Apps & Tools
+- [ ] Remove "Whisper Notes" / knowledge paste UI from kid-visible pages
+- [ ] Replace always-on Whisper chat with a push-to-talk "Chat Buddy" button (tap to talk)
+- [ ] First-launch onboarding modal: theme picker (Chalkboard Classic / Sunny Paper / Midnight Sky / Ocean Breeze) → AI name → voice/text/silent → tour → materials list → opening joke
+- [ ] Store `onboardingCompleted` + `theme` on learner profile so intro runs only once
+
+## 🎯 Round 4 — Kid-safe, simplified, intro flow
+- [ ] Read Reagan's profile PDF and fold missing history into About Me
+- [ ] Remove green tint from default theme; no dotted trim; no background texture on canvas
+- [ ] White 3D schedule cards; subject color only as left time chip + title accent
+- [ ] Bigger schedule card text; subject-colored titles (not all white)
+- [ ] Subject color system applied across Today / Week / Adventures / Assignments
+- [ ] Parental 4-digit passcode (default 3918) gates Curriculum, Tutor, Analytics, Knowledge, Settings
+- [ ] Kid sidebar hides adult pages until unlocked
+- [ ] Reagan's photo upload on About Me; shown in sidebar Classroom nameplate
+- [ ] Curated Adventures: reduce to ~6, add illustration/photo per option, subject-color tint
+- [ ] Apps & Tools: IXL + PowerSchool + Google Classroom/Docs/Slides/Drive/Gmail + YouTube Kids + Khan Academy + Prodigy
+- [ ] Remove "Whisper Notes" / knowledge paste UI from kid-visible pages
+- [ ] Replace always-on Whisper chat with push-to-talk "Chat Buddy" button
+- [ ] First-launch onboarding modal: theme picker (Chalkboard Classic / Sunny Paper / Midnight Sky / Ocean Breeze) → AI name → voice/text/silent → tour → materials list → opening joke
+- [ ] Store onboardingCompleted + theme + adultPasscode on learner profile so intro runs once
+- [ ] Reshape Journal page: general kid journal (mood + free note) + persistent "What I Need Help With" list she can add to any time
+- [ ] Remove My Animals page, routes, sidebar entry, backend endpoints
+- [ ] Save Reagan's profile notes to /home/ubuntu/reagan_homeschool_dashboard/reagan-profile-notes.md for reference
+- [ ] Adult-only "Ask Manus" 3D white command box on Settings (~3-4x Google-bar height) + compact version on other adult pages; routes to LLM tool-calling that edits dashboard (add schedule, change theme, add help item, etc.)
