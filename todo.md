@@ -417,10 +417,10 @@
 - [x] Final vitest tests for joy, struggle, knowledge, recap procedures (17/17 passing)
 
 ## ⚡ Polish Round
-- [ ] Print CSS so Print packet button produces clean printout (hide sidebar/Whisper)
-- [ ] Whisper proactive nudges (gentle check-in if a block sits idle)
-- [ ] Companion name change via chat ("call me Sunny")
-- [ ] Real curated kid-safe animal video URLs (Dodo, etc.)
-- [ ] Polished Week page with 5-day grid + completion status
-- [ ] Analytics: simple SVG charts for mood arc + subject coverage
-- [ ] End-of-day celebration flow on Today page
+- [x] Print CSS so Print packet button produces clean printout (hide sidebar/Whisper)
+- [x] Whisper proactive nudges (gentle check-in if a block sits idle)
+- [x] Companion name change via chat ("call me Sunny")
+- [x] Real curated kid-safe animal video URLs (Dodo, etc.)
+- [x] Polished Week page with 5-day grid + completion status
+- [x] Analytics: simple SVG charts for mood arc + subject coverage
+- [x] End-of-day celebration flow on Today page
