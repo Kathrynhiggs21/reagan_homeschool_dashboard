@@ -10,6 +10,7 @@ import AdultGate from "./components/AdultGate";
 import CozyShell from "./components/CozyShell";
 import KiwiCompanion from "./components/KiwiCompanion";
 import KiwiPerch from "./components/KiwiPerch";
+import ReviewLibrary from "./pages/ReviewLibrary";
 import ResourceDock from "./components/ResourceDock";
 import QuickAddFab from "./components/QuickAddFab";
 import Today from "./pages/Today";
@@ -96,6 +97,9 @@ function Router() {
         </Route>
         <Route path="/whiteboard">
           <AdultGate><Whiteboard /></AdultGate>
+        </Route>
+        <Route path="/review-library">
+          <AdultGate><ReviewLibrary /></AdultGate>
         </Route>
         <Route path="/stickers" component={Stickers} />
         <Route path="/prizes" component={Prizes} />

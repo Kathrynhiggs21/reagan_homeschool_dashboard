@@ -1600,3 +1600,31 @@ export async function seedStarterTVIfEmpty() {
   }
   return { seeded: true, count: starters.length };
 }
+
+
+/* ==================== REAGAN'S BOOKSHELF SEED ==================== */
+export async function seedReaganBooksIfEmpty() {
+  const _db = getDb();
+  const existing = await _db.select().from(books).limit(1);
+  if (existing.length > 0) return { seeded: false };
+  const starters = [
+    // Spectrum series
+    { title: "Spectrum Math Grade 4", author: "Carson Dellosa", type: "workbook" as const, subjectSlug: "math", currentPage: 1, totalPages: 176, notes: "Daily 2 pages, alternating topics." },
+    { title: "Spectrum Reading Grade 4", author: "Carson Dellosa", type: "workbook" as const, subjectSlug: "reading", currentPage: 1, totalPages: 176, notes: "Follow fiction → nonfiction rotation." },
+    { title: "Spectrum Language Arts Grade 4", author: "Carson Dellosa", type: "workbook" as const, subjectSlug: "writing", currentPage: 1, totalPages: 176 },
+    { title: "Spectrum Science Grade 4", author: "Carson Dellosa", type: "workbook" as const, subjectSlug: "science", currentPage: 1, totalPages: 176 },
+    // 180 Days series
+    { title: "180 Days of Math Grade 4", author: "Shell Education", type: "workbook" as const, subjectSlug: "math", currentPage: 1, totalPages: 208, notes: "1 page/day Mon–Fri." },
+    { title: "180 Days of Reading Grade 4", author: "Shell Education", type: "workbook" as const, subjectSlug: "reading", currentPage: 1, totalPages: 208 },
+    { title: "180 Days of Writing Grade 4", author: "Shell Education", type: "workbook" as const, subjectSlug: "writing", currentPage: 1, totalPages: 208 },
+    // Novels / read-alouds
+    { title: "Tuck Everlasting", author: "Natalie Babbitt", type: "novel" as const, subjectSlug: "reading", currentPage: 1, totalPages: 139, notes: "Read-aloud with Mom, ~2 chapters/day." },
+    { title: "Michael's World (placeholder)", author: "Scribbles by Marcy", type: "novel" as const, subjectSlug: "reading", currentPage: 1, totalPages: null as any, notes: "Character journal — book in progress." },
+    // Reference
+    { title: "Student Dictionary", author: "Merriam-Webster", type: "reference" as const, subjectSlug: null as any, currentPage: 1, totalPages: null as any },
+  ];
+  for (const s of starters) {
+    await _db.insert(books).values(s as any);
+  }
+  return { seeded: true, count: starters.length };
+}

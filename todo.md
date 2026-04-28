@@ -929,3 +929,21 @@
 - [x] ResourceDock — global floating dock (Timer, Calculator, Dictionary)
 - [x] Dictionary hooked to free dictionaryapi.dev endpoint
 - [x] Vitest coverage for review library (48/48 pass)
+
+## Pass 2b — TV Box + Brain Break + Resource Dock (Apr 28, v8f0bd3cb → next)
+- [x] review (TV) tRPC router: list/add/approve/remove/seedStarter
+- [x] TVBox component with YouTube grid + Surprise Me + picture-in-picture modal player
+- [x] BrainBreakSpinner with 12 preset activities + built-in 30/60s timer + Kiwi flap
+- [x] ResourceDock (global): Timer preset, Calculator, Dictionary lookup (dictionaryapi.dev)
+- [x] 8 starter TV picks seeded (movement, birds, nature, math, reading)
+- [x] vitest raised to 15s testTimeout to absorb TiDB cold-query latency
+- [x] Full suite 48/48 passing
+
+## Pass 2b — TV Box + Brain Break + Resource Dock (Apr 28, v8f0bd3cb → next)
+- [x] review (TV) tRPC router: list/add/approve/remove/seedStarter
+- [x] TVBox component with YouTube grid + Surprise Me + picture-in-picture modal player
+- [x] BrainBreakSpinner with 12 preset activities + built-in 30/60s timer + Kiwi flap
+- [x] ResourceDock (global): Timer preset, Calculator, Dictionary lookup (dictionaryapi.dev)
+- [x] 8 starter TV picks seeded (movement, birds, nature, math, reading)
+- [x] vitest raised to 15s testTimeout to absorb TiDB cold-query latency
+- [x] Full suite 48/48 passing
