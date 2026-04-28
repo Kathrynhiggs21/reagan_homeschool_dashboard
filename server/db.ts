@@ -13,7 +13,7 @@ import {
   journalEntries, helpList, assignmentSubmissions,
   assignmentAnswerKeys, assignmentSubmissionsAutoGrade,
   takeNotes, curriculumAdjustments, blockGrades, needsWorkItems,
-  printableSources, printableFavorites, academicRecords,
+  printableSources, printableFavorites, academicRecords, auditLog,
 } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -538,7 +538,7 @@ export async function listTakeNotes(params?: { subjectSlug?: string; limit?: num
   if (params?.subjectSlug) return rows.filter((r) => r.subjectSlug === params.subjectSlug);
   return rows;
 }
-export async function createTakeNote(patch: { subjectSlug?: string; title?: string; body?: string; strokes?: any; pngFileKey?: string; pngFileUrl?: string; tags?: string[] }) {
+export async function createTakeNote(patch: { subjectSlug?: string; title?: string; body?: string; strokes?: any; pngFileKey?: string; pngFileUrl?: string; tags?: string[]; linkedBlockId?: number | null }) {
   const db = getDb();
   await db.insert(takeNotes).values(patch as any);
   const rows = await db.select().from(takeNotes).orderBy(desc(takeNotes.id)).limit(1);
@@ -1112,4 +1112,38 @@ export async function updateAppointment(id: number, patch: Partial<typeof appoin
 }
 export async function deleteAppointment(id: number) {
   await getDb().update(appointments).set({ active: false } as any).where(eq(appointments.id, id));
+}
+
+
+/* ============================== AUDIT LOG ================================= */
+export type AuditEntityType = "block" | "book" | "app" | "timeline" | "adventure" | "needsWork" | "recipient" | "appointment" | "note" | "submission" | "answerKey" | "academic" | "blockGrade";
+export type AuditAction = "create" | "update" | "delete" | "complete" | "reopen" | "grade" | "submit";
+
+export async function logAudit(input: {
+  actorOpenId?: string | null;
+  actorName?: string | null;
+  entityType: AuditEntityType;
+  entityId?: number | null;
+  action: AuditAction;
+  summary?: string;
+  metadata?: Record<string, any>;
+}) {
+  try {
+    await getDb().insert(auditLog).values({
+      actorOpenId: input.actorOpenId ?? null,
+      actorName: input.actorName ?? null,
+      entityType: input.entityType,
+      entityId: input.entityId ?? null,
+      action: input.action,
+      summary: input.summary ?? null,
+      metadata: input.metadata ?? null,
+    } as any);
+  } catch (e) {
+    // never let audit failures break business mutations
+    console.warn("[audit] write failed:", (e as any)?.message);
+  }
+}
+
+export async function listAudit(limit = 100) {
+  return getDb().select().from(auditLog).orderBy(desc(auditLog.createdAt)).limit(limit);
 }

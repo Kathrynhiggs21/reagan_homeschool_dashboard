@@ -461,7 +461,7 @@
 - [x] Parental 4-digit passcode lock on Curriculum, Tutor Handoff, Analytics, Knowledge Base, Settings
 - [x] Kid sidebar hides adult pages until unlocked; lock icon shown
 - [x] Reagan's photo upload on About Me; photo shown in sidebar Classroom nameplate (upper-left)
-- [ ] Curated Adventures: reduce to ~6, add illustration/photo per option, tint by subject color
+- [x] Curated Adventures: reduce to ~6, add illustration/photo per option, tint by subject color
 - [ ] Add IXL + PowerSchool + Google Classroom + Docs + Slides + Drive + Gmail + YouTube Kids + Khan Academy + Prodigy to Apps & Tools
 - [x] Remove "Whisper Notes" / knowledge paste UI from kid-visible pages
 - [ ] Replace always-on Whisper chat with a push-to-talk "Chat Buddy" button (tap to talk)
@@ -477,7 +477,7 @@
 - [x] Parental 4-digit passcode (default 3918) gates Curriculum, Tutor, Analytics, Knowledge, Settings
 - [x] Kid sidebar hides adult pages until unlocked
 - [x] Reagan's photo upload on About Me; shown in sidebar Classroom nameplate
-- [ ] Curated Adventures: reduce to ~6, add illustration/photo per option, subject-color tint
+- [x] Curated Adventures: reduce to ~6, add illustration/photo per option, subject-color tint
 - [x] Apps & Tools: IXL + PowerSchool + Google Classroom/Docs/Slides/Drive/Gmail + YouTube Kids + Khan Academy + Prodigy
 - [x] Remove "Whisper Notes" / knowledge paste UI from kid-visible pages
 - [ ] Replace always-on Whisper chat with push-to-talk "Chat Buddy" button
@@ -561,7 +561,7 @@
 - [x] perfect-freehand for natural strokes; undo/redo/erase/color/thickness
 - [ ] Flatten ink onto PDF via pdf-lib on submit
 - [ ] Save original + annotated to storage + Google Drive sync (Reagan Homeschool / Subject / YYYY-MM-DD_title)
-- [ ] Scratch Page blank canvas (Apps or Journal entry)
+- [x] Scratch Page blank canvas (Apps or Journal entry)
 - [x] Palm rejection via pointerType filter
 
 ## ✅ Auto-Answer Checking (Round 4a-ii)
@@ -586,7 +586,7 @@
 - [x] Typed mode: textarea + subject tag
 - [x] Drawn mode: Apple Pencil canvas saved as PNG
 - [x] Mixed mode: text above, canvas below
-- [ ] Optional: link a note to a schedule block / adventure
+- [x] Optional: link a note to a schedule block / adventure
 
 ## 📈 Adaptive Curriculum (Round 4a-ii)
 - [x] Curriculum reads skillsMastery + recent grades
@@ -650,37 +650,37 @@
 - [x] Apps & Tools: add/edit/delete app tiles; reorder
 - [x] Needs Work: full tree CRUD (add at any level, reparent, archive)
 - [ ] Assignments/Turn-Ins: create assignment tied to block, upload worksheet PDF, set answerKey, override autoScore, set letter grade, flag for retry
-- [ ] Appointments: add/edit/delete recurring appointments
-- [ ] Notification Recipients: add/remove, toggle channels
+- [x] Appointments: add/edit/delete recurring appointments
+- [x] Notification Recipients: add/remove, toggle channels
 - [x] Profile/Contacts: edit any field
-- [ ] Audit log: edit actions recorded with timestamp + actor (Mom/tutor) for undo
+- [x] Audit log: edit actions recorded with timestamp + actor (Mom/tutor) for undo
 - [x] All edit controls completely hidden when AdultLock locked — Reagan never sees them
 - [x] Toast confirmation on every edit (undo-within-10s deferred)
 
 
 ## 🗺 Adventures imagery (Round 4a-vii)
 
-- [ ] Adventure cards show a large hero image inside the card (~16:9 banner above the title)
-- [ ] If `coverImageUrl` is empty, auto-generate one via the LLM image-gen helper from the adventure's title + description on first view
-- [ ] Persist the generated coverImageUrl back to the adventure row so subsequent loads are instant
+- [x] Adventure cards show a large hero image inside the card (~16:9 banner above the title)
+- [x] If `coverImageUrl` is empty, auto-generate one via the LLM image-gen helper from the adventure's title + description on first view
+- [x] Persist the generated coverImageUrl back to the adventure row so subsequent loads are instant
 - [ ] Adult-only: ✎ Edit cover (re-roll AI image, paste URL, or upload file)
 - [ ] Adult-only: re-prompt with custom text (e.g., "make it more cozy / brighter / kid-friendly")
 - [ ] Reagan view: image is just visual, no edit affordances
-- [ ] Empty state placeholder while image is generating (skeleton + "drawing your adventure…")
+- [x] Empty state placeholder while image is generating (skeleton + "drawing your adventure…")
 
 
 ## 🎨 Subject Color Visual System (Round 4a-viii)
 
-- [ ] Add `subjectTint(slug)` helper that returns `{ bg, border, ink, accent }` per subject so cards can be fully tinted in the subject color
-- [ ] Today: each schedule block becomes a fully tinted card (soft subject-tint background, colored 4px left border, subject icon in subject ink)
-- [ ] Week: same tinted cards across all 7 days
-- [ ] Tutor handoff: same tint
-- [ ] Curriculum: weekly-topic cards tinted by subject
-- [ ] Adventures: card tinted by primary subject; tag pills also subject-tinted
-- [ ] Bookshelf: each book card tinted by its book.subjectSlug (default reading)
-- [ ] Apps & Tools: each app card tinted by category (academic / creative / utility) with key
-- [ ] Subject Color Key card pinned at top of Today (collapsible) and Curriculum, listing every subject swatch + name + meaning
+- [x] Add `subjectTint(slug)` helper that returns `{ bg, border, ink, accent }` per subject so cards can be fully tinted in the subject color
+- [x] Today: each schedule block becomes a fully tinted card (soft subject-tint background, colored 4px left border, subject icon in subject ink)
+- [x] Week: same tinted cards across all 7 days
+- [x] Tutor handoff: same tint
+- [x] Curriculum: weekly-topic cards tinted by subject
+- [x] Adventures: card tinted by primary subject; tag pills also subject-tinted
+- [x] Bookshelf: each book card tinted by its book.subjectSlug (default reading)
+- [x] Apps & Tools: each app card tinted by category (academic / creative / utility) with key
+- [x] Subject Color Key card pinned at top of Today (collapsible) and Curriculum, listing every subject swatch + name + meaning
 - [ ] Sidebar nav "For Reagan" items get a tiny color dot on the right matching the page's primary subject hue (Today=warm, Week=blue, Bookshelf=red, Notebook=violet, Apps=amber, About=rose)
 - [ ] Onboarding step explains the color key briefly
 - [ ] Adult Apps: ✎ Edit lets adult set category (drives card color)
-- [ ] Adventures: ✎ Edit lets adult set primary subject (drives card color)
+- [x] Adventures: ✎ Edit lets adult set primary subject (drives card color)

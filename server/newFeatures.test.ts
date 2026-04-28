@@ -302,3 +302,15 @@ describe("report card data", () => {
     expect(r.count).toBe(0);
   });
 });
+
+
+describe("audit log", () => {
+  it("logAudit writes a row and listAudit returns it", async () => {
+    const db = await import("./db");
+    await db.logAudit({ actorName: "test-suite", entityType: "block", entityId: 999, action: "create", summary: "audit unit test row" });
+    const rows = await db.listAudit(10);
+    expect(rows.length).toBeGreaterThan(0);
+    const found = rows.find((r: any) => r.summary === "audit unit test row");
+    expect(found).toBeTruthy();
+  });
+});

@@ -147,23 +147,42 @@ export const appRouter = router({
       planId: z.number(), blockType: BlockType, title: z.string(), description: z.string().optional(),
       durationMin: z.number().default(30), startTime: z.string().optional(), sortOrder: z.number().default(0),
       subjectId: z.number().optional(), adventureId: z.number().optional(), ihAssignmentId: z.number().optional(),
-    })).mutation(({ input }) => db.createBlock(input as any)),
+    })).mutation(async ({ input, ctx }) => {
+      const r = await db.createBlock(input as any);
+      await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: (r as any)?.id, action: "create", summary: input.title });
+      return r;
+    }),
     update: protectedProcedure.input(z.object({
       id: z.number(), title: z.string().optional(), description: z.string().optional(),
       status: BlockStatus.optional(), grade: z.string().optional(), notes: z.string().optional(),
       durationMin: z.number().optional(), sortOrder: z.number().optional(),
-    })).mutation(({ input, ctx }) => {
+    })).mutation(async ({ input, ctx }) => {
       const patch: any = { ...input };
       delete patch.id;
       if (input.status === "complete") patch.completedAt = new Date(), patch.completedByUserId = ctx.user?.id;
-      return db.updateBlock(input.id, patch);
+      const r = await db.updateBlock(input.id, patch);
+      await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: input.id, action: input.status === "complete" ? "complete" : "update", summary: input.title || (input.status ?? "edit") });
+      return r;
     }),
     complete: protectedProcedure.input(z.object({ id: z.number(), grade: z.string().optional(), notes: z.string().optional() }))
-      .mutation(({ input, ctx }) => db.updateBlock(input.id, {
-        status: "complete", grade: input.grade, notes: input.notes,
-        completedAt: new Date(), completedByUserId: ctx.user?.id,
-      } as any)),
-    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteBlock(input.id)),
+      .mutation(async ({ input, ctx }) => {
+        const r = await db.updateBlock(input.id, {
+          status: "complete", grade: input.grade, notes: input.notes,
+          completedAt: new Date(), completedByUserId: ctx.user?.id,
+        } as any);
+        await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: input.id, action: "complete", summary: input.grade });
+        return r;
+      }),
+    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
+      const r = await db.deleteBlock(input.id);
+      await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: input.id, action: "delete" });
+      return r;
+    }),
+  }),
+
+  /* =================== AUDIT =================== */
+  audit: router({
+    list: protectedProcedure.input(z.object({ limit: z.number().default(100) }).optional()).query(({ input }) => db.listAudit(input?.limit ?? 100)),
   }),
 
   /* =================== ADVENTURES =================== */
@@ -743,8 +762,9 @@ export const appRouter = router({
       pngFileKey: z.string().optional(),
       pngFileUrl: z.string().optional(),
       tags: z.array(z.string()).optional(),
+      linkedBlockId: z.number().nullable().optional(),
     })).mutation(({ input }) => db.createTakeNote(input as any)),
-    update: publicProcedure.input(z.object({ id: z.number(), subjectSlug: z.string().optional(), title: z.string().optional(), body: z.string().optional(), strokes: z.any().optional(), pngFileKey: z.string().optional(), pngFileUrl: z.string().optional(), tags: z.array(z.string()).optional() })).mutation(({ input }) => {
+    update: publicProcedure.input(z.object({ id: z.number(), subjectSlug: z.string().optional(), title: z.string().optional(), body: z.string().optional(), strokes: z.any().optional(), pngFileKey: z.string().optional(), pngFileUrl: z.string().optional(), tags: z.array(z.string()).optional(), linkedBlockId: z.number().nullable().optional() })).mutation(({ input }) => {
       const { id, ...rest } = input;
       return db.updateTakeNote(id, rest as any);
     }),

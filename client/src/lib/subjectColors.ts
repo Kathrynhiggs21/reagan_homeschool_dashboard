@@ -57,10 +57,15 @@ export function subjectTint(slug?: string | null): SubjectTint {
 /** Inline style helpers — apply to a card to fully tint it. */
 export function tintCardStyle(slug?: string | null): React.CSSProperties {
   const t = subjectTint(slug);
+  // Cast to allow custom CSS vars used by .schedule-row
   return {
     backgroundColor: t.bg,
     borderLeft: `4px solid ${t.border}`,
-  };
+    ["--row-bg" as any]: t.bg,
+    ["--row-fg" as any]: t.ink,
+    ["--row-accent" as any]: t.border,
+    ["--row-border" as any]: "rgba(0,0,0,0.08)",
+  } as React.CSSProperties;
 }
 
 export function tintInkStyle(slug?: string | null): React.CSSProperties {

@@ -235,7 +235,36 @@ export default function Settings() {
 
       {/* ============================ APPOINTMENTS ============================ */}
       <AppointmentsCard />
+
+      {/* ============================ AUDIT LOG ============================ */}
+      <AuditCard />
     </div>
+  );
+}
+
+function AuditCard() {
+  const list = trpc.audit.list.useQuery({ limit: 50 });
+  const fmt = (d: any) => new Date(d).toLocaleString();
+  return (
+    <Card className="classroom-card p-5">
+      <h2 className="font-display text-xl mb-3">Audit log</h2>
+      <p className="text-xs text-muted-foreground mb-3">Last 50 adult edits. Helpful for spotting accidental changes.</p>
+      <div className="space-y-1 max-h-80 overflow-auto">
+        {(list.data ?? []).map((row: any) => (
+          <div key={row.id} className="text-xs flex items-start justify-between gap-2 p-2 rounded bg-neutral-50 border border-neutral-200">
+            <div>
+              <span className="font-mono text-[10px] uppercase text-neutral-500 mr-2">{row.action}</span>
+              <span className="font-medium">{row.entityType}</span>
+              {row.entityId ? <span className="text-neutral-500"> #{row.entityId}</span> : null}
+              {row.summary ? <span className="text-neutral-700"> — {row.summary}</span> : null}
+              {row.actorName ? <div className="text-[10px] text-neutral-500">by {row.actorName}</div> : null}
+            </div>
+            <div className="text-[10px] text-neutral-500 shrink-0">{fmt(row.createdAt)}</div>
+          </div>
+        ))}
+        {(list.data ?? []).length === 0 && <div className="text-sm text-neutral-500">No edits recorded yet.</div>}
+      </div>
+    </Card>
   );
 }
 

@@ -108,6 +108,29 @@ export default function Academics() {
         </p>
       </header>
 
+      <details className="classroom-card p-4 text-sm">
+        <summary className="cursor-pointer font-medium">✨ Auto-ingest from Gmail / Classroom / PowerSchool / IXL (advanced)</summary>
+        <div className="mt-3 space-y-2 text-muted-foreground">
+          <p>
+            This dashboard cannot reach your Gmail / Classroom / PowerSchool / IXL accounts directly while it is hosted.
+            Set up a Manus <strong>Scheduled Task</strong> with access to those connectors. In its prompt tell it to scan your inbox / classroom / IXL each morning and POST a JSON record to this site:
+          </p>
+          <pre className="text-[11px] bg-neutral-900 text-neutral-100 p-3 rounded overflow-auto">{`curl -X POST "$SCHEDULED_TASK_ENDPOINT_BASE/api/trpc/academics.create" \\
+  -H "Content-Type: application/json" \\
+  -H "Cookie: app_session_id=$SCHEDULED_TASK_COOKIE" \\
+  --data '{"json": {
+    "source": "powerschool_ih",
+    "kind": "grade",
+    "subjectSlug": "math",
+    "title": "Unit 4 Quiz",
+    "summary": "Reagan scored 88% on Unit 4 quiz.",
+    "scoreText": "22/25",
+    "scorePercent": 88
+  }}'`}</pre>
+          <p className="text-xs">Until then, just paste below — the LLM will extract structured fields automatically.</p>
+        </div>
+      </details>
+
       <Card className="classroom-card p-4 space-y-3">
         <div className="flex gap-2 items-center">
           <div className="text-xs uppercase tracking-wider text-muted-foreground">Source:</div>

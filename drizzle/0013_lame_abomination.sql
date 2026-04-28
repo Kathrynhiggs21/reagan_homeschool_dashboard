@@ -1,0 +1,1 @@
+ALTER TABLE `takeNotes` ADD `linkedBlockId` int;

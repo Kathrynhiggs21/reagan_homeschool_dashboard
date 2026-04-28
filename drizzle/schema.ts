@@ -568,6 +568,8 @@ export const takeNotes = mysqlTable("takeNotes", {
   pngFileKey: varchar("pngFileKey", { length: 500 }),
   pngFileUrl: varchar("pngFileUrl", { length: 1000 }),
   tags: json("tags").$type<string[]>(),
+  /** Optional reference to a schedule block this note belongs to. */
+  linkedBlockId: int("linkedBlockId"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });
@@ -707,3 +709,20 @@ export const academicRecords = mysqlTable("academicRecords", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 export type AcademicRecord = typeof academicRecords.$inferSelect;
+
+/**
+ * auditLog — chronological log of adult edits.
+ * Records who changed what, when. Used for the adult-only audit trail panel.
+ */
+export const auditLog = mysqlTable("auditLog", {
+  id: int("id").autoincrement().primaryKey(),
+  actorOpenId: varchar("actorOpenId", { length: 64 }),
+  actorName: varchar("actorName", { length: 100 }),
+  entityType: varchar("entityType", { length: 32 }).notNull(), // block | book | app | timeline | adventure | needsWork | recipient | appointment | note | submission
+  entityId: int("entityId"),
+  action: mysqlEnum("action", ["create", "update", "delete", "complete", "reopen", "grade", "submit"]).notNull(),
+  summary: varchar("summary", { length: 300 }),
+  metadata: json("metadata").$type<Record<string, any>>(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type AuditLogRow = typeof auditLog.$inferSelect;
