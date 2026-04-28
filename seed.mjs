@@ -208,18 +208,42 @@ console.log(`✓ ${adventures.length} adventures seeded`);
 /* ============================== APP LINKS ================================ */
 await clear("appLinks");
 const apps = [
-  { name: "Khan Academy Kids", url: "https://learn.khanacademy.org", category: "learning", emoji: "📚", sortOrder: 1 },
-  { name: "Prodigy Math", url: "https://play.prodigygame.com", category: "learning", emoji: "🔢", sortOrder: 2 },
-  { name: "Merlin Bird ID", url: "https://merlin.allaboutbirds.org", category: "nature", emoji: "🦜", sortOrder: 3 },
-  { name: "iNaturalist Seek", url: "https://www.inaturalist.org/pages/seek_app", category: "nature", emoji: "🌿", sortOrder: 4 },
-  { name: "Mystery Doug", url: "https://mysteryscience.com/mystery-doug", category: "learning", emoji: "🤔", sortOrder: 5 },
-  { name: "Generation Genius", url: "https://www.generationgenius.com", category: "learning", emoji: "🧪", sortOrder: 6 },
-  { name: "Math Antics", url: "https://www.mathantics.com", category: "learning", emoji: "🧮", sortOrder: 7 },
-  { name: "Crash Course Kids", url: "https://www.youtube.com/c/crashcoursekids", category: "learning", emoji: "🎬", sortOrder: 8 },
-  { name: "Canva", url: "https://www.canva.com", category: "creativity", emoji: "🎨", sortOrder: 9 },
-  { name: "ChatGPT (kid mode)", url: "https://chatgpt.com", category: "learning", emoji: "💬", sortOrder: 10 },
-  { name: "Indian Hill Classroom", url: "https://classroom.google.com", category: "school", emoji: "🏫", sortOrder: 11 },
-  { name: "Epic! Books", url: "https://www.getepic.com", category: "reading", emoji: "📖", sortOrder: 12 },
+  // ===== Core school daily-drivers =====
+  { name: "IXL", url: "https://www.ixl.com/signin", category: "school", emoji: "🧠", sortOrder: 1 },
+  { name: "Khan Academy", url: "https://www.khanacademy.org", category: "school", emoji: "📚", sortOrder: 2 },
+  { name: "Prodigy Math", url: "https://play.prodigygame.com", category: "school", emoji: "🔢", sortOrder: 3 },
+  { name: "PowerSchool — Indian Hill", url: "https://powerschool.ihsd.us/public/", category: "school", emoji: "🏫", sortOrder: 4 },
+  { name: "PowerSchool — Madeira", url: "https://madeiracityschools.powerschool.com/public/", category: "school", emoji: "🏫", sortOrder: 5 },
+
+  // ===== Google Workspace =====
+  { name: "Google Classroom", url: "https://classroom.google.com", category: "google", emoji: "📘", sortOrder: 10 },
+  { name: "Google Docs", url: "https://docs.google.com", category: "google", emoji: "📝", sortOrder: 11 },
+  { name: "Google Slides", url: "https://slides.google.com", category: "google", emoji: "🎞️", sortOrder: 12 },
+  { name: "Google Drive", url: "https://drive.google.com", category: "google", emoji: "📁", sortOrder: 13 },
+  { name: "Gmail", url: "https://mail.google.com", category: "google", emoji: "✉️", sortOrder: 14 },
+
+  // ===== Video / kid-safe =====
+  { name: "YouTube Kids", url: "https://www.youtubekids.com", category: "video", emoji: "📺", sortOrder: 20 },
+  { name: "Mystery Doug", url: "https://mysteryscience.com/mystery-doug", category: "video", emoji: "🤔", sortOrder: 21 },
+  { name: "Generation Genius", url: "https://www.generationgenius.com", category: "video", emoji: "🧪", sortOrder: 22 },
+  { name: "Crash Course Kids", url: "https://www.youtube.com/c/crashcoursekids", category: "video", emoji: "🎬", sortOrder: 23 },
+  { name: "Math Antics", url: "https://www.mathantics.com", category: "video", emoji: "🧮", sortOrder: 24 },
+
+  // ===== Reading / Books =====
+  { name: "Epic! Books", url: "https://www.getepic.com", category: "reading", emoji: "📖", sortOrder: 30 },
+  { name: "Storyline Online", url: "https://storylineonline.net", category: "reading", emoji: "📚", sortOrder: 31 },
+  { name: "CommonLit", url: "https://www.commonlit.org/en/library?grade=5", category: "reading", emoji: "📰", sortOrder: 32 },
+  { name: "ReadWorks", url: "https://www.readworks.org", category: "reading", emoji: "📄", sortOrder: 33 },
+
+  // ===== Nature / Science =====
+  { name: "Merlin Bird ID", url: "https://merlin.allaboutbirds.org", category: "nature", emoji: "🦜", sortOrder: 40 },
+  { name: "iNaturalist Seek", url: "https://www.inaturalist.org/pages/seek_app", category: "nature", emoji: "🌿", sortOrder: 41 },
+  { name: "NASA Space Place", url: "https://spaceplace.nasa.gov", category: "nature", emoji: "🚀", sortOrder: 42 },
+  { name: "Nat Geo Kids", url: "https://kids.nationalgeographic.com", category: "nature", emoji: "🌍", sortOrder: 43 },
+
+  // ===== Creative =====
+  { name: "Canva", url: "https://www.canva.com", category: "creativity", emoji: "🎨", sortOrder: 50 },
+  { name: "ChatGPT (kid mode)", url: "https://chatgpt.com", category: "creativity", emoji: "💬", sortOrder: 51 },
 ];
 for (const a of apps) await ins("appLinks", a);
 console.log(`✓ ${apps.length} app links seeded`);

@@ -96,7 +96,7 @@ export const appRouter = router({
   /* =================== PROFILE =================== */
   profile: router({
     get: publicProcedure.query(() => db.getProfile()),
-    update: protectedProcedure.input(z.object({
+    update: publicProcedure.input(z.object({
       studentName: z.string().optional(),
       gradeLevel: z.string().optional(),
       accommodations: z.array(z.string()).optional(),
@@ -106,6 +106,14 @@ export const appRouter = router({
       contacts: z.array(z.object({ name: z.string(), role: z.string(), phone: z.string().optional(), email: z.string().optional() })).optional(),
       interests: z.array(z.string()).optional(),
       notes: z.string().optional(),
+      // Extended fields for onboarding + My Setup:
+      photoUrl: z.string().optional(),
+      companionName: z.string().optional(),
+      companionAvatar: z.string().optional(),
+      theme: z.string().optional(),
+      voiceMode: z.string().optional(),
+      onboardingCompleted: z.boolean().optional(),
+      adultPasscode: z.string().optional(),
     })).mutation(({ input }) => db.upsertProfile(input as any)),
   }),
 

@@ -5,14 +5,15 @@ import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { WhisperProvider } from "./contexts/WhisperContext";
+import { AdultLockProvider } from "./contexts/AdultLockContext";
+import AdultGate from "./components/AdultGate";
 import CozyShell from "./components/CozyShell";
 import WhisperCompanion from "./components/WhisperCompanion";
 import Today from "./pages/Today";
 import Week from "./pages/Week";
 import Curriculum from "./pages/Curriculum";
 import Adventures from "./pages/Adventures";
-import RescueJournal from "./pages/RescueJournal";
-import Animals from "./pages/Animals";
+import Journal from "./pages/Journal";
 import Bookshelf from "./pages/Bookshelf";
 import Apps from "./pages/Apps";
 import Timeline from "./pages/Timeline";
@@ -20,27 +21,55 @@ import Profile from "./pages/Profile";
 import Analytics from "./pages/Analytics";
 import TutorHandoff from "./pages/TutorHandoff";
 import Knowledge from "./pages/Knowledge";
-import Settings from "./pages/Settings";
+import Settings from "@/pages/Settings";
+import Onboarding from "./pages/Onboarding";
+import { trpc } from "@/lib/trpc";
+import { useEffect } from "react";
+import { useLocation } from "wouter";
+
+function OnboardingGuard() {
+  const profile = trpc.profile.get.useQuery();
+  const [loc, navigate] = useLocation();
+  useEffect(() => {
+    if (!profile.data) return;
+    const done = (profile.data as any).onboardingCompleted;
+    const onWelcome = loc === "/welcome";
+    if (!done && !onWelcome) navigate("/welcome");
+  }, [profile.data, loc, navigate]);
+  return null;
+}
 
 function Router() {
   return (
     <CozyShell>
+      <OnboardingGuard />
       <Switch>
+        <Route path="/welcome" component={Onboarding} />
         <Route path="/" component={Today} />
         <Route path="/today" component={Today} />
         <Route path="/week" component={Week} />
-        <Route path="/curriculum" component={Curriculum} />
         <Route path="/adventures" component={Adventures} />
-        <Route path="/rescue" component={RescueJournal} />
-        <Route path="/animals" component={Animals} />
+        <Route path="/journal" component={Journal} />
         <Route path="/bookshelf" component={Bookshelf} />
         <Route path="/apps" component={Apps} />
         <Route path="/timeline" component={Timeline} />
         <Route path="/profile" component={Profile} />
-        <Route path="/analytics" component={Analytics} />
-        <Route path="/tutor" component={TutorHandoff} />
-        <Route path="/knowledge" component={Knowledge} />
-        <Route path="/settings" component={Settings} />
+        {/* Adult-only pages: each wrapped in AdultGate so they prompt for the 3918 passcode */}
+        <Route path="/curriculum">
+          <AdultGate><Curriculum /></AdultGate>
+        </Route>
+        <Route path="/analytics">
+          <AdultGate><Analytics /></AdultGate>
+        </Route>
+        <Route path="/tutor">
+          <AdultGate><TutorHandoff /></AdultGate>
+        </Route>
+        <Route path="/knowledge">
+          <AdultGate><Knowledge /></AdultGate>
+        </Route>
+        <Route path="/settings">
+          <AdultGate><Settings /></AdultGate>
+        </Route>
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
@@ -55,8 +84,10 @@ function App() {
       <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <WhisperProvider>
-            <Toaster />
-            <Router />
+            <AdultLockProvider>
+              <Toaster />
+              <Router />
+            </AdultLockProvider>
           </WhisperProvider>
         </TooltipProvider>
       </ThemeProvider>

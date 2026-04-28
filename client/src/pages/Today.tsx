@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useWhisper } from "@/contexts/WhisperContext";
+import { useAdultLock } from "@/contexts/AdultLockContext";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -54,6 +55,7 @@ function blockTimeLabel(i: number): string {
 
 export default function Today() {
   const { companionAvatar, companionName, setOpen } = useWhisper();
+  const { unlocked } = useAdultLock();
   const profile = trpc.profile.get.useQuery();
   const today = trpc.plans.today.useQuery();
   const struggleM = trpc.struggles.log.useMutation({ onSuccess: () => toast.success("Logged.") });
@@ -102,12 +104,9 @@ export default function Today() {
       <header className="chalkboard relative">
         <div className="flex items-end justify-between flex-wrap gap-3">
           <div>
-            <div className="font-chalk-hand text-2xl leading-none" style={{ color: "#ffe27a" }}>{today_str}</div>
-            <h1 className="font-display text-4xl md:text-6xl mt-2 leading-none">
-              <span style={{ color: "#ff8fc9" }}>Good</span>{" "}
-              <span style={{ color: "#ffe27a" }}>Morning,</span>{" "}
-              <span style={{ color: "#7fd9f2" }}>{(profile.data?.studentName || "Reagan").split(" ")[0]}</span>
-              <span style={{ color: "#bfe86c" }}>!</span>
+            <div className="font-chalk-hand text-2xl leading-none chalk-yellow">{today_str}</div>
+            <h1 className="font-display text-4xl md:text-6xl mt-2 leading-none chalk-white">
+              Good Morning, {(profile.data?.studentName || "Reagan").split(" ")[0]}!
             </h1>
           </div>
           <Button
@@ -132,24 +131,29 @@ export default function Today() {
         </Card>
       )}
 
-      {/* Check-in strip (was "How are you feeling?" big pastel cards) */}
-      <Card className="classroom-card p-4">
-        <div className="flex items-center justify-between flex-wrap gap-3">
-          <div className="font-display text-sm font-semibold chalk-white">Check-in</div>
-          <div className="flex gap-2 flex-wrap">
-            {ZONES.map(z => (
-              <button
-                key={z.z}
-                onClick={() => planId && moodM.mutate({ planId, zone: z.z as any })}
-                className="mood-chip"
-              >
-                <span>{z.icon}</span>
-                <span>{z.label}</span>
-              </button>
-            ))}
+      {/* Check-in strip — adult-only, since mood tracking is parent-facing, not kid-facing. */}
+      {unlocked && (
+        <Card className="classroom-card p-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="font-display text-sm font-semibold chalk-white">
+              Adult check-in
+              <span className="ml-2 text-[10px] font-normal text-muted-foreground uppercase tracking-wider">for Mom/tutor</span>
+            </div>
+            <div className="flex gap-2 flex-wrap">
+              {ZONES.map(z => (
+                <button
+                  key={z.z}
+                  onClick={() => planId && moodM.mutate({ planId, zone: z.z as any })}
+                  className="mood-chip"
+                >
+                  <span>{z.icon}</span>
+                  <span>{z.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      )}
 
       {/* End-of-day recap (kept, but much calmer) */}
       {total > 0 && done === total && (
@@ -223,14 +227,17 @@ export default function Today() {
                     >
                       Help
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 px-2 text-xs text-neutral-500 hover:bg-white"
-                      onClick={() => setStruggleDialog({ open: true, blockId: b.id, subjectSlug: b.subjectSlug })}
-                    >
-                      Struggle
-                    </Button>
+                    {unlocked && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 px-2 text-xs text-neutral-500 hover:bg-white"
+                        onClick={() => setStruggleDialog({ open: true, blockId: b.id, subjectSlug: b.subjectSlug })}
+                        title="Adult-only: log a moment Reagan found hard"
+                      >
+                        Note a struggle
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>

@@ -14,6 +14,7 @@ interface WhisperState {
   open: boolean;
   companionName: string;
   companionAvatar: string;
+  photoUrl: string | null;
   setEnabled: (b: boolean) => void;
   setMode: (m: WhisperMode) => void;
   setVoiceMode: (m: WhisperVoiceMode) => void;
@@ -22,6 +23,7 @@ interface WhisperState {
   setOpen: (b: boolean) => void;
   setCompanionName: (s: string) => void;
   setCompanionAvatar: (s: string) => void;
+  setPhotoUrl: (s: string | null) => void;
 }
 
 const Ctx = createContext<WhisperState | null>(null);
@@ -48,9 +50,17 @@ export function WhisperProvider({ children }: { children: ReactNode }) {
   const [companionAvatar, setCompanionAvatarState] = useState(
     localStorage.getItem("companionAvatar") || "⭐"
   );
+  const [photoUrl, setPhotoUrlState] = useState<string | null>(
+    localStorage.getItem("reaganPhotoUrl") || null
+  );
 
   const setCompanionName = (s: string) => { setCompanionNameState(s); localStorage.setItem("companionName", s); };
   const setCompanionAvatar = (s: string) => { setCompanionAvatarState(s); localStorage.setItem("companionAvatar", s); };
+  const setPhotoUrl = (s: string | null) => {
+    setPhotoUrlState(s);
+    if (s) localStorage.setItem("reaganPhotoUrl", s);
+    else localStorage.removeItem("reaganPhotoUrl");
+  };
   const setModeP = (m: WhisperMode) => { setMode(m); localStorage.setItem("whisperMode", m); };
   const setVoiceModeP = (m: WhisperVoiceMode) => { setVoiceMode(m); localStorage.setItem("whisperVoiceMode", m); };
   const setAdultP = (b: boolean) => { setAdultPresent(b); localStorage.setItem("adultPresent", b ? "1" : "0"); };
@@ -62,10 +72,10 @@ export function WhisperProvider({ children }: { children: ReactNode }) {
 
   return (
     <Ctx.Provider value={{
-      enabled, mode, voiceMode, adultPresent, adultUnlocked, open, companionName, companionAvatar,
+      enabled, mode, voiceMode, adultPresent, adultUnlocked, open, companionName, companionAvatar, photoUrl,
       setEnabled, setMode: setModeP, setVoiceMode: setVoiceModeP,
       setAdultPresent: setAdultP, setAdultUnlocked,
-      setOpen, setCompanionName, setCompanionAvatar,
+      setOpen, setCompanionName, setCompanionAvatar, setPhotoUrl,
     }}>
       {children}
     </Ctx.Provider>

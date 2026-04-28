@@ -1,0 +1,1 @@
+ALTER TABLE `appLinks` MODIFY COLUMN `category` enum('learning','creativity','school','nature','reading','google','video') NOT NULL DEFAULT 'learning';

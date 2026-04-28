@@ -551,3 +551,108 @@
 
 ## 🎯 Round 4a-iii — Additional source
 - [ ] Ingest Manus share: https://manus.im/share/Q6CGT8xgDNMn4QvxxhVE2L — browser-open and extract Reagan's profile info (grade levels, IEP content, testing history, current skills, accommodations). Source-link back to that share URL.
+
+## 🎨 Title color update
+- [ ] Switch page-hero titles (Today / Week / Bookshelf / Apps / Journal / etc.) from rotating multicolor chalk to a single chalk-dust warm-white so subject colors on cards/tiles pop without competing
+- [ ] Keep one small accent-color flourish per page (subtitle or date line) instead of full rainbow headline
+
+## ✏️ Apple Pencil / iPad draw-on-doc + Turn-In (Round 4a-ii)
+- [ ] Canvas overlay on Turn-In dialog for PDF + image with Pointer Events (pressure, pointerType==='pen')
+- [ ] perfect-freehand for natural strokes; undo/redo/erase/color/thickness
+- [ ] Flatten ink onto PDF via pdf-lib on submit
+- [ ] Save original + annotated to storage + Google Drive sync (Reagan Homeschool / Subject / YYYY-MM-DD_title)
+- [ ] Scratch Page blank canvas (Apps or Journal entry)
+- [ ] Palm rejection via pointerType filter
+
+## ✅ Auto-Answer Checking (Round 4a-ii)
+- [ ] Extend assignmentSubmissions: answers JSON (questionId → answer), autoScore 0-100, autoFeedback, gradingMethod, answerKey (per block)
+- [ ] Multiple choice → compare key → per-question correct + total %
+- [ ] Text answer → LLM rubric grading (returns score + short feedback)
+- [ ] Drawn answer → LLM vision OCR + grade
+- [ ] autoScore feeds skillsMastery (weighted rolling avg) + analytics
+
+## 🎓 Completion Grades (Round 4a-ii)
+- [ ] assignmentSubmissions adds: letterGrade (A/B/C/D/F derived), kidLabel (Not yet / Getting there / Got it / Mastered), finalScore (auto or adult-overridden)
+- [ ] blockGrades table: planId, blockId, subjectSlug, score 0-100, kidLabel, letterGrade, gradedBy, notes, gradedAt
+- [ ] Adult "Mark complete" UI gains grade stepper (4-button + hidden 0-100 slider)
+- [ ] Kid only sees supportive kidLabel, never number
+- [ ] Analytics: per-subject rolling avg (last 10 submissions, exponentially weighted), per-subject letter grade card, week-over-week trend
+- [ ] Tutor handoff shows per-subject letter grades
+- [ ] Report card view (adult-only, printable) rolling grades by subject
+
+## 📓 Take Notes (Round 4a-ii)
+- [ ] takeNotes schema: subjectId, title, type (typed|drawn|mixed), contentText, contentUrl, blockId nullable, createdAt
+- [ ] Notes page: by subject + date, search, quick-add
+- [ ] Typed mode: textarea + subject tag
+- [ ] Drawn mode: Apple Pencil canvas saved as PNG
+- [ ] Mixed mode: text above, canvas below
+- [ ] Optional: link a note to a schedule block / adventure
+
+## 📈 Adaptive Curriculum (Round 4a-ii)
+- [ ] Curriculum reads skillsMastery + recent grades
+- [ ] Skill >85% × 5 sessions → suggest level-up
+- [ ] Skill <50% × 3 sessions → suggest re-entry
+- [ ] curriculumAdjustments table: skillName, direction (up|down|hold), suggestedChange, acceptedByAdult, rationale, createdAt
+- [ ] Adult accept/reject → accepted adjustments mutate weeklyTopics
+- [ ] "This week's focus" panel reflects accepted adjustments
+- [ ] Tutor handoff surfaces newly accepted adjustments
+
+## 📚 Academic Ingestion (Round 4a-iii)
+- [ ] Gmail MCP: IH + Madeira teacher emails, IEP docs, scores
+- [ ] Drive MCP: report cards, IEP PDFs, work samples
+- [ ] Classroom: assignments + status (via Gmail notifs for v1)
+- [ ] PowerSchool IH scrape (powerschool.ihsd.us)
+- [ ] PowerSchool Madeira scrape
+- [ ] IXL diagnostic scrape
+- [ ] Manus share extract: https://manus.im/share/Q6CGT8xgDNMn4QvxxhVE2L
+- [ ] Academic Record page (adult-only 3918): per-subject level, IEP, testing history
+- [ ] Feed into skillsMastery scores
+
+## 🌳 Needs Work Tree (adult-only, Round 4a-ii)
+- [ ] needsWorkItems schema: id, parentId (self-ref, nullable), subjectSlug, label, notes, sourceType (manual|low_mastery|struggle|low_grade|tutor), sourceRefId, dateAdded, dateCompleted (nullable), sortOrder
+- [ ] Needs Work page (behind 3918): tree view by Subject → Sub-subject → Skill → Sub-skill (arbitrary nesting)
+- [ ] Check off item → strikethrough + show dateCompleted badge
+- [ ] Parent auto-completes only when all children complete
+- [ ] Drag-to-reorder + drag-to-reparent inside tree
+- [ ] Add item button at any level (subject, sub-subject, skill)
+- [ ] Auto-populate jobs: 
+   - skillsMastery < 50% × 3 sessions → add skill to subject branch
+   - emotionalStruggle red × 2 on same topic → add topic to subject branch
+   - assignmentSubmission autoScore < 60 × 2 in same skill → add skill
+- [ ] Completing a Needs Work item linked to a skillsMastery row bumps that skill's currentScore (+10 cap at 100) and logs adjustment
+- [ ] Export "Needs Work" list as printable for tutor handoff
+- [ ] Filters: show only incomplete / show completed history / by subject / by date added window
+
+## 📄 Printables & Worksheets Hub (adult-only, Round 4a-ii)
+- [ ] printableSources schema: name, url, searchUrlTemplate (with {q}), category (math/ela/science/ss/art/music/spanish/general), gradeTags, freeTier, country/state
+- [ ] printableFavorites schema: sourceId, topic, url, addedAt, noteForReagan
+- [ ] Seed 25+ sources:
+   - Ohio: Ohio's Learning Standards (education.ohio.gov), Ohio History Connection teacher resources, PBS LearningMedia Ohio, Ohio.gov for Kids
+   - General worksheets: K5 Learning, Education.com free, Super Teacher Worksheets free, Scholastic Teachables free, Teachers Pay Teachers free filter
+   - Math: Math Drills, Math Salamanders, Cool Math 4 Kids, AAA Math, IXL, Khan Academy, Prodigy
+   - ELA/Reading: ReadWorks, CommonLit, Storyline Online, Reading Worksheets, Spelling City free, Starfall free, Vocabulary.com
+   - Science: NASA Space Place, NASA Kids Club, Nat Geo Kids, Smithsonian Learning Lab, DK Find Out, BrainPOP (if subscribed)
+   - Social Studies/Civics: Ben's Guide (bensguide.gpo.gov), iCivics, National Archives DocsTeach
+   - Homeschool blogs: Easy Peasy All-in-One Homeschool, The Measured Mom, Confessions of a Homeschooler, 123 Homeschool 4 Me, Mama's Learning Corner, The Homeschool Mom
+- [ ] Printables hub page (Settings > Printables, adult-only 3918): grid of source tiles grouped by subject; search box routes topic query to that source's searchUrlTemplate
+- [ ] "Search across all" option: opens new tabs for each source with topic query prefilled
+- [ ] "Add to Today" on any source result → creates a scheduleBlock with link + optional PDF key for Reagan's plan
+- [ ] Favorites: save a prepped worksheet link for later with noteForReagan
+
+## 🛠 Adult Edit Mode (Round 4a-ii) — full CRUD when 3918 unlocked
+- [ ] Global "+ Quick Add" button in app header (adult-unlocked only) — picker: Block today / Block later / To-Do item / Timeline event / Assignment / Note / Adventure / Book / App link / Needs-Work item / Appointment
+- [ ] Keyboard shortcut "A" (when unlocked, not in input) opens Quick Add
+- [ ] Today page: when unlocked show inline ✎/🗑/⇅ on every block; "+ Add block" button in Today's Schedule header; drag-to-reorder
+- [ ] Week page: add/edit/delete/duplicate block on any day; drag block between days; weekly-template editor
+- [ ] Timeline: ✎/🗑 on every event; "+ Add event" header button; photo upload
+- [ ] Adventures: full CRUD (already exists, just surface behind AdultLock consistently)
+- [ ] Books: add/edit/delete, update page progress, add chapter bookmark
+- [ ] Apps & Tools: add/edit/delete app tiles; reorder
+- [ ] Needs Work: full tree CRUD (add at any level, reparent, archive)
+- [ ] Assignments/Turn-Ins: create assignment tied to block, upload worksheet PDF, set answerKey, override autoScore, set letter grade, flag for retry
+- [ ] Appointments: add/edit/delete recurring appointments
+- [ ] Notification Recipients: add/remove, toggle channels
+- [ ] Profile/Contacts: edit any field
+- [ ] Audit log: edit actions recorded with timestamp + actor (Mom/tutor) for undo
+- [ ] All edit controls completely hidden when AdultLock locked — Reagan never sees them
+- [ ] Toast confirmation on every edit; undo within 10s for destructive actions

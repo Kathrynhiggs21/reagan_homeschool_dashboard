@@ -138,7 +138,7 @@ export const appLinks = mysqlTable("appLinks", {
   id: int("id").autoincrement().primaryKey(),
   name: varchar("name", { length: 100 }).notNull(),
   url: varchar("url", { length: 500 }).notNull(),
-  category: mysqlEnum("category", ["learning", "creativity", "school", "nature", "reading"]).default("learning").notNull(),
+  category: mysqlEnum("category", ["learning", "creativity", "school", "nature", "reading", "google", "video"]).default("learning").notNull(),
   emoji: varchar("emoji", { length: 8 }).notNull(),
   description: text("description"),
   accountInfo: text("accountInfo"), // username hint, NEVER passwords
