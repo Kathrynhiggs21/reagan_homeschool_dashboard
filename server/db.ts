@@ -1521,3 +1521,82 @@ export async function listTagsForEntity(entityType: string, entityId: number) {
     .where(and(eq(tagLinks.entityType, entityType as any), eq(tagLinks.entityId, entityId)));
   return rows;
 }
+
+
+/* ==================== REVIEW LIBRARY / TV BOX ==================== */
+import { reviewResources } from "../drizzle/schema";
+
+export async function listReviewResources(opts: { approvedOnly?: boolean; kind?: string; subjectSlug?: string } = {}) {
+  const _db = getDb();
+  const conds: any[] = [];
+  if (opts.approvedOnly !== false) conds.push(eq(reviewResources.approved, true));
+  if (opts.kind) conds.push(eq(reviewResources.kind, opts.kind as any));
+  if (opts.subjectSlug) conds.push(eq(reviewResources.subjectSlug, opts.subjectSlug));
+  const rows = await _db
+    .select()
+    .from(reviewResources)
+    .where(conds.length ? and(...conds) : undefined)
+    .orderBy(desc(reviewResources.createdAt))
+    .limit(200);
+  return rows;
+}
+
+export async function addReviewResource(input: {
+  topic: string; title: string; kind: string;
+  subjectSlug?: string | null; gradeBand?: string | null;
+  url?: string | null; youtubeId?: string | null;
+  description?: string | null; approved?: boolean;
+  addedByUserId?: number | null;
+}) {
+  const _db = getDb();
+  const res: any = await _db.insert(reviewResources).values({
+    topic: input.topic,
+    title: input.title,
+    kind: input.kind as any,
+    subjectSlug: input.subjectSlug ?? null,
+    gradeBand: input.gradeBand ?? null,
+    url: input.url ?? null,
+    youtubeId: input.youtubeId ?? null,
+    description: input.description ?? null,
+    approved: input.approved ?? true,
+    addedByUserId: input.addedByUserId ?? null,
+  } as any);
+  return { id: (res?.[0]?.insertId ?? res?.insertId ?? 0) as number };
+}
+
+export async function setReviewResourceApproval(id: number, approved: boolean) {
+  const _db = getDb();
+  await _db.update(reviewResources).set({ approved }).where(eq(reviewResources.id, id));
+  return { id, approved };
+}
+
+export async function deleteReviewResource(id: number) {
+  const _db = getDb();
+  await _db.delete(reviewResources).where(eq(reviewResources.id, id));
+  return { ok: true };
+}
+
+export async function seedStarterTVIfEmpty() {
+  const _db = getDb();
+  const existing = await _db.select().from(reviewResources).limit(1);
+  if (existing.length > 0) return { seeded: false };
+  const starters = [
+    // Brain-break dances / movement (adult-vetted favorites for kids)
+    { topic: "movement", title: "Cosmic Kids Yoga — Squish the Fish", kind: "youtube", youtubeId: "YIT5Zvp43Gc", subjectSlug: "brain-break", description: "3-min gentle movement", approved: true },
+    { topic: "movement", title: "GoNoodle — Banana Banana Meatball", kind: "youtube", youtubeId: "A87nC7qQoUI", subjectSlug: "brain-break", description: "Silly dance break", approved: true },
+    { topic: "movement", title: "Jack Hartmann — Workout & Count", kind: "youtube", youtubeId: "5_1SPJQ_View", subjectSlug: "brain-break", description: "Count + wiggle", approved: true },
+    // Birds
+    { topic: "birds", title: "Parakeet Care 101", kind: "youtube", youtubeId: "N0vi4j1s5LE", subjectSlug: "science", description: "Bird care basics", approved: true },
+    { topic: "birds", title: "How birds fly", kind: "youtube", youtubeId: "_Mj78nmgy_8", subjectSlug: "science", description: "Flight physics for kids", approved: true },
+    // Nature
+    { topic: "nature", title: "Bluey — Creek episode", kind: "youtube", youtubeId: "yhCrLBS31iI", subjectSlug: "social-studies", description: "Creek / nature connection", approved: true },
+    // Math
+    { topic: "math", title: "Multiplication rap (times 3)", kind: "youtube", youtubeId: "dmWFyQdRcXo", subjectSlug: "math", description: "Times tables rap", approved: true },
+    // Reading
+    { topic: "reading", title: "Storyline Online — Rainbow Fish", kind: "youtube", youtubeId: "u8TgZEbBaO4", subjectSlug: "reading", description: "Celebrity storytime", approved: true },
+  ];
+  for (const s of starters) {
+    await addReviewResource(s as any);
+  }
+  return { seeded: true, count: starters.length };
+}

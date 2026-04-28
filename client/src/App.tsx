@@ -10,6 +10,7 @@ import AdultGate from "./components/AdultGate";
 import CozyShell from "./components/CozyShell";
 import KiwiCompanion from "./components/KiwiCompanion";
 import KiwiPerch from "./components/KiwiPerch";
+import ResourceDock from "./components/ResourceDock";
 import QuickAddFab from "./components/QuickAddFab";
 import Today from "./pages/Today";
 import Week from "./pages/Week";
@@ -104,6 +105,7 @@ function Router() {
         <Route component={NotFound} />
       </Switch>
       <KiwiPerch />
+      <ResourceDock />
       <KiwiCompanion />
       <QuickAddFab />
     </CozyShell>

@@ -15,6 +15,8 @@ import { subjectTint, tintCardStyle, tintInkStyle, tintPillStyle, rainbowCardSty
 import { celebrateKiwi } from "@/components/KiwiPerch";
 import FlockWidget from "@/components/FlockWidget";
 import WhiteboardStrip from "@/components/WhiteboardStrip";
+import TVBox from "@/components/TVBox";
+import BrainBreakSpinner from "@/components/BrainBreakSpinner";
 
 // Neutral classroom mood language + classroom-y icons
 const ZONES = [
@@ -196,6 +198,10 @@ export default function Today() {
       <TourModeCard />
       <FlockWidget />
       <WhiteboardStrip />
+      <div className="grid md:grid-cols-2 gap-3">
+        <TVBox />
+        <BrainBreakSpinner />
+      </div>
       {/* Coin + sticker chip (always visible, upbeat) */}
       <CoinStickerStrip />
       <SubjectColorKey variant="schedule" />

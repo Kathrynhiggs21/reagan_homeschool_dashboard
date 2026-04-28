@@ -918,3 +918,14 @@
 - [x] Sticky note welcome from Mom seeded
 - [x] 18 preset tags seeded (moods, energy, body, family, subjects)
 - [x] Vitest coverage: whiteboard post/list/heart/archive/date-scope + tag upsert/attach/detach (46/46 pass)
+
+## Pass 2b — TV + BrainBreak + ResourceDock (Apr 28, v8f0bd3cb → next)
+- [x] reviewResources db helpers (list, add, approve, remove)
+- [x] review tRPC router (public list, protected add/approve/remove)
+- [x] Starter TV picks seeded (8 items: movement, birds, nature, math, reading)
+- [x] TVBox component — YouTube grid + "Surprise me" brain-break shuffle
+- [x] BrainBreakSpinner — 12 short prompts, timer, Kiwi celebrate
+- [x] TV + BrainBreak mounted side-by-side on Today page
+- [x] ResourceDock — global floating dock (Timer, Calculator, Dictionary)
+- [x] Dictionary hooked to free dictionaryapi.dev endpoint
+- [x] Vitest coverage for review library (48/48 pass)

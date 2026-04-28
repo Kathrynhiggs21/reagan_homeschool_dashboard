@@ -1160,6 +1160,36 @@ export const appRouter = router({
       entityId: z.number(),
     })).query(({ input }) => db.listTagsForEntity(input.entityType, input.entityId)),
   }),
+  /* =================== REVIEW LIBRARY / TV BOX =================== */
+  review: router({
+    list: publicProcedure.input(z.object({
+      approvedOnly: z.boolean().default(true),
+      kind: z.string().optional(),
+      subjectSlug: z.string().optional(),
+    }).optional())
+      .query(({ input }) => db.listReviewResources({
+        approvedOnly: input?.approvedOnly ?? true,
+        kind: input?.kind, subjectSlug: input?.subjectSlug,
+      })),
+    add: protectedProcedure.input(z.object({
+      topic: z.string(), title: z.string(),
+      kind: z.enum(["youtube","webpage","app","printable","practice","game"]),
+      subjectSlug: z.string().nullable().optional(),
+      gradeBand: z.string().nullable().optional(),
+      url: z.string().nullable().optional(),
+      youtubeId: z.string().nullable().optional(),
+      description: z.string().nullable().optional(),
+      approved: z.boolean().default(true),
+    })).mutation(({ input, ctx }) => db.addReviewResource({
+      ...input,
+      addedByUserId: (ctx.user as any)?.id ?? null,
+    })),
+    approve: protectedProcedure.input(z.object({ id: z.number(), approved: z.boolean() }))
+      .mutation(({ input }) => db.setReviewResourceApproval(input.id, input.approved)),
+    remove: protectedProcedure.input(z.object({ id: z.number() }))
+      .mutation(({ input }) => db.deleteReviewResource(input.id)),
+    seedStarter: publicProcedure.mutation(() => db.seedStarterTVIfEmpty()),
+  }),
   /* =================== PRINTABLES HUB =================== */
   printables: router({
     listSources: publicProcedure.query(() => db.listPrintableSources()),
