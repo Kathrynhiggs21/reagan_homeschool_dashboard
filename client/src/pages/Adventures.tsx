@@ -16,9 +16,9 @@ export default function Adventures() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-3xl font-display font-semibold">Adventure Library</h1>
-        <p className="text-muted-foreground text-sm mt-1">Real-world things to do, weighted toward animals, creeks, art, and helping people you love.</p>
+      <header className="chalkboard">
+        <h1 className="font-chalk text-5xl leading-tight">Adventure Library</h1>
+        <p className="font-chalk text-xl opacity-90 mt-1">Real-world things to do — weighted toward animals, creeks, art, and helping people you love.</p>
       </header>
 
       <div className="flex gap-2 flex-wrap">

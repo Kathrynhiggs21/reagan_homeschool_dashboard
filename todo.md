@@ -416,6 +416,11 @@
 - [x] Tutor handoff "Print packet" + "Email dispatch" buttons wired
 - [x] Final vitest tests for joy, struggle, knowledge, recap procedures (17/17 passing)
 
+## 🐛 Bugs / Re-theme
+- [x] Fix nested `<a>` validateDOMNesting error on /today
+- [x] Re-theme to brighter white background; lean into chalkboard panels + chalk script + school-supply accents (pencil, notebook lines, ruler, paper clip, push pin)
+- [x] Update Today/Week/Adventures hero areas with chalkboard + school-supply motifs
+
 ## ⚡ Polish Round
 - [x] Print CSS so Print packet button produces clean printout (hide sidebar/Whisper)
 - [x] Whisper proactive nudges (gentle check-in if a block sits idle)
@@ -424,3 +429,6 @@
 - [x] Polished Week page with 5-day grid + completion status
 - [x] Analytics: simple SVG charts for mood arc + subject coverage
 - [x] End-of-day celebration flow on Today page
+
+## 🐛 Bugs
+- [ ] Fix nested `<a>` validateDOMNesting error on /today

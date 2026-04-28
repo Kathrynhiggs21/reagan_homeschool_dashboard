@@ -43,47 +43,51 @@
 }
 
 :root {
-  /* Cozy Classroom: warm cream + soft sage + dusty pink + golden amber */
+  /* Bright Classroom: clean white paper + chalkboard green + pencil yellow + apple red + sky blue */
   --radius: 1rem;
-  --background: oklch(0.985 0.012 85);                /* warm cream */
-  --foreground: oklch(0.35 0.04 50);                  /* warm cocoa */
-  --card: oklch(0.99 0.01 85);                        /* lighter cream */
-  --card-foreground: oklch(0.35 0.04 50);
-  --popover: oklch(0.99 0.01 85);
-  --popover-foreground: oklch(0.35 0.04 50);
-  --primary: oklch(0.62 0.13 65);                     /* honey amber */
-  --primary-foreground: oklch(0.99 0.01 85);
-  --secondary: oklch(0.92 0.04 130);                  /* soft sage */
-  --secondary-foreground: oklch(0.35 0.06 130);
-  --muted: oklch(0.95 0.015 75);                      /* muted cream */
-  --muted-foreground: oklch(0.5 0.03 60);
-  --accent: oklch(0.88 0.07 20);                      /* dusty rose */
-  --accent-foreground: oklch(0.3 0.08 20);
-  --destructive: oklch(0.6 0.18 25);
+  --background: oklch(0.995 0.002 95);                /* near-white paper */
+  --foreground: oklch(0.25 0.02 250);                 /* graphite */
+  --card: oklch(1 0 0);                                /* pure white */
+  --card-foreground: oklch(0.25 0.02 250);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.25 0.02 250);
+  --primary: oklch(0.42 0.07 165);                    /* chalkboard green */
+  --primary-foreground: oklch(0.985 0.01 95);
+  --secondary: oklch(0.93 0.04 250);                  /* sky blue paper */
+  --secondary-foreground: oklch(0.3 0.08 250);
+  --muted: oklch(0.97 0.005 250);                     /* very pale cool gray */
+  --muted-foreground: oklch(0.48 0.02 250);
+  --accent: oklch(0.86 0.13 90);                      /* pencil yellow */
+  --accent-foreground: oklch(0.3 0.08 70);
+  --destructive: oklch(0.62 0.2 25);                  /* apple red */
   --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.88 0.025 70);
-  --input: oklch(0.94 0.02 70);
-  --ring: oklch(0.7 0.12 65);
-  --chart-1: oklch(0.7 0.13 65);                      /* honey */
-  --chart-2: oklch(0.65 0.11 145);                    /* sage */
-  --chart-3: oklch(0.7 0.13 25);                      /* rose */
-  --chart-4: oklch(0.6 0.12 250);                     /* lavender */
-  --chart-5: oklch(0.75 0.1 100);                     /* gold */
-  --sidebar: oklch(0.97 0.018 80);                    /* warm sidebar */
-  --sidebar-foreground: oklch(0.35 0.04 50);
-  --sidebar-primary: oklch(0.62 0.13 65);
-  --sidebar-primary-foreground: oklch(0.99 0.01 85);
-  --sidebar-accent: oklch(0.92 0.035 75);
-  --sidebar-accent-foreground: oklch(0.35 0.06 60);
-  --sidebar-border: oklch(0.88 0.025 70);
-  --sidebar-ring: oklch(0.7 0.12 65);
+  --border: oklch(0.9 0.01 250);
+  --input: oklch(0.95 0.008 250);
+  --ring: oklch(0.55 0.1 165);
+  --chart-1: oklch(0.55 0.12 165);                    /* chalkboard green */
+  --chart-2: oklch(0.7 0.15 90);                      /* pencil yellow */
+  --chart-3: oklch(0.62 0.2 25);                      /* apple red */
+  --chart-4: oklch(0.6 0.14 250);                     /* notebook blue */
+  --chart-5: oklch(0.7 0.12 320);                     /* eraser pink */
+  --sidebar: oklch(0.99 0.005 250);                   /* almost white */
+  --sidebar-foreground: oklch(0.3 0.02 250);
+  --sidebar-primary: oklch(0.42 0.07 165);
+  --sidebar-primary-foreground: oklch(0.985 0.01 95);
+  --sidebar-accent: oklch(0.94 0.02 165);
+  --sidebar-accent-foreground: oklch(0.3 0.06 165);
+  --sidebar-border: oklch(0.9 0.01 250);
+  --sidebar-ring: oklch(0.55 0.1 165);
   /* Zone colors (mood) */
-  --zone-green: oklch(0.78 0.13 145);
+  --zone-green: oklch(0.72 0.14 155);
   --zone-yellow: oklch(0.85 0.15 90);
-  --zone-red: oklch(0.7 0.16 25);
+  --zone-red: oklch(0.7 0.18 25);
   /* Whisper accent */
-  --whisper: oklch(0.7 0.1 280);
-  --whisper-soft: oklch(0.92 0.04 280);
+  --whisper: oklch(0.6 0.12 280);
+  --whisper-soft: oklch(0.94 0.04 280);
+  /* Chalkboard surface */
+  --chalkboard: oklch(0.27 0.04 165);
+  --chalkboard-foreground: oklch(0.97 0.01 95);
+  --chalk: oklch(0.97 0.01 95);
 }
 
 .dark {
@@ -130,10 +134,16 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Subtle ruled-paper feel: faint horizontal lines + a left-margin red rule */
     background-image:
-      radial-gradient(circle at 12% 18%, oklch(0.95 0.04 75 / 0.5) 0, transparent 28%),
-      radial-gradient(circle at 88% 82%, oklch(0.93 0.05 145 / 0.4) 0, transparent 32%),
-      radial-gradient(circle at 50% 100%, oklch(0.93 0.06 20 / 0.25) 0, transparent 40%);
+      linear-gradient(to right, transparent 56px, oklch(0.7 0.18 25 / 0.18) 56px, oklch(0.7 0.18 25 / 0.18) 57px, transparent 58px),
+      repeating-linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent 31px,
+        oklch(0.6 0.14 250 / 0.07) 31px,
+        oklch(0.6 0.14 250 / 0.07) 32px
+      );
     background-attachment: fixed;
   }
   h1, h2, h3, h4, h5, h6 {
@@ -141,12 +151,80 @@
     letter-spacing: -0.01em;
   }
   .font-display { font-family: 'Fraunces', serif; }
-  .font-hand { font-family: 'Caveat', cursive; }
+  .font-hand { font-family: 'Caveat', 'Patrick Hand', cursive; }
+  .font-chalk { font-family: 'Caveat', 'Patrick Hand', cursive; letter-spacing: 0.01em; }
   .cozy-card {
-    background: oklch(0.99 0.012 80);
-    border: 1px solid oklch(0.88 0.03 70);
+    background: var(--card);
+    border: 1px solid oklch(0.9 0.01 250);
     border-radius: 1.25rem;
-    box-shadow: 0 4px 16px -4px oklch(0.6 0.05 60 / 0.08), 0 2px 4px -1px oklch(0.5 0.04 60 / 0.05);
+    box-shadow: 0 1px 0 oklch(0.85 0.01 250) inset, 0 4px 14px -6px oklch(0.4 0.05 250 / 0.10), 0 2px 4px -2px oklch(0.4 0.05 250 / 0.06);
+  }
+  /* Chalkboard panel — for hero/heading surfaces */
+  .chalkboard {
+    background-color: var(--chalkboard);
+    color: var(--chalkboard-foreground);
+    background-image:
+      radial-gradient(circle at 20% 30%, oklch(0.97 0.01 95 / 0.04) 0, transparent 40%),
+      radial-gradient(circle at 80% 70%, oklch(0.97 0.01 95 / 0.05) 0, transparent 45%),
+      repeating-linear-gradient(45deg, oklch(0.97 0.01 95 / 0.015) 0 2px, transparent 2px 6px);
+    border-radius: 1.25rem;
+    box-shadow:
+      inset 0 0 0 6px oklch(0.5 0.04 30),                 /* wood frame */
+      inset 0 0 0 8px oklch(0.35 0.04 30),                 /* darker wood */
+      0 8px 24px -10px oklch(0.2 0.04 165 / 0.4);
+    padding: 1.25rem 1.5rem;
+    position: relative;
+  }
+  .chalkboard h1, .chalkboard h2, .chalkboard h3, .chalkboard .font-chalk {
+    font-family: 'Caveat', 'Patrick Hand', cursive;
+    color: var(--chalk);
+    text-shadow: 0 0 1px oklch(0.97 0.01 95 / 0.6);
+  }
+  .chalkboard .font-display {
+    font-family: 'Caveat', 'Patrick Hand', cursive;
+    color: var(--chalk);
+    text-shadow: 0 0 1px oklch(0.97 0.01 95 / 0.6);
+  }
+  /* Notebook paper card variant — light blue rules + red margin */
+  .notebook-card {
+    background-color: oklch(1 0 0);
+    background-image:
+      linear-gradient(to right, transparent 32px, oklch(0.7 0.18 25 / 0.4) 32px, oklch(0.7 0.18 25 / 0.4) 33px, transparent 34px),
+      repeating-linear-gradient(to bottom, transparent 0, transparent 27px, oklch(0.6 0.14 250 / 0.18) 27px, oklch(0.6 0.14 250 / 0.18) 28px);
+    border: 1px solid oklch(0.9 0.01 250);
+    border-radius: 0.75rem;
+    padding: 1rem 1rem 1rem 2.5rem;
+    box-shadow: 0 4px 12px -6px oklch(0.4 0.05 250 / 0.1);
+  }
+  /* Sticky-note card */
+  .sticky-note {
+    background: oklch(0.93 0.13 95);
+    color: oklch(0.3 0.06 70);
+    border-radius: 0.25rem;
+    padding: 0.75rem 1rem;
+    box-shadow: 0 6px 16px -8px oklch(0.4 0.04 70 / 0.4);
+    transform: rotate(-1.2deg);
+    font-family: 'Caveat', 'Patrick Hand', cursive;
+  }
+  /* Pencil divider */
+  .pencil-rule {
+    height: 8px;
+    background:
+      linear-gradient(to right, oklch(0.55 0.04 30) 0 14px, oklch(0.86 0.13 90) 14px calc(100% - 28px), oklch(0.7 0.04 0) calc(100% - 28px) calc(100% - 14px), oklch(0.45 0.03 30) calc(100% - 14px) 100%);
+    border-radius: 4px;
+    margin: 1rem 0;
+  }
+  /* Push-pin */
+  .push-pin::before {
+    content: "";
+    position: absolute;
+    top: -10px;
+    left: 16px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, oklch(0.85 0.18 25), oklch(0.55 0.2 25) 60%, oklch(0.35 0.15 25));
+    box-shadow: 0 2px 3px oklch(0.3 0.05 25 / 0.4);
   }
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),

@@ -28,38 +28,34 @@ export default function CozyShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen flex">
       <aside className="w-64 shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col h-screen sticky top-0 no-print">
-        <div className="px-5 py-5 border-b border-sidebar-border">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🪶</span>
+        <div className="px-4 py-4 border-b border-sidebar-border">
+          <div className="chalkboard !p-3 !rounded-xl flex items-center gap-2">
+            <span className="text-2xl">✏️</span>
             <div>
-              <div className="font-display font-semibold text-base text-sidebar-foreground leading-tight">Reagan's<br/>Homeschool</div>
-              <div className="text-xs text-muted-foreground mt-0.5 font-hand">The Animal Whisperer</div>
+              <div className="font-chalk text-xl leading-tight">Reagan's<br/>Homeschool</div>
+              <div className="font-chalk text-sm opacity-80 mt-0.5">the Animal Whisperer</div>
             </div>
           </div>
         </div>
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
           <div className="px-2 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-1.5">For Reagan</div>
           {NAV.filter(n => n.section === "kid").map(n => (
-            <Link key={n.to} href={n.to}>
-              <a className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all ${
-                loc === n.to || (loc === "/" && n.to === "/today")
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent"
-              }`}>
-                <span className="text-lg">{n.emoji}</span>
-                <span>{n.label}</span>
-              </a>
+            <Link key={n.to} href={n.to} className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all ${
+              loc === n.to || (loc === "/" && n.to === "/today")
+                ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm"
+                : "text-sidebar-foreground hover:bg-sidebar-accent"
+            }`}>
+              <span className="text-lg">{n.emoji}</span>
+              <span>{n.label}</span>
             </Link>
           ))}
           <div className="px-2 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mt-5 mb-1.5">For Adults</div>
           {NAV.filter(n => n.section === "adult").map(n => (
-            <Link key={n.to} href={n.to}>
-              <a className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all ${
-                loc === n.to ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm" : "text-sidebar-foreground hover:bg-sidebar-accent"
-              }`}>
-                <span className="text-lg">{n.emoji}</span>
-                <span>{n.label}</span>
-              </a>
+            <Link key={n.to} href={n.to} className={`flex items-center gap-3 px-3 py-2 rounded-xl text-sm transition-all ${
+              loc === n.to ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold shadow-sm" : "text-sidebar-foreground hover:bg-sidebar-accent"
+            }`}>
+              <span className="text-lg">{n.emoji}</span>
+              <span>{n.label}</span>
             </Link>
           ))}
         </nav>

@@ -88,10 +88,10 @@ export default function Week() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-end justify-between gap-4 flex-wrap">
+      <header className="chalkboard flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-3xl font-display font-semibold">This Week</h1>
-          <p className="text-muted-foreground text-sm mt-1">A gentle look ahead — five soft days. {weekLabel}</p>
+          <h1 className="font-chalk text-5xl leading-tight">This Week</h1>
+          <p className="font-chalk text-xl opacity-90 mt-1">A gentle look ahead — five soft days. {weekLabel}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setWeekOffset(o => o - 1)}>← Prev</Button>

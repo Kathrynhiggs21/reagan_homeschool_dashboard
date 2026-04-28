@@ -65,15 +65,16 @@ export default function Today() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-end justify-between flex-wrap gap-3">
+      <header className="chalkboard relative flex items-end justify-between flex-wrap gap-3">
         <div>
-          <div className="font-hand text-xl text-muted-foreground">{today_str}</div>
-          <h1 className="text-3xl font-display font-semibold mt-1">
-            Hi {(profile.data?.studentName || "Reagan").split(" ")[0]} <span className="font-hand text-2xl text-primary">— the Animal Whisperer</span>
+          <div className="font-chalk text-2xl opacity-80">{today_str}</div>
+          <h1 className="font-chalk text-5xl mt-1 leading-tight">
+            Hi {(profile.data?.studentName || "Reagan").split(" ")[0]}!
+            <span className="block text-2xl opacity-90">— the Animal Whisperer</span>
           </h1>
-          <p className="text-muted-foreground mt-1 text-sm">No timing today, just your pace. {companionName} is right here. 💛</p>
+          <p className="font-chalk text-xl mt-2 opacity-90">No timing today, just your pace. {companionName} is right here. ✨</p>
         </div>
-        <Button onClick={() => setOpen(true)} size="lg" className="rounded-full">
+        <Button onClick={() => setOpen(true)} size="lg" className="rounded-full bg-accent text-accent-foreground hover:bg-accent/90 border-2 border-amber-700/30">
           <span className="text-lg mr-2">{companionAvatar}</span> Talk to {companionName}
         </Button>
       </header>
