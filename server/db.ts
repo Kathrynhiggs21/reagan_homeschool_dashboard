@@ -13,7 +13,7 @@ import {
   journalEntries, helpList, assignmentSubmissions,
   assignmentAnswerKeys, assignmentSubmissionsAutoGrade,
   takeNotes, curriculumAdjustments, blockGrades, needsWorkItems,
-  printableSources, printableFavorites, academicRecords, auditLog,
+  printableSources, printableFavorites, academicRecords, auditLog, iepGoals, iepAccommodations,
 } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -1146,4 +1146,16 @@ export async function logAudit(input: {
 
 export async function listAudit(limit = 100) {
   return getDb().select().from(auditLog).orderBy(desc(auditLog.createdAt)).limit(limit);
+}
+
+
+// ===== IEP Goals & Accommodations =====
+export async function listIepGoals() {
+  const db = getDb();
+  return await db.select().from(iepGoals).orderBy(desc(iepGoals.createdAt));
+}
+
+export async function listIepAccommodations() {
+  const db = getDb();
+  return await db.select().from(iepAccommodations).where(eq(iepAccommodations.active, true)).orderBy(desc(iepAccommodations.createdAt));
 }

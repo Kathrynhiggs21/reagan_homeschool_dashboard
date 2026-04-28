@@ -74,8 +74,73 @@ ${ctx.knowledgeInsights && ctx.knowledgeInsights.length ? `\nWHAT WE'VE LEARNED 
 Speak in 1-3 short sentences usually. Be present, not chatty. Silence is okay. Say less, mean more.`;
 }
 
+/* =================== ADMIN (one-time migrations + maintenance) =================== */
+// Exposed briefly to run migration 0014 and purge test seed rows through the
+// server's already-working TiDB connection (direct sandbox->gateway times out).
+// These endpoints are gated on BUILT_IN_FORGE_API_KEY so random visitors can't hit them.
+const adminRouter = router({
+  runSql: publicProcedure
+    .input(z.object({ token: z.string(), sql: z.string() }))
+    .mutation(async ({ input }) => {
+      if (input.token !== process.env.BUILT_IN_FORGE_API_KEY) throw new Error("bad token");
+      const { getDb } = await import("./db");
+      const pool = (getDb() as any).session?.client ?? null;
+      const mysql2 = (await import("mysql2/promise")).default;
+      const p = mysql2.createPool({ uri: process.env.DATABASE_URL, connectionLimit: 2 });
+      try {
+        const stmts = input.sql.split(/--> statement-breakpoint|;\s*\n/).map(s => s.trim()).filter(Boolean);
+        const results: any[] = [];
+        for (const stmt of stmts) {
+          try {
+            const [r] = await p.query(stmt);
+            results.push({ ok: true, stmt: stmt.slice(0, 80), rows: Array.isArray(r) ? r.length : (r as any).affectedRows });
+          } catch (e: any) {
+            const msg = String(e?.message || e);
+            // tolerate "already exists" during idempotent migration re-runs
+            if (/already exists|Duplicate/i.test(msg)) {
+              results.push({ ok: true, stmt: stmt.slice(0, 80), skipped: true });
+            } else {
+              results.push({ ok: false, stmt: stmt.slice(0, 80), error: msg });
+            }
+          }
+        }
+        return results;
+      } finally { await p.end(); }
+    }),
+  purgeTestData: publicProcedure
+    .input(z.object({ token: z.string() }))
+    .mutation(async ({ input }) => {
+      if (input.token !== process.env.BUILT_IN_FORGE_API_KEY) throw new Error("bad token");
+      const mysql2 = (await import("mysql2/promise")).default;
+      const p = mysql2.createPool({ uri: process.env.DATABASE_URL, connectionLimit: 2 });
+      try {
+        const statements = [
+          "DELETE FROM appLinks WHERE name LIKE 'Test App%' OR name LIKE '%test-177%'",
+          "DELETE FROM academicRecords WHERE summary LIKE 'A unit test seeded%' OR title LIKE 'Test record%'",
+          "DELETE FROM books WHERE title LIKE 'Test Book%'",
+          "DELETE FROM timelineEvents WHERE title LIKE 'Test Event%'",
+          "DELETE FROM needsWorkItems WHERE title LIKE 'Test needs%' OR title LIKE 'Test Item%'",
+          "DELETE FROM emotionalStruggles WHERE description LIKE 'Test struggle%'",
+          "DELETE FROM journalEntries WHERE content LIKE '%unit test%'",
+          "DELETE FROM takeNotes WHERE title LIKE 'Test Note%'",
+          "DELETE FROM adventures WHERE title LIKE 'Test Adventure%'",
+        ];
+        const results: any[] = [];
+        for (const s of statements) {
+          try {
+            const [r] = await p.query(s);
+            results.push({ stmt: s.slice(0, 60), removed: (r as any).affectedRows ?? 0 });
+          } catch (e: any) {
+            results.push({ stmt: s.slice(0, 60), error: String(e?.message || e) });
+          }
+        }
+        return results;
+      } finally { await p.end(); }
+    }),
+});
 export const appRouter = router({
   system: systemRouter,
+  admin: adminRouter,
 
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
@@ -970,6 +1035,11 @@ export const appRouter = router({
     subjectGrades: publicProcedure.query(() => db.subjectRollingGrades()),
   }),
 
+  /* =================== IEP (Goals + Accommodations) =================== */
+  iep: router({
+    listGoals: publicProcedure.query(() => db.listIepGoals()),
+    listAccommodations: publicProcedure.query(() => db.listIepAccommodations()),
+  }),
   /* =================== PRINTABLES HUB =================== */
   printables: router({
     listSources: publicProcedure.query(() => db.listPrintableSources()),

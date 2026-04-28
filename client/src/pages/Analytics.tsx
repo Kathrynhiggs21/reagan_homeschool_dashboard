@@ -77,6 +77,8 @@ export default function Analytics() {
   const struggles = trpc.struggles.list.useQuery({});
   const moods = trpc.mood.recent.useQuery({ daysBack: 14 });
   const subjectGrades = trpc.submissions.subjectGrades.useQuery();
+  const iepGoals = trpc.iep.listGoals.useQuery();
+  const iepAccoms = trpc.iep.listAccommodations.useQuery();
 
   return (
     <div className="space-y-6">
@@ -150,6 +152,73 @@ export default function Analytics() {
           <CoverageChart struggles={struggles.data || []} />
         </Card>
       </div>
+
+      {/* ============ IEP Goals & Accommodations (RHiggs 2025-26 IEP.pdf) ============ */}
+      <Card className="cozy-card p-4 border-l-4" style={{ borderLeftColor: 'oklch(0.78 0.16 340)' }}>
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div>
+            <h2 className="font-display font-semibold text-xl">IEP Goals &amp; Accommodations</h2>
+            <p className="text-xs text-muted-foreground mt-1">Source: RHiggs 2025-26 IEP.pdf · Madeira City SD · OHI (anxiety) · Effective 2/19/2025 &ndash; 2/17/2026</p>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <span className="text-[10px] px-2 py-1 rounded-full bg-rose-200/40 text-rose-900 border border-rose-300">OHI</span>
+            <span className="text-[10px] px-2 py-1 rounded-full bg-amber-200/40 text-amber-900 border border-amber-300">Anxiety</span>
+            <span className="text-[10px] px-2 py-1 rounded-full bg-sky-200/40 text-sky-900 border border-sky-300">5th grade</span>
+            <span className="text-[10px] px-2 py-1 rounded-full bg-emerald-200/40 text-emerald-900 border border-emerald-300">Next ETR 2/17/2028</span>
+          </div>
+        </div>
+        <div className="grid lg:grid-cols-2 gap-4">
+          <div>
+            <h3 className="font-display font-semibold text-sm mb-2 flex items-center gap-2">
+              <span className="text-base">🎯</span> Measurable Annual Goals
+              <span className="text-[10px] text-muted-foreground">({(iepGoals.data as any[])?.length || 0})</span>
+            </h3>
+            <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
+              {(iepGoals.data as any[] || []).map((g: any) => (
+                <div key={g.id} className="p-3 rounded-md border bg-white/40">
+                  <div className="flex items-center gap-2 flex-wrap mb-1">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-100 text-violet-900 border border-violet-200 capitalize">{g.area}</span>
+                    {g.subjectSlug && <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-100 text-sky-900 border border-sky-200 capitalize">{g.subjectSlug}</span>}
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-200 capitalize">{String(g.status || '').replace('_', ' ')}</span>
+                  </div>
+                  <div className="text-sm font-medium">{g.goalText}</div>
+                  {g.presentLevel && <div className="text-xs text-muted-foreground mt-1"><span className="font-semibold">Present level:</span> {g.presentLevel}</div>}
+                  {g.targetCriterion && <div className="text-xs text-muted-foreground mt-1"><span className="font-semibold">Target:</span> {g.targetCriterion}</div>}
+                  {g.measuredBy && <div className="text-[10px] text-muted-foreground mt-1 italic">Measured by: {g.measuredBy}</div>}
+                </div>
+              ))}
+              {(!iepGoals.data || (iepGoals.data as any[]).length === 0) && (
+                <div className="text-sm text-muted-foreground italic p-3">No IEP goals loaded.</div>
+              )}
+            </div>
+          </div>
+          <div>
+            <h3 className="font-display font-semibold text-sm mb-2 flex items-center gap-2">
+              <span className="text-base">🛡️</span> Active Accommodations
+              <span className="text-[10px] text-muted-foreground">({(iepAccoms.data as any[])?.length || 0})</span>
+            </h3>
+            <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
+              {(iepAccoms.data as any[] || []).map((a: any) => (
+                <div key={a.id} className="p-3 rounded-md border bg-white/40">
+                  <div className="flex items-start gap-2">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-100 text-orange-900 border border-orange-200 capitalize shrink-0 mt-0.5">{a.category}</span>
+                    <div className="flex-1">
+                      <div className="text-sm">{a.accommodationText}</div>
+                      <div className="text-[10px] text-muted-foreground mt-1 flex gap-2">
+                        {a.subjectSlug && <span className="capitalize">{a.subjectSlug}</span>}
+                        {a.frequency && <span>&middot; {a.frequency}</span>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {(!iepAccoms.data || (iepAccoms.data as any[]).length === 0) && (
+                <div className="text-sm text-muted-foreground italic p-3">No accommodations loaded.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </Card>
 
       <Card className="cozy-card p-4">
         <h2 className="font-display font-semibold mb-3">Recent Emotional Struggles</h2>

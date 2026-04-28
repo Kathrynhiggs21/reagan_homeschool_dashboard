@@ -746,3 +746,23 @@
 - [ ] Apply unified chalkboard dark theme globally (dark green chalkboard background, chalk-dust white text); keep it consistent on every page
 - [ ] Cards on chalkboard use groovy-retro bright pastels (coral, mint, lavender, sky blue, peach, buttery yellow) — each subject obviously distinct
 - [ ] Remove/clean demo seed data: placeholder schedule blocks, fake adventures, test timeline events, lorem book entries (keep vitest .test.ts files)
+
+## Completed this session (2026-04-28 — IEP ingestion)
+- [x] Vibrant groovy-retro subject palette on chalkboard theme
+- [x] Purged 7 "Test App" + 1 Test Book seeded rows
+- [x] Migration 0014 applied (classroomAgendas, iepGoals, iepAccommodations, academicSourceRuns)
+- [x] Google Drive scanned — 585 Reagan-tagged files catalogued
+- [x] Current IEP PDF uploaded to Manus storage
+- [x] 6 IEP goals + 6 accommodations + 8 MAP/Acadience/MAZE records seeded from real IEP
+- [x] iep.listGoals + iep.listAccommodations tRPC procedures
+- [x] IEP Goals & Accommodations card on Analytics (with OHI/Anxiety/5th grade/Next ETR chips)
+- [x] Vitest passes 2/2
+
+## Still queued (next session)
+- [ ] Gmail sweep for indianhill.k12.oh.us + madeiracityschools.org
+- [ ] Google Classroom active + archived sweep → classroomAgendas
+- [ ] PowerSchool IH + Madeira scrape (needs login)
+- [ ] FinalForms IH + Madeira scan (needs login)
+- [ ] Vision+LLM extraction of remaining ~580 Drive docs
+- [ ] Daily Agenda viewer page + auto-apply adaptive IEP toggle
+- [ ] Grade-level-gap viz from MAP percentiles

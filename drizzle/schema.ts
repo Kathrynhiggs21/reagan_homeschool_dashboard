@@ -726,3 +726,89 @@ export const auditLog = mysqlTable("auditLog", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 export type AuditLogRow = typeof auditLog.$inferSelect;
+
+
+/**
+ * classroomAgendas — Daily class agendas imported from Google Classroom /
+ * teacher Drive folders / emailed agenda images (Mr. Froehlich, Ms. Smith, etc.).
+ * One row per teacher-day. Source could be "classroom" | "drive" | "gmail" | "image".
+ */
+export const classroomAgendas = mysqlTable("classroomAgendas", {
+  id: int("id").autoincrement().primaryKey(),
+  agendaDate: varchar("agendaDate", { length: 10 }).notNull(), // YYYY-MM-DD
+  teacher: varchar("teacher", { length: 100 }),
+  course: varchar("course", { length: 120 }),
+  subjectSlug: varchar("subjectSlug", { length: 32 }),
+  school: varchar("school", { length: 60 }),     // "indian_hill" | "madeira"
+  term: varchar("term", { length: 8 }),          // "Q1" | "Q2" | "Q3" | "Q4" | "Y"
+  source: varchar("source", { length: 40 }).notNull(), // classroom | drive | gmail | image | manual
+  sourceUrl: varchar("sourceUrl", { length: 600 }),
+  imageKey: varchar("imageKey", { length: 200 }),
+  rawText: text("rawText"),
+  topics: json("topics").$type<string[]>(),        // bullet list of what was covered
+  assignments: json("assignments").$type<Array<{ title: string; dueAt?: string; notes?: string }>>(),
+  standalonePdfKey: varchar("standalonePdfKey", { length: 200 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ClassroomAgenda = typeof classroomAgendas.$inferSelect;
+
+/**
+ * iepGoals — Extracted goals from the most recent IEP. Includes present-levels,
+ * measurable goals, criteria, quarterly progress reports. Each row is one goal.
+ */
+export const iepGoals = mysqlTable("iepGoals", {
+  id: int("id").autoincrement().primaryKey(),
+  iepDate: varchar("iepDate", { length: 10 }),   // start date of the IEP
+  reviewDate: varchar("reviewDate", { length: 10 }),
+  area: varchar("area", { length: 40 }).notNull(),  // reading | writing | math | behavior | social | speech | ot | pt | adaptive | other
+  subjectSlug: varchar("subjectSlug", { length: 32 }),
+  goalText: text("goalText").notNull(),
+  presentLevel: text("presentLevel"),
+  measuredBy: varchar("measuredBy", { length: 200 }),
+  targetCriterion: varchar("targetCriterion", { length: 200 }),
+  startPercent: int("startPercent"),
+  targetPercent: int("targetPercent"),
+  currentPercent: int("currentPercent"),
+  status: varchar("status", { length: 24 }).default("in_progress"),  // in_progress | met | not_met | discontinued
+  quarterlyProgress: json("quarterlyProgress").$type<Array<{ quarter: string; percent?: number; narrative: string; date: string }>>(),
+  sourceFileKey: varchar("sourceFileKey", { length: 200 }),
+  sourceFileName: varchar("sourceFileName", { length: 200 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+export type IepGoal = typeof iepGoals.$inferSelect;
+
+/**
+ * iepAccommodations — Specific accommodations/modifications from the IEP.
+ * Separate table so we can display them on Tutor Handoff + Analytics.
+ */
+export const iepAccommodations = mysqlTable("iepAccommodations", {
+  id: int("id").autoincrement().primaryKey(),
+  iepDate: varchar("iepDate", { length: 10 }),
+  category: varchar("category", { length: 40 }).notNull(), // presentation | response | setting | timing | behavior | assistive_tech
+  accommodationText: text("accommodationText").notNull(),
+  subjectSlug: varchar("subjectSlug", { length: 32 }),
+  frequency: varchar("frequency", { length: 60 }),
+  notes: text("notes"),
+  active: boolean("active").default(true).notNull(),
+  sourceFileKey: varchar("sourceFileKey", { length: 200 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type IepAccommodation = typeof iepAccommodations.$inferSelect;
+
+/**
+ * academicSourceRuns — log of every ingestion run (Drive / Gmail / Classroom /
+ * PowerSchool / FinalForms / Manus-share). Used for dedupe + status UI.
+ */
+export const academicSourceRuns = mysqlTable("academicSourceRuns", {
+  id: int("id").autoincrement().primaryKey(),
+  source: varchar("source", { length: 40 }).notNull(),  // drive | gmail | classroom | powerschool_ih | powerschool_madeira | finalforms_ih | finalforms_madeira | manus_share
+  status: varchar("status", { length: 24 }).notNull(),  // running | success | partial | error
+  summary: varchar("summary", { length: 400 }),
+  itemsFound: int("itemsFound").default(0),
+  itemsInserted: int("itemsInserted").default(0),
+  errorText: text("errorText"),
+  startedAt: timestamp("startedAt").defaultNow().notNull(),
+  finishedAt: timestamp("finishedAt"),
+});
+export type AcademicSourceRun = typeof academicSourceRuns.$inferSelect;
