@@ -2,7 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { useWhisper } from "@/contexts/WhisperContext";
+import { useKiwi } from "@/contexts/KiwiContext";
 import { useAdultLock } from "@/contexts/AdultLockContext";
 import { trpc } from "@/lib/trpc";
 import { useState, useEffect } from "react";
@@ -19,7 +19,7 @@ import { useLocation } from "wouter";
  *   4. Recipients   — notification contacts
  */
 export default function Settings() {
-  const ctx = useWhisper();
+  const ctx = useKiwi();
   const { currentPasscode, setPasscode } = useAdultLock();
   const [, navigate] = useLocation();
 

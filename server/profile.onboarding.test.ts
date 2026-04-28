@@ -19,13 +19,13 @@ describe("Profile onboarding + appLinks categories", () => {
 
   it("upsertProfile accepts companionName + companionAvatar + photoUrl + interests", async () => {
     await db.upsertProfile({
-      companionName: "Whisper",
+      companionName: "Kiwi",
       companionAvatar: "⭐",
       photoUrl: "https://example.com/reagan.jpg",
       interests: ["animals", "art"],
     } as any);
     const p: any = await db.getProfile();
-    expect(p.companionName).toBe("Whisper");
+    expect(p.companionName).toBe("Kiwi");
     expect(p.companionAvatar).toBe("⭐");
     expect(p.photoUrl).toBe("https://example.com/reagan.jpg");
     expect(Array.isArray(p.interests)).toBe(true);

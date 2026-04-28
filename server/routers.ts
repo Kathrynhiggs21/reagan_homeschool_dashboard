@@ -17,7 +17,7 @@ const BlockStatus = z.enum(["not_started", "in_progress", "complete", "skipped"]
 const BlockType = z.enum(["morning_warmup","math","adventure","read_aloud","choice","catch_up","appointment","custom"]);
 
 /* ---------- WHISPER SYSTEM PROMPT (the soul of the AI) ---------- */
-function buildWhisperSystemPrompt(ctx: {
+function buildKiwiSystemPrompt(ctx: {
   profileName: string; companionName: string; tonePref?: string;
   todayBlocks?: Array<{title:string;status:string}>;
   recentMood?: Array<{zone:string;note:string|null}>;
@@ -31,7 +31,7 @@ function buildWhisperSystemPrompt(ctx: {
   return `You are ${ctx.companionName}, Reagan's AI companion. Reagan calls you "${ctx.companionName}" — use that name when introducing yourself. You are NOT a teacher, therapist, or cheerleader. You are a real friend with the energy of a cool older sister or favorite young-adult babysitter. Warm, real, present.
 
 WHO REAGAN IS — KNOW THIS DEEPLY:
-• Reagan, 5th grade, known as "The Animal Whisperer" 🪶
+• Reagan, 5th grade, known as "The Animal Friend" 🪶
 • Animal rescuer at her core — this is her identity, not a hobby
 • Has 2 parakeets, 10+ ducklings, dogs, cats, a bearded dragon, and constantly brings in injured wildlife/insects to care for
 • Loves: hiking, creeks, all outdoors, all animals, helping others (especially family/cousins), art, building, baking, makeup/style, the spiritual/wonder side of life
@@ -236,6 +236,17 @@ export const appRouter = router({
           completedAt: new Date(), completedByUserId: ctx.user?.id,
         } as any);
         await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: input.id, action: "complete", summary: input.grade });
+        // Sticker + coin economy: +1 sticker, +1 coin every block done
+        try {
+          await db.awardSticker({
+            userId: (ctx.user as any)?.id ?? null,
+            reason: "block_done",
+            blockId: input.id,
+            coins: 1,
+          });
+        } catch (e) {
+          console.warn("[rewards] awardSticker failed", e);
+        }
         return r;
       }),
     delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
@@ -378,7 +389,7 @@ export const appRouter = router({
         ? struggles.map((s: any) => "  - " + s.subjectSlug + ": " + (s.description || "(logged)")).join("\n")
         : "  None this week.";
       const recipientList = recipients.map((r: any) => (r.displayName || r.email) + " <" + r.email + ">").join(", ") || "(no recipients yet)";
-      const body = "Reagan's Whisper Dispatch - " + dateStr + "\n\nToday's plan:\n" + (blockLines || "(no blocks)") + "\n\nRecent struggles (7 days):\n" + struggleLines + "\n\nSent to: " + recipientList + "\n";
+      const body = "Reagan's Kiwi Dispatch - " + dateStr + "\n\nToday's plan:\n" + (blockLines || "(no blocks)") + "\n\nRecent struggles (7 days):\n" + struggleLines + "\n\nSent to: " + recipientList + "\n";
       const ok = await notifyOwner({ title: "Reagan dispatch - " + dateStr, content: body });
       return { ok, recipients: recipients.length };
     }),
@@ -647,16 +658,16 @@ export const appRouter = router({
   }),
 
   /* =================== WHISPER (AI COMPANION) =================================== */
-  whisper: router({
-    history: publicProcedure.input(z.object({ limit: z.number().default(50) })).query(({ input }) => db.listWhisperMessages(input.limit)),
-    clear: protectedProcedure.input(z.object({}).optional()).mutation(() => db.clearWhisperHistory()),
+  kiwi: router({
+    history: publicProcedure.input(z.object({ limit: z.number().default(50) })).query(({ input }) => db.listKiwiMessages(input.limit)),
+    clear: protectedProcedure.input(z.object({}).optional()).mutation(() => db.clearKiwiHistory()),
     chat: publicProcedure.input(z.object({
       userMessage: z.string(),
       adultPresent: z.boolean().default(false),
       currentBlockTitle: z.string().optional(),
     })).mutation(async ({ input }) => {
       // Save user message
-      await db.insertWhisperMessage({ role: "user", content: input.userMessage } as any);
+      await db.insertKiwiMessage({ role: "user", content: input.userMessage } as any);
 
       // Detect name-change requests like "call me Sunny", "your name is Sunny", "I want to call you Sunny"
       const nameMatch = input.userMessage.match(/(?:call (?:you|yourself)|your name is|i(?:'ll| will| wanna| want to)? call you|new name is|name yourself)\s+([A-Za-z][A-Za-z\- ]{1,18})/i);
@@ -678,13 +689,13 @@ export const appRouter = router({
       const struggles = await db.listStruggles(14);
       const timeline = await db.listTimelineEvents(20);
       const animalsList = await db.listAnimals();
-      const recentMessages = await db.listWhisperMessages(20);
-      const knowledge = await db.listKnowledgeForWhisper(20);
+      const recentMessages = await db.listKiwiMessages(20);
+      const knowledge = await db.listKnowledgeForKiwi(20);
 
-      const companionName = (profile as any)?.companionName || "Whisper";
+      const companionName = (profile as any)?.companionName || "Kiwi";
       const tonePref = (profile as any)?.companionTonePreference;
 
-      const systemPrompt = buildWhisperSystemPrompt({
+      const systemPrompt = buildKiwiSystemPrompt({
         profileName: profile?.studentName || "Reagan",
         companionName,
         tonePref,
@@ -714,7 +725,7 @@ export const appRouter = router({
 
       const aiContentRaw = response.choices[0]?.message?.content || "I'm here.";
       const aiContent: string = typeof aiContentRaw === "string" ? aiContentRaw : (aiContentRaw as any[]).map(c => (c as any).text || "").join("");
-      await db.insertWhisperMessage({ role: "assistant", content: aiContent } as any);
+      await db.insertKiwiMessage({ role: "assistant", content: aiContent } as any);
       return { reply: aiContent, nameChange };
     }),
 
@@ -764,7 +775,7 @@ export const appRouter = router({
       const moods = await db.listRecentMood(1);
       const profile = await db.getProfile();
       const summary = `Reagan finished ${done.length} of ${blocks.length} blocks today. Mood: ${moods[0]?.zone || "unlogged"}. ${struggles.length ? `She logged ${struggles.length} struggle(s).` : "No struggles today."} Done blocks: ${done.map(d => d.title).join(", ") || "none"}.`;
-      const sys = `You are ${(profile as any)?.companionName || "Whisper"}, an AI friend wrapping up the day for Reagan. Write 2-4 short sentences celebrating something specific from today. Use her name. Be warm, real, never saccharine. No mention of timing. End with: \"You did good today.\"`;
+      const sys = `You are ${(profile as any)?.companionName || "Kiwi"}, an AI friend wrapping up the day for Reagan. Write 2-4 short sentences celebrating something specific from today. Use her name. Be warm, real, never saccharine. No mention of timing. End with: \"You did good today.\"`;
       try {
         const r = await invokeLLM({ messages: [{ role: "system", content: sys }, { role: "user", content: summary }] });
         const c = r.choices[0]?.message?.content;
@@ -774,13 +785,13 @@ export const appRouter = router({
       }
     }),
 
-    // Whisper notices a struggle pattern and alerts the parent if needed
+    // Kiwi notices a struggle pattern and alerts the parent if needed
     checkAlerts: protectedProcedure.input(z.object({}).optional()).mutation(async () => {
       const struggles = await db.listStruggles(7);
       const reds = struggles.filter(s => s.intensity === "red");
       if (reds.length >= 3) {
         await notifyOwner({
-          title: "🪶 Whisper noticed a pattern",
+          title: "🪶 Kiwi noticed a pattern",
           content: `Reagan has logged ${reds.length} red-zone struggles this week. Topics: ${reds.map(r => r.subjectSlug || "general").join(", ")}. Worth a check-in.`,
         });
         return { alerted: true, count: reds.length };
@@ -1039,6 +1050,52 @@ export const appRouter = router({
   iep: router({
     listGoals: publicProcedure.query(() => db.listIepGoals()),
     listAccommodations: publicProcedure.query(() => db.listIepAccommodations()),
+  }),
+
+  /* =================== REWARDS (stickers, coins, prizes, notes) =================== */
+  rewards: router({
+    myStickers: publicProcedure.query(({ ctx }) => db.listStickers((ctx as any).user?.id ?? null)),
+    myCoins: publicProcedure.query(({ ctx }) => db.coinBalance((ctx as any).user?.id ?? null)),
+    myLedger: publicProcedure.input(z.object({ limit: z.number().default(30) }).optional()).query(({ input, ctx }) => db.recentCoinLedger((ctx as any).user?.id ?? null, input?.limit ?? 30)),
+    awardBonus: protectedProcedure.input(z.object({
+      userId: z.number().optional(), coins: z.number().default(1), lyric: z.string().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const out = await db.awardSticker({
+        userId: input.userId ?? (ctx.user as any)?.id ?? null,
+        reason: "adult_bonus",
+        coins: input.coins,
+        shortLyric: input.lyric ?? null,
+        addedByUserId: (ctx.user as any)?.id ?? null,
+      });
+      if (input.lyric) {
+        await db.addGoodWorkNote({
+          userId: input.userId ?? (ctx.user as any)?.id ?? null,
+          authorUserId: (ctx.user as any)?.id ?? null,
+          authorName: ctx.user?.name ?? null,
+          lyric: input.lyric,
+          stickerId: out.stickerId ?? null,
+        });
+      }
+      return out;
+    }),
+    listPrizes: publicProcedure.query(() => db.listPrizes(true)),
+    seedPrizes: publicProcedure.mutation(() => db.seedDefaultPrizesIfEmpty()),
+    requestPrize: publicProcedure.input(z.object({ prizeId: z.number() })).mutation(({ input, ctx }) => db.requestPrize((ctx as any).user?.id ?? null, input.prizeId)),
+    myRedemptions: publicProcedure.query(({ ctx }) => db.listMyRedemptions((ctx as any).user?.id ?? null)),
+    goodWorkNotes: publicProcedure.query(({ ctx }) => db.listGoodWorkNotes((ctx as any).user?.id ?? null)),
+    addGoodWorkNote: protectedProcedure.input(z.object({
+      userId: z.number().optional(),
+      lyric: z.string().min(1),
+      stickerId: z.number().optional(),
+      blockId: z.number().optional(),
+    })).mutation(({ input, ctx }) => db.addGoodWorkNote({
+      userId: input.userId ?? (ctx.user as any)?.id ?? null,
+      authorUserId: (ctx.user as any)?.id ?? null,
+      authorName: ctx.user?.name ?? null,
+      lyric: input.lyric,
+      stickerId: input.stickerId ?? null,
+      blockId: input.blockId ?? null,
+    })),
   }),
   /* =================== PRINTABLES HUB =================== */
   printables: router({

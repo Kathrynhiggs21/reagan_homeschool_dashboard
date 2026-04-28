@@ -98,3 +98,68 @@ export const COLOR_KEY_SUBJECTS: SubjectTint[] = [
 
 /** App page still uses same 5+1 buckets for consistency. */
 export const APP_CATEGORY_KEY: SubjectTint[] = COLOR_KEY_SUBJECTS;
+
+
+/**
+ * RAINBOW LIST PALETTE — used for the Daily Playlist rows so each activity
+ * shows in a different rainbow color (independent of subject). Subject
+ * identity is still carried by the icon + the COLOR_KEY above.
+ *
+ * 7 bright pastel stops matching the groovy-retro card reference.
+ */
+export interface RainbowStop {
+  name: string;
+  bg: string;       // card fill
+  border: string;   // saturated accent
+  ink: string;      // deep text color readable on bg
+}
+
+export const RAINBOW: RainbowStop[] = [
+  { name: "coral",    bg: "#ff8fa3", border: "#e11d6b", ink: "#5a0724" },
+  { name: "peach",    bg: "#ffb07a", border: "#ff6a00", ink: "#4a1a00" },
+  { name: "butter",   bg: "#ffe066", border: "#d4a900", ink: "#4a3600" },
+  { name: "mint",     bg: "#7fe3c4", border: "#10b981", ink: "#063c2d" },
+  { name: "sky",      bg: "#7ec8ff", border: "#1d6fe0", ink: "#062a5c" },
+  { name: "lavender", bg: "#c9a7ff", border: "#7c3aed", ink: "#2a0e66" },
+  { name: "pink",     bg: "#ffaad4", border: "#db2777", ink: "#500724" },
+];
+
+/** Weekday offset so the rainbow starts at a different color each day. */
+function daySeed(date?: Date): number {
+  const d = date ?? new Date();
+  return d.getDay(); // 0=Sun .. 6=Sat
+}
+
+/**
+ * Return the rainbow stop for a given row position, with a daily shuffle seed.
+ * Row 0 on Sunday = coral; Row 0 on Monday = peach; Row 0 on Tuesday = butter; etc.
+ */
+export function rainbowStop(index: number, date?: Date): RainbowStop {
+  const offset = daySeed(date);
+  const i = ((index + offset) % RAINBOW.length + RAINBOW.length) % RAINBOW.length;
+  return RAINBOW[i];
+}
+
+/** Card-style builder for a rainbow-colored row. Matches tintCardStyle API. */
+export function rainbowCardStyle(index: number, date?: Date): React.CSSProperties {
+  const s = rainbowStop(index, date);
+  return {
+    backgroundColor: s.bg,
+    borderLeft: `8px solid ${s.border}`,
+    color: s.ink,
+    boxShadow: "0 4px 0 rgba(0,0,0,0.18), 0 1px 2px rgba(0,0,0,0.08)",
+    ["--row-bg" as any]: s.bg,
+    ["--row-fg" as any]: s.ink,
+    ["--row-accent" as any]: s.border,
+    ["--row-border" as any]: "rgba(0,0,0,0.14)",
+  } as React.CSSProperties;
+}
+
+export function rainbowPillStyle(index: number, date?: Date): React.CSSProperties {
+  const s = rainbowStop(index, date);
+  return { backgroundColor: s.border, color: "#fff" };
+}
+
+export function rainbowInkStyle(index: number, date?: Date): React.CSSProperties {
+  return { color: rainbowStop(index, date).ink };
+}

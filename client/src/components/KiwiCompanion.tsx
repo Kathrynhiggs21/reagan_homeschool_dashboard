@@ -1,19 +1,20 @@
 import { useState, useEffect, useRef } from "react";
-import { useWhisper } from "@/contexts/WhisperContext";
+import { useKiwi } from "@/contexts/KiwiContext";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Send, Mic, X, Volume2, VolumeX, MessageCircle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import KiwiSprite from "./KiwiSprite";
 
-export default function WhisperCompanion() {
-  const { open, setOpen, enabled, mode, voiceMode, adultPresent, companionName, companionAvatar, setCompanionName } = useWhisper();
+export default function KiwiCompanion() {
+  const { open, setOpen, enabled, mode, voiceMode, adultPresent, companionName, companionAvatar, setCompanionName } = useKiwi();
   const [input, setInput] = useState("");
   const [muted, setMuted] = useState(false);
   const [lastInteractionAt, setLastInteractionAt] = useState<number>(Date.now());
   const [proactivePrompted, setProactivePrompted] = useState(false);
-  const messages = trpc.whisper.history.useQuery({ limit: 20 });
-  const sendMsg = trpc.whisper.chat.useMutation({
+  const messages = trpc.kiwi.history.useQuery({ limit: 20 });
+  const sendMsg = trpc.kiwi.chat.useMutation({
     onSuccess: (data: any) => {
       messages.refetch();
       setLastInteractionAt(Date.now());
@@ -71,7 +72,7 @@ export default function WhisperCompanion() {
       const last = e.results[e.results.length - 1];
       const text = (last[0]?.transcript || "").toLowerCase();
       const wake = `hey ${companionName.toLowerCase()}`;
-      if (text.includes(wake) || text.includes("hey whisper")) {
+      if (text.includes(wake) || text.includes("hey kiwi")) {
         setOpen(true);
       }
     };
@@ -101,25 +102,14 @@ export default function WhisperCompanion() {
 
   return (
     <>
-      {/* Floating button */}
-      {!open && (
-        <button
-          onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-6 z-40 w-16 h-16 rounded-full bg-primary text-primary-foreground shadow-2xl hover:scale-110 transition-transform flex items-center justify-center text-3xl ring-4 ring-primary/20 no-print"
-          style={{ boxShadow: "0 10px 30px -5px oklch(0.7 0.12 65 / 0.5)" }}
-          data-whisper-launcher
-          aria-label={`Open ${companionName}`}
-        >
-          {adultPresent ? "💤" : companionAvatar}
-        </button>
-      )}
+      {/* Kiwi's own floating perch (KiwiPerch) now handles opening chat; no separate launcher button needed */}
 
       {/* Panel */}
       {open && (
-        <Card data-whisper-companion className="fixed bottom-6 right-6 z-40 w-[380px] max-w-[calc(100vw-2rem)] h-[560px] max-h-[80vh] flex flex-col shadow-2xl border-2 border-primary/20 no-print">
+        <Card data-kiwi-companion className="fixed bottom-6 right-6 z-40 w-[380px] max-w-[calc(100vw-2rem)] h-[560px] max-h-[80vh] flex flex-col shadow-2xl border-2 border-primary/20 no-print">
           <div className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center gap-2">
-              <span className="text-2xl">{companionAvatar}</span>
+              <div className="w-10 h-10"><KiwiSprite pose={adultPresent ? "sleep" : "idle"} size={40} /></div>
               <div>
                 <div className="font-display font-semibold text-base leading-tight">{companionName}</div>
                 <div className="text-[10px] text-muted-foreground">{adultPresent ? "Resting — adult is here" : "Here for you 💛"}</div>
@@ -129,7 +119,7 @@ export default function WhisperCompanion() {
               <Button variant="ghost" size="icon" onClick={() => setMuted(m => !m)} title={muted ? "Unmute" : "Mute voice"}>
                 {muted ? <VolumeX className="w-4 h-4"/> : <Volume2 className="w-4 h-4"/>}
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => { setOpen(false); utils.whisper.history.invalidate(); }}>
+              <Button variant="ghost" size="icon" onClick={() => { setOpen(false); utils.kiwi.history.invalidate(); }}>
                 <X className="w-4 h-4"/>
               </Button>
             </div>
@@ -139,8 +129,8 @@ export default function WhisperCompanion() {
             {messages.isLoading && <div className="text-center text-sm text-muted-foreground">Loading...</div>}
             {messages.data?.length === 0 && (
               <div className="text-center text-sm text-muted-foreground p-6">
-                <div className="text-3xl mb-2">{companionAvatar}</div>
-                <div className="font-hand text-lg">Hi Whisperer.</div>
+                <div className="flex justify-center mb-2"><KiwiSprite pose="chirp" size={80} /></div>
+                <div className="font-hand text-lg">Hi Reagan!</div>
                 <div className="text-xs mt-2">I'm here whenever. Ask me anything, or just say hi.</div>
               </div>
             )}

@@ -14,6 +14,7 @@ import {
   assignmentAnswerKeys, assignmentSubmissionsAutoGrade,
   takeNotes, curriculumAdjustments, blockGrades, needsWorkItems,
   printableSources, printableFavorites, academicRecords, auditLog, iepGoals, iepAccommodations,
+  stickers, goodWorkNotes, coinLedger, prizes, prizeRedemptions, certificates,
 } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -375,13 +376,13 @@ export async function progressBadge(slug: string, increment = 1) {
 }
 
 /* ============================== WHISPER SESSIONS ========================== */
-export async function listWhisperMessages(limit = 50) {
+export async function listKiwiMessages(limit = 50) {
   return getDb().select().from(whisperSessions).orderBy(desc(whisperSessions.createdAt)).limit(limit);
 }
-export async function insertWhisperMessage(m: typeof whisperSessions.$inferInsert) {
+export async function insertKiwiMessage(m: typeof whisperSessions.$inferInsert) {
   await getDb().insert(whisperSessions).values(m);
 }
-export async function clearWhisperHistory() {
+export async function clearKiwiHistory() {
   await getDb().delete(whisperSessions);
 }
 
@@ -465,7 +466,7 @@ export async function listKnowledge(activeOnly = true) {
   return await db.select().from(reaganKnowledge).orderBy(desc(reaganKnowledge.createdAt));
 }
 
-export async function listKnowledgeForWhisper(limit = 30) {
+export async function listKnowledgeForKiwi(limit = 30) {
   const db = getDb();
   return await db.select().from(reaganKnowledge)
     .where(and(eq(reaganKnowledge.active, true), eq(reaganKnowledge.sensitive, false)))
@@ -1158,4 +1159,164 @@ export async function listIepGoals() {
 export async function listIepAccommodations() {
   const db = getDb();
   return await db.select().from(iepAccommodations).where(eq(iepAccommodations.active, true)).orderBy(desc(iepAccommodations.createdAt));
+}
+
+
+// ===== Sticker & Coin Economy =====
+const STICKER_ART = [
+  "star-gold", "rainbow-burst", "parakeet-wink", "heart-sparkle", "cupcake-pink",
+  "pencil-hero", "lightbulb", "trophy-mini", "book-magic", "apple-smile",
+  "crown-tiny", "balloon-bunch", "butterfly", "ladybug", "taco", "sun-happy",
+  "moon-wink", "cloud-rainbow", "cat-sticker", "dog-sticker",
+];
+
+export async function awardSticker(params: {
+  userId?: number | null;
+  reason: "block_done" | "streak_bonus" | "gold_star_day" | "submission_approved" | "placement_complete" | "adult_bonus";
+  blockId?: number | null;
+  submissionId?: number | null;
+  coins?: number;
+  shortLyric?: string | null;
+  addedByUserId?: number | null;
+  art?: string;
+  palette?: string;
+}) {
+  const db = getDb();
+  const art = params.art || STICKER_ART[Math.floor(Math.random() * STICKER_ART.length)];
+  const palette = params.palette || ["coral", "peach", "butter", "mint", "sky", "lavender", "pink"][Math.floor(Math.random() * 7)];
+  const coins = params.coins ?? 1;
+  const [res]: any = await db.insert(stickers).values({
+    userId: params.userId ?? null,
+    reason: params.reason,
+    blockId: params.blockId ?? null,
+    submissionId: params.submissionId ?? null,
+    art,
+    palette,
+    coinsAwarded: coins,
+    shortLyric: params.shortLyric ?? null,
+    addedByUserId: params.addedByUserId ?? null,
+  } as any);
+  const stickerId = (res as any)?.insertId as number | undefined;
+  // Mirror into coin ledger (+coins)
+  if (coins > 0) {
+    await db.insert(coinLedger).values({
+      userId: params.userId ?? null,
+      delta: coins,
+      kind: "earn_sticker",
+      reasonNote: params.reason,
+      stickerId: stickerId ?? null,
+    } as any);
+  }
+  return { stickerId, art, palette, coins };
+}
+
+export async function listStickers(userId?: number | null) {
+  const db = getDb();
+  const q = db.select().from(stickers).orderBy(desc(stickers.awardedAt));
+  const rows = await q;
+  if (userId == null) return rows;
+  return rows.filter((r: any) => r.userId === userId);
+}
+
+export async function coinBalance(userId?: number | null) {
+  const db = getDb();
+  const rows: any = await db.select().from(coinLedger);
+  let earned = 0, spent = 0;
+  for (const r of rows) {
+    if (userId != null && r.userId !== userId) continue;
+    if (r.delta > 0) earned += r.delta;
+    else spent += Math.abs(r.delta);
+  }
+  return { balance: earned - spent, earned, spent };
+}
+
+export async function recentCoinLedger(userId?: number | null, limit = 30) {
+  const db = getDb();
+  const rows: any = await db.select().from(coinLedger).orderBy(desc(coinLedger.createdAt)).limit(limit);
+  return userId == null ? rows : rows.filter((r: any) => r.userId === userId);
+}
+
+export async function listPrizes(activeOnly = true) {
+  const db = getDb();
+  const rows: any = await db.select().from(prizes).orderBy(desc(prizes.createdAt));
+  return activeOnly ? rows.filter((p: any) => p.active) : rows;
+}
+
+export async function seedDefaultPrizesIfEmpty() {
+  const db = getDb();
+  const existing: any = await db.select().from(prizes).limit(1);
+  if (existing.length > 0) return { seeded: false };
+  const defaults = [
+    { slug: "roblox-5",      title: "$5 Roblox card",          emoji: "🎮", coinCost: 50,  category: "digital" as const, description: "Save up for digital fun!" },
+    { slug: "ice-cream",     title: "Ice cream outing",        emoji: "🍦", coinCost: 30,  category: "treat" as const,   description: "Mom-approved sweet treat." },
+    { slug: "amazon-10",     title: "$10 Amazon choice",       emoji: "📦", coinCost: 100, category: "cash" as const,    description: "Pick anything under $10." },
+    { slug: "movie-night",   title: "Family movie night",      emoji: "🎬", coinCost: 40,  category: "experience" as const, description: "You pick the movie!" },
+    { slug: "extra-screen",  title: "+30 min screen time",     emoji: "📱", coinCost: 15,  category: "screen_time" as const, description: "Bonus iPad time." },
+    { slug: "bird-toy",      title: "New toy for the birds",   emoji: "🦜", coinCost: 60,  category: "toy" as const,     description: "For Kiwi and the flock." },
+    { slug: "starbucks",     title: "Starbucks cake pop",      emoji: "☕", coinCost: 25,  category: "treat" as const,   description: "Pink frosting, sprinkles." },
+    { slug: "stuffie",       title: "New stuffed animal",      emoji: "🧸", coinCost: 80,  category: "toy" as const,     description: "Add one to your collection." },
+  ];
+  for (const p of defaults) {
+    await db.insert(prizes).values({ ...p, active: true } as any);
+  }
+  return { seeded: true, count: defaults.length };
+}
+
+export async function requestPrize(userId: number | null, prizeId: number) {
+  const db = getDb();
+  const p: any = (await db.select().from(prizes).where(eq(prizes.id, prizeId)).limit(1))[0];
+  if (!p) throw new Error("Prize not found");
+  const bal = await coinBalance(userId);
+  if (bal.balance < p.coinCost) throw new Error("Not enough coins yet");
+  const [res]: any = await db.insert(prizeRedemptions).values({
+    userId: userId ?? null,
+    prizeId,
+    coinCost: p.coinCost,
+    status: "pending",
+  } as any);
+  const redemptionId = (res as any)?.insertId as number | undefined;
+  // Deduct coins
+  await db.insert(coinLedger).values({
+    userId: userId ?? null,
+    delta: -p.coinCost,
+    kind: "spend_prize",
+    reasonNote: `Requested: ${p.title}`,
+    prizeRedemptionId: redemptionId ?? null,
+  } as any);
+  return { redemptionId, status: "pending", title: p.title };
+}
+
+export async function listMyRedemptions(userId?: number | null) {
+  const db = getDb();
+  const rows: any = await db.select().from(prizeRedemptions).orderBy(desc(prizeRedemptions.requestedAt));
+  return userId == null ? rows : rows.filter((r: any) => r.userId === userId);
+}
+
+// ===== Good Work Notes =====
+export async function addGoodWorkNote(params: {
+  userId?: number | null;
+  authorUserId?: number | null;
+  authorName?: string | null;
+  lyric: string;
+  stickerId?: number | null;
+  submissionId?: number | null;
+  blockId?: number | null;
+}) {
+  const db = getDb();
+  const [res]: any = await db.insert(goodWorkNotes).values({
+    userId: params.userId ?? null,
+    authorUserId: params.authorUserId ?? null,
+    authorName: params.authorName ?? null,
+    lyric: params.lyric,
+    attachedToStickerId: params.stickerId ?? null,
+    attachedToSubmissionId: params.submissionId ?? null,
+    attachedToBlockId: params.blockId ?? null,
+  } as any);
+  return { id: (res as any)?.insertId };
+}
+
+export async function listGoodWorkNotes(userId?: number | null, limit = 50) {
+  const db = getDb();
+  const rows: any = await db.select().from(goodWorkNotes).orderBy(desc(goodWorkNotes.createdAt)).limit(limit);
+  return userId == null ? rows : rows.filter((r: any) => r.userId === userId);
 }

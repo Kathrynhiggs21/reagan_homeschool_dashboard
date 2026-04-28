@@ -81,9 +81,9 @@
   --zone-green: oklch(0.82 0.18 150);
   --zone-yellow: oklch(0.88 0.16 95);
   --zone-red: oklch(0.78 0.17 20);
-  /* Helper accent (was 'whisper') */
-  --whisper: oklch(0.82 0.15 290);
-  --whisper-soft: oklch(0.3 0.05 290);
+  /* Helper accent (was 'kiwi') */
+  --kiwi: oklch(0.82 0.15 290);
+  --kiwi-soft: oklch(0.3 0.05 290);
   /* Chalkboard surface tokens */
   --chalkboard: oklch(0.22 0.022 170);
   --chalkboard-foreground: oklch(0.97 0.008 95);
@@ -338,8 +338,8 @@
   [data-print="hide"],
   aside, nav,
   [aria-label="Sidebar"],
-  [data-whisper-launcher],
-  [data-whisper-companion],
+  [data-kiwi-launcher],
+  [data-kiwi-companion],
   button,
   [role="dialog"] {
     display: none !important;

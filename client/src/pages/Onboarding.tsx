@@ -23,7 +23,7 @@ import { toast } from "sonner";
  */
 
 const HELPER_PRESETS = [
-  { name: "Whisper", avatar: "⭐", blurb: "Gentle, curious, kind." },
+  { name: "Kiwi", avatar: "⭐", blurb: "Gentle, curious, kind." },
   { name: "Sprig",   avatar: "🌱", blurb: "Outdoorsy, nature-first." },
   { name: "Nova",    avatar: "✨", blurb: "Bright, playful, encouraging." },
   { name: "Milo",    avatar: "🦊", blurb: "Clever, friendly, a little silly." },
@@ -45,7 +45,7 @@ export default function Onboarding() {
   const [name, setName] = useState(profile.data?.studentName || "Reagan");
   const [grade, setGrade] = useState(profile.data?.gradeLevel || "5th Grade");
   const [photoUrl, setPhotoUrl] = useState(profile.data?.photoUrl || "");
-  const [helperName, setHelperName] = useState(profile.data?.companionName || "Whisper");
+  const [helperName, setHelperName] = useState(profile.data?.companionName || "Kiwi");
   const [helperAvatar, setHelperAvatar] = useState(profile.data?.companionAvatar || "⭐");
   const [interests, setInterests] = useState<string[]>(profile.data?.interests || []);
 

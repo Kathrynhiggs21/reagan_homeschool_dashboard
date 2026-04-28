@@ -2,7 +2,7 @@ import { trpc } from "@/lib/trpc";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useWhisper } from "@/contexts/WhisperContext";
+import { useKiwi } from "@/contexts/KiwiContext";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { subjectTint, tintCardStyle, tintInkStyle } from "@/lib/subjectColors";
@@ -25,7 +25,7 @@ export default function TutorHandoff() {
   const struggles = trpc.struggles.list.useQuery({});
   const completeM = trpc.blocks.complete.useMutation();
   const utils = trpc.useUtils();
-  const { adultPresent, setAdultPresent } = useWhisper();
+  const { adultPresent, setAdultPresent } = useKiwi();
 
   const blocks = today.data?.blocks ?? [];
   const data = profile.data;
@@ -52,7 +52,7 @@ export default function TutorHandoff() {
           <li><strong>Reassure she's not in trouble.</strong> Say it out loud often.</li>
           <li><strong>Catch her doing well 5x more than you correct anything.</strong></li>
           <li><strong>If she shuts down, do not push.</strong> Switch to animal care, art, or sit-spot.</li>
-          <li><strong>Use her title: "The Animal Whisperer."</strong> Believe in her out loud.</li>
+          <li><strong>Use her title: "The Animal Kiwier."</strong> Believe in her out loud.</li>
         </ol>
       </Card>
 

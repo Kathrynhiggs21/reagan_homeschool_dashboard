@@ -14,7 +14,7 @@ export default function Profile() {
     <div className="space-y-6">
       <header>
         <h1 className="text-3xl font-display font-semibold">About Me 🪪</h1>
-        <p className="text-muted-foreground text-sm mt-1 font-hand text-lg">"{data?.studentName}, the Animal Whisperer"</p>
+        <p className="text-muted-foreground text-sm mt-1 font-hand text-lg">"{data?.studentName}, the Animal Kiwier"</p>
       </header>
 
       <Card className="cozy-card p-5 bg-gradient-to-br from-amber-50 to-rose-50 border-amber-200">

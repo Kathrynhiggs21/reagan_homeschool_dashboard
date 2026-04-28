@@ -4,11 +4,12 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { WhisperProvider } from "./contexts/WhisperContext";
+import { KiwiProvider } from "./contexts/KiwiContext";
 import { AdultLockProvider } from "./contexts/AdultLockContext";
 import AdultGate from "./components/AdultGate";
 import CozyShell from "./components/CozyShell";
-import WhisperCompanion from "./components/WhisperCompanion";
+import KiwiCompanion from "./components/KiwiCompanion";
+import KiwiPerch from "./components/KiwiPerch";
 import QuickAddFab from "./components/QuickAddFab";
 import Today from "./pages/Today";
 import Week from "./pages/Week";
@@ -27,6 +28,8 @@ import Onboarding from "./pages/Onboarding";
 import NeedsWork from "./pages/NeedsWork";
 import Printables from "./pages/Printables";
 import TakeNotes from "./pages/TakeNotes";
+import Stickers from "./pages/Stickers";
+import Prizes from "./pages/Prizes";
 import Academics from "./pages/Academics";
 import ReportCard from "./pages/ReportCard";
 import Scratch from "./pages/Scratch";
@@ -89,12 +92,15 @@ function Router() {
         <Route path="/report-card">
           <AdultGate><ReportCard /></AdultGate>
         </Route>
+        <Route path="/stickers" component={Stickers} />
+        <Route path="/prizes" component={Prizes} />
         <Route path="/notes" component={TakeNotes} />
         <Route path="/scratch" component={Scratch} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
-      <WhisperCompanion />
+      <KiwiPerch />
+      <KiwiCompanion />
       <QuickAddFab />
     </CozyShell>
   );
@@ -105,12 +111,12 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light">
         <TooltipProvider>
-          <WhisperProvider>
+          <KiwiProvider>
             <AdultLockProvider>
               <Toaster />
               <Router />
             </AdultLockProvider>
-          </WhisperProvider>
+          </KiwiProvider>
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

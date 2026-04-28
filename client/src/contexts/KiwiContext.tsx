@@ -1,12 +1,12 @@
 import { createContext, useContext, useState, ReactNode } from "react";
 
-type WhisperMode = "off" | "tap" | "wake" | "always";
-type WhisperVoiceMode = "text" | "voice";
+type KiwiMode = "off" | "tap" | "wake" | "always";
+type KiwiVoiceMode = "text" | "voice";
 
-interface WhisperState {
+interface KiwiState {
   enabled: boolean;
-  mode: WhisperMode;
-  voiceMode: WhisperVoiceMode;
+  mode: KiwiMode;
+  voiceMode: KiwiVoiceMode;
   adultPresent: boolean;
   /** Adult-unlocked means the 3918 passcode was entered this session.
    *  This is the REAL gate for adult-only pages & controls. */
@@ -16,8 +16,8 @@ interface WhisperState {
   companionAvatar: string;
   photoUrl: string | null;
   setEnabled: (b: boolean) => void;
-  setMode: (m: WhisperMode) => void;
-  setVoiceMode: (m: WhisperVoiceMode) => void;
+  setMode: (m: KiwiMode) => void;
+  setVoiceMode: (m: KiwiVoiceMode) => void;
   setAdultPresent: (b: boolean) => void;
   setAdultUnlocked: (b: boolean) => void;
   setOpen: (b: boolean) => void;
@@ -26,15 +26,15 @@ interface WhisperState {
   setPhotoUrl: (s: string | null) => void;
 }
 
-const Ctx = createContext<WhisperState | null>(null);
+const Ctx = createContext<KiwiState | null>(null);
 
-export function WhisperProvider({ children }: { children: ReactNode }) {
+export function KiwiProvider({ children }: { children: ReactNode }) {
   const [enabled, setEnabled] = useState(true);
-  const [mode, setMode] = useState<WhisperMode>(
-    (localStorage.getItem("whisperMode") as WhisperMode) || "tap"
+  const [mode, setMode] = useState<KiwiMode>(
+    (localStorage.getItem("kiwiMode") as KiwiMode) || "tap"
   );
-  const [voiceMode, setVoiceMode] = useState<WhisperVoiceMode>(
-    (localStorage.getItem("whisperVoiceMode") as WhisperVoiceMode) || "text"
+  const [voiceMode, setVoiceMode] = useState<KiwiVoiceMode>(
+    (localStorage.getItem("kiwiVoiceMode") as KiwiVoiceMode) || "text"
   );
   const [adultPresent, setAdultPresent] = useState(
     localStorage.getItem("adultPresent") === "1"
@@ -45,7 +45,7 @@ export function WhisperProvider({ children }: { children: ReactNode }) {
   );
   const [open, setOpen] = useState(false);
   const [companionName, setCompanionNameState] = useState(
-    localStorage.getItem("companionName") || "Whisper"
+    localStorage.getItem("companionName") || "Kiwi"
   );
   const [companionAvatar, setCompanionAvatarState] = useState(
     localStorage.getItem("companionAvatar") || "⭐"
@@ -61,8 +61,8 @@ export function WhisperProvider({ children }: { children: ReactNode }) {
     if (s) localStorage.setItem("reaganPhotoUrl", s);
     else localStorage.removeItem("reaganPhotoUrl");
   };
-  const setModeP = (m: WhisperMode) => { setMode(m); localStorage.setItem("whisperMode", m); };
-  const setVoiceModeP = (m: WhisperVoiceMode) => { setVoiceMode(m); localStorage.setItem("whisperVoiceMode", m); };
+  const setModeP = (m: KiwiMode) => { setMode(m); localStorage.setItem("kiwiMode", m); };
+  const setVoiceModeP = (m: KiwiVoiceMode) => { setVoiceMode(m); localStorage.setItem("kiwiVoiceMode", m); };
   const setAdultP = (b: boolean) => { setAdultPresent(b); localStorage.setItem("adultPresent", b ? "1" : "0"); };
   const setAdultUnlocked = (b: boolean) => {
     setAdultUnlockedState(b);
@@ -82,8 +82,8 @@ export function WhisperProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useWhisper() {
+export function useKiwi() {
   const v = useContext(Ctx);
-  if (!v) throw new Error("WhisperProvider missing");
+  if (!v) throw new Error("KiwiProvider missing");
   return v;
 }

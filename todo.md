@@ -821,3 +821,87 @@
 - [ ] Whiteboard note tool: pen, highlighter, text, shapes, images, eraser, camera-snap, layers, voice note
 - [ ] Adult Help onboarding page: how to add work, approve, write good-work, add prize, custom cert, log session
 - [ ] Tutors table (name, role, bio, schedule, notes) + assign tutor to block
+
+
+## Round 4i — Rainbow list + final spec
+- [ ] Daily list: each activity a different rainbow color (coral/peach/yellow/mint/sky/lavender/pink cycle)
+- [ ] Daily shuffle seed so starting color rotates by weekday
+- [ ] Subject identity icon stays constant per subject
+- [ ] Completed card dims + sticker stamp but keeps rainbow color
+
+
+## Round 4j — Kiwi parakeet + textbooks + rec column
+- [ ] Generate Kiwi parakeet sprite set (idle, flap, fly, sleep, chirp, peek, frown, confetti)
+- [ ] Build KiwiCompanion component replacing WhisperCompanion (floating, 4 preset perches, draggable)
+- [ ] Kiwi mood engine: reacts to completion, idle time, video playing, hard-block flag, bedtime
+- [ ] Chirp sound (toggleable) + speech bubble + thought-bubble when she has a tip
+- [ ] Index Michael's World (226 pages) + build reading guide
+- [ ] Index Tuck Everlasting (25 chapters) + reading guide
+- [ ] Fetch Spectrum Science Gr5 + 180 Days Science Gr5 TOCs
+- [ ] Adult-only Recommendations column on Home (Yes/No/Maybe; Mom+Grandma approve)
+- [ ] Google Calendar duplicate for approved recs + tutor sessions
+
+
+## Pass 1 — Kiwi's World Foundation (heads-down)
+
+- [ ] Generate final Kiwi chibi-vinyl reference (big expressive eyes, yellow/green, on perch)
+- [ ] Generate Kiwi 3 extra poses (happy flap, sleeping, chirping with speech bubble)
+- [ ] Upload Kiwi sprites to webdev-static-assets + get URLs
+- [ ] Rename Whisper → Kiwi across codebase (sidebar, ai chat, greetings, settings)
+- [ ] Build KiwiCompanion React component with idle breathing/blink/tilt CSS animations
+- [ ] Wire Kiwi to schedule completion events (flap on Done)
+- [ ] Rainbow-per-row coloring on Today list
+- [ ] Material-icon subject tiles (huge icon, small title under)
+- [ ] Today page completion-based playlist (no hard times)
+- [ ] Tour Mode card for Apr 28 + 11am Tutor Trial card
+- [ ] Sticker-on-Done + confetti + coin increment
+- [ ] Sticker Book page + Prize Shop page (basic grids)
+- [ ] Tighten spacing across Today + Home
+- [ ] Final checkpoint + deliver
+
+## Future passes (queued — do NOT build in Pass 1)
+- [ ] Full flock: Blue (parakeet friend), Duck (mallard), Goose (black Swedish duckling) + interactions
+- [ ] Holiday/seasonal costumes for all birds
+- [ ] Cage toys (swing, mirror, bell, bamboo, millet, sprinkler, heat lamp, disco ball)
+- [ ] Mountable perch/swing system across page
+- [ ] Little black poop spots + feathers + seed crumbs fading
+- [ ] Flock visits + interactions with page elements
+- [ ] Multi-user roles (mom/dad/grandma/tutor/therapist/guest) + Team + invites
+- [ ] Tag system (tired/sick/happy/etc) + custom tags
+- [ ] Adult Whiteboard broadcast page with sticky notes
+- [ ] Adaptive Learning Engine (signals, modality detector, nightly auto-adjust, weekly digest)
+- [ ] Review Library (videos, web pages, apps, printables) keyed off gaps
+- [ ] Textbook scope-and-sequence ingestion (Spectrum Science G5, 180 Days of Science G5, Tuck Everlasting, Michael's World)
+- [ ] Recommendations column (Mom+Grandma approve only)
+- [ ] Google Calendar duplicate sync
+- [ ] Home-hub widgets + Joke of the Day + Pet of the Day + YouTube TV Box + Resource popups + Play-Break footer
+- [ ] Full whiteboard note tool (pen/text/shapes/images/highlighter/voice)
+- [ ] Placement mini-tasks engine
+- [ ] Template/theme picker (chalkboard/groovy/nature/galaxy/forest)
+- [ ] Adult Help onboarding page
+
+- [ ] Circle-to-Search / "Kiwi, what's this?" tool — draggable magnifier that lets Reagan circle any word/image/topic; Kiwi identifies it via vision LLM and offers Learn-More menu (video / article / draw / game / printable / fun fact); logs curiosity data for adaptive engine
+
+- [ ] Popup-first navigation: all "Learn More" / details / chat / video / article / game actions open floating popup cards instead of route navigation; support minimize, pin-for-later, stack-like tabs, close/dismiss; ensure Today list + stickers + Kiwi perch never unmount
+
+- [ ] Background ingestion sweep (best-effort): IH + Madeira Drive/Gmail/Classroom content reachable in this session — pull what the current auth allows, skip the rest silently, log gaps
+
+## Pass 1 DELIVERED — Kiwi's World Foundation (Apr 28, 2026)
+
+- [x] Whisper → Kiwi rename across codebase + context/avatar
+- [x] KiwiSprite component (4 poses: idle / flap / sleep / chirp)
+- [x] KiwiPerch floating animated companion with corner teleporting + speech bubbles
+- [x] Kiwi images re-optimized (5 MB PNG → 20 KB WebP) + re-uploaded to Manus storage
+- [x] KiwiCompanion chat panel uses KiwiSprite in header/empty state
+- [x] Rainbow per-row coloring on Today schedule (position-based, weekday-shuffled)
+- [x] celebrateKiwi() fires on Done tap → Kiwi flaps + speech bubble
+- [x] Sticker + coin backend wired: blocks.complete auto-inserts sticker + coin ledger entry
+- [x] rewards tRPC router: myStickers, myCoins, myLedger, awardBonus, listPrizes, seedPrizes, requestPrize, myRedemptions, goodWorkNotes, addGoodWorkNote
+- [x] Default prize catalog auto-seeds (Roblox $5, Amazon $10, ice cream, stuffie, movie night, bird toy, extra screen time, Starbucks cake pop)
+- [x] Sticker Book page (/stickers) — inline SVG sticker art, coin pill, empty state, good-work notes
+- [x] Prize Shop page (/prizes) — category-tinted cards, coin progress bars, Redeem button with Mom-approval queue
+- [x] Tour Mode card — Apr 28 "Explore your new classroom!" + 11am tutor trial chip, Apr 29 placement, Apr 30 official start
+- [x] Coin + Sticker strip above schedule (live counts)
+- [x] Sticker Book + Prize Shop added to kid sidebar nav
+- [x] Vitest: rewards.test.ts — awardSticker, seedDefaultPrizes idempotency, requestPrize deduction, insufficient-coins rejection
+- [x] All 42/42 vitest pass

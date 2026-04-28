@@ -2,7 +2,7 @@ import { trpc } from "@/lib/trpc";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { useWhisper } from "@/contexts/WhisperContext";
+import { useKiwi } from "@/contexts/KiwiContext";
 import { useAdultLock } from "@/contexts/AdultLockContext";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -11,7 +11,8 @@ import GradeBlockDialog from "@/components/GradeBlockDialog";
 import AnswerKeyDialog from "@/components/AnswerKeyDialog";
 import TurnInDialog from "@/components/TurnInDialog";
 import SubjectColorKey from "@/components/SubjectColorKey";
-import { subjectTint, tintCardStyle, tintInkStyle, tintPillStyle } from "@/lib/subjectColors";
+import { subjectTint, tintCardStyle, tintInkStyle, tintPillStyle, rainbowCardStyle, rainbowPillStyle, rainbowInkStyle } from "@/lib/subjectColors";
+import { celebrateKiwi } from "@/components/KiwiPerch";
 
 // Neutral classroom mood language + classroom-y icons
 const ZONES = [
@@ -60,7 +61,7 @@ function blockTimeLabel(i: number): string {
 }
 
 export default function Today() {
-  const { companionAvatar, companionName, setOpen } = useWhisper();
+  const { companionAvatar, companionName, setOpen } = useKiwi();
   const { unlocked } = useAdultLock();
   const profile = trpc.profile.get.useQuery();
   const today = trpc.plans.today.useQuery();
@@ -69,8 +70,8 @@ export default function Today() {
   const completeM = trpc.blocks.complete.useMutation();
   const specialDay = trpc.specialDays.today.useQuery();
   const encouragement = trpc.encouragement.list.useQuery({ unreadOnly: false });
-  const joke = trpc.whisper.joke.useQuery();
-  const recap = trpc.whisper.endOfDayRecap.useQuery();
+  const joke = trpc.kiwi.joke.useQuery();
+  const recap = trpc.kiwi.endOfDayRecap.useQuery();
   const utils = trpc.useUtils();
 
   const [struggleDialog, setStruggleDialog] = useState<{ open: boolean; blockId?: number; subjectSlug?: string | null }>({ open: false });
@@ -79,7 +80,7 @@ export default function Today() {
   const [triggers, setTriggers] = useState<string[]>([]);
   const [helpers, setHelpers] = useState<string[]>([]);
   const [videoOpen, setVideoOpen] = useState(false);
-  const animalVideo = trpc.whisper.funnyAnimalVideo.useQuery(undefined, { enabled: videoOpen });
+  const animalVideo = trpc.kiwi.funnyAnimalVideo.useQuery(undefined, { enabled: videoOpen });
   // Adult edit state
   const [blockEditor, setBlockEditor] = useState<{ open: boolean; block?: ExistingBlock }>({ open: false });
   const [gradeDialog, setGradeDialog] = useState<{ open: boolean; block?: { id: number; title?: string; subjectSlug?: string | null } }>({ open: false });
@@ -189,8 +190,11 @@ export default function Today() {
         </Card>
       )}
 
+       {/* Tour Mode — Apr 28 is Reagan's soft-open day */}
+      <TourModeCard />
+      {/* Coin + sticker chip (always visible, upbeat) */}
+      <CoinStickerStrip />
       <SubjectColorKey variant="schedule" />
-
       {/* Today's Schedule board */}
       <section>
         <div className="flex items-baseline justify-between mb-3">
@@ -226,14 +230,14 @@ export default function Today() {
               <div
                 key={b.id}
                 className={`schedule-row ${isDone ? "opacity-55" : ""}`}
-                style={tintCardStyle(b.subjectSlug)}
+                style={rainbowCardStyle(i)}
               >
                 <img src={tileFor(b.subjectSlug)} alt="" className="subject-tile" />
-                <span className="time-chip" style={tintPillStyle(b.subjectSlug)}>{blockTimeLabel(i)}</span>
+                <span className="time-chip" style={rainbowPillStyle(i)}>{blockTimeLabel(i)}</span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <span className="text-base" aria-hidden="true">{tint.emoji}</span>
-                    <div className="font-display font-semibold text-base leading-tight" style={tintInkStyle(b.subjectSlug)}>{b.title}</div>
+                    <div className="font-display font-semibold text-base leading-tight" style={rainbowInkStyle(i)}>{b.title}</div>
                   </div>
                   {b.description && (
                     <p className="text-xs text-neutral-700 mt-0.5 line-clamp-1">{b.description}</p>
@@ -245,7 +249,7 @@ export default function Today() {
                         variant="outline"
                         className="bg-white/60 border-neutral-300 text-neutral-900 hover:bg-white h-7 px-2 text-xs"
                         onClick={() => {
-                          completeM.mutate({ id: b.id }, { onSuccess: () => { toast.success("Done."); utils.plans.today.invalidate(); }});
+                          completeM.mutate({ id: b.id }, { onSuccess: () => { toast.success("Done!"); celebrateKiwi("Yay! 🎉 +1 sticker!"); utils.plans.today.invalidate(); }});
                         }}
                       >
                         ✓ Done
@@ -474,6 +478,95 @@ export default function Today() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+
+/* ============ Tour Mode card (Apr 28 is Reagan's soft-open day) ============ */
+function TourModeCard() {
+  const today = new Date();
+  const m = today.getMonth(); // 0-indexed (3 = April)
+  const d = today.getDate();
+  // Show for Apr 28, 29, 30 (the opening week)
+  let msg: { tag: string; emoji: string; title: string; body: string; chip?: string } | null = null;
+  if (m === 3 && d === 28) {
+    msg = {
+      tag: "Day 1 — Tour",
+      emoji: "🏠",
+      title: "Explore your new classroom!",
+      body: "Today's a light day. Peek at your schedule, poke around, and meet Kiwi. No pressure — check off whatever feels fun.",
+      chip: "11am · Tutor trial 🧑‍🏫",
+    };
+  } else if (m === 3 && d === 29) {
+    msg = {
+      tag: "Day 2 — Placement",
+      emoji: "🧭",
+      title: "Placement day with your tutor!",
+      body: "Today your tutor will try a few quick tasks so we can build the perfect plan just for you.",
+    };
+  } else if (m === 3 && d === 30) {
+    msg = {
+      tag: "Day 3 — Official start!",
+      emoji: "🎉",
+      title: "Your first real school day!",
+      body: "Welcome to homeschool! Your daily playlist is ready. Do the list in any order — just finish it!",
+    };
+  }
+  if (!msg) return null;
+  return (
+    <div
+      className="rounded-2xl p-5 shadow-sm"
+      style={{
+        background: "linear-gradient(135deg, #ffe066 0%, #ffb07a 45%, #ff8fa3 100%)",
+        border: "3px solid #ffffff",
+        boxShadow: "0 4px 0 rgba(0,0,0,0.18), 0 1px 2px rgba(0,0,0,0.08)",
+        color: "#4a1a00",
+      }}
+    >
+      <div className="flex items-start gap-4">
+        <div className="text-4xl">{msg.emoji}</div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[11px] font-bold uppercase tracking-wider opacity-70 mb-1">{msg.tag}</div>
+          <div className="font-display font-bold text-xl leading-tight">{msg.title}</div>
+          <p className="text-sm mt-1 leading-snug">{msg.body}</p>
+          {msg.chip && (
+            <div className="inline-block mt-3 px-3 py-1.5 rounded-full bg-white/80 text-sm font-semibold">
+              {msg.chip}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============ Coin + Sticker strip (live from rewards API) ============ */
+function CoinStickerStrip() {
+  const coins = trpc.rewards.myCoins.useQuery();
+  const stks = trpc.rewards.myStickers.useQuery();
+  const coinCount = coins.data?.balance ?? 0;
+  const stickerCount = Array.isArray(stks.data) ? stks.data.length : 0;
+  return (
+    <div className="flex items-center gap-3 flex-wrap">
+      <a
+        href="/stickers"
+        className="group inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold shadow-sm hover:shadow transition"
+        style={{ backgroundColor: "#ffe066", color: "#4a3600", border: "2px solid #d4a900" }}
+      >
+        <span className="text-lg">⭐</span>
+        <span>{stickerCount}</span>
+        <span className="opacity-70 font-normal text-xs">stickers</span>
+      </a>
+      <a
+        href="/prizes"
+        className="group inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold shadow-sm hover:shadow transition"
+        style={{ backgroundColor: "#7fe3c4", color: "#063c2d", border: "2px solid #10b981" }}
+      >
+        <span className="text-lg">🪙</span>
+        <span>{coinCount}</span>
+        <span className="opacity-70 font-normal text-xs">coins · prize shop</span>
+      </a>
     </div>
   );
 }

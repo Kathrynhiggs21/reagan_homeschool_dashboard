@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "wouter";
-import { useWhisper } from "@/contexts/WhisperContext";
+import { useKiwi } from "@/contexts/KiwiContext";
 import { useAdultLock } from "@/contexts/AdultLockContext";
 import { Button } from "@/components/ui/button";
 import { Lock, Unlock } from "lucide-react";
@@ -18,6 +18,8 @@ type NavItem = { to: string; emoji: string; label: string; dot?: string };
 const KID_NAV: NavItem[] = [
   { to: "/today",     emoji: "📋", label: "Today",        dot: "#ff9b3d" },
   { to: "/week",      emoji: "🗓️", label: "This Week",   dot: "#3b82f6" },
+  { to: "/stickers",  emoji: "⭐", label: "Sticker Book",  dot: "#f59e0b" },
+  { to: "/prizes",    emoji: "🪙", label: "Prize Shop",    dot: "#10b981" },
   { to: "/bookshelf", emoji: "📚", label: "Bookshelf",    dot: "#ef4444" },
   { to: "/notes",     emoji: "📝", label: "Notebook",     dot: "#a855f7" },
   { to: "/scratch",   emoji: "✏️", label: "Scratch Pad",  dot: "#06b6d4" },
@@ -45,7 +47,7 @@ const ADULT_NAV: NavItem[] = [
 
 export default function CozyShell({ children }: { children: ReactNode }) {
   const [loc] = useLocation();
-  const { companionName, photoUrl } = useWhisper() as unknown as {
+  const { companionName, photoUrl } = useKiwi() as unknown as {
     companionName: string;
     photoUrl?: string | null;
   };

@@ -22,7 +22,7 @@ describe("Reagan Dashboard core helpers", () => {
     expect(advs.length).toBeGreaterThan(20);
   });
 
-  it("getProfile returns Animal Whisperer", async () => {
+  it("getProfile returns Animal Friend", async () => {
     const p = await db.getProfile();
     expect(p).toBeTruthy();
     expect(p?.studentName?.toLowerCase()).toContain("reagan");
@@ -123,7 +123,7 @@ describe("Reagan Dashboard core helpers", () => {
 
   it("upsertProfile can change companionName", async () => {
     const before: any = await db.getProfile();
-    const original = before?.companionName || "Whisper";
+    const original = before?.companionName || "Kiwi";
     await db.upsertProfile({ companionName: "Sunny" } as any);
     const after: any = await db.getProfile();
     expect(after?.companionName).toBe("Sunny");

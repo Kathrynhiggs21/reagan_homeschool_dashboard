@@ -14,19 +14,19 @@ function PasteIngestCard() {
   return (
     <Card className="cozy-card p-4 space-y-3 bg-rose-50/30 border-rose-200">
       <div className="font-display font-semibold">📝 Paste an email, doc, or evaluation</div>
-      <p className="text-xs text-muted-foreground">Whisper reads it and extracts only the Reagan-specific insights. Nothing leaves the dashboard.</p>
+      <p className="text-xs text-muted-foreground">Kiwi reads it and extracts only the Reagan-specific insights. Nothing leaves the dashboard.</p>
       <input className="w-full px-3 py-2 rounded-lg border bg-card text-sm" placeholder="Source title (e.g. 'Mrs. Marlow email Apr 22')" value={title} onChange={e => setTitle(e.target.value)} />
       <Textarea rows={6} placeholder="Paste raw email body, doc text, or notes here..." value={text} onChange={e => setText(e.target.value)} />
       <Button disabled={ingest.isPending || !text.trim() || !title.trim()} onClick={() => {
         ingest.mutate({ sourceTitle: title.trim(), rawText: text.trim(), source: "manual" }, {
           onSuccess: (r: any) => {
-            toast.success(`Whisper extracted ${r.inserted} insights.`);
+            toast.success(`Kiwi extracted ${r.inserted} insights.`);
             setTitle(""); setText("");
             utils.knowledge.list.invalidate();
           },
           onError: (e: any) => toast.error(e.message || "Could not extract insights"),
         });
-      }}>{ingest.isPending ? "Reading..." : "Extract insights with Whisper"}</Button>
+      }}>{ingest.isPending ? "Reading..." : "Extract insights with Kiwi"}</Button>
     </Card>
   );
 }
@@ -45,7 +45,7 @@ export default function Knowledge() {
     <div className="space-y-6">
       <header>
         <h1 className="text-3xl font-display font-semibold">Reagan Knowledge Base 🧠</h1>
-        <p className="text-muted-foreground text-sm mt-1">Insights about Reagan that Whisper uses to shape every interaction. Add anything you learn about her.</p>
+        <p className="text-muted-foreground text-sm mt-1">Insights about Reagan that Kiwi uses to shape every interaction. Add anything you learn about her.</p>
       </header>
 
       <Card className="cozy-card p-4 space-y-3">
@@ -58,15 +58,15 @@ export default function Knowledge() {
         </div>
         <Button onClick={() => {
           if (!insight.trim()) return;
-          add.mutate({ insight, insightType: type as any, source: "manual" }, { onSuccess: () => { toast.success("Whisper now knows."); setInsight(""); utils.knowledge.list.invalidate(); }});
-        }}>Save to Whisper's brain</Button>
+          add.mutate({ insight, insightType: type as any, source: "manual" }, { onSuccess: () => { toast.success("Kiwi now knows."); setInsight(""); utils.knowledge.list.invalidate(); }});
+        }}>Save to Kiwi's brain</Button>
       </Card>
 
       <PasteIngestCard />
 
       <Card className="cozy-card p-4 bg-amber-50/40 border-amber-200">
         <div className="font-display font-semibold mb-2">📥 Auto-Sync Sources</div>
-        <p className="text-sm text-muted-foreground">Gmail and Google Drive auto-scan can be wired in via a future MCP authorization. For now, paste any email or document above and Whisper will extract the structured insights for you.</p>
+        <p className="text-sm text-muted-foreground">Gmail and Google Drive auto-scan can be wired in via a future MCP authorization. For now, paste any email or document above and Kiwi will extract the structured insights for you.</p>
       </Card>
 
       <div className="space-y-2">
