@@ -766,3 +766,58 @@
 - [ ] Vision+LLM extraction of remaining ~580 Drive docs
 - [ ] Daily Agenda viewer page + auto-apply adaptive IEP toggle
 - [ ] Grade-level-gap viz from MAP percentiles
+
+
+## Round 4c — "do what you can" (Gmail/Classroom/PowerSchool/FinalForms blocked by scope/login)
+- [ ] Vision+LLM extract top-priority Drive docs (5-yr anxiety timeline, medical/behavioral summary, teacher reference guide, ETR, report cards) and seed into academicRecords + struggles + profile notes
+- [ ] Build Daily Agenda viewer page for classroomAgendas table (placeholder until Classroom scope is granted)
+- [ ] Add adaptive IEP auto-apply toggle (uses 6 seeded accommodations)
+- [ ] Add Grade-Level-Gap visualization to Analytics (uses 8 seeded MAP/Acadience records)
+
+
+## Round 4d — Gmail unblocked
+- [ ] Gmail sweep: list+fetch IH (indianhill.k12.oh.us) + Madeira (madeiracityschools.org) senders
+- [ ] Classify school emails (assignment, agenda, grade, IEP/504, anxiety, scheduling)
+- [ ] Seed classified emails into academicRecords + classroomAgendas
+
+
+## Round 4e — Kid-friendly overhaul
+- [ ] Gmail MCP probe (option 2)
+- [ ] Add chalk illustrations per subject (Math, ELA, Science, Social Studies, Writing, Art, PE, Music, Snack, Choice, Morning Wonder, Wrap-up)
+- [ ] AppTile component: huge icon on top + small title under (apply to Apps & Tools + Connectors)
+- [ ] Brain Break video box with rotating funny-animal clips
+- [ ] Choice Spinner widget for "pick an adventure"
+- [ ] Rotating mascot illustration next to Good Morning greeting
+- [ ] Confetti + sticker-on-done animation for schedule blocks
+- [ ] Tighten spacing site-wide (reduce empty space, denser cards)
+
+
+## Round 4f — Rewards system (final spec)
+- [ ] Stickers on Done tap + streak bonus + Gold Star day
+- [ ] Adult "Good Work" lyric/note attached to any sticker
+- [ ] Coin meter (hidden-from-kid toggle)
+- [ ] Prize Shop (adult-editable) preloaded with Amazon $, Roblox $, Roblox skin, parakeet/duckling toy, ice cream, movie pick, craft kit, American Girl accessory, boba, "yes day"
+- [ ] Auto certificates (First Full Day, Week Streak, Subject Pro)
+- [ ] Adult one-off custom certificate creator
+- [ ] "Good Work" note button everywhere work shows up
+
+
+## Round 4g — Work submission flow
+- [ ] Schema: submissions table (block_id, kind photo|link|note|file, payload, status, approved_at, approved_by, good_work_note)
+- [ ] Turn-In button on schedule blocks opens 4-choice sheet: Camera | Upload | Link | Note
+- [ ] Camera capture via getUserMedia → upload to S3 via storagePut
+- [ ] Notebook page becomes chronological Portfolio grid (tap to zoom, shows good-work note stamp)
+- [ ] Adult approve flow triggers sticker+coin and attaches good-work lyric
+
+
+## Round 4h — Final spec (daily playlist, Kiwi, review library, whiteboard)
+- [ ] Rename Whisper → Kiwi everywhere + Settings rename field
+- [ ] Today page = daily playlist (suggested order, completion-based, no hard times)
+- [ ] Tour Mode for 2026-04-28: explore classroom + 11am Tutor Trial card + gentle placement mini-tasks
+- [ ] Light Tuesday 2026-04-29 with tutor-led placement
+- [ ] Wednesday 2026-04-30 full playlist kickoff
+- [ ] Review Library: videos (YouTube embed) + web pages + apps + printables + practice per topic
+- [ ] YouTubePlayer component (iframe API) + TV Box for Brain Break
+- [ ] Whiteboard note tool: pen, highlighter, text, shapes, images, eraser, camera-snap, layers, voice note
+- [ ] Adult Help onboarding page: how to add work, approve, write good-work, add prize, custom cert, log session
+- [ ] Tutors table (name, role, bio, schedule, notes) + assign tutor to block

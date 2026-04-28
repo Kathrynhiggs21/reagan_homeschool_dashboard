@@ -812,3 +812,158 @@ export const academicSourceRuns = mysqlTable("academicSourceRuns", {
   finishedAt: timestamp("finishedAt"),
 });
 export type AcademicSourceRun = typeof academicSourceRuns.$inferSelect;
+
+
+// ============================================================================
+// Migration 0015 — Rewards economy, work submissions, tutors, review library,
+// assistant rename, and good-work note stream.
+// ============================================================================
+
+export const stickers = mysqlTable("stickers", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"),
+  awardedAt: timestamp("awardedAt").defaultNow().notNull(),
+  // what triggered it
+  reason: mysqlEnum("reason", [
+    "block_done",
+    "streak_bonus",
+    "gold_star_day",
+    "submission_approved",
+    "placement_complete",
+    "adult_bonus",
+  ]).notNull(),
+  blockId: int("blockId"),
+  submissionId: int("submissionId"),
+  // visual
+  art: varchar("art", { length: 64 }).notNull(), // slug of sticker art
+  palette: varchar("palette", { length: 32 }),   // color family
+  // reward
+  coinsAwarded: int("coinsAwarded").default(1).notNull(),
+  // optional good-work lyric/note (see goodWorkNotes below for longer notes)
+  shortLyric: varchar("shortLyric", { length: 200 }),
+  addedByUserId: int("addedByUserId"), // adult who awarded (or null = auto)
+});
+
+export const goodWorkNotes = mysqlTable("goodWorkNotes", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"), // the kid receiving the note
+  authorUserId: int("authorUserId"), // adult who wrote it
+  authorName: varchar("authorName", { length: 100 }),
+  lyric: text("lyric").notNull(),
+  attachedToStickerId: int("attachedToStickerId"),
+  attachedToSubmissionId: int("attachedToSubmissionId"),
+  attachedToBlockId: int("attachedToBlockId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const coinLedger = mysqlTable("coinLedger", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"),
+  delta: int("delta").notNull(), // +earn / -spend
+  kind: mysqlEnum("kind", ["earn_sticker", "earn_bonus", "earn_gold_star", "spend_prize", "adjust"]).notNull(),
+  reasonNote: varchar("reasonNote", { length: 200 }),
+  stickerId: int("stickerId"),
+  prizeRedemptionId: int("prizeRedemptionId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const prizes = mysqlTable("prizes", {
+  id: int("id").autoincrement().primaryKey(),
+  slug: varchar("slug", { length: 64 }).notNull().unique(),
+  title: varchar("title", { length: 120 }).notNull(),
+  emoji: varchar("emoji", { length: 8 }).notNull(),
+  description: text("description"),
+  coinCost: int("coinCost").notNull(),
+  category: mysqlEnum("category", ["cash", "digital", "toy", "experience", "screen_time", "treat", "custom"]).notNull(),
+  active: boolean("active").default(true).notNull(),
+  stock: int("stock"), // null = unlimited
+  createdByUserId: int("createdByUserId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const prizeRedemptions = mysqlTable("prizeRedemptions", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"),
+  prizeId: int("prizeId").notNull(),
+  coinCost: int("coinCost").notNull(),
+  status: mysqlEnum("status", ["pending", "approved", "delivered", "denied"]).default("pending").notNull(),
+  requestedAt: timestamp("requestedAt").defaultNow().notNull(),
+  approvedByUserId: int("approvedByUserId"),
+  approvedAt: timestamp("approvedAt"),
+  deliveredAt: timestamp("deliveredAt"),
+  notes: text("notes"),
+});
+
+export const certificates = mysqlTable("certificates", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"),
+  slug: varchar("slug", { length: 64 }).notNull(),
+  title: varchar("title", { length: 120 }).notNull(),
+  emoji: varchar("emoji", { length: 8 }),
+  description: text("description"),
+  issuedOn: date("issuedOn").notNull(),
+  issuedByUserId: int("issuedByUserId"),
+  imageUrl: varchar("imageUrl", { length: 500 }),
+  custom: boolean("custom").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const tutors = mysqlTable("tutors", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 120 }).notNull(),
+  role: varchar("role", { length: 60 }), // tutor | therapist | parent | teacher
+  email: varchar("email", { length: 200 }),
+  phone: varchar("phone", { length: 40 }),
+  bio: text("bio"),
+  subjects: varchar("subjects", { length: 300 }), // comma list
+  avatarUrl: varchar("avatarUrl", { length: 500 }),
+  active: boolean("active").default(true).notNull(),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const tutorSessions = mysqlTable("tutorSessions", {
+  id: int("id").autoincrement().primaryKey(),
+  tutorId: int("tutorId").notNull(),
+  scheduledAt: timestamp("scheduledAt").notNull(),
+  durationMin: int("durationMin").default(60).notNull(),
+  location: varchar("location", { length: 200 }),
+  focus: text("focus"),
+  status: mysqlEnum("status", ["scheduled", "completed", "missed", "trial", "cancelled"]).default("scheduled").notNull(),
+  sessionNotes: text("sessionNotes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const reviewResources = mysqlTable("reviewResources", {
+  id: int("id").autoincrement().primaryKey(),
+  topic: varchar("topic", { length: 120 }).notNull(), // e.g., "multi-digit subtraction"
+  subjectSlug: varchar("subjectSlug", { length: 32 }),
+  gradeBand: varchar("gradeBand", { length: 16 }), // e.g., "3-5"
+  kind: mysqlEnum("kind", ["youtube", "webpage", "app", "printable", "practice", "game"]).notNull(),
+  title: varchar("title", { length: 200 }).notNull(),
+  url: varchar("url", { length: 500 }),
+  youtubeId: varchar("youtubeId", { length: 32 }), // for youtube embeds
+  description: text("description"),
+  approved: boolean("approved").default(true).notNull(), // adult pre-vetted
+  addedByUserId: int("addedByUserId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const appSettings = mysqlTable("appSettings", {
+  id: int("id").autoincrement().primaryKey(),
+  key: varchar("key", { length: 64 }).notNull().unique(),
+  value: text("value"),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const placementResults = mysqlTable("placementResults", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId"),
+  subjectSlug: varchar("subjectSlug", { length: 32 }).notNull(),
+  gradeEquivalent: varchar("gradeEquivalent", { length: 16 }), // e.g., "3.8"
+  strengthsNote: text("strengthsNote"),
+  gapsNote: text("gapsNote"),
+  assessedAt: timestamp("assessedAt").defaultNow().notNull(),
+  assessedByUserId: int("assessedByUserId"),
+  sourceKind: mysqlEnum("sourceKind", ["self_check", "tutor", "parent", "map", "acadience", "review_library"]).default("self_check").notNull(),
+});
