@@ -17,8 +17,11 @@ export default function Adventures() {
   return (
     <div className="space-y-6">
       <header className="chalkboard">
-        <h1 className="font-chalk text-5xl leading-tight">Adventure Library</h1>
-        <p className="font-chalk text-xl opacity-90 mt-1">Real-world things to do — weighted toward animals, creeks, art, and helping people you love.</p>
+        <h1 className="font-display text-4xl md:text-5xl leading-none">
+          <span className="chalk-cyan">Adventure</span>{" "}
+          <span className="chalk-lime">Library</span>
+        </h1>
+        <p className="font-display text-base chalk-white opacity-85 mt-2">Real-world things to do — animals, outdoors, art, and service.</p>
       </header>
 
       <div className="flex gap-2 flex-wrap">
@@ -29,7 +32,7 @@ export default function Adventures() {
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {list.map((a: any) => (
-          <Card key={a.id} className="cozy-card p-4">
+          <Card key={a.id} className="classroom-card p-4">
             <div className="flex justify-between items-start">
               <span className="text-2xl">{a.emoji || "🪶"}</span>
               <button onClick={() => fav.mutate({ id: a.id }, { onSuccess: () => utils.adventures.list.invalidate() })}>

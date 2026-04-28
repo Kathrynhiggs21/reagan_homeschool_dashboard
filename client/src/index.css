@@ -43,86 +43,93 @@
 }
 
 :root {
-  /* Bright Classroom: clean white paper + chalkboard green + pencil yellow + apple red + sky blue */
-  --radius: 1rem;
-  --background: oklch(0.995 0.002 95);                /* near-white paper */
-  --foreground: oklch(0.25 0.02 250);                 /* graphite */
-  --card: oklch(1 0 0);                                /* pure white */
-  --card-foreground: oklch(0.25 0.02 250);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.25 0.02 250);
-  --primary: oklch(0.42 0.07 165);                    /* chalkboard green */
-  --primary-foreground: oklch(0.985 0.01 95);
-  --secondary: oklch(0.93 0.04 250);                  /* sky blue paper */
-  --secondary-foreground: oklch(0.3 0.08 250);
-  --muted: oklch(0.97 0.005 250);                     /* very pale cool gray */
-  --muted-foreground: oklch(0.48 0.02 250);
-  --accent: oklch(0.86 0.13 90);                      /* pencil yellow */
-  --accent-foreground: oklch(0.3 0.08 70);
-  --destructive: oklch(0.62 0.2 25);                  /* apple red */
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(0.9 0.01 250);
-  --input: oklch(0.95 0.008 250);
-  --ring: oklch(0.55 0.1 165);
-  --chart-1: oklch(0.55 0.12 165);                    /* chalkboard green */
-  --chart-2: oklch(0.7 0.15 90);                      /* pencil yellow */
-  --chart-3: oklch(0.62 0.2 25);                      /* apple red */
-  --chart-4: oklch(0.6 0.14 250);                     /* notebook blue */
-  --chart-5: oklch(0.7 0.12 320);                     /* eraser pink */
-  --sidebar: oklch(0.99 0.005 250);                   /* almost white */
-  --sidebar-foreground: oklch(0.3 0.02 250);
-  --sidebar-primary: oklch(0.42 0.07 165);
-  --sidebar-primary-foreground: oklch(0.985 0.01 95);
-  --sidebar-accent: oklch(0.94 0.02 165);
-  --sidebar-accent-foreground: oklch(0.3 0.06 165);
-  --sidebar-border: oklch(0.9 0.01 250);
-  --sidebar-ring: oklch(0.55 0.1 165);
-  /* Zone colors (mood) */
-  --zone-green: oklch(0.72 0.14 155);
-  --zone-yellow: oklch(0.85 0.15 90);
-  --zone-red: oklch(0.7 0.18 25);
-  /* Whisper accent */
-  --whisper: oklch(0.6 0.12 280);
-  --whisper-soft: oklch(0.94 0.04 280);
-  /* Chalkboard surface */
-  --chalkboard: oklch(0.27 0.04 165);
-  --chalkboard-foreground: oklch(0.97 0.01 95);
-  --chalk: oklch(0.97 0.01 95);
+  /* Chalkboard Classroom: deep chalkboard canvas + bright chalk accents */
+  --radius: 0.9rem;
+  --background: oklch(0.18 0.015 180);                 /* deep chalkboard slate */
+  --foreground: oklch(0.95 0.008 95);                  /* chalk white */
+  --card: oklch(0.22 0.018 180);                       /* slightly raised slate */
+  --card-foreground: oklch(0.95 0.008 95);
+  --popover: oklch(0.22 0.018 180);
+  --popover-foreground: oklch(0.95 0.008 95);
+  --primary: oklch(0.82 0.18 150);                     /* chalk lime */
+  --primary-foreground: oklch(0.18 0.02 180);
+  --secondary: oklch(0.78 0.14 220);                   /* chalk cyan */
+  --secondary-foreground: oklch(0.18 0.02 180);
+  --muted: oklch(0.28 0.015 180);
+  --muted-foreground: oklch(0.78 0.01 95);
+  --accent: oklch(0.88 0.16 95);                       /* chalk yellow */
+  --accent-foreground: oklch(0.22 0.04 80);
+  --destructive: oklch(0.78 0.17 20);                  /* chalk coral */
+  --destructive-foreground: oklch(0.2 0.04 20);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 10%);
+  --ring: oklch(0.82 0.18 150);
+  --chart-1: oklch(0.82 0.18 150);                     /* lime */
+  --chart-2: oklch(0.88 0.16 95);                      /* yellow */
+  --chart-3: oklch(0.78 0.17 20);                      /* coral */
+  --chart-4: oklch(0.78 0.14 220);                     /* cyan */
+  --chart-5: oklch(0.82 0.15 330);                     /* pink */
+  --sidebar: oklch(0.14 0.012 180);                    /* darker slate */
+  --sidebar-foreground: oklch(0.92 0.008 95);
+  --sidebar-primary: oklch(0.82 0.18 150);
+  --sidebar-primary-foreground: oklch(0.18 0.02 180);
+  --sidebar-accent: oklch(0.24 0.018 180);
+  --sidebar-accent-foreground: oklch(0.95 0.008 95);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.82 0.18 150);
+  /* Zone colors (kept neutral-classroom, not emotional) */
+  --zone-green: oklch(0.82 0.18 150);
+  --zone-yellow: oklch(0.88 0.16 95);
+  --zone-red: oklch(0.78 0.17 20);
+  /* Helper accent (was 'whisper') */
+  --whisper: oklch(0.82 0.15 290);
+  --whisper-soft: oklch(0.3 0.05 290);
+  /* Chalkboard surface tokens */
+  --chalkboard: oklch(0.22 0.022 170);
+  --chalkboard-foreground: oklch(0.97 0.008 95);
+  --chalk: oklch(0.97 0.008 95);
+  --chalk-pink: oklch(0.82 0.16 340);
+  --chalk-yellow: oklch(0.9 0.17 95);
+  --chalk-cyan: oklch(0.82 0.14 220);
+  --chalk-lime: oklch(0.85 0.18 150);
+  --wood-light: oklch(0.62 0.08 60);
+  --wood-dark: oklch(0.42 0.06 50);
 }
 
 .dark {
-  --primary: var(--color-blue-700);
-  --primary-foreground: var(--color-blue-50);
-  --sidebar-primary: var(--color-blue-500);
-  --sidebar-primary-foreground: var(--color-blue-50);
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.85 0.005 65);
-  --card: oklch(0.21 0.006 285.885);
-  --card-foreground: oklch(0.85 0.005 65);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.85 0.005 65);
-  --secondary: oklch(0.24 0.006 286.033);
-  --secondary-foreground: oklch(0.7 0.005 65);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground:  oklch(0.92 0.005 65);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.488 0.243 264.376);
-  --chart-1: var(--color-blue-300);
-  --chart-2: var(--color-blue-500);
-  --chart-3: var(--color-blue-600);
-  --chart-4: var(--color-blue-700);
-  --chart-5: var(--color-blue-800);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.85 0.005 65);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground:  oklch(0.985 0 0);
+  /* Same palette — the app is always dark-chalkboard */
+  --background: oklch(0.18 0.015 180);
+  --foreground: oklch(0.95 0.008 95);
+  --card: oklch(0.22 0.018 180);
+  --card-foreground: oklch(0.95 0.008 95);
+  --popover: oklch(0.22 0.018 180);
+  --popover-foreground: oklch(0.95 0.008 95);
+  --primary: oklch(0.82 0.18 150);
+  --primary-foreground: oklch(0.18 0.02 180);
+  --secondary: oklch(0.78 0.14 220);
+  --secondary-foreground: oklch(0.18 0.02 180);
+  --muted: oklch(0.28 0.015 180);
+  --muted-foreground: oklch(0.78 0.01 95);
+  --accent: oklch(0.88 0.16 95);
+  --accent-foreground: oklch(0.22 0.04 80);
+  --destructive: oklch(0.78 0.17 20);
+  --destructive-foreground: oklch(0.2 0.04 20);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 10%);
+  --ring: oklch(0.82 0.18 150);
+  --chart-1: oklch(0.82 0.18 150);
+  --chart-2: oklch(0.88 0.16 95);
+  --chart-3: oklch(0.78 0.17 20);
+  --chart-4: oklch(0.78 0.14 220);
+  --chart-5: oklch(0.82 0.15 330);
+  --sidebar: oklch(0.14 0.012 180);
+  --sidebar-foreground: oklch(0.92 0.008 95);
+  --sidebar-primary: oklch(0.82 0.18 150);
+  --sidebar-primary-foreground: oklch(0.18 0.02 180);
+  --sidebar-accent: oklch(0.24 0.018 180);
+  --sidebar-accent-foreground: oklch(0.95 0.008 95);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.488 0.243 264.376);
+  --sidebar-ring: oklch(0.82 0.18 150);
 }
 
 @layer base {
@@ -130,102 +137,126 @@
     @apply border-border outline-ring/50;
   }
   html, body {
-    font-family: 'Quicksand', 'Nunito', system-ui, -apple-system, sans-serif;
+    font-family: 'Nunito', 'Quicksand', system-ui, -apple-system, sans-serif;
   }
   body {
     @apply bg-background text-foreground;
-    /* Subtle ruled-paper feel: faint horizontal lines + a left-margin red rule */
+    /* Deep slate with faint chalk-dust grain, no ruled-paper lines */
     background-image:
-      linear-gradient(to right, transparent 56px, oklch(0.7 0.18 25 / 0.18) 56px, oklch(0.7 0.18 25 / 0.18) 57px, transparent 58px),
-      repeating-linear-gradient(
-        to bottom,
-        transparent 0,
-        transparent 31px,
-        oklch(0.6 0.14 250 / 0.07) 31px,
-        oklch(0.6 0.14 250 / 0.07) 32px
-      );
+      radial-gradient(circle at 18% 22%, oklch(1 0 0 / 0.02) 0, transparent 35%),
+      radial-gradient(circle at 78% 68%, oklch(1 0 0 / 0.025) 0, transparent 40%),
+      repeating-linear-gradient(45deg, oklch(1 0 0 / 0.008) 0 2px, transparent 2px 7px);
     background-attachment: fixed;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Fraunces', 'Quicksand', serif;
+    font-family: 'Fredoka', 'Nunito', system-ui, sans-serif;
+    font-weight: 600;
     letter-spacing: -0.01em;
   }
-  .font-display { font-family: 'Fraunces', serif; }
-  .font-hand { font-family: 'Caveat', 'Patrick Hand', cursive; }
-  .font-chalk { font-family: 'Caveat', 'Patrick Hand', cursive; letter-spacing: 0.01em; }
-  .cozy-card {
-    background: var(--card);
-    border: 1px solid oklch(0.9 0.01 250);
-    border-radius: 1.25rem;
-    box-shadow: 0 1px 0 oklch(0.85 0.01 250) inset, 0 4px 14px -6px oklch(0.4 0.05 250 / 0.10), 0 2px 4px -2px oklch(0.4 0.05 250 / 0.06);
+  .font-display { font-family: 'Fredoka', 'Nunito', sans-serif; font-weight: 600; }
+  .font-chalk-hand { font-family: 'Caveat', 'Patrick Hand', cursive; }
+  .font-chalk {
+    font-family: 'Fredoka', 'Nunito', sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.01em;
   }
-  /* Chalkboard panel — for hero/heading surfaces */
+  /* Chalk-colored heading utilities */
+  .chalk-pink   { color: var(--chalk-pink);   text-shadow: 0 0 1px oklch(1 0 0 / 0.25); }
+  .chalk-yellow { color: var(--chalk-yellow); text-shadow: 0 0 1px oklch(1 0 0 / 0.25); }
+  .chalk-cyan   { color: var(--chalk-cyan);   text-shadow: 0 0 1px oklch(1 0 0 / 0.25); }
+  .chalk-lime   { color: var(--chalk-lime);   text-shadow: 0 0 1px oklch(1 0 0 / 0.25); }
+  .chalk-white  { color: var(--chalk);        text-shadow: 0 0 1px oklch(1 0 0 / 0.25); }
+
+  /* Generic card — dark slate with soft border, minimal shadow */
+  .cozy-card,
+  .classroom-card {
+    background: var(--card);
+    border: 1px solid oklch(1 0 0 / 0.1);
+    border-radius: var(--radius);
+    box-shadow: 0 2px 0 oklch(0 0 0 / 0.15), 0 8px 24px -12px oklch(0 0 0 / 0.35);
+  }
+
+  /* Chalkboard hero panel — classroom chalkboard with wood frame */
   .chalkboard {
     background-color: var(--chalkboard);
     color: var(--chalkboard-foreground);
     background-image:
-      radial-gradient(circle at 20% 30%, oklch(0.97 0.01 95 / 0.04) 0, transparent 40%),
-      radial-gradient(circle at 80% 70%, oklch(0.97 0.01 95 / 0.05) 0, transparent 45%),
-      repeating-linear-gradient(45deg, oklch(0.97 0.01 95 / 0.015) 0 2px, transparent 2px 6px);
-    border-radius: 1.25rem;
-    box-shadow:
-      inset 0 0 0 6px oklch(0.5 0.04 30),                 /* wood frame */
-      inset 0 0 0 8px oklch(0.35 0.04 30),                 /* darker wood */
-      0 8px 24px -10px oklch(0.2 0.04 165 / 0.4);
-    padding: 1.25rem 1.5rem;
+      radial-gradient(circle at 22% 28%, oklch(1 0 0 / 0.05) 0, transparent 38%),
+      radial-gradient(circle at 78% 72%, oklch(1 0 0 / 0.04) 0, transparent 42%),
+      repeating-linear-gradient(45deg, oklch(1 0 0 / 0.015) 0 2px, transparent 2px 6px);
+    border-radius: 1rem;
+    padding: 1.5rem 1.75rem;
     position: relative;
+    /* Wood frame using layered insets */
+    box-shadow:
+      inset 0 0 0 4px var(--wood-light),
+      inset 0 0 0 8px var(--wood-dark),
+      0 10px 28px -12px oklch(0 0 0 / 0.55);
   }
-  .chalkboard h1, .chalkboard h2, .chalkboard h3, .chalkboard .font-chalk {
-    font-family: 'Caveat', 'Patrick Hand', cursive;
+  .chalkboard .font-chalk-hand,
+  .chalkboard h1, .chalkboard h2, .chalkboard h3 {
     color: var(--chalk);
-    text-shadow: 0 0 1px oklch(0.97 0.01 95 / 0.6);
+    text-shadow: 0 0 1px oklch(1 0 0 / 0.35);
   }
-  .chalkboard .font-display {
-    font-family: 'Caveat', 'Patrick Hand', cursive;
-    color: var(--chalk);
-    text-shadow: 0 0 1px oklch(0.97 0.01 95 / 0.6);
+
+  /* Dotted confetti trim (the only approved flourish) */
+  .dotted-trim {
+    background-image: radial-gradient(circle, var(--chalk-yellow) 0 2.5px, transparent 3px);
+    background-size: 14px 6px;
+    background-repeat: repeat-x;
+    background-position: left center;
+    height: 6px;
   }
-  /* Notebook paper card variant — light blue rules + red margin */
-  .notebook-card {
-    background-color: oklch(1 0 0);
-    background-image:
-      linear-gradient(to right, transparent 32px, oklch(0.7 0.18 25 / 0.4) 32px, oklch(0.7 0.18 25 / 0.4) 33px, transparent 34px),
-      repeating-linear-gradient(to bottom, transparent 0, transparent 27px, oklch(0.6 0.14 250 / 0.18) 27px, oklch(0.6 0.14 250 / 0.18) 28px);
-    border: 1px solid oklch(0.9 0.01 250);
-    border-radius: 0.75rem;
-    padding: 1rem 1rem 1rem 2.5rem;
-    box-shadow: 0 4px 12px -6px oklch(0.4 0.05 250 / 0.1);
+
+  /* Schedule row — colored time chip + white label + icon (classroom board pattern) */
+  .schedule-row {
+    display: grid;
+    grid-template-columns: 96px 1fr auto;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.55rem 0.65rem;
+    background: oklch(1 0 0 / 0.98);
+    color: oklch(0.2 0.02 180);
+    border-radius: 0.6rem;
+    border: 1px solid oklch(1 0 0 / 0.08);
   }
-  /* Sticky-note card */
-  .sticky-note {
-    background: oklch(0.93 0.13 95);
-    color: oklch(0.3 0.06 70);
-    border-radius: 0.25rem;
-    padding: 0.75rem 1rem;
-    box-shadow: 0 6px 16px -8px oklch(0.4 0.04 70 / 0.4);
-    transform: rotate(-1.2deg);
-    font-family: 'Caveat', 'Patrick Hand', cursive;
+  .schedule-row .time-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.35rem 0.5rem;
+    border-radius: 0.4rem;
+    color: oklch(0.2 0.02 180);
+    font-weight: 700;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.01em;
   }
-  /* Pencil divider */
-  .pencil-rule {
-    height: 8px;
-    background:
-      linear-gradient(to right, oklch(0.55 0.04 30) 0 14px, oklch(0.86 0.13 90) 14px calc(100% - 28px), oklch(0.7 0.04 0) calc(100% - 28px) calc(100% - 14px), oklch(0.45 0.03 30) calc(100% - 14px) 100%);
-    border-radius: 4px;
-    margin: 1rem 0;
+  .time-chip.chip-pink   { background: var(--chalk-pink); }
+  .time-chip.chip-yellow { background: var(--chalk-yellow); }
+  .time-chip.chip-cyan   { background: var(--chalk-cyan); }
+  .time-chip.chip-lime   { background: var(--chalk-lime); }
+  .time-chip.chip-coral  { background: oklch(0.82 0.16 30); }
+  .time-chip.chip-violet { background: oklch(0.78 0.15 300); }
+
+  /* Mood chip row (slim, non-emotional) */
+  .mood-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 999px;
+    border: 1px solid oklch(1 0 0 / 0.14);
+    background: oklch(1 0 0 / 0.06);
+    color: var(--foreground);
+    font-weight: 600;
+    font-size: 0.9rem;
   }
-  /* Push-pin */
-  .push-pin::before {
-    content: "";
-    position: absolute;
-    top: -10px;
-    left: 16px;
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    background: radial-gradient(circle at 35% 30%, oklch(0.85 0.18 25), oklch(0.55 0.2 25) 60%, oklch(0.35 0.15 25));
-    box-shadow: 0 2px 3px oklch(0.3 0.05 25 / 0.4);
+  .mood-chip[data-active="true"] {
+    background: oklch(1 0 0 / 0.16);
+    border-color: oklch(1 0 0 / 0.3);
   }
+
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
   [type="button"]:not(:disabled),
@@ -240,24 +271,11 @@
 }
 
 @layer components {
-  /**
-   * Custom container utility that centers content and adds responsive padding.
-   *
-   * This overrides Tailwind's default container behavior to:
-   * - Auto-center content (mx-auto)
-   * - Add responsive horizontal padding
-   * - Set max-width for large screens
-   *
-   * Usage: <div className="container">...</div>
-   *
-   * For custom widths, use max-w-* utilities directly:
-   * <div className="max-w-6xl mx-auto px-4">...</div>
-   */
   .container {
     width: 100%;
     margin-left: auto;
     margin-right: auto;
-    padding-left: 1rem; /* 16px - mobile padding */
+    padding-left: 1rem;
     padding-right: 1rem;
   }
 
@@ -268,30 +286,29 @@
 
   @media (min-width: 640px) {
     .container {
-      padding-left: 1.5rem; /* 24px - tablet padding */
+      padding-left: 1.5rem;
       padding-right: 1.5rem;
     }
   }
 
   @media (min-width: 1024px) {
     .container {
-      padding-left: 2rem; /* 32px - desktop padding */
+      padding-left: 2rem;
       padding-right: 2rem;
-      max-width: 1280px; /* Standard content width */
+      max-width: 1280px;
     }
   }
 }
 
-/* ---- Print packet styles ---- */
+/* ---- Print packet ---- */
 @media print {
   @page { margin: 0.5in; size: letter; }
   body {
     background: white !important;
     background-image: none !important;
-    color: #2a1f12 !important;
+    color: #1a1a1a !important;
     font-size: 11pt;
   }
-  /* Hide app shell chrome */
   .no-print,
   [data-print="hide"],
   aside, nav,
@@ -302,23 +319,26 @@
   [role="dialog"] {
     display: none !important;
   }
-  /* Force full width on main */
-  main, [role="main"], .container { 
+  main, [role="main"], .container {
     max-width: 100% !important;
     width: 100% !important;
     padding: 0 !important;
     margin: 0 !important;
   }
-  .cozy-card, .card {
-    border: 1px solid #ccc !important;
+  .cozy-card, .classroom-card, .card, .chalkboard {
+    border: 1px solid #bbb !important;
     box-shadow: none !important;
+    background: white !important;
+    color: #1a1a1a !important;
     page-break-inside: avoid;
     break-inside: avoid;
-    background: white !important;
   }
-  h1, h2, h3 { page-break-after: avoid; break-after: avoid; }
+  .chalkboard * { color: #1a1a1a !important; text-shadow: none !important; }
+  h1, h2, h3 { page-break-after: avoid; break-after: avoid; color: #1a1a1a !important; }
   .print-only { display: block !important; }
   a { color: inherit !important; text-decoration: none !important; }
   .badge, [data-slot="badge"] { border: 1px solid #999 !important; background: white !important; color: #333 !important; }
+  .schedule-row { background: white !important; color: #1a1a1a !important; border: 1px solid #bbb !important; }
+  .time-chip { background: #eee !important; color: #222 !important; border: 1px solid #bbb !important; }
 }
 .print-only { display: none; }

@@ -22,7 +22,7 @@ function DayCard({ date, label, isToday }: { date: string; label: string; isToda
   const total = blocks.length;
   const pct = total ? Math.round((done / total) * 100) : 0;
   return (
-    <Card className={`cozy-card p-4 min-h-[220px] ${isToday ? "ring-2 ring-primary" : ""}`}>
+    <Card className={`classroom-card p-4 min-h-[220px] ${isToday ? "ring-2 ring-primary" : ""}`}>
       <div className="flex items-center justify-between">
         <div className="font-display font-semibold text-sm">{label}</div>
         {isToday && <Badge className="text-[10px]">Today</Badge>}
@@ -49,7 +49,7 @@ function DayCard({ date, label, isToday }: { date: string; label: string; isToda
           </ul>
         </>
       ) : (
-        <div className="text-xs text-muted-foreground mt-3 italic">Plan opens that morning. 💛</div>
+        <div className="text-xs text-muted-foreground mt-3 italic">Plan opens that morning.</div>
       )}
     </Card>
   );
@@ -90,8 +90,11 @@ export default function Week() {
     <div className="space-y-6">
       <header className="chalkboard flex items-end justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="font-chalk text-5xl leading-tight">This Week</h1>
-          <p className="font-chalk text-xl opacity-90 mt-1">A gentle look ahead — five soft days. {weekLabel}</p>
+          <h1 className="font-display text-4xl md:text-5xl leading-none">
+            <span className="chalk-pink">This</span>{" "}
+            <span className="chalk-yellow">Week</span>
+          </h1>
+          <p className="font-display text-base chalk-white opacity-85 mt-2">{weekLabel}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setWeekOffset(o => o - 1)}>← Prev</Button>
@@ -101,14 +104,14 @@ export default function Week() {
       </header>
 
       {upcoming.data && upcoming.data.length > 0 && (
-        <Card className="cozy-card p-4 bg-gradient-to-r from-amber-50 to-rose-50 border-amber-200">
-          <div className="text-sm font-semibold mb-2">✨ Wonder Days Coming Up</div>
-          <div className="flex flex-wrap gap-3">
+        <Card className="classroom-card p-4">
+          <div className="text-sm font-semibold mb-2 chalk-white">Coming Up</div>
+          <div className="flex flex-wrap gap-2">
             {upcoming.data.slice(0, 6).map((d: any) => (
-              <div key={d.id} className="text-sm flex items-center gap-2 bg-white/70 rounded-full px-3 py-1">
-                <span className="text-lg">{d.emoji || "🌟"}</span>
-                <span className="font-medium">{d.name}</span>
-                <span className="text-muted-foreground text-xs">{new Date(d.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+              <div key={d.id} className="mood-chip text-xs">
+                <span>{d.emoji || "📌"}</span>
+                <span>{d.name}</span>
+                <span className="text-muted-foreground">{new Date(d.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
               </div>
             ))}
           </div>

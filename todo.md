@@ -432,3 +432,13 @@
 
 ## 🐛 Bugs
 - [x] Fix nested `<a>` validateDOMNesting error on /today
+
+## 🎨 Chalkboard Classroom Redesign (Round 2)
+- [x] Flip theme to dark chalkboard slate canvas (near-black with faint chalk-dust grain)
+- [x] Bold chalky sans heading font (Fredoka) + rotating pink/yellow/cyan/lime chalk-color headings
+- [x] New `schedule-row` pattern: colored time chip + white label card + icon (One Sharp Bunch style)
+- [x] Rebuild Today page: clean Daily Schedule board, slim mood chip Check-in row
+- [x] Neutralize tone: "Today's Schedule", "Check-in", "Journal", "Helper" — removed emotional copy
+- [x] Sidebar labels neutralized; compact chalkboard nameplate ("Reagan's Classroom")
+- [x] Week + Adventures heroes rebuilt with chalk-colored headings
+- [x] Visible pages use chalkboard + classroom-card + schedule-row only; dotted-trim as sole flourish
