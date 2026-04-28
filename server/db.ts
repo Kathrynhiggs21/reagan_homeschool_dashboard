@@ -1008,3 +1008,61 @@ Return JSON matching the schema exactly. Score fields may be null. Subjects: mat
   };
   return draft;
 }
+
+
+export async function updateTimelineEvent(
+  id: number,
+  patch: Partial<{ title: string; description: string; date: string; eventType: any; mediaUrl: string }>
+) {
+  const set: any = {};
+  if (patch.title !== undefined) set.title = patch.title;
+  if (patch.description !== undefined) set.description = patch.description;
+  if (patch.date !== undefined) set.date = new Date(patch.date);
+  if (patch.eventType !== undefined) set.eventType = patch.eventType;
+  if (patch.mediaUrl !== undefined) set.mediaUrl = patch.mediaUrl;
+  if (Object.keys(set).length === 0) return { updated: false };
+  await getDb().update(timelineEvents).set(set).where(eq(timelineEvents.id, id));
+  return { updated: true };
+}
+
+export async function deleteTimelineEvent(id: number) {
+  await getDb().delete(timelineEvents).where(eq(timelineEvents.id, id));
+  return { deleted: true };
+}
+
+
+export async function updateAppLink(
+  id: number,
+  patch: Partial<{ name: string; url: string; emoji: string; category: any; description: string; accountInfo: string; sortOrder: number }>
+) {
+  const set: any = {};
+  for (const k of ["name","url","emoji","category","description","accountInfo","sortOrder"] as const) {
+    if (patch[k] !== undefined) (set as any)[k] = (patch as any)[k];
+  }
+  if (Object.keys(set).length === 0) return { updated: false };
+  await getDb().update(appLinks).set(set).where(eq(appLinks.id, id));
+  return { updated: true };
+}
+
+export async function deleteAppLink(id: number) {
+  await getDb().delete(appLinks).where(eq(appLinks.id, id));
+  return { deleted: true };
+}
+
+export async function updateBook(
+  id: number,
+  patch: Partial<{ title: string; author: string; type: any; subjectSlug: string; currentPage: number; totalPages: number; notes: string }>
+) {
+  const set: any = {};
+  for (const k of ["title","author","type","subjectSlug","currentPage","totalPages","notes"] as const) {
+    if (patch[k] !== undefined) (set as any)[k] = (patch as any)[k];
+  }
+  if (Object.keys(set).length === 0) return { updated: false };
+  await getDb().update(books).set(set).where(eq(books.id, id));
+  return { updated: true };
+}
+
+export async function deleteBook(id: number) {
+  await getDb().delete(books).where(eq(books.id, id));
+  return { deleted: true };
+}

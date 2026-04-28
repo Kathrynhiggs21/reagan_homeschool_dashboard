@@ -182,3 +182,81 @@ describe("academic records", () => {
     expect(after.some((r: any) => r.id === created.id)).toBe(false);
   }, 15000);
 });
+
+
+function makeAdminCaller() {
+  return (appRouter as any).createCaller({
+    user: { id: 1, role: "admin", openId: "test", name: "Test", email: "t@t.t" },
+    req: null,
+    res: null,
+  });
+}
+
+describe("adult edit-mode mutations", () => {
+  it("timeline: add → update → delete", async () => {
+    const caller = makeAdminCaller();
+    const added: any = await caller.timeline.add({
+      date: new Date().toISOString().slice(0, 10),
+      eventType: "milestone",
+      title: "Test milestone",
+      description: "first draft",
+    });
+    const id = added?.insertId ?? added?.id ?? added?.[0]?.insertId;
+    // List to find the row by title (some helpers don't return id)
+    const list: any[] = await caller.timeline.list();
+    const found = list.find((e) => e.title === "Test milestone");
+    expect(found).toBeTruthy();
+    const eid = found?.id ?? id;
+
+    await caller.timeline.update({ id: eid, title: "Test milestone v2" });
+    const list2: any[] = await caller.timeline.list();
+    expect(list2.find((e) => e.id === eid)?.title).toBe("Test milestone v2");
+
+    await caller.timeline.delete({ id: eid });
+    const list3: any[] = await caller.timeline.list();
+    expect(list3.find((e) => e.id === eid)).toBeUndefined();
+  });
+
+  it("appLinks: create → update → delete", async () => {
+    const caller = makeAdminCaller();
+    await caller.appLinks.create({
+      name: "Test App " + Date.now(),
+      url: "https://example.com/test-" + Date.now(),
+      emoji: "🧪",
+      category: "learning",
+    });
+    const list: any[] = await caller.appLinks.list();
+    const last = list[list.length - 1];
+    expect(last).toBeTruthy();
+
+    await caller.appLinks.update({ id: last.id, name: "Test App Renamed" });
+    const list2: any[] = await caller.appLinks.list();
+    expect(list2.find((a) => a.id === last.id)?.name).toBe("Test App Renamed");
+
+    await caller.appLinks.delete({ id: last.id });
+    const list3: any[] = await caller.appLinks.list();
+    expect(list3.find((a) => a.id === last.id)).toBeUndefined();
+  });
+
+  it("books: create → update → delete", async () => {
+    const caller = makeAdminCaller();
+    await caller.books.create({
+      title: "Test Book " + Date.now(),
+      author: "Tester",
+      type: "workbook",
+      currentPage: 1,
+      totalPages: 50,
+    });
+    const list: any[] = await caller.books.list();
+    const last = list[list.length - 1];
+    expect(last).toBeTruthy();
+
+    await caller.books.update({ id: last.id, author: "Tester v2" });
+    const list2: any[] = await caller.books.list();
+    expect(list2.find((b) => b.id === last.id)?.author).toBe("Tester v2");
+
+    await caller.books.delete({ id: last.id });
+    const list3: any[] = await caller.books.list();
+    expect(list3.find((b) => b.id === last.id)).toBeUndefined();
+  });
+});

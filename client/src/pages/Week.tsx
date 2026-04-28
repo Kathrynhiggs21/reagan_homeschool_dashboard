@@ -3,6 +3,9 @@ import { trpc } from "@/lib/trpc";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useAdultLock } from "@/contexts/AdultLockContext";
+import BlockEditor from "@/components/BlockEditor";
+import { toast } from "sonner";
 
 function startOfWeek(d: Date) {
   const out = new Date(d);
@@ -14,10 +17,15 @@ function startOfWeek(d: Date) {
 }
 
 function DayCard({ date, label, isToday }: { date: string; label: string; isToday: boolean }) {
+  const { unlocked } = useAdultLock();
+  const utils = trpc.useUtils();
   const ensure = trpc.plans.byDate.useQuery({ date });
   const plan: any = ensure.data;
   const blocksQ = trpc.blocks.list.useQuery({ planId: plan?.id || 0 }, { enabled: !!plan?.id });
   const blocks: any[] = blocksQ.data || [];
+  const del = trpc.blocks.delete.useMutation({ onSuccess: () => utils.blocks.list.invalidate({ planId: plan?.id }) });
+  const [editing, setEditing] = useState<any | null>(null);
+  const [adding, setAdding] = useState(false);
   const done = blocks.filter(b => b.status === "complete").length;
   const total = blocks.length;
   const pct = total ? Math.round((done / total) * 100) : 0;
@@ -37,16 +45,52 @@ function DayCard({ date, label, isToday }: { date: string; label: string; isToda
           </div>
           <div className="text-[11px] text-muted-foreground mt-1">{done}/{total} blocks done</div>
           <ul className="mt-3 space-y-1">
-            {blocks.slice(0, 5).map((b: any) => (
-              <li key={b.id} className="text-xs flex items-start gap-1.5">
+            {blocks.slice(0, unlocked ? 20 : 5).map((b: any) => (
+              <li key={b.id} className="text-xs flex items-start gap-1.5 group">
                 <span className="mt-0.5">{b.status === "complete" ? "✓" : "•"}</span>
-                <span className={b.status === "complete" ? "line-through text-muted-foreground" : ""}>{b.title}</span>
+                <span className={`flex-1 ${b.status === "complete" ? "line-through text-muted-foreground" : ""}`}>{b.title}</span>
+                {unlocked && (
+                  <span className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                    <button
+                      className="text-[10px] hover:underline"
+                      onClick={() => setEditing(b)}
+                      aria-label="Edit block"
+                    >✎</button>
+                    <button
+                      className="text-[10px] hover:underline text-destructive"
+                      onClick={async () => { if (confirm(`Delete "${b.title}"?`)) { await del.mutateAsync({ id: b.id }); toast.success("Block deleted"); } }}
+                      aria-label="Delete block"
+                    >🗑</button>
+                  </span>
+                )}
               </li>
             ))}
-            {blocks.length > 5 && (
+            {!unlocked && blocks.length > 5 && (
               <li className="text-[10px] text-muted-foreground italic">+{blocks.length - 5} more…</li>
             )}
           </ul>
+          {unlocked && plan?.id && (
+            <Button size="sm" variant="outline" className="bg-transparent mt-3 w-full text-xs" onClick={() => setAdding(true)}>
+              + Add block
+            </Button>
+          )}
+          {editing && (
+            <BlockEditor
+              open={!!editing}
+              onOpenChange={(o) => !o && setEditing(null)}
+              block={editing}
+              planId={plan.id}
+              onSaved={() => { setEditing(null); utils.blocks.list.invalidate({ planId: plan.id }); }}
+            />
+          )}
+          {adding && (
+            <BlockEditor
+              open={adding}
+              onOpenChange={(o) => !o && setAdding(false)}
+              planId={plan.id}
+              onSaved={() => { setAdding(false); utils.blocks.list.invalidate({ planId: plan.id }); }}
+            />
+          )}
         </>
       ) : (
         <div className="text-xs text-muted-foreground mt-3 italic">Plan opens that morning.</div>

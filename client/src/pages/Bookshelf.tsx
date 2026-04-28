@@ -2,9 +2,12 @@ import { trpc } from "@/lib/trpc";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useAdultLock } from "@/contexts/AdultLockContext";
 import { useState } from "react";
 import { toast } from "sonner";
+import { trpc as trpcRoot } from "@/lib/trpc";
 
 type Book = {
   id: number;
@@ -28,13 +31,48 @@ function isTuckEverlasting(b: Book): boolean {
   return (b.title || "").toLowerCase().includes("tuck everlasting");
 }
 
+function AddBookDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
+  const utils = trpcRoot.useUtils();
+  const create = trpcRoot.books.create.useMutation();
+  const [title, setTitle] = useState("");
+  const [author, setAuthor] = useState("");
+  const [totalPages, setTotalPages] = useState("");
+  async function save() {
+    if (!title.trim()) return toast.error("Title required.");
+    try {
+      await create.mutateAsync({ title, author: author || undefined, totalPages: totalPages ? Number(totalPages) : undefined } as any);
+      utils.books.list.invalidate();
+      toast.success("Book added");
+      onOpenChange(false);
+    } catch (e: any) { toast.error(e?.message || "Failed"); }
+  }
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader><DialogTitle>Add a book</DialogTitle></DialogHeader>
+        <div className="space-y-2 pt-2">
+          <Input placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <Input placeholder="Author" value={author} onChange={(e) => setAuthor(e.target.value)} />
+          <Input placeholder="Total pages (optional)" type="number" value={totalPages} onChange={(e) => setTotalPages(e.target.value)} />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" className="bg-transparent" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button onClick={save} disabled={create.isPending}>Save</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function Bookshelf() {
   const books = trpc.books.list.useQuery();
   const updateProgress = trpc.books.advancePage.useMutation();
+  const del = trpc.books.delete.useMutation();
   const utils = trpc.useUtils();
   const { unlocked } = useAdultLock();
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draftPage, setDraftPage] = useState<string>("");
+  const [adding, setAdding] = useState(false);
 
   function startEdit(b: Book) {
     setEditingId(b.id);
@@ -56,12 +94,17 @@ export default function Bookshelf() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <div className="font-chalk-hand text-xl leading-none chalk-yellow">Your library</div>
-        <h1 className="font-display text-4xl md:text-5xl mt-1 chalk-white">Bookshelf</h1>
-        <p className="text-sm text-muted-foreground mt-2">
-          Workbooks, read-alouds, and the stories you're inside of.
-        </p>
+      <header className="flex items-end justify-between gap-3 flex-wrap">
+        <div>
+          <div className="font-chalk-hand text-xl leading-none chalk-yellow">Your library</div>
+          <h1 className="font-display text-4xl md:text-5xl mt-1 chalk-white">Bookshelf</h1>
+          <p className="text-sm text-muted-foreground mt-2">
+            Workbooks, read-alouds, and the stories you're inside of.
+          </p>
+        </div>
+        {unlocked && (
+          <Button size="sm" onClick={() => setAdding(true)}>+ Add book</Button>
+        )}
       </header>
 
       <div className="grid sm:grid-cols-1 lg:grid-cols-2 gap-4">
@@ -92,7 +135,7 @@ export default function Bookshelf() {
 
                   {/* Chapter bookmark — adult can edit it; kid just sees current page. */}
                   {unlocked && (
-                    <div className="mt-3">
+                    <div className="mt-3 flex items-center gap-2 flex-wrap">
                       {editingId === b.id ? (
                         <div className="flex items-center gap-2">
                           <input
@@ -107,9 +150,17 @@ export default function Bookshelf() {
                           <Button size="sm" variant="ghost" onClick={() => setEditingId(null)}>Cancel</Button>
                         </div>
                       ) : (
-                        <Button size="sm" variant="outline" className="bg-transparent h-7 text-xs" onClick={() => startEdit(b)}>
-                          ✎ Update bookmark
-                        </Button>
+                        <>
+                          <Button size="sm" variant="outline" className="bg-transparent h-7 text-xs" onClick={() => startEdit(b)}>
+                            ✎ Update bookmark
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="bg-transparent h-7 text-xs text-destructive"
+                            onClick={async () => { if (confirm(`Remove "${b.title}"?`)) { await del.mutateAsync({ id: b.id }); utils.books.list.invalidate(); toast.success("Book removed"); } }}
+                          >🗑 Remove</Button>
+                        </>
                       )}
                     </div>
                   )}
@@ -151,6 +202,7 @@ export default function Bookshelf() {
           <p className="font-display">No books on the shelf yet.</p>
         </Card>
       )}
+      {adding && <AddBookDialog open={adding} onOpenChange={setAdding} />}
     </div>
   );
 }

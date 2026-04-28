@@ -189,6 +189,14 @@ export const appRouter = router({
       name: z.string(), url: z.string(), category: z.enum(["learning","creativity","school","nature","reading"]),
       emoji: z.string(), description: z.string().optional(), accountInfo: z.string().optional(), sortOrder: z.number().default(0),
     })).mutation(({ input }) => db.insertAppLink(input as any)),
+    update: protectedProcedure.input(z.object({
+      id: z.number(),
+      name: z.string().optional(), url: z.string().optional(),
+      emoji: z.string().optional(),
+      category: z.enum(["learning","creativity","school","nature","reading"]).optional(),
+      description: z.string().optional(), accountInfo: z.string().optional(), sortOrder: z.number().optional(),
+    })).mutation(({ input }) => db.updateAppLink(input.id, input)),
+    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteAppLink(input.id)),
   }),
 
   /* =================== BOOKS =================== */
@@ -202,6 +210,13 @@ export const appRouter = router({
     })).mutation(({ input }) => db.insertBook(input as any)),
     advancePage: protectedProcedure.input(z.object({ id: z.number(), currentPage: z.number() }))
       .mutation(({ input }) => db.updateBookPage(input.id, input.currentPage)),
+    update: protectedProcedure.input(z.object({
+      id: z.number(),
+      title: z.string().optional(), author: z.string().optional(),
+      type: z.enum(["workbook","novel","reference","audiobook"]).optional(),
+      subjectSlug: z.string().optional(), currentPage: z.number().optional(), totalPages: z.number().optional(), notes: z.string().optional(),
+    })).mutation(({ input }) => db.updateBook(input.id, input)),
+    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteBook(input.id)),
   }),
 
   /* =================== MOOD =================== */
@@ -233,6 +248,15 @@ export const appRouter = router({
       title: z.string(), description: z.string().optional(),
       subjectSlug: z.string().optional(), mediaUrl: z.string().optional(),
     })).mutation(({ input, ctx }) => db.insertTimelineEvent({ ...input, createdByUserId: ctx.user?.id } as any)),
+    update: protectedProcedure.input(z.object({
+      id: z.number(),
+      title: z.string().optional(),
+      description: z.string().optional(),
+      date: z.string().optional(),
+      eventType: z.enum(["completion","milestone","creation","field_trip","reflection","adventure"]).optional(),
+      mediaUrl: z.string().optional(),
+    })).mutation(({ input }) => db.updateTimelineEvent(input.id, input)),
+    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteTimelineEvent(input.id)),
   }),
 
   /* =================== NOTIFICATIONS =================== */
