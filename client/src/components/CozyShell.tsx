@@ -13,16 +13,16 @@ import { Lock, Unlock } from "lucide-react";
  * My Animals / Rescue Journal have been removed entirely.
  */
 
-type NavItem = { to: string; emoji: string; label: string };
+type NavItem = { to: string; emoji: string; label: string; dot?: string };
 
 const KID_NAV: NavItem[] = [
-  { to: "/today",     emoji: "📋", label: "Today" },
-  { to: "/week",      emoji: "🗓️", label: "This Week" },
-  { to: "/bookshelf", emoji: "📚", label: "Bookshelf" },
-  { to: "/notes",     emoji: "📝", label: "Notebook" },
-  { to: "/scratch",   emoji: "✏️", label: "Scratch Pad" },
-  { to: "/apps",      emoji: "🎒", label: "Apps & Tools" },
-  { to: "/profile",   emoji: "🪪", label: "About Me" },
+  { to: "/today",     emoji: "📋", label: "Today",        dot: "#ff9b3d" },
+  { to: "/week",      emoji: "🗓️", label: "This Week",   dot: "#3b82f6" },
+  { to: "/bookshelf", emoji: "📚", label: "Bookshelf",    dot: "#ef4444" },
+  { to: "/notes",     emoji: "📝", label: "Notebook",     dot: "#a855f7" },
+  { to: "/scratch",   emoji: "✏️", label: "Scratch Pad",  dot: "#06b6d4" },
+  { to: "/apps",      emoji: "🎒", label: "Apps & Tools", dot: "#eab308" },
+  { to: "/profile",   emoji: "🪪", label: "About Me",     dot: "#ec4899" },
 ];
 
 const MORE_NAV: NavItem[] = [
@@ -100,7 +100,8 @@ export default function CozyShell({ children }: { children: ReactNode }) {
               }`}
             >
               <span className="text-base w-5 text-center">{n.emoji}</span>
-              <span>{n.label}</span>
+              <span className="flex-1">{n.label}</span>
+              {n.dot && <span className="w-2 h-2 rounded-full" style={{ background: n.dot }} aria-hidden />}
             </Link>
           ))}
 

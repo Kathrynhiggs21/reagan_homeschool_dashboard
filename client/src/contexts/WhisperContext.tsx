@@ -31,7 +31,7 @@ const Ctx = createContext<WhisperState | null>(null);
 export function WhisperProvider({ children }: { children: ReactNode }) {
   const [enabled, setEnabled] = useState(true);
   const [mode, setMode] = useState<WhisperMode>(
-    (localStorage.getItem("whisperMode") as WhisperMode) || "wake"
+    (localStorage.getItem("whisperMode") as WhisperMode) || "tap"
   );
   const [voiceMode, setVoiceMode] = useState<WhisperVoiceMode>(
     (localStorage.getItem("whisperVoiceMode") as WhisperVoiceMode) || "text"

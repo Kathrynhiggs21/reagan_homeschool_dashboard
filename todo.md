@@ -453,7 +453,7 @@
 - [x] Richer chalk color rotation on rows (pink, yellow, cyan, lime, orange, violet)
 
 ## 🎯 Round 4 — Kid-safe + simplified + intro flow
-- [ ] Read Reagan's profile PDF and fold missing history into About Me
+- [x] Read Reagan's profile PDF and fold missing history into About Me
 - [x] Remove green tint from default theme; no dotted trim; no background texture on canvas
 - [x] White 3D schedule cards on dark canvas; subject color only as left time chip + title accent
 - [x] Bigger schedule card text; subject-colored titles (not all white)
@@ -462,14 +462,14 @@
 - [x] Kid sidebar hides adult pages until unlocked; lock icon shown
 - [x] Reagan's photo upload on About Me; photo shown in sidebar Classroom nameplate (upper-left)
 - [x] Curated Adventures: reduce to ~6, add illustration/photo per option, tint by subject color
-- [ ] Add IXL + PowerSchool + Google Classroom + Docs + Slides + Drive + Gmail + YouTube Kids + Khan Academy + Prodigy to Apps & Tools
+- [x] Add IXL + PowerSchool + Google Classroom + Docs + Slides + Drive + Gmail + YouTube Kids + Khan Academy + Prodigy to Apps & Tools
 - [x] Remove "Whisper Notes" / knowledge paste UI from kid-visible pages
-- [ ] Replace always-on Whisper chat with a push-to-talk "Chat Buddy" button (tap to talk)
+- [x] Replace always-on Whisper chat with a push-to-talk "Chat Buddy" button (tap to talk)
 - [x] First-launch onboarding modal: theme picker (Chalkboard Classic / Sunny Paper / Midnight Sky / Ocean Breeze) → AI name → voice/text/silent → tour → materials list → opening joke
 - [x] Store `onboardingCompleted` + `theme` on learner profile so intro runs only once
 
 ## 🎯 Round 4 — Kid-safe, simplified, intro flow
-- [ ] Read Reagan's profile PDF and fold missing history into About Me
+- [x] Read Reagan's profile PDF and fold missing history into About Me
 - [x] Remove green tint from default theme; no dotted trim; no background texture on canvas
 - [x] White 3D schedule cards; subject color only as left time chip + title accent
 - [x] Bigger schedule card text; subject-colored titles (not all white)
@@ -480,7 +480,7 @@
 - [x] Curated Adventures: reduce to ~6, add illustration/photo per option, subject-color tint
 - [x] Apps & Tools: IXL + PowerSchool + Google Classroom/Docs/Slides/Drive/Gmail + YouTube Kids + Khan Academy + Prodigy
 - [x] Remove "Whisper Notes" / knowledge paste UI from kid-visible pages
-- [ ] Replace always-on Whisper chat with push-to-talk "Chat Buddy" button
+- [x] Replace always-on Whisper chat with push-to-talk "Chat Buddy" button
 - [x] First-launch onboarding modal: theme picker (Chalkboard Classic / Sunny Paper / Midnight Sky / Ocean Breeze) → AI name → voice/text/silent → tour → materials list → opening joke
 - [x] Store onboardingCompleted + theme + adultPasscode on learner profile so intro runs once
 - [x] Reshape Journal page: general kid journal (mood + free note) + persistent "What I Need Help With" list she can add to any time
@@ -500,7 +500,7 @@
 - [x] Reagan photo upload on About Me; shown in sidebar "Reagan's Classroom" nameplate
 
 ## 🎯 Round 4a (updated) — additions
-- [ ] Mood/Struggle chips only visible/usable when adult-unlocked (Reagan can't log them)
+- [x] Mood/Struggle chips only visible/usable when adult-unlocked (Reagan can't log them)
 - [x] Notifications opt-in in adult Settings: channels (in-app bell, email, browser push, on-screen banner), events (red/yellow mood, block done, block skipped, help-list add, journal entry, streaks, therapy reminder, IXL overdue), custom recurring reminders
 
 ## 🎯 Round 4a — Execution list
@@ -529,28 +529,28 @@
 
 ## 🎯 Round 4a-i — First-Day Setup + My Setup
 - [x] Onboarding flow component (`OnboardingFlow.tsx`) mounted in App.tsx; blocks UI until `profile.onboardingCompleted = true`
-- [ ] Steps: Welcome → Theme picker (4 templates) → Helper name → Voice mode (voice/text/silent) → Quick tour (Today/Week/Bookshelf/Apps) → Materials list → Turn-In intro → Chat Buddy button → Joke → "Start my day"
+- [x] Steps: Welcome → Theme picker (4 templates) → Helper name → Voice mode (voice/text/silent) → Quick tour (Today/Week/Bookshelf/Apps) → Materials list → Turn-In intro → Chat Buddy button → Joke → "Start my day"
 - [x] Persists each choice via `profile.update` (resumes if reloaded mid-setup)
 - [x] Reagan "My Setup" panel on About Me: change theme, helper name, voice mode, replay First-Day Setup
 - [x] Adult Settings (passcode) can also reset onboarding and override choices
 - [x] Theme templates wired: Chalkboard Classic (default, no green), Sunny Paper, Midnight Sky, Ocean Breeze — implemented as body-class swap + CSS variable set
 
 ## 🎯 Round 4a-iii — Academic data ingestion (AFTER 4a-i checkpoint)
-- [ ] Verify MCP auth: Gmail, Google Drive, Google Classroom (prompt re-auth if any fail)
-- [ ] Gmail scan (last 12 months): from:(indianhill.org OR ihsd.us OR madeiracityschools.org OR schoology OR powerschool OR ixl OR classroom.google.com) OR subject:(IEP OR ETR OR "report card" OR MAP OR STAR OR "i-Ready" OR progress)
-- [ ] Google Drive scan: names/contents matching Reagan, IEP, ETR, MAP, STAR, i-Ready, report card, IXL, 504, progress
-- [ ] Google Classroom: list courses, assignments, turn-in status, grades, teacher feedback
-- [ ] PowerSchool IH (powerschool.ihsd.us) — open browser, hand off for login, scrape grades + attendance + test scores
-- [ ] Madeira City Schools PowerSchool — same pattern
-- [ ] IXL — browser scrape while logged in: diagnostic levels (5-skill radar), recent skill activity per subject
-- [ ] Normalize all data into new `academicRecord` + `academicSource` schema tables (source-linked back to original email/doc/page)
-- [ ] New Profile > "Academic Record" section (adult-only, 3918 passcode): current levels per subject, IEP goals + progress, MAP/STAR/i-Ready percentiles, recent Classroom assignments, strengths/stretch areas/accommodations summary
-- [ ] Academic timeline on profile (IEP meetings, testing, re-evals, big wins)
+- [x] Verify MCP auth: Gmail, Google Drive, Google Classroom (prompt re-auth if any fail)
+- [x] Gmail scan (last 12 months): from:(indianhill.org OR ihsd.us OR madeiracityschools.org OR schoology OR powerschool OR ixl OR classroom.google.com) OR subject:(IEP OR ETR OR "report card" OR MAP OR STAR OR "i-Ready" OR progress)
+- [x] Google Drive scan: names/contents matching Reagan, IEP, ETR, MAP, STAR, i-Ready, report card, IXL, 504, progress
+- [x] Google Classroom: list courses, assignments, turn-in status, grades, teacher feedback
+- [x] PowerSchool IH (powerschool.ihsd.us) — open browser, hand off for login, scrape grades + attendance + test scores
+- [x] Madeira City Schools PowerSchool — same pattern
+- [x] IXL — browser scrape while logged in: diagnostic levels (5-skill radar), recent skill activity per subject
+- [x] Normalize all data into new `academicRecord` + `academicSource` schema tables (source-linked back to original email/doc/page)
+- [x] New Profile > "Academic Record" section (adult-only, 3918 passcode): current levels per subject, IEP goals + progress, MAP/STAR/i-Ready percentiles, recent Classroom assignments, strengths/stretch areas/accommodations summary
+- [x] Academic timeline on profile (IEP meetings, testing, re-evals, big wins)
 - [x] Feed `skillsMastery` currentScore per subject from normalized data so Today block defaults match her real level
-- [ ] "Refresh from sources" button to re-pull on demand
+- [x] "Refresh from sources" button to re-pull on demand
 
 ## 🎯 Round 4a-iii — Additional source
-- [ ] Ingest Manus share: https://manus.im/share/Q6CGT8xgDNMn4QvxxhVE2L — browser-open and extract Reagan's profile info (grade levels, IEP content, testing history, current skills, accommodations). Source-link back to that share URL.
+- [x] Ingest Manus share: https://manus.im/share/Q6CGT8xgDNMn4QvxxhVE2L — browser-open and extract Reagan's profile info (grade levels, IEP content, testing history, current skills, accommodations). Source-link back to that share URL.
 
 ## 🎨 Title color update
 - [x] Switch page-hero titles (Today / Week / Bookshelf / Apps / Journal / etc.) from rotating multicolor chalk to a single chalk-dust warm-white so subject colors on cards/tiles pop without competing
@@ -559,8 +559,8 @@
 ## ✏️ Apple Pencil / iPad draw-on-doc + Turn-In (Round 4a-ii)
 - [x] Canvas overlay on Turn-In dialog for PDF + image with Pointer Events (pressure, pointerType==='pen')
 - [x] perfect-freehand for natural strokes; undo/redo/erase/color/thickness
-- [ ] Flatten ink onto PDF via pdf-lib on submit
-- [ ] Save original + annotated to storage + Google Drive sync (Reagan Homeschool / Subject / YYYY-MM-DD_title)
+- [x] Flatten ink onto PDF via pdf-lib on submit
+- [x] Save original + annotated to storage + Google Drive sync (Reagan Homeschool / Subject / YYYY-MM-DD_title)
 - [x] Scratch Page blank canvas (Apps or Journal entry)
 - [x] Palm rejection via pointerType filter
 
@@ -598,12 +598,12 @@
 - [x] Tutor handoff surfaces newly accepted adjustments
 
 ## 📚 Academic Ingestion (Round 4a-iii)
-- [ ] Gmail MCP: IH + Madeira teacher emails, IEP docs, scores
-- [ ] Drive MCP: report cards, IEP PDFs, work samples
-- [ ] Classroom: assignments + status (via Gmail notifs for v1)
-- [ ] PowerSchool IH scrape (powerschool.ihsd.us)
-- [ ] PowerSchool Madeira scrape
-- [ ] IXL diagnostic scrape
+- [x] Gmail MCP: IH + Madeira teacher emails, IEP docs, scores
+- [x] Drive MCP: report cards, IEP PDFs, work samples
+- [x] Classroom: assignments + status (via Gmail notifs for v1)
+- [x] PowerSchool IH scrape (powerschool.ihsd.us)
+- [x] PowerSchool Madeira scrape
+- [x] IXL diagnostic scrape
 - [x] Manus share extract: https://manus.im/share/Q6CGT8xgDNMn4QvxxhVE2L
 - [x] Academic Record page (adult-only 3918): per-subject level, IEP, testing history
 - [x] Feed into skillsMastery scores
@@ -649,7 +649,7 @@
 - [x] Books: add/edit/delete, update page progress, add chapter bookmark
 - [x] Apps & Tools: add/edit/delete app tiles; reorder
 - [x] Needs Work: full tree CRUD (add at any level, reparent, archive)
-- [ ] Assignments/Turn-Ins: create assignment tied to block, upload worksheet PDF, set answerKey, override autoScore, set letter grade, flag for retry
+- [x] Assignments/Turn-Ins: create assignment tied to block, upload worksheet PDF, set answerKey, override autoScore, set letter grade, flag for retry
 - [x] Appointments: add/edit/delete recurring appointments
 - [x] Notification Recipients: add/remove, toggle channels
 - [x] Profile/Contacts: edit any field
@@ -663,9 +663,9 @@
 - [x] Adventure cards show a large hero image inside the card (~16:9 banner above the title)
 - [x] If `coverImageUrl` is empty, auto-generate one via the LLM image-gen helper from the adventure's title + description on first view
 - [x] Persist the generated coverImageUrl back to the adventure row so subsequent loads are instant
-- [ ] Adult-only: ✎ Edit cover (re-roll AI image, paste URL, or upload file)
-- [ ] Adult-only: re-prompt with custom text (e.g., "make it more cozy / brighter / kid-friendly")
-- [ ] Reagan view: image is just visual, no edit affordances
+- [x] Adult-only: ✎ Edit cover (re-roll AI image, paste URL, or upload file)
+- [x] Adult-only: re-prompt with custom text (e.g., "make it more cozy / brighter / kid-friendly")
+- [x] Reagan view: image is just visual, no edit affordances
 - [x] Empty state placeholder while image is generating (skeleton + "drawing your adventure…")
 
 
@@ -680,7 +680,7 @@
 - [x] Bookshelf: each book card tinted by its book.subjectSlug (default reading)
 - [x] Apps & Tools: each app card tinted by category (academic / creative / utility) with key
 - [x] Subject Color Key card pinned at top of Today (collapsible) and Curriculum, listing every subject swatch + name + meaning
-- [ ] Sidebar nav "For Reagan" items get a tiny color dot on the right matching the page's primary subject hue (Today=warm, Week=blue, Bookshelf=red, Notebook=violet, Apps=amber, About=rose)
-- [ ] Onboarding step explains the color key briefly
-- [ ] Adult Apps: ✎ Edit lets adult set category (drives card color)
+- [x] Sidebar nav "For Reagan" items get a tiny color dot on the right matching the page's primary subject hue (Today=warm, Week=blue, Bookshelf=red, Notebook=violet, Apps=amber, About=rose)
+- [x] Onboarding step explains the color key briefly
+- [x] Adult Apps: ✎ Edit lets adult set category (drives card color)
 - [x] Adventures: ✎ Edit lets adult set primary subject (drives card color)

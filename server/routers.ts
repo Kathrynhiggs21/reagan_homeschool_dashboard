@@ -199,6 +199,7 @@ export const appRouter = router({
       energyLevel: z.enum(["low","medium","high"]).default("medium"),
     })).mutation(({ input }) => db.insertAdventure(input as any)),
     toggleFavorite: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.toggleAdventureFavorite(input.id)),
+    updateCoverUrl: protectedProcedure.input(z.object({ id: z.number(), coverImageUrl: z.string().url() })).mutation(({ input }) => db.updateAdventureCover(input.id, input.coverImageUrl)),
     generateCover: protectedProcedure.input(z.object({ id: z.number(), promptOverride: z.string().optional() })).mutation(async ({ input }) => {
       const { generateImage } = await import("./_core/imageGeneration");
       const adv = await db.getAdventure(input.id);

@@ -21,9 +21,16 @@ function AdventureCard({ a }: { a: any }) {
   const subj = primarySubject(a);
   const tint = subjectTint(subj);
   const { unlocked } = useAdultLock();
+  const [editingCover, setEditingCover] = useState(false);
+  const [customPrompt, setCustomPrompt] = useState("");
+  const [pastedUrl, setPastedUrl] = useState("");
   const genCover = (trpc as any).adventures?.generateCover?.useMutation?.({
-    onSuccess: () => { toast.success("Cover refreshed."); utils.adventures.list.invalidate(); },
+    onSuccess: () => { toast.success("Cover refreshed."); utils.adventures.list.invalidate(); setEditingCover(false); setCustomPrompt(""); },
     onError: (e: any) => toast.error(e?.message || "Could not generate cover."),
+  });
+  const setUrl = (trpc as any).adventures?.updateCoverUrl?.useMutation?.({
+    onSuccess: () => { toast.success("Cover saved."); utils.adventures.list.invalidate(); setEditingCover(false); setPastedUrl(""); },
+    onError: (e: any) => toast.error(e?.message || "Could not save cover."),
   });
   return (
     <Card className="classroom-card overflow-hidden p-0" style={tintCardStyle(subj)}>
@@ -60,16 +67,58 @@ function AdventureCard({ a }: { a: any }) {
           {Array.isArray(a.interestTags) && a.interestTags.slice(0, 3).join(" · ")}
         </div>
         {unlocked && genCover && (
-          <div className="mt-3">
-            <Button
-              size="sm"
-              variant="outline"
-              className="bg-white/70 h-7 text-xs"
-              disabled={genCover.isPending}
-              onClick={() => genCover.mutate({ id: a.id })}
-            >
-              {a.coverImageUrl ? "↻ Re-roll cover" : "✨ Draw a cover"}
-            </Button>
+          <div className="mt-3 space-y-2">
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                size="sm"
+                variant="outline"
+                className="bg-white/70 h-7 text-xs"
+                disabled={genCover.isPending}
+                onClick={() => genCover.mutate({ id: a.id })}
+              >
+                {genCover.isPending ? "✨ Drawing…" : a.coverImageUrl ? "↻ Re-roll cover" : "✨ Draw a cover"}
+              </Button>
+              <Button size="sm" variant="outline" className="bg-white/70 h-7 text-xs" onClick={() => setEditingCover(v => !v)}>
+                ✎ Edit cover
+              </Button>
+            </div>
+            {editingCover && (
+              <div className="space-y-2 p-2 rounded bg-white/70 border">
+                <input
+                  type="text"
+                  className="w-full h-7 px-2 rounded border text-xs"
+                  placeholder="Custom prompt (e.g. cozy watercolor of a backyard fairy circle)"
+                  value={customPrompt}
+                  onChange={e => setCustomPrompt(e.target.value)}
+                />
+                <Button
+                  size="sm"
+                  className="h-6 text-[11px]"
+                  disabled={!customPrompt.trim() || genCover.isPending}
+                  onClick={() => genCover.mutate({ id: a.id, promptOverride: customPrompt.trim() })}
+                >
+                  Use custom prompt
+                </Button>
+                <input
+                  type="url"
+                  className="w-full h-7 px-2 rounded border text-xs"
+                  placeholder="Or paste an image URL…"
+                  value={pastedUrl}
+                  onChange={e => setPastedUrl(e.target.value)}
+                />
+                {setUrl && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-6 text-[11px] bg-white"
+                    disabled={!pastedUrl.trim() || setUrl.isPending}
+                    onClick={() => setUrl.mutate({ id: a.id, coverImageUrl: pastedUrl.trim() })}
+                  >
+                    Use this URL
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>
