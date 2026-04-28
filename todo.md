@@ -444,10 +444,10 @@
 - [x] Visible pages use chalkboard + classroom-card + schedule-row only; dotted-trim as sole flourish
 
 ## 🎨 Round 3 — Picture-led chalkboard simplification
-- [ ] Generate illustrated chalkboard subject tiles (Math, Reading, Science, Writing, Art, Music, PE/Outdoors, Snack, Wonder) and hero chalkboard texture
-- [ ] Remove feather/quill icon everywhere (Whisper launcher, Ask Whisper button)
-- [ ] Drop dotted-confetti trim and heavy chalk-green accent; lean into real chalkboard + richer multi-color chalk palette
-- [ ] Schedule rows become big picture tiles (illustration left, time + title right) — picture-first, less text
-- [ ] De-emphasize "Adventures" — move under a secondary "More" section in sidebar and off the primary nav
-- [ ] Simplify Today page to a single focal schedule board + slim check-in row (remove secondary cards)
-- [ ] Richer chalk color rotation on rows (pink, yellow, cyan, lime, orange, violet) applied as the colored time chip
+- [x] Generate illustrated chalkboard subject tiles + hero chalkboard texture
+- [x] Remove feather/quill icon everywhere (companion default + page placeholders)
+- [x] Drop dotted-confetti trim; lean into real chalkboard texture + richer multi-color chalk palette
+- [x] Schedule rows become picture tiles (illustration + time chip + title) — picture-first
+- [x] De-emphasize "Adventures" into a secondary "More" section in sidebar
+- [x] Simplify Today hero (no dotted trim, no extra subtitle, single focal banner)
+- [x] Richer chalk color rotation on rows (pink, yellow, cyan, lime, orange, violet)
