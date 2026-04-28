@@ -6,6 +6,31 @@ import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
 import { toast } from "sonner";
 
+function PasteIngestCard() {
+  const [title, setTitle] = useState("");
+  const [text, setText] = useState("");
+  const ingest = trpc.knowledge.ingestText.useMutation();
+  const utils = trpc.useUtils();
+  return (
+    <Card className="cozy-card p-4 space-y-3 bg-rose-50/30 border-rose-200">
+      <div className="font-display font-semibold">📝 Paste an email, doc, or evaluation</div>
+      <p className="text-xs text-muted-foreground">Whisper reads it and extracts only the Reagan-specific insights. Nothing leaves the dashboard.</p>
+      <input className="w-full px-3 py-2 rounded-lg border bg-card text-sm" placeholder="Source title (e.g. 'Mrs. Marlow email Apr 22')" value={title} onChange={e => setTitle(e.target.value)} />
+      <Textarea rows={6} placeholder="Paste raw email body, doc text, or notes here..." value={text} onChange={e => setText(e.target.value)} />
+      <Button disabled={ingest.isPending || !text.trim() || !title.trim()} onClick={() => {
+        ingest.mutate({ sourceTitle: title.trim(), rawText: text.trim(), source: "manual" }, {
+          onSuccess: (r: any) => {
+            toast.success(`Whisper extracted ${r.inserted} insights.`);
+            setTitle(""); setText("");
+            utils.knowledge.list.invalidate();
+          },
+          onError: (e: any) => toast.error(e.message || "Could not extract insights"),
+        });
+      }}>{ingest.isPending ? "Reading..." : "Extract insights with Whisper"}</Button>
+    </Card>
+  );
+}
+
 export default function Knowledge() {
   const list = trpc.knowledge.list.useQuery({});
   const add = trpc.knowledge.add.useMutation();
@@ -37,10 +62,11 @@ export default function Knowledge() {
         }}>Save to Whisper's brain</Button>
       </Card>
 
+      <PasteIngestCard />
+
       <Card className="cozy-card p-4 bg-amber-50/40 border-amber-200">
-        <div className="font-display font-semibold mb-2">📥 Auto-Sync Sources (coming soon)</div>
-        <p className="text-sm text-muted-foreground">Gmail (teachers, therapist, school) and Google Drive (assessments, reports, journals) can be auto-scanned for Reagan-relevant insights once you authorize the connections from your account.</p>
-        <Button disabled variant="outline" className="mt-3 bg-card">Connect Gmail (needs OAuth)</Button>
+        <div className="font-display font-semibold mb-2">📥 Auto-Sync Sources</div>
+        <p className="text-sm text-muted-foreground">Gmail and Google Drive auto-scan can be wired in via a future MCP authorization. For now, paste any email or document above and Whisper will extract the structured insights for you.</p>
       </Card>
 
       <div className="space-y-2">

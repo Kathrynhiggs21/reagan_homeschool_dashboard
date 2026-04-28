@@ -96,4 +96,21 @@ describe("Reagan Dashboard core helpers", () => {
     const badges: any[] = await db.listBadges();
     expect(badges.some(b => b.name?.toLowerCase().includes("tracker"))).toBe(true);
   });
+
+  it("listRecipients returns family circle (Mom + Grandma)", async () => {
+    const recips: any[] = await db.listRecipients();
+    expect(recips.length).toBeGreaterThanOrEqual(2);
+    const emails = recips.map((r: any) => (r.email || "").toLowerCase());
+    expect(emails.some(e => e.includes("spear.cpt") || e.includes("marcy.spear"))).toBe(true);
+  });
+
+  it("today digest data composes plan + blocks + struggles", async () => {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const plan: any = await db.ensurePlanForDate(todayStr);
+    expect(plan).toBeTruthy();
+    const blocks: any[] = await db.listBlocksForPlan(plan.id);
+    expect(Array.isArray(blocks)).toBe(true);
+    const struggles: any[] = await db.listStruggles(7);
+    expect(Array.isArray(struggles)).toBe(true);
+  });
 });

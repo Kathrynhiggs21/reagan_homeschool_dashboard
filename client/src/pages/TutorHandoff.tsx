@@ -4,6 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useWhisper } from "@/contexts/WhisperContext";
 import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
+
+function SendDigestButton() {
+  const send = trpc.notifications.sendTodayDigest.useMutation();
+  return (
+    <Button size="sm" disabled={send.isPending} onClick={() => {
+      send.mutate(undefined as any, {
+        onSuccess: (r: any) => toast.success(r.ok ? `Dispatch sent (${r.recipients} family recipients)` : "Sent locally"),
+        onError: (e: any) => toast.error(e.message || "Could not send"),
+      });
+    }}>{send.isPending ? "Sending…" : "📧 Send dispatch"}</Button>
+  );
+}
 
 export default function TutorHandoff() {
   const profile = trpc.profile.get.useQuery();
@@ -61,7 +74,13 @@ export default function TutorHandoff() {
       )}
 
       <Card className="cozy-card p-4">
-        <div className="font-display font-semibold mb-3">Today's Plan ({blocks.length} blocks)</div>
+        <div className="flex items-center justify-between mb-3">
+          <div className="font-display font-semibold">Today's Plan ({blocks.length} blocks)</div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => window.print()} className="bg-card">🗄️ Print packet</Button>
+            <SendDigestButton />
+          </div>
+        </div>
         <div className="space-y-2">
           {blocks.map((b: any) => (
             <div key={b.id} className="p-3 rounded-xl border border-border flex items-start gap-3">

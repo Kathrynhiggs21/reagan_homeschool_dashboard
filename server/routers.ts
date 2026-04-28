@@ -234,6 +234,22 @@ export const appRouter = router({
       userId: z.number().nullable(), type: z.enum(["red_zone","block_complete","milestone","ih_update","reminder","info"]),
       title: z.string(), body: z.string().optional(), link: z.string().optional(),
     })).mutation(({ input }) => db.createNotification(input as any)),
+    sendTodayDigest: protectedProcedure.mutation(async () => {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const today: any = await db.ensurePlanForDate(todayStr);
+      const blocks: any[] = await db.listBlocksForPlan(today.id);
+      const struggles: any[] = await db.listStruggles(7);
+      const recipients: any[] = await db.listRecipients();
+      const dateStr = new Date(today.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+      const blockLines = blocks.map((b: any) => "- " + b.title + (b.status === "complete" ? " (done)" : "")).join("\n");
+      const struggleLines = struggles.length
+        ? struggles.map((s: any) => "  - " + s.subjectSlug + ": " + (s.description || "(logged)")).join("\n")
+        : "  None this week.";
+      const recipientList = recipients.map((r: any) => (r.displayName || r.email) + " <" + r.email + ">").join(", ") || "(no recipients yet)";
+      const body = "Reagan's Whisper Dispatch - " + dateStr + "\n\nToday's plan:\n" + (blockLines || "(no blocks)") + "\n\nRecent struggles (7 days):\n" + struggleLines + "\n\nSent to: " + recipientList + "\n";
+      const ok = await notifyOwner({ title: "Reagan dispatch - " + dateStr, content: body });
+      return { ok, recipients: recipients.length };
+    }),
   }),
 
   /* =================== IH ASSIGNMENTS =================== */
@@ -397,6 +413,74 @@ export const appRouter = router({
       }),
     })).mutation(({ input }) => db.updateKnowledge(input.id, input.patch as any)),
     delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteKnowledge(input.id)),
+    // Extract insights from raw text (paste from email, doc, evaluation, etc.)
+    ingestText: protectedProcedure.input(z.object({
+      sourceTitle: z.string(),
+      source: z.enum(["gmail","gdrive","manual","chat_history"]).default("manual"),
+      sourceUrl: z.string().optional(),
+      sourceDate: z.string().optional(),
+      rawText: z.string(),
+    })).mutation(async ({ input, ctx }) => {
+      const sys = `You extract structured insights about a 5th-grade student named Reagan from documents. Return strict JSON only. Each insight must be a single sentence, present-tense, about Reagan specifically. Use only types: academic_strength, academic_gap, trigger, accommodation, interest, medical, social, preference, quote, strategy, context, general. Output {"insights":[{"insightType":"...","insight":"...","confidence":"low|medium|high"}]}.`;
+      const r = await invokeLLM({
+        messages: [
+          { role: "system", content: sys },
+          { role: "user", content: `Source: ${input.sourceTitle}\n\n${input.rawText.slice(0, 8000)}` },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "reagan_insights",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                insights: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      insightType: { type: "string", enum: ["academic_strength","academic_gap","trigger","accommodation","interest","medical","social","preference","quote","strategy","context","general"] },
+                      insight: { type: "string" },
+                      confidence: { type: "string", enum: ["low","medium","high"] },
+                    },
+                    required: ["insightType","insight","confidence"],
+                    additionalProperties: false,
+                  },
+                },
+              },
+              required: ["insights"],
+              additionalProperties: false,
+            },
+          },
+        },
+      });
+      let parsed: any = { insights: [] };
+      try {
+        const content = r.choices[0]?.message?.content;
+        const text = typeof content === "string" ? content : (content as any[]).map((c: any) => c.text || "").join("");
+        parsed = JSON.parse(text);
+      } catch {
+        parsed = { insights: [] };
+      }
+      let inserted = 0;
+      for (const item of parsed.insights || []) {
+        await db.insertKnowledge({
+          source: input.source,
+          sourceTitle: input.sourceTitle,
+          sourceUrl: input.sourceUrl,
+          sourceDate: input.sourceDate,
+          insightType: item.insightType,
+          insight: item.insight,
+          confidence: item.confidence || "medium",
+          sensitive: false,
+          approvedBy: ctx.user?.id ?? null,
+        } as any);
+        inserted++;
+      }
+      return { inserted, total: (parsed.insights || []).length };
+    }),
+
     bulkAdd: protectedProcedure.input(z.object({
       items: z.array(z.object({
         source: z.enum(["gmail","gdrive","manual","chat_history"]),
