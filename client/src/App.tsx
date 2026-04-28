@@ -32,6 +32,7 @@ import Stickers from "./pages/Stickers";
 import Prizes from "./pages/Prizes";
 import Academics from "./pages/Academics";
 import ReportCard from "./pages/ReportCard";
+import Whiteboard from "./pages/Whiteboard";
 import Scratch from "./pages/Scratch";
 import { trpc } from "@/lib/trpc";
 import { useEffect } from "react";
@@ -91,6 +92,9 @@ function Router() {
         </Route>
         <Route path="/report-card">
           <AdultGate><ReportCard /></AdultGate>
+        </Route>
+        <Route path="/whiteboard">
+          <AdultGate><Whiteboard /></AdultGate>
         </Route>
         <Route path="/stickers" component={Stickers} />
         <Route path="/prizes" component={Prizes} />

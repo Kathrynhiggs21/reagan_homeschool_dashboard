@@ -1320,3 +1320,204 @@ export async function listGoodWorkNotes(userId?: number | null, limit = 50) {
   const rows: any = await db.select().from(goodWorkNotes).orderBy(desc(goodWorkNotes.createdAt)).limit(limit);
   return userId == null ? rows : rows.filter((r: any) => r.userId === userId);
 }
+
+
+/* ==================== WHITEBOARD NOTES & TAGS ==================== */
+import { whiteboardNotes, tags, tagLinks } from "../drizzle/schema";
+
+// ---- Whiteboard ----
+
+const DEFAULT_NOTE_COLORS = ["butter", "coral", "mint", "sky", "lavender", "peach", "pink"] as const;
+type NoteColor = typeof DEFAULT_NOTE_COLORS[number];
+
+export async function listWhiteboardNotes(opts: { includeArchived?: boolean; forDate?: string } = {}) {
+  const _db = getDb();
+  const where: any[] = [];
+  if (!opts.includeArchived) where.push(eq(whiteboardNotes.archived, false));
+  // Select explicitly — drizzle's select() returns undefined for some DATE columns
+  const rows: any[] = await _db
+    .select({
+      id: whiteboardNotes.id,
+      authorUserId: whiteboardNotes.authorUserId,
+      authorName: whiteboardNotes.authorName,
+      authorAvatar: whiteboardNotes.authorAvatar,
+      title: whiteboardNotes.title,
+      body: whiteboardNotes.body,
+      color: whiteboardNotes.color,
+      emoji: whiteboardNotes.emoji,
+      pinned: whiteboardNotes.pinned,
+      showOnDate: whiteboardNotes.showOnDate,
+      heartCount: whiteboardNotes.heartCount,
+      reaganHearted: whiteboardNotes.reaganHearted,
+      archived: whiteboardNotes.archived,
+      createdAt: whiteboardNotes.createdAt,
+      updatedAt: whiteboardNotes.updatedAt,
+    })
+    .from(whiteboardNotes)
+    .where(where.length ? and(...where) : undefined)
+    .orderBy(desc(whiteboardNotes.pinned), desc(whiteboardNotes.createdAt))
+    .limit(200);
+  // filter by showOnDate client-side — if set, only show on that day
+  const today = opts.forDate || new Date().toISOString().slice(0, 10);
+  return rows.filter((r: any) => {
+    if (r.showOnDate == null) return true;
+    const d = r.showOnDate instanceof Date
+      ? r.showOnDate.toISOString().slice(0, 10)
+      : String(r.showOnDate).slice(0, 10);
+    return d === today;
+  });
+}
+
+export async function postWhiteboardNote(input: {
+  authorUserId: number;
+  authorName: string;
+  authorAvatar?: string | null;
+  title?: string | null;
+  body: string;
+  color?: NoteColor;
+  emoji?: string | null;
+  pinned?: boolean;
+  showOnDate?: string | null;
+}) {
+  const _db = getDb();
+  const res: any = await _db.insert(whiteboardNotes).values({
+    authorUserId: input.authorUserId,
+    authorName: input.authorName,
+    authorAvatar: input.authorAvatar ?? null,
+    title: input.title ?? null,
+    body: input.body,
+    color: (input.color ?? "butter") as any,
+    emoji: input.emoji ?? null,
+    pinned: !!input.pinned,
+    showOnDate: input.showOnDate ?? null,
+  } as any);
+  const id = (res?.[0]?.insertId ?? res?.insertId ?? 0) as number;
+  return { id };
+}
+
+export async function updateWhiteboardNote(id: number, patch: Partial<{
+  title: string | null; body: string; color: NoteColor; emoji: string | null;
+  pinned: boolean; archived: boolean; showOnDate: string | null;
+}>) {
+  const _db = getDb();
+  await _db.update(whiteboardNotes).set(patch as any).where(eq(whiteboardNotes.id, id));
+  return { id };
+}
+
+export async function reaganHeartNote(id: number) {
+  const _db = getDb();
+  const [cur]: any = await _db.select().from(whiteboardNotes).where(eq(whiteboardNotes.id, id)).limit(1);
+  if (!cur) return { id, reaganHearted: false, heartCount: 0 };
+  const newVal = !cur.reaganHearted;
+  const newCount = Math.max(0, (cur.heartCount || 0) + (newVal ? 1 : -1));
+  await _db
+    .update(whiteboardNotes)
+    .set({ reaganHearted: newVal, heartCount: newCount })
+    .where(eq(whiteboardNotes.id, id));
+  return { id, reaganHearted: newVal, heartCount: newCount };
+}
+
+// ---- Tags ----
+
+export async function listTags(category?: string) {
+  const _db = getDb();
+  const rows = category
+    ? await _db.select().from(tags).where(eq(tags.category, category as any)).orderBy(tags.sortOrder)
+    : await _db.select().from(tags).orderBy(tags.sortOrder);
+  return rows;
+}
+
+export async function upsertTag(input: {
+  slug: string; label: string; emoji?: string | null;
+  category?: string; color?: string; isPreset?: boolean; sortOrder?: number;
+}) {
+  const _db = getDb();
+  const [exists]: any = await _db.select().from(tags).where(eq(tags.slug, input.slug)).limit(1);
+  if (exists) {
+    await _db.update(tags).set({
+      label: input.label, emoji: input.emoji ?? null,
+      category: (input.category ?? "custom") as any,
+      color: (input.color ?? "butter") as any,
+      isPreset: !!input.isPreset,
+      sortOrder: input.sortOrder ?? 100,
+    } as any).where(eq(tags.id, exists.id));
+    return { id: exists.id as number };
+  }
+  const res: any = await _db.insert(tags).values({
+    slug: input.slug, label: input.label, emoji: input.emoji ?? null,
+    category: (input.category ?? "custom") as any,
+    color: (input.color ?? "butter") as any,
+    isPreset: !!input.isPreset,
+    sortOrder: input.sortOrder ?? 100,
+  } as any);
+  return { id: (res?.[0]?.insertId ?? res?.insertId ?? 0) as number };
+}
+
+export async function seedDefaultTagsIfEmpty() {
+  const existing = await listTags();
+  if (existing.length > 0) return { seeded: false };
+  const presets = [
+    // Mood
+    { slug: "good-day",    label: "Good day",    emoji: "🌈", category: "mood",   color: "mint",     sortOrder: 10 },
+    { slug: "hard-day",    label: "Hard day",    emoji: "💛", category: "mood",   color: "peach",    sortOrder: 11 },
+    { slug: "proud",       label: "Proud",       emoji: "⭐", category: "mood",   color: "butter",   sortOrder: 12 },
+    { slug: "overwhelmed", label: "Overwhelmed", emoji: "🌊", category: "mood",   color: "sky",      sortOrder: 13 },
+    { slug: "frustrated",  label: "Frustrated",  emoji: "🌶️", category: "mood",   color: "coral",    sortOrder: 14 },
+    { slug: "quiet",       label: "Quiet",       emoji: "🌙", category: "mood",   color: "lavender", sortOrder: 15 },
+    // Energy
+    { slug: "wiggly",      label: "Wiggly",      emoji: "⚡", category: "energy", color: "coral",    sortOrder: 20 },
+    { slug: "tired",       label: "Tired",       emoji: "🌧️", category: "energy", color: "sky",      sortOrder: 21 },
+    { slug: "focused",     label: "Focused",     emoji: "🎯", category: "energy", color: "mint",     sortOrder: 22 },
+    // Body
+    { slug: "hungry",      label: "Hungry",      emoji: "🍎", category: "body",   color: "coral",    sortOrder: 30 },
+    { slug: "thirsty",     label: "Thirsty",     emoji: "💧", category: "body",   color: "sky",      sortOrder: 31 },
+    { slug: "headache",    label: "Headache",    emoji: "🤕", category: "body",   color: "lavender", sortOrder: 32 },
+    { slug: "tummy",       label: "Tummy ache",  emoji: "🫖", category: "body",   color: "peach",    sortOrder: 33 },
+    // Family / social
+    { slug: "missed-mom",  label: "Missed Mom",  emoji: "💖", category: "family", color: "pink",     sortOrder: 40 },
+    { slug: "with-grandma",label: "With Grandma",emoji: "🧡", category: "family", color: "butter",   sortOrder: 41 },
+    { slug: "cousins-day", label: "Cousins day", emoji: "🎈", category: "family", color: "mint",     sortOrder: 42 },
+    // Subjects
+    { slug: "loved-birds", label: "Loved birds today", emoji: "🦜", category: "subject", color: "mint",   sortOrder: 50 },
+    { slug: "creek-time",  label: "Creek time",        emoji: "🌿", category: "subject", color: "sky",    sortOrder: 51 },
+    { slug: "art-flow",    label: "Art flow",          emoji: "🎨", category: "subject", color: "lavender",sortOrder: 52 },
+  ];
+  for (const p of presets) {
+    await upsertTag({ ...p, isPreset: true });
+  }
+  return { seeded: true, count: presets.length };
+}
+
+export async function attachTag(input: { tagId: number; entityType: string; entityId: number }) {
+  const _db = getDb();
+  const res: any = await _db.insert(tagLinks).values({
+    tagId: input.tagId,
+    entityType: input.entityType as any,
+    entityId: input.entityId,
+  } as any);
+  return { id: (res?.[0]?.insertId ?? res?.insertId ?? 0) as number };
+}
+
+export async function detachTag(linkId: number) {
+  const _db = getDb();
+  await _db.delete(tagLinks).where(eq(tagLinks.id, linkId));
+  return { ok: true };
+}
+
+export async function listTagsForEntity(entityType: string, entityId: number) {
+  const _db = getDb();
+  const rows: any = await _db
+    .select({
+      linkId: tagLinks.id,
+      tagId: tags.id,
+      slug: tags.slug,
+      label: tags.label,
+      emoji: tags.emoji,
+      color: tags.color,
+      category: tags.category,
+    })
+    .from(tagLinks)
+    .innerJoin(tags, eq(tagLinks.tagId, tags.id))
+    .where(and(eq(tagLinks.entityType, entityType as any), eq(tagLinks.entityId, entityId)));
+  return rows;
+}

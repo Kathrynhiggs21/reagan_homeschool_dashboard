@@ -905,3 +905,16 @@
 - [x] Sticker Book + Prize Shop added to kid sidebar nav
 - [x] Vitest: rewards.test.ts — awardSticker, seedDefaultPrizes idempotency, requestPrize deduction, insufficient-coins rejection
 - [x] All 42/42 vitest pass
+
+## Pass 2a — Flock + Whiteboard + Tags (Apr 28 AM, v5c3ab18b → next)
+- [x] Blue budgie, Daffy duckling, Honk gosling sprites generated + optimized to webp
+- [x] FlockSprite + FlockWidget components
+- [x] Flock strip on Today page
+- [x] whiteboardNotes + tags + tagLinks tables (migration 0016)
+- [x] Whiteboard tRPC router (list, post, update, heart)
+- [x] Tags tRPC router (list, seedDefaults, upsert, attach, detach, forEntity)
+- [x] WhiteboardStrip on Reagan's Today page
+- [x] Adult Whiteboard page at /whiteboard (adult-gated) with color picker, emoji picker, pin, date-scoping
+- [x] Sticky note welcome from Mom seeded
+- [x] 18 preset tags seeded (moods, energy, body, family, subjects)
+- [x] Vitest coverage: whiteboard post/list/heart/archive/date-scope + tag upsert/attach/detach (46/46 pass)

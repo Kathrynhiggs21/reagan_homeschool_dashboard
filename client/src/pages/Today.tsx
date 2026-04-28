@@ -13,6 +13,8 @@ import TurnInDialog from "@/components/TurnInDialog";
 import SubjectColorKey from "@/components/SubjectColorKey";
 import { subjectTint, tintCardStyle, tintInkStyle, tintPillStyle, rainbowCardStyle, rainbowPillStyle, rainbowInkStyle } from "@/lib/subjectColors";
 import { celebrateKiwi } from "@/components/KiwiPerch";
+import FlockWidget from "@/components/FlockWidget";
+import WhiteboardStrip from "@/components/WhiteboardStrip";
 
 // Neutral classroom mood language + classroom-y icons
 const ZONES = [
@@ -192,6 +194,8 @@ export default function Today() {
 
        {/* Tour Mode — Apr 28 is Reagan's soft-open day */}
       <TourModeCard />
+      <FlockWidget />
+      <WhiteboardStrip />
       {/* Coin + sticker chip (always visible, upbeat) */}
       <CoinStickerStrip />
       <SubjectColorKey variant="schedule" />

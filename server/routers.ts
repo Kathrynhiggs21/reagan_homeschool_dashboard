@@ -1097,6 +1097,69 @@ export const appRouter = router({
       blockId: input.blockId ?? null,
     })),
   }),
+  /* =================== WHITEBOARD (Adult sticky notes for Reagan) =================== */
+  whiteboard: router({
+    list: publicProcedure.input(z.object({ includeArchived: z.boolean().default(false) }).optional())
+      .query(({ input }) => db.listWhiteboardNotes({ includeArchived: !!input?.includeArchived })),
+    post: protectedProcedure.input(z.object({
+      title: z.string().nullable().optional(),
+      body: z.string().min(1),
+      color: z.enum(["butter","coral","mint","sky","lavender","peach","pink"]).default("butter"),
+      emoji: z.string().nullable().optional(),
+      pinned: z.boolean().default(false),
+      showOnDate: z.string().nullable().optional(),
+      authorAvatar: z.string().nullable().optional(),
+    })).mutation(({ input, ctx }) => db.postWhiteboardNote({
+      authorUserId: (ctx.user as any).id,
+      authorName: ctx.user.name || "Adult",
+      authorAvatar: input.authorAvatar ?? ((ctx.user.name || "A").slice(0,1).toUpperCase()),
+      title: input.title ?? null,
+      body: input.body,
+      color: input.color as any,
+      emoji: input.emoji ?? null,
+      pinned: !!input.pinned,
+      showOnDate: input.showOnDate ?? null,
+    })),
+    update: protectedProcedure.input(z.object({
+      id: z.number(),
+      title: z.string().nullable().optional(),
+      body: z.string().optional(),
+      color: z.enum(["butter","coral","mint","sky","lavender","peach","pink"]).optional(),
+      emoji: z.string().nullable().optional(),
+      pinned: z.boolean().optional(),
+      archived: z.boolean().optional(),
+      showOnDate: z.string().nullable().optional(),
+    })).mutation(({ input }) => {
+      const { id, ...patch } = input;
+      return db.updateWhiteboardNote(id, patch as any);
+    }),
+    heart: publicProcedure.input(z.object({ id: z.number() }))
+      .mutation(({ input }) => db.reaganHeartNote(input.id)),
+  }),
+  /* =================== TAGS =================== */
+  tags: router({
+    list: publicProcedure.input(z.object({ category: z.string().optional() }).optional())
+      .query(({ input }) => db.listTags(input?.category)),
+    seedDefaults: publicProcedure.mutation(() => db.seedDefaultTagsIfEmpty()),
+    upsert: protectedProcedure.input(z.object({
+      slug: z.string(), label: z.string(), emoji: z.string().nullable().optional(),
+      category: z.string().optional(), color: z.string().optional(),
+      isPreset: z.boolean().optional(), sortOrder: z.number().optional(),
+    })).mutation(({ input }) => db.upsertTag({
+      ...input, emoji: input.emoji ?? null,
+    })),
+    attach: publicProcedure.input(z.object({
+      tagId: z.number(),
+      entityType: z.enum(["note","mood","block","day","journal","rescue","struggle"]),
+      entityId: z.number(),
+    })).mutation(({ input }) => db.attachTag(input)),
+    detach: publicProcedure.input(z.object({ linkId: z.number() }))
+      .mutation(({ input }) => db.detachTag(input.linkId)),
+    forEntity: publicProcedure.input(z.object({
+      entityType: z.enum(["note","mood","block","day","journal","rescue","struggle"]),
+      entityId: z.number(),
+    })).query(({ input }) => db.listTagsForEntity(input.entityType, input.entityId)),
+  }),
   /* =================== PRINTABLES HUB =================== */
   printables: router({
     listSources: publicProcedure.query(() => db.listPrintableSources()),

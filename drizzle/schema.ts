@@ -967,3 +967,51 @@ export const placementResults = mysqlTable("placementResults", {
   assessedByUserId: int("assessedByUserId"),
   sourceKind: mysqlEnum("sourceKind", ["self_check", "tutor", "parent", "map", "acadience", "review_library"]).default("self_check").notNull(),
 });
+
+
+/**
+ * Adult Whiteboard — sticky notes that parents / tutor can post for Reagan.
+ * Shows on the Today page as pastel index cards. Reagan can "heart" them.
+ * Authors: any user with role = admin | tutor. Reagan (user) can read but not post.
+ */
+export const whiteboardNotes = mysqlTable("whiteboardNotes", {
+  id: int("id").autoincrement().primaryKey(),
+  authorUserId: int("authorUserId").notNull(),
+  authorName: varchar("authorName", { length: 80 }).notNull(),   // denormalized for quick render
+  authorAvatar: varchar("authorAvatar", { length: 40 }),         // emoji or 1-2 letter initials
+  title: varchar("title", { length: 120 }),
+  body: text("body").notNull(),
+  color: mysqlEnum("color", ["butter", "coral", "mint", "sky", "lavender", "peach", "pink"]).default("butter").notNull(),
+  emoji: varchar("emoji", { length: 12 }),                       // small flourish emoji
+  pinned: boolean("pinned").default(false).notNull(),
+  showOnDate: date("showOnDate"),                                // optional: only appear on this date
+  heartCount: int("heartCount").default(0).notNull(),
+  reaganHearted: boolean("reaganHearted").default(false).notNull(),
+  archived: boolean("archived").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+/**
+ * Tag system — a preset vocabulary of tags (good-day, hard-day, mood marker,
+ * subject tag, etc). Tags can be attached to anything via entityType + entityId.
+ */
+export const tags = mysqlTable("tags", {
+  id: int("id").autoincrement().primaryKey(),
+  slug: varchar("slug", { length: 48 }).notNull().unique(),
+  label: varchar("label", { length: 80 }).notNull(),
+  emoji: varchar("emoji", { length: 12 }),
+  category: mysqlEnum("category", ["mood", "subject", "energy", "body", "social", "family", "custom"]).default("custom").notNull(),
+  color: mysqlEnum("color", ["butter", "coral", "mint", "sky", "lavender", "peach", "pink", "rose", "sage"]).default("butter").notNull(),
+  isPreset: boolean("isPreset").default(false).notNull(),
+  sortOrder: int("sortOrder").default(100).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const tagLinks = mysqlTable("tagLinks", {
+  id: int("id").autoincrement().primaryKey(),
+  tagId: int("tagId").notNull(),
+  entityType: mysqlEnum("entityType", ["note", "mood", "block", "day", "journal", "rescue", "struggle"]).notNull(),
+  entityId: int("entityId").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});

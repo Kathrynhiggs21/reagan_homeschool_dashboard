@@ -34,6 +34,7 @@ const MORE_NAV: NavItem[] = [
 ];
 
 const ADULT_NAV: NavItem[] = [
+  { to: "/whiteboard", emoji: "📌", label: "Whiteboard" },
   { to: "/curriculum", emoji: "📖", label: "Curriculum" },
   { to: "/tutor",      emoji: "🤝", label: "Tutor Handoff" },
   { to: "/analytics",  emoji: "📊", label: "Analytics" },
