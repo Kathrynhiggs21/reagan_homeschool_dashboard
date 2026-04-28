@@ -739,3 +739,181 @@ export async function updateAssignmentSubmission(id: number, patch: Partial<type
   const db = getDb();
   await db.update(assignmentSubmissions).set(patch).where(eq(assignmentSubmissions.id, id));
 }
+
+
+/* ========================================================================== */
+/*  Phase 5: grade -> skillsMastery + per-subject rolling grade               */
+/* ========================================================================== */
+
+/**
+ * When an assignment submission has been auto-graded, roll the percentage
+ * into skillsMastery for that block's subject. We treat the block title as
+ * the skill name if the block has one; otherwise fall back to subjectSlug.
+ * If a mastery row already exists we exponentially smooth toward the new
+ * score (alpha=0.4) so a single score doesn't swing mastery too hard.
+ */
+export async function applyGradeToMastery(opts: {
+  subjectSlug: string;
+  skillName: string;
+  score: number; // 0-100
+}) {
+  const db = getDb();
+  const rows = await db
+    .select()
+    .from(skillsMastery)
+    .where(eq(skillsMastery.subjectSlug, opts.subjectSlug));
+  const existing = (rows as any[]).find(
+    (r) => (r.skillName || "").toLowerCase() === opts.skillName.toLowerCase(),
+  );
+  const alpha = 0.4;
+  if (existing) {
+    const newScore = Math.round(existing.currentScore * (1 - alpha) + opts.score * alpha);
+    await db
+      .update(skillsMastery)
+      .set({ currentScore: newScore, lastPracticedAt: new Date(), needsHelp: newScore < 60 })
+      .where(eq(skillsMastery.id, existing.id));
+    return { id: existing.id, currentScore: newScore };
+  }
+  await db.insert(skillsMastery).values({
+    subjectSlug: opts.subjectSlug,
+    skillName: opts.skillName,
+    currentScore: opts.score,
+    lastPracticedAt: new Date(),
+    needsHelp: opts.score < 60,
+  } as any);
+  return { id: 0, currentScore: opts.score };
+}
+
+/**
+ * Returns per-subject rolling grade: weighted average of recent
+ * auto-graded submissions (70%) + block completion grades (30%),
+ * over the last 30 days. Also returns kid-friendly label and
+ * adult-facing letter grade.
+ */
+export async function subjectRollingGrades() {
+  const db = getDb();
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  const subs: any[] = await db
+    .select()
+    .from(assignmentSubmissions)
+    .where(gte(assignmentSubmissions.submittedAt, thirtyDaysAgo));
+  const autos: any[] = await db.select().from(assignmentSubmissionsAutoGrade);
+  const autoById = new Map(autos.map((a) => [a.submissionId, a]));
+  const grades: any[] = await db.select().from(blockGrades);
+
+  const bySubject: Record<string, { scores: number[]; blockScores: number[] }> = {};
+  for (const s of subs) {
+    const slug = s.subjectSlug || "general";
+    if (!bySubject[slug]) bySubject[slug] = { scores: [], blockScores: [] };
+    const adult = typeof s.rubricScore === "number" ? s.rubricScore : null;
+    const auto = autoById.get(s.id)?.autoScore ?? null;
+    const score = adult ?? auto;
+    if (score !== null) bySubject[slug].scores.push(score);
+  }
+  for (const g of grades) {
+    const slug = g.subjectSlug || "general";
+    if (!bySubject[slug]) bySubject[slug] = { scores: [], blockScores: [] };
+    if (typeof g.score === "number") bySubject[slug].blockScores.push(g.score);
+  }
+
+  const out: Array<{ subjectSlug: string; average: number; letter: string; kidLabel: string; n: number }> = [];
+  for (const [slug, v] of Object.entries(bySubject)) {
+    const a = v.scores.length ? v.scores.reduce((x, y) => x + y, 0) / v.scores.length : null;
+    const b = v.blockScores.length ? v.blockScores.reduce((x, y) => x + y, 0) / v.blockScores.length : null;
+    let avg: number | null = null;
+    if (a !== null && b !== null) avg = a * 0.7 + b * 0.3;
+    else if (a !== null) avg = a;
+    else if (b !== null) avg = b;
+    if (avg === null) continue;
+    const pct = Math.round(avg);
+    const letter = pct >= 90 ? "A" : pct >= 80 ? "B" : pct >= 70 ? "C" : pct >= 60 ? "D" : "F";
+    const kidLabel =
+      pct >= 90 ? "Mastered" :
+      pct >= 80 ? "Got it" :
+      pct >= 70 ? "Getting there" :
+      "Not yet";
+    out.push({ subjectSlug: slug, average: pct, letter, kidLabel, n: v.scores.length + v.blockScores.length });
+  }
+  out.sort((x, y) => x.subjectSlug.localeCompare(y.subjectSlug));
+  return out;
+}
+
+
+/**
+ * Runs the "adaptive engine":
+ *   - Looks at skillsMastery where currentScore < 60 (needs help)
+ *   - Looks at recent subject rolling grades (F/D in last 30 days)
+ *   - For each hot spot, creates:
+ *       • a curriculumAdjustment row with status="proposed"
+ *       • a needsWorkItems row if none exists for that (subject, skillName)
+ * Safe to run repeatedly — dedupes on (subjectSlug, title) for needsWork and
+ * on (subjectSlug, suggestion, weekStart) for adjustments.
+ */
+export async function rebuildAdaptiveSuggestions() {
+  const db = getDb();
+  const weekStart = new Date();
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1); // Monday
+  const weekStartStr = weekStart.toISOString().slice(0, 10);
+
+  const lowMastery: any[] = await db
+    .select()
+    .from(skillsMastery)
+    .where(lte(skillsMastery.currentScore, 60));
+
+  const rolling = await subjectRollingGrades();
+  const lowSubjects = rolling.filter((r) => r.average < 70);
+
+  const existingAdj: any[] = await db.select().from(curriculumAdjustments);
+  const adjKey = new Set(
+    existingAdj.map((a) => `${a.subjectSlug}|${a.suggestion}|${a.weekStart instanceof Date ? a.weekStart.toISOString().slice(0, 10) : String(a.weekStart)}`),
+  );
+
+  const existingNW: any[] = await db.select().from(needsWorkItems);
+  const nwKey = new Set(existingNW.map((n) => `${n.subjectSlug || ""}|${(n.title || "").toLowerCase()}`));
+
+  let adjCount = 0;
+  let nwCount = 0;
+
+  for (const s of lowMastery) {
+    const sugg = `Reinforce ${s.skillName}`;
+    const key = `${s.subjectSlug}|${sugg}|${weekStartStr}`;
+    if (!adjKey.has(key)) {
+      await db.insert(curriculumAdjustments).values({
+        subjectSlug: s.subjectSlug,
+        weekStart: weekStart,
+        suggestion: sugg,
+        reason: `Mastery currently at ${s.currentScore}%`,
+      } as any);
+      adjCount++;
+    }
+    const nwk = `${s.subjectSlug}|${s.skillName.toLowerCase()}`;
+    if (!nwKey.has(nwk)) {
+      await db.insert(needsWorkItems).values({
+        subjectSlug: s.subjectSlug,
+        title: s.skillName,
+        note: `Auto-added: mastery at ${s.currentScore}%`,
+        origin: "mastery",
+        dateAdded: new Date().toISOString().slice(0, 10),
+      } as any);
+      nwCount++;
+      nwKey.add(nwk);
+    }
+  }
+
+  for (const r of lowSubjects) {
+    const sugg = `Spend extra time on ${r.subjectSlug} (recent avg ${r.average}%)`;
+    const key = `${r.subjectSlug}|${sugg}|${weekStartStr}`;
+    if (!adjKey.has(key)) {
+      await db.insert(curriculumAdjustments).values({
+        subjectSlug: r.subjectSlug,
+        weekStart: weekStart,
+        suggestion: sugg,
+        reason: `30-day rolling grade is ${r.letter} (${r.average}%)`,
+      } as any);
+      adjCount++;
+    }
+  }
+
+  return { adjustmentsAdded: adjCount, needsWorkAdded: nwCount };
+}

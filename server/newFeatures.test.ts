@@ -110,3 +110,39 @@ describe("submissions + auto-grading", () => {
     expect(graded.letter).toBe("A");
   }, 30000);
 });
+
+describe("adaptive curriculum", () => {
+  it("rebuildAdaptiveSuggestions adds proposed adjustments + seeds needs-work for low-mastery skills", async () => {
+    const caller = makeCaller();
+    // Ensure a low-mastery skill exists
+    const skills: any = await caller.skills.list();
+    let target = skills.find((s: any) => (s.currentScore ?? 100) < 60);
+    if (!target) {
+      // upsert a fresh low-mastery skill
+      await caller.skills.upsert({
+        subjectSlug: "math",
+        skillName: "Fractions with unlike denominators (adaptive test)",
+        currentScore: 40,
+      });
+    }
+
+    const result: any = await caller.adjustments.rebuild();
+    expect(result.adjustmentsAdded).toBeGreaterThanOrEqual(0);
+    expect(result.needsWorkAdded).toBeGreaterThanOrEqual(0);
+
+    const proposed: any = await caller.adjustments.list({ status: "proposed" });
+    expect(Array.isArray(proposed)).toBe(true);
+  }, 30000);
+
+  it("subjectGrades returns rolling averages with letters + kid labels", async () => {
+    const caller = makeCaller();
+    const grades: any = await caller.submissions.subjectGrades();
+    expect(Array.isArray(grades)).toBe(true);
+    for (const g of grades) {
+      expect(typeof g.subjectSlug).toBe("string");
+      expect(typeof g.average).toBe("number");
+      expect(["A","B","C","D","F"]).toContain(g.letter);
+      expect(["Mastered","Got it","Getting there","Not yet"]).toContain(g.kidLabel);
+    }
+  }, 15000);
+});

@@ -76,6 +76,7 @@ export default function Analytics() {
   const skills = trpc.skills.list.useQuery();
   const struggles = trpc.struggles.list.useQuery({});
   const moods = trpc.mood.recent.useQuery({ daysBack: 14 });
+  const subjectGrades = trpc.submissions.subjectGrades.useQuery();
 
   return (
     <div className="space-y-6">
@@ -83,6 +84,28 @@ export default function Analytics() {
         <h1 className="text-3xl font-display font-semibold">Analytics 📊</h1>
         <p className="text-muted-foreground text-sm mt-1">For adults — Reagan's growth, patterns, and where she needs support. Never shown to her.</p>
       </header>
+
+      <Card className="cozy-card p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-display font-semibold">Subject grades (last 30 days)</h2>
+          <div className="text-[10px] text-muted-foreground">Rolling avg of auto-graded turn-ins (70%) + block completion grades (30%)</div>
+        </div>
+        {((subjectGrades.data as any[]) || []).length === 0 ? (
+          <div className="text-sm text-muted-foreground italic">No grades yet. Once Reagan turns in an assignment with an answer key, numbers appear here.</div>
+        ) : (
+          <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-2">
+            {((subjectGrades.data as any[]) || []).map((g) => (
+              <div key={g.subjectSlug} className="p-3 rounded-md border bg-white/40">
+                <div className="flex items-baseline justify-between">
+                  <div className="capitalize font-semibold">{g.subjectSlug}</div>
+                  <div className="text-2xl font-display font-semibold">{g.letter}</div>
+                </div>
+                <div className="text-xs text-muted-foreground">{g.average}% — {g.kidLabel} · {g.n} item{g.n === 1 ? "" : "s"}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
 
       <div className="grid sm:grid-cols-3 gap-3">
         <Card className="cozy-card p-4">

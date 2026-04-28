@@ -750,6 +750,7 @@ export const appRouter = router({
     list: publicProcedure.input(z.object({ status: z.enum(["proposed","accepted","rejected","applied"]).optional() }).optional()).query(({ input }) => db.listAdjustments(input?.status)),
     create: publicProcedure.input(z.object({ subjectSlug: z.string(), weekStart: z.string(), suggestion: z.string(), reason: z.string().optional(), affectsTopicId: z.number().optional() })).mutation(({ input }) => db.createAdjustment(input)),
     decide: publicProcedure.input(z.object({ id: z.number(), status: z.enum(["accepted","rejected","applied"]) })).mutation(({ input, ctx }) => db.decideAdjustment(input.id, input.status, (ctx as any).user?.id)),
+    rebuild: publicProcedure.mutation(() => db.rebuildAdaptiveSuggestions()),
   }),
 
   /* =================== ASSIGNMENT SUBMISSIONS + AUTO-GRADING =================== */
@@ -853,8 +854,17 @@ export const appRouter = router({
       const pct = Math.max(0, Math.min(100, Math.round((score / total) * 100)));
       const letter = pct >= 90 ? "A" : pct >= 80 ? "B" : pct >= 70 ? "C" : pct >= 60 ? "D" : "F";
       await db.recordAutoGrade({ submissionId: input.submissionId, autoScore: pct, autoLetter: letter, autoFeedback: feedback, answers });
+      // Roll into skillsMastery so adaptive curriculum + Needs Work can react
+      if (sub.subjectSlug) {
+        await db.applyGradeToMastery({
+          subjectSlug: sub.subjectSlug,
+          skillName: sub.title || sub.subjectSlug,
+          score: pct,
+        }).catch(() => {});
+      }
       return { autoScore: pct, letter, feedback };
     }),
+    subjectGrades: publicProcedure.query(() => db.subjectRollingGrades()),
   }),
 
   /* =================== PRINTABLES HUB =================== */
