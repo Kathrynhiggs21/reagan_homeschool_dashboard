@@ -75,3 +75,38 @@ describe("printables hub", () => {
     expect(names.some((n) => n.includes("k5"))).toBe(true);
   });
 });
+
+describe("submissions + auto-grading", () => {
+  it("creates a typed submission and auto-grades against an MC+text key", async () => {
+    const caller = makeCaller();
+    // Create a block to attach to
+    const today = new Date().toISOString().slice(0, 10);
+    const plan: any = await caller.plans.ensureToday({ date: today }).catch(() => null);
+    // Use any existing block: pull today's schedule
+    const t: any = await caller.plans.today();
+    const block = t?.blocks?.[0];
+    expect(block).toBeTruthy();
+
+    // Seed an answer key
+    await caller.answerKeys.upsert({
+      blockId: block.id,
+      totalPoints: 100,
+      questions: [
+        { qId: "q1", kind: "mc", prompt: "Capital of Ohio?", correct: "Columbus" },
+        { qId: "q2", kind: "mc", prompt: "2 + 2", correct: "4" },
+      ],
+    });
+
+    // Submit typed answers
+    const sub: any = await caller.submissions.create({
+      blockId: block.id,
+      mode: "typed",
+      answersText: "Columbus\n4",
+    });
+    expect(sub.id).toBeGreaterThan(0);
+
+    const graded: any = await caller.submissions.autoGrade({ submissionId: sub.id });
+    expect(graded.autoScore).toBe(100);
+    expect(graded.letter).toBe("A");
+  }, 30000);
+});

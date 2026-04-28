@@ -8,6 +8,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import BlockEditor, { type ExistingBlock } from "@/components/BlockEditor";
 import GradeBlockDialog from "@/components/GradeBlockDialog";
+import TurnInDialog from "@/components/TurnInDialog";
 
 // Neutral classroom mood language + classroom-y icons
 const ZONES = [
@@ -79,6 +80,7 @@ export default function Today() {
   // Adult edit state
   const [blockEditor, setBlockEditor] = useState<{ open: boolean; block?: ExistingBlock }>({ open: false });
   const [gradeDialog, setGradeDialog] = useState<{ open: boolean; block?: { id: number; title?: string; subjectSlug?: string | null } }>({ open: false });
+  const [turnIn, setTurnIn] = useState<{ open: boolean; block?: { id: number; title?: string; subjectSlug?: string | null } }>({ open: false });
 
   const today_str = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
   const blocks = today.data?.blocks ?? [];
@@ -236,6 +238,14 @@ export default function Today() {
                         ✓ Done
                       </Button>
                     )}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="bg-white/60 border-neutral-300 text-neutral-900 hover:bg-white h-7 px-2 text-xs"
+                      onClick={() => setTurnIn({ open: true, block: { id: b.id, title: b.title, subjectSlug: b.subjectSlug } })}
+                    >
+                      📝 Turn in
+                    </Button>
                     <Button
                       size="sm"
                       variant="ghost"
@@ -411,7 +421,11 @@ export default function Today() {
       <GradeBlockDialog
         open={gradeDialog.open}
         onOpenChange={(v) => setGradeDialog((s) => ({ ...s, open: v }))}
-        block={gradeDialog.block}
+      />
+      <TurnInDialog
+        open={turnIn.open}
+        block={turnIn.block}
+        onOpenChange={(v) => setTurnIn((s) => ({ ...s, open: v }))}
       />
 
       {/* Animal video */}

@@ -7,6 +7,7 @@ import * as db from "./db";
 import { invokeLLM } from "./_core/llm";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { notifyOwner } from "./_core/notification";
+import { storagePut } from "./storage";
 
 const Zone = z.enum(["green", "yellow", "red"]);
 const Intensity = z.enum(["green", "yellow", "red"]);
@@ -749,6 +750,111 @@ export const appRouter = router({
     list: publicProcedure.input(z.object({ status: z.enum(["proposed","accepted","rejected","applied"]).optional() }).optional()).query(({ input }) => db.listAdjustments(input?.status)),
     create: publicProcedure.input(z.object({ subjectSlug: z.string(), weekStart: z.string(), suggestion: z.string(), reason: z.string().optional(), affectsTopicId: z.number().optional() })).mutation(({ input }) => db.createAdjustment(input)),
     decide: publicProcedure.input(z.object({ id: z.number(), status: z.enum(["accepted","rejected","applied"]) })).mutation(({ input, ctx }) => db.decideAdjustment(input.id, input.status, (ctx as any).user?.id)),
+  }),
+
+  /* =================== ASSIGNMENT SUBMISSIONS + AUTO-GRADING =================== */
+  submissions: router({
+    list: publicProcedure.input(z.object({ blockId: z.number().optional(), limit: z.number().optional() }).optional()).query(async ({ input }) => {
+      const all = await db.listAssignmentSubmissions(input?.limit ?? 50);
+      return input?.blockId ? (all as any[]).filter((s) => s.blockId === input.blockId) : all;
+    }),
+    create: publicProcedure.input(z.object({
+      blockId: z.number(),
+      mode: z.enum(["draw","photo","typed"]),
+      answersText: z.string().optional(),
+      strokes: z.any().optional(),
+      fileKey: z.string().optional(),
+      fileUrl: z.string().optional(),
+      title: z.string().optional(),
+      subjectSlug: z.string().optional(),
+    })).mutation(({ input }) => db.createAssignmentSubmission({
+      blockId: input.blockId,
+      subjectSlug: input.subjectSlug,
+      title: input.title,
+      submissionType: input.mode === "typed" ? "text" : input.mode === "photo" ? "photo" : "file",
+      contentText: input.answersText,
+      fileKey: input.fileKey,
+      fileUrl: input.fileUrl,
+    } as any)),
+    upload: publicProcedure.input(z.object({ dataUrl: z.string(), fileName: z.string() })).mutation(async ({ input }) => {
+      // Parse data URL
+      const m = /^data:([^;]+);base64,(.+)$/.exec(input.dataUrl);
+      if (!m) throw new Error("Expected a data URL (image/png base64).");
+      const mime = m[1];
+      const buf = Buffer.from(m[2], "base64");
+      const key = `assignments/${Date.now()}-${input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+      return storagePut(key, buf, mime);
+    }),
+    autoGrade: publicProcedure.input(z.object({ submissionId: z.number() })).mutation(async ({ input }) => {
+      // Pull submission + answer key + answers
+      const subs = await db.listAssignmentSubmissions(200);
+      const sub = (subs as any[]).find((s) => s.id === input.submissionId);
+      if (!sub) throw new Error("Submission not found.");
+      const key = await db.getAnswerKeyForBlock(sub.blockId);
+      if (!key) return { autoScore: null as number | null, letter: null as string | null, feedback: "No answer key set for this block." };
+
+      // Best-effort auto-grade:
+      //  - For 'typed' submissions, parse answers line-by-line against MC/text keys
+      //  - For 'photo'/'drawn' submissions, ask the LLM to vision-grade against the rubric
+      let score = 0;
+      let total = (key.totalPoints as number) || 100;
+      let feedback = "";
+      const questions = (key.questions as any[]) || [];
+      const perQ = questions.length ? Math.floor(total / questions.length) : 0;
+      const answers: Record<string,string> = {};
+
+      if (sub.submissionType === "text" && sub.contentText) {
+        const lines = String(sub.contentText).split(/\r?\n/).map((l: string) => l.trim()).filter(Boolean);
+        for (let i = 0; i < questions.length; i++) {
+          const q = questions[i];
+          const ans = lines[i] || "";
+          answers[q.qId] = ans;
+          if (!ans) continue;
+          if (q.kind === "mc" && q.correct) {
+            if (ans.trim().toLowerCase() === String(q.correct).trim().toLowerCase()) score += perQ;
+          } else if (q.kind === "text" && q.correct) {
+            // Exact OR LLM-equivalent
+            if (ans.trim().toLowerCase() === String(q.correct).trim().toLowerCase()) {
+              score += perQ;
+            } else {
+              try {
+                const r = await invokeLLM({ messages: [
+                  { role: "system", content: "You grade 5th-grade answers. Reply with a single JSON object {\"correct\": boolean, \"why\": string}." },
+                  { role: "user", content: `Question: ${q.prompt || "(no prompt)"}\nExpected: ${q.correct}\nStudent: ${ans}\nGrade with tolerance for spelling/phrasing.` },
+                ], response_format: { type: "json_schema", json_schema: { name: "g", strict: true, schema: { type: "object", additionalProperties: false, required: ["correct","why"], properties: { correct: { type: "boolean" }, why: { type: "string" } } } } } });
+                const raw = (r as any)?.choices?.[0]?.message?.content || "{}";
+                const parsed = JSON.parse(raw);
+                if (parsed.correct) score += perQ;
+                feedback += `${q.prompt ? q.prompt + ": " : ""}${parsed.why}\n`;
+              } catch { /* swallow */ }
+            }
+          }
+        }
+      } else if (sub.fileUrl) {
+        // Vision-grade against rubric
+        try {
+          const promptText = questions.map((q,i) => `Q${i+1} (${q.kind}): ${q.prompt || ""}\n  Rubric: ${q.rubric || ""}\n  Expected: ${q.correct || ""}`).join("\n");
+          const r = await invokeLLM({ messages: [
+            { role: "system", content: "You grade a 5th-grade worksheet from an image. Reply with strict JSON {\"score\": 0-100, \"feedback\": string}." },
+            { role: "user", content: [
+              { type: "text", text: `Grade this worksheet.\n${promptText}` },
+              { type: "image_url", image_url: { url: new URL(sub.fileUrl, "https://dashboard.local").toString().replace("https://dashboard.local", "") } },
+            ] },
+          ], response_format: { type: "json_schema", json_schema: { name: "g", strict: true, schema: { type: "object", additionalProperties: false, required: ["score","feedback"], properties: { score: { type: "integer" }, feedback: { type: "string" } } } } } });
+          const raw = (r as any)?.choices?.[0]?.message?.content || "{}";
+          const parsed = JSON.parse(raw);
+          score = Math.max(0, Math.min(100, Math.round(parsed.score || 0)));
+          feedback = String(parsed.feedback || "");
+        } catch (e: any) {
+          feedback = "Image grading unavailable right now.";
+        }
+      }
+
+      const pct = Math.max(0, Math.min(100, Math.round((score / total) * 100)));
+      const letter = pct >= 90 ? "A" : pct >= 80 ? "B" : pct >= 70 ? "C" : pct >= 60 ? "D" : "F";
+      await db.recordAutoGrade({ submissionId: input.submissionId, autoScore: pct, autoLetter: letter, autoFeedback: feedback, answers });
+      return { autoScore: pct, letter, feedback };
+    }),
   }),
 
   /* =================== PRINTABLES HUB =================== */
