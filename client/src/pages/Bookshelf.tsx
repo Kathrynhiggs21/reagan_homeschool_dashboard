@@ -8,6 +8,8 @@ import { useAdultLock } from "@/contexts/AdultLockContext";
 import { useState } from "react";
 import { toast } from "sonner";
 import { trpc as trpcRoot } from "@/lib/trpc";
+import SubjectColorKey from "@/components/SubjectColorKey";
+import { subjectTint, tintCardStyle, tintInkStyle } from "@/lib/subjectColors";
 
 type Book = {
   id: number;
@@ -107,18 +109,22 @@ export default function Bookshelf() {
         )}
       </header>
 
+      <SubjectColorKey variant="schedule" />
+
       <div className="grid sm:grid-cols-1 lg:grid-cols-2 gap-4">
         {books.data?.map((b: Book) => {
           const pct = b.totalPages ? Math.round(((b.currentPage || 0) / b.totalPages) * 100) : 0;
           const isTuck = isTuckEverlasting(b);
+          const subj = b.subjectSlug || "reading";
+          const tint = subjectTint(subj);
           return (
-            <Card key={b.id} className="classroom-card p-5">
+            <Card key={b.id} className="classroom-card p-5" style={tintCardStyle(subj)}>
               <div className="flex gap-4">
-                <span className="text-5xl shrink-0">{isTuck ? "🌳" : "📖"}</span>
+                <span className="text-5xl shrink-0">{isTuck ? "🌳" : (tint.emoji || "📖")}</span>
                 <div className="flex-1 min-w-0">
-                  <div className="font-display font-semibold text-lg leading-tight">{b.title}</div>
-                  <div className="text-xs text-neutral-500 mt-0.5">
-                    {b.author || "Unknown author"} {b.subjectSlug && `· ${b.subjectSlug}`}
+                  <div className="font-display font-semibold text-lg leading-tight" style={tintInkStyle(subj)}>{b.title}</div>
+                  <div className="text-xs mt-0.5 opacity-80" style={tintInkStyle(subj)}>
+                    {b.author || "Unknown author"} · {tint.label}
                   </div>
 
                   {b.totalPages ? (

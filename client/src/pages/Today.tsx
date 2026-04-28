@@ -8,7 +8,10 @@ import { useState } from "react";
 import { toast } from "sonner";
 import BlockEditor, { type ExistingBlock } from "@/components/BlockEditor";
 import GradeBlockDialog from "@/components/GradeBlockDialog";
+import AnswerKeyDialog from "@/components/AnswerKeyDialog";
 import TurnInDialog from "@/components/TurnInDialog";
+import SubjectColorKey from "@/components/SubjectColorKey";
+import { subjectTint, tintCardStyle, tintInkStyle, tintPillStyle } from "@/lib/subjectColors";
 
 // Neutral classroom mood language + classroom-y icons
 const ZONES = [
@@ -80,6 +83,7 @@ export default function Today() {
   // Adult edit state
   const [blockEditor, setBlockEditor] = useState<{ open: boolean; block?: ExistingBlock }>({ open: false });
   const [gradeDialog, setGradeDialog] = useState<{ open: boolean; block?: { id: number; title?: string; subjectSlug?: string | null } }>({ open: false });
+  const [keyDialog, setKeyDialog] = useState<{ open: boolean; blockId?: number; title?: string }>({ open: false });
   const [turnIn, setTurnIn] = useState<{ open: boolean; block?: { id: number; title?: string; subjectSlug?: string | null } }>({ open: false });
 
   const today_str = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
@@ -185,6 +189,8 @@ export default function Today() {
         </Card>
       )}
 
+      <SubjectColorKey variant="schedule" />
+
       {/* Today's Schedule board */}
       <section>
         <div className="flex items-baseline justify-between mb-3">
@@ -214,16 +220,23 @@ export default function Today() {
         )}
         <div className="space-y-2">
           {blocks.map((b: any, i: number) => {
-            const chip = CHIP_COLORS[i % CHIP_COLORS.length];
             const isDone = b.status === "complete";
+            const tint = subjectTint(b.subjectSlug);
             return (
-              <div key={b.id} className={`schedule-row ${isDone ? "opacity-55" : ""}`}>
+              <div
+                key={b.id}
+                className={`schedule-row ${isDone ? "opacity-55" : ""}`}
+                style={tintCardStyle(b.subjectSlug)}
+              >
                 <img src={tileFor(b.subjectSlug)} alt="" className="subject-tile" />
-                <span className={`time-chip ${chip}`}>{blockTimeLabel(i)}</span>
+                <span className="time-chip" style={tintPillStyle(b.subjectSlug)}>{blockTimeLabel(i)}</span>
                 <div className="min-w-0 flex-1">
-                  <div className="font-display font-semibold text-base leading-tight">{b.title}</div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base" aria-hidden="true">{tint.emoji}</span>
+                    <div className="font-display font-semibold text-base leading-tight" style={tintInkStyle(b.subjectSlug)}>{b.title}</div>
+                  </div>
                   {b.description && (
-                    <p className="text-xs text-neutral-600 mt-0.5 line-clamp-1">{b.description}</p>
+                    <p className="text-xs text-neutral-700 mt-0.5 line-clamp-1">{b.description}</p>
                   )}
                   <div className="flex gap-1 mt-1.5 flex-wrap">
                     {!isDone && (
@@ -273,6 +286,15 @@ export default function Today() {
                           title="Adult: grade this block"
                         >
                           🅰 Grade
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs text-neutral-700 hover:bg-white"
+                          onClick={() => setKeyDialog({ open: true, blockId: b.id, title: b.title })}
+                          title="Adult: set answer key for auto-grading"
+                        >
+                          🔑 Key
                         </Button>
                         <Button
                           size="sm"
@@ -421,6 +443,12 @@ export default function Today() {
       <GradeBlockDialog
         open={gradeDialog.open}
         onOpenChange={(v) => setGradeDialog((s) => ({ ...s, open: v }))}
+      />
+      <AnswerKeyDialog
+        open={keyDialog.open}
+        onOpenChange={(v) => setKeyDialog((s) => ({ ...s, open: v }))}
+        blockId={keyDialog.blockId ?? null}
+        blockTitle={keyDialog.title}
       />
       <TurnInDialog
         open={turnIn.open}

@@ -128,6 +128,8 @@ export const adventures = mysqlTable("adventures", {
   instructions: text("instructions").notNull(),
   ohioStandards: json("ohioStandards").$type<string[]>(),
   isFavorite: boolean("isFavorite").default(false).notNull(),
+  coverImageUrl: varchar("coverImageUrl", { length: 500 }),
+  emoji: varchar("emoji", { length: 8 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

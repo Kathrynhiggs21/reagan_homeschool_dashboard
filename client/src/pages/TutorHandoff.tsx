@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useWhisper } from "@/contexts/WhisperContext";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { subjectTint, tintCardStyle, tintInkStyle } from "@/lib/subjectColors";
 
 function SendDigestButton() {
   const send = trpc.notifications.sendTodayDigest.useMutation();
@@ -82,19 +83,22 @@ export default function TutorHandoff() {
           </div>
         </div>
         <div className="space-y-2">
-          {blocks.map((b: any) => (
-            <div key={b.id} className="p-3 rounded-xl border border-border flex items-start gap-3">
-              <span className="text-xl">{b.emoji || "📝"}</span>
+          {blocks.map((b: any) => {
+            const tint = subjectTint(b.subjectSlug);
+            return (
+            <div key={b.id} className="p-3 rounded-xl border border-border flex items-start gap-3" style={tintCardStyle(b.subjectSlug)}>
+              <span className="text-xl">{b.emoji || tint.emoji}</span>
               <div className="flex-1">
-                <div className="font-medium">{b.title}</div>
-                <div className="text-xs text-muted-foreground">{b.subjectSlug} · est {b.estimatedMinutes || 30}m · {b.status}</div>
+                <div className="font-semibold" style={tintInkStyle(b.subjectSlug)}>{b.title}</div>
+                <div className="text-xs opacity-80" style={tintInkStyle(b.subjectSlug)}>{tint.label} · est {b.estimatedMinutes || 30}m · {b.status}</div>
                 {b.description && <p className="text-sm mt-1">{b.description}</p>}
               </div>
               {b.status !== "complete" && (
                 <Button size="sm" onClick={() => completeM.mutate({ id: b.id }, { onSuccess: () => utils.plans.today.invalidate() })}>✓ Mark done</Button>
               )}
             </div>
-          ))}
+            );
+          })}
           {blocks.length === 0 && <div className="text-sm text-muted-foreground italic">No plan yet for today.</div>}
         </div>
       </Card>

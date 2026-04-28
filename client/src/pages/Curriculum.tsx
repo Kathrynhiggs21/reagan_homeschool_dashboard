@@ -4,6 +4,8 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import SubjectColorKey from "@/components/SubjectColorKey";
+import { subjectTint, tintCardStyle, tintInkStyle } from "@/lib/subjectColors";
 
 export default function Curriculum() {
   const subjects = trpc.subjects.list.useQuery();
@@ -36,6 +38,8 @@ export default function Curriculum() {
         <p className="text-muted-foreground text-sm mt-1">Subjects, skills, and the books we're working through.</p>
       </header>
 
+      <SubjectColorKey variant="schedule" />
+
       <Card className="cozy-card p-4">
         <div className="flex items-center justify-between mb-3">
           <div>
@@ -48,12 +52,15 @@ export default function Curriculum() {
         </div>
         {((subjectGrades.data as any[]) ?? []).length > 0 && (
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-2 mb-3">
-            {((subjectGrades.data as any[]) ?? []).map((g: any) => (
-              <div key={g.subjectSlug} className="text-xs p-2 rounded border bg-white/40 flex justify-between">
-                <span className="capitalize">{g.subjectSlug}</span>
-                <span className={g.average < 70 ? "text-red-700 font-semibold" : "text-neutral-700"}>{g.letter} · {g.average}%</span>
+            {((subjectGrades.data as any[]) ?? []).map((g: any) => {
+              const t = subjectTint(g.subjectSlug);
+              return (
+              <div key={g.subjectSlug} className="text-xs p-2 rounded flex justify-between" style={tintCardStyle(g.subjectSlug)}>
+                <span className="font-semibold" style={tintInkStyle(g.subjectSlug)}>{t.emoji} {t.label}</span>
+                <span className={g.average < 70 ? "text-red-700 font-bold" : "font-semibold"} style={g.average >= 70 ? tintInkStyle(g.subjectSlug) : undefined}>{g.letter} · {g.average}%</span>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
         {proposed.length === 0 ? (
@@ -84,10 +91,10 @@ export default function Curriculum() {
         <h2 className="font-display font-semibold mb-3">Subjects</h2>
         <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
           {subjects.data?.map((s: any) => (
-            <Card key={s.id} className="cozy-card p-4">
-              <div className="text-2xl mb-1">{s.emoji}</div>
-              <div className="font-display font-semibold">{s.name}</div>
-              {s.description && <p className="text-xs text-muted-foreground mt-1">{s.description}</p>}
+            <Card key={s.id} className="cozy-card p-4" style={tintCardStyle(s.slug)}>
+              <div className="text-2xl mb-1">{s.emoji || subjectTint(s.slug).emoji}</div>
+              <div className="font-display font-semibold" style={tintInkStyle(s.slug)}>{s.name}</div>
+              {s.description && <p className="text-xs mt-1 opacity-80" style={tintInkStyle(s.slug)}>{s.description}</p>}
             </Card>
           ))}
         </div>
@@ -97,13 +104,13 @@ export default function Curriculum() {
         <h2 className="font-display font-semibold mb-3">Skills Mastery</h2>
         <div className="space-y-2">
           {skills.data?.map((sk: any) => (
-            <Card key={sk.id} className="cozy-card p-3">
+            <Card key={sk.id} className="cozy-card p-3" style={tintCardStyle(sk.subjectSlug)}>
               <div className="flex items-center justify-between text-sm">
                 <div>
-                  <div className="font-medium">{sk.skillName}</div>
-                  <div className="text-xs text-muted-foreground">{sk.subjectSlug}</div>
+                  <div className="font-medium" style={tintInkStyle(sk.subjectSlug)}>{subjectTint(sk.subjectSlug).emoji} {sk.skillName}</div>
+                  <div className="text-xs opacity-80" style={tintInkStyle(sk.subjectSlug)}>{subjectTint(sk.subjectSlug).label}</div>
                 </div>
-                <div className="font-mono text-sm font-semibold">{sk.currentScore || 0}%</div>
+                <div className="font-mono text-sm font-semibold" style={tintInkStyle(sk.subjectSlug)}>{sk.currentScore || 0}%</div>
               </div>
               <Progress value={sk.currentScore || 0} className="mt-2 h-2" />
             </Card>
@@ -115,12 +122,12 @@ export default function Curriculum() {
         <h2 className="font-display font-semibold mb-3">Books in Progress</h2>
         <div className="grid sm:grid-cols-2 gap-3">
           {books.data?.map((b: any) => (
-            <Card key={b.id} className="cozy-card p-4">
+            <Card key={b.id} className="cozy-card p-4" style={tintCardStyle(b.subjectSlug || "reading")}>
               <div className="flex gap-3">
                 <span className="text-3xl">📖</span>
                 <div className="flex-1">
-                  <div className="font-display font-semibold">{b.title}</div>
-                  <div className="text-xs text-muted-foreground">{b.author} · {b.subjectSlug}</div>
+                  <div className="font-display font-semibold" style={tintInkStyle(b.subjectSlug || "reading")}>{b.title}</div>
+                  <div className="text-xs opacity-80" style={tintInkStyle(b.subjectSlug || "reading")}>{b.author} · {subjectTint(b.subjectSlug || "reading").label}</div>
                   {b.totalPages && (
                     <div className="mt-2">
                       <div className="text-xs text-muted-foreground">Page {b.currentPage || 0} of {b.totalPages}</div>

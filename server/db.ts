@@ -181,6 +181,11 @@ export async function toggleAdventureFavorite(id: number) {
   await getDb().update(adventures).set({ isFavorite: !a.isFavorite }).where(eq(adventures.id, id));
 }
 
+export async function updateAdventureCover(id: number, coverImageUrl: string) {
+  await getDb().update(adventures).set({ coverImageUrl }).where(eq(adventures.id, id));
+  return getAdventure(id);
+}
+
 /* ============================== APPS ====================================== */
 export async function listAppLinks() {
   return getDb().select().from(appLinks).orderBy(appLinks.sortOrder);
@@ -1089,4 +1094,22 @@ export async function updateBook(
 export async function deleteBook(id: number) {
   await getDb().delete(books).where(eq(books.id, id));
   return { deleted: true };
+}
+
+
+/* ============================================================
+ * Recipients + Appointments — update / delete (Round 4a-vi)
+ * ============================================================ */
+export async function updateRecipient(id: number, patch: Partial<typeof notificationRecipients.$inferInsert>) {
+  await getDb().update(notificationRecipients).set(patch).where(eq(notificationRecipients.id, id));
+}
+export async function deleteRecipient(id: number) {
+  // Soft-delete to preserve history; switch active flag off.
+  await getDb().update(notificationRecipients).set({ active: false } as any).where(eq(notificationRecipients.id, id));
+}
+export async function updateAppointment(id: number, patch: Partial<typeof appointments.$inferInsert>) {
+  await getDb().update(appointments).set(patch).where(eq(appointments.id, id));
+}
+export async function deleteAppointment(id: number) {
+  await getDb().update(appointments).set({ active: false } as any).where(eq(appointments.id, id));
 }

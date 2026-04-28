@@ -20,6 +20,7 @@ const KID_NAV: NavItem[] = [
   { to: "/week",      emoji: "🗓️", label: "This Week" },
   { to: "/bookshelf", emoji: "📚", label: "Bookshelf" },
   { to: "/notes",     emoji: "📝", label: "Notebook" },
+  { to: "/scratch",   emoji: "✏️", label: "Scratch Pad" },
   { to: "/apps",      emoji: "🎒", label: "Apps & Tools" },
   { to: "/profile",   emoji: "🪪", label: "About Me" },
 ];

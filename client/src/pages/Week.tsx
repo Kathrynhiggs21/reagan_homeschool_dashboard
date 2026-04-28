@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { useAdultLock } from "@/contexts/AdultLockContext";
 import BlockEditor from "@/components/BlockEditor";
 import { toast } from "sonner";
+import SubjectColorKey from "@/components/SubjectColorKey";
+import { subjectTint, tintCardStyle, tintInkStyle } from "@/lib/subjectColors";
 
 function startOfWeek(d: Date) {
   const out = new Date(d);
@@ -44,11 +46,17 @@ function DayCard({ date, label, isToday }: { date: string; label: string; isToda
             <div className="h-full bg-primary transition-all" style={{ width: `${pct}%` }} />
           </div>
           <div className="text-[11px] text-muted-foreground mt-1">{done}/{total} blocks done</div>
-          <ul className="mt-3 space-y-1">
-            {blocks.slice(0, unlocked ? 20 : 5).map((b: any) => (
-              <li key={b.id} className="text-xs flex items-start gap-1.5 group">
-                <span className="mt-0.5">{b.status === "complete" ? "✓" : "•"}</span>
-                <span className={`flex-1 ${b.status === "complete" ? "line-through text-muted-foreground" : ""}`}>{b.title}</span>
+          <ul className="mt-3 space-y-1.5">
+            {blocks.slice(0, unlocked ? 20 : 5).map((b: any) => {
+              const tint = subjectTint(b.subjectSlug);
+              return (
+              <li
+                key={b.id}
+                className="text-xs flex items-start gap-1.5 group rounded-md px-2 py-1.5"
+                style={tintCardStyle(b.subjectSlug)}
+              >
+                <span className="mt-0.5" aria-hidden="true">{b.status === "complete" ? "✓" : tint.emoji}</span>
+                <span className={`flex-1 font-medium ${b.status === "complete" ? "line-through opacity-60" : ""}`} style={tintInkStyle(b.subjectSlug)}>{b.title}</span>
                 {unlocked && (
                   <span className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                     <button
@@ -64,7 +72,8 @@ function DayCard({ date, label, isToday }: { date: string; label: string; isToda
                   </span>
                 )}
               </li>
-            ))}
+              );
+            })}
             {!unlocked && blocks.length > 5 && (
               <li className="text-[10px] text-muted-foreground italic">+{blocks.length - 5} more…</li>
             )}
@@ -161,6 +170,8 @@ export default function Week() {
           </div>
         </Card>
       )}
+
+      <SubjectColorKey variant="schedule" />
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
         {days.map(d => (

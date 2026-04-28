@@ -231,27 +231,124 @@ export default function Settings() {
       </Card>
 
       {/* ============================ RECIPIENTS ============================ */}
-      <Card className="classroom-card p-5">
-        <div className="font-display font-semibold text-lg mb-3">Notification Recipients</div>
-        <div className="space-y-2">
-          {(recipients.data ?? []).map((r: any) => (
-            <div
-              key={r.id}
-              className="text-sm flex items-center justify-between p-3 rounded-lg bg-neutral-50 border border-neutral-200"
-            >
-              <div>
-                <div className="font-medium">{r.name}</div>
-                <div className="text-xs text-neutral-500">
-                  {r.email} · {r.role}
-                </div>
-              </div>
-            </div>
-          ))}
-          {(recipients.data ?? []).length === 0 && (
-            <div className="text-sm text-neutral-500">No recipients yet.</div>
-          )}
-        </div>
-      </Card>
+      <RecipientsCard />
+
+      {/* ============================ APPOINTMENTS ============================ */}
+      <AppointmentsCard />
     </div>
+  );
+}
+
+function RecipientsCard() {
+  const list = trpc.recipients.list.useQuery();
+  const addM = trpc.recipients.add.useMutation();
+  const updateM = trpc.recipients.update.useMutation();
+  const delM = trpc.recipients.delete.useMutation();
+  const utils = trpc.useUtils();
+  const [form, setForm] = useState({ email: "", displayName: "", role: "parent" as "parent"|"grandparent"|"tutor"|"other" });
+  async function add() {
+    if (!form.email) return;
+    await addM.mutateAsync({ email: form.email, displayName: form.displayName || undefined, role: form.role });
+    setForm({ email: "", displayName: "", role: "parent" });
+    utils.recipients.list.invalidate();
+  }
+  async function rename(r: any) {
+    const name = prompt("Display name:", r.displayName || "");
+    if (name === null) return;
+    await updateM.mutateAsync({ id: r.id, displayName: name });
+    utils.recipients.list.invalidate();
+  }
+  async function remove(r: any) {
+    if (!confirm(`Remove ${r.email}?`)) return;
+    await delM.mutateAsync({ id: r.id });
+    utils.recipients.list.invalidate();
+  }
+  return (
+    <Card className="classroom-card p-5">
+      <div className="font-display font-semibold text-lg mb-3">Notification Recipients</div>
+      <div className="flex flex-wrap gap-2 mb-4">
+        <input className="text-sm border border-border rounded px-2 py-1 bg-white text-neutral-900" placeholder="email" value={form.email} onChange={(e)=>setForm({...form, email:e.target.value})}/>
+        <input className="text-sm border border-border rounded px-2 py-1 bg-white text-neutral-900" placeholder="display name" value={form.displayName} onChange={(e)=>setForm({...form, displayName:e.target.value})}/>
+        <select className="text-sm border border-border rounded px-2 py-1 bg-white text-neutral-900" value={form.role} onChange={(e)=>setForm({...form, role: e.target.value as any})}>
+          <option value="parent">parent</option>
+          <option value="grandparent">grandparent</option>
+          <option value="tutor">tutor</option>
+          <option value="other">other</option>
+        </select>
+        <button className="text-sm rounded px-3 py-1 bg-primary text-primary-foreground" onClick={add}>+ Add</button>
+      </div>
+      <div className="space-y-2">
+        {(list.data ?? []).map((r: any) => (
+          <div key={r.id} className="text-sm flex items-center justify-between p-3 rounded-lg bg-neutral-50 border border-neutral-200">
+            <div>
+              <div className="font-medium">{r.displayName || r.email}</div>
+              <div className="text-xs text-neutral-500">{r.email} · {r.role}</div>
+            </div>
+            <div className="flex gap-2">
+              <button className="text-xs underline" onClick={() => rename(r)}>rename</button>
+              <button className="text-xs text-destructive underline" onClick={() => remove(r)}>remove</button>
+            </div>
+          </div>
+        ))}
+        {(list.data ?? []).length === 0 && (
+          <div className="text-sm text-neutral-500">No recipients yet.</div>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+function AppointmentsCard() {
+  const list = trpc.appointments.list.useQuery();
+  const addM = trpc.appointments.add.useMutation();
+  const updateM = trpc.appointments.update.useMutation();
+  const delM = trpc.appointments.delete.useMutation();
+  const utils = trpc.useUtils();
+  const [form, setForm] = useState({ title: "", contactName: "", durationMin: 60, recurrenceRule: "", notes: "" });
+  async function add() {
+    if (!form.title) return;
+    await addM.mutateAsync({ title: form.title, contactName: form.contactName || undefined, durationMin: form.durationMin, recurrenceRule: form.recurrenceRule || undefined, notes: form.notes || undefined });
+    setForm({ title: "", contactName: "", durationMin: 60, recurrenceRule: "", notes: "" });
+    utils.appointments.list.invalidate();
+  }
+  async function rename(a: any) {
+    const title = prompt("Title:", a.title);
+    if (title === null) return;
+    await updateM.mutateAsync({ id: a.id, title });
+    utils.appointments.list.invalidate();
+  }
+  async function remove(a: any) {
+    if (!confirm(`Delete "${a.title}"?`)) return;
+    await delM.mutateAsync({ id: a.id });
+    utils.appointments.list.invalidate();
+  }
+  return (
+    <Card className="classroom-card p-5">
+      <div className="font-display font-semibold text-lg mb-3">Appointments</div>
+      <div className="flex flex-wrap gap-2 mb-4">
+        <input className="text-sm border border-border rounded px-2 py-1 bg-white text-neutral-900" placeholder="title (e.g. OT, therapy)" value={form.title} onChange={(e)=>setForm({...form, title:e.target.value})}/>
+        <input className="text-sm border border-border rounded px-2 py-1 bg-white text-neutral-900" placeholder="contact name" value={form.contactName} onChange={(e)=>setForm({...form, contactName:e.target.value})}/>
+        <input className="text-sm border border-border rounded px-2 py-1 bg-white text-neutral-900 w-20" type="number" placeholder="minutes" value={form.durationMin} onChange={(e)=>setForm({...form, durationMin:Number(e.target.value)||60})}/>
+        <input className="text-sm border border-border rounded px-2 py-1 bg-white text-neutral-900" placeholder="recurrence (e.g. weekly Tue 3pm)" value={form.recurrenceRule} onChange={(e)=>setForm({...form, recurrenceRule:e.target.value})}/>
+        <button className="text-sm rounded px-3 py-1 bg-primary text-primary-foreground" onClick={add}>+ Add</button>
+      </div>
+      <div className="space-y-2">
+        {(list.data ?? []).map((a: any) => (
+          <div key={a.id} className="text-sm flex items-center justify-between p-3 rounded-lg bg-neutral-50 border border-neutral-200">
+            <div>
+              <div className="font-medium">{a.title}{a.contactName ? ` — ${a.contactName}` : ""}</div>
+              <div className="text-xs text-neutral-500">{a.durationMin} min{a.recurrenceRule ? ` · ${a.recurrenceRule}` : ""}</div>
+            </div>
+            <div className="flex gap-2">
+              <button className="text-xs underline" onClick={() => rename(a)}>rename</button>
+              <button className="text-xs text-destructive underline" onClick={() => remove(a)}>remove</button>
+            </div>
+          </div>
+        ))}
+        {(list.data ?? []).length === 0 && (
+          <div className="text-sm text-neutral-500">No recurring appointments yet.</div>
+        )}
+      </div>
+    </Card>
   );
 }

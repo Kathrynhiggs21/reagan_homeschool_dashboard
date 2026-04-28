@@ -180,6 +180,20 @@ export const appRouter = router({
       energyLevel: z.enum(["low","medium","high"]).default("medium"),
     })).mutation(({ input }) => db.insertAdventure(input as any)),
     toggleFavorite: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.toggleAdventureFavorite(input.id)),
+    generateCover: protectedProcedure.input(z.object({ id: z.number(), promptOverride: z.string().optional() })).mutation(async ({ input }) => {
+      const { generateImage } = await import("./_core/imageGeneration");
+      const adv = await db.getAdventure(input.id);
+      if (!adv) throw new Error("Adventure not found");
+      const subj = Array.isArray((adv as any).subjectSlugs) && (adv as any).subjectSlugs.length > 0 ? (adv as any).subjectSlugs[0] : "adventure";
+      const basePrompt = input.promptOverride ||
+        `Whimsical hand-drawn classroom illustration of: \"${(adv as any).title}\". ${(adv as any).description || ""}. ` +
+        `Style: cozy children's book, soft pastels, warm lighting, slight crayon texture, kid-friendly. ` +
+        `Subject context: ${subj}. No text, no letters, no logos.`;
+      const result = await generateImage({ prompt: basePrompt });
+      const url = (result as any).url || "";
+      if (url) await db.updateAdventureCover(input.id, url);
+      return { url };
+    }),
   }),
 
   /* =================== APPS =================== */
@@ -317,23 +331,37 @@ export const appRouter = router({
   /* =================== RECIPIENTS =================== */
   recipients: router({
     list: publicProcedure.query(() => db.listRecipients()),
-    add: protectedProcedure.input(z.object({
+    add: publicProcedure.input(z.object({
       email: z.string().email(), displayName: z.string().optional(),
       role: z.enum(["parent","grandparent","tutor","other"]).default("other"),
       optInTypes: z.array(z.string()).optional(),
     })).mutation(({ input }) => db.insertRecipient(input as any)),
+    update: publicProcedure.input(z.object({
+      id: z.number(), email: z.string().email().optional(), displayName: z.string().optional(),
+      role: z.enum(["parent","grandparent","tutor","other"]).optional(),
+      optInTypes: z.array(z.string()).optional(),
+    })).mutation(({ input }) => { const { id, ...patch } = input; return db.updateRecipient(id, patch as any); }),
+    delete: publicProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteRecipient(input.id)),
   }),
 
   /* =================== APPOINTMENTS =================== */
   appointments: router({
     list: publicProcedure.query(() => db.listAppointments()),
-    add: protectedProcedure.input(z.object({
+    add: publicProcedure.input(z.object({
       title: z.string(), contactName: z.string().optional(),
       recurrenceRule: z.string().optional(), startTime: z.string().optional(), endTime: z.string().optional(),
       leaveTime: z.string().optional(), returnTime: z.string().optional(),
       durationMin: z.number().default(60), isProtected: z.boolean().default(true),
       decompressionBufferMin: z.number().default(30), notes: z.string().optional(),
     })).mutation(({ input }) => db.insertAppointment(input as any)),
+    update: publicProcedure.input(z.object({
+      id: z.number(), title: z.string().optional(), contactName: z.string().optional(),
+      recurrenceRule: z.string().optional(), startTime: z.string().optional(), endTime: z.string().optional(),
+      leaveTime: z.string().optional(), returnTime: z.string().optional(),
+      durationMin: z.number().optional(), isProtected: z.boolean().optional(),
+      decompressionBufferMin: z.number().optional(), notes: z.string().optional(),
+    })).mutation(({ input }) => { const { id, ...patch } = input; return db.updateAppointment(id, patch as any); }),
+    delete: publicProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteAppointment(input.id)),
   }),
 
   /* =================== SCHOOL CALENDAR =================== */

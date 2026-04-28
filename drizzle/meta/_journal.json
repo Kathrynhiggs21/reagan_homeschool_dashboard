@@ -78,6 +78,13 @@
       "when": 1777350638388,
       "tag": "0010_even_queen_noir",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1777352431728,
+      "tag": "0011_noisy_shockwave",
+      "breakpoints": true
     }
   ]
 }

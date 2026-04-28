@@ -530,10 +530,10 @@
 ## 🎯 Round 4a-i — First-Day Setup + My Setup
 - [x] Onboarding flow component (`OnboardingFlow.tsx`) mounted in App.tsx; blocks UI until `profile.onboardingCompleted = true`
 - [ ] Steps: Welcome → Theme picker (4 templates) → Helper name → Voice mode (voice/text/silent) → Quick tour (Today/Week/Bookshelf/Apps) → Materials list → Turn-In intro → Chat Buddy button → Joke → "Start my day"
-- [ ] Persists each choice via `profile.update` (resumes if reloaded mid-setup)
-- [ ] Reagan "My Setup" panel on About Me: change theme, helper name, voice mode, replay First-Day Setup
-- [ ] Adult Settings (passcode) can also reset onboarding and override choices
-- [ ] Theme templates wired: Chalkboard Classic (default, no green), Sunny Paper, Midnight Sky, Ocean Breeze — implemented as body-class swap + CSS variable set
+- [x] Persists each choice via `profile.update` (resumes if reloaded mid-setup)
+- [x] Reagan "My Setup" panel on About Me: change theme, helper name, voice mode, replay First-Day Setup
+- [x] Adult Settings (passcode) can also reset onboarding and override choices
+- [x] Theme templates wired: Chalkboard Classic (default, no green), Sunny Paper, Midnight Sky, Ocean Breeze — implemented as body-class swap + CSS variable set
 
 ## 🎯 Round 4a-iii — Academic data ingestion (AFTER 4a-i checkpoint)
 - [ ] Verify MCP auth: Gmail, Google Drive, Google Classroom (prompt re-auth if any fail)
@@ -553,7 +553,7 @@
 - [ ] Ingest Manus share: https://manus.im/share/Q6CGT8xgDNMn4QvxxhVE2L — browser-open and extract Reagan's profile info (grade levels, IEP content, testing history, current skills, accommodations). Source-link back to that share URL.
 
 ## 🎨 Title color update
-- [ ] Switch page-hero titles (Today / Week / Bookshelf / Apps / Journal / etc.) from rotating multicolor chalk to a single chalk-dust warm-white so subject colors on cards/tiles pop without competing
+- [x] Switch page-hero titles (Today / Week / Bookshelf / Apps / Journal / etc.) from rotating multicolor chalk to a single chalk-dust warm-white so subject colors on cards/tiles pop without competing
 - [x] Keep one small accent-color flourish per page (subtitle or date line) instead of full rainbow headline
 
 ## ✏️ Apple Pencil / iPad draw-on-doc + Turn-In (Round 4a-ii)
@@ -656,3 +656,31 @@
 - [ ] Audit log: edit actions recorded with timestamp + actor (Mom/tutor) for undo
 - [x] All edit controls completely hidden when AdultLock locked — Reagan never sees them
 - [x] Toast confirmation on every edit (undo-within-10s deferred)
+
+
+## 🗺 Adventures imagery (Round 4a-vii)
+
+- [ ] Adventure cards show a large hero image inside the card (~16:9 banner above the title)
+- [ ] If `coverImageUrl` is empty, auto-generate one via the LLM image-gen helper from the adventure's title + description on first view
+- [ ] Persist the generated coverImageUrl back to the adventure row so subsequent loads are instant
+- [ ] Adult-only: ✎ Edit cover (re-roll AI image, paste URL, or upload file)
+- [ ] Adult-only: re-prompt with custom text (e.g., "make it more cozy / brighter / kid-friendly")
+- [ ] Reagan view: image is just visual, no edit affordances
+- [ ] Empty state placeholder while image is generating (skeleton + "drawing your adventure…")
+
+
+## 🎨 Subject Color Visual System (Round 4a-viii)
+
+- [ ] Add `subjectTint(slug)` helper that returns `{ bg, border, ink, accent }` per subject so cards can be fully tinted in the subject color
+- [ ] Today: each schedule block becomes a fully tinted card (soft subject-tint background, colored 4px left border, subject icon in subject ink)
+- [ ] Week: same tinted cards across all 7 days
+- [ ] Tutor handoff: same tint
+- [ ] Curriculum: weekly-topic cards tinted by subject
+- [ ] Adventures: card tinted by primary subject; tag pills also subject-tinted
+- [ ] Bookshelf: each book card tinted by its book.subjectSlug (default reading)
+- [ ] Apps & Tools: each app card tinted by category (academic / creative / utility) with key
+- [ ] Subject Color Key card pinned at top of Today (collapsible) and Curriculum, listing every subject swatch + name + meaning
+- [ ] Sidebar nav "For Reagan" items get a tiny color dot on the right matching the page's primary subject hue (Today=warm, Week=blue, Bookshelf=red, Notebook=violet, Apps=amber, About=rose)
+- [ ] Onboarding step explains the color key briefly
+- [ ] Adult Apps: ✎ Edit lets adult set category (drives card color)
+- [ ] Adventures: ✎ Edit lets adult set primary subject (drives card color)

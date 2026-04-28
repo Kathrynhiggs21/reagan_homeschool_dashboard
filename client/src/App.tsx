@@ -29,6 +29,7 @@ import Printables from "./pages/Printables";
 import TakeNotes from "./pages/TakeNotes";
 import Academics from "./pages/Academics";
 import ReportCard from "./pages/ReportCard";
+import Scratch from "./pages/Scratch";
 import { trpc } from "@/lib/trpc";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
@@ -89,6 +90,7 @@ function Router() {
           <AdultGate><ReportCard /></AdultGate>
         </Route>
         <Route path="/notes" component={TakeNotes} />
+        <Route path="/scratch" component={Scratch} />
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
