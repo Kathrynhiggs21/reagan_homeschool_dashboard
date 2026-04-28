@@ -13,7 +13,7 @@ import {
   journalEntries, helpList, assignmentSubmissions,
   assignmentAnswerKeys, assignmentSubmissionsAutoGrade,
   takeNotes, curriculumAdjustments, blockGrades, needsWorkItems,
-  printableSources, printableFavorites,
+  printableSources, printableFavorites, academicRecords,
 } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -916,4 +916,95 @@ export async function rebuildAdaptiveSuggestions() {
   }
 
   return { adjustmentsAdded: adjCount, needsWorkAdded: nwCount };
+}
+
+
+/* =================== ACADEMIC RECORDS =================== */
+export type AcademicSource =
+  "paste" | "manus_share" | "gmail" | "classroom" | "powerschool_ih" | "powerschool_madeira" | "ixl" | "drive" | "manual";
+export type AcademicKind = "assignment" | "grade" | "mastery" | "note" | "attendance";
+
+export async function listAcademicRecords(filter?: { source?: AcademicSource; subjectSlug?: string; limit?: number }) {
+  const db = getDb();
+  const limit = filter?.limit ?? 200;
+  let rows = await db.select().from(academicRecords).orderBy(desc(academicRecords.createdAt)).limit(limit);
+  if (filter?.source) rows = rows.filter((r) => r.source === filter.source);
+  if (filter?.subjectSlug) rows = rows.filter((r) => r.subjectSlug === filter.subjectSlug);
+  return rows;
+}
+
+export async function createAcademicRecord(input: {
+  source: AcademicSource; kind: AcademicKind; subjectSlug?: string; title: string;
+  summary?: string; scoreText?: string; scorePercent?: number;
+  assignedAt?: Date; dueAt?: Date; completedAt?: Date;
+  payload?: string; metadata?: Record<string, any>;
+}) {
+  const db = getDb();
+  const result: any = await db.insert(academicRecords).values(input as any);
+  const insertId = (result as any)?.[0]?.insertId ?? (result as any)?.insertId;
+  if (insertId) {
+    const [row] = await db.select().from(academicRecords).where(eq(academicRecords.id, Number(insertId))).limit(1);
+    return row;
+  }
+  const rows = await db.select().from(academicRecords).orderBy(desc(academicRecords.id)).limit(1);
+  return rows[0];
+}
+
+export async function deleteAcademicRecord(id: number) {
+  const db = getDb();
+  await db.delete(academicRecords).where(eq(academicRecords.id, id));
+}
+
+/**
+ * Uses the LLM to pull an assignment/grade/mastery summary out of free-form
+ * pasted content (a Classroom invite, a PowerSchool screenshot caption, a
+ * Gmail forward, an IXL skill URL, a Drive link paragraph, etc).
+ * Returns a draft AcademicRecord payload; caller decides to store it.
+ */
+export async function extractAcademicFromPaste(source: AcademicSource, raw: string) {
+  const { invokeLLM } = await import("./_core/llm");
+  const sys = `You extract a single homework/assignment/grade record from free-form text a parent pastes.
+Return JSON matching the schema exactly. Score fields may be null. Subjects: math, ela, reading, writing, science, ss, art, music, pe, life_skills, other.`;
+  const resp: any = await invokeLLM({
+    messages: [
+      { role: "system", content: sys },
+      { role: "user", content: raw.slice(0, 8000) },
+    ],
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "academic_record",
+        strict: true,
+        schema: {
+          type: "object",
+          properties: {
+            kind: { type: "string", enum: ["assignment", "grade", "mastery", "note", "attendance"] },
+            title: { type: "string" },
+            subjectSlug: { type: "string" },
+            summary: { type: "string" },
+            scoreText: { type: ["string", "null"] },
+            scorePercent: { type: ["integer", "null"] },
+            dueDateIso: { type: ["string", "null"] },
+          },
+          required: ["kind", "title", "subjectSlug", "summary", "scoreText", "scorePercent", "dueDateIso"],
+          additionalProperties: false,
+        },
+      },
+    },
+  });
+  const content = resp?.choices?.[0]?.message?.content ?? "{}";
+  let parsed: any = {};
+  try { parsed = typeof content === "string" ? JSON.parse(content) : content; } catch { parsed = {}; }
+  const draft = {
+    source,
+    kind: parsed.kind || "note",
+    title: parsed.title || raw.slice(0, 80),
+    subjectSlug: parsed.subjectSlug,
+    summary: parsed.summary,
+    scoreText: parsed.scoreText ?? undefined,
+    scorePercent: typeof parsed.scorePercent === "number" ? parsed.scorePercent : undefined,
+    dueAt: parsed.dueDateIso ? new Date(parsed.dueDateIso) : undefined,
+    payload: raw,
+  };
+  return draft;
 }

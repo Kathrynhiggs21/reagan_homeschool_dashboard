@@ -26,6 +26,7 @@ import Onboarding from "./pages/Onboarding";
 import NeedsWork from "./pages/NeedsWork";
 import Printables from "./pages/Printables";
 import TakeNotes from "./pages/TakeNotes";
+import Academics from "./pages/Academics";
 import { trpc } from "@/lib/trpc";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
@@ -78,6 +79,9 @@ function Router() {
         </Route>
         <Route path="/printables">
           <AdultGate><Printables /></AdultGate>
+        </Route>
+        <Route path="/academics">
+          <AdultGate><Academics /></AdultGate>
         </Route>
         <Route path="/notes" component={TakeNotes} />
         <Route path="/404" component={NotFound} />

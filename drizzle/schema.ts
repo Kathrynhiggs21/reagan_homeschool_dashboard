@@ -675,3 +675,33 @@ export const assignmentSubmissionsAutoGrade = mysqlTable("assignmentSubmissionsA
   answers: json("answers").$type<Record<string, string>>(),
   gradedAt: timestamp("gradedAt").defaultNow().notNull(),
 });
+
+
+/**
+ * academicRecords — a chronological log of assignments/grades/skills
+ * ingested from outside sources. Sources are tagged so the UI can filter.
+ * - source: where the row came from (paste/manus_share/gmail/classroom/powerschool_ih/powerschool_madeira/ixl/drive/manual)
+ * - kind: assignment | grade | mastery | note | attendance
+ * - payload: original raw text/URL blob (optional)
+ * - metadata: JSON blob for source-specific fields (URL, classroom id, screenshot key...)
+ */
+export const academicRecords = mysqlTable("academicRecords", {
+  id: int("id").autoincrement().primaryKey(),
+  source: mysqlEnum("source", [
+    "paste", "manus_share", "gmail", "classroom", "powerschool_ih", "powerschool_madeira",
+    "ixl", "drive", "manual",
+  ]).notNull(),
+  kind: mysqlEnum("kind", ["assignment", "grade", "mastery", "note", "attendance"]).notNull(),
+  subjectSlug: varchar("subjectSlug", { length: 32 }),
+  title: varchar("title", { length: 300 }).notNull(),
+  summary: text("summary"),
+  scoreText: varchar("scoreText", { length: 48 }),
+  scorePercent: int("scorePercent"),
+  assignedAt: timestamp("assignedAt"),
+  dueAt: timestamp("dueAt"),
+  completedAt: timestamp("completedAt"),
+  payload: text("payload"),
+  metadata: json("metadata").$type<Record<string, any>>(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type AcademicRecord = typeof academicRecords.$inferSelect;

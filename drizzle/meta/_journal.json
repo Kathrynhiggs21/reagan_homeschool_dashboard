@@ -71,6 +71,13 @@
       "when": 1777348633210,
       "tag": "0009_motionless_riptide",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1777350638388,
+      "tag": "0010_even_queen_noir",
+      "breakpoints": true
     }
   ]
 }

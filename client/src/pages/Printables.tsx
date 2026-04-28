@@ -24,6 +24,8 @@ export default function Printables() {
   const favorites = trpc.printables.listFavorites.useQuery();
   const addFav = trpc.printables.addFavorite.useMutation();
   const removeFav = trpc.printables.removeFavorite.useMutation();
+  const todayQ = trpc.plans.today.useQuery();
+  const createBlock = trpc.blocks.create.useMutation();
   const utils = trpc.useUtils();
 
   const [q, setQ] = useState("");
@@ -63,6 +65,22 @@ export default function Printables() {
       }
     }
     toast.success(`Opened ${opened} search tab${opened === 1 ? "" : "s"}.`);
+  }
+
+  async function addToToday(s: any) {
+    const planId = (todayQ.data as any)?.plan?.id;
+    if (!planId) { toast.error("Today's plan isn't ready yet."); return; }
+    const url = s.searchUrl && q ? s.searchUrl.replace("{q}", encodeURIComponent(q)) : s.url;
+    const title = q ? `${q} — ${s.name}` : s.name;
+    await createBlock.mutateAsync({
+      planId,
+      blockType: "school",
+      title,
+      description: `Open: ${url}`,
+      durationMin: 20,
+    } as any);
+    utils.plans.today.invalidate();
+    toast.success(`Added “${title}” to Today.`);
   }
 
   async function saveFav(s: any) {
@@ -142,9 +160,12 @@ export default function Printables() {
                   <Badge key={t} variant="secondary" className="text-[10px]">{t}</Badge>
                 ))}
               </div>
-              <div className="flex gap-2 mt-3">
+              <div className="flex gap-2 mt-3 flex-wrap">
                 <Button size="sm" variant="outline" className="bg-transparent h-7 text-xs" onClick={() => launch(s)}>
                   {q && s.searchUrl ? "Search" : "Open"}
+                </Button>
+                <Button size="sm" variant="outline" className="bg-transparent h-7 text-xs" onClick={() => addToToday(s)}>
+                  + Today
                 </Button>
                 <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => saveFav(s)}>
                   ☆ Save

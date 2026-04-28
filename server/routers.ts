@@ -753,6 +753,35 @@ export const appRouter = router({
     rebuild: publicProcedure.mutation(() => db.rebuildAdaptiveSuggestions()),
   }),
 
+  /* =================== ACADEMIC RECORDS =================== */
+  academics: router({
+    list: publicProcedure.input(z.object({
+      source: z.enum(["paste","manus_share","gmail","classroom","powerschool_ih","powerschool_madeira","ixl","drive","manual"]).optional(),
+      subjectSlug: z.string().optional(),
+      limit: z.number().optional(),
+    }).optional()).query(({ input }) => db.listAcademicRecords(input)),
+    create: publicProcedure.input(z.object({
+      source: z.enum(["paste","manus_share","gmail","classroom","powerschool_ih","powerschool_madeira","ixl","drive","manual"]),
+      kind: z.enum(["assignment","grade","mastery","note","attendance"]),
+      subjectSlug: z.string().optional(),
+      title: z.string(),
+      summary: z.string().optional(),
+      scoreText: z.string().optional(),
+      scorePercent: z.number().optional(),
+      dueAt: z.string().optional(),
+      payload: z.string().optional(),
+      metadata: z.any().optional(),
+    })).mutation(({ input }) => db.createAcademicRecord({
+      ...input,
+      dueAt: input.dueAt ? new Date(input.dueAt) : undefined,
+    } as any)),
+    extract: publicProcedure.input(z.object({
+      source: z.enum(["paste","manus_share","gmail","classroom","powerschool_ih","powerschool_madeira","ixl","drive","manual"]).default("paste"),
+      text: z.string().min(3),
+    })).mutation(({ input }) => db.extractAcademicFromPaste(input.source, input.text)),
+    delete: publicProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteAcademicRecord(input.id)),
+  }),
+
   /* =================== ASSIGNMENT SUBMISSIONS + AUTO-GRADING =================== */
   submissions: router({
     list: publicProcedure.input(z.object({ blockId: z.number().optional(), limit: z.number().optional() }).optional()).query(async ({ input }) => {

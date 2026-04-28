@@ -146,3 +146,39 @@ describe("adaptive curriculum", () => {
     }
   }, 15000);
 });
+
+describe("printables hub", () => {
+  it("seeds 25+ free sources with valid urls + subjects", async () => {
+    const caller = makeCaller();
+    const sources: any = await caller.printables.listSources();
+    expect(Array.isArray(sources)).toBe(true);
+    expect(sources.length).toBeGreaterThanOrEqual(25);
+    for (const s of sources) {
+      expect(typeof s.name).toBe("string");
+      expect(typeof s.url).toBe("string");
+      expect(s.url.startsWith("http")).toBe(true);
+    }
+  }, 10000);
+});
+
+describe("academic records", () => {
+  it("creates, lists, and deletes an academic record", async () => {
+    const caller = makeCaller();
+    const created: any = await caller.academics.create({
+      source: "manual",
+      kind: "assignment",
+      subjectSlug: "math",
+      title: "Test assignment " + Date.now(),
+      summary: "A unit test seeded this row.",
+      scorePercent: 92,
+    });
+    expect(created.id).toBeGreaterThan(0);
+
+    const rows: any = await caller.academics.list({});
+    expect(rows.some((r: any) => r.id === created.id)).toBe(true);
+
+    await caller.academics.delete({ id: created.id });
+    const after: any = await caller.academics.list({});
+    expect(after.some((r: any) => r.id === created.id)).toBe(false);
+  }, 15000);
+});
