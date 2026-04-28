@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import CalendarSyncCard from "@/components/CalendarSyncCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -229,6 +230,9 @@ export default function Settings() {
           <Button onClick={savePasscode}>Update</Button>
         </div>
       </Card>
+
+      {/* ============================ CALENDAR SYNC ============================ */}
+      <CalendarSyncCard />
 
       {/* ============================ RECIPIENTS ============================ */}
       <RecipientsCard />

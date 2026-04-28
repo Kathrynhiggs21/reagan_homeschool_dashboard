@@ -961,3 +961,15 @@
 - [ ] Circle-to-Search style visual lookup (device-level Gemini feature; can approximate with OCR + camera permissions)
 - [ ] Deep per-page indexing of Spectrum / 180 Days / Tuck Everlasting (requires scanned pages)
 - [ ] Adaptive Learning Engine spaced-repetition scoring tuning (default ELO is in place)
+
+## Pass 2c — Google Calendar sync (Apr 28)
+- [x] /api/calendar.ics public iCalendar feed (timeline events + pinned notes + today's blocks)
+- [x] CalendarSyncCard on Settings with copy-URL button + Google Calendar steps
+- [x] registerCalendarFeed wired into Express app
+- [x] vitest for calendar feed — 49/49 passing
+
+## Pass 2 — items already present in codebase (verified)
+- [x] ReviewLibrary admin page + /review-library route + Adult sidebar entry
+- [x] Textbook seeding (Spectrum Math/Reading/LA/Science, 180 Days Math/Reading/Writing, Tuck Everlasting, Michael's World, Merriam-Webster dictionary)
+- [x] Bookshelf page with page tracking + progress bars
+- [x] Adaptive engine (rebuildAdaptiveSuggestions) — drops curriculumAdjustments + needsWorkItems for sub-60% mastery
