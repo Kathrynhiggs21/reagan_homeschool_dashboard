@@ -483,6 +483,56 @@ export const appRouter = router({
       throw new Error("Transcription failed: " + (result as any).code);
     }),
 
+    // A short kind joke (animal-themed when possible)
+    joke: publicProcedure.query(async () => {
+      const jokes = [
+        "Why don't ducks tell secrets? They always quack up. 🦆",
+        "What do you call a parakeet who fell into the punch bowl? A bird-bath.",
+        "How does a bearded dragon say goodbye? Sea ya later, gator. 🐉 (Wrong species. He doesn't know.)",
+        "Why did the hen sit on the axe? To hatch-et.",
+        "What do you call a duck that gets straight A's? A wise quacker.",
+        "What's a cat's favorite color? Purr-ple.",
+        "What do you call a sleeping bull? A bulldozer.",
+        "Why did the bicycle fall over? It was two-tired.",
+        "What do birds get when they are sick? Tweet-ment.",
+        "What do you call a dinosaur with an extensive vocabulary? A thesaurus.",
+      ];
+      return { text: jokes[Math.floor(Math.random() * jokes.length)] };
+    }),
+
+    // Joy drop: a search-able funny animal video link from a curated list
+    funnyAnimalVideo: publicProcedure.query(async () => {
+      const videos = [
+        { title: "Funny ducklings compilation", embedUrl: "https://www.youtube.com/embed/KQHIp1IfvZw" },
+        { title: "Parakeets being chaotic",     embedUrl: "https://www.youtube.com/embed/Vad33u9_dZc" },
+        { title: "Bearded dragon antics",       embedUrl: "https://www.youtube.com/embed/YbE5tgZeoiw" },
+        { title: "Cute baby animals",            embedUrl: "https://www.youtube.com/embed/INscMGmhmX4" },
+        { title: "Funny duck running",          embedUrl: "https://www.youtube.com/embed/GwO9SAZcM-c" },
+      ];
+      return videos[Math.floor(Math.random() * videos.length)];
+    }),
+
+    // End-of-day recap: kind, specific, real
+    endOfDayRecap: publicProcedure.query(async () => {
+      const today = new Date().toISOString().slice(0,10);
+      const plan = await db.getPlanByDate(today);
+      if (!plan) return { recap: "Soft day. Good for resting. 💛" };
+      const blocks = await db.listBlocksForPlan(plan.id);
+      const done = blocks.filter(b => b.status === "complete");
+      const struggles = await db.listStruggles(1);
+      const moods = await db.listRecentMood(1);
+      const profile = await db.getProfile();
+      const summary = `Reagan finished ${done.length} of ${blocks.length} blocks today. Mood: ${moods[0]?.zone || "unlogged"}. ${struggles.length ? `She logged ${struggles.length} struggle(s).` : "No struggles today."} Done blocks: ${done.map(d => d.title).join(", ") || "none"}.`;
+      const sys = `You are ${(profile as any)?.companionName || "Whisper"}, an AI friend wrapping up the day for Reagan. Write 2-4 short sentences celebrating something specific from today. Use her name. Be warm, real, never saccharine. No mention of timing. End with: \"You did good today.\"`;
+      try {
+        const r = await invokeLLM({ messages: [{ role: "system", content: sys }, { role: "user", content: summary }] });
+        const c = r.choices[0]?.message?.content;
+        return { recap: typeof c === "string" ? c : "You did good today. 💛" };
+      } catch {
+        return { recap: `You showed up today. ${done.length} thing${done.length===1?"":"s"} done, and your animals were loved. You did good today. 💛` };
+      }
+    }),
+
     // Whisper notices a struggle pattern and alerts the parent if needed
     checkAlerts: protectedProcedure.input(z.object({}).optional()).mutation(async () => {
       const struggles = await db.listStruggles(7);

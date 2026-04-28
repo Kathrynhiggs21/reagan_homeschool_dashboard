@@ -66,4 +66,34 @@ describe("Reagan Dashboard core helpers", () => {
     const k = await db.listKnowledge(true);
     expect(Array.isArray(k)).toBe(true);
   });
+
+  it("insertStruggle persists with intensity + triggers", async () => {
+    const inserted: any = await db.insertStruggle({
+      subjectSlug: "math",
+      description: "vitest fixture",
+      intensity: "yellow",
+      triggers: ["too hard"],
+      copingUsed: ["a break"],
+      resolved: false,
+      loggedByUserId: null,
+    } as any);
+    void inserted;
+    const list: any[] = await db.listStruggles(30);
+    expect(list.some(s => s.description === "vitest fixture")).toBe(true);
+  });
+
+  it("strugglesBySubject filters", async () => {
+    const list: any[] = await db.listStrugglesBySubject("math");
+    expect(Array.isArray(list)).toBe(true);
+  });
+
+  it("listSpecialDays returns array", async () => {
+    const list: any[] = await db.listUpcomingSpecialDays(30);
+    expect(Array.isArray(list)).toBe(true);
+  });
+
+  it("badges include Tracker badge", async () => {
+    const badges: any[] = await db.listBadges();
+    expect(badges.some(b => b.name?.toLowerCase().includes("tracker"))).toBe(true);
+  });
 });
