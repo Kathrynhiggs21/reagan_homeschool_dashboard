@@ -238,8 +238,39 @@ export const learnerProfile = mysqlTable("learnerProfile", {
   interests: json("interests").$type<string[]>(),
   notes: text("notes"),
   companionName: varchar("companionName", { length: 64 }).default("Whisper"),
-  companionAvatar: varchar("companionAvatar", { length: 16 }).default("🪶"),
+  companionAvatar: varchar("companionAvatar", { length: 16 }).default("⭐"),
   companionTonePreference: varchar("companionTonePreference", { length: 64 }),
+  photoUrl: varchar("photoUrl", { length: 500 }),
+  theme: varchar("theme", { length: 32 }).default("chalkboard").notNull(),
+  voiceMode: varchar("voiceMode", { length: 16 }).default("text").notNull(), // voice | text | silent
+  onboardingCompleted: boolean("onboardingCompleted").default(false).notNull(),
+  adultPasscode: varchar("adultPasscode", { length: 8 }).default("3918").notNull(),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  JOURNAL ENTRIES — Reagan's free-form daily journal                        */
+/* -------------------------------------------------------------------------- */
+export const journalEntries = mysqlTable("journalEntries", {
+  id: int("id").autoincrement().primaryKey(),
+  date: date("date").notNull(),
+  title: varchar("title", { length: 200 }),
+  body: text("body").notNull(),
+  mood: varchar("mood", { length: 16 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  HELP LIST — "What I need help with" running list                          */
+/* -------------------------------------------------------------------------- */
+export const helpList = mysqlTable("helpList", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 200 }).notNull(),
+  note: text("note"),
+  subjectSlug: varchar("subjectSlug", { length: 32 }),
+  status: mysqlEnum("status", ["open", "in_progress", "resolved"]).default("open").notNull(),
+  priority: mysqlEnum("priority", ["low", "medium", "high"]).default("medium").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  resolvedAt: timestamp("resolvedAt"),
 });
 
 /* -------------------------------------------------------------------------- */
@@ -460,4 +491,30 @@ export const specialDays = mysqlTable("specialDays", {
   interestTags: json("interestTags").$type<string[]>(),
   viewingTimeNote: varchar("viewingTimeNote", { length: 200 }),
   isOptional: boolean("isOptional").default(true).notNull(),
+});
+
+
+/* -------------------------------------------------------------------------- */
+/*  ASSIGNMENT SUBMISSIONS — Reagan turns work in HERE, never to school       */
+/* -------------------------------------------------------------------------- */
+export const assignmentSubmissions = mysqlTable("assignmentSubmissions", {
+  id: int("id").autoincrement().primaryKey(),
+  blockId: int("blockId"),
+  subjectSlug: varchar("subjectSlug", { length: 32 }),
+  title: varchar("title", { length: 200 }),
+  submissionType: mysqlEnum("submissionType", ["text", "photo", "file", "audio"]).notNull(),
+  contentText: text("contentText"),
+  fileKey: varchar("fileKey", { length: 500 }),
+  fileUrl: varchar("fileUrl", { length: 1000 }),
+  fileMimeType: varchar("fileMimeType", { length: 100 }),
+  driveFileId: varchar("driveFileId", { length: 200 }),
+  driveFileUrl: varchar("driveFileUrl", { length: 1000 }),
+  // Adult review fields
+  reviewStatus: mysqlEnum("reviewStatus", ["pending", "reviewed", "retry", "flagged"]).default("pending").notNull(),
+  rubricPick: mysqlEnum("rubricPick", ["not_yet", "getting_there", "got_it", "mastered"]),
+  rubricScore: int("rubricScore"), // full 0-100 precision, only shown when slider is expanded
+  adultNotes: text("adultNotes"),
+  reviewedAt: timestamp("reviewedAt"),
+  reviewedByUserId: int("reviewedByUserId"),
+  submittedAt: timestamp("submittedAt").defaultNow().notNull(),
 });

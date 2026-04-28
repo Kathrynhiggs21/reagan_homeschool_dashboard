@@ -1,0 +1,21 @@
+CREATE TABLE `assignmentSubmissions` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`blockId` int,
+	`subjectSlug` varchar(32),
+	`title` varchar(200),
+	`submissionType` enum('text','photo','file','audio') NOT NULL,
+	`contentText` text,
+	`fileKey` varchar(500),
+	`fileUrl` varchar(1000),
+	`fileMimeType` varchar(100),
+	`driveFileId` varchar(200),
+	`driveFileUrl` varchar(1000),
+	`reviewStatus` enum('pending','reviewed','retry','flagged') NOT NULL DEFAULT 'pending',
+	`rubricPick` enum('not_yet','getting_there','got_it','mastered'),
+	`rubricScore` int,
+	`adultNotes` text,
+	`reviewedAt` timestamp,
+	`reviewedByUserId` int,
+	`submittedAt` timestamp NOT NULL DEFAULT (now()),
+	CONSTRAINT `assignmentSubmissions_id` PRIMARY KEY(`id`)
+);

@@ -487,3 +487,67 @@
 - [ ] Remove My Animals page, routes, sidebar entry, backend endpoints
 - [ ] Save Reagan's profile notes to /home/ubuntu/reagan_homeschool_dashboard/reagan-profile-notes.md for reference
 - [ ] Adult-only "Ask Manus" 3D white command box on Settings (~3-4x Google-bar height) + compact version on other adult pages; routes to LLM tool-calling that edits dashboard (add schedule, change theme, add help item, etc.)
+
+## 🎯 Round 4a — Priorities 1/2/3/5
+- [ ] Remove My Animals page, route, sidebar entry, and backend endpoints/tables references
+- [ ] Reshape Journal page: drop rescue theme; add "What I Need Help With" running list section
+- [ ] Parental 4-digit passcode (default 3918) gate on Curriculum / Tutor Handoff / Analytics / Knowledge Base / Settings
+- [ ] Hide Curriculum / Tutor / Analytics / Knowledge / Settings from sidebar unless unlocked
+- [ ] Apps & Tools: seed IXL, PowerSchool, Google Classroom, Google Docs, Google Slides, Google Drive, Gmail, YouTube Kids, Khan Academy, Prodigy
+- [ ] Remove green tint from default theme; canvas neutral dark
+- [ ] White 3D schedule cards (no image inside; subject color chip + title)
+- [ ] Subject-color system shared across schedule, Week, assignments, Adventures, Analytics
+- [ ] Reagan photo upload on About Me; shown in sidebar "Reagan's Classroom" nameplate
+
+## 🎯 Round 4a (updated) — additions
+- [ ] Mood/Struggle chips only visible/usable when adult-unlocked (Reagan can't log them)
+- [ ] Notifications opt-in in adult Settings: channels (in-app bell, email, browser push, on-screen banner), events (red/yellow mood, block done, block skipped, help-list add, journal entry, streaks, therapy reminder, IXL overdue), custom recurring reminders
+
+## 🎯 Round 4a — Execution list
+- [ ] Remove Rescue Journal + My Animals pages/routes; keep schema tables untouched
+- [ ] Add general Journal page (`/journal`) with free-form entries + "What I'd like help with" list
+- [ ] Parental passcode (3918) gate on Curriculum/Tutor/Analytics/Knowledge/Settings; hide from kid sidebar until unlocked
+- [ ] Restrict mood + struggle logging UI to adult-unlocked state; Reagan sees celebration only
+- [ ] Expand appLinks: IXL, PowerSchool, Google Classroom/Docs/Slides/Drive/Gmail, YouTube Kids, Khan, Prodigy
+- [ ] Kill green default theme; switch to white 3D schedule cards + subject-color accents
+- [ ] Subject color system: assign pink/cyan/lime/violet/orange/yellow/sky across schedule, week, analytics
+- [ ] Reagan photo upload on About Me -> shown in sidebar Classroom nameplate
+- [ ] Opt-in Notifications in adult Settings (in-app bell, email recipients, browser push stub, on-screen toasts)
+- [ ] Tuck Everlasting: launch tile on Bookshelf (Kindle/Apple/Libby/Audible) + chapter bookmark (currentPage) shown on Today read-aloud block
+
+## 🎯 Round 4a — Turn-In Flow (NEW)
+- [ ] Schema: `assignmentSubmissions` table (blockId, subjectSlug, submittedAt, submissionType text/photo/file/audio, contentText, fileKey, fileUrl, reviewStatus open/reviewed/mastered/retry/flagged, rubricScore 0-100, adultNotes, reviewedAt)
+- [ ] Kid UI: "Turn It In" button on each block card → dialog with tabs (Type, Photo, File, Audio); shows "Turned in ✓" after submit; never shows score
+- [ ] Adult UI (behind 3918): Analytics page gets "Turn-Ins" tab — list of submissions, preview, rubric score slider, status picker, notes, "Flag for tutor" action
+- [ ] Rubric scores feed skillsMastery.currentScore per subject (weighted rolling average)
+- [ ] Filter Turn-Ins by subject / date range / status; export week as PDF portfolio
+- [ ] Google Classroom stays VIEW-ONLY — no push-back to IH
+
+## 🎯 Round 4a — Split plan
+- 4a-i (current): Journal reshape, passcode lock, Apps expansion, Tuck bookmark, Turn-In flow
+- 4a-ii (next): White 3D card theme overhaul + opt-in Notifications
+
+## 🎯 Round 4a-i — First-Day Setup + My Setup
+- [ ] Onboarding flow component (`OnboardingFlow.tsx`) mounted in App.tsx; blocks UI until `profile.onboardingCompleted = true`
+- [ ] Steps: Welcome → Theme picker (4 templates) → Helper name → Voice mode (voice/text/silent) → Quick tour (Today/Week/Bookshelf/Apps) → Materials list → Turn-In intro → Chat Buddy button → Joke → "Start my day"
+- [ ] Persists each choice via `profile.update` (resumes if reloaded mid-setup)
+- [ ] Reagan "My Setup" panel on About Me: change theme, helper name, voice mode, replay First-Day Setup
+- [ ] Adult Settings (passcode) can also reset onboarding and override choices
+- [ ] Theme templates wired: Chalkboard Classic (default, no green), Sunny Paper, Midnight Sky, Ocean Breeze — implemented as body-class swap + CSS variable set
+
+## 🎯 Round 4a-iii — Academic data ingestion (AFTER 4a-i checkpoint)
+- [ ] Verify MCP auth: Gmail, Google Drive, Google Classroom (prompt re-auth if any fail)
+- [ ] Gmail scan (last 12 months): from:(indianhill.org OR ihsd.us OR madeiracityschools.org OR schoology OR powerschool OR ixl OR classroom.google.com) OR subject:(IEP OR ETR OR "report card" OR MAP OR STAR OR "i-Ready" OR progress)
+- [ ] Google Drive scan: names/contents matching Reagan, IEP, ETR, MAP, STAR, i-Ready, report card, IXL, 504, progress
+- [ ] Google Classroom: list courses, assignments, turn-in status, grades, teacher feedback
+- [ ] PowerSchool IH (powerschool.ihsd.us) — open browser, hand off for login, scrape grades + attendance + test scores
+- [ ] Madeira City Schools PowerSchool — same pattern
+- [ ] IXL — browser scrape while logged in: diagnostic levels (5-skill radar), recent skill activity per subject
+- [ ] Normalize all data into new `academicRecord` + `academicSource` schema tables (source-linked back to original email/doc/page)
+- [ ] New Profile > "Academic Record" section (adult-only, 3918 passcode): current levels per subject, IEP goals + progress, MAP/STAR/i-Ready percentiles, recent Classroom assignments, strengths/stretch areas/accommodations summary
+- [ ] Academic timeline on profile (IEP meetings, testing, re-evals, big wins)
+- [ ] Feed `skillsMastery` currentScore per subject from normalized data so Today block defaults match her real level
+- [ ] "Refresh from sources" button to re-pull on demand
+
+## 🎯 Round 4a-iii — Additional source
+- [ ] Ingest Manus share: https://manus.im/share/Q6CGT8xgDNMn4QvxxhVE2L — browser-open and extract Reagan's profile info (grade levels, IEP content, testing history, current skills, accommodations). Source-link back to that share URL.
