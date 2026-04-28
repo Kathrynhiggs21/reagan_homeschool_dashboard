@@ -431,4 +431,4 @@
 - [x] End-of-day celebration flow on Today page
 
 ## 🐛 Bugs
-- [ ] Fix nested `<a>` validateDOMNesting error on /today
+- [x] Fix nested `<a>` validateDOMNesting error on /today
