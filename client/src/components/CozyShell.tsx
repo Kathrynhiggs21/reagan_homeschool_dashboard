@@ -5,16 +5,16 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 
 // Neutralized classroom labels (was emotional / themed).
-const NAV: Array<{ to: string; emoji: string; label: string; section: "kid" | "adult" }> = [
+const NAV: Array<{ to: string; emoji: string; label: string; section: "kid" | "adult" | "more" }> = [
   { to: "/today",      emoji: "📋", label: "Today",        section: "kid" },
   { to: "/week",       emoji: "🗓️", label: "This Week",    section: "kid" },
-  { to: "/adventures", emoji: "🧭", label: "Adventures",   section: "kid" },
-  { to: "/rescue",     emoji: "📓", label: "Journal",      section: "kid" },
-  { to: "/animals",    emoji: "🐾", label: "My Animals",   section: "kid" },
   { to: "/bookshelf",  emoji: "📚", label: "Bookshelf",    section: "kid" },
   { to: "/apps",       emoji: "🎒", label: "Apps & Tools", section: "kid" },
-  { to: "/timeline",   emoji: "🕒", label: "My Timeline",  section: "kid" },
   { to: "/profile",    emoji: "🪪", label: "About Me",     section: "kid" },
+  { to: "/rescue",     emoji: "📓", label: "Journal",      section: "more" },
+  { to: "/animals",    emoji: "🐾", label: "My Animals",   section: "more" },
+  { to: "/adventures", emoji: "🧭", label: "Adventures",   section: "more" },
+  { to: "/timeline",   emoji: "🕒", label: "My Timeline",  section: "more" },
   { to: "/curriculum", emoji: "📖", label: "Curriculum",     section: "adult" },
   { to: "/tutor",      emoji: "🤝", label: "Tutor Handoff",  section: "adult" },
   { to: "/analytics",  emoji: "📊", label: "Analytics",      section: "adult" },
@@ -46,6 +46,21 @@ export default function CozyShell({ children }: { children: ReactNode }) {
               className={`flex items-center gap-3 px-3 py-1.5 rounded-md text-[13px] transition-all ${
                 loc === n.to || (loc === "/" && n.to === "/today")
                   ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent"
+              }`}
+            >
+              <span className="text-base w-5 text-center">{n.emoji}</span>
+              <span>{n.label}</span>
+            </Link>
+          ))}
+          <div className="px-2 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mt-5 mb-1.5">More</div>
+          {NAV.filter(n => n.section === "more").map(n => (
+            <Link
+              key={n.to}
+              href={n.to}
+              className={`flex items-center gap-3 px-3 py-1.5 rounded-md text-[12px] transition-all opacity-80 ${
+                loc === n.to
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold opacity-100"
                   : "text-sidebar-foreground hover:bg-sidebar-accent"
               }`}
             >

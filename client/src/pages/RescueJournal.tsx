@@ -31,7 +31,7 @@ export default function RescueJournal() {
           <Textarea placeholder="Condition when found" value={form.condition} onChange={e => setForm({ ...form, condition: e.target.value })} />
           <Textarea placeholder="Care plan" value={form.carePlan} onChange={e => setForm({ ...form, carePlan: e.target.value })} />
           <Button onClick={() => {
-            add.mutate({ ...form, dateFound: new Date().toISOString().slice(0,10) }, { onSuccess: () => { toast.success("Logged. You're a real one. 🪶"); setOpen(false); setForm({ nickname: "", species: "", foundLocation: "", condition: "", carePlan: "" }); utils.rescues.list.invalidate(); }});
+            add.mutate({ ...form, dateFound: new Date().toISOString().slice(0,10) }, { onSuccess: () => { toast.success("Logged."); setOpen(false); setForm({ nickname: "", species: "", foundLocation: "", condition: "", carePlan: "" }); utils.rescues.list.invalidate(); }});
           }}>Save Rescue Report</Button>
         </Card>
       )}
@@ -50,7 +50,7 @@ export default function RescueJournal() {
         ))}
         {list.data?.length === 0 && (
           <Card className="cozy-card p-6 text-center text-muted-foreground sm:col-span-2">
-            <div className="text-4xl mb-2">🪶</div>
+            <div className="text-4xl mb-2">📓</div>
             <p className="font-hand text-lg">No rescues logged yet. When you help your next critter, log it here.</p>
           </Card>
         )}

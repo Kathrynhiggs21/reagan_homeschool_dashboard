@@ -12,7 +12,7 @@ export default function Timeline() {
       <div className="space-y-3">
         {(events.data ?? []).map((e: any) => (
           <Card key={e.id} className="cozy-card p-4 flex gap-3">
-            <span className="text-2xl">{e.emoji || "🪶"}</span>
+            <span className="text-2xl">{e.emoji || "⭐"}</span>
             <div className="flex-1">
               <div className="font-display font-semibold">{e.title}</div>
               {e.description && <p className="text-sm text-muted-foreground mt-1">{e.description}</p>}

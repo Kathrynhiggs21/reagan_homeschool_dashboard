@@ -38,7 +38,7 @@ export function WhisperProvider({ children }: { children: ReactNode }) {
     localStorage.getItem("companionName") || "Whisper"
   );
   const [companionAvatar, setCompanionAvatarState] = useState(
-    localStorage.getItem("companionAvatar") || "🪶"
+    localStorage.getItem("companionAvatar") || "⭐"
   );
 
   const setCompanionName = (s: string) => { setCompanionNameState(s); localStorage.setItem("companionName", s); };

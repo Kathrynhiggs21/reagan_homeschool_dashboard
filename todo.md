@@ -442,3 +442,12 @@
 - [x] Sidebar labels neutralized; compact chalkboard nameplate ("Reagan's Classroom")
 - [x] Week + Adventures heroes rebuilt with chalk-colored headings
 - [x] Visible pages use chalkboard + classroom-card + schedule-row only; dotted-trim as sole flourish
+
+## 🎨 Round 3 — Picture-led chalkboard simplification
+- [ ] Generate illustrated chalkboard subject tiles (Math, Reading, Science, Writing, Art, Music, PE/Outdoors, Snack, Wonder) and hero chalkboard texture
+- [ ] Remove feather/quill icon everywhere (Whisper launcher, Ask Whisper button)
+- [ ] Drop dotted-confetti trim and heavy chalk-green accent; lean into real chalkboard + richer multi-color chalk palette
+- [ ] Schedule rows become big picture tiles (illustration left, time + title right) — picture-first, less text
+- [ ] De-emphasize "Adventures" — move under a secondary "More" section in sidebar and off the primary nav
+- [ ] Simplify Today page to a single focal schedule board + slim check-in row (remove secondary cards)
+- [ ] Richer chalk color rotation on rows (pink, yellow, cyan, lime, orange, violet) applied as the colored time chip

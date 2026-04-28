@@ -34,7 +34,7 @@ export default function Adventures() {
         {list.map((a: any) => (
           <Card key={a.id} className="classroom-card p-4">
             <div className="flex justify-between items-start">
-              <span className="text-2xl">{a.emoji || "🪶"}</span>
+              <span className="text-2xl">{a.emoji || "🌟"}</span>
               <button onClick={() => fav.mutate({ id: a.id }, { onSuccess: () => utils.adventures.list.invalidate() })}>
                 <Star className={`w-4 h-4 ${a.isFavorite ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`} />
               </button>

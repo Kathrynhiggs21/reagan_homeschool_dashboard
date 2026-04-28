@@ -31,7 +31,7 @@ export default function Settings() {
         <div>
           <label className="text-sm font-medium">Avatar</label>
           <div className="flex gap-2 mt-1">
-            {["🪶", "🦜", "🦆", "🐉", "🌙", "✨"].map(e => (
+            {["⭐", "🌞", "🌈", "🍎", "📚", "🎨"].map(e => (
               <button key={e} onClick={() => ctx.setCompanionAvatar(e)} className={`text-2xl p-2 rounded-xl border ${ctx.companionAvatar === e ? "bg-primary/20 border-primary" : "bg-card"}`}>{e}</button>
             ))}
           </div>

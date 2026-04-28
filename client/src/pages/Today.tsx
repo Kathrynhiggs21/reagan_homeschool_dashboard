@@ -22,7 +22,28 @@ const COMMON_TRIGGERS = ["too long", "too hard", "boring", "noisy", "tired", "di
 const COMMON_HELPERS  = ["a break", "a snack", "the parakeets", "outside", "drawing", "Helper helped", "Mom helped"];
 
 // Rotate a chalk-chip color per schedule row (classroom brights)
-const CHIP_COLORS = ["chip-pink", "chip-yellow", "chip-cyan", "chip-lime", "chip-coral", "chip-violet"] as const;
+const CHIP_COLORS = ["chip-pink", "chip-yellow", "chip-cyan", "chip-lime", "chip-coral", "chip-violet", "chip-orange"] as const;
+
+// Chalkboard subject illustration tiles
+const SUBJECT_TILES: Record<string, string> = {
+  math:     "https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/tile-math-GDvMDcWdUWiyUVqvPPhH28.webp",
+  reading:  "https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/tile-reading-NZeZTX7tk5FvyoyZXYPwNa.webp",
+  ela:      "https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/tile-reading-NZeZTX7tk5FvyoyZXYPwNa.webp",
+  writing:  "https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/tile-writing-Vw9chobvTCUGm6tzZvCg6H.webp",
+  science:  "https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/tile-science-JMiWUYXXdUnZ3nVikeNQb5.webp",
+  art:      "https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/tile-art-L94UFK6EijVaPmxjXhVxDW.webp",
+  music:    "https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/tile-music-9L3nZsUGhgec67ggkd8bxd.webp",
+  outdoors: "https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/tile-outdoors-TP2qJ3ECbys7zseUwnwazP.webp",
+  pe:       "https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/tile-outdoors-TP2qJ3ECbys7zseUwnwazP.webp",
+  snack:    "https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/tile-snack-AfiqhVvLjG9J5ZkBrhtuK8.webp",
+  break:    "https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/tile-snack-AfiqhVvLjG9J5ZkBrhtuK8.webp",
+  wonder:   "https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/tile-wonder-FZ6zaUtunJLBXvcXAjejbd.webp",
+};
+function tileFor(slug?: string | null): string {
+  if (!slug) return SUBJECT_TILES.wonder;
+  const key = slug.toLowerCase();
+  return SUBJECT_TILES[key] || SUBJECT_TILES.wonder;
+}
 
 function blockTimeLabel(i: number): string {
   // Give each block a clean time label (pretend a typical school schedule).
@@ -77,31 +98,26 @@ export default function Today() {
 
   return (
     <div className="space-y-6">
-      {/* Hero chalkboard — bold, simple, classroom-style */}
+      {/* Hero chalkboard — real chalkboard texture, bold multicolor chalk */}
       <header className="chalkboard relative">
-        <div className="dotted-trim absolute left-6 right-6 top-3" aria-hidden />
-        <div className="pt-4 flex items-end justify-between flex-wrap gap-3">
+        <div className="flex items-end justify-between flex-wrap gap-3">
           <div>
-            <div className="font-chalk-hand text-2xl chalk-yellow leading-none">{today_str}</div>
-            <h1 className="font-display text-4xl md:text-5xl mt-2 leading-none">
-              <span className="chalk-pink">Good</span>{" "}
-              <span className="chalk-yellow">Morning,</span>{" "}
-              <span className="chalk-cyan">{(profile.data?.studentName || "Reagan").split(" ")[0]}</span>
-              <span className="chalk-lime">!</span>
+            <div className="font-chalk-hand text-2xl leading-none" style={{ color: "#ffe27a" }}>{today_str}</div>
+            <h1 className="font-display text-4xl md:text-6xl mt-2 leading-none">
+              <span style={{ color: "#ff8fc9" }}>Good</span>{" "}
+              <span style={{ color: "#ffe27a" }}>Morning,</span>{" "}
+              <span style={{ color: "#7fd9f2" }}>{(profile.data?.studentName || "Reagan").split(" ")[0]}</span>
+              <span style={{ color: "#bfe86c" }}>!</span>
             </h1>
-            <p className="font-display text-base mt-3 chalk-white opacity-85">
-              Today's schedule is on the board.
-            </p>
           </div>
           <Button
             onClick={() => setOpen(true)}
             size="lg"
             className="rounded-full bg-accent text-accent-foreground hover:bg-accent/90 font-display"
           >
-            <span className="text-lg mr-2">{companionAvatar}</span> Ask {companionName}
+            Ask {companionName}
           </Button>
         </div>
-        <div className="dotted-trim absolute left-6 right-6 bottom-3" aria-hidden />
       </header>
 
       {specialDay.data && (
@@ -178,25 +194,20 @@ export default function Today() {
             const chip = CHIP_COLORS[i % CHIP_COLORS.length];
             const isDone = b.status === "complete";
             return (
-              <div key={b.id} className={`schedule-row ${isDone ? "opacity-60" : ""}`}>
+              <div key={b.id} className={`schedule-row ${isDone ? "opacity-55" : ""}`}>
+                <img src={tileFor(b.subjectSlug)} alt="" className="subject-tile" />
                 <span className={`time-chip ${chip}`}>{blockTimeLabel(i)}</span>
-                <div className="min-w-0">
-                  <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className="text-lg leading-none mr-1">{b.emoji || "📝"}</span>
-                    <span className="font-display font-semibold text-[15px]">{b.title}</span>
-                    {b.subjectSlug && (
-                      <span className="text-[10px] uppercase tracking-wider text-neutral-500">{b.subjectSlug}</span>
-                    )}
-                  </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-display font-semibold text-base leading-tight">{b.title}</div>
                   {b.description && (
-                    <p className="text-sm text-neutral-600 mt-0.5 truncate">{b.description}</p>
+                    <p className="text-xs text-neutral-600 mt-0.5 line-clamp-1">{b.description}</p>
                   )}
-                  <div className="flex gap-1 mt-2 flex-wrap">
+                  <div className="flex gap-1 mt-1.5 flex-wrap">
                     {!isDone && (
                       <Button
                         size="sm"
                         variant="outline"
-                        className="bg-transparent h-7 px-2 text-xs"
+                        className="bg-white/60 border-neutral-300 text-neutral-900 hover:bg-white h-7 px-2 text-xs"
                         onClick={() => {
                           completeM.mutate({ id: b.id }, { onSuccess: () => { toast.success("Done."); utils.plans.today.invalidate(); }});
                         }}
@@ -207,22 +218,21 @@ export default function Today() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-7 px-2 text-xs"
+                      className="h-7 px-2 text-xs text-neutral-700 hover:bg-white"
                       onClick={() => setOpen(true)}
                     >
-                      {companionAvatar} Help
+                      Help
                     </Button>
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-7 px-2 text-xs text-neutral-500"
+                      className="h-7 px-2 text-xs text-neutral-500 hover:bg-white"
                       onClick={() => setStruggleDialog({ open: true, blockId: b.id, subjectSlug: b.subjectSlug })}
                     >
                       Struggle
                     </Button>
                   </div>
                 </div>
-                <div />
               </div>
             );
           })}
