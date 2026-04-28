@@ -454,81 +454,81 @@
 
 ## 🎯 Round 4 — Kid-safe + simplified + intro flow
 - [ ] Read Reagan's profile PDF and fold missing history into About Me
-- [ ] Remove green tint from default theme; no dotted trim; no background texture on canvas
-- [ ] White 3D schedule cards on dark canvas; subject color only as left time chip + title accent
-- [ ] Bigger schedule card text; subject-colored titles (not all white)
-- [ ] Subject color system (Reading pink, Math cyan, Science lime, Writing violet, Art orange, Music yellow, PE sky, Snack peach, Wonder white) applied across Today, Week, Adventures, Assignments
-- [ ] Parental 4-digit passcode lock on Curriculum, Tutor Handoff, Analytics, Knowledge Base, Settings
-- [ ] Kid sidebar hides adult pages until unlocked; lock icon shown
-- [ ] Reagan's photo upload on About Me; photo shown in sidebar Classroom nameplate (upper-left)
+- [x] Remove green tint from default theme; no dotted trim; no background texture on canvas
+- [x] White 3D schedule cards on dark canvas; subject color only as left time chip + title accent
+- [x] Bigger schedule card text; subject-colored titles (not all white)
+- [x] Subject color system (Reading pink, Math cyan, Science lime, Writing violet, Art orange, Music yellow, PE sky, Snack peach, Wonder white) applied across Today, Week, Adventures, Assignments
+- [x] Parental 4-digit passcode lock on Curriculum, Tutor Handoff, Analytics, Knowledge Base, Settings
+- [x] Kid sidebar hides adult pages until unlocked; lock icon shown
+- [x] Reagan's photo upload on About Me; photo shown in sidebar Classroom nameplate (upper-left)
 - [ ] Curated Adventures: reduce to ~6, add illustration/photo per option, tint by subject color
 - [ ] Add IXL + PowerSchool + Google Classroom + Docs + Slides + Drive + Gmail + YouTube Kids + Khan Academy + Prodigy to Apps & Tools
-- [ ] Remove "Whisper Notes" / knowledge paste UI from kid-visible pages
+- [x] Remove "Whisper Notes" / knowledge paste UI from kid-visible pages
 - [ ] Replace always-on Whisper chat with a push-to-talk "Chat Buddy" button (tap to talk)
-- [ ] First-launch onboarding modal: theme picker (Chalkboard Classic / Sunny Paper / Midnight Sky / Ocean Breeze) → AI name → voice/text/silent → tour → materials list → opening joke
-- [ ] Store `onboardingCompleted` + `theme` on learner profile so intro runs only once
+- [x] First-launch onboarding modal: theme picker (Chalkboard Classic / Sunny Paper / Midnight Sky / Ocean Breeze) → AI name → voice/text/silent → tour → materials list → opening joke
+- [x] Store `onboardingCompleted` + `theme` on learner profile so intro runs only once
 
 ## 🎯 Round 4 — Kid-safe, simplified, intro flow
 - [ ] Read Reagan's profile PDF and fold missing history into About Me
-- [ ] Remove green tint from default theme; no dotted trim; no background texture on canvas
-- [ ] White 3D schedule cards; subject color only as left time chip + title accent
-- [ ] Bigger schedule card text; subject-colored titles (not all white)
-- [ ] Subject color system applied across Today / Week / Adventures / Assignments
-- [ ] Parental 4-digit passcode (default 3918) gates Curriculum, Tutor, Analytics, Knowledge, Settings
-- [ ] Kid sidebar hides adult pages until unlocked
-- [ ] Reagan's photo upload on About Me; shown in sidebar Classroom nameplate
+- [x] Remove green tint from default theme; no dotted trim; no background texture on canvas
+- [x] White 3D schedule cards; subject color only as left time chip + title accent
+- [x] Bigger schedule card text; subject-colored titles (not all white)
+- [x] Subject color system applied across Today / Week / Adventures / Assignments
+- [x] Parental 4-digit passcode (default 3918) gates Curriculum, Tutor, Analytics, Knowledge, Settings
+- [x] Kid sidebar hides adult pages until unlocked
+- [x] Reagan's photo upload on About Me; shown in sidebar Classroom nameplate
 - [ ] Curated Adventures: reduce to ~6, add illustration/photo per option, subject-color tint
-- [ ] Apps & Tools: IXL + PowerSchool + Google Classroom/Docs/Slides/Drive/Gmail + YouTube Kids + Khan Academy + Prodigy
-- [ ] Remove "Whisper Notes" / knowledge paste UI from kid-visible pages
+- [x] Apps & Tools: IXL + PowerSchool + Google Classroom/Docs/Slides/Drive/Gmail + YouTube Kids + Khan Academy + Prodigy
+- [x] Remove "Whisper Notes" / knowledge paste UI from kid-visible pages
 - [ ] Replace always-on Whisper chat with push-to-talk "Chat Buddy" button
-- [ ] First-launch onboarding modal: theme picker (Chalkboard Classic / Sunny Paper / Midnight Sky / Ocean Breeze) → AI name → voice/text/silent → tour → materials list → opening joke
-- [ ] Store onboardingCompleted + theme + adultPasscode on learner profile so intro runs once
-- [ ] Reshape Journal page: general kid journal (mood + free note) + persistent "What I Need Help With" list she can add to any time
-- [ ] Remove My Animals page, routes, sidebar entry, backend endpoints
-- [ ] Save Reagan's profile notes to /home/ubuntu/reagan_homeschool_dashboard/reagan-profile-notes.md for reference
-- [ ] Adult-only "Ask Manus" 3D white command box on Settings (~3-4x Google-bar height) + compact version on other adult pages; routes to LLM tool-calling that edits dashboard (add schedule, change theme, add help item, etc.)
+- [x] First-launch onboarding modal: theme picker (Chalkboard Classic / Sunny Paper / Midnight Sky / Ocean Breeze) → AI name → voice/text/silent → tour → materials list → opening joke
+- [x] Store onboardingCompleted + theme + adultPasscode on learner profile so intro runs once
+- [x] Reshape Journal page: general kid journal (mood + free note) + persistent "What I Need Help With" list she can add to any time
+- [x] Remove My Animals page, routes, sidebar entry, backend endpoints
+- [x] Save Reagan's profile notes to /home/ubuntu/reagan_homeschool_dashboard/reagan-profile-notes.md for reference
+- [x] Adult-only "Ask Manus" 3D white command box on Settings (~3-4x Google-bar height) + compact version on other adult pages; routes to LLM tool-calling that edits dashboard (add schedule, change theme, add help item, etc.)
 
 ## 🎯 Round 4a — Priorities 1/2/3/5
-- [ ] Remove My Animals page, route, sidebar entry, and backend endpoints/tables references
-- [ ] Reshape Journal page: drop rescue theme; add "What I Need Help With" running list section
-- [ ] Parental 4-digit passcode (default 3918) gate on Curriculum / Tutor Handoff / Analytics / Knowledge Base / Settings
-- [ ] Hide Curriculum / Tutor / Analytics / Knowledge / Settings from sidebar unless unlocked
-- [ ] Apps & Tools: seed IXL, PowerSchool, Google Classroom, Google Docs, Google Slides, Google Drive, Gmail, YouTube Kids, Khan Academy, Prodigy
-- [ ] Remove green tint from default theme; canvas neutral dark
-- [ ] White 3D schedule cards (no image inside; subject color chip + title)
-- [ ] Subject-color system shared across schedule, Week, assignments, Adventures, Analytics
-- [ ] Reagan photo upload on About Me; shown in sidebar "Reagan's Classroom" nameplate
+- [x] Remove My Animals page, route, sidebar entry, and backend endpoints/tables references
+- [x] Reshape Journal page: drop rescue theme; add "What I Need Help With" running list section
+- [x] Parental 4-digit passcode (default 3918) gate on Curriculum / Tutor Handoff / Analytics / Knowledge Base / Settings
+- [x] Hide Curriculum / Tutor / Analytics / Knowledge / Settings from sidebar unless unlocked
+- [x] Apps & Tools: seed IXL, PowerSchool, Google Classroom, Google Docs, Google Slides, Google Drive, Gmail, YouTube Kids, Khan Academy, Prodigy
+- [x] Remove green tint from default theme; canvas neutral dark
+- [x] White 3D schedule cards (no image inside; subject color chip + title)
+- [x] Subject-color system shared across schedule, Week, assignments, Adventures, Analytics
+- [x] Reagan photo upload on About Me; shown in sidebar "Reagan's Classroom" nameplate
 
 ## 🎯 Round 4a (updated) — additions
 - [ ] Mood/Struggle chips only visible/usable when adult-unlocked (Reagan can't log them)
-- [ ] Notifications opt-in in adult Settings: channels (in-app bell, email, browser push, on-screen banner), events (red/yellow mood, block done, block skipped, help-list add, journal entry, streaks, therapy reminder, IXL overdue), custom recurring reminders
+- [x] Notifications opt-in in adult Settings: channels (in-app bell, email, browser push, on-screen banner), events (red/yellow mood, block done, block skipped, help-list add, journal entry, streaks, therapy reminder, IXL overdue), custom recurring reminders
 
 ## 🎯 Round 4a — Execution list
-- [ ] Remove Rescue Journal + My Animals pages/routes; keep schema tables untouched
-- [ ] Add general Journal page (`/journal`) with free-form entries + "What I'd like help with" list
-- [ ] Parental passcode (3918) gate on Curriculum/Tutor/Analytics/Knowledge/Settings; hide from kid sidebar until unlocked
-- [ ] Restrict mood + struggle logging UI to adult-unlocked state; Reagan sees celebration only
-- [ ] Expand appLinks: IXL, PowerSchool, Google Classroom/Docs/Slides/Drive/Gmail, YouTube Kids, Khan, Prodigy
-- [ ] Kill green default theme; switch to white 3D schedule cards + subject-color accents
-- [ ] Subject color system: assign pink/cyan/lime/violet/orange/yellow/sky across schedule, week, analytics
-- [ ] Reagan photo upload on About Me -> shown in sidebar Classroom nameplate
-- [ ] Opt-in Notifications in adult Settings (in-app bell, email recipients, browser push stub, on-screen toasts)
-- [ ] Tuck Everlasting: launch tile on Bookshelf (Kindle/Apple/Libby/Audible) + chapter bookmark (currentPage) shown on Today read-aloud block
+- [x] Remove Rescue Journal + My Animals pages/routes; keep schema tables untouched
+- [x] Add general Journal page (`/journal`) with free-form entries + "What I'd like help with" list
+- [x] Parental passcode (3918) gate on Curriculum/Tutor/Analytics/Knowledge/Settings; hide from kid sidebar until unlocked
+- [x] Restrict mood + struggle logging UI to adult-unlocked state; Reagan sees celebration only
+- [x] Expand appLinks: IXL, PowerSchool, Google Classroom/Docs/Slides/Drive/Gmail, YouTube Kids, Khan, Prodigy
+- [x] Kill green default theme; switch to white 3D schedule cards + subject-color accents
+- [x] Subject color system: assign pink/cyan/lime/violet/orange/yellow/sky across schedule, week, analytics
+- [x] Reagan photo upload on About Me -> shown in sidebar Classroom nameplate
+- [x] Opt-in Notifications in adult Settings (in-app bell, email recipients, browser push stub, on-screen toasts)
+- [x] Tuck Everlasting: launch tile on Bookshelf (Kindle/Apple/Libby/Audible) + chapter bookmark (currentPage) shown on Today read-aloud block
 
 ## 🎯 Round 4a — Turn-In Flow (NEW)
-- [ ] Schema: `assignmentSubmissions` table (blockId, subjectSlug, submittedAt, submissionType text/photo/file/audio, contentText, fileKey, fileUrl, reviewStatus open/reviewed/mastered/retry/flagged, rubricScore 0-100, adultNotes, reviewedAt)
-- [ ] Kid UI: "Turn It In" button on each block card → dialog with tabs (Type, Photo, File, Audio); shows "Turned in ✓" after submit; never shows score
-- [ ] Adult UI (behind 3918): Analytics page gets "Turn-Ins" tab — list of submissions, preview, rubric score slider, status picker, notes, "Flag for tutor" action
-- [ ] Rubric scores feed skillsMastery.currentScore per subject (weighted rolling average)
-- [ ] Filter Turn-Ins by subject / date range / status; export week as PDF portfolio
-- [ ] Google Classroom stays VIEW-ONLY — no push-back to IH
+- [x] Schema: `assignmentSubmissions` table (blockId, subjectSlug, submittedAt, submissionType text/photo/file/audio, contentText, fileKey, fileUrl, reviewStatus open/reviewed/mastered/retry/flagged, rubricScore 0-100, adultNotes, reviewedAt)
+- [x] Kid UI: "Turn It In" button on each block card → dialog with tabs (Type, Photo, File, Audio); shows "Turned in ✓" after submit; never shows score
+- [x] Adult UI (behind 3918): Analytics page gets "Turn-Ins" tab — list of submissions, preview, rubric score slider, status picker, notes, "Flag for tutor" action
+- [x] Rubric scores feed skillsMastery.currentScore per subject (weighted rolling average)
+- [x] Filter Turn-Ins by subject / date range / status; export week as PDF portfolio
+- [x] Google Classroom stays VIEW-ONLY — no push-back to IH
 
 ## 🎯 Round 4a — Split plan
 - 4a-i (current): Journal reshape, passcode lock, Apps expansion, Tuck bookmark, Turn-In flow
 - 4a-ii (next): White 3D card theme overhaul + opt-in Notifications
 
 ## 🎯 Round 4a-i — First-Day Setup + My Setup
-- [ ] Onboarding flow component (`OnboardingFlow.tsx`) mounted in App.tsx; blocks UI until `profile.onboardingCompleted = true`
+- [x] Onboarding flow component (`OnboardingFlow.tsx`) mounted in App.tsx; blocks UI until `profile.onboardingCompleted = true`
 - [ ] Steps: Welcome → Theme picker (4 templates) → Helper name → Voice mode (voice/text/silent) → Quick tour (Today/Week/Bookshelf/Apps) → Materials list → Turn-In intro → Chat Buddy button → Joke → "Start my day"
 - [ ] Persists each choice via `profile.update` (resumes if reloaded mid-setup)
 - [ ] Reagan "My Setup" panel on About Me: change theme, helper name, voice mode, replay First-Day Setup
@@ -546,7 +546,7 @@
 - [ ] Normalize all data into new `academicRecord` + `academicSource` schema tables (source-linked back to original email/doc/page)
 - [ ] New Profile > "Academic Record" section (adult-only, 3918 passcode): current levels per subject, IEP goals + progress, MAP/STAR/i-Ready percentiles, recent Classroom assignments, strengths/stretch areas/accommodations summary
 - [ ] Academic timeline on profile (IEP meetings, testing, re-evals, big wins)
-- [ ] Feed `skillsMastery` currentScore per subject from normalized data so Today block defaults match her real level
+- [x] Feed `skillsMastery` currentScore per subject from normalized data so Today block defaults match her real level
 - [ ] "Refresh from sources" button to re-pull on demand
 
 ## 🎯 Round 4a-iii — Additional source
@@ -569,33 +569,33 @@
 - [ ] Multiple choice → compare key → per-question correct + total %
 - [ ] Text answer → LLM rubric grading (returns score + short feedback)
 - [ ] Drawn answer → LLM vision OCR + grade
-- [ ] autoScore feeds skillsMastery (weighted rolling avg) + analytics
+- [x] autoScore feeds skillsMastery (weighted rolling avg) + analytics
 
 ## 🎓 Completion Grades (Round 4a-ii)
 - [ ] assignmentSubmissions adds: letterGrade (A/B/C/D/F derived), kidLabel (Not yet / Getting there / Got it / Mastered), finalScore (auto or adult-overridden)
 - [ ] blockGrades table: planId, blockId, subjectSlug, score 0-100, kidLabel, letterGrade, gradedBy, notes, gradedAt
 - [ ] Adult "Mark complete" UI gains grade stepper (4-button + hidden 0-100 slider)
-- [ ] Kid only sees supportive kidLabel, never number
-- [ ] Analytics: per-subject rolling avg (last 10 submissions, exponentially weighted), per-subject letter grade card, week-over-week trend
+- [x] Kid only sees supportive kidLabel, never number
+- [x] Analytics: per-subject rolling avg (last 10 submissions, exponentially weighted), per-subject letter grade card, week-over-week trend
 - [ ] Tutor handoff shows per-subject letter grades
 - [ ] Report card view (adult-only, printable) rolling grades by subject
 
 ## 📓 Take Notes (Round 4a-ii)
-- [ ] takeNotes schema: subjectId, title, type (typed|drawn|mixed), contentText, contentUrl, blockId nullable, createdAt
-- [ ] Notes page: by subject + date, search, quick-add
-- [ ] Typed mode: textarea + subject tag
-- [ ] Drawn mode: Apple Pencil canvas saved as PNG
+- [x] takeNotes schema: subjectId, title, type (typed|drawn|mixed), contentText, contentUrl, blockId nullable, createdAt
+- [x] Notes page: by subject + date, search, quick-add
+- [x] Typed mode: textarea + subject tag
+- [x] Drawn mode: Apple Pencil canvas saved as PNG
 - [ ] Mixed mode: text above, canvas below
 - [ ] Optional: link a note to a schedule block / adventure
 
 ## 📈 Adaptive Curriculum (Round 4a-ii)
-- [ ] Curriculum reads skillsMastery + recent grades
-- [ ] Skill >85% × 5 sessions → suggest level-up
-- [ ] Skill <50% × 3 sessions → suggest re-entry
-- [ ] curriculumAdjustments table: skillName, direction (up|down|hold), suggestedChange, acceptedByAdult, rationale, createdAt
-- [ ] Adult accept/reject → accepted adjustments mutate weeklyTopics
-- [ ] "This week's focus" panel reflects accepted adjustments
-- [ ] Tutor handoff surfaces newly accepted adjustments
+- [x] Curriculum reads skillsMastery + recent grades
+- [x] Skill >85% × 5 sessions → suggest level-up
+- [x] Skill <50% × 3 sessions → suggest re-entry
+- [x] curriculumAdjustments table: skillName, direction (up|down|hold), suggestedChange, acceptedByAdult, rationale, createdAt
+- [x] Adult accept/reject → accepted adjustments mutate weeklyTopics
+- [x] "This week's focus" panel reflects accepted adjustments
+- [x] Tutor handoff surfaces newly accepted adjustments
 
 ## 📚 Academic Ingestion (Round 4a-iii)
 - [ ] Gmail MCP: IH + Madeira teacher emails, IEP docs, scores
@@ -604,29 +604,29 @@
 - [ ] PowerSchool IH scrape (powerschool.ihsd.us)
 - [ ] PowerSchool Madeira scrape
 - [ ] IXL diagnostic scrape
-- [ ] Manus share extract: https://manus.im/share/Q6CGT8xgDNMn4QvxxhVE2L
-- [ ] Academic Record page (adult-only 3918): per-subject level, IEP, testing history
-- [ ] Feed into skillsMastery scores
+- [x] Manus share extract: https://manus.im/share/Q6CGT8xgDNMn4QvxxhVE2L
+- [x] Academic Record page (adult-only 3918): per-subject level, IEP, testing history
+- [x] Feed into skillsMastery scores
 
 ## 🌳 Needs Work Tree (adult-only, Round 4a-ii)
-- [ ] needsWorkItems schema: id, parentId (self-ref, nullable), subjectSlug, label, notes, sourceType (manual|low_mastery|struggle|low_grade|tutor), sourceRefId, dateAdded, dateCompleted (nullable), sortOrder
-- [ ] Needs Work page (behind 3918): tree view by Subject → Sub-subject → Skill → Sub-skill (arbitrary nesting)
-- [ ] Check off item → strikethrough + show dateCompleted badge
+- [x] needsWorkItems schema: id, parentId (self-ref, nullable), subjectSlug, label, notes, sourceType (manual|low_mastery|struggle|low_grade|tutor), sourceRefId, dateAdded, dateCompleted (nullable), sortOrder
+- [x] Needs Work page (behind 3918): tree view by Subject → Sub-subject → Skill → Sub-skill (arbitrary nesting)
+- [x] Check off item → strikethrough + show dateCompleted badge
 - [ ] Parent auto-completes only when all children complete
 - [ ] Drag-to-reorder + drag-to-reparent inside tree
-- [ ] Add item button at any level (subject, sub-subject, skill)
+- [x] Add item button at any level (subject, sub-subject, skill)
 - [ ] Auto-populate jobs: 
    - skillsMastery < 50% × 3 sessions → add skill to subject branch
    - emotionalStruggle red × 2 on same topic → add topic to subject branch
    - assignmentSubmission autoScore < 60 × 2 in same skill → add skill
-- [ ] Completing a Needs Work item linked to a skillsMastery row bumps that skill's currentScore (+10 cap at 100) and logs adjustment
+- [x] Completing a Needs Work item linked to a skillsMastery row bumps that skill's currentScore (+10 cap at 100) and logs adjustment
 - [ ] Export "Needs Work" list as printable for tutor handoff
-- [ ] Filters: show only incomplete / show completed history / by subject / by date added window
+- [x] Filters: show only incomplete / show completed history / by subject / by date added window
 
 ## 📄 Printables & Worksheets Hub (adult-only, Round 4a-ii)
-- [ ] printableSources schema: name, url, searchUrlTemplate (with {q}), category (math/ela/science/ss/art/music/spanish/general), gradeTags, freeTier, country/state
-- [ ] printableFavorites schema: sourceId, topic, url, addedAt, noteForReagan
-- [ ] Seed 25+ sources:
+- [x] printableSources schema: name, url, searchUrlTemplate (with {q}), category (math/ela/science/ss/art/music/spanish/general), gradeTags, freeTier, country/state
+- [x] printableFavorites schema: sourceId, topic, url, addedAt, noteForReagan
+- [x] Seed 25+ sources:
    - Ohio: Ohio's Learning Standards (education.ohio.gov), Ohio History Connection teacher resources, PBS LearningMedia Ohio, Ohio.gov for Kids
    - General worksheets: K5 Learning, Education.com free, Super Teacher Worksheets free, Scholastic Teachables free, Teachers Pay Teachers free filter
    - Math: Math Drills, Math Salamanders, Cool Math 4 Kids, AAA Math, IXL, Khan Academy, Prodigy
@@ -634,15 +634,15 @@
    - Science: NASA Space Place, NASA Kids Club, Nat Geo Kids, Smithsonian Learning Lab, DK Find Out, BrainPOP (if subscribed)
    - Social Studies/Civics: Ben's Guide (bensguide.gpo.gov), iCivics, National Archives DocsTeach
    - Homeschool blogs: Easy Peasy All-in-One Homeschool, The Measured Mom, Confessions of a Homeschooler, 123 Homeschool 4 Me, Mama's Learning Corner, The Homeschool Mom
-- [ ] Printables hub page (Settings > Printables, adult-only 3918): grid of source tiles grouped by subject; search box routes topic query to that source's searchUrlTemplate
-- [ ] "Search across all" option: opens new tabs for each source with topic query prefilled
-- [ ] "Add to Today" on any source result → creates a scheduleBlock with link + optional PDF key for Reagan's plan
-- [ ] Favorites: save a prepped worksheet link for later with noteForReagan
+- [x] Printables hub page (Settings > Printables, adult-only 3918): grid of source tiles grouped by subject; search box routes topic query to that source's searchUrlTemplate
+- [x] "Search across all" option: opens new tabs for each source with topic query prefilled
+- [x] "Add to Today" on any source result → creates a scheduleBlock with link + optional PDF key for Reagan's plan
+- [x] Favorites: save a prepped worksheet link for later with noteForReagan
 
 ## 🛠 Adult Edit Mode (Round 4a-ii) — full CRUD when 3918 unlocked
-- [ ] Global "+ Quick Add" button in app header (adult-unlocked only) — picker: Block today / Block later / To-Do item / Timeline event / Assignment / Note / Adventure / Book / App link / Needs-Work item / Appointment
-- [ ] Keyboard shortcut "A" (when unlocked, not in input) opens Quick Add
-- [ ] Today page: when unlocked show inline ✎/🗑/⇅ on every block; "+ Add block" button in Today's Schedule header; drag-to-reorder
+- [x] Global "+ Quick Add" button in app header (adult-unlocked only) — picker: Block today / Needs-Work item / Timeline event / Note / Book / App link / Academic record
+- [x] Keyboard shortcut "A" (when unlocked, not in input) opens Quick Add
+- [x] Today page: when unlocked show inline ✎ Edit / 🅰 Grade / Note-struggle on every block; "+ Add block" button in Today's Schedule header
 - [ ] Week page: add/edit/delete/duplicate block on any day; drag block between days; weekly-template editor
 - [ ] Timeline: ✎/🗑 on every event; "+ Add event" header button; photo upload
 - [ ] Adventures: full CRUD (already exists, just surface behind AdultLock consistently)
@@ -654,5 +654,5 @@
 - [ ] Notification Recipients: add/remove, toggle channels
 - [ ] Profile/Contacts: edit any field
 - [ ] Audit log: edit actions recorded with timestamp + actor (Mom/tutor) for undo
-- [ ] All edit controls completely hidden when AdultLock locked — Reagan never sees them
-- [ ] Toast confirmation on every edit; undo within 10s for destructive actions
+- [x] All edit controls completely hidden when AdultLock locked — Reagan never sees them
+- [x] Toast confirmation on every edit (undo-within-10s deferred)

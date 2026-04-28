@@ -9,6 +9,7 @@ import { AdultLockProvider } from "./contexts/AdultLockContext";
 import AdultGate from "./components/AdultGate";
 import CozyShell from "./components/CozyShell";
 import WhisperCompanion from "./components/WhisperCompanion";
+import QuickAddFab from "./components/QuickAddFab";
 import Today from "./pages/Today";
 import Week from "./pages/Week";
 import Curriculum from "./pages/Curriculum";
@@ -88,6 +89,7 @@ function Router() {
         <Route component={NotFound} />
       </Switch>
       <WhisperCompanion />
+      <QuickAddFab />
     </CozyShell>
   );
 }
