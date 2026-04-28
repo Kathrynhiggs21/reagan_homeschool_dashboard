@@ -947,3 +947,17 @@
 - [x] 8 starter TV picks seeded (movement, birds, nature, math, reading)
 - [x] vitest raised to 15s testTimeout to absorb TiDB cold-query latency
 - [x] Full suite 48/48 passing
+
+
+## Pass 2c — Review Library admin + Bookshelf seed + Dock polish (Apr 28)
+- [x] /review-library adult route + sidebar entry (Review Library)
+- [x] Adult UI to add / approve / delete / seed YouTube + web resources
+- [x] ResourceDock moved to centered floating pill (no sidebar collision)
+- [x] Bookshelf seeded: Spectrum G5 (4) + 180 Days G5 (4) + Tuck Everlasting + Michael's World placeholder
+- [x] All 48 tests still green
+
+## Deferred (follow-up session, needs credentials or device features)
+- [ ] Google Calendar two-way sync (needs Google OAuth client + user consent flow)
+- [ ] Circle-to-Search style visual lookup (device-level Gemini feature; can approximate with OCR + camera permissions)
+- [ ] Deep per-page indexing of Spectrum / 180 Days / Tuck Everlasting (requires scanned pages)
+- [ ] Adaptive Learning Engine spaced-repetition scoring tuning (default ELO is in place)
