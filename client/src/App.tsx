@@ -28,6 +28,7 @@ import NeedsWork from "./pages/NeedsWork";
 import Printables from "./pages/Printables";
 import TakeNotes from "./pages/TakeNotes";
 import Academics from "./pages/Academics";
+import ReportCard from "./pages/ReportCard";
 import { trpc } from "@/lib/trpc";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
@@ -83,6 +84,9 @@ function Router() {
         </Route>
         <Route path="/academics">
           <AdultGate><Academics /></AdultGate>
+        </Route>
+        <Route path="/report-card">
+          <AdultGate><ReportCard /></AdultGate>
         </Route>
         <Route path="/notes" component={TakeNotes} />
         <Route path="/404" component={NotFound} />

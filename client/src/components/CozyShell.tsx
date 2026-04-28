@@ -37,6 +37,7 @@ const ADULT_NAV: NavItem[] = [
   { to: "/needs-work", emoji: "🌳", label: "Needs Work" },
   { to: "/printables", emoji: "📄", label: "Printables" },
   { to: "/academics",  emoji: "🗂️", label: "Academics" },
+  { to: "/report-card", emoji: "📈", label: "Report Card" },
   { to: "/knowledge",  emoji: "🧠", label: "Knowledge" },
   { to: "/settings",   emoji: "⚙️", label: "Settings" },
 ];

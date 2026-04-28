@@ -260,3 +260,45 @@ describe("adult edit-mode mutations", () => {
     expect(list3.find((b) => b.id === last.id)).toBeUndefined();
   });
 });
+
+
+describe("needsWork rollup + reparent", () => {
+  it("auto-completes parent when all children complete; reparent works", async () => {
+    const caller = makeCaller();
+    const parent: any = await caller.needsWork.create({ title: "ROLLUP-PARENT-" + Date.now() });
+    const a: any = await caller.needsWork.create({ title: "RU-A", parentId: parent.id });
+    const b: any = await caller.needsWork.create({ title: "RU-B", parentId: parent.id });
+
+    // Complete first child — parent should remain incomplete.
+    await caller.needsWork.complete({ id: a.id });
+    let list: any[] = await caller.needsWork.list();
+    let parentRow = list.find((r) => r.id === parent.id);
+    expect(parentRow.dateCompleted).toBeFalsy();
+
+    // Complete second child — parent should auto-complete now.
+    await caller.needsWork.complete({ id: b.id });
+    list = await caller.needsWork.list();
+    parentRow = list.find((r) => r.id === parent.id);
+    expect(parentRow.dateCompleted).toBeTruthy();
+
+    // Reparent A to top-level
+    await caller.needsWork.reparent({ id: a.id, parentId: null });
+    list = await caller.needsWork.list();
+    expect(list.find((r) => r.id === a.id)?.parentId).toBeNull();
+
+    // Cleanup
+    await caller.needsWork.delete({ id: parent.id });
+    await caller.needsWork.delete({ id: a.id });
+  }, 20000);
+});
+
+describe("report card data", () => {
+  it("grades.rolling returns shape for any subject slug (even with no grades)", async () => {
+    const caller = makeCaller();
+    const r: any = await caller.grades.rolling({ subjectSlug: "no-such-subject-" + Date.now() });
+    expect(r).toHaveProperty("score");
+    expect(r).toHaveProperty("letter");
+    expect(r).toHaveProperty("count");
+    expect(r.count).toBe(0);
+  });
+});

@@ -742,6 +742,7 @@ export const appRouter = router({
     complete: publicProcedure.input(z.object({ id: z.number() })).mutation(({ input, ctx }) => db.completeNeedsWork(input.id, (ctx as any).user?.id)),
     reopen: publicProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.reopenNeedsWork(input.id)),
     delete: publicProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteNeedsWork(input.id)),
+    reparent: publicProcedure.input(z.object({ id: z.number(), parentId: z.number().nullable() })).mutation(({ input }) => db.updateNeedsWork(input.id, { parentId: input.parentId } as any)),
   }),
 
   /* =================== BLOCK GRADES =================== */

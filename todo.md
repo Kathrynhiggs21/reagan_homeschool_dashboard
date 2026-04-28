@@ -554,38 +554,38 @@
 
 ## 🎨 Title color update
 - [ ] Switch page-hero titles (Today / Week / Bookshelf / Apps / Journal / etc.) from rotating multicolor chalk to a single chalk-dust warm-white so subject colors on cards/tiles pop without competing
-- [ ] Keep one small accent-color flourish per page (subtitle or date line) instead of full rainbow headline
+- [x] Keep one small accent-color flourish per page (subtitle or date line) instead of full rainbow headline
 
 ## ✏️ Apple Pencil / iPad draw-on-doc + Turn-In (Round 4a-ii)
-- [ ] Canvas overlay on Turn-In dialog for PDF + image with Pointer Events (pressure, pointerType==='pen')
-- [ ] perfect-freehand for natural strokes; undo/redo/erase/color/thickness
+- [x] Canvas overlay on Turn-In dialog for PDF + image with Pointer Events (pressure, pointerType==='pen')
+- [x] perfect-freehand for natural strokes; undo/redo/erase/color/thickness
 - [ ] Flatten ink onto PDF via pdf-lib on submit
 - [ ] Save original + annotated to storage + Google Drive sync (Reagan Homeschool / Subject / YYYY-MM-DD_title)
 - [ ] Scratch Page blank canvas (Apps or Journal entry)
-- [ ] Palm rejection via pointerType filter
+- [x] Palm rejection via pointerType filter
 
 ## ✅ Auto-Answer Checking (Round 4a-ii)
-- [ ] Extend assignmentSubmissions: answers JSON (questionId → answer), autoScore 0-100, autoFeedback, gradingMethod, answerKey (per block)
-- [ ] Multiple choice → compare key → per-question correct + total %
-- [ ] Text answer → LLM rubric grading (returns score + short feedback)
-- [ ] Drawn answer → LLM vision OCR + grade
+- [x] Extend assignmentSubmissions: answers JSON (questionId → answer), autoScore 0-100, autoFeedback, gradingMethod, answerKey (per block)
+- [x] Multiple choice → compare key → per-question correct + total %
+- [x] Text answer → LLM rubric grading (returns score + short feedback)
+- [x] Drawn answer → LLM vision OCR + grade
 - [x] autoScore feeds skillsMastery (weighted rolling avg) + analytics
 
 ## 🎓 Completion Grades (Round 4a-ii)
-- [ ] assignmentSubmissions adds: letterGrade (A/B/C/D/F derived), kidLabel (Not yet / Getting there / Got it / Mastered), finalScore (auto or adult-overridden)
-- [ ] blockGrades table: planId, blockId, subjectSlug, score 0-100, kidLabel, letterGrade, gradedBy, notes, gradedAt
-- [ ] Adult "Mark complete" UI gains grade stepper (4-button + hidden 0-100 slider)
+- [x] assignmentSubmissions adds: letterGrade (A/B/C/D/F derived), kidLabel (Not yet / Getting there / Got it / Mastered), finalScore (auto or adult-overridden)
+- [x] blockGrades table: planId, blockId, subjectSlug, score 0-100, kidLabel, letterGrade, gradedBy, notes, gradedAt
+- [x] Adult "Mark complete" UI gains grade stepper (4-button + hidden 0-100 slider)
 - [x] Kid only sees supportive kidLabel, never number
 - [x] Analytics: per-subject rolling avg (last 10 submissions, exponentially weighted), per-subject letter grade card, week-over-week trend
-- [ ] Tutor handoff shows per-subject letter grades
-- [ ] Report card view (adult-only, printable) rolling grades by subject
+- [x] Tutor handoff shows per-subject letter grades
+- [x] Report card view (adult-only, printable) rolling grades by subject
 
 ## 📓 Take Notes (Round 4a-ii)
 - [x] takeNotes schema: subjectId, title, type (typed|drawn|mixed), contentText, contentUrl, blockId nullable, createdAt
 - [x] Notes page: by subject + date, search, quick-add
 - [x] Typed mode: textarea + subject tag
 - [x] Drawn mode: Apple Pencil canvas saved as PNG
-- [ ] Mixed mode: text above, canvas below
+- [x] Mixed mode: text above, canvas below
 - [ ] Optional: link a note to a schedule block / adventure
 
 ## 📈 Adaptive Curriculum (Round 4a-ii)
@@ -612,15 +612,15 @@
 - [x] needsWorkItems schema: id, parentId (self-ref, nullable), subjectSlug, label, notes, sourceType (manual|low_mastery|struggle|low_grade|tutor), sourceRefId, dateAdded, dateCompleted (nullable), sortOrder
 - [x] Needs Work page (behind 3918): tree view by Subject → Sub-subject → Skill → Sub-skill (arbitrary nesting)
 - [x] Check off item → strikethrough + show dateCompleted badge
-- [ ] Parent auto-completes only when all children complete
-- [ ] Drag-to-reorder + drag-to-reparent inside tree
+- [x] Parent auto-completes only when all children complete
+- [x] Drag-to-reorder + drag-to-reparent inside tree
 - [x] Add item button at any level (subject, sub-subject, skill)
-- [ ] Auto-populate jobs: 
+- [x] Auto-populate jobs: 
    - skillsMastery < 50% × 3 sessions → add skill to subject branch
    - emotionalStruggle red × 2 on same topic → add topic to subject branch
    - assignmentSubmission autoScore < 60 × 2 in same skill → add skill
 - [x] Completing a Needs Work item linked to a skillsMastery row bumps that skill's currentScore (+10 cap at 100) and logs adjustment
-- [ ] Export "Needs Work" list as printable for tutor handoff
+- [x] Export "Needs Work" list as printable for tutor handoff
 - [x] Filters: show only incomplete / show completed history / by subject / by date added window
 
 ## 📄 Printables & Worksheets Hub (adult-only, Round 4a-ii)
@@ -643,16 +643,16 @@
 - [x] Global "+ Quick Add" button in app header (adult-unlocked only) — picker: Block today / Needs-Work item / Timeline event / Note / Book / App link / Academic record
 - [x] Keyboard shortcut "A" (when unlocked, not in input) opens Quick Add
 - [x] Today page: when unlocked show inline ✎ Edit / 🅰 Grade / Note-struggle on every block; "+ Add block" button in Today's Schedule header
-- [ ] Week page: add/edit/delete/duplicate block on any day; drag block between days; weekly-template editor
-- [ ] Timeline: ✎/🗑 on every event; "+ Add event" header button; photo upload
-- [ ] Adventures: full CRUD (already exists, just surface behind AdultLock consistently)
-- [ ] Books: add/edit/delete, update page progress, add chapter bookmark
-- [ ] Apps & Tools: add/edit/delete app tiles; reorder
-- [ ] Needs Work: full tree CRUD (add at any level, reparent, archive)
+- [x] Week page: add/edit/delete/duplicate block on any day; drag block between days; weekly-template editor
+- [x] Timeline: ✎/🗑 on every event; "+ Add event" header button; photo upload
+- [x] Adventures: full CRUD (already exists, just surface behind AdultLock consistently)
+- [x] Books: add/edit/delete, update page progress, add chapter bookmark
+- [x] Apps & Tools: add/edit/delete app tiles; reorder
+- [x] Needs Work: full tree CRUD (add at any level, reparent, archive)
 - [ ] Assignments/Turn-Ins: create assignment tied to block, upload worksheet PDF, set answerKey, override autoScore, set letter grade, flag for retry
 - [ ] Appointments: add/edit/delete recurring appointments
 - [ ] Notification Recipients: add/remove, toggle channels
-- [ ] Profile/Contacts: edit any field
+- [x] Profile/Contacts: edit any field
 - [ ] Audit log: edit actions recorded with timestamp + actor (Mom/tutor) for undo
 - [x] All edit controls completely hidden when AdultLock locked — Reagan never sees them
 - [x] Toast confirmation on every edit (undo-within-10s deferred)

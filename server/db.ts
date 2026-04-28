@@ -664,6 +664,30 @@ export async function completeNeedsWork(id: number, completedByUserId?: number) 
   const db = getDb();
   const today = new Date().toISOString().slice(0, 10);
   await db.update(needsWorkItems).set({ dateCompleted: today, completedByUserId } as any).where(eq(needsWorkItems.id, id));
+  // Roll up: parent auto-completes when all of its children are complete.
+  // Walk up the tree as far as the chain of all-complete parents goes.
+  const all = await listNeedsWork();
+  const byId = new Map(all.map((r) => [r.id, r] as const));
+  const childrenOf = new Map<number, typeof all>();
+  for (const r of all) {
+    if (r.parentId) {
+      const list = childrenOf.get(r.parentId) || [];
+      list.push(r);
+      childrenOf.set(r.parentId, list);
+    }
+  }
+  let cursor = byId.get(id)?.parentId ?? null;
+  while (cursor) {
+    const kids = childrenOf.get(cursor) || [];
+    if (kids.length === 0) break;
+    // Treat the just-completed kid as completed even if local map is stale
+    const allDone = kids.every((k) => k.dateCompleted || k.id === id);
+    const parent = byId.get(cursor);
+    if (!parent || parent.dateCompleted) break;
+    if (!allDone) break;
+    await db.update(needsWorkItems).set({ dateCompleted: today, completedByUserId } as any).where(eq(needsWorkItems.id, cursor));
+    cursor = parent.parentId ?? null;
+  }
 }
 export async function reopenNeedsWork(id: number) {
   const db = getDb();

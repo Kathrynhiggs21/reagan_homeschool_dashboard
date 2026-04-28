@@ -38,7 +38,7 @@ export default function TakeNotes() {
   const [strokes, setStrokes] = useState<PFStroke[]>([]);
   const drawRef = useRef<DrawCanvasHandle>(null);
   const [query, setQuery] = useState("");
-  const [mode, setMode] = useState<"type" | "draw">("type");
+  const [mode, setMode] = useState<"type" | "draw" | "mixed">("type");
 
   const notes = useMemo(() => (list.data as any[] | undefined) ?? [], [list.data]);
   const filtered = useMemo(() => {
@@ -151,6 +151,7 @@ export default function TakeNotes() {
             <TabsList>
               <TabsTrigger value="type">Type</TabsTrigger>
               <TabsTrigger value="draw">Draw ✏️</TabsTrigger>
+              <TabsTrigger value="mixed">Mixed 📝✏️</TabsTrigger>
             </TabsList>
             <TabsContent value="type" className="mt-3">
               <Textarea
@@ -177,6 +178,28 @@ export default function TakeNotes() {
               <div className="text-[11px] text-muted-foreground mt-2">
                 Tip: use Apple Pencil for pressure-aware strokes. Eraser toggles in the toolbar.
               </div>
+            </TabsContent>
+            <TabsContent value="mixed" className="mt-3 space-y-3">
+              <Textarea
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                rows={6}
+                placeholder="Write the typed part on top..."
+              />
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" className="bg-transparent" onClick={() => drawRef.current?.undo()}>Undo</Button>
+                <Button size="sm" variant="outline" className="bg-transparent" onClick={() => { drawRef.current?.clear(); setStrokes([]); }}>Clear</Button>
+              </div>
+              <div className="bg-white rounded-md overflow-hidden border">
+                <DrawCanvas
+                  ref={drawRef}
+                  width={720}
+                  height={360}
+                  color="#111"
+                  size={3}
+                />
+              </div>
+              <div className="text-[11px] text-muted-foreground">Type and draw in the same note — both save together.</div>
             </TabsContent>
           </Tabs>
 

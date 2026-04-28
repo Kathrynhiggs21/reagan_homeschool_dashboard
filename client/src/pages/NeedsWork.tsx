@@ -44,6 +44,7 @@ export default function NeedsWork() {
   const completeM = trpc.needsWork.complete.useMutation();
   const reopenM = trpc.needsWork.reopen.useMutation();
   const deleteM = trpc.needsWork.delete.useMutation();
+  const reparentM = trpc.needsWork.reparent.useMutation();
   const utils = trpc.useUtils();
 
   const [addDialog, setAddDialog] = useState<{ open: boolean; parent?: NWRow | null }>({ open: false });
@@ -109,6 +110,65 @@ export default function NeedsWork() {
     utils.needsWork.list.invalidate();
   }
 
+  async function moveSibling(r: NWRow, dir: -1 | 1) {
+    const siblings = byParent.get(r.parentId ?? null) ?? [];
+    const idx = siblings.findIndex((x) => x.id === r.id);
+    const swapWith = siblings[idx + dir];
+    if (!swapWith) return;
+    await Promise.all([
+      updateM.mutateAsync({ id: r.id, sortOrder: swapWith.sortOrder }),
+      updateM.mutateAsync({ id: swapWith.id, sortOrder: r.sortOrder }),
+    ]);
+    utils.needsWork.list.invalidate();
+  }
+
+  async function reparent(r: NWRow) {
+    const all = (list.data as NWRow[] | undefined) ?? [];
+    // Build candidate parents (exclude self + any descendant)
+    const descendants = new Set<number>([r.id]);
+    let grew = true;
+    while (grew) {
+      grew = false;
+      for (const x of all) {
+        if (x.parentId && descendants.has(x.parentId) && !descendants.has(x.id)) {
+          descendants.add(x.id);
+          grew = true;
+        }
+      }
+    }
+    const candidates = all.filter((x) => !descendants.has(x.id));
+    const choices = ["(top level)", ...candidates.map((x) => `${x.id}: ${x.title}`)].join("\n");
+    const pick = prompt(`Move "${r.title}" under which parent?\n\n${choices}\n\nType id (or blank for top-level):`);
+    if (pick === null) return;
+    const parentId = pick.trim() === "" ? null : Number(pick.trim());
+    if (parentId !== null && Number.isNaN(parentId)) { toast.error("Invalid id"); return; }
+    await reparentM.mutateAsync({ id: r.id, parentId });
+    utils.needsWork.list.invalidate();
+  }
+
+  function exportPrintable() {
+    const all = (list.data as NWRow[] | undefined) ?? [];
+    const lines: string[] = ["Reagan — Needs Work (printable)", new Date().toLocaleDateString(), ""];
+    function walk(parentId: number | null, depth: number) {
+      const rows = byParent.get(parentId) ?? [];
+      for (const r of rows) {
+        const prefix = "  ".repeat(depth) + (r.dateCompleted ? "[x] " : "[ ] ");
+        const subj = r.subjectSlug ? ` (${r.subjectSlug})` : "";
+        const dates = r.dateCompleted ? `  — added ${fmt(r.dateAdded)}, done ${fmt(r.dateCompleted)}` : `  — added ${fmt(r.dateAdded)}`;
+        lines.push(prefix + r.title + subj + dates);
+        walk(r.id, depth + 1);
+      }
+    }
+    walk(null, 0);
+    void all;
+    const blob = new Blob([lines.join("\n")], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `needs-work-${new Date().toISOString().slice(0,10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   function Branch({ parentId, depth = 0 }: { parentId: number | null; depth?: number }) {
     const rows = byParent.get(parentId) ?? [];
     if (rows.length === 0 && parentId !== null) return null;
@@ -139,6 +199,9 @@ export default function NeedsWork() {
                   {done && <> · Done {fmt(r.dateCompleted)}</>}
                 </div>
                 <div className="opacity-0 group-hover:opacity-100 transition flex gap-1">
+                  <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => moveSibling(r, -1)}>↑</Button>
+                  <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => moveSibling(r, 1)}>↓</Button>
+                  <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => reparent(r)}>⇋ move</Button>
                   <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => openAdd(r)}>+ child</Button>
                   <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px]" onClick={() => rename(r)}>✎</Button>
                   <Button size="sm" variant="ghost" className="h-6 px-2 text-[10px] text-destructive" onClick={() => remove(r)}>🗑</Button>
@@ -166,7 +229,10 @@ export default function NeedsWork() {
         <div className="text-sm text-muted-foreground">
           {(list.data as NWRow[] | undefined)?.length ?? 0} item{(list.data as NWRow[] | undefined)?.length === 1 ? "" : "s"}
         </div>
-        <Button size="sm" onClick={() => openAdd(null)}>+ Top-level item</Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" className="bg-transparent" onClick={exportPrintable}>🖨 Export for tutor</Button>
+          <Button size="sm" onClick={() => openAdd(null)}>+ Top-level item</Button>
+        </div>
       </div>
 
       <Card className="classroom-card p-5">
