@@ -11,7 +11,7 @@ import GradeBlockDialog from "@/components/GradeBlockDialog";
 import AnswerKeyDialog from "@/components/AnswerKeyDialog";
 import TurnInDialog from "@/components/TurnInDialog";
 import SubjectColorKey from "@/components/SubjectColorKey";
-import { subjectTint, tintCardStyle, tintInkStyle, tintPillStyle, rainbowCardStyle, rainbowPillStyle, rainbowInkStyle } from "@/lib/subjectColors";
+import { subjectTint, tintCardStyle, tintInkStyle, tintPillStyle, rainbowCardStyle, rainbowPillStyle, rainbowInkStyle, rainbowStop } from "@/lib/subjectColors";
 import { celebrateKiwi } from "@/components/KiwiPerch";
 import FlockWidget from "@/components/FlockWidget";
 import WhiteboardStrip from "@/components/WhiteboardStrip";
@@ -116,19 +116,38 @@ export default function Today() {
 
   return (
     <div className="space-y-6">
-      {/* Hero chalkboard — real chalkboard texture, bold multicolor chalk */}
-      <header className="chalkboard relative">
+      {/* Header — calm chalkboard strip, rainbow multi-color title. No ombre banner. */}
+      <header className="relative rounded-2xl p-5 md:p-7" style={{
+        background: "linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.18))",
+        border: "1px solid rgba(255,255,255,0.08)",
+        boxShadow: "0 10px 30px -16px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04)",
+      }}>
         <div className="flex items-end justify-between flex-wrap gap-3">
           <div>
-            <div className="font-chalk-hand text-2xl leading-none chalk-yellow">{today_str}</div>
-            <h1 className="font-display text-4xl md:text-6xl mt-2 leading-none chalk-white">
-              Good Morning, {(profile.data?.studentName || "Reagan").split(" ")[0]}!
+            <div className="font-chalk-hand text-2xl md:text-3xl leading-none" style={{ color: "#ffd97a", textShadow: "0 0 1px rgba(255,255,255,0.25)" }}>{today_str}</div>
+            <h1 className="font-display mt-2 leading-none flex flex-wrap items-baseline gap-x-3 gap-y-1" style={{ fontSize: "clamp(2.5rem, 6vw, 4.75rem)", letterSpacing: "-0.01em" }}>
+              {(() => {
+                const first = (profile.data?.studentName || "Reagan").split(" ")[0];
+                const words = [
+                  { t: "Good",      c: "#ff9fb2" }, // coral pink
+                  { t: "Morning,",  c: "#ffd97a" }, // butter yellow
+                  { t: first + "!", c: "#7fe3c4" }, // mint
+                ];
+                return words.map((w, i) => (
+                  <span key={i} className="inline-block" style={{
+                    color: w.c,
+                    textShadow: "0 0 1px rgba(255,255,255,0.35), 0 3px 0 rgba(0,0,0,0.35), 0 6px 14px rgba(0,0,0,0.4)",
+                  }}>
+                    {w.t}
+                  </span>
+                ));
+              })()}
             </h1>
           </div>
           <Button
             onClick={() => setOpen(true)}
             size="lg"
-            className="rounded-full bg-accent text-accent-foreground hover:bg-accent/90 font-display"
+            className="rounded-full bg-accent text-accent-foreground hover:bg-accent/90 font-display text-base px-5 py-6 shadow-[0_6px_0_rgba(0,0,0,0.35),0_0_18px_rgba(255,216,106,0.25)]"
           >
             Ask {companionName}
           </Button>
@@ -194,17 +213,8 @@ export default function Today() {
         </Card>
       )}
 
-       {/* Tour Mode — Apr 28 is Reagan's soft-open day */}
+      {/* Tour Mode — calm pinned strip, no ombre gradient */}
       <TourModeCard />
-      <FlockWidget />
-      <WhiteboardStrip />
-      <div className="grid md:grid-cols-2 gap-3">
-        <TVBox />
-        <BrainBreakSpinner />
-      </div>
-      {/* Coin + sticker chip (always visible, upbeat) */}
-      <CoinStickerStrip />
-      <SubjectColorKey variant="schedule" />
       {/* Today's Schedule board */}
       <section>
         <div className="flex items-baseline justify-between mb-3">
@@ -236,39 +246,32 @@ export default function Today() {
           {blocks.map((b: any, i: number) => {
             const isDone = b.status === "complete";
             const tint = subjectTint(b.subjectSlug);
+            const stop = rainbowStop(i);
             return (
               <div
                 key={b.id}
-                className={`schedule-row ${isDone ? "opacity-55" : ""}`}
+                className={`schedule-row-v2 ${isDone ? "is-done" : ""}`}
                 style={rainbowCardStyle(i)}
               >
-                <img src={tileFor(b.subjectSlug)} alt="" className="subject-tile" />
-                <span className="time-chip" style={rainbowPillStyle(i)}>{blockTimeLabel(i)}</span>
+                {/* 3D subject icon tile (bigger, glowing) */}
+                <div className="subject-icon-tile" style={{ boxShadow: `0 4px 0 rgba(0,0,0,0.35), 0 0 18px ${stop.border}44, inset 0 2px 0 rgba(255,255,255,0.05)` }}>
+                  <img src={tileFor(b.subjectSlug)} alt="" />
+                </div>
+                {/* Time + body */}
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base" aria-hidden="true">{tint.emoji}</span>
-                    <div className="font-display font-semibold text-base leading-tight" style={rainbowInkStyle(i)}>{b.title}</div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="time-chip time-chip-v2" style={rainbowPillStyle(i)}>{blockTimeLabel(i)}</span>
+                    <span className="text-xl" aria-hidden="true">{tint.emoji}</span>
+                    <div className="font-display font-bold leading-tight" style={{ ...rainbowInkStyle(i), fontSize: "clamp(1.05rem, 2.1vw, 1.35rem)" }}>{b.title}</div>
                   </div>
                   {b.description && (
-                    <p className="text-xs text-neutral-700 mt-0.5 line-clamp-1">{b.description}</p>
+                    <p className="mt-1 chalk-white/90" style={{ fontSize: "0.95rem", opacity: 0.82, lineHeight: 1.35 }}>{b.description}</p>
                   )}
-                  <div className="flex gap-1 mt-1.5 flex-wrap">
-                    {!isDone && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="bg-white/60 border-neutral-300 text-neutral-900 hover:bg-white h-7 px-2 text-xs"
-                        onClick={() => {
-                          completeM.mutate({ id: b.id }, { onSuccess: () => { toast.success("Done!"); celebrateKiwi("Yay! 🎉 +1 sticker!"); utils.plans.today.invalidate(); }});
-                        }}
-                      >
-                        ✓ Done
-                      </Button>
-                    )}
+                  <div className="flex gap-1.5 mt-2 flex-wrap">
                     <Button
                       size="sm"
                       variant="outline"
-                      className="bg-white/60 border-neutral-300 text-neutral-900 hover:bg-white h-7 px-2 text-xs"
+                      className="bg-white/10 border-white/25 chalk-white hover:bg-white/20 h-8 px-3 text-xs"
                       onClick={() => setTurnIn({ open: true, block: { id: b.id, title: b.title, subjectSlug: b.subjectSlug } })}
                     >
                       📝 Turn in
@@ -276,7 +279,7 @@ export default function Today() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      className="h-7 px-2 text-xs text-neutral-700 hover:bg-white"
+                      className="h-8 px-3 text-xs chalk-white hover:bg-white/10"
                       onClick={() => setOpen(true)}
                     >
                       Help
@@ -313,7 +316,7 @@ export default function Today() {
                         <Button
                           size="sm"
                           variant="ghost"
-                          className="h-7 px-2 text-xs text-neutral-500 hover:bg-white"
+                          className="h-7 px-2 text-xs text-white/60 hover:bg-white/10"
                           onClick={() => setStruggleDialog({ open: true, blockId: b.id, subjectSlug: b.subjectSlug })}
                           title="Adult-only: log a moment Reagan found hard"
                         >
@@ -323,48 +326,95 @@ export default function Today() {
                     )}
                   </div>
                 </div>
+                {/* BIG obvious end-of-row checkmark */}
+                <button
+                  type="button"
+                  aria-label={isDone ? "Completed" : "Mark complete"}
+                  className={`schedule-check ${isDone ? "is-checked" : ""}`}
+                  style={{ ['--check-accent' as any]: stop.border }}
+                  onClick={() => {
+                    if (isDone) return;
+                    completeM.mutate({ id: b.id }, { onSuccess: () => { toast.success("Done!"); celebrateKiwi("Yay! 🎉 +1 sticker!"); utils.plans.today.invalidate(); }});
+                  }}
+                >
+                  {isDone ? (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <polyline points="5 12 10 17 19 8" />
+                    </svg>
+                  ) : (
+                    <span className="sr-only">Mark complete</span>
+                  )}
+                </button>
               </div>
             );
           })}
         </div>
       </section>
 
-      {/* Breaks + notes row (was "Sunshine Drop" + emotional recap) */}
-      <div className="grid md:grid-cols-2 gap-4">
-        <Card className="classroom-card p-4">
-          <div className="font-display text-sm font-semibold mb-2">Brain Break</div>
-          <div className="text-[15px] leading-snug">{joke.data?.text || "Pulling a joke..."}</div>
-          <div className="flex gap-2 mt-3">
-            <Button size="sm" variant="outline" className="bg-transparent h-7 px-2 text-xs" onClick={() => joke.refetch()}>
-              Another
-            </Button>
-            <Button size="sm" variant="outline" className="bg-transparent h-7 px-2 text-xs" onClick={() => setVideoOpen(true)}>
-              Animal video
-            </Button>
-          </div>
-        </Card>
-
-        <Card className="classroom-card p-4">
-          <div className="font-display text-sm font-semibold mb-2">{companionName}'s note</div>
-          <div className="text-[15px] leading-snug whitespace-pre-line text-muted-foreground">
-            {recap.data?.recap || "A short note will appear here at the end of the day."}
-          </div>
-        </Card>
-      </div>
-
-      {encouragement.data && encouragement.data.length > 0 && (
-        <Card className="classroom-card p-4">
-          <div className="font-display text-sm font-semibold mb-3">Notes for you</div>
-          <div className="space-y-2">
-            {encouragement.data.slice(0, 3).map((n: any) => (
-              <div key={n.id} className="rounded-md p-3 border border-border bg-white/5">
-                <div className="text-[15px]">"{n.content}"</div>
-                <div className="text-xs text-muted-foreground mt-1">— {n.fromName}</div>
+      {/* ===== Widget grid (everything-after-the-schedule) ===== */}
+      <section className="pt-2">
+        <h2 className="font-display font-semibold mb-3 flex flex-wrap items-baseline gap-x-2" style={{ fontSize: "clamp(1.5rem, 3.5vw, 2.25rem)" }}>
+          <span style={{ color: "#ff9fb2", textShadow: "0 3px 0 rgba(0,0,0,0.35)" }}>Your</span>
+          <span style={{ color: "#ffd97a", textShadow: "0 3px 0 rgba(0,0,0,0.35)" }}>classroom</span>
+          <span style={{ color: "#7fe3c4", textShadow: "0 3px 0 rgba(0,0,0,0.35)" }}>extras</span>
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="widget-tile"><FlockWidget /></div>
+          <div className="widget-tile"><WhiteboardStrip /></div>
+          <div className="widget-tile"><TVBox /></div>
+          <div className="widget-tile"><BrainBreakSpinner /></div>
+          <div className="widget-tile"><CoinStickerStrip /></div>
+          <div className="widget-tile">
+            <div className="rounded-2xl p-4 h-full" style={{
+              background: "linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.2))",
+              border: "2px solid rgba(255,216,106,0.35)",
+              boxShadow: "0 6px 0 rgba(0,0,0,0.3), 0 0 18px rgba(255,216,106,0.12)",
+            }}>
+              <div className="font-display font-semibold text-lg mb-2" style={{ color: "#ffd97a", textShadow: "0 2px 0 rgba(0,0,0,0.3)" }}>Brain Break 🧠</div>
+              <div className="text-[15px] leading-snug chalk-white">{joke.data?.text || "Pulling a joke..."}</div>
+              <div className="flex gap-2 mt-3">
+                <Button size="sm" variant="outline" className="bg-transparent h-8 px-3 text-xs" onClick={() => joke.refetch()}>Another</Button>
+                <Button size="sm" variant="outline" className="bg-transparent h-8 px-3 text-xs" onClick={() => setVideoOpen(true)}>Animal video</Button>
               </div>
-            ))}
+            </div>
           </div>
-        </Card>
-      )}
+          <div className="widget-tile md:col-span-2">
+            <div className="rounded-2xl p-4 h-full" style={{
+              background: "linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.2))",
+              border: "2px solid rgba(127,227,196,0.35)",
+              boxShadow: "0 6px 0 rgba(0,0,0,0.3), 0 0 18px rgba(127,227,196,0.12)",
+            }}>
+              <div className="font-display font-semibold text-lg mb-2" style={{ color: "#7fe3c4", textShadow: "0 2px 0 rgba(0,0,0,0.3)" }}>{companionName}'s note 📝</div>
+              <div className="text-[15px] leading-snug whitespace-pre-line chalk-white/90">
+                {recap.data?.recap || "A short note will appear here at the end of the day."}
+              </div>
+            </div>
+          </div>
+          {encouragement.data && encouragement.data.length > 0 && (
+            <div className="widget-tile md:col-span-3">
+              <div className="rounded-2xl p-4 h-full" style={{
+                background: "linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.2))",
+                border: "2px solid rgba(255,159,178,0.35)",
+                boxShadow: "0 6px 0 rgba(0,0,0,0.3), 0 0 18px rgba(255,159,178,0.12)",
+              }}>
+                <div className="font-display font-semibold text-lg mb-3" style={{ color: "#ff9fb2", textShadow: "0 2px 0 rgba(0,0,0,0.3)" }}>Notes for you 💕</div>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {encouragement.data.slice(0, 3).map((n: any) => (
+                    <div key={n.id} className="rounded-xl p-3" style={{
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.12)",
+                      boxShadow: "0 3px 0 rgba(0,0,0,0.25)",
+                    }}>
+                      <div className="text-[15px] chalk-white">“{n.content}”</div>
+                      <div className="text-xs mt-1" style={{ color: "#ffd97a" }}>— {n.fromName}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* Struggle dialog — toned down */}
       <Dialog open={struggleDialog.open} onOpenChange={(o) => setStruggleDialog(s => ({ ...s, open: o }))}>
@@ -526,22 +576,26 @@ function TourModeCard() {
   if (!msg) return null;
   return (
     <div
-      className="rounded-2xl p-5 shadow-sm"
+      className="rounded-2xl p-5"
       style={{
-        background: "linear-gradient(135deg, #ffe066 0%, #ffb07a 45%, #ff8fa3 100%)",
-        border: "3px solid #ffffff",
-        boxShadow: "0 4px 0 rgba(0,0,0,0.18), 0 1px 2px rgba(0,0,0,0.08)",
-        color: "#4a1a00",
+        background: "linear-gradient(180deg, rgba(255,216,106,0.1), rgba(255,159,178,0.06))",
+        border: "2px solid rgba(255,216,106,0.45)",
+        borderLeft: "10px solid #ffd97a",
+        boxShadow: "0 6px 0 rgba(0,0,0,0.3), 0 0 22px rgba(255,216,106,0.18), inset 0 1px 0 rgba(255,255,255,0.04)",
       }}
     >
       <div className="flex items-start gap-4">
-        <div className="text-4xl">{msg.emoji}</div>
+        <div className="text-5xl" style={{ filter: "drop-shadow(0 3px 0 rgba(0,0,0,0.4))" }}>{msg.emoji}</div>
         <div className="flex-1 min-w-0">
-          <div className="text-[11px] font-bold uppercase tracking-wider opacity-70 mb-1">{msg.tag}</div>
-          <div className="font-display font-bold text-xl leading-tight">{msg.title}</div>
-          <p className="text-sm mt-1 leading-snug">{msg.body}</p>
+          <div className="text-[11px] font-bold uppercase tracking-widest mb-1" style={{ color: "#ffd97a" }}>{msg.tag}</div>
+          <div className="font-display font-bold leading-tight" style={{ color: "#ff9fb2", fontSize: "clamp(1.35rem, 3vw, 1.8rem)", textShadow: "0 2px 0 rgba(0,0,0,0.4)" }}>{msg.title}</div>
+          <p className="mt-1 leading-snug chalk-white" style={{ fontSize: "1.05rem", opacity: 0.9 }}>{msg.body}</p>
           {msg.chip && (
-            <div className="inline-block mt-3 px-3 py-1.5 rounded-full bg-white/80 text-sm font-semibold">
+            <div className="inline-block mt-3 px-4 py-2 rounded-full text-sm font-semibold" style={{
+              background: "rgba(255,216,106,0.95)",
+              color: "#4a3600",
+              boxShadow: "0 3px 0 rgba(0,0,0,0.35)",
+            }}>
               {msg.chip}
             </div>
           )}

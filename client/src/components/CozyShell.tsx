@@ -103,7 +103,7 @@ export default function CozyShell({ children }: { children: ReactNode }) {
                   : "text-sidebar-foreground hover:bg-sidebar-accent"
               }`}
             >
-              <span className="text-base w-5 text-center">{n.emoji}</span>
+              <span className="text-2xl w-7 text-center">{n.emoji}</span>
               <span className="flex-1">{n.label}</span>
               {n.dot && <span className="w-2 h-2 rounded-full" style={{ background: n.dot }} aria-hidden />}
             </Link>
@@ -122,7 +122,7 @@ export default function CozyShell({ children }: { children: ReactNode }) {
                   : "text-sidebar-foreground hover:bg-sidebar-accent"
               }`}
             >
-              <span className="text-base w-5 text-center">{n.emoji}</span>
+              <span className="text-2xl w-7 text-center">{n.emoji}</span>
               <span>{n.label}</span>
             </Link>
           ))}
@@ -144,7 +144,7 @@ export default function CozyShell({ children }: { children: ReactNode }) {
                       : "text-sidebar-foreground hover:bg-sidebar-accent"
                   }`}
                 >
-                  <span className="text-base w-5 text-center">{n.emoji}</span>
+                  <span className="text-2xl w-7 text-center">{n.emoji}</span>
                   <span>{n.label}</span>
                 </Link>
               ))}

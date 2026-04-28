@@ -150,9 +150,12 @@
   }
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Fredoka', 'Nunito', system-ui, sans-serif;
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: -0.01em;
   }
+  /* Larger readable body size across the app (Pass 3) */
+  html { font-size: 17px; }
+  @media (min-width: 768px) { html { font-size: 18px; } }
   .font-display { font-family: 'Fredoka', 'Nunito', sans-serif; font-weight: 600; }
   .font-chalk-hand { font-family: 'Caveat', 'Patrick Hand', cursive; }
   .font-chalk {
@@ -230,7 +233,77 @@
     flex-shrink: 0;
   }
 
-  /* Schedule row — picture tile + time + title (picture-first classroom board) */
+  /* ===== Pass 3: schedule-row-v2 (frame-only, big icon, big checkmark) ===== */
+  .schedule-row-v2 {
+    display: flex;
+    align-items: stretch;
+    gap: 1rem;
+    padding: 0.85rem 1rem;
+    border-radius: 1rem;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s ease;
+  }
+  .schedule-row-v2:hover { transform: translateY(-1px); }
+  .schedule-row-v2.is-done { opacity: 0.55; }
+  .subject-icon-tile {
+    flex-shrink: 0;
+    width: 84px;
+    height: 84px;
+    border-radius: 0.9rem;
+    overflow: hidden;
+    background: rgba(0,0,0,0.5);
+    border: 2px solid rgba(255,255,255,0.12);
+    display: flex; align-items: center; justify-content: center;
+  }
+  @media (min-width: 768px) {
+    .subject-icon-tile { width: 96px; height: 96px; }
+  }
+  .subject-icon-tile img { width: 100%; height: 100%; object-fit: cover; }
+  .time-chip-v2 {
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 0.45rem 0.85rem;
+    border-radius: 0.6rem;
+    font-weight: 800;
+    font-family: 'Fredoka', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.01em;
+    color: #fff;
+  }
+  /* BIG checkmark button at the end of each row */
+  .schedule-check {
+    flex-shrink: 0;
+    align-self: center;
+    width: 60px; height: 60px;
+    border-radius: 999px;
+    border: 3px dashed rgba(255,255,255,0.45);
+    background: rgba(0,0,0,0.35);
+    color: transparent;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.35), inset 0 2px 0 rgba(255,255,255,0.04);
+  }
+  @media (min-width: 768px) {
+    .schedule-check { width: 72px; height: 72px; }
+  }
+  .schedule-check:hover {
+    transform: translateY(-1px) scale(1.04);
+    border-color: rgba(255,255,255,0.8);
+    background: rgba(255,255,255,0.08);
+  }
+  .schedule-check.is-checked {
+    background: var(--check-accent, #7fe3c4);
+    border: 3px solid #fff;
+    color: #fff;
+    box-shadow: 0 4px 0 rgba(0,0,0,0.4), 0 0 24px var(--check-accent, #7fe3c4);
+  }
+  .schedule-check svg { width: 36px; height: 36px; }
+
+  /* Widget tile wrapper — shared depth */
+  .widget-tile > * {
+    height: 100%;
+  }
+
+  /* Legacy: schedule row — picture tile + time + title */
   .schedule-row {
     display: flex;
     align-items: center;

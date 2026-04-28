@@ -68,6 +68,7 @@ function AddBookDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o
 
 export default function Bookshelf() {
   const books = trpc.books.list.useQuery();
+  const videos = trpc.review.list.useQuery({ kind: "video", approvedOnly: true });
   const updateProgress = trpc.books.advancePage.useMutation();
   const del = trpc.books.delete.useMutation();
   const utils = trpc.useUtils();
@@ -75,6 +76,16 @@ export default function Bookshelf() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draftPage, setDraftPage] = useState<string>("");
   const [adding, setAdding] = useState(false);
+
+  // Dedupe by normalized title+author so duplicate seeds don't double-render.
+  const dedupedBooks: Book[] = (() => {
+    const seen = new Map<string, Book>();
+    for (const b of (books.data || []) as Book[]) {
+      const key = `${(b.title || "").toLowerCase().trim()}|${(b.author || "").toLowerCase().trim()}`;
+      if (!seen.has(key)) seen.set(key, b);
+    }
+    return Array.from(seen.values());
+  })();
 
   function startEdit(b: Book) {
     setEditingId(b.id);
@@ -112,7 +123,7 @@ export default function Bookshelf() {
       <SubjectColorKey variant="schedule" />
 
       <div className="grid sm:grid-cols-1 lg:grid-cols-2 gap-4">
-        {books.data?.map((b: Book) => {
+        {dedupedBooks.map((b: Book) => {
           const pct = b.totalPages ? Math.round(((b.currentPage || 0) / b.totalPages) * 100) : 0;
           const isTuck = isTuckEverlasting(b);
           const subj = b.subjectSlug || "reading";
@@ -203,11 +214,49 @@ export default function Bookshelf() {
         })}
       </div>
 
-      {!books.isLoading && (books.data?.length ?? 0) === 0 && (
+      {!books.isLoading && dedupedBooks.length === 0 && (
         <Card className="classroom-card p-6 text-center">
           <p className="font-display">No books on the shelf yet.</p>
         </Card>
       )}
+
+      {/* Watch & Learn — curated YouTube picks */}
+      {Array.isArray(videos.data) && videos.data.length > 0 && (
+        <section className="pt-4">
+          <div className="flex items-baseline gap-3 mb-3 flex-wrap">
+            <h2 className="font-display font-bold" style={{ fontSize: "clamp(1.5rem, 3vw, 2rem)", color: "#ff9fb2", textShadow: "0 3px 0 rgba(0,0,0,0.35)" }}>Watch</h2>
+            <h2 className="font-display font-bold" style={{ fontSize: "clamp(1.5rem, 3vw, 2rem)", color: "#ffd97a", textShadow: "0 3px 0 rgba(0,0,0,0.35)" }}>&amp;</h2>
+            <h2 className="font-display font-bold" style={{ fontSize: "clamp(1.5rem, 3vw, 2rem)", color: "#7fe3c4", textShadow: "0 3px 0 rgba(0,0,0,0.35)" }}>Learn</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {videos.data.map((v: any) => (
+              <a
+                key={v.id}
+                href={v.url}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-2xl p-4 transition hover:-translate-y-1"
+                style={{
+                  background: "linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.25))",
+                  border: "2px solid rgba(255,159,178,0.35)",
+                  boxShadow: "0 6px 0 rgba(0,0,0,0.3), 0 0 18px rgba(255,159,178,0.12)",
+                }}
+              >
+                <div className="flex items-start gap-3">
+                  <span className="text-4xl" style={{ filter: "drop-shadow(0 3px 0 rgba(0,0,0,0.4))" }}>📺</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-display font-bold leading-tight" style={{ color: "#ff9fb2", fontSize: "1.1rem", textShadow: "0 2px 0 rgba(0,0,0,0.35)" }}>{v.title}</div>
+                    {v.description && (
+                      <p className="mt-1 chalk-white" style={{ fontSize: "0.95rem", opacity: 0.85, lineHeight: 1.35 }}>{v.description}</p>
+                    )}
+                  </div>
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+
       {adding && <AddBookDialog open={adding} onOpenChange={setAdding} />}
     </div>
   );
