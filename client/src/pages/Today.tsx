@@ -103,6 +103,29 @@ export default function Today() {
         </div>
       </Card>
 
+      {/* End-of-day celebration */}
+      {(() => {
+        const total = blocks.length;
+        const done = blocks.filter((b: any) => b.status === "complete").length;
+        if (total > 0 && done === total) {
+          return (
+            <Card className="cozy-card p-6 bg-gradient-to-br from-emerald-50 via-amber-50 to-rose-50 border-emerald-200">
+              <div className="flex items-start gap-4">
+                <span className="text-5xl">🌿</span>
+                <div className="flex-1">
+                  <div className="font-display font-semibold text-xl">You did the whole day, Reagan.</div>
+                  <p className="font-hand text-lg mt-1 leading-snug">Every block. The animals saw you show up, and so did I. Real Animal Whisperer energy. Go love on the parakeets. 💛</p>
+                  <div className="flex gap-2 mt-3">
+                    <Button size="sm" variant="outline" className="bg-card" onClick={() => recap.refetch()}>{companionAvatar} Read me {companionName}'s note</Button>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          );
+        }
+        return null;
+      })()}
+
       <div>
         <h2 className="text-lg font-display font-semibold mb-3 flex items-center gap-2"><BookOpen className="w-4 h-4"/> Your day, in cozy blocks</h2>
         {today.isLoading && <div className="text-muted-foreground text-sm">Loading...</div>}

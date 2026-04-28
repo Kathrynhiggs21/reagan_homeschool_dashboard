@@ -27,7 +27,7 @@ export default function CozyShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen flex">
-      <aside className="w-64 shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col h-screen sticky top-0">
+      <aside className="w-64 shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col h-screen sticky top-0 no-print">
         <div className="px-5 py-5 border-b border-sidebar-border">
           <div className="flex items-center gap-2">
             <span className="text-2xl">🪶</span>

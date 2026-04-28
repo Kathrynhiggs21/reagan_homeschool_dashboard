@@ -512,6 +512,17 @@ export const appRouter = router({
       // Save user message
       await db.insertWhisperMessage({ role: "user", content: input.userMessage } as any);
 
+      // Detect name-change requests like "call me Sunny", "your name is Sunny", "I want to call you Sunny"
+      const nameMatch = input.userMessage.match(/(?:call (?:you|yourself)|your name is|i(?:'ll| will| wanna| want to)? call you|new name is|name yourself)\s+([A-Za-z][A-Za-z\- ]{1,18})/i);
+      let nameChange: string | null = null;
+      if (nameMatch) {
+        const proposed = nameMatch[1].trim().split(/\s+/).slice(0,2).join(" ");
+        if (proposed && proposed.length >= 2) {
+          await db.upsertProfile({ companionName: proposed } as any);
+          nameChange = proposed;
+        }
+      }
+
       // Build context
       const profile = await db.getProfile();
       const today = new Date().toISOString().slice(0,10);
@@ -558,7 +569,7 @@ export const appRouter = router({
       const aiContentRaw = response.choices[0]?.message?.content || "I'm here.";
       const aiContent: string = typeof aiContentRaw === "string" ? aiContentRaw : (aiContentRaw as any[]).map(c => (c as any).text || "").join("");
       await db.insertWhisperMessage({ role: "assistant", content: aiContent } as any);
-      return { reply: aiContent };
+      return { reply: aiContent, nameChange };
     }),
 
     transcribe: publicProcedure.input(z.object({ audioUrl: z.string() })).mutation(async ({ input }) => {

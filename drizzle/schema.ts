@@ -237,6 +237,9 @@ export const learnerProfile = mysqlTable("learnerProfile", {
   contacts: json("contacts").$type<{ name: string; role: string; phone?: string; email?: string }[]>(),
   interests: json("interests").$type<string[]>(),
   notes: text("notes"),
+  companionName: varchar("companionName", { length: 64 }).default("Whisper"),
+  companionAvatar: varchar("companionAvatar", { length: 16 }).default("🪶"),
+  companionTonePreference: varchar("companionTonePreference", { length: 64 }),
 });
 
 /* -------------------------------------------------------------------------- */

@@ -36,6 +36,13 @@
       "when": 1777332531063,
       "tag": "0004_unknown_prima",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1777335570082,
+      "tag": "0005_smart_thunderbird",
+      "breakpoints": true
     }
   ]
 }

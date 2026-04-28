@@ -203,3 +203,44 @@
     }
   }
 }
+
+/* ---- Print packet styles ---- */
+@media print {
+  @page { margin: 0.5in; size: letter; }
+  body {
+    background: white !important;
+    background-image: none !important;
+    color: #2a1f12 !important;
+    font-size: 11pt;
+  }
+  /* Hide app shell chrome */
+  .no-print,
+  [data-print="hide"],
+  aside, nav,
+  [aria-label="Sidebar"],
+  [data-whisper-launcher],
+  [data-whisper-companion],
+  button,
+  [role="dialog"] {
+    display: none !important;
+  }
+  /* Force full width on main */
+  main, [role="main"], .container { 
+    max-width: 100% !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .cozy-card, .card {
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    background: white !important;
+  }
+  h1, h2, h3 { page-break-after: avoid; break-after: avoid; }
+  .print-only { display: block !important; }
+  a { color: inherit !important; text-decoration: none !important; }
+  .badge, [data-slot="badge"] { border: 1px solid #999 !important; background: white !important; color: #333 !important; }
+}
+.print-only { display: none; }

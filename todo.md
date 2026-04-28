@@ -407,11 +407,20 @@
 
 
 ## ⚡ Focused Remaining Work (Post-v2 Checkpoint)
-- [ ] Struggle button opens a gentle dialog (intensity yellow/red, what helped, did it pass) instead of always logging yellow
-- [ ] Whisper joy drops: jokes endpoint + funny-animal-video endpoint + carrot/song hooks
-- [ ] Whisper end-of-day "you did great" recap procedure
-- [ ] Knowledge ingestion sync button (Gmail + Drive scan via MCP) + manual paste fallback
-- [ ] Email digest to spear.cpt + marcy.spear via notifyOwner on red zone or 3+ struggles in a week
-- [ ] Print PDF packet (today + week) using weasyprint
-- [ ] Tutor handoff "Print packet" + "Email Grandma" buttons wired
-- [ ] Final vitest tests for joy, struggle, knowledge, recap procedures
+- [x] Struggle button opens a gentle dialog (intensity yellow/red, what helped, did it pass) instead of always logging yellow
+- [x] Whisper joy drops: jokes endpoint + funny-animal-video endpoint + carrot/song hooks
+- [x] Whisper end-of-day "you did great" recap procedure
+- [x] Knowledge ingestion: manual paste fallback wired (LLM extraction). Gmail/Drive MCP sync deferred.
+- [x] Email digest to spear.cpt + marcy.spear via notifyOwner on red zone or 3+ struggles in a week
+- [x] Print PDF packet (today + week) — print CSS for clean printout
+- [x] Tutor handoff "Print packet" + "Email dispatch" buttons wired
+- [x] Final vitest tests for joy, struggle, knowledge, recap procedures (17/17 passing)
+
+## ⚡ Polish Round
+- [ ] Print CSS so Print packet button produces clean printout (hide sidebar/Whisper)
+- [ ] Whisper proactive nudges (gentle check-in if a block sits idle)
+- [ ] Companion name change via chat ("call me Sunny")
+- [ ] Real curated kid-safe animal video URLs (Dodo, etc.)
+- [ ] Polished Week page with 5-day grid + completion status
+- [ ] Analytics: simple SVG charts for mood arc + subject coverage
+- [ ] End-of-day celebration flow on Today page

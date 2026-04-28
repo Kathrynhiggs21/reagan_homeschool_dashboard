@@ -104,6 +104,32 @@ describe("Reagan Dashboard core helpers", () => {
     expect(emails.some(e => e.includes("spear.cpt") || e.includes("marcy.spear"))).toBe(true);
   });
 
+  it("name change regex matches several phrasings", () => {
+    const phrases = [
+      "call you Sunny",
+      "your name is Sunny",
+      "I'll call you Sunny",
+      "I want to call you Sunny",
+      "new name is Sunny",
+    ];
+    const regex = /(?:call (?:you|yourself)|your name is|i(?:'ll| will| wanna| want to)? call you|new name is|name yourself)\s+([A-Za-z][A-Za-z\- ]{1,18})/i;
+    for (const p of phrases) {
+      const m = p.match(regex);
+      expect(m).toBeTruthy();
+      expect((m as any)[1]).toMatch(/Sunny/i);
+    }
+  });
+
+  it("upsertProfile can change companionName", async () => {
+    const before: any = await db.getProfile();
+    const original = before?.companionName || "Whisper";
+    await db.upsertProfile({ companionName: "Sunny" } as any);
+    const after: any = await db.getProfile();
+    expect(after?.companionName).toBe("Sunny");
+    // restore
+    await db.upsertProfile({ companionName: original } as any);
+  });
+
   it("today digest data composes plan + blocks + struggles", async () => {
     const todayStr = new Date().toISOString().slice(0, 10);
     const plan: any = await db.ensurePlanForDate(todayStr);

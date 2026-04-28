@@ -7,19 +7,44 @@ import { Send, Mic, X, Volume2, VolumeX, MessageCircle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
 export default function WhisperCompanion() {
-  const { open, setOpen, enabled, mode, voiceMode, adultPresent, companionName, companionAvatar } = useWhisper();
+  const { open, setOpen, enabled, mode, voiceMode, adultPresent, companionName, companionAvatar, setCompanionName } = useWhisper();
   const [input, setInput] = useState("");
   const [muted, setMuted] = useState(false);
+  const [lastInteractionAt, setLastInteractionAt] = useState<number>(Date.now());
+  const [proactivePrompted, setProactivePrompted] = useState(false);
   const messages = trpc.whisper.history.useQuery({ limit: 20 });
   const sendMsg = trpc.whisper.chat.useMutation({
     onSuccess: (data: any) => {
       messages.refetch();
+      setLastInteractionAt(Date.now());
+      setProactivePrompted(false);
+      if (data?.nameChange) {
+        setCompanionName(data.nameChange);
+      }
       if (!muted && voiceMode === "voice" && data?.reply) {
         speak(data.reply);
       }
     },
   });
   const utils = trpc.useUtils();
+
+  // Proactive idle nudge: if no interaction for 12+ minutes and no adult present, gently check in (once)
+  useEffect(() => {
+    if (!enabled || adultPresent || proactivePrompted) return;
+    const t = setInterval(() => {
+      const idleMs = Date.now() - lastInteractionAt;
+      if (idleMs > 12 * 60 * 1000) {
+        setProactivePrompted(true);
+        // Send a gentle check-in via the chat (counts as user-initiated to surface a response)
+        sendMsg.mutate({
+          userMessage: "(silent prompt) Reagan has been quiet for a while. Drop a soft, real check-in — one short sentence. No pressure. Maybe ask about an animal.",
+          adultPresent: false,
+        });
+        if (!open) setOpen(true);
+      }
+    }, 60 * 1000);
+    return () => clearInterval(t);
+  }, [enabled, adultPresent, proactivePrompted, lastInteractionAt, open, setOpen]);
 
   function speak(text: string) {
     if (!("speechSynthesis" in window)) return;
@@ -80,8 +105,9 @@ export default function WhisperCompanion() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-6 z-40 w-16 h-16 rounded-full bg-primary text-primary-foreground shadow-2xl hover:scale-110 transition-transform flex items-center justify-center text-3xl ring-4 ring-primary/20"
+          className="fixed bottom-6 right-6 z-40 w-16 h-16 rounded-full bg-primary text-primary-foreground shadow-2xl hover:scale-110 transition-transform flex items-center justify-center text-3xl ring-4 ring-primary/20 no-print"
           style={{ boxShadow: "0 10px 30px -5px oklch(0.7 0.12 65 / 0.5)" }}
+          data-whisper-launcher
           aria-label={`Open ${companionName}`}
         >
           {adultPresent ? "💤" : companionAvatar}
@@ -90,7 +116,7 @@ export default function WhisperCompanion() {
 
       {/* Panel */}
       {open && (
-        <Card className="fixed bottom-6 right-6 z-40 w-[380px] max-w-[calc(100vw-2rem)] h-[560px] max-h-[80vh] flex flex-col shadow-2xl border-2 border-primary/20">
+        <Card data-whisper-companion className="fixed bottom-6 right-6 z-40 w-[380px] max-w-[calc(100vw-2rem)] h-[560px] max-h-[80vh] flex flex-col shadow-2xl border-2 border-primary/20 no-print">
           <div className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center gap-2">
               <span className="text-2xl">{companionAvatar}</span>
