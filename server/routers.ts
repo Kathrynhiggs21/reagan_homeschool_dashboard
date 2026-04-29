@@ -1433,5 +1433,14 @@ export const appRouter = router({
       })).optional(),
     })).mutation(({ input }) => db.recordTutorSession(input)),
   }),
+
+  // ─────────────────────────────────────────────────────────────────────
+  // Weekly Digest — auto-emailed Sunday 7 PM to spear.cpt@gmail.com
+  // ─────────────────────────────────────────────────────────────────────
+  digest: router({
+    preview: protectedProcedure.query(() => db.buildWeeklyDigestPayload()),
+    recent: protectedProcedure.input(z.object({ limit: z.number().default(12) }).optional())
+      .query(({ input }) => db.listRecentDigests(input?.limit ?? 12)),
+  }),
 });
 export type AppRouter = typeof appRouter;

@@ -2917,3 +2917,146 @@ export async function automationStatus() {
     pendingFlags: flagged,
   };
 }
+
+
+// ──────────────────────────────────────────────────────────────────────────
+// Weekly Digest — auto-emailed Sunday 7 PM to spear.cpt@gmail.com
+// All numbers come from REAL parent/Reagan/tutor entries only.
+// ──────────────────────────────────────────────────────────────────────────
+import { weeklyDigests } from "../drizzle/schema";
+
+export async function buildWeeklyDigestPayload(opts?: { weekStart?: Date; weekEnd?: Date }) {
+  const db = getDb();
+  const now = new Date();
+  const weekEnd = opts?.weekEnd ?? now;
+  const weekStart = opts?.weekStart ?? new Date(weekEnd.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+  // 1. Confidence wins (level-ups in proudMoments since weekStart, source=auto)
+  const allProud = await db.select().from(proudMoments);
+  const levelUps = allProud.filter((p: any) => {
+    const created = p.createdAt ? new Date(p.createdAt) : null;
+    return created && created >= weekStart && created <= weekEnd && (p.source === "auto" || p.category === "levelUp");
+  });
+
+  // 2. Tutor sessions completed this week
+  const allTutorSessions = await db.select().from(tutorSessions);
+  const recentTutorSessions = allTutorSessions.filter((t: any) => {
+    const at = t.scheduledAt ? new Date(t.scheduledAt) : null;
+    return at && at >= weekStart && at <= weekEnd && t.status === "completed";
+  });
+
+  // 3. Parent flags raised this week
+  const allParentFlags = await db.select().from(parentFlags);
+  const flagsThisWeek = allParentFlags.filter((f: any) => {
+    const at = f.createdAt ? new Date(f.createdAt) : null;
+    return at && at >= weekStart && at <= weekEnd;
+  });
+
+  // 4. Mood arc — moodSignals across the week (best-effort; empty if none)
+  let moodArc: any = { hard: 0, ok: 0, easy: 0, total: 0 };
+  try {
+    const sigs = await db.select().from(moodSignals);
+    const recent = sigs.filter((s: any) => {
+      const at = s.createdAt ? new Date(s.createdAt) : null;
+      return at && at >= weekStart && at <= weekEnd;
+    });
+    moodArc = {
+      hard: recent.filter((r: any) => r.feltIt === "hard").length,
+      ok: recent.filter((r: any) => r.feltIt === "ok").length,
+      easy: recent.filter((r: any) => r.feltIt === "easy").length,
+      total: recent.length,
+    };
+  } catch { /* moodSignals not always present */ }
+
+  // 5. What helped (top helpers from skillFeedback this week)
+  let whatHelped: Array<{ helper: string; count: number }> = [];
+  try {
+    const fb = await db.select().from(skillFeedback);
+    const recent = fb.filter((f: any) => {
+      const at = f.createdAt ? new Date(f.createdAt) : null;
+      return at && at >= weekStart && at <= weekEnd && f.whatHelped;
+    });
+    const counts: Record<string, number> = {};
+    for (const r of recent as any[]) {
+      const h = String(r.whatHelped || "").trim();
+      if (!h) continue;
+      counts[h] = (counts[h] || 0) + 1;
+    }
+    whatHelped = Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([helper, count]) => ({ helper, count }));
+  } catch { /* skillFeedback not always present */ }
+
+  // 6. Subject confidence delta — average confidence per subject from current skillProgress
+  const progress = await db.select().from(skillProgress);
+  const ladder = await db.select().from(skillLadder);
+  const ladderById = new Map(ladder.map((l: any) => [l.id, l]));
+  const subjectAggs: Record<string, { sum: number; count: number; levelSum: number }> = {};
+  for (const p of progress as any[]) {
+    const skill = ladderById.get(p.skillLadderId);
+    if (!skill) continue;
+    const slug = (skill as any).subjectSlug || "other";
+    if (!subjectAggs[slug]) subjectAggs[slug] = { sum: 0, count: 0, levelSum: 0 };
+    subjectAggs[slug].sum += p.confidence ?? 0;
+    subjectAggs[slug].count += 1;
+    subjectAggs[slug].levelSum += p.level ?? 0;
+  }
+  const subjectSummary = Object.entries(subjectAggs).map(([slug, agg]) => ({
+    subject: slug,
+    avgConfidence: agg.count ? Math.round(agg.sum / agg.count) : 0,
+    avgLevel: agg.count ? Math.round((agg.levelSum / agg.count) * 10) / 10 : 0,
+    skillsTracked: agg.count,
+  }));
+
+  // 7. IH alignment for the week
+  let ihAlignment: any[] = [];
+  try {
+    const wt = await db.select().from(weeklyTopics);
+    ihAlignment = (wt as any[]).filter((w: any) => {
+      const ws = w.weekStart ? new Date(w.weekStart) : null;
+      return ws && ws >= new Date(weekStart.getTime() - 24 * 60 * 60 * 1000) && ws <= weekEnd;
+    }).map((w: any) => ({ subject: w.subjectSlug, topic: w.topic, weekStart: w.weekStart }));
+  } catch { /* weeklyTopics not always present */ }
+
+  return {
+    weekStart: weekStart.toISOString(),
+    weekEnd: weekEnd.toISOString(),
+    levelUps: levelUps.map((p: any) => ({ title: p.title, category: p.category, when: p.createdAt })),
+    tutorSessionsCount: recentTutorSessions.length,
+    tutorSessions: recentTutorSessions.map((t: any) => ({ tutorId: t.tutorId, focus: t.focus, when: t.scheduledAt })),
+    flagsCount: flagsThisWeek.length,
+    flags: flagsThisWeek.map((f: any) => ({ kind: f.kind, summary: f.summary, skillLadderId: f.skillLadderId })),
+    moodArc,
+    whatHelped,
+    subjectSummary,
+    ihAlignment,
+    generatedAt: new Date().toISOString(),
+  };
+}
+
+export async function saveWeeklyDigest(payload: any, opts?: { weekStart?: Date; weekEnd?: Date }) {
+  const db = getDb();
+  const weekStart = opts?.weekStart ?? new Date(payload.weekStart);
+  const weekEnd = opts?.weekEnd ?? new Date(payload.weekEnd);
+  const r = await db.insert(weeklyDigests).values({
+    weekStart, weekEnd, payload, emailStatus: "pending",
+  } as any).$returningId();
+  return r[0]?.id;
+}
+
+export async function listRecentDigests(limit = 12) {
+  const db = getDb();
+  const rows = await db.select().from(weeklyDigests);
+  return (rows as any[])
+    .sort((a, b) => new Date(b.weekStart).getTime() - new Date(a.weekStart).getTime())
+    .slice(0, limit);
+}
+
+export async function markDigestEmailed(id: number, status: "sent" | "failed" = "sent") {
+  const db = getDb();
+  await db.update(weeklyDigests).set({
+    emailedAt: new Date(),
+    emailStatus: status,
+  } as any).where(eq(weeklyDigests.id, id));
+}

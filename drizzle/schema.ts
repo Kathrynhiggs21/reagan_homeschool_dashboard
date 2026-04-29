@@ -1266,3 +1266,21 @@ export const syncRunItems = mysqlTable("sync_run_items", {
 export type SyncRequest = typeof syncRequests.$inferSelect;
 export type SyncRun = typeof syncRuns.$inferSelect;
 export type SyncRunItem = typeof syncRunItems.$inferSelect;
+
+
+// ──────────────────────────────────────────────────────────────────────────
+// Weekly Digest — auto-emailed Sunday 7 PM to spear.cpt@gmail.com
+// Stores history so we can show the parent the past 12 weeks at a glance.
+// All numbers in `payload` are computed from REAL parent/Reagan/tutor entries
+// only — never from seeded or demo data.
+// ──────────────────────────────────────────────────────────────────────────
+export const weeklyDigests = mysqlTable("weekly_digests", {
+  id: int("id").autoincrement().primaryKey(),
+  weekStart: timestamp("week_start").notNull(),
+  weekEnd: timestamp("week_end").notNull(),
+  payload: json("payload").notNull(),  // structured: {levelUps, tutorSessions, flags, moodArc, whatHelped, ihAlignment, subjectConfidenceDelta}
+  emailedAt: timestamp("emailed_at"),  // when sent to spear.cpt@gmail.com
+  emailStatus: mysqlEnum("email_status", ["pending", "sent", "failed"]).default("pending"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type WeeklyDigest = typeof weeklyDigests.$inferSelect;

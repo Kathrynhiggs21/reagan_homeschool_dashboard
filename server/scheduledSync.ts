@@ -123,4 +123,57 @@ export function registerScheduledSync(app: Express) {
       return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
     }
   });
+
+  /**
+   * Weekly digest endpoint. The Sunday 7 PM scheduled task hits this to:
+   * 1. GET (or compute via preview) the latest digest payload
+   * 2. POST to record that it was emailed (with status)
+   *
+   * GET  /api/scheduled/weekly-digest        → returns fresh payload + saves a row
+   * POST /api/scheduled/weekly-digest/sent   → marks a digest as emailed
+   */
+  app.get("/api/scheduled/weekly-digest", async (req: Request, res: Response) => {
+    let role: string | null = null;
+    try {
+      const u = await sdk.authenticateRequest(req);
+      role = u?.role ?? null;
+    } catch {
+      role = null;
+    }
+    if (!role || (role !== "user" && role !== "admin")) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
+
+    try {
+      const payload = await db.buildWeeklyDigestPayload();
+      const id = await db.saveWeeklyDigest(payload);
+      return res.json({ ok: true, digestId: id, payload });
+    } catch (e: any) {
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
+
+  app.post("/api/scheduled/weekly-digest/sent", async (req: Request, res: Response) => {
+    let role: string | null = null;
+    try {
+      const u = await sdk.authenticateRequest(req);
+      role = u?.role ?? null;
+    } catch {
+      role = null;
+    }
+    if (!role || (role !== "user" && role !== "admin")) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
+
+    try {
+      const { digestId, status } = req.body ?? {};
+      if (typeof digestId !== "number") {
+        return res.status(400).json({ ok: false, error: "Expected { digestId, status }" });
+      }
+      await db.markDigestEmailed(digestId, status === "failed" ? "failed" : "sent");
+      return res.json({ ok: true });
+    } catch (e: any) {
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
 }

@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Upload, Link as LinkIcon, FileText, RefreshCw, Mail, FolderOpen, CheckCircle2, AlertCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import AutomationFeedCard from "@/components/AutomationFeedCard";
+import WeeklyDigestCard from "@/components/WeeklyDigestCard";
 import { toast } from "sonner";
 
 type RoutedResult = {
@@ -112,6 +113,8 @@ export default function UploadOrSync() {
           Add anything — file, photo, link, or note — Kiwi figures out where it goes. Gmail + Google Drive sync runs every morning at 6:30 AM.
         </p>
       </header>
+
+      <WeeklyDigestCard />
 
       <AutomationFeedCard />
 
