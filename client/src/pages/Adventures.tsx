@@ -5,6 +5,7 @@ import { Star } from "lucide-react";
 import { useState } from "react";
 import { useAdultLock } from "@/contexts/AdultLockContext";
 import SubjectColorKey from "@/components/SubjectColorKey";
+import FlockWidget from "@/components/FlockWidget";
 import { subjectTint, tintCardStyle, tintInkStyle, tintPillStyle } from "@/lib/subjectColors";
 import { toast } from "sonner";
 
@@ -144,6 +145,12 @@ export default function Adventures() {
         </h1>
         <p className="font-display text-base chalk-white opacity-85 mt-2">Real-world things to do — animals, outdoors, art, and service.</p>
       </header>
+
+      {/* Reagan's Flock lives here now (moved off the homepage) */}
+      <section>
+        <h2 className="font-display text-xl font-semibold chalk-white mb-2">My Flock</h2>
+        <FlockWidget />
+      </section>
 
       <SubjectColorKey variant="schedule" />
 

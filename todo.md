@@ -973,3 +973,63 @@
 - [x] Textbook seeding (Spectrum Math/Reading/LA/Science, 180 Days Math/Reading/Writing, Tuck Everlasting, Michael's World, Merriam-Webster dictionary)
 - [x] Bookshelf page with page tracking + progress bars
 - [x] Adaptive engine (rebuildAdaptiveSuggestions) — drops curriculumAdjustments + needsWorkItems for sub-60% mastery
+
+
+## SURVIVAL MODE — tutor starts tomorrow Apr 29
+
+- [ ] Hard-dedupe bookshelf at DB level (keep one of each title+author, remove "Test Book 1777379912525")
+- [ ] Kill ombre banners on Sticker Book, Prize Shop, Today; replace with calm title strip
+- [ ] Fix Tutor Handoff unreadable red-on-dark trauma-aware rules; move Accommodations section to bottom
+- [ ] Add parent-add custom prize form on Prize Shop; allow removal of defaults
+- [ ] Verify theme picker, widget grid, end-of-row checkmarks render on Today
+- [ ] Run tests, checkpoint, prompt user to publish before tomorrow
+
+## Deferred — post-tutor session
+
+- [ ] Merge Notebook + Scratch Pad + Journal into one tabbed page
+- [ ] Integrate Journal entries with Timeline
+- [ ] Rebuild About Me with multi-column sections
+- [ ] Group Printables by category with visual variety
+- [ ] Dedupe + group Academics records by subject and year
+- [ ] Wire Report Card to pull from Academics data
+- [ ] Simplify Settings; hide/explain Audit log
+- [ ] Full light "school planner" redesign per reference images
+- [ ] Add Reagan's headphones accent to avatar (awaiting photo)
+- [ ] Sticker Book: open-book-spread sticker slot layout
+- [ ] This Week: fill or shrink empty day cards
+
+
+## Latest feedback
+
+- [ ] Remove URL-pasted photos (user disliked them); replace with uploaded photos or clean illustrated placeholders
+
+
+## Parent confirmations
+
+- [x] Option A Drive structure: single master folder `Reagan's School Hub` with year + subfolder nesting in user's main Drive
+- [x] Avatar photo: use already-uploaded photo (not URL paste); parent to drop her favorite pic
+
+
+## Survival-mode simplification pass (Apr 28 PM)
+
+- [x] Strip homepage: removed TV, BrainBreak, Flock, Whiteboard tiles; kept only schedule + tiny sticker/coin chip + 1 note tile
+- [x] Merge Sticker Book + Prize Shop into single `/rewards` page with tabs; added legacy `/stickers` + `/prizes` redirects
+- [x] Moved Flock widget off homepage into Adventures page as a "My Flock" section
+- [x] Killed loud ombre on TourModeCard — now a calm single-line chalk strip
+- [x] Tutor Handoff: replaced red-on-dark unreadable rules card with high-contrast cream card + dark amber text; moved accommodations + triggers BELOW the day plan
+- [x] Hard-deduped bookshelf (10 → 9 books; removed "Test book" row); re-added Tuck Everlasting
+- [x] Reduced ADULT_NAV sidebar to 5 entries: Tutor Handoff, Analytics, Parent Notes, AI Assistant, Settings (other admin routes still reachable by URL)
+- [x] Created Google Drive master-folder subtree: Reagan School Master Folder → Reagan School Hub (Dashboard) → {Adult Notes, Analytics, Journal, Printables, Report Cards, Tutor Handoffs}
+- [x] Cleaned up 6 stray "Untitled" files accidentally created in Drive root during folder setup
+- [x] Full vitest suite 49/49 passing
+
+## Deferred (next pass)
+
+- [ ] Wire in-app "Save to Drive" button on Parent Notes, Tutor Handoff, Analytics (needs server-side Drive OAuth credentials)
+- [ ] Reagan's headphones accent on her avatar (needs reference photo from user)
+- [ ] Avatar uploaded-photo selector (user disliked URL-pasted photos)
+- [ ] Cream/white theme variant (currently chalkboard only)
+- [ ] Bigger 3D subject icons (morning/math/science/reading/adventure/etc.)
+- [ ] Bookshelf: "Watch & Learn" YouTube shelf polish
+- [ ] Report Card page cleanup and wiring to real data
+- [ ] Printables admin: collapse into AI-prompted flow instead of tiled source list

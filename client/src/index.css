@@ -440,3 +440,44 @@
   .time-chip { background: #eee !important; color: #222 !important; border: 1px solid #bbb !important; }
 }
 .print-only { display: none; }
+
+
+/* ===== Reagan Theme system (Pass 3) ===== */
+
+/* Cream Homeschool (light paper) */
+html[data-rtheme="cream"] body {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(255, 220, 160, 0.35) 0, transparent 40%),
+    radial-gradient(circle at 88% 18%, rgba(186, 223, 255, 0.3) 0, transparent 42%),
+    radial-gradient(circle at 50% 95%, rgba(255, 199, 211, 0.3) 0, transparent 50%),
+    #fbf4e6;
+  color: #2d2317;
+}
+html[data-rtheme="cream"] .chalk-white { color: #2d2317 !important; }
+html[data-rtheme="cream"] .chalk-yellow { color: #b88a1a !important; }
+html[data-rtheme="cream"] .text-muted-foreground { color: rgba(45, 35, 23, 0.6) !important; }
+
+/* Chalkboard Night (pure black) */
+html[data-rtheme="chalkboard"] body {
+  background: #0a0a0a;
+  background-image:
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.018) 0, transparent 60%);
+}
+
+/* Notebook Doodle (paper with ruled lines) */
+html[data-rtheme="notebook"] body {
+  background:
+    linear-gradient(to right, transparent 56px, rgba(220, 80, 80, 0.35) 56px, rgba(220, 80, 80, 0.35) 57px, transparent 57px),
+    repeating-linear-gradient(to bottom, #fdfbf3 0, #fdfbf3 31px, rgba(100, 140, 200, 0.22) 31px, rgba(100, 140, 200, 0.22) 32px),
+    #fdfbf3;
+  color: #1e2e52;
+}
+html[data-rtheme="notebook"] .chalk-white { color: #1e2e52 !important; }
+html[data-rtheme="notebook"] .chalk-yellow { color: #b88a1a !important; }
+html[data-rtheme="notebook"] .text-muted-foreground { color: rgba(30, 46, 82, 0.6) !important; }
+
+/* In the light themes, soften the strong drop-shadows on big titles to keep readability */
+html[data-rtheme="cream"] h1, html[data-rtheme="cream"] h2,
+html[data-rtheme="notebook"] h1, html[data-rtheme="notebook"] h2 {
+  text-shadow: none !important;
+}

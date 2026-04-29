@@ -32,6 +32,7 @@ import Printables from "./pages/Printables";
 import TakeNotes from "./pages/TakeNotes";
 import Stickers from "./pages/Stickers";
 import Prizes from "./pages/Prizes";
+import Rewards from "./pages/Rewards";
 import Academics from "./pages/Academics";
 import ReportCard from "./pages/ReportCard";
 import Whiteboard from "./pages/Whiteboard";
@@ -101,6 +102,8 @@ function Router() {
         <Route path="/review-library">
           <AdultGate><ReviewLibrary /></AdultGate>
         </Route>
+        <Route path="/rewards" component={Rewards} />
+        {/* Legacy direct links still work and land on the Rewards tabs */}
         <Route path="/stickers" component={Stickers} />
         <Route path="/prizes" component={Prizes} />
         <Route path="/notes" component={TakeNotes} />

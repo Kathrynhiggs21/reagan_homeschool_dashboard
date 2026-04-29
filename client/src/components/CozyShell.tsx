@@ -18,11 +18,9 @@ type NavItem = { to: string; emoji: string; label: string; dot?: string };
 const KID_NAV: NavItem[] = [
   { to: "/today",     emoji: "📋", label: "Today",        dot: "#ff9b3d" },
   { to: "/week",      emoji: "🗓️", label: "This Week",   dot: "#3b82f6" },
-  { to: "/stickers",  emoji: "⭐", label: "Sticker Book",  dot: "#f59e0b" },
-  { to: "/prizes",    emoji: "🪙", label: "Prize Shop",    dot: "#10b981" },
+  { to: "/rewards",   emoji: "⭐", label: "Rewards",       dot: "#f59e0b" },
   { to: "/bookshelf", emoji: "📚", label: "Bookshelf",    dot: "#ef4444" },
   { to: "/notes",     emoji: "📝", label: "Notebook",     dot: "#a855f7" },
-  { to: "/scratch",   emoji: "✏️", label: "Scratch Pad",  dot: "#06b6d4" },
   { to: "/apps",      emoji: "🎒", label: "Apps & Tools", dot: "#eab308" },
   { to: "/profile",   emoji: "🪪", label: "About Me",     dot: "#ec4899" },
 ];
@@ -30,20 +28,15 @@ const KID_NAV: NavItem[] = [
 const MORE_NAV: NavItem[] = [
   { to: "/journal",    emoji: "📓", label: "Journal" },
   { to: "/adventures", emoji: "🧭", label: "Adventures" },
-  { to: "/timeline",   emoji: "🕒", label: "My Timeline" },
 ];
 
+// Adult section simplified: only the 5 things the parent actually uses.
+// Full admin pages still reachable via direct URL but hidden from sidebar.
 const ADULT_NAV: NavItem[] = [
-  { to: "/whiteboard", emoji: "📌", label: "Whiteboard" },
-  { to: "/curriculum", emoji: "📖", label: "Curriculum" },
   { to: "/tutor",      emoji: "🤝", label: "Tutor Handoff" },
   { to: "/analytics",  emoji: "📊", label: "Analytics" },
-  { to: "/needs-work", emoji: "🌳", label: "Needs Work" },
-  { to: "/printables", emoji: "📄", label: "Printables" },
-  { to: "/academics",  emoji: "🗂️", label: "Academics" },
-  { to: "/report-card", emoji: "📈", label: "Report Card" },
-  { to: "/review-library", emoji: "📺", label: "Review Library" },
-  { to: "/knowledge",  emoji: "🧠", label: "Knowledge" },
+  { to: "/whiteboard", emoji: "📌", label: "Parent Notes" },
+  { to: "/knowledge",  emoji: "🧠", label: "AI Assistant" },
   { to: "/settings",   emoji: "⚙️", label: "Settings" },
 ];
 

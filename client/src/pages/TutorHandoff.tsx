@@ -43,36 +43,27 @@ export default function TutorHandoff() {
         </div>
       </header>
 
-      <Card className="cozy-card p-5 bg-rose-50/50 border-rose-200">
-        <div className="font-display font-semibold mb-2 text-rose-900">⚠️ Trauma-Aware Rules — Read Every Time</div>
-        <ol className="text-sm space-y-1.5 list-decimal list-inside text-rose-900">
-          <li><strong>Never mention timing.</strong> No timers, no "X minutes left," no "hurry."</li>
-          <li><strong>Never imply she's behind or not smart.</strong> She IS smart. Prove it; don't say it.</li>
+      {/* Trauma-aware rules — high-contrast card so tutors can actually read them */}
+      <Card
+        className="p-5"
+        style={{
+          background: "#fff8f0",
+          border: "2px solid #f59e0b",
+          color: "#3b2a00",
+          boxShadow: "0 4px 0 rgba(0,0,0,0.15)",
+        }}
+      >
+        <div className="font-display text-lg font-bold mb-3" style={{ color: "#9a3412" }}>⚠️ Please read every session — Trauma-aware rules</div>
+        <ol className="text-[15px] leading-relaxed space-y-2 list-decimal list-inside" style={{ color: "#1f1b16" }}>
+          <li><strong>Never mention timing.</strong> No timers, no “X minutes left,” no “hurry.”</li>
+          <li><strong>Never imply she’s behind or not smart.</strong> She IS smart. Prove it — don’t say it.</li>
           <li><strong>Never make her feel watched.</strong> Sit beside, not across.</li>
-          <li><strong>Reassure she's not in trouble.</strong> Say it out loud often.</li>
-          <li><strong>Catch her doing well 5x more than you correct anything.</strong></li>
+          <li><strong>Reassure she’s not in trouble.</strong> Say it out loud, often.</li>
+          <li><strong>Catch her doing well 5× more than you correct anything.</strong></li>
           <li><strong>If she shuts down, do not push.</strong> Switch to animal care, art, or sit-spot.</li>
-          <li><strong>Use her title: "The Animal Kiwier."</strong> Believe in her out loud.</li>
+          <li><strong>Use her title: “The Animal Kiwier.”</strong> Believe in her out loud.</li>
         </ol>
       </Card>
-
-      {data?.accommodations && (
-        <Card className="cozy-card p-4">
-          <div className="font-display font-semibold mb-2">Accommodations</div>
-          <ul className="text-sm space-y-1 list-disc list-inside">
-            {(data.accommodations as string[]).map((a: string) => <li key={a}>{a}</li>)}
-          </ul>
-        </Card>
-      )}
-
-      {data?.triggers && (
-        <Card className="cozy-card p-4 bg-amber-50/40">
-          <div className="font-display font-semibold mb-2">Known Triggers</div>
-          <div className="flex flex-wrap gap-1.5">
-            {(data.triggers as string[]).map((t: string) => <Badge key={t} variant="destructive" className="bg-rose-100 text-rose-900 hover:bg-rose-200">{t}</Badge>)}
-          </div>
-        </Card>
-      )}
 
       <Card className="cozy-card p-4">
         <div className="flex items-center justify-between mb-3">
@@ -103,8 +94,35 @@ export default function TutorHandoff() {
         </div>
       </Card>
 
+      {/* Accommodations + triggers moved to the BOTTOM so the plan is front-and-center */}
+      {data?.accommodations && (
+        <Card className="cozy-card p-4">
+          <div className="font-display font-semibold mb-2">Accommodations</div>
+          <ul className="text-sm space-y-1 list-disc list-inside">
+            {(data.accommodations as string[]).map((a: string) => <li key={a}>{a}</li>)}
+          </ul>
+        </Card>
+      )}
+
+      {data?.triggers && (
+        <Card className="cozy-card p-4" style={{ background: "rgba(251,191,36,0.06)" }}>
+          <div className="font-display font-semibold mb-2">Known triggers to avoid</div>
+          <div className="flex flex-wrap gap-1.5">
+            {(data.triggers as string[]).map((t: string) => (
+              <Badge
+                key={t}
+                className="border"
+                style={{ background: "#fef3c7", color: "#78350f", borderColor: "#fcd34d" }}
+              >
+                {t}
+              </Badge>
+            ))}
+          </div>
+        </Card>
+      )}
+
       <Card className="cozy-card p-4">
-        <div className="font-display font-semibold mb-3">Recent Struggles (last 7)</div>
+        <div className="font-display font-semibold mb-3">Recent struggles (last 7)</div>
         <div className="space-y-2">
           {(struggles.data ?? []).slice(0, 7).map((s: any) => (
             <div key={s.id} className="text-sm flex items-start gap-2">

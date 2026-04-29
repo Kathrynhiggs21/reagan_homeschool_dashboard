@@ -10,13 +10,9 @@ import BlockEditor, { type ExistingBlock } from "@/components/BlockEditor";
 import GradeBlockDialog from "@/components/GradeBlockDialog";
 import AnswerKeyDialog from "@/components/AnswerKeyDialog";
 import TurnInDialog from "@/components/TurnInDialog";
-import SubjectColorKey from "@/components/SubjectColorKey";
 import { subjectTint, tintCardStyle, tintInkStyle, tintPillStyle, rainbowCardStyle, rainbowPillStyle, rainbowInkStyle, rainbowStop } from "@/lib/subjectColors";
 import { celebrateKiwi } from "@/components/KiwiPerch";
-import FlockWidget from "@/components/FlockWidget";
-import WhiteboardStrip from "@/components/WhiteboardStrip";
-import TVBox from "@/components/TVBox";
-import BrainBreakSpinner from "@/components/BrainBreakSpinner";
+import ThemePickerStrip from "@/components/ThemePickerStrip";
 
 // Neutral classroom mood language + classroom-y icons
 const ZONES = [
@@ -116,6 +112,8 @@ export default function Today() {
 
   return (
     <div className="space-y-6">
+      {/* Theme picker strip — 4 themes Reagan can pick from */}
+      <ThemePickerStrip />
       {/* Header — calm chalkboard strip, rainbow multi-color title. No ombre banner. */}
       <header className="relative rounded-2xl p-5 md:p-7" style={{
         background: "linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.18))",
@@ -353,49 +351,41 @@ export default function Today() {
 
       {/* ===== Widget grid (everything-after-the-schedule) ===== */}
       <section className="pt-2">
-        <h2 className="font-display font-semibold mb-3 flex flex-wrap items-baseline gap-x-2" style={{ fontSize: "clamp(1.5rem, 3.5vw, 2.25rem)" }}>
-          <span style={{ color: "#ff9fb2", textShadow: "0 3px 0 rgba(0,0,0,0.35)" }}>Your</span>
-          <span style={{ color: "#ffd97a", textShadow: "0 3px 0 rgba(0,0,0,0.35)" }}>classroom</span>
-          <span style={{ color: "#7fe3c4", textShadow: "0 3px 0 rgba(0,0,0,0.35)" }}>extras</span>
+        <h2 className="font-display font-semibold mb-3" style={{ fontSize: "clamp(1.25rem, 2.5vw, 1.75rem)", color: "rgba(255,255,255,0.85)" }}>
+          A little extra ✨
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="widget-tile"><FlockWidget /></div>
-          <div className="widget-tile"><WhiteboardStrip /></div>
-          <div className="widget-tile"><TVBox /></div>
-          <div className="widget-tile"><BrainBreakSpinner /></div>
-          <div className="widget-tile"><CoinStickerStrip /></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="widget-tile">
             <div className="rounded-2xl p-4 h-full" style={{
-              background: "linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.2))",
-              border: "2px solid rgba(255,216,106,0.35)",
-              boxShadow: "0 6px 0 rgba(0,0,0,0.3), 0 0 18px rgba(255,216,106,0.12)",
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(255,216,106,0.25)",
+              boxShadow: "0 3px 0 rgba(0,0,0,0.2)",
             }}>
-              <div className="font-display font-semibold text-lg mb-2" style={{ color: "#ffd97a", textShadow: "0 2px 0 rgba(0,0,0,0.3)" }}>Brain Break 🧠</div>
+              <div className="font-display font-semibold text-lg mb-2" style={{ color: "#ffd97a" }}>A little joke 🧠</div>
               <div className="text-[15px] leading-snug chalk-white">{joke.data?.text || "Pulling a joke..."}</div>
               <div className="flex gap-2 mt-3">
                 <Button size="sm" variant="outline" className="bg-transparent h-8 px-3 text-xs" onClick={() => joke.refetch()}>Another</Button>
-                <Button size="sm" variant="outline" className="bg-transparent h-8 px-3 text-xs" onClick={() => setVideoOpen(true)}>Animal video</Button>
               </div>
             </div>
           </div>
-          <div className="widget-tile md:col-span-2">
+          <div className="widget-tile">
             <div className="rounded-2xl p-4 h-full" style={{
-              background: "linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.2))",
-              border: "2px solid rgba(127,227,196,0.35)",
-              boxShadow: "0 6px 0 rgba(0,0,0,0.3), 0 0 18px rgba(127,227,196,0.12)",
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid rgba(127,227,196,0.25)",
+              boxShadow: "0 3px 0 rgba(0,0,0,0.2)",
             }}>
-              <div className="font-display font-semibold text-lg mb-2" style={{ color: "#7fe3c4", textShadow: "0 2px 0 rgba(0,0,0,0.3)" }}>{companionName}'s note 📝</div>
+              <div className="font-display font-semibold text-lg mb-2" style={{ color: "#7fe3c4" }}>{companionName}'s note 📝</div>
               <div className="text-[15px] leading-snug whitespace-pre-line chalk-white/90">
                 {recap.data?.recap || "A short note will appear here at the end of the day."}
               </div>
             </div>
           </div>
           {encouragement.data && encouragement.data.length > 0 && (
-            <div className="widget-tile md:col-span-3">
+            <div className="widget-tile md:col-span-2">
               <div className="rounded-2xl p-4 h-full" style={{
-                background: "linear-gradient(180deg, rgba(255,255,255,0.03), rgba(0,0,0,0.2))",
-                border: "2px solid rgba(255,159,178,0.35)",
-                boxShadow: "0 6px 0 rgba(0,0,0,0.3), 0 0 18px rgba(255,159,178,0.12)",
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,159,178,0.25)",
+                boxShadow: "0 3px 0 rgba(0,0,0,0.2)",
               }}>
                 <div className="font-display font-semibold text-lg mb-3" style={{ color: "#ff9fb2", textShadow: "0 2px 0 rgba(0,0,0,0.3)" }}>Notes for you 💕</div>
                 <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -576,31 +566,26 @@ function TourModeCard() {
   if (!msg) return null;
   return (
     <div
-      className="rounded-2xl p-5"
+      className="rounded-xl px-4 py-3 flex items-center gap-3"
       style={{
-        background: "linear-gradient(180deg, rgba(255,216,106,0.1), rgba(255,159,178,0.06))",
-        border: "2px solid rgba(255,216,106,0.45)",
-        borderLeft: "10px solid #ffd97a",
-        boxShadow: "0 6px 0 rgba(0,0,0,0.3), 0 0 22px rgba(255,216,106,0.18), inset 0 1px 0 rgba(255,255,255,0.04)",
+        background: "rgba(255,255,255,0.03)",
+        border: "1px solid rgba(255,216,106,0.25)",
       }}
     >
-      <div className="flex items-start gap-4">
-        <div className="text-5xl" style={{ filter: "drop-shadow(0 3px 0 rgba(0,0,0,0.4))" }}>{msg.emoji}</div>
-        <div className="flex-1 min-w-0">
-          <div className="text-[11px] font-bold uppercase tracking-widest mb-1" style={{ color: "#ffd97a" }}>{msg.tag}</div>
-          <div className="font-display font-bold leading-tight" style={{ color: "#ff9fb2", fontSize: "clamp(1.35rem, 3vw, 1.8rem)", textShadow: "0 2px 0 rgba(0,0,0,0.4)" }}>{msg.title}</div>
-          <p className="mt-1 leading-snug chalk-white" style={{ fontSize: "1.05rem", opacity: 0.9 }}>{msg.body}</p>
-          {msg.chip && (
-            <div className="inline-block mt-3 px-4 py-2 rounded-full text-sm font-semibold" style={{
-              background: "rgba(255,216,106,0.95)",
-              color: "#4a3600",
-              boxShadow: "0 3px 0 rgba(0,0,0,0.35)",
-            }}>
-              {msg.chip}
-            </div>
-          )}
-        </div>
+      <div className="text-2xl">{msg.emoji}</div>
+      <div className="flex-1 min-w-0">
+        <div className="font-display font-semibold" style={{ color: "#ffd97a", fontSize: "1.05rem" }}>{msg.title}</div>
+        <div className="text-sm chalk-white/75 leading-snug">{msg.body}</div>
       </div>
+      {msg.chip && (
+        <div className="hidden sm:block text-xs font-semibold px-2 py-1 rounded-full" style={{
+          background: "rgba(255,216,106,0.18)",
+          color: "#ffd97a",
+          border: "1px solid rgba(255,216,106,0.35)",
+        }}>
+          {msg.chip}
+        </div>
+      )}
     </div>
   );
 }
