@@ -1476,6 +1476,7 @@ export const appRouter = router({
       .query(({ input }) => db.priorityForTutor(input.tutorId, input.limit)),
     sessionSkills: publicProcedure.input(z.object({ sessionId: z.number() }))
       .query(({ input }) => db.tutorSessionSkillsFor(input.sessionId)),
+    resetRoster: protectedProcedure.mutation(() => db.resetTutorRoster()),
     recordSession: protectedProcedure.input(z.object({
       tutorId: z.number(),
       scheduledAt: z.date().optional(),

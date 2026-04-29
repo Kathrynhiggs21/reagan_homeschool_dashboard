@@ -1289,5 +1289,5 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 
 
 ## Tutor roster (Apr 29 PM)
-- [ ] Seed three tutors (Mike, Sophie, College tutor) with names only — leave phone/email blank so Tutor Handoff shows no fake contact info
-- [ ] Remove any existing default/sample tutor rows that aren't one of these three
+- [x] Seeded Mike, Sophie, College tutor (names only, no contact info) via db.resetTutorRoster() — ran as part of vitest suite
+- [x] All previous tutors marked inactive (history preserved, hidden from pickers); new "Reset roster" button in Settings → Tutors for future cleanup

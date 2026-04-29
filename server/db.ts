@@ -3455,3 +3455,39 @@ export async function recordIepRefresh(args: {
   }
   return { inserted, updated };
 }
+
+
+/**
+ * resetTutorRoster — replace the active tutor list with the canonical three:
+ *   Mike, Sophie, College tutor.
+ *
+ * Deactivates (active=false) every other tutor so past session history stays
+ * referenced but they stop showing up in Tutor Handoff / pickers. Inserts new
+ * rows only for names that don't already exist (or reactivates matching ones).
+ * Intentionally does NOT seed phone/email so no fake contact info surfaces.
+ */
+export async function resetTutorRoster() {
+  const dbi = getDb();
+  await dbi.update(tutors).set({ active: false });
+  const want = [
+    { name: "Mike", role: "tutor" },
+    { name: "Sophie", role: "tutor" },
+    { name: "College tutor", role: "tutor" },
+  ];
+  for (const w of want) {
+    const existing = await dbi.select().from(tutors).where(eq(tutors.name, w.name)).limit(1);
+    if (existing.length > 0) {
+      await dbi.update(tutors)
+        .set({ active: true, role: w.role })
+        .where(eq(tutors.id, existing[0].id));
+    } else {
+      await dbi.insert(tutors).values({
+        name: w.name,
+        role: w.role,
+        active: true,
+      });
+    }
+  }
+  const final = await dbi.select().from(tutors).where(eq(tutors.active, true));
+  return { count: final.length, roster: final.map((t) => t.name) };
+}

@@ -29,6 +29,14 @@ export default function TutorsManager() {
     onError: (e) => toast.error(e.message),
   });
 
+  const resetRoster = trpc.tutors.resetRoster.useMutation({
+    onSuccess: (res) => {
+      toast.success(`Roster reset — ${res.roster.join(", ")}`);
+      utils.tutors.list.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   function save() {
     if (!editing?.name?.trim()) { toast.error("Name required"); return; }
     upsert.mutate({
@@ -53,7 +61,21 @@ export default function TutorsManager() {
           <p className="text-xs opacity-70">Each tutor gets a private briefing page with priority skills + outcome buttons.</p>
         </div>
         {!editing && (
-          <Button size="sm" onClick={() => setEditing({ ...EMPTY })}>+ Add tutor</Button>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={resetRoster.isPending}
+              onClick={() => {
+                if (window.confirm("Reset tutor roster to Mike, Sophie, and College tutor? Other tutors will be marked inactive (history preserved).")) {
+                  resetRoster.mutate();
+                }
+              }}
+            >
+              {resetRoster.isPending ? "Resetting…" : "Reset roster"}
+            </Button>
+            <Button size="sm" onClick={() => setEditing({ ...EMPTY })}>+ Add tutor</Button>
+          </div>
         )}
       </div>
 
