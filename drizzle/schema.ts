@@ -1258,6 +1258,9 @@ export const syncRunItems = mysqlTable("sync_run_items", {
   title: varchar("title", { length: 255 }),
   message: varchar("message", { length: 500 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  dismissed: boolean("dismissed").default(false).notNull(),
+  flagged: boolean("flagged").default(false).notNull(),
+  parentNote: varchar("parent_note", { length: 500 }),
 });
 
 export type SyncRequest = typeof syncRequests.$inferSelect;

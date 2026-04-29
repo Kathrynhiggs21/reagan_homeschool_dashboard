@@ -2843,3 +2843,77 @@ export async function findSyncItemByExternalId(externalId: string) {
     .limit(1);
   return row ?? null;
 }
+
+
+/* ============== Automation feed helpers (parent dashboard) =============== */
+import { syncRuns as _automation_runs, syncRunItems as _automation_items } from "../drizzle/schema";
+
+export async function listRecentAutomationRuns(limit = 14) {
+  const dbi = getDb();
+  return await dbi
+    .select()
+    .from(_automation_runs)
+    .orderBy(desc(_automation_runs.startedAt))
+    .limit(limit);
+}
+
+export async function listAutomationItemsForRun(runId: number) {
+  const dbi = getDb();
+  return await dbi
+    .select()
+    .from(_automation_items)
+    .where(eq(_automation_items.runId, runId))
+    .orderBy(desc(_automation_items.createdAt));
+}
+
+export async function listRecentAutomationItems(opts: { sinceMs?: number; limit?: number } = {}) {
+  const dbi = getDb();
+  const since = opts.sinceMs ?? Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const rows = await dbi
+    .select()
+    .from(_automation_items)
+    .orderBy(desc(_automation_items.createdAt))
+    .limit(opts.limit ?? 50);
+  return rows.filter((r) => new Date(r.createdAt as any).getTime() >= since);
+}
+
+export async function dismissAutomationItem(itemId: number, parentNote?: string) {
+  const dbi = getDb();
+  await dbi
+    .update(_automation_items)
+    .set({ dismissed: true, parentNote: parentNote ?? null })
+    .where(eq(_automation_items.id, itemId));
+  return { ok: true };
+}
+
+export async function flagAutomationItem(itemId: number, parentNote?: string) {
+  const dbi = getDb();
+  await dbi
+    .update(_automation_items)
+    .set({ flagged: true, parentNote: parentNote ?? null })
+    .where(eq(_automation_items.id, itemId));
+  return { ok: true };
+}
+
+export async function automationStatus() {
+  const dbi = getDb();
+  const [latestRun] = await dbi
+    .select()
+    .from(_automation_runs)
+    .orderBy(desc(_automation_runs.startedAt))
+    .limit(1);
+  const last7Items = await listRecentAutomationItems({ limit: 200 });
+  const flagged = last7Items.filter((r) => r.flagged && !r.dismissed).length;
+  let latestRunStatus: "running" | "ok" | "errors" | null = null;
+  if (latestRun) {
+    if (!latestRun.finishedAt) latestRunStatus = "running";
+    else if (latestRun.errors) latestRunStatus = "errors";
+    else latestRunStatus = "ok";
+  }
+  return {
+    latestRunAt: latestRun?.startedAt ?? null,
+    latestRunStatus,
+    last7DaysItems: last7Items.length,
+    pendingFlags: flagged,
+  };
+}

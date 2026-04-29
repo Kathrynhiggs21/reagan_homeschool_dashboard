@@ -176,6 +176,13 @@
       "when": 1777429633303,
       "tag": "0024_empty_black_queen",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "5",
+      "when": 1777430421000,
+      "tag": "0025_majestic_devos",
+      "breakpoints": true
     }
   ]
 }

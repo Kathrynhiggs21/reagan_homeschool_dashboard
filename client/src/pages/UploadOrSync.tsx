@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Upload, Link as LinkIcon, FileText, RefreshCw, Mail, FolderOpen, CheckCircle2, AlertCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import AutomationFeedCard from "@/components/AutomationFeedCard";
 import { toast } from "sonner";
 
 type RoutedResult = {
@@ -108,9 +109,11 @@ export default function UploadOrSync() {
       <header className="space-y-1">
         <h1 className="text-3xl font-bold">Upload or Sync</h1>
         <p className="text-muted-foreground">
-          Drop in any file, link, or note — Kiwi figures out where it goes. Or let Gmail + Google Drive auto-sync overnight.
+          Add anything — file, photo, link, or note — Kiwi figures out where it goes. Gmail + Google Drive sync runs every morning at 6:30 AM.
         </p>
       </header>
+
+      <AutomationFeedCard />
 
       {/* === SYNC AUTOMATIC === */}
       <Card className="p-5 bg-gradient-to-br from-blue-500/10 to-purple-500/10 border-blue-500/30">

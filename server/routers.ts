@@ -1381,6 +1381,19 @@ export const appRouter = router({
     }),
     /** What the latest scheduled sync did, for the parent-home 'What ran today' card */
     lastSyncSummary: publicProcedure.query(() => db.getMostRecentSyncSummary()),
+
+    /* parent-side automation feed */
+    automationStatus: publicProcedure.query(() => db.automationStatus()),
+    recentRuns: publicProcedure.input(z.object({ limit: z.number().default(14) }).optional())
+      .query(({ input }) => db.listRecentAutomationRuns(input?.limit ?? 14)),
+    recentItems: publicProcedure.input(z.object({ limit: z.number().default(50) }).optional())
+      .query(({ input }) => db.listRecentAutomationItems({ limit: input?.limit ?? 50 })),
+    runItems: publicProcedure.input(z.object({ runId: z.number() }))
+      .query(({ input }) => db.listAutomationItemsForRun(input.runId)),
+    dismissItem: protectedProcedure.input(z.object({ itemId: z.number(), parentNote: z.string().optional() }))
+      .mutation(({ input }) => db.dismissAutomationItem(input.itemId, input.parentNote)),
+    flagItem: protectedProcedure.input(z.object({ itemId: z.number(), parentNote: z.string().optional() }))
+      .mutation(({ input }) => db.flagAutomationItem(input.itemId, input.parentNote)),
   }),
 });
 export type AppRouter = typeof appRouter;
