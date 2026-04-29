@@ -297,6 +297,29 @@ export async function upsertWeeklyTopic(w: typeof weeklyTopics.$inferInsert) {
   await getDb().insert(weeklyTopics).values(w);
 }
 
+/**
+ * IH "this week" lookup. Computes the active Monday in EDT (handles weekends
+ * by snapping to the most recent Monday) and returns all weeklyTopics rows for
+ * that Monday, joined with a hint about which IH week tag applies.
+ */
+export async function getIhTopicsThisWeek() {
+  const today = new Date();
+  // Snap to Monday (ISO weekday 1). If today is Sat/Sun, this still rolls back
+  // to the same week's Monday, matching how IH publishes weekly updates.
+  const day = today.getDay(); // 0 Sun .. 6 Sat
+  const offsetToMonday = day === 0 ? -6 : 1 - day;
+  const monday = new Date(today.getFullYear(), today.getMonth(), today.getDate() + offsetToMonday);
+  const ymd = `${monday.getFullYear()}-${String(monday.getMonth()+1).padStart(2,"0")}-${String(monday.getDate()).padStart(2,"0")}`;
+  const rows = await getDb().select().from(weeklyTopics).where(eq(weeklyTopics.weekStartDate, ymd as any));
+  // Derive ihWeekTag from the notes field (we wrote "... Q4-Wxx ...")
+  let ihWeekTag: string | null = null;
+  for (const r of rows) {
+    const m = (r.notes || "").match(/Q\d-W\d+/);
+    if (m) { ihWeekTag = m[0]; break; }
+  }
+  return { weekStart: ymd, ihWeekTag, topics: rows };
+}
+
 /* ============================== RECIPIENTS ================================ */
 export async function listRecipients() {
   return getDb().select().from(notificationRecipients).where(eq(notificationRecipients.active, true));
@@ -1664,10 +1687,17 @@ export async function listSkillsWithProgress(subjectSlug?: string) {
 
 /** The next-up skill: lowest-level skill in the requested subject (or any) */
 export async function nextSkillForToday(subjectSlug?: string) {
-  const all = await listSkillsWithProgress(subjectSlug);
-  // pick the first not-yet-mastered (level < 4) in ladder order
-  const next = all.find((s: any) => (s.progress?.level ?? 0) < 4);
-  return next || all[0] || null;
+  const all: any[] = await listSkillsWithProgress(subjectSlug);
+  const ih = await getIhTopicsThisWeek();
+  const ihTag = ih.ihWeekTag;
+  const notMastered = all.filter((s: any) => (s.progress?.level ?? 0) < 4);
+  // 1) If we have an active IH week tag, prefer skills tagged for that week
+  if (ihTag) {
+    const ihMatches = notMastered.filter((s: any) => s.ihWeekTag === ihTag);
+    if (ihMatches.length) return { ...ihMatches[0], _matchedIhWeek: ihTag };
+  }
+  // 2) Otherwise return the first not-mastered in ladder order
+  return notMastered[0] || all[0] || null;
 }
 
 /** Record practice on a skill. Bumps level slowly so Reagan stays at her edge. */

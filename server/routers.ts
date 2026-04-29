@@ -469,6 +469,8 @@ export const appRouter = router({
   /* =================== WEEKLY TOPICS =================== */
   weeklyTopics: router({
     forWeek: publicProcedure.input(z.object({ weekStart: z.string() })).query(({ input }) => db.getWeeklyTopics(input.weekStart)),
+    /** Returns IH topics for the *current* school week (Mon-anchored). */
+    thisWeek: publicProcedure.query(() => db.getIhTopicsThisWeek()),
     set: protectedProcedure.input(z.object({
       weekStartDate: z.string(), subjectSlug: z.string(), topics: z.array(z.string()), notes: z.string().optional(),
     })).mutation(({ input }) => db.upsertWeeklyTopic(input as any)),

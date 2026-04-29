@@ -1040,6 +1040,7 @@ export const skillLadder = mysqlTable("skillLadder", {
   visualHook: text("visualHook"),                                // visual/picture-style intro
   handsOnHook: text("handsOnHook"),                              // build-it / hands-on prompt
   ihAligned: boolean("ihAligned").default(true).notNull(),       // matches Indian Hill 5th-grade scope
+  ihWeekTag: varchar("ihWeekTag", { length: 32 }),                // e.g. "Q4-W22" — surfaces in SkillBuilder when matching the active IH week
   active: boolean("active").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });

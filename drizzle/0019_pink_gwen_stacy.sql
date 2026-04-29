@@ -1,0 +1,1 @@
+ALTER TABLE `skillLadder` ADD `ihWeekTag` varchar(32);

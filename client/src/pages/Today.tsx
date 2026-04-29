@@ -16,6 +16,7 @@ import ThemePickerStrip from "@/components/ThemePickerStrip";
 import KiwiIntroStrip from "@/components/KiwiIntroStrip";
 import SkillBuilderTile from "@/components/SkillBuilderTile";
 import PlacementInviteCard from "@/components/PlacementInviteCard";
+import IHThisWeekStrip from "@/components/IHThisWeekStrip";
 
 // Neutral classroom mood language + classroom-y icons
 const ZONES = [
@@ -219,6 +220,9 @@ export default function Today() {
 
       {/* Diagnostic Placement invite — gentle, optional, dismisses at 100% */}
       <PlacementInviteCard />
+
+      {/* What her IH class is doing this week (collapsed by default) */}
+      <IHThisWeekStrip />
 
       {/* Daily 15-min Skill Builder — next-up skill from her ladder */}
       <SkillBuilderTile />

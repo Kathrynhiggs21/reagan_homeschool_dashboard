@@ -55,7 +55,14 @@ export default function SkillBuilderTile() {
     <Card className="classroom-card p-4 space-y-3" style={{ borderTop: `4px solid ${c}` }}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">15-min Skill Builder · {skill.subjectSlug.toUpperCase()} · {skill.strand}</div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+            <span>15-min Skill Builder · {skill.subjectSlug.toUpperCase()} · {skill.strand}</span>
+            {skill._matchedIhWeek && (
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-semibold" style={{ background: "#e6c20022", color: "#e6c200", border: "1px solid #e6c20055" }}>
+                🏫 At Indian Hill this week
+              </span>
+            )}
+          </div>
           <div className="font-display text-lg leading-tight mt-0.5">Today's next step: {skill.title}</div>
           {skill.kidFriendly && (
             <p className="text-sm text-neutral-300 mt-1 leading-snug">{skill.kidFriendly}</p>
