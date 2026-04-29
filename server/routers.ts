@@ -448,6 +448,24 @@ export const appRouter = router({
     archive: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.archiveProudMoment(input.id)),
   }),
 
+  /* =================== DIAGNOSTIC PLACEMENT (Phase 3) =================== */
+  placement: router({
+    /** Status across subjects: how many tasks done, how many skills placed. */
+    status: publicProcedure.query(() => db.placementStatus()),
+    /** All placement tasks for a subject (or all subjects). Tasks include subject + skill metadata. */
+    tasks: publicProcedure.input(z.object({ subjectSlug: z.string().optional() }).optional())
+      .query(({ input }) => db.placementTasksFor(input?.subjectSlug)),
+    /** Submit one task response. Returns whether the submission caused a level placement. */
+    submit: publicProcedure.input(z.object({
+      placementTaskId: z.number(),
+      kidAnswer: z.string().optional(),
+      feltIt: z.enum(["easy", "ok", "hard", "skip"]).default("ok"),
+    })).mutation(({ input }) => db.submitPlacementResponse(input)),
+    /** Reset placement responses for a subject (lets her redo it later). */
+    reset: protectedProcedure.input(z.object({ subjectSlug: z.string().optional() }).optional())
+      .mutation(({ input }) => db.resetPlacement(input?.subjectSlug)),
+  }),
+
   /* =================== WEEKLY TOPICS =================== */
   weeklyTopics: router({
     forWeek: publicProcedure.input(z.object({ weekStart: z.string() })).query(({ input }) => db.getWeeklyTopics(input.weekStart)),

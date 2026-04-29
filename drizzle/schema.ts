@@ -1077,3 +1077,34 @@ export const proudMoments = mysqlTable("proudMoments", {
   archived: boolean("archived").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
+
+
+/* ========================================================================== */
+/*  DIAGNOSTIC PLACEMENT (Phase 3)                                            */
+/*  Low-pressure 3-5 tasks per skill so Reagan's true starting ladder level   */
+/*  is grounded in real evidence — not the IEP guess. She sees only           */
+/*  encouragement; correctness data lives only on the parent dashboard.      */
+/* ========================================================================== */
+export const placementTasks = mysqlTable("placementTasks", {
+  id: int("id").autoincrement().primaryKey(),
+  skillLadderId: int("skillLadderId").notNull(),                       // which ladder skill this assesses
+  taskOrder: int("taskOrder").notNull().default(0),                    // 0..N within the skill
+  gradeLevel: varchar("gradeLevel", { length: 8 }).notNull().default("5"), // "4" = below-grade probe, "5" = on-grade, "6" = stretch
+  taskType: mysqlEnum("taskType", ["pickOne", "trueFalse", "shortAnswer", "showMeHow"]).notNull().default("pickOne"),
+  kidPrompt: text("kidPrompt").notNull(),                              // Reagan-friendly question text
+  choices: json("choices"),                                            // for pickOne: ["a","b","c","d"]
+  correctAnswer: text("correctAnswer"),                                // canonical answer (string for pickOne/text, null for showMeHow)
+  hint: text("hint"),                                                  // optional gentle hint Kiwi can give
+  active: boolean("active").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const placementResponses = mysqlTable("placementResponses", {
+  id: int("id").autoincrement().primaryKey(),
+  placementTaskId: int("placementTaskId").notNull(),
+  skillLadderId: int("skillLadderId").notNull(),                       // denormalized for quick rollups
+  kidAnswer: text("kidAnswer"),                                        // what she chose / typed (null for showMeHow)
+  isCorrect: boolean("isCorrect"),                                     // null for showMeHow / hand-graded
+  feltIt: mysqlEnum("feltIt", ["easy", "ok", "hard", "skip"]).notNull().default("ok"),
+  completedAt: timestamp("completedAt").defaultNow().notNull(),
+});

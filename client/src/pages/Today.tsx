@@ -15,6 +15,7 @@ import { celebrateKiwi } from "@/components/KiwiPerch";
 import ThemePickerStrip from "@/components/ThemePickerStrip";
 import KiwiIntroStrip from "@/components/KiwiIntroStrip";
 import SkillBuilderTile from "@/components/SkillBuilderTile";
+import PlacementInviteCard from "@/components/PlacementInviteCard";
 
 // Neutral classroom mood language + classroom-y icons
 const ZONES = [
@@ -215,6 +216,9 @@ export default function Today() {
 
       {/* Kiwi intro — dismissible, plain-language */}
       <KiwiIntroStrip />
+
+      {/* Diagnostic Placement invite — gentle, optional, dismisses at 100% */}
+      <PlacementInviteCard />
 
       {/* Daily 15-min Skill Builder — next-up skill from her ladder */}
       <SkillBuilderTile />

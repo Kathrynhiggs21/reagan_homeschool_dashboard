@@ -1793,3 +1793,234 @@ export async function archiveProudMoment(id: number) {
   await db.update(proudMoments).set({ archived: true }).where(eq(proudMoments.id, id));
   return true;
 }
+
+
+/* ========================================================================== */
+/*  DIAGNOSTIC PLACEMENT (Phase 3)                                            */
+/* ========================================================================== */
+import { placementTasks, placementResponses } from "../drizzle/schema";
+import { inArray } from "drizzle-orm";
+
+/**
+ * Returns all placement tasks (optionally for one subject) joined with their
+ * skill metadata. Sorted by subject -> skill ladderOrder -> task order so the
+ * UI walks her through one skill's three tasks at a time before moving on.
+ */
+export async function placementTasksFor(subjectSlug?: string) {
+  const db = getDb();
+  const rows: any[] = await db
+    .select({
+      taskId: placementTasks.id,
+      taskOrder: placementTasks.taskOrder,
+      gradeLevel: placementTasks.gradeLevel,
+      taskType: placementTasks.taskType,
+      kidPrompt: placementTasks.kidPrompt,
+      choices: placementTasks.choices,
+      hint: placementTasks.hint,
+      skillId: skillLadder.id,
+      skillCode: (skillLadder as any).skillCode,
+      skillTitle: skillLadder.title,
+      strand: skillLadder.strand,
+      subjectSlug: skillLadder.subjectSlug,
+      ladderOrder: (skillLadder as any).ladderOrder,
+    })
+    .from(placementTasks)
+    .innerJoin(skillLadder, eq(placementTasks.skillLadderId, skillLadder.id))
+    .where(
+      subjectSlug
+        ? and(eq(placementTasks.active, true), eq(skillLadder.subjectSlug, subjectSlug))
+        : eq(placementTasks.active, true) as any
+    );
+
+  // Mark which ones already have responses (so frontend can skip).
+  const responses: any[] = await db.select({
+    placementTaskId: placementResponses.placementTaskId,
+    isCorrect: placementResponses.isCorrect,
+    feltIt: placementResponses.feltIt,
+  }).from(placementResponses);
+  const respMap = new Map(responses.map((r) => [r.placementTaskId, r]));
+
+  rows.sort((a, b) => {
+    if (a.subjectSlug !== b.subjectSlug) return a.subjectSlug.localeCompare(b.subjectSlug);
+    if ((a.ladderOrder ?? 0) !== (b.ladderOrder ?? 0)) return (a.ladderOrder ?? 0) - (b.ladderOrder ?? 0);
+    return a.taskOrder - b.taskOrder;
+  });
+
+  return rows.map((r) => ({ ...r, response: respMap.get(r.taskId) || null }));
+}
+
+/**
+ * Submit one placement response. Auto-grades if it's pickOne / trueFalse /
+ * shortAnswer (string-equal, case-insensitive, trimmed). When all 3 tasks
+ * for a skill have responses, computes a placement level and writes it to
+ * skillProgress (level 0..2) without firing the celebratory "leveled-up!"
+ * proud-moment so she doesn't think she just "won" the placement.
+ */
+export async function submitPlacementResponse(input: {
+  placementTaskId: number;
+  kidAnswer?: string;
+  feltIt?: "easy" | "ok" | "hard" | "skip";
+}) {
+  const db = getDb();
+  const [task] = await db.select().from(placementTasks).where(eq(placementTasks.id, input.placementTaskId));
+  if (!task) throw new Error("placement task not found");
+
+  // Auto-grade
+  let isCorrect: boolean | null = null;
+  if (task.taskType !== "showMeHow" && task.correctAnswer != null && input.kidAnswer != null) {
+    const norm = (s: string) => s.trim().toLowerCase().replace(/[\s,.\-_]+/g, " ");
+    const expected = norm(String(task.correctAnswer));
+    const got = norm(String(input.kidAnswer));
+    isCorrect = expected === got || expected.includes(got) || got.includes(expected);
+  } else if (input.feltIt === "skip") {
+    isCorrect = false;
+  }
+
+  // Upsert response
+  const [existing] = await db.select().from(placementResponses).where(eq(placementResponses.placementTaskId, input.placementTaskId));
+  if (existing) {
+    await db.update(placementResponses).set({
+      kidAnswer: input.kidAnswer ?? null,
+      isCorrect,
+      feltIt: input.feltIt ?? "ok",
+      completedAt: new Date(),
+    }).where(eq(placementResponses.id, existing.id));
+  } else {
+    await db.insert(placementResponses).values({
+      placementTaskId: input.placementTaskId,
+      skillLadderId: task.skillLadderId,
+      kidAnswer: input.kidAnswer ?? null,
+      isCorrect,
+      feltIt: input.feltIt ?? "ok",
+    } as any);
+  }
+
+  // Did we complete all 3 (or however many) tasks for this skill?
+  const allTasks = await db.select().from(placementTasks).where(eq(placementTasks.skillLadderId, task.skillLadderId));
+  const allResp: any[] = await db.select().from(placementResponses).where(eq(placementResponses.skillLadderId, task.skillLadderId));
+  const responded = new Set(allResp.map((r) => r.placementTaskId));
+  const allDone = allTasks.every((t) => responded.has(t.id));
+  let placedAt: number | null = null;
+
+  if (allDone) {
+    // Score: 1 point per correct + 0.5 per "easy" felt; subtract 0.5 per "hard" felt
+    let score = 0;
+    for (const t of allTasks) {
+      const r = allResp.find((x) => x.placementTaskId === t.id);
+      if (!r) continue;
+      if (r.isCorrect) score += 1;
+      if (r.feltIt === "easy") score += 0.5;
+      if (r.feltIt === "hard") score -= 0.5;
+    }
+    // Map to ladder level 0..2 (placement bucket; she can grow further via practice)
+    let placementLevel = 0;
+    if (score >= 2.5) placementLevel = 2;
+    else if (score >= 1.5) placementLevel = 1;
+    else placementLevel = 0;
+
+    // Confidence reflects how it felt overall
+    const easyCount = allResp.filter((r) => r.feltIt === "easy").length;
+    const hardCount = allResp.filter((r) => r.feltIt === "hard").length;
+    let confidence = 50 + (easyCount - hardCount) * 12;
+    confidence = Math.max(20, Math.min(75, confidence));
+
+    // Write to skillProgress (placement-style: no proud-moment, no celebration)
+    const [existingProgress] = await db.select().from(skillProgress).where(eq(skillProgress.skillLadderId, task.skillLadderId));
+    if (existingProgress) {
+      await db.update(skillProgress).set({
+        level: placementLevel,
+        confidence,
+        evidenceCount: 0,
+        updatedAt: new Date() as any,
+        notes: `Placed via diagnostic on ${new Date().toLocaleDateString()}`,
+      } as any).where(eq(skillProgress.id, existingProgress.id));
+    } else {
+      await db.insert(skillProgress).values({
+        skillLadderId: task.skillLadderId,
+        level: placementLevel,
+        confidence,
+        evidenceCount: 0,
+        notes: `Placed via diagnostic on ${new Date().toLocaleDateString()}`,
+      } as any);
+    }
+    placedAt = placementLevel;
+  }
+
+  return { isCorrect, allDone, placedAt };
+}
+
+/**
+ * Across-the-app placement status: per-subject totals + overall progress %.
+ */
+export async function placementStatus() {
+  const db = getDb();
+  const skills: any[] = await db.select({
+    skillId: skillLadder.id,
+    subjectSlug: skillLadder.subjectSlug,
+  }).from(skillLadder).where(eq((skillLadder as any).active, true));
+  const tasks: any[] = await db.select({
+    id: placementTasks.id,
+    skillLadderId: placementTasks.skillLadderId,
+  }).from(placementTasks).where(eq(placementTasks.active, true));
+  const resp: any[] = await db.select({
+    placementTaskId: placementResponses.placementTaskId,
+    skillLadderId: placementResponses.skillLadderId,
+  }).from(placementResponses);
+
+  const tasksBySubject: Record<string, number> = {};
+  const doneBySubject: Record<string, number> = {};
+  const skillsBySubject: Record<string, Set<number>> = {};
+  const placedSkillsBySubject: Record<string, Set<number>> = {};
+
+  const skillSubject = new Map<number, string>(skills.map((s) => [s.skillId, s.subjectSlug]));
+  for (const s of skills) {
+    skillsBySubject[s.subjectSlug] = skillsBySubject[s.subjectSlug] || new Set();
+    skillsBySubject[s.subjectSlug].add(s.skillId);
+    placedSkillsBySubject[s.subjectSlug] = placedSkillsBySubject[s.subjectSlug] || new Set();
+  }
+  for (const t of tasks) {
+    const sub = skillSubject.get(t.skillLadderId);
+    if (!sub) continue;
+    tasksBySubject[sub] = (tasksBySubject[sub] || 0) + 1;
+  }
+  // a skill is "placed" once all of its tasks have responses
+  const respBySkill = new Map<number, Set<number>>();
+  for (const r of resp) {
+    if (!respBySkill.has(r.skillLadderId)) respBySkill.set(r.skillLadderId, new Set());
+    respBySkill.get(r.skillLadderId)!.add(r.placementTaskId);
+    const sub = skillSubject.get(r.skillLadderId);
+    if (sub) doneBySubject[sub] = (doneBySubject[sub] || 0) + 1;
+  }
+  for (const s of skills) {
+    const taskCount = tasks.filter((t) => t.skillLadderId === s.skillId).length;
+    const responded = respBySkill.get(s.skillId)?.size || 0;
+    if (taskCount > 0 && responded >= taskCount) placedSkillsBySubject[s.subjectSlug].add(s.skillId);
+  }
+
+  const subjects = Object.keys(skillsBySubject).sort();
+  const summary = subjects.map((sub) => ({
+    subjectSlug: sub,
+    skillsTotal: skillsBySubject[sub].size,
+    skillsPlaced: placedSkillsBySubject[sub].size,
+    tasksTotal: tasksBySubject[sub] || 0,
+    tasksDone: doneBySubject[sub] || 0,
+    percentDone: tasksBySubject[sub] ? Math.round(((doneBySubject[sub] || 0) / tasksBySubject[sub]) * 100) : 0,
+  }));
+  const totalTasks = summary.reduce((a, s) => a + s.tasksTotal, 0);
+  const totalDone = summary.reduce((a, s) => a + s.tasksDone, 0);
+  return { subjects: summary, percentOverall: totalTasks ? Math.round((totalDone / totalTasks) * 100) : 0, totalDone, totalTasks };
+}
+
+/** Wipe placement responses (optionally for one subject) so she can redo it. */
+export async function resetPlacement(subjectSlug?: string) {
+  const db = getDb();
+  if (subjectSlug) {
+    const skills: any[] = await db.select({ id: skillLadder.id }).from(skillLadder).where(eq(skillLadder.subjectSlug, subjectSlug));
+    const ids = skills.map((s) => s.id);
+    if (ids.length === 0) return true;
+    await db.delete(placementResponses).where(inArray(placementResponses.skillLadderId, ids as any));
+  } else {
+    await db.delete(placementResponses);
+  }
+  return true;
+}

@@ -127,6 +127,13 @@
       "when": 1777425703937,
       "tag": "0017_flippant_the_twelve",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "5",
+      "when": 1777426548527,
+      "tag": "0018_fearless_lizard",
+      "breakpoints": true
     }
   ]
 }
