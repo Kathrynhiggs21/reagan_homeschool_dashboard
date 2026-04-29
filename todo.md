@@ -1172,3 +1172,31 @@ Every feature is judged by 3 questions:
 - [x] "▶ Hear Kiwi say hi again" replay button restarts the script anytime
 - [x] Existing profile.onboarding.test.ts already covers photoUrl persistence — no new tests required
 - [x] Full vitest: 23 files / 107 tests passing
+
+
+---
+## Phase 8 — Reagan handoff bundle import (Apr 28 2026)
+Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
+- [ ] Download bundle from Drive (12 files + Reagan_Dashboard_Handoff.zip) into /home/ubuntu/reagan_handoff/
+- [ ] Read HANDOFF.md + 00_Audit_Report.md (gap matrix)
+- [ ] CLEANUP punchlist (11_): delete TEST_STRAND skills rows
+- [ ] CLEANUP: delete "Test Book" from bookshelf
+- [ ] CLEANUP: reset seeded stickers (1,886) and coins (1,196) to ZERO (Mom approved)
+- [ ] CLEANUP: rename district label from "Madeira" to dual: "Madeira City SD (IEP origin) / Indian Hill EVSD (current)"
+- [ ] CORRECTION: Brutus → Precious in adventure cards "Bearded Dragon Meal Math" + "Children's Book Starring Precious"
+- [ ] CORRECTION: add Precious (bearded dragon) to pets list in profile
+- [ ] CORRECTION: confirm submissions go to adult analytics dashboard, NOT Google Classroom
+- [ ] IMPORT 01_reagan_profile.json into learnerProfile (birthday Sep 10 2015, family, pets, school history, sensory, foods, books, self-advocacy)
+- [ ] IMPORT 02_contacts.json into Care Team (Mom, Sam Rust, Ali Hill LISW, Dr. Kelsey Marlow, Marisa Nyerges + Reagan's two Google account labels)
+- [ ] IMPORT 03_iep_corrections.json (dedupe goals/accommodations, fix district label, fix placeholder grade card)
+- [ ] IMPORT 04_assessment_history.json (Acadience, MAZE, MAP Math, decoding, writing scores → screening-history chart)
+- [ ] IMPORT 05_levels_links.json (Khan URLs + IXL skill codes for every Levels skill + missing IEP-required skills)
+- [ ] IMPORT 06_assignment_backlog.csv (23 ready-to-load assignments)
+- [ ] IMPORT 07_weekly_schedule.json (5-day default with theme days + anxiety-protected therapy/recovery blocks)
+- [ ] IMPORT 08_bookshelf_additions.json (append + delete "Test Book")
+- [ ] IMPORT 09_prizes_catalog.json (17 prizes + earn-rate rules) - Mom approved tiers/costs
+- [ ] IMPORT 10_apps_additions.json (Pinterest, ReadWorks, iCivics, Mystery Science, Khanmigo, Quizlet, Stellarium, Merlin, Epic + per-app account labels)
+- [ ] FEATURE: ensure adult-editable rewards CRUD (add/edit reward tiers from adult section anytime)
+- [ ] FEATURE: ensure Care Team / contacts editable from Settings (Mom will fill phones/teacher/specialist/allergies/meds later)
+- [ ] Run vitest suite (target: all green)
+- [ ] Save checkpoint, ask user to publish to reaganschool.manus.space

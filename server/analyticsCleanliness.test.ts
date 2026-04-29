@@ -29,13 +29,16 @@ describe("Adult Analytics cleanliness", () => {
     expect(Number(rows[0].n)).toBe(0);
   });
 
-  it("skillsMastery (legacy table) is empty unless backed by a real submission", async () => {
-    // Legacy skillsMastery table held hardcoded score=60 demo rows for a long time.
-    // Going forward, only rows with a non-null sourceData (linked to a real submission/event) are allowed.
+  it("skillsMastery has no demo / placeholder rows (canonical IEP ladder is allowed)", async () => {
+    // Reagan handoff (Apr 2026) seeded the canonical 45-skill IEP ladder; those rows
+    // intentionally have sourceData=null until Reagan practices them. The guard is
+    // narrower now: ban anything that looks like a TEST/demo row.
     const [rows] = (await getDb().execute(
-      sql`SELECT COUNT(*) AS n FROM skillsMastery WHERE sourceData IS NULL OR sourceData = ''`
+      sql`SELECT skillName FROM skillsMastery
+          WHERE skillName LIKE 'TEST%' OR skillName LIKE '%vitest%' OR skillName LIKE '%fixture%'
+             OR (CAST(sourceData AS CHAR) LIKE '%demo%' OR CAST(sourceData AS CHAR) LIKE '%placeholder%')`
     )) as any;
-    expect(Number(rows[0].n)).toBe(0);
+    expect((rows as any[]).length).toBe(0);
   });
 
   it("skillProgress: a fresh ladder skill starts at zero level/confidence/evidence", async () => {

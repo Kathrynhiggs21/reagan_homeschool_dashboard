@@ -13,7 +13,7 @@ import {
   journalEntries, helpList, assignmentSubmissions,
   assignmentAnswerKeys, assignmentSubmissionsAutoGrade,
   takeNotes, curriculumAdjustments, blockGrades, needsWorkItems,
-  printableSources, printableFavorites, academicRecords, auditLog, iepGoals, iepAccommodations,
+  printableSources, printableFavorites, academicRecords, auditLog, iepGoals, iepAccommodations, assessmentScreenings,
   stickers, goodWorkNotes, coinLedger, prizes, prizeRedemptions, certificates,
 } from "../drizzle/schema";
 
@@ -1182,6 +1182,15 @@ export async function listIepGoals() {
 export async function listIepAccommodations() {
   const db = getDb();
   return await db.select().from(iepAccommodations).where(eq(iepAccommodations.active, true)).orderBy(desc(iepAccommodations.createdAt));
+}
+
+/**
+ * List historical assessment screenings (Acadience, MAZE, MAP, decoding, writing).
+ * Source: Reagan handoff bundle 04_assessment_history.json (Apr 2026).
+ */
+export async function listAssessmentScreenings() {
+  const db = getDb();
+  return await db.select().from(assessmentScreenings).orderBy(assessmentScreenings.testFamily, assessmentScreenings.metric, assessmentScreenings.id);
 }
 
 
@@ -3150,4 +3159,64 @@ export async function markDrivePushResult(args: {
       pushedAt: new Date(),
     } as any)
     .where(eq(drivePushQueue.id, args.id));
+}
+
+
+/* =====================================================================
+   PRIZE CRUD — adult-editable from Settings ▸ Rewards Manager
+   ===================================================================== */
+export async function createPrize(input: {
+  title: string;
+  emoji: string;
+  description?: string | null;
+  coinCost: number;
+  category: "cash" | "digital" | "toy" | "experience" | "screen_time" | "treat" | "custom";
+  active?: boolean;
+  stock?: number | null;
+  createdByUserId?: number | null;
+}) {
+  const db = getDb();
+  const slug = `${input.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").slice(0, 56)}-${Date.now().toString(36).slice(-6)}`;
+  await db.insert(prizes).values({
+    slug,
+    title: input.title.slice(0, 120),
+    emoji: input.emoji.slice(0, 8) || "⭐",
+    description: input.description ?? null,
+    coinCost: Math.max(0, Math.floor(input.coinCost)),
+    category: input.category,
+    active: input.active ?? true,
+    stock: input.stock ?? null,
+    createdByUserId: input.createdByUserId ?? null,
+  } as any);
+  const [created]: any = await db.select().from(prizes).where(eq(prizes.slug, slug)).limit(1);
+  return created;
+}
+
+export async function updatePrize(id: number, patch: Partial<{
+  title: string;
+  emoji: string;
+  description: string | null;
+  coinCost: number;
+  category: "cash" | "digital" | "toy" | "experience" | "screen_time" | "treat" | "custom";
+  active: boolean;
+  stock: number | null;
+}>) {
+  const db = getDb();
+  const updates: any = {};
+  if (patch.title !== undefined) updates.title = patch.title.slice(0, 120);
+  if (patch.emoji !== undefined) updates.emoji = patch.emoji.slice(0, 8) || "⭐";
+  if (patch.description !== undefined) updates.description = patch.description;
+  if (patch.coinCost !== undefined) updates.coinCost = Math.max(0, Math.floor(patch.coinCost));
+  if (patch.category !== undefined) updates.category = patch.category;
+  if (patch.active !== undefined) updates.active = patch.active;
+  if (patch.stock !== undefined) updates.stock = patch.stock;
+  if (Object.keys(updates).length === 0) return { ok: true, noop: true };
+  await db.update(prizes).set(updates).where(eq(prizes.id, id));
+  return { ok: true };
+}
+
+export async function deletePrize(id: number) {
+  const db = getDb();
+  await db.delete(prizes).where(eq(prizes.id, id));
+  return { ok: true };
 }

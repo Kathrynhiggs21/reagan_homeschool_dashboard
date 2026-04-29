@@ -247,6 +247,22 @@ export const learnerProfile = mysqlTable("learnerProfile", {
   voiceMode: varchar("voiceMode", { length: 16 }).default("text").notNull(), // voice | text | silent
   onboardingCompleted: boolean("onboardingCompleted").default(false).notNull(),
   adultPasscode: varchar("adultPasscode", { length: 8 }).default("3918").notNull(),
+  // ---- Reagan handoff bundle (Apr 2026) — rich About-Me fields, all editable in Settings ----
+  birthday: varchar("birthday", { length: 10 }), // ISO date YYYY-MM-DD
+  pronouns: varchar("pronouns", { length: 32 }),
+  selfStatement: text("selfStatement"), // "I am an animal rescuer. I always have been."
+  selfAdvocacyStatement: text("selfAdvocacyStatement"),
+  schoolHistory: json("schoolHistory").$type<Array<{ school: string; district: string; years: string; transferDate?: string }>>(),
+  family: json("family").$type<Record<string, any>>(),
+  pets: json("pets").$type<Array<{ name: string; species: string; role?: string }>>(),
+  sensoryLoves: json("sensoryLoves").$type<string[]>(),
+  sensoryAvoids: json("sensoryAvoids").$type<string[]>(),
+  favoriteFoods: json("favoriteFoods").$type<string[]>(),
+  favoriteShows: json("favoriteShows").$type<string[]>(),
+  favoriteBooks: json("favoriteBooks").$type<string[]>(),
+  diagnoses: json("diagnoses").$type<string[]>(),
+  currentSupports: json("currentSupports").$type<string[]>(),
+  weeklyScheduleTemplate: json("weeklyScheduleTemplate").$type<Record<string, any>>(),
 });
 
 /* -------------------------------------------------------------------------- */
@@ -288,6 +304,10 @@ export const skillsMastery = mysqlTable("skillsMastery", {
   needsHelp: boolean("needsHelp").default(false).notNull(),
   sourceData: json("sourceData"),
   notes: text("notes"),
+  // Reagan handoff (Apr 2026): canonical practice links + IEP flag
+  khanUrl: varchar("khanUrl", { length: 500 }),
+  ixlCode: varchar("ixlCode", { length: 200 }),
+  iepGoal: boolean("iepGoal").default(false).notNull(),
 });
 
 /* -------------------------------------------------------------------------- */
@@ -1304,3 +1324,45 @@ export const drivePushQueue = mysqlTable("drive_push_queue", {
   pushedAt: timestamp("pushed_at"),
 });
 export type DrivePushQueueRow = typeof drivePushQueue.$inferSelect;
+
+
+/* ============================================================================
+   ASSESSMENT SCREENINGS — historical Acadience/MAZE/MAP/decoding data
+   from 2024-25 IEP & Reevaluation. One row per screening event.
+   Source: Reagan handoff bundle 04_assessment_history.json (Apr 2026).
+   ============================================================================ */
+export const assessmentScreenings = mysqlTable("assessmentScreenings", {
+  id: int("id").autoincrement().primaryKey(),
+  testFamily: varchar("testFamily", { length: 40 }).notNull(), // acadience_orf | maze | nwea_map_math | decoding | writing | basc3
+  metric: varchar("metric", { length: 60 }).notNull(),         // wcpm | percentile | accuracy_pct | rit | raw | scale_score
+  windowLabel: varchar("windowLabel", { length: 40 }),         // Fall 2024 / Winter 2024 / Spring 2025 / 1/28/2025
+  value: varchar("value", { length: 60 }).notNull(),           // can be a single value or "82-110"
+  targetValue: varchar("targetValue", { length: 60 }),         // expected/typical range or floor
+  notes: text("notes"),
+  sourceDoc: varchar("sourceDoc", { length: 100 }),            // "RHiggs 2025-26 IEP" / "2025 Reevaluation"
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type AssessmentScreening = typeof assessmentScreenings.$inferSelect;
+
+
+/* ============================================================================
+   ASSIGNMENT BACKLOG — Mom-curated assignment library that the daily-plan
+   composer can pull from when building Reagan's day. Source: handoff bundle
+   06_assignment_backlog.csv (Apr 2026).
+   ============================================================================ */
+export const assignmentBacklog = mysqlTable("assignmentBacklog", {
+  id: int("id").autoincrement().primaryKey(),
+  code: varchar("code", { length: 20 }).notNull().unique(), // e.g. "RW-001", "M-005"
+  title: varchar("title", { length: 200 }).notNull(),
+  subjectSlug: varchar("subjectSlug", { length: 32 }).notNull(),
+  blockType: varchar("blockType", { length: 40 }),    // matches scheduleBlocks.blockType where possible
+  estMinutes: int("estMinutes").default(25).notNull(),
+  weekTheme: varchar("weekTheme", { length: 80 }),    // e.g. "Wonder Wednesday"
+  dayHint: varchar("dayHint", { length: 16 }),        // monday | tuesday | wednesday | thursday | friday | any
+  notes: text("notes"),
+  iepGoal: boolean("iepGoal").default(false).notNull(),
+  active: boolean("active").default(true).notNull(),
+  sourceDoc: varchar("sourceDoc", { length: 100 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type AssignmentBacklogRow = typeof assignmentBacklog.$inferSelect;

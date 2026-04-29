@@ -111,6 +111,33 @@ export default function TutorHandoff() {
         </div>
       </Card>
 
+      {/* Care Team — contacts from learnerProfile.contacts (Reagan handoff Apr 2026). Mom can fill in phones in Settings. */}
+      {Array.isArray((data as any)?.contacts) && ((data as any).contacts as any[]).length > 0 && (
+        <Card className="cozy-card p-4">
+          <div className="font-display font-semibold mb-2 flex items-center gap-2">
+            <span>🤝</span>
+            <span>Care Team</span>
+            <span className="text-[10px] text-muted-foreground">({((data as any).contacts as any[]).length})</span>
+          </div>
+          <p className="text-xs text-muted-foreground mb-3">Adults supporting Reagan. Edit contact details in Settings → Profile.</p>
+          <div className="grid sm:grid-cols-2 gap-2">
+            {((data as any).contacts as any[]).map((c: any, i: number) => (
+              <div key={`${c.name}-${i}`} className="p-2 rounded-md border bg-white/40 text-sm">
+                <div className="font-semibold">{c.name}</div>
+                <div className="text-xs text-muted-foreground">{c.role}</div>
+                {(c.phone || c.email) && (
+                  <div className="text-xs mt-1 space-x-2">
+                    {c.phone && <a className="underline text-blue-700" href={`tel:${c.phone}`}>{c.phone}</a>}
+                    {c.email && <a className="underline text-blue-700" href={`mailto:${c.email}`}>{c.email}</a>}
+                  </div>
+                )}
+                {!c.phone && !c.email && <div className="text-[10px] text-muted-foreground italic mt-1">no contact info on file</div>}
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       {/* Accommodations + triggers moved to the BOTTOM so the plan is front-and-center */}
       {data?.accommodations && (
         <Card className="cozy-card p-4">

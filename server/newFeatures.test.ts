@@ -238,8 +238,8 @@ describe("adult edit-mode mutations", () => {
   it("books: create → update → delete", async () => {
     const caller = makeAdminCaller();
     await caller.books.create({
-      title: "Test Book " + Date.now(),
-      author: "Tester",
+      title: "__vitest_book_" + Date.now(),
+      author: "__vitest_author",
       type: "workbook",
       currentPage: 1,
       totalPages: 50,
@@ -248,9 +248,9 @@ describe("adult edit-mode mutations", () => {
     const last = list[list.length - 1];
     expect(last).toBeTruthy();
 
-    await caller.books.update({ id: last.id, author: "Tester v2" });
+    await caller.books.update({ id: last.id, author: "__vitest_author_v2" });
     const list2: any[] = await caller.books.list();
-    expect(list2.find((b) => b.id === last.id)?.author).toBe("Tester v2");
+    expect(list2.find((b) => b.id === last.id)?.author).toBe("__vitest_author_v2");
 
     await caller.books.delete({ id: last.id });
     const list3: any[] = await caller.books.list();

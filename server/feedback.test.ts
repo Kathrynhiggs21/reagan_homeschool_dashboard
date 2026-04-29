@@ -19,15 +19,15 @@ beforeAll(async () => {
   const db = getDb();
   await db.insert(skillLadder).values({
     subjectSlug: "math",
-    strand: "TEST_FEEDBACK",
-    skillCode: "TEST.FEEDBACK.1",
-    title: "TEST FEEDBACK skill",
+    strand: "__vitest_FEEDBACK",
+    skillCode: "__vitest.FEEDBACK.1",
+    title: "__vitest feedback skill",
     kidFriendly: "test",
     gradeLevel: "5",
     ladderOrder: 9100,
     active: true,
   } as any);
-  const [s] = await db.select().from(skillLadder).where(eq((skillLadder as any).skillCode, "TEST.FEEDBACK.1"));
+  const [s] = await db.select().from(skillLadder).where(eq((skillLadder as any).skillCode, "__vitest.FEEDBACK.1"));
   testSkillId = s.id;
 });
 

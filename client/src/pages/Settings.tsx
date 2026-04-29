@@ -4,6 +4,7 @@ import AvatarUploader from "@/components/AvatarUploader";
 import ConfidencePrinciplesCard from "@/components/ConfidencePrinciplesCard";
 import GamesManager from "@/components/GamesManager";
 import TutorsManager from "@/components/TutorsManager";
+import { RewardsManager } from "@/components/RewardsManager";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -240,6 +241,8 @@ export default function Settings() {
       <AppointmentsCard />
 
       {/* ============================ GAMES & BREAKS ============================ */}
+      <RewardsManager />
+
       <GamesManager />
 
       {/* ============================ TUTORS ============================ */}

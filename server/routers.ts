@@ -180,6 +180,21 @@ export const appRouter = router({
       voiceMode: z.string().optional(),
       onboardingCompleted: z.boolean().optional(),
       adultPasscode: z.string().optional(),
+      // ---- Reagan handoff (Apr 2026) rich-profile fields, all editable in Settings ----
+      birthday: z.string().nullable().optional(),
+      pronouns: z.string().nullable().optional(),
+      selfStatement: z.string().nullable().optional(),
+      selfAdvocacyStatement: z.string().nullable().optional(),
+      schoolHistory: z.array(z.object({ school: z.string(), district: z.string(), years: z.string(), transferDate: z.string().optional() })).optional(),
+      family: z.record(z.string(), z.any()).optional(),
+      pets: z.array(z.object({ name: z.string(), species: z.string(), role: z.string().optional() })).optional(),
+      sensoryLoves: z.array(z.string()).optional(),
+      sensoryAvoids: z.array(z.string()).optional(),
+      favoriteFoods: z.array(z.string()).optional(),
+      favoriteShows: z.array(z.string()).optional(),
+      favoriteBooks: z.array(z.string()).optional(),
+      diagnoses: z.array(z.string()).optional(),
+      currentSupports: z.array(z.string()).optional(),
     })).mutation(({ input }) => db.upsertProfile(input as any)),
   }),
 
@@ -1164,6 +1179,7 @@ export const appRouter = router({
   iep: router({
     listGoals: publicProcedure.query(() => db.listIepGoals()),
     listAccommodations: publicProcedure.query(() => db.listIepAccommodations()),
+    listScreenings: publicProcedure.query(() => db.listAssessmentScreenings()),
   }),
 
   /* =================== REWARDS (stickers, coins, prizes, notes) =================== */
@@ -1192,8 +1208,32 @@ export const appRouter = router({
       }
       return out;
     }),
-    listPrizes: publicProcedure.query(() => db.listPrizes(true)),
+    listPrizes: publicProcedure.input(z.object({ activeOnly: z.boolean().default(true) }).optional()).query(({ input }) => db.listPrizes(input?.activeOnly ?? true)),
     seedPrizes: publicProcedure.mutation(() => db.seedDefaultPrizesIfEmpty()),
+    /* Adult-only prize CRUD (gated by AdultGate at UI level) */
+    createPrize: protectedProcedure.input(z.object({
+      title: z.string().min(1).max(120),
+      emoji: z.string().min(1).max(8),
+      description: z.string().max(500).nullable().optional(),
+      coinCost: z.number().int().min(0).max(10000),
+      category: z.enum(["cash", "digital", "toy", "experience", "screen_time", "treat", "custom"]),
+      active: z.boolean().default(true),
+      stock: z.number().int().nullable().optional(),
+    })).mutation(({ input, ctx }) => db.createPrize({ ...input, createdByUserId: (ctx.user as any)?.id ?? null })),
+    updatePrize: protectedProcedure.input(z.object({
+      id: z.number(),
+      title: z.string().min(1).max(120).optional(),
+      emoji: z.string().min(1).max(8).optional(),
+      description: z.string().max(500).nullable().optional(),
+      coinCost: z.number().int().min(0).max(10000).optional(),
+      category: z.enum(["cash", "digital", "toy", "experience", "screen_time", "treat", "custom"]).optional(),
+      active: z.boolean().optional(),
+      stock: z.number().int().nullable().optional(),
+    })).mutation(({ input }) => {
+      const { id, ...patch } = input;
+      return db.updatePrize(id, patch);
+    }),
+    deletePrize: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deletePrize(input.id)),
     requestPrize: publicProcedure.input(z.object({ prizeId: z.number() })).mutation(({ input, ctx }) => db.requestPrize((ctx as any).user?.id ?? null, input.prizeId)),
     myRedemptions: publicProcedure.query(({ ctx }) => db.listMyRedemptions((ctx as any).user?.id ?? null)),
     goodWorkNotes: publicProcedure.query(({ ctx }) => db.listGoodWorkNotes((ctx as any).user?.id ?? null)),
