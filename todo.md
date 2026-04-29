@@ -1033,3 +1033,5 @@
 - [ ] Bookshelf: "Watch & Learn" YouTube shelf polish
 - [ ] Report Card page cleanup and wiring to real data
 - [ ] Printables admin: collapse into AI-prompted flow instead of tiled source list
+
+- [ ] Theme picker must also swap the sidebar + "Reagan's Classroom" profile card colors to match the active theme

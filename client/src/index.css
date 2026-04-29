@@ -481,3 +481,121 @@ html[data-rtheme="cream"] h1, html[data-rtheme="cream"] h2,
 html[data-rtheme="notebook"] h1, html[data-rtheme="notebook"] h2 {
   text-shadow: none !important;
 }
+
+
+/* ===== Light-theme card overrides so panels are readable on cream/notebook bg ===== */
+html[data-rtheme="cream"] .chalkboard,
+html[data-rtheme="cream"] .cozy-card,
+html[data-rtheme="cream"] .classroom-card {
+  background: rgba(255, 250, 235, 0.92) !important;
+  border: 1px solid rgba(160, 120, 60, 0.28) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.8) inset,
+    0 12px 28px rgba(120, 80, 30, 0.10),
+    0 2px 6px rgba(120, 80, 30, 0.08) !important;
+  color: #2d2317 !important;
+}
+html[data-rtheme="cream"] aside,
+html[data-rtheme="cream"] [aria-label="Sidebar"] {
+  background: rgba(255, 248, 230, 0.95) !important;
+  border-right: 1px solid rgba(160, 120, 60, 0.2) !important;
+  color: #2d2317 !important;
+}
+html[data-rtheme="cream"] .schedule-row,
+html[data-rtheme="cream"] .schedule-row-v2 {
+  background: rgba(255, 253, 245, 0.85) !important;
+  color: #2d2317 !important;
+  box-shadow: 0 6px 16px rgba(120, 80, 30, 0.08) !important;
+}
+html[data-rtheme="cream"] .time-chip {
+  background: rgba(255, 235, 180, 0.9) !important;
+  color: #5b3b10 !important;
+}
+html[data-rtheme="cream"] h1,
+html[data-rtheme="cream"] h2 { color: #2d2317 !important; }
+
+html[data-rtheme="notebook"] .chalkboard,
+html[data-rtheme="notebook"] .cozy-card,
+html[data-rtheme="notebook"] .classroom-card {
+  background: rgba(255, 253, 245, 0.94) !important;
+  border: 1px solid rgba(30, 46, 82, 0.25) !important;
+  box-shadow:
+    0 2px 0 rgba(30, 46, 82, 0.06) inset,
+    0 10px 24px rgba(30, 46, 82, 0.10) !important;
+  color: #1e2e52 !important;
+}
+html[data-rtheme="notebook"] aside,
+html[data-rtheme="notebook"] [aria-label="Sidebar"] {
+  background: rgba(250, 247, 230, 0.95) !important;
+  border-right: 2px dashed rgba(30, 46, 82, 0.18) !important;
+  color: #1e2e52 !important;
+}
+html[data-rtheme="notebook"] .schedule-row,
+html[data-rtheme="notebook"] .schedule-row-v2 {
+  background: rgba(255, 254, 246, 0.9) !important;
+  color: #1e2e52 !important;
+}
+html[data-rtheme="notebook"] .time-chip {
+  background: rgba(200, 220, 255, 0.6) !important;
+  color: #1e2e52 !important;
+}
+
+/* Chalkboard night: push cards very dark for max contrast */
+html[data-rtheme="chalkboard"] body { color: #f0ebe0; }
+html[data-rtheme="chalkboard"] .chalkboard,
+html[data-rtheme="chalkboard"] .cozy-card,
+html[data-rtheme="chalkboard"] .classroom-card {
+  background: rgba(15, 15, 15, 0.82) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.55) !important;
+}
+html[data-rtheme="chalkboard"] aside,
+html[data-rtheme="chalkboard"] [aria-label="Sidebar"] {
+  background: rgba(8, 8, 8, 0.96) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+
+/* Side panel profile card must match the theme too */
+html[data-rtheme="cream"] aside .chalkboard {
+  background: linear-gradient(180deg, #fff7e1 0%, #fde8c6 100%) !important;
+  border: 1px solid rgba(160, 120, 60, 0.3) !important;
+  color: #2d2317 !important;
+}
+html[data-rtheme="cream"] aside .chalk-white { color: #2d2317 !important; }
+html[data-rtheme="cream"] aside .chalk-yellow { color: #a76b12 !important; }
+
+html[data-rtheme="notebook"] aside .chalkboard {
+  background: #fffdf3 !important;
+  border: 2px dashed rgba(30, 46, 82, 0.3) !important;
+  color: #1e2e52 !important;
+}
+html[data-rtheme="notebook"] aside .chalk-white { color: #1e2e52 !important; }
+html[data-rtheme="notebook"] aside .chalk-yellow { color: #b15b16 !important; }
+
+html[data-rtheme="chalkboard"] aside .chalkboard {
+  background: #0a0a0a !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+}
+
+/* Sidebar nav active/hover colors re-tuned per light theme */
+html[data-rtheme="cream"] aside nav a:hover { background: rgba(255, 220, 160, 0.5) !important; }
+html[data-rtheme="cream"] aside nav a.bg-sidebar-primary,
+html[data-rtheme="cream"] aside nav [class*="bg-sidebar-primary"] {
+  background: #f0c07a !important;
+  color: #2d2317 !important;
+}
+html[data-rtheme="notebook"] aside nav a:hover { background: rgba(200, 220, 255, 0.55) !important; }
+html[data-rtheme="notebook"] aside nav a.bg-sidebar-primary,
+html[data-rtheme="notebook"] aside nav [class*="bg-sidebar-primary"] {
+  background: #c4d6ff !important;
+  color: #1e2e52 !important;
+}
+
+/* Bottom "Unlock adult area" button in sidebar recolor per theme */
+html[data-rtheme="cream"] aside button { color: #2d2317 !important; }
+html[data-rtheme="notebook"] aside button { color: #1e2e52 !important; }
+
+/* The "Kiwi / Tap button on any page to talk" footer section */
+html[data-rtheme="cream"] aside .border-t { border-top-color: rgba(160, 120, 60, 0.25) !important; }
+html[data-rtheme="notebook"] aside .border-t { border-top-color: rgba(30, 46, 82, 0.25) !important; }
