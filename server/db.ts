@@ -1760,6 +1760,18 @@ export async function recordSkillPractice(opts: {
       skillLadderId: opts.skillLadderId,
     } as any);
   }
+  // Log mood signal for frustration detection
+  try {
+    const [skillRow] = await db.select().from(skillLadder).where(eq(skillLadder.id, opts.skillLadderId));
+    const felt = opts.selfRating === 1 ? "hard" : opts.selfRating === 5 ? "easy" : "ok";
+    await db.insert(moodSignals).values({
+      source: "skillPractice",
+      subjectSlug: skillRow?.subjectSlug ?? null,
+      skillLadderId: opts.skillLadderId,
+      selfRating: opts.selfRating ?? null,
+      feltIt: felt as any,
+    } as any);
+  } catch { /* mood logging is best-effort */ }
   return { newLevel, newConf, newEvidence, leveledUp: newLevel > (prev.level ?? 0) };
 }
 
@@ -2053,4 +2065,67 @@ export async function resetPlacement(subjectSlug?: string) {
     await db.delete(placementResponses);
   }
   return true;
+}
+
+
+/* ============================== GAME-AS-REWARD (Phase 5) ============================== */
+import { gamePrefs, moodSignals, gameBreakLog } from "../drizzle/schema";
+
+export async function listGamePrefs(opts: { activeOnly?: boolean } = {}) {
+  const db = getDb();
+  if (opts.activeOnly === false) {
+    return db.select().from(gamePrefs).orderBy(gamePrefs.rank);
+  }
+  return db.select().from(gamePrefs).where(eq(gamePrefs.active, true)).orderBy(gamePrefs.rank);
+}
+export async function upsertGamePref(g: typeof gamePrefs.$inferInsert & { id?: number }) {
+  const db = getDb();
+  if (g.id) {
+    await db.update(gamePrefs).set(g as any).where(eq(gamePrefs.id, g.id));
+    return g.id;
+  }
+  const result: any = await db.insert(gamePrefs).values(g as any);
+  return result?.[0]?.insertId ?? null;
+}
+export async function deleteGamePref(id: number) {
+  await getDb().update(gamePrefs).set({ active: false } as any).where(eq(gamePrefs.id, id));
+}
+
+/**
+ * Detects frustration in the last `windowMin` minutes (default 30).
+ * Returns counts so the UI can decide whether to offer a break.
+ */
+export async function recentMoodWindow(windowMin: number = 30) {
+  const db = getDb();
+  const since = new Date(Date.now() - windowMin * 60_000);
+  const rows = await db.select().from(moodSignals);
+  const recent = rows.filter((r: any) => new Date(r.createdAt) >= since);
+  const hard = recent.filter((r: any) => r.feltIt === "hard").length;
+  const ok = recent.filter((r: any) => r.feltIt === "ok").length;
+  const easy = recent.filter((r: any) => r.feltIt === "easy").length;
+  return {
+    windowMin,
+    hard, ok, easy,
+    total: recent.length,
+    suggestBreak: hard >= 2,            // 2+ "Hard" in 30 min -> Kiwi offers a break
+    suggestReward: easy >= 2 && hard === 0, // 2+ "Got it" with no "Hard" -> earned reward
+    recent,
+  };
+}
+
+export async function logGameBreak(opts: {
+  gamePrefId?: number | null;
+  reason?: "earnedReward" | "frustrationBreak" | "kidPicked";
+  durationMinutes?: number;
+}) {
+  const db = getDb();
+  await db.insert(gameBreakLog).values({
+    gamePrefId: opts.gamePrefId ?? null,
+    reason: opts.reason ?? "kidPicked",
+    durationMinutes: opts.durationMinutes ?? 10,
+  } as any);
+}
+
+export async function recentGameBreaks(limit: number = 10) {
+  return getDb().select().from(gameBreakLog).orderBy(desc(gameBreakLog.startedAt)).limit(limit);
 }

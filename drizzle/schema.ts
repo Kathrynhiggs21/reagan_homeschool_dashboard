@@ -1109,3 +1109,43 @@ export const placementResponses = mysqlTable("placementResponses", {
   feltIt: mysqlEnum("feltIt", ["easy", "ok", "hard", "skip"]).notNull().default("ok"),
   completedAt: timestamp("completedAt").defaultNow().notNull(),
 });
+
+
+/* ==========================================================================
+ * GAME-AS-REWARD + MOOD BREAK (Phase 5)
+ * Reagan's safe, parent-approved game catalog + frustration-aware break offers
+ * ========================================================================== */
+
+export const gamePrefs = mysqlTable("gamePrefs", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 120 }).notNull(),                  // e.g. "Roblox", "Adopt Me!", "Minecraft"
+  kind: mysqlEnum("kind", ["web", "app", "console", "offline"]).default("app").notNull(),
+  url: varchar("url", { length: 600 }),                                // optional launch URL (web games)
+  emoji: varchar("emoji", { length: 8 }).default("🎮").notNull(),
+  preferredMinutes: int("preferredMinutes").default(10).notNull(),     // how long a typical break is
+  needsParentOk: boolean("needsParentOk").default(false).notNull(),    // requires parent unlock
+  notes: text("notes"),                                                // anything Reagan should know (e.g. "stop at 4:30 for tutor")
+  active: boolean("active").default(true).notNull(),
+  rank: int("rank").default(100).notNull(),                            // ordering, lower = more favorite
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const moodSignals = mysqlTable("moodSignals", {
+  id: int("id").autoincrement().primaryKey(),
+  source: mysqlEnum("source", ["skillPractice", "placement", "manual"]).default("skillPractice").notNull(),
+  subjectSlug: varchar("subjectSlug", { length: 32 }),
+  skillLadderId: int("skillLadderId"),                                 // null if not skill-linked
+  selfRating: int("selfRating"),                                       // 1=Hard … 5=Got it!
+  feltIt: mysqlEnum("feltIt", ["easy", "ok", "hard", "skip"]),         // mirrors placement vocabulary
+  note: text("note"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const gameBreakLog = mysqlTable("gameBreakLog", {
+  id: int("id").autoincrement().primaryKey(),
+  gamePrefId: int("gamePrefId"),                                       // null if she picked "something else"
+  reason: mysqlEnum("reason", ["earnedReward", "frustrationBreak", "kidPicked"]).default("kidPicked").notNull(),
+  durationMinutes: int("durationMinutes").default(10).notNull(),
+  startedAt: timestamp("startedAt").defaultNow().notNull(),
+  endedAt: timestamp("endedAt"),
+});

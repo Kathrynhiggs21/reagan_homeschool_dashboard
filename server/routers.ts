@@ -448,6 +448,36 @@ export const appRouter = router({
     archive: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.archiveProudMoment(input.id)),
   }),
 
+  /* =================== GAMES & BREAKS (Phase 5) =================== */
+  games: router({
+    list: publicProcedure.input(z.object({ activeOnly: z.boolean().default(true) }).optional())
+      .query(({ input }) => db.listGamePrefs({ activeOnly: input?.activeOnly ?? true })),
+    upsert: protectedProcedure.input(z.object({
+      id: z.number().optional(),
+      title: z.string().min(1).max(120),
+      kind: z.enum(["web", "app", "console", "offline"]).default("app"),
+      url: z.string().nullable().optional(),
+      emoji: z.string().max(8).default("\ud83c\udfae"),
+      preferredMinutes: z.number().min(1).max(120).default(10),
+      needsParentOk: z.boolean().default(false),
+      notes: z.string().nullable().optional(),
+      rank: z.number().default(100),
+    })).mutation(({ input }) => db.upsertGamePref(input as any)),
+    deactivate: protectedProcedure.input(z.object({ id: z.number() }))
+      .mutation(({ input }) => db.deleteGamePref(input.id)),
+    /** Returns frustration / earned-reward signal for the last 30 minutes. */
+    moodWindow: publicProcedure.input(z.object({ windowMin: z.number().default(30) }).optional())
+      .query(({ input }) => db.recentMoodWindow(input?.windowMin ?? 30)),
+    /** Log that Reagan started a break (kid-pick / earned / frustration). */
+    logBreak: publicProcedure.input(z.object({
+      gamePrefId: z.number().nullable().optional(),
+      reason: z.enum(["earnedReward", "frustrationBreak", "kidPicked"]).default("kidPicked"),
+      durationMinutes: z.number().min(1).max(120).default(10),
+    })).mutation(({ input }) => db.logGameBreak(input)),
+    recentBreaks: publicProcedure.input(z.object({ limit: z.number().default(10) }).optional())
+      .query(({ input }) => db.recentGameBreaks(input?.limit ?? 10)),
+  }),
+
   /* =================== DIAGNOSTIC PLACEMENT (Phase 3) =================== */
   placement: router({
     /** Status across subjects: how many tasks done, how many skills placed. */

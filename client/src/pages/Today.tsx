@@ -17,6 +17,7 @@ import KiwiIntroStrip from "@/components/KiwiIntroStrip";
 import SkillBuilderTile from "@/components/SkillBuilderTile";
 import PlacementInviteCard from "@/components/PlacementInviteCard";
 import IHThisWeekStrip from "@/components/IHThisWeekStrip";
+import GameBreakCard from "@/components/GameBreakCard";
 
 // Neutral classroom mood language + classroom-y icons
 const ZONES = [
@@ -226,6 +227,9 @@ export default function Today() {
 
       {/* Daily 15-min Skill Builder — next-up skill from her ladder */}
       <SkillBuilderTile />
+
+      {/* Game-as-reward / mood break (only renders on signal) */}
+      <GameBreakCard />
 
       {/* Tour Mode — calm pinned strip, no ombre gradient */}
       <TourModeCard />

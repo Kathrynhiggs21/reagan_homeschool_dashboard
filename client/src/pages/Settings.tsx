@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import CalendarSyncCard from "@/components/CalendarSyncCard";
 import AvatarUploader from "@/components/AvatarUploader";
 import ConfidencePrinciplesCard from "@/components/ConfidencePrinciplesCard";
+import GamesManager from "@/components/GamesManager";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -236,6 +237,9 @@ export default function Settings() {
 
       {/* ============================ APPOINTMENTS ============================ */}
       <AppointmentsCard />
+
+      {/* ============================ GAMES & BREAKS ============================ */}
+      <GamesManager />
 
       {/* ============================ AUDIT LOG ============================ */}
       <AuditCard />

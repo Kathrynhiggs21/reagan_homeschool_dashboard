@@ -141,6 +141,13 @@
       "when": 1777427130416,
       "tag": "0019_pink_gwen_stacy",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "5",
+      "when": 1777427751649,
+      "tag": "0020_chunky_gauntlet",
+      "breakpoints": true
     }
   ]
 }
