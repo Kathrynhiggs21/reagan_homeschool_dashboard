@@ -1252,3 +1252,42 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] Cream Homeschool (light) theme: fixed — redeclared --foreground / --card-foreground / --popover-foreground on data-rtheme="cream" + "notebook" so every card reads dark
 - [x] Bookshelf: listBooks() now filters out any title containing __vitest; UI will only show the real three books (Spectrum Science 5, 180 Days of Language 5, Tuck Everlasting)
 - [x] Test-row guard on listBooks; covered by new server/listBooksFilter.test.ts
+
+
+## Kiwi wake-word + bird voice (Apr 29)
+- [x] Global wake-word listener — accepts "kiwi", "hi kiwi", "hey kiwi" and custom companion-name; auto-restarts across browser pauses
+- [x] Listener auto-restarts on end; swallows permission/mic errors
+- [x] Settings listening-mode chip (wake/tap/always/off) with explainer text; default now "wake"
+- [x] Perch shows green pulsing mic badge when wake is active, grey when off
+- [x] Bird voice: pitch 1.6 / rate 1.05 / volume 0.9, smart voice picker (Samantha/Aria/Jenny preferred, male voices skipped)
+- [x] 3-note WebAudio chirp plays before each Kiwi line (safe no-op in headless env)
+- [ ] Never request mic on the Rewards / kid-safe pages unless Kiwi panel is opened
+- [x] Vitest server/birdVoice.test.ts (5 tests) covering preset + voice picker + no-throw in non-browser
+
+
+## Kiwi bird upgrades (Apr 29 PM)
+- [x] KiwiPerch draggable (pointer events, touch + mouse, clamped, localStorage-persisted)
+- [x] Flutter hop every 25-45s (bigger movement) + bob-hop on the main 2.5s action loop
+- [x] Peck animation on tap (quick chirp/idle bounce)
+- [x] Pop burst (6 hearts/leaves) when chat opens or celebrate event fires
+- [x] Fly-across every 90-150s (edge-to-edge slide, lands in a visible spot)
+- [x] Sleep pose when adultPresent (action loop halts)
+- [x] Bird-voice TTS wired into KiwiCompanion.speak()
+- [x] Wake-word phrases expanded; default mode = wake; persists via localStorage
+- [x] Mic dot on KiwiPerch (pulsing green when on, grey when off)
+- [x] Bird-voice vitest at server/birdVoice.test.ts
+
+
+## Flock + Kiwi animations (Apr 29 PM-2)
+- [x] Reconciled uploaded KiwiSprite — identical to current; no change needed
+- [x] Reconciled uploaded FlockSprite/FlockWidget — already present in project
+- [x] Migration 0016_cheerful_lilith.sql already applied (snapshots 0016–0032 exist)
+- [x] Uploaded rewards.ts was a test file — existing server/rewards.test.ts passes (4 tests)
+- [x] Flock + Kiwi animations coexist (flock in-page widget, Kiwi floating perch on z-30)
+
+- [x] Cranked Kiwi activity: persistent 2.5s action loop (tilt/bob/chirp/peck), medium flutter 25-45s, fly-across 90-150s, reactive flap on mouse/touch move
+
+
+## Tutor roster (Apr 29 PM)
+- [ ] Seed three tutors (Mike, Sophie, College tutor) with names only — leave phone/email blank so Tutor Handoff shows no fake contact info
+- [ ] Remove any existing default/sample tutor rows that aren't one of these three

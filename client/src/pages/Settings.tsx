@@ -190,7 +190,11 @@ export default function Settings() {
           />
         </div>
         <div>
-          <div className="text-sm font-medium mb-2">Listening mode</div>
+          <div className="text-sm font-medium mb-1">Listening mode</div>
+          <div className="text-xs text-muted-foreground mb-2">
+            <strong>Wake word</strong> listens for “Kiwi” or “Hi Kiwi” and opens the chat.
+            Requires mic permission in the browser.
+          </div>
           <div className="flex gap-2 flex-wrap">
             {[
               ["wake", "Wake word"],

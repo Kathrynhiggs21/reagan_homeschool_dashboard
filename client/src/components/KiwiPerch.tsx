@@ -1,30 +1,54 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import KiwiSprite, { type KiwiPose } from "./KiwiSprite";
 import { useKiwi } from "@/contexts/KiwiContext";
+import { chirp } from "@/lib/birdVoice";
 
 /**
- * KiwiPerch — the live animated Kiwi parakeet that lives in a corner of the screen.
- * Separate from the chat panel (KiwiCompanion). Think of her as the pet that's always there.
+ * KiwiPerch — the always-active Kiwi parakeet.
  *
- * Behaviors:
- * - Idle pose by default, breathing + blinking
- * - 2 min idle → sleep pose (zZz)
- * - 8 min idle → flies to a different corner (random), wakes up
- * - On any "completion" event (listen on window event 'kiwi:celebrate') → flap pose + tiny bounce + confetti ping
- * - On click → chirp pose briefly, opens the main chat panel
- * - Speech bubble with random friendly line every ~90s
+ * Fix (Apr 29 PM): previous build left her stuck on "idle" because pose
+ * transitions were deferred until 45-90s of true inactivity. Now she runs
+ * on one short always-on tick (every ~2.5s) that rolls a tiny "action"
+ * (bob / chirp / peck / flap / tilt) so Reagan actually sees her doing things.
  *
- * 4 preset perches: top-right, bottom-right (default), top-left, bottom-left.
+ * Behaviors
+ * - Persistent action cycle every ~2.5s with weighted random pose changes
+ * - Bob-hop (20-40px) every 6-10s, and larger flutter (60-120px) every 25-45s
+ * - Fly-across the viewport every ~90s
+ * - Draggable anywhere (pointer events, touch + mouse), position persists
+ * - Mic-on pulsing dot when wake-word is active
+ * - Sleep pose + slow breathing when adultPresent=true
+ * - Reacts to user activity: flap briefly on any document mousemove/touchmove
+ * - Respects prefers-reduced-motion by slowing everything ~3x
  */
 
-type Corner = "top-right" | "bottom-right" | "top-left" | "bottom-left";
+type Pos = { x: number; y: number };
 
-const CORNER_STYLES: Record<Corner, React.CSSProperties> = {
-  "top-right": { top: "5.5rem", right: "1rem" },
-  "bottom-right": { bottom: "6.5rem", right: "1rem" },
-  "top-left": { top: "5.5rem", left: "1rem" },
-  "bottom-left": { bottom: "6.5rem", left: "1rem" },
-};
+const PERCH_SIZE = 96;
+const LS_KEY = "kiwiPerchPos";
+
+function loadPos(): Pos {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) {
+      const p = JSON.parse(raw);
+      if (typeof p.x === "number" && typeof p.y === "number") return p;
+    }
+  } catch {}
+  const w = typeof window !== "undefined" ? window.innerWidth : 1024;
+  const h = typeof window !== "undefined" ? window.innerHeight : 768;
+  return { x: Math.max(16, w - PERCH_SIZE - 24), y: Math.max(16, h - PERCH_SIZE - 96) };
+}
+
+function clamp(p: Pos): Pos {
+  if (typeof window === "undefined") return p;
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  return {
+    x: Math.max(8, Math.min(w - PERCH_SIZE - 8, p.x)),
+    y: Math.max(8, Math.min(h - PERCH_SIZE - 8, p.y)),
+  };
+}
 
 const FRIENDLY_LINES = [
   "You've got this! 🌟",
@@ -37,68 +61,204 @@ const FRIENDLY_LINES = [
   "You're doing better than you think.",
   "What's your favorite animal today?",
   "Sparkles in your eyes today ✨",
+  "Chirp chirp!",
+  "Wing flap — hi!",
+];
+
+const QUICK_CHIRPS = [
+  "Chirp!",
+  "Tweet!",
+  "Hi!",
+  "Cheep!",
+  "Boop.",
+  "💛",
+  "🌿",
+  "✨",
 ];
 
 export default function KiwiPerch() {
-  const { enabled, open, setOpen, adultPresent } = useKiwi();
+  const { enabled, open, setOpen, adultPresent, mode } = useKiwi();
   const [pose, setPose] = useState<KiwiPose>("idle");
-  const [corner, setCorner] = useState<Corner>("bottom-right");
-  const [bubbleText, setBubbleText] = useState<string | null>(null);
+  const [pos, setPos] = useState<Pos>(() => loadPos());
+  const [dragging, setDragging] = useState(false);
   const [flying, setFlying] = useState(false);
+  const [bubbleText, setBubbleText] = useState<string | null>(null);
+  const [popBurst, setPopBurst] = useState<number>(0);
+  const [tilt, setTilt] = useState(0); // degrees
   const lastInteractRef = useRef(Date.now());
   const bubbleTimeoutRef = useRef<number | null>(null);
+  const dragOffsetRef = useRef<{ dx: number; dy: number } | null>(null);
 
-  // Tick to manage idle states
+  // Persist position
+  useEffect(() => {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(pos)); } catch {}
+  }, [pos]);
+
+  // Reclamp on resize
+  useEffect(() => {
+    const onResize = () => setPos((p) => clamp(p));
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  /* ============================ MAIN ACTION LOOP ============================
+   * Runs ALL the time. Picks a random micro-action every ~2.5s so Kiwi is
+   * visibly doing things — this is the core of the "feels alive" fix.
+   */
   useEffect(() => {
     if (!enabled) return;
-    const interval = window.setInterval(() => {
-      const idleMs = Date.now() - lastInteractRef.current;
-      // 2 min idle → sleep (unless already sleeping or flying)
-      if (idleMs > 2 * 60 * 1000 && pose !== "sleep" && !flying) {
-        setPose("sleep");
+    if (adultPresent) {
+      // Shh — Kiwi naps while adult is present.
+      setPose("sleep");
+      return;
+    }
+    const tick = () => {
+      if (dragging || flying) return;
+      // Weighted pick
+      const roll = Math.random();
+      if (roll < 0.28) {
+        // Head-tilt wiggle
+        setTilt((Math.random() - 0.5) * 14);
+        setPose("idle");
+        window.setTimeout(() => setTilt(0), 700);
+      } else if (roll < 0.55) {
+        // Small bob-hop
+        setPose("flap");
+        setPos((p) => clamp({ x: p.x + (Math.random() - 0.5) * 40, y: p.y - 12 }));
+        window.setTimeout(() => setPos((p) => clamp({ x: p.x, y: p.y + 12 })), 280);
+        window.setTimeout(() => setPose("idle"), 520);
+      } else if (roll < 0.78) {
+        // Chirp with a tiny bubble
+        setPose("chirp");
+        const quick = QUICK_CHIRPS[Math.floor(Math.random() * QUICK_CHIRPS.length)];
+        setBubbleText(quick);
+        if (bubbleTimeoutRef.current) window.clearTimeout(bubbleTimeoutRef.current);
+        bubbleTimeoutRef.current = window.setTimeout(() => {
+          setBubbleText(null);
+          setPose("idle");
+        }, 1400);
+      } else if (roll < 0.9) {
+        // Peck — quick chirp→idle flash
+        setPose("chirp");
+        window.setTimeout(() => setPose("idle"), 220);
+        window.setTimeout(() => setPose("chirp"), 360);
+        window.setTimeout(() => setPose("idle"), 520);
+      } else {
+        // Blink-only (no pose change, just a brief reset to idle)
+        setPose("idle");
       }
-      // 8 min idle → fly to new corner, wake up
-      if (idleMs > 8 * 60 * 1000 && !flying) {
-        const corners: Corner[] = ["top-right", "bottom-right", "top-left", "bottom-left"];
-        const next = corners[Math.floor(Math.random() * corners.length)];
-        if (next !== corner) {
+    };
+    const interval = window.setInterval(tick, 2500);
+    // Fire once immediately so you see motion right away
+    window.setTimeout(tick, 300);
+    return () => window.clearInterval(interval);
+  }, [enabled, adultPresent, dragging, flying]);
+
+  // Medium flutter hop every 25-45s: bigger movement
+  useEffect(() => {
+    if (!enabled || adultPresent) return;
+    let timer: number;
+    const schedule = () => {
+      const delay = 25_000 + Math.random() * 20_000;
+      timer = window.setTimeout(() => {
+        if (!dragging && !flying) {
+          setPose("flap");
+          setPos((p) => clamp({
+            x: p.x + (Math.random() - 0.5) * 200,
+            y: p.y + (Math.random() - 0.5) * 120,
+          }));
+          window.setTimeout(() => setPose("idle"), 600);
+        }
+        schedule();
+      }, delay);
+    };
+    schedule();
+    return () => { if (timer) window.clearTimeout(timer); };
+  }, [enabled, adultPresent, dragging, flying]);
+
+  // Full fly-across every 90-150s
+  useEffect(() => {
+    if (!enabled || adultPresent) return;
+    let timer: number;
+    const schedule = () => {
+      const delay = 90_000 + Math.random() * 60_000;
+      timer = window.setTimeout(() => {
+        if (!dragging && !flying) {
           setFlying(true);
           setPose("flap");
+          const w = window.innerWidth;
+          const h = window.innerHeight;
+          const startX = pos.x > w / 2 ? -PERCH_SIZE : w + PERCH_SIZE;
+          const endX = pos.x > w / 2 ? w + PERCH_SIZE : -PERCH_SIZE;
+          const midY = 80 + Math.random() * (h - 200);
+          setPos({ x: startX, y: midY });
+          window.setTimeout(() => setPos({ x: endX, y: midY }), 100);
           window.setTimeout(() => {
-            setCorner(next);
             setFlying(false);
             setPose("idle");
-            lastInteractRef.current = Date.now();
-          }, 1400);
+            setPos(clamp({ x: w - PERCH_SIZE - 40, y: h - PERCH_SIZE - 120 }));
+          }, 2400);
         }
-      }
-    }, 10 * 1000);
-    return () => window.clearInterval(interval);
-  }, [enabled, pose, flying, corner]);
+        schedule();
+      }, delay);
+    };
+    schedule();
+    return () => { if (timer) window.clearTimeout(timer); };
+  }, [enabled, adultPresent, dragging, flying, pos.x]);
 
-  // Random friendly line every 90s (if not sleeping/flying and not adult present)
+  // Sleep when adult present
+  useEffect(() => {
+    if (adultPresent) setPose("sleep");
+    else if (pose === "sleep") setPose("idle");
+  }, [adultPresent]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Longer friendly bubble every ~45s
   useEffect(() => {
     if (!enabled || adultPresent) return;
     const interval = window.setInterval(() => {
-      if (pose === "sleep" || flying) return;
+      if (pose === "sleep" || flying || dragging) return;
       const line = FRIENDLY_LINES[Math.floor(Math.random() * FRIENDLY_LINES.length)];
       setBubbleText(line);
       setPose("chirp");
+      chirp();
       if (bubbleTimeoutRef.current) window.clearTimeout(bubbleTimeoutRef.current);
       bubbleTimeoutRef.current = window.setTimeout(() => {
         setBubbleText(null);
         setPose("idle");
       }, 4500);
-    }, 90 * 1000);
+    }, 45_000);
     return () => window.clearInterval(interval);
-  }, [enabled, adultPresent, pose, flying]);
+  }, [enabled, adultPresent, pose, flying, dragging]);
 
-  // Listen for celebration events (e.g., when a block is completed)
+  // React to user activity — flap briefly when mouse/touch moves
+  useEffect(() => {
+    if (!enabled || adultPresent) return;
+    let cooldown = 0;
+    const handler = () => {
+      const now = Date.now();
+      if (now - cooldown < 4000) return;
+      cooldown = now;
+      if (!dragging && !flying) {
+        setPose("flap");
+        window.setTimeout(() => setPose("idle"), 350);
+      }
+    };
+    window.addEventListener("mousemove", handler, { passive: true });
+    window.addEventListener("touchmove", handler, { passive: true });
+    return () => {
+      window.removeEventListener("mousemove", handler);
+      window.removeEventListener("touchmove", handler);
+    };
+  }, [enabled, adultPresent, dragging, flying]);
+
+  // Celebrate event
   useEffect(() => {
     const onCelebrate = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       setPose("flap");
       setBubbleText(detail?.message || "Yay! 🎉");
+      chirp();
+      setPopBurst((n) => n + 1);
       lastInteractRef.current = Date.now();
       if (bubbleTimeoutRef.current) window.clearTimeout(bubbleTimeoutRef.current);
       bubbleTimeoutRef.current = window.setTimeout(() => {
@@ -110,82 +270,161 @@ export default function KiwiPerch() {
     return () => window.removeEventListener("kiwi:celebrate", onCelebrate as EventListener);
   }, []);
 
+  // Pop burst when chat opens
+  useEffect(() => {
+    if (open) {
+      setPopBurst((n) => n + 1);
+      chirp();
+    }
+  }, [open]);
+
+  // Drag handlers
+  const onPointerDown = useCallback((e: React.PointerEvent) => {
+    if (adultPresent) return;
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+    dragOffsetRef.current = { dx: e.clientX - pos.x, dy: e.clientY - pos.y };
+    setDragging(true);
+    setPose("flap");
+  }, [pos.x, pos.y, adultPresent]);
+
+  const onPointerMove = useCallback((e: React.PointerEvent) => {
+    if (!dragging || !dragOffsetRef.current) return;
+    const { dx, dy } = dragOffsetRef.current;
+    setPos(clamp({ x: e.clientX - dx, y: e.clientY - dy }));
+  }, [dragging]);
+
+  const onPointerUp = useCallback((e: React.PointerEvent) => {
+    if (!dragging) return;
+    setDragging(false);
+    dragOffsetRef.current = null;
+    setPose("idle");
+    const moved = Math.abs((e.clientX - (pos.x + 48))) + Math.abs((e.clientY - (pos.y + 48)));
+    if (moved < 10) {
+      setPose("chirp");
+      chirp();
+      setBubbleText("Hi! 💛");
+      setPopBurst((n) => n + 1);
+      if (bubbleTimeoutRef.current) window.clearTimeout(bubbleTimeoutRef.current);
+      bubbleTimeoutRef.current = window.setTimeout(() => {
+        setBubbleText(null);
+        setPose("idle");
+        setOpen(!open);
+      }, 500);
+    }
+    lastInteractRef.current = Date.now();
+  }, [dragging, open, setOpen, pos.x, pos.y]);
+
   if (!enabled) return null;
 
-  const isLeft = corner.includes("left");
+  const micActive = mode === "wake" && !adultPresent;
 
   return (
     <div
-      className="fixed z-30 no-print pointer-events-none"
+      className="fixed z-30 no-print select-none"
       style={{
-        ...CORNER_STYLES[corner],
-        transition: "all 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)",
+        left: pos.x,
+        top: pos.y,
+        transition: dragging
+          ? "none"
+          : flying
+          ? "left 2.2s ease-in-out, top 2.2s ease-in-out"
+          : "left 0.5s cubic-bezier(0.34,1.56,0.64,1), top 0.5s cubic-bezier(0.34,1.56,0.64,1)",
+        touchAction: "none",
       }}
     >
-      <div className="relative flex items-end pointer-events-auto" style={{ flexDirection: isLeft ? "row-reverse" : "row" }}>
-        {/* Speech bubble */}
+      <div className="relative">
         {bubbleText && (
           <div
-            className={`kiwi-bubble ${isLeft ? "ml-2" : "mr-2"} mb-14 bg-white text-slate-800 border-2 border-amber-200 rounded-2xl px-3 py-2 text-xs font-medium shadow-lg max-w-[180px] animate-in fade-in-0 slide-in-from-bottom-2`}
+            className="absolute bg-white text-slate-800 border-2 border-amber-200 rounded-2xl px-3 py-2 text-xs font-medium shadow-lg max-w-[180px]"
             style={{
-              fontFamily: "'Patrick Hand', 'Comic Sans MS', cursive",
-              fontSize: "13px",
+              bottom: PERCH_SIZE + 4,
+              left: "50%",
+              transform: "translateX(-50%)",
+              fontFamily: "'Patrick Hand','Comic Sans MS',cursive",
+              fontSize: 13,
               lineHeight: 1.2,
+              whiteSpace: "nowrap",
             }}
           >
             {bubbleText}
-            <div
-              className="absolute w-3 h-3 bg-white border-amber-200 transform rotate-45"
-              style={{
-                bottom: -6,
-                [isLeft ? "left" : "right"]: 18,
-                borderRight: isLeft ? "2px solid" : undefined,
-                borderBottom: "2px solid",
-                borderColor: "rgb(253 230 138)",
-              }}
-            />
           </div>
         )}
 
-        {/* Kiwi herself */}
+        {popBurst > 0 && <PopBurst key={popBurst} />}
+
         <div
-          className="pointer-events-auto"
-          onClick={() => {
-            lastInteractRef.current = Date.now();
-            setPose("chirp");
-            setBubbleText("Hi! 💛");
-            if (bubbleTimeoutRef.current) window.clearTimeout(bubbleTimeoutRef.current);
-            bubbleTimeoutRef.current = window.setTimeout(() => {
-              setBubbleText(null);
-              setPose("idle");
-              setOpen(!open);
-            }, 700);
-          }}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
           style={{
-            cursor: "pointer",
-            transform: flying ? "translateY(-30px) rotate(-8deg)" : undefined,
-            transition: "transform 0.8s ease-in-out",
+            cursor: dragging ? "grabbing" : "grab",
+            width: PERCH_SIZE,
+            height: PERCH_SIZE,
+            transform: `${flying ? "rotate(-6deg) scale(1.05)" : dragging ? "scale(1.08)" : `rotate(${tilt}deg)`}`,
+            transition: "transform 0.25s ease-out",
+            filter: dragging ? "drop-shadow(0 8px 18px rgba(0,0,0,0.35))" : undefined,
           }}
+          title="Drag Kiwi anywhere — tap to chat"
         >
-          <KiwiSprite pose={pose} size={96} animate ariaLabel="Kiwi the parakeet — click to chat" />
-          {/* Wooden perch line under her */}
-          <div
-            className="absolute bottom-0 left-1/2 -translate-x-1/2 rounded-full"
-            style={{
-              width: 70,
-              height: 4,
-              background: "linear-gradient(180deg, #a07a4a 0%, #6b4e2a 100%)",
-              boxShadow: "0 2px 4px rgba(0,0,0,0.3)",
-              zIndex: -1,
-            }}
-          />
+          <KiwiSprite pose={pose} size={PERCH_SIZE} animate ariaLabel="Kiwi the parakeet — drag me or tap to chat" />
         </div>
+
+        <div
+          className="absolute -top-1 -right-1 rounded-full border border-white shadow"
+          style={{
+            width: 12,
+            height: 12,
+            background: micActive ? "#22c55e" : "#64748b",
+            animation: micActive ? "kiwiMicPulse 1.8s ease-in-out infinite" : undefined,
+          }}
+          title={micActive ? 'Listening for "Hi Kiwi"' : "Wake word off"}
+        />
       </div>
+
+      <style>{`
+        @keyframes kiwiMicPulse {
+          0%, 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.6); }
+          50% { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
+        }
+        @keyframes kiwiPop {
+          0% { transform: translate(0,0) scale(0.6); opacity: 0.9; }
+          100% { transform: translate(var(--kx), var(--ky)) scale(1.1); opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 }
 
-// Helper: fire a celebration event anywhere in the app
+function PopBurst() {
+  const items = Array.from({ length: 6 }).map((_, i) => {
+    const angle = (i / 6) * Math.PI * 2;
+    const r = 40 + Math.random() * 20;
+    const kx = `${Math.cos(angle) * r}px`;
+    const ky = `${Math.sin(angle) * r}px`;
+    const glyph = i % 2 === 0 ? "🌿" : "💛";
+    return (
+      <span
+        key={i}
+        style={{
+          position: "absolute",
+          left: PERCH_SIZE / 2 - 8,
+          top: PERCH_SIZE / 2 - 8,
+          fontSize: 18,
+          pointerEvents: "none",
+          // @ts-expect-error CSS variables
+          "--kx": kx,
+          "--ky": ky,
+          animation: "kiwiPop 900ms ease-out forwards",
+        }}
+      >
+        {glyph}
+      </span>
+    );
+  });
+  return <>{items}</>;
+}
+
 export function celebrateKiwi(message?: string) {
   window.dispatchEvent(new CustomEvent("kiwi:celebrate", { detail: { message } }));
 }

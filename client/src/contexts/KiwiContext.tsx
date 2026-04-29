@@ -31,7 +31,7 @@ const Ctx = createContext<KiwiState | null>(null);
 export function KiwiProvider({ children }: { children: ReactNode }) {
   const [enabled, setEnabled] = useState(true);
   const [mode, setMode] = useState<KiwiMode>(
-    (localStorage.getItem("kiwiMode") as KiwiMode) || "tap"
+    (localStorage.getItem("kiwiMode") as KiwiMode) || "wake"
   );
   const [voiceMode, setVoiceMode] = useState<KiwiVoiceMode>(
     (localStorage.getItem("kiwiVoiceMode") as KiwiVoiceMode) || "text"

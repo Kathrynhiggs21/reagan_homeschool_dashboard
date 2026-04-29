@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Send, Mic, X, Volume2, VolumeX, MessageCircle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import KiwiSprite from "./KiwiSprite";
+import { speakLikeBird } from "@/lib/birdVoice";
 
 export default function KiwiCompanion() {
   const { open, setOpen, enabled, mode, voiceMode, adultPresent, companionName, companionAvatar, setCompanionName } = useKiwi();
@@ -47,16 +48,8 @@ export default function KiwiCompanion() {
     return () => clearInterval(t);
   }, [enabled, adultPresent, proactivePrompted, lastInteractionAt, open, setOpen]);
 
-  function speak(text: string) {
-    if (!("speechSynthesis" in window)) return;
-    const u = new SpeechSynthesisUtterance(text);
-    u.rate = 1.02; u.pitch = 1.15; u.volume = 0.9;
-    const voices = speechSynthesis.getVoices();
-    const preferred = voices.find(v => /samantha|aria|jenny|natural|female/i.test(v.name)) || voices.find(v => v.lang.startsWith("en"));
-    if (preferred) u.voice = preferred;
-    speechSynthesis.cancel();
-    speechSynthesis.speak(u);
-  }
+  // Kiwi now speaks with a parakeet voice (chirp + higher pitch/rate).
+  function speak(text: string) { speakLikeBird(text); }
 
   // Wake word listener (lightweight, browser SpeechRecognition)
   const recognitionRef = useRef<any>(null);
@@ -71,10 +64,24 @@ export default function KiwiCompanion() {
     r.onresult = (e: any) => {
       const last = e.results[e.results.length - 1];
       const text = (last[0]?.transcript || "").toLowerCase();
-      const wake = `hey ${companionName.toLowerCase()}`;
-      if (text.includes(wake) || text.includes("hey kiwi")) {
+      const name = companionName.toLowerCase();
+      // Accept "hi kiwi", "hey kiwi", "kiwi", and custom companion-name variants.
+      if (
+        text.includes(`hi ${name}`) ||
+        text.includes(`hey ${name}`) ||
+        text.includes(`ok ${name}`) ||
+        text.includes(name) ||
+        text.includes("hi kiwi") ||
+        text.includes("hey kiwi") ||
+        text.includes("kiwi")
+      ) {
         setOpen(true);
       }
+    };
+    r.onerror = () => { /* swallow mic errors; browser will end the session */ };
+    r.onend = () => {
+      // Auto-restart so the wake-word keeps listening across browser pauses.
+      try { r.start(); } catch { /* already started */ }
     };
     try { r.start(); recognitionRef.current = r; } catch {}
     return () => { try { r.stop(); } catch {} };
