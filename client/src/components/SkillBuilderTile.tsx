@@ -5,6 +5,7 @@ import { Link } from "wouter";
 import { useKiwi } from "@/contexts/KiwiContext";
 import { useState } from "react";
 import { toast } from "sonner";
+import FeedbackChips from "@/components/FeedbackChips";
 
 /**
  * SkillBuilderTile — the daily 15-minute Skill Builder block.
@@ -27,6 +28,7 @@ export default function SkillBuilderTile() {
   const { companionName, companionAvatar } = useKiwi();
   const next = trpc.skillLadder.nextUp.useQuery({});
   const utils = trpc.useUtils();
+  const [showFeedback, setShowFeedback] = useState(false);
   const practice = trpc.skillLadder.practice.useMutation({
     onSuccess: (res: any) => {
       utils.skillLadder.nextUp.invalidate();
@@ -37,6 +39,7 @@ export default function SkillBuilderTile() {
       } else {
         toast(`${companionAvatar} ${companionName || "Kiwi"}: I saw that effort. That counts.`, { icon: "💛" });
       }
+      setShowFeedback(true);
     },
   });
 
@@ -121,6 +124,11 @@ export default function SkillBuilderTile() {
           onClick={() => practice.mutate({ skillLadderId: skill.id, mode: mode as any, selfRating: 5 })}>🌟 Got it!</Button>
         <Link href="/levels" className="ml-auto text-xs text-amber-400 underline">See all my levels →</Link>
       </div>
+      {showFeedback && (
+        <div className="px-4 pb-4">
+          <FeedbackChips skillLadderId={skill.id} onDone={() => setShowFeedback(false)} />
+        </div>
+      )}
     </Card>
   );
 }

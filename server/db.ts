@@ -2129,3 +2129,63 @@ export async function logGameBreak(opts: {
 export async function recentGameBreaks(limit: number = 10) {
   return getDb().select().from(gameBreakLog).orderBy(desc(gameBreakLog.startedAt)).limit(limit);
 }
+
+
+/* ============================== POST-BLOCK FEEDBACK (Phase 6) ============================== */
+import { skillFeedback } from "../drizzle/schema";
+
+export async function recordSkillFeedback(opts: {
+  skillLadderId?: number | null;
+  feltIt?: "easy" | "ok" | "hard" | "skip";
+  whatHelped?: "story" | "visual" | "handsOn" | "watch" | "practice" | "kiwiTalk" | "tutor" | "movement" | "none";
+  timeFelt?: "tooShort" | "justRight" | "tooLong";
+  wantedBreak?: boolean;
+  note?: string | null;
+}) {
+  const db = getDb();
+  let subjectSlug: string | null = null;
+  if (opts.skillLadderId) {
+    const [s] = await db.select().from(skillLadder).where(eq(skillLadder.id, opts.skillLadderId));
+    subjectSlug = s?.subjectSlug ?? null;
+  }
+  await db.insert(skillFeedback).values({
+    skillLadderId: opts.skillLadderId ?? null,
+    subjectSlug,
+    feltIt: (opts.feltIt ?? null) as any,
+    whatHelped: (opts.whatHelped ?? null) as any,
+    timeFelt: (opts.timeFelt ?? null) as any,
+    wantedBreak: opts.wantedBreak ?? false,
+    note: opts.note ?? null,
+  } as any);
+
+  // Mirror into moodSignals so the GameBreakCard / adaptation engine sees it too
+  if (opts.feltIt) {
+    try {
+      await db.insert(moodSignals).values({
+        source: "manual",
+        subjectSlug,
+        skillLadderId: opts.skillLadderId ?? null,
+        feltIt: opts.feltIt as any,
+        note: opts.note ?? null,
+      } as any);
+    } catch { /* best-effort */ }
+  }
+  return { ok: true };
+}
+
+/** Recent feedback rows (parent dashboard / adaptation engine input). */
+export async function recentSkillFeedback(limit: number = 25) {
+  return getDb().select().from(skillFeedback).orderBy(desc(skillFeedback.createdAt)).limit(limit);
+}
+
+/** Aggregate of "what helped most" across the last N rows — input for adaptation engine. */
+export async function whatHelpedSummary(limit: number = 50) {
+  const rows = await recentSkillFeedback(limit);
+  const counts: Record<string, number> = {};
+  for (const r of rows as any[]) {
+    if (!r.whatHelped) continue;
+    counts[r.whatHelped] = (counts[r.whatHelped] || 0) + 1;
+  }
+  const ranked = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  return { ranked, total: rows.length, top: ranked[0]?.[0] || null };
+}

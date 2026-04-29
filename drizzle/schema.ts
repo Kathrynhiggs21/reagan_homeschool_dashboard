@@ -1149,3 +1149,26 @@ export const gameBreakLog = mysqlTable("gameBreakLog", {
   startedAt: timestamp("startedAt").defaultNow().notNull(),
   endedAt: timestamp("endedAt"),
 });
+
+
+/* ==========================================================================
+ * POST-BLOCK FEEDBACK (Phase 6)
+ * Chips Reagan taps after a Skill Builder block — feeds adaptation engine.
+ * ========================================================================== */
+
+export const skillFeedback = mysqlTable("skillFeedback", {
+  id: int("id").autoincrement().primaryKey(),
+  skillLadderId: int("skillLadderId"),                // null for free-form / non-skill blocks
+  subjectSlug: varchar("subjectSlug", { length: 32 }),
+  // How it felt overall
+  feltIt: mysqlEnum("feltIt", ["easy", "ok", "hard", "skip"]),
+  // Which mode helped most (mirrors recordSkillPractice modes)
+  whatHelped: mysqlEnum("whatHelped", ["story", "visual", "handsOn", "watch", "practice", "kiwiTalk", "tutor", "movement", "none"]),
+  // Time pacing self-report
+  timeFelt: mysqlEnum("timeFelt", ["tooShort", "justRight", "tooLong"]),
+  // Did she want a break?
+  wantedBreak: boolean("wantedBreak").default(false).notNull(),
+  // Free-form note Reagan can dictate to Kiwi (optional)
+  note: text("note"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});

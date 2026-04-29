@@ -478,6 +478,22 @@ export const appRouter = router({
       .query(({ input }) => db.recentGameBreaks(input?.limit ?? 10)),
   }),
 
+  /* =================== POST-BLOCK FEEDBACK CHIPS (Phase 6) =================== */
+  feedback: router({
+    record: publicProcedure.input(z.object({
+      skillLadderId: z.number().nullable().optional(),
+      feltIt: z.enum(["easy", "ok", "hard", "skip"]).optional(),
+      whatHelped: z.enum(["story", "visual", "handsOn", "watch", "practice", "kiwiTalk", "tutor", "movement", "none"]).optional(),
+      timeFelt: z.enum(["tooShort", "justRight", "tooLong"]).optional(),
+      wantedBreak: z.boolean().optional(),
+      note: z.string().nullable().optional(),
+    })).mutation(({ input }) => db.recordSkillFeedback(input)),
+    recent: publicProcedure.input(z.object({ limit: z.number().default(25) }).optional())
+      .query(({ input }) => db.recentSkillFeedback(input?.limit ?? 25)),
+    whatHelped: publicProcedure.input(z.object({ limit: z.number().default(50) }).optional())
+      .query(({ input }) => db.whatHelpedSummary(input?.limit ?? 50)),
+  }),
+
   /* =================== DIAGNOSTIC PLACEMENT (Phase 3) =================== */
   placement: router({
     /** Status across subjects: how many tasks done, how many skills placed. */

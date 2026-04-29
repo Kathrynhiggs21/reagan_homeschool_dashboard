@@ -148,6 +148,13 @@
       "when": 1777427751649,
       "tag": "0020_chunky_gauntlet",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "5",
+      "when": 1777428134015,
+      "tag": "0021_tearful_warbound",
+      "breakpoints": true
     }
   ]
 }
