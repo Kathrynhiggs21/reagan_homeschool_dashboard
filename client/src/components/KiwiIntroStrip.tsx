@@ -1,8 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useKiwi } from "@/contexts/KiwiContext";
 
 const STORAGE_KEY = "kiwi-intro-dismissed-v1";
+const PLAYED_KEY = "kiwi-intro-played-v1";
+
+// 5-line timed script. Plays automatically the very first time, then on demand.
+const SCRIPT = [
+  { ms: 0,    text: "Hi! I'm Kiwi." },
+  { ms: 1800, text: "I'm here to help you feel smart." },
+  { ms: 3600, text: "I never test you. I never time you." },
+  { ms: 5400, text: "If something feels hard, just tell me — we'll try another way." },
+  { ms: 7800, text: "You're already doing great." },
+] as const;
 
 /**
  * KiwiIntroStrip
@@ -14,10 +24,38 @@ const STORAGE_KEY = "kiwi-intro-dismissed-v1";
 export default function KiwiIntroStrip() {
   const { companionName, companionAvatar, photoUrl } = useKiwi();
   const [dismissed, setDismissed] = useState(true);
+  const [playing, setPlaying] = useState(false);
+  const [step, setStep] = useState(-1);
+  const timersRef = useRef<number[]>([]);
 
   useEffect(() => {
     setDismissed(localStorage.getItem(STORAGE_KEY) === "1");
   }, []);
+
+  // Auto-play once on first ever view.
+  useEffect(() => {
+    if (dismissed) return;
+    if (localStorage.getItem(PLAYED_KEY) === "1") return;
+    localStorage.setItem(PLAYED_KEY, "1");
+    play();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dismissed]);
+
+  function play() {
+    // Clear any in-flight timers, then schedule the script.
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+    setPlaying(true);
+    setStep(-1);
+    SCRIPT.forEach((line, i) => {
+      timersRef.current.push(window.setTimeout(() => setStep(i), line.ms));
+    });
+    // Stop after the last line + 2s breathing room.
+    const total = SCRIPT[SCRIPT.length - 1].ms + 2400;
+    timersRef.current.push(window.setTimeout(() => setPlaying(false), total));
+  }
+
+  useEffect(() => () => timersRef.current.forEach(clearTimeout), []);
 
   if (dismissed) return null;
 
@@ -34,15 +72,41 @@ export default function KiwiIntroStrip() {
         <div className="font-display font-semibold text-lg text-amber-900">
           Hi! I'm {companionName || "Kiwi"}.
         </div>
-        <p className="text-[14px] leading-snug text-amber-950 mt-1">
-          I'm here to help you <strong>feel smart</strong> and figure stuff out. I never test you, never time you,
-          and never get the answer "wrong." If something feels too hard, just tell me — we'll try a different way
-          together. You're already doing great.
-        </p>
-        <div className="mt-2 flex gap-2 flex-wrap text-[12px] font-semibold">
-          <span className="px-2.5 py-1 rounded-full bg-amber-200 text-amber-900 border border-amber-400">No tests</span>
-          <span className="px-2.5 py-1 rounded-full bg-amber-200 text-amber-900 border border-amber-400">No timers</span>
-          <span className="px-2.5 py-1 rounded-full bg-amber-200 text-amber-900 border border-amber-400">You pick how to learn it</span>
+        {playing ? (
+          <div className="min-h-[68px] mt-1">
+            {SCRIPT.map((line, i) => (
+              <p
+                key={i}
+                className={`text-[15px] leading-snug font-medium text-amber-950 transition-all duration-500 ${i === step ? "opacity-100 translate-y-0" : i < step ? "opacity-50 -translate-y-1" : "opacity-0 translate-y-2 absolute"}`}
+                aria-hidden={i !== step}
+              >
+                {line.text}
+              </p>
+            ))}
+          </div>
+        ) : (
+          <>
+            <p className="text-[14px] leading-snug text-amber-950 mt-1">
+              I'm here to help you <strong>feel smart</strong> and figure stuff out. I never test you, never time you,
+              and never get the answer "wrong." If something feels too hard, just tell me — we'll try a different way
+              together. You're already doing great.
+            </p>
+            <div className="mt-2 flex gap-2 flex-wrap text-[12px] font-semibold">
+              <span className="px-2.5 py-1 rounded-full bg-amber-200 text-amber-900 border border-amber-400">No tests</span>
+              <span className="px-2.5 py-1 rounded-full bg-amber-200 text-amber-900 border border-amber-400">No timers</span>
+              <span className="px-2.5 py-1 rounded-full bg-amber-200 text-amber-900 border border-amber-400">You pick how to learn it</span>
+            </div>
+          </>
+        )}
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={play}
+            disabled={playing}
+            className="text-[12px] font-semibold underline text-amber-900 disabled:opacity-50"
+          >
+            {playing ? "…Kiwi is talking" : "▶ Hear Kiwi say hi again"}
+          </button>
         </div>
       </div>
       <Button

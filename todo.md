@@ -1162,3 +1162,13 @@ Every feature is judged by 3 questions:
 - [x] cron updated: combined daily 6:30 AM + 7 PM job now also processes Job B (Drive auto-push) every fire
 - [x] tests: `server/drivePush.test.ts` (4 tests: enqueue+list, mark pushed, folder-picker mapping, 401 on anon endpoints)
 - [x] full vitest: 23 files / 107 tests passing
+
+
+---
+## Phase 7 — Avatar persistence + Kiwi intro animation (Apr 28 2026)
+- [x] AvatarUploader now calls `profile.update({ photoUrl })` on every upload/remove so the photo survives device switches (was localStorage-only)
+- [x] AvatarUploader shows "Saved at HH:MM" confirmation timestamp
+- [x] KiwiIntroStrip auto-plays a 5-line scripted intro the first time Reagan sees it (~10s, no big media file, full motion via CSS transitions)
+- [x] "▶ Hear Kiwi say hi again" replay button restarts the script anytime
+- [x] Existing profile.onboarding.test.ts already covers photoUrl persistence — no new tests required
+- [x] Full vitest: 23 files / 107 tests passing

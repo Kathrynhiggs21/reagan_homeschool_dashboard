@@ -8,9 +8,22 @@ export default function AvatarUploader() {
     setPhotoUrl: (url: string | null) => void;
   };
   const upload = trpc.submissions.upload.useMutation();
+  const persistProfile = trpc.profile.update.useMutation();
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
+
+  async function persist(url: string | null) {
+    setPhotoUrl(url);
+    try {
+      await persistProfile.mutateAsync({ photoUrl: url ?? "" } as any);
+      setSavedAt(new Date());
+    } catch (e: any) {
+      // Non-fatal — local copy still set.
+      console.warn("[avatar] profile.update failed", e?.message);
+    }
+  }
 
   async function handleFile(file: File) {
     setBusy(true);
@@ -24,7 +37,7 @@ export default function AvatarUploader() {
         reader.readAsDataURL(file);
       });
       const result = await upload.mutateAsync({ dataUrl, fileName: `avatar-${Date.now()}-${file.name}` });
-      setPhotoUrl(result.url);
+      await persist(result.url);
     } catch (e: any) {
       setErr(e?.message || "Upload failed.");
     } finally {
@@ -54,11 +67,14 @@ export default function AvatarUploader() {
           {photoUrl && (
             <button
               type="button"
-              onClick={() => setPhotoUrl(null)}
+              onClick={() => void persist(null)}
               className="text-xs underline chalk-white/70 text-left"
             >
               Remove
             </button>
+          )}
+          {savedAt && (
+            <div className="text-[10px] chalk-white/50">Saved at {savedAt.toLocaleTimeString()}</div>
           )}
         </div>
       </div>
