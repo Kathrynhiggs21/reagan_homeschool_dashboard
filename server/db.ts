@@ -3324,3 +3324,125 @@ export async function listPowerschoolImports(limit = 20) {
     .orderBy(desc(powerschoolImports.id))
     .limit(limit);
 }
+
+
+// -------- Classroom-agendas helpers (for daily Classroom/teacher-Gmail sync) --------
+import { classroomAgendas } from "../drizzle/schema";
+
+export async function listRecentClassroomAgendas(limit = 30) {
+  return getDb()
+    .select()
+    .from(classroomAgendas)
+    .orderBy(desc(classroomAgendas.agendaDate), desc(classroomAgendas.id))
+    .limit(limit);
+}
+
+export async function insertClassroomAgenda(row: {
+  agendaDate: string;
+  teacher?: string | null;
+  course?: string | null;
+  subjectSlug?: string | null;
+  school?: string | null;
+  term?: string | null;
+  source: "classroom" | "drive" | "gmail" | "image" | "manual";
+  sourceUrl?: string | null;
+  imageKey?: string | null;
+  rawText?: string | null;
+  topics?: string[] | null;
+  assignments?: Array<{ title: string; dueAt?: string; notes?: string }> | null;
+  standalonePdfKey?: string | null;
+}) {
+  const db = getDb();
+  const [res]: any = await db.insert(classroomAgendas).values(row as any);
+  return { id: (res?.insertId as number) ?? 0 };
+}
+
+export async function findClassroomAgenda(
+  agendaDate: string,
+  teacher: string | null,
+  course: string | null,
+) {
+  const db = getDb();
+  const where = and(
+    eq(classroomAgendas.agendaDate, agendaDate),
+    teacher ? eq(classroomAgendas.teacher, teacher) : isNull(classroomAgendas.teacher),
+    course ? eq(classroomAgendas.course, course) : isNull(classroomAgendas.course),
+  );
+  const rows = await db.select().from(classroomAgendas).where(where).limit(1);
+  return rows[0] ?? null;
+}
+
+/**
+ * Returns which agendas we still need to hydrate (for the daily scheduled task).
+ * Currently: the last 7 dates where we have fewer than 2 agendas per day.
+ */
+export async function listAgendaHydrationGaps(daysBack = 7) {
+  const today = new Date();
+  const cutoff = new Date(today.getTime() - daysBack * 86400000);
+  const iso = (d: Date) =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const db = getDb();
+  const rows: any = await db
+    .select()
+    .from(classroomAgendas)
+    .where(gte(classroomAgendas.agendaDate, iso(cutoff)));
+  const byDate: Record<string, number> = {};
+  for (const r of rows) byDate[r.agendaDate] = (byDate[r.agendaDate] ?? 0) + 1;
+  const gaps: Array<{ date: string; have: number }> = [];
+  for (let i = 0; i <= daysBack; i++) {
+    const d = new Date(today.getTime() - i * 86400000);
+    const dateStr = iso(d);
+    const have = byDate[dateStr] ?? 0;
+    if (have < 2) gaps.push({ date: dateStr, have });
+  }
+  return gaps;
+}
+
+
+// -------- IEP refresh helpers --------
+export async function recordIepRefresh(args: {
+  source: "drive" | "manual" | "vision";
+  rawText?: string | null;
+  extractedGoals?: Array<{
+    area: string;
+    goalText: string;
+    presentLevel?: string;
+    currentPercent?: number;
+    subjectSlug?: string;
+  }>;
+  notes?: string;
+}) {
+  // Insert each extracted goal that doesn't already exist (by area + first 80 chars of goalText).
+  if (!args.extractedGoals || args.extractedGoals.length === 0) {
+    return { inserted: 0, updated: 0 };
+  }
+  const db = getDb();
+  const existing: any = await db.select().from(iepGoals);
+  let inserted = 0, updated = 0;
+  for (const g of args.extractedGoals) {
+    const key = (g.goalText || "").trim().slice(0, 80).toLowerCase();
+    const match = existing.find(
+      (e: any) => e.area === g.area && (e.goalText || "").trim().slice(0, 80).toLowerCase() === key,
+    );
+    if (match) {
+      if (typeof g.currentPercent === "number" && g.currentPercent !== match.currentPercent) {
+        await db
+          .update(iepGoals)
+          .set({ currentPercent: g.currentPercent, presentLevel: g.presentLevel ?? match.presentLevel })
+          .where(eq(iepGoals.id, match.id));
+        updated++;
+      }
+    } else {
+      await db.insert(iepGoals).values({
+        area: g.area,
+        goalText: g.goalText,
+        presentLevel: g.presentLevel ?? null,
+        currentPercent: g.currentPercent ?? null,
+        subjectSlug: g.subjectSlug ?? null,
+        status: "in_progress",
+      } as any);
+      inserted++;
+    }
+  }
+  return { inserted, updated };
+}

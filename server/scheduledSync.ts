@@ -235,6 +235,143 @@ export function registerScheduledSync(app: Express) {
     }
   });
 
+  /* ====================== CLASSROOM-AGENDAS (daily teacher sync) ====================== */
+  // GET  /api/scheduled/classroom-agendas/pending
+  // Returns the dates (last 7 days) for which we are still missing agendas.
+  app.get("/api/scheduled/classroom-agendas/pending", async (req: Request, res: Response) => {
+    let role: string | null = null;
+    try {
+      const u = await sdk.authenticateRequest(req);
+      role = u?.role ?? null;
+    } catch {
+      role = null;
+    }
+    if (!role || (role !== "user" && role !== "admin")) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
+    try {
+      const gaps = await db.listAgendaHydrationGaps(7);
+      const recent = await db.listRecentClassroomAgendas(10);
+      return res.json({ ok: true, gaps, recentCount: recent.length });
+    } catch (e: any) {
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
+
+  // POST /api/scheduled/classroom-agendas/result
+  // Body: { items: Array<{ agendaDate, teacher?, course?, subjectSlug?, school?, term?, source, rawText?, topics?, assignments?, sourceUrl?, imageKey?, standalonePdfKey? }> }
+  app.post("/api/scheduled/classroom-agendas/result", async (req: Request, res: Response) => {
+    let role: string | null = null;
+    try {
+      const u = await sdk.authenticateRequest(req);
+      role = u?.role ?? null;
+    } catch {
+      role = null;
+    }
+    if (!role || (role !== "user" && role !== "admin")) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
+    try {
+      const { items } = req.body ?? {};
+      if (!Array.isArray(items)) {
+        return res.status(400).json({ ok: false, error: "Expected { items: [] }" });
+      }
+      let inserted = 0, skipped = 0;
+      for (const raw of items) {
+        if (!raw?.agendaDate || !raw?.source) {
+          skipped++;
+          continue;
+        }
+        const existing = await db.findClassroomAgenda(
+          raw.agendaDate,
+          raw.teacher ?? null,
+          raw.course ?? null,
+        );
+        if (existing) {
+          skipped++;
+          continue;
+        }
+        await db.insertClassroomAgenda({
+          agendaDate: raw.agendaDate,
+          teacher: raw.teacher ?? null,
+          course: raw.course ?? null,
+          subjectSlug: raw.subjectSlug ?? null,
+          school: raw.school ?? "indian_hill",
+          term: raw.term ?? null,
+          source: raw.source,
+          sourceUrl: raw.sourceUrl ?? null,
+          imageKey: raw.imageKey ?? null,
+          rawText: raw.rawText ?? null,
+          topics: Array.isArray(raw.topics) ? raw.topics : null,
+          assignments: Array.isArray(raw.assignments) ? raw.assignments : null,
+          standalonePdfKey: raw.standalonePdfKey ?? null,
+        });
+        inserted++;
+      }
+      return res.json({ ok: true, inserted, skipped });
+    } catch (e: any) {
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
+
+  /* ====================== IEP REFRESH (vision+LLM extraction) ====================== */
+  // GET  /api/scheduled/iep-refresh/trigger
+  // Tells the scheduled task whether a fresh IEP PDF has been uploaded since the last refresh.
+  app.get("/api/scheduled/iep-refresh/trigger", async (req: Request, res: Response) => {
+    let role: string | null = null;
+    try {
+      const u = await sdk.authenticateRequest(req);
+      role = u?.role ?? null;
+    } catch {
+      role = null;
+    }
+    if (!role || (role !== "user" && role !== "admin")) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
+    try {
+      // Version 1: we just surface goal count + latest refresh date.
+      // The scheduled task agent decides (via its own Drive access) whether a new file exists.
+      const goals = await db.listIepGoals();
+      return res.json({
+        ok: true,
+        currentGoalCount: goals.length,
+        needsRefresh: true, // let the daily job always check Drive; dedupe happens at /result
+      });
+    } catch (e: any) {
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
+
+  // POST /api/scheduled/iep-refresh/result
+  // Body: { source: "drive"|"vision"|"manual", rawText?, extractedGoals: [{area,goalText,presentLevel?,currentPercent?,subjectSlug?}] }
+  app.post("/api/scheduled/iep-refresh/result", async (req: Request, res: Response) => {
+    let role: string | null = null;
+    try {
+      const u = await sdk.authenticateRequest(req);
+      role = u?.role ?? null;
+    } catch {
+      role = null;
+    }
+    if (!role || (role !== "user" && role !== "admin")) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
+    try {
+      const { source, rawText, extractedGoals, notes } = req.body ?? {};
+      if (!source || !Array.isArray(extractedGoals)) {
+        return res.status(400).json({ ok: false, error: "Expected { source, extractedGoals[] }" });
+      }
+      const result = await db.recordIepRefresh({
+        source,
+        rawText: rawText ?? null,
+        extractedGoals,
+        notes,
+      });
+      return res.json({ ok: true, ...result });
+    } catch (e: any) {
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
+
   /* ====================== POWERSCHOOL INGEST (daily scraper) ====================== */
   app.post("/api/scheduled/powerschool/ingest", async (req: Request, res: Response) => {
     let role: string | null = null;
