@@ -416,6 +416,38 @@ export const appRouter = router({
     gaps: publicProcedure.input(z.object({ threshold: z.number().default(70) })).query(({ input }) => db.listGapSkills(input.threshold)),
   }),
 
+  /* =================== SKILL LADDER (Catch-Up Engine) =================== */
+  skillLadder: router({
+    list: publicProcedure.input(z.object({ subjectSlug: z.string().optional() }).optional())
+      .query(({ input }) => db.listSkillsWithProgress(input?.subjectSlug)),
+    nextUp: publicProcedure.input(z.object({ subjectSlug: z.string().optional() }).optional())
+      .query(({ input }) => db.nextSkillForToday(input?.subjectSlug)),
+    practice: publicProcedure.input(z.object({
+      skillLadderId: z.number(),
+      mode: z.enum(["story", "visual", "handsOn", "watch", "practice"]).optional(),
+      selfRating: z.number().int().min(1).max(5).optional(),
+      parentNote: z.string().optional(),
+    })).mutation(({ input }) => db.recordSkillPractice(input as any)),
+    summary: publicProcedure.query(() => db.subjectLevelSummary()),
+  }),
+
+  /* =================== PROUD MOMENTS (Confidence Engine) =================== */
+  proud: router({
+    list: publicProcedure.input(z.object({ limit: z.number().default(50) }).optional())
+      .query(({ input }) => db.listProudMoments(input?.limit ?? 50)),
+    add: publicProcedure.input(z.object({
+      title: z.string().min(1).max(200),
+      body: z.string().optional(),
+      emoji: z.string().optional(),
+      source: z.enum(["reagan", "kiwi", "parent", "tutor", "auto"]).optional(),
+      category: z.enum(["effort", "kindness", "skill", "bravery", "creativity", "persistence", "growth", "wonder"]).optional(),
+      skillLadderId: z.number().optional(),
+      blockId: z.number().optional(),
+    })).mutation(({ input }) => db.addProudMoment(input)),
+    heart: publicProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.reaganHeartProudMoment(input.id)),
+    archive: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.archiveProudMoment(input.id)),
+  }),
+
   /* =================== WEEKLY TOPICS =================== */
   weeklyTopics: router({
     forWeek: publicProcedure.input(z.object({ weekStart: z.string() })).query(({ input }) => db.getWeeklyTopics(input.weekStart)),

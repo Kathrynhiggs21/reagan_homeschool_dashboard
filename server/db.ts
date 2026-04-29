@@ -1628,3 +1628,168 @@ export async function seedReaganBooksIfEmpty() {
   }
   return { seeded: true, count: starters.length };
 }
+
+
+/* ========================================================================== */
+/*  SKILL LADDER (Catch-Up Engine) + PROUD MOMENTS (Confidence Engine)        */
+/*  Imported lazily here to avoid editing the long schema-import block above. */
+/* ========================================================================== */
+import { skillLadder, skillProgress, proudMoments } from "../drizzle/schema";
+
+export async function listSkillLadder(opts: { subjectSlug?: string; activeOnly?: boolean } = {}) {
+  const db = getDb();
+  const conds: any[] = [];
+  if (opts.subjectSlug) conds.push(eq(skillLadder.subjectSlug, opts.subjectSlug));
+  if (opts.activeOnly !== false) conds.push(eq(skillLadder.active, true));
+  const where = conds.length === 1 ? conds[0] : conds.length ? and(...conds) : undefined;
+  const rows = await db.select().from(skillLadder).where(where as any).orderBy(skillLadder.subjectSlug, skillLadder.ladderOrder);
+  return rows;
+}
+
+export async function listSkillProgress() {
+  const db = getDb();
+  return db.select().from(skillProgress);
+}
+
+/** Joined view: skill + Reagan's progress on it */
+export async function listSkillsWithProgress(subjectSlug?: string) {
+  const ladder = await listSkillLadder({ subjectSlug, activeOnly: true });
+  const progress = await listSkillProgress();
+  const byLadderId = new Map(progress.map((p: any) => [p.skillLadderId, p]));
+  return ladder.map((s: any) => ({
+    ...s,
+    progress: byLadderId.get(s.id) || { level: 0, confidence: 0, evidenceCount: 0, lastModeUsed: "practice", lastPracticedAt: null },
+  }));
+}
+
+/** The next-up skill: lowest-level skill in the requested subject (or any) */
+export async function nextSkillForToday(subjectSlug?: string) {
+  const all = await listSkillsWithProgress(subjectSlug);
+  // pick the first not-yet-mastered (level < 4) in ladder order
+  const next = all.find((s: any) => (s.progress?.level ?? 0) < 4);
+  return next || all[0] || null;
+}
+
+/** Record practice on a skill. Bumps level slowly so Reagan stays at her edge. */
+export async function recordSkillPractice(opts: {
+  skillLadderId: number;
+  mode?: "story" | "visual" | "handsOn" | "watch" | "practice";
+  selfRating?: 1 | 2 | 3 | 4 | 5; // 1=hard, 5=easy
+  parentNote?: string;
+}) {
+  const db = getDb();
+  const [existing] = await db.select().from(skillProgress).where(eq(skillProgress.skillLadderId, opts.skillLadderId));
+  const prev = existing || { level: 0, confidence: 0, evidenceCount: 0 };
+  // Mastery curve: tuned so 3 strong "Got it" practice rounds level her up,
+  // 3 "Getting it" rounds level her up too (just slower). Hard rounds barely
+  // move confidence so we never punish struggle.
+  //   selfRating 1 (Hard)        -> +5
+  //   selfRating 2 (Tried it)    -> +12
+  //   selfRating 3 (Getting it)  -> +20
+  //   selfRating 4               -> +25
+  //   selfRating 5 (Got it!)     -> +30
+  const boostMap: Record<number, number> = { 1: 5, 2: 12, 3: 20, 4: 25, 5: 30 };
+  const selfBoost = opts.selfRating ? (boostMap[opts.selfRating] ?? 12) : 12;
+  let newConf = Math.min(100, (prev.confidence ?? 0) + selfBoost);
+  let newLevel = prev.level ?? 0;
+  let newEvidence = (prev.evidenceCount ?? 0) + 1;
+  if (newConf >= 75 && newEvidence >= 3 && newLevel < 5) {
+    newLevel += 1;
+    newConf = 50; // reset confidence at new level
+    newEvidence = 0;
+  }
+  if (existing) {
+    await db.update(skillProgress).set({
+      level: newLevel,
+      confidence: newConf,
+      evidenceCount: newEvidence,
+      lastModeUsed: (opts.mode || "practice") as any,
+      lastPracticedAt: new Date(),
+      parentNote: opts.parentNote ?? existing.parentNote,
+    }).where(eq(skillProgress.id, existing.id));
+  } else {
+    await db.insert(skillProgress).values({
+      skillLadderId: opts.skillLadderId,
+      level: newLevel,
+      confidence: newConf,
+      evidenceCount: newEvidence,
+      lastModeUsed: (opts.mode || "practice") as any,
+      lastPracticedAt: new Date(),
+      parentNote: opts.parentNote ?? null,
+    } as any);
+  }
+  // Auto-celebrate level-ups via proudMoments
+  if (newLevel > (prev.level ?? 0)) {
+    const [skill] = await db.select().from(skillLadder).where(eq(skillLadder.id, opts.skillLadderId));
+    await db.insert(proudMoments).values({
+      source: "auto",
+      category: "growth",
+      emoji: "📈",
+      title: `Leveled up: ${skill?.title || "a skill"}!`,
+      body: `Reagan moved up to level ${newLevel} on this skill — that used to be hard.`,
+      skillLadderId: opts.skillLadderId,
+    } as any);
+  }
+  return { newLevel, newConf, newEvidence, leveledUp: newLevel > (prev.level ?? 0) };
+}
+
+/** Subject-level summary for the parent trajectory dashboard */
+export async function subjectLevelSummary() {
+  const all = await listSkillsWithProgress();
+  const bySubject: Record<string, { skills: number; sumLevel: number; mastered: number; gradeLevel: string }> = {};
+  for (const s of all as any[]) {
+    const subj = s.subjectSlug;
+    if (!bySubject[subj]) bySubject[subj] = { skills: 0, sumLevel: 0, mastered: 0, gradeLevel: s.gradeLevel || "5" };
+    bySubject[subj].skills += 1;
+    bySubject[subj].sumLevel += s.progress?.level ?? 0;
+    if ((s.progress?.level ?? 0) >= 4) bySubject[subj].mastered += 1;
+  }
+  return Object.entries(bySubject).map(([subjectSlug, v]) => ({
+    subjectSlug,
+    skills: v.skills,
+    avgLevel: v.skills ? +(v.sumLevel / v.skills).toFixed(2) : 0,
+    mastered: v.mastered,
+    pctMastered: v.skills ? Math.round((v.mastered / v.skills) * 100) : 0,
+    gradeLevel: v.gradeLevel,
+  }));
+}
+
+/* ============================== PROUD MOMENTS ============================ */
+export async function listProudMoments(limit = 50) {
+  const db = getDb();
+  return db.select().from(proudMoments).where(eq(proudMoments.archived, false)).orderBy(desc(proudMoments.createdAt)).limit(limit);
+}
+
+export async function addProudMoment(input: {
+  source?: "reagan" | "kiwi" | "parent" | "tutor" | "auto";
+  category?: "effort" | "kindness" | "skill" | "bravery" | "creativity" | "persistence" | "growth" | "wonder";
+  title: string;
+  body?: string;
+  emoji?: string;
+  skillLadderId?: number;
+  blockId?: number;
+}) {
+  const db = getDb();
+  await db.insert(proudMoments).values({
+    source: (input.source || "kiwi") as any,
+    category: (input.category || "effort") as any,
+    title: input.title,
+    body: input.body || null,
+    emoji: input.emoji || "⭐",
+    skillLadderId: input.skillLadderId || null,
+    blockId: input.blockId || null,
+  } as any);
+  return listProudMoments(10);
+}
+
+export async function reaganHeartProudMoment(id: number) {
+  const db = getDb();
+  await db.update(proudMoments).set({ reaganHearted: true }).where(eq(proudMoments.id, id));
+  return true;
+}
+
+export async function archiveProudMoment(id: number) {
+  const db = getDb();
+  await db.update(proudMoments).set({ archived: true }).where(eq(proudMoments.id, id));
+  return true;
+}

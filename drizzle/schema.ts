@@ -1015,3 +1015,65 @@ export const tagLinks = mysqlTable("tagLinks", {
   entityId: int("entityId").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
+
+
+/* -------------------------------------------------------------------------- */
+/*  SKILL LADDER (Catch-Up Engine)                                            */
+/*  - skillLadder: ordered Ohio-aligned skills per subject                    */
+/*  - skillProgress: Reagan's mastery per skill (0=not yet, 5=mastered)       */
+/* -------------------------------------------------------------------------- */
+export const skillLadder = mysqlTable("skillLadder", {
+  id: int("id").autoincrement().primaryKey(),
+  subjectSlug: varchar("subjectSlug", { length: 32 }).notNull(), // math, ela, science, ss
+  strand: varchar("strand", { length: 64 }).notNull(),           // e.g. "Operations & Algebraic Thinking"
+  skillCode: varchar("skillCode", { length: 32 }).notNull(),     // e.g. OH.5.OA.1, OH.5.RL.2
+  title: varchar("title", { length: 240 }).notNull(),
+  kidFriendly: text("kidFriendly"),                              // plain-language description Reagan sees
+  gradeLevel: varchar("gradeLevel", { length: 8 }).default("5").notNull(), // 3,4,5,6 — for catch-up below 5th
+  ladderOrder: int("ladderOrder").notNull(),                     // global ordering across the ladder
+  prereqSkillCodes: json("prereqSkillCodes").$type<string[]>(),  // skill codes that must be reached first
+  estMinutes: int("estMinutes").default(15).notNull(),
+  khanUrl: varchar("khanUrl", { length: 600 }),
+  ixlUrl: varchar("ixlUrl", { length: 600 }),
+  watchUrl: varchar("watchUrl", { length: 600 }),                // YouTube/Edpuzzle "Watch" path
+  storyHook: text("storyHook"),                                  // multi-modal: story-style intro
+  visualHook: text("visualHook"),                                // visual/picture-style intro
+  handsOnHook: text("handsOnHook"),                              // build-it / hands-on prompt
+  ihAligned: boolean("ihAligned").default(true).notNull(),       // matches Indian Hill 5th-grade scope
+  active: boolean("active").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const skillProgress = mysqlTable("skillProgress", {
+  id: int("id").autoincrement().primaryKey(),
+  skillLadderId: int("skillLadderId").notNull(),
+  // mastery level: 0 not started, 1 introduced, 2 trying, 3 with help, 4 on own, 5 mastered
+  level: int("level").default(0).notNull(),
+  // confidence 0-100 (from her own self-rating + adaptation engine)
+  confidence: int("confidence").default(0).notNull(),
+  evidenceCount: int("evidenceCount").default(0).notNull(),      // how many practice rounds counted toward mastery
+  lastPracticedAt: timestamp("lastPracticedAt"),
+  lastModeUsed: mysqlEnum("lastModeUsed", ["story", "visual", "handsOn", "watch", "practice"]).default("practice").notNull(),
+  // parent-private flag — we never show the absolute "grade-level gap" to Reagan
+  parentNote: text("parentNote"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+/* -------------------------------------------------------------------------- */
+/*  PROUD MOMENTS  (Confidence Engine)                                        */
+/*  - what Reagan accomplished, who noticed, how it felt                       */
+/* -------------------------------------------------------------------------- */
+export const proudMoments = mysqlTable("proudMoments", {
+  id: int("id").autoincrement().primaryKey(),
+  source: mysqlEnum("source", ["reagan", "kiwi", "parent", "tutor", "auto"]).default("kiwi").notNull(),
+  category: mysqlEnum("category", ["effort", "kindness", "skill", "bravery", "creativity", "persistence", "growth", "wonder"]).default("effort").notNull(),
+  title: varchar("title", { length: 200 }).notNull(),
+  body: text("body"),                                            // optional longer story
+  emoji: varchar("emoji", { length: 12 }).default("⭐").notNull(),
+  skillLadderId: int("skillLadderId"),                           // optional link to a skill she leveled up on
+  blockId: int("blockId"),                                       // optional link to the block where it happened
+  reaganHearted: boolean("reaganHearted").default(false).notNull(), // she tapped a heart on it
+  archived: boolean("archived").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});

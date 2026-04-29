@@ -1095,3 +1095,21 @@ Every feature is judged by 3 questions:
 - [ ] Apps & Tools prune to actually-used apps with big centered icons
 - [ ] Settings explainers in plain language + Kiwi intro video
 - [ ] Finish AvatarUploader wiring into Settings
+
+
+---
+
+## Phase 2 — Confidence Engine + Skill-Gap Closer (Apr 28 2026)
+
+- [x] schema: `skillLadder` + `skillProgress` + `proudMoments` tables (migration 0017)
+- [x] seed: 36 Ohio 5th-grade skills (Math 13 / ELA 13 / Science 6 / SS 4) with kid-friendly text + Khan/IXL deep-links + multimodal hooks
+- [x] db helpers: `listSkillsWithProgress`, `nextSkillForToday`, `recordSkillPractice` (mastery curve), `subjectLevelSummary`, `listProudMoments`, `addProudMoment`, `reaganHeartProudMoment`, `archiveProudMoment`
+- [x] tRPC routers: `skillLadder.list / nextUp / practice / summary` + `proud.list / add / heart / archive`
+- [x] kid page: `/levels` (My Levels) — her own ladder going UP, no grade comparison, multimodal "Show me a way to get this" expansions, three encouragement-shaped practice buttons
+- [x] kid page: `/proud` (Proud Wall) — quick-add for self-recognition + heart toggle on every moment
+- [x] today tile: `SkillBuilderTile` — daily 15-min next-up skill with mode picker (story/visual/handsOn/watch/practice) + "tell Kiwi how it felt"
+- [x] parent-only card: `TrajectoryCard` on `/analytics` — overall mastery %, projected weeks to 80%, per-subject breakdown, IEP exit indicators (RIPE/RIMP / MAP RIT / Acadience benchmarks)
+- [x] sidebar: added "My Levels" + "Proud Wall" entries between This Week and Rewards
+- [x] auto-celebrate: every level-up auto-creates a "Leveled up!" entry on the Proud Wall
+- [x] tests: `server/skillLadder.test.ts` covers list, nextUp, practice→levelUp→proud-moment, summary, proud.add, proud.heart (6 tests, all pass)
+- [x] full vitest suite: 10 files / 55 tests passing

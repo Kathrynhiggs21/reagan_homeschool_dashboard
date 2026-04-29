@@ -18,6 +18,8 @@ type NavItem = { to: string; emoji: string; label: string; dot?: string };
 const KID_NAV: NavItem[] = [
   { to: "/today",     emoji: "📋", label: "Today",        dot: "#ff9b3d" },
   { to: "/week",      emoji: "🗓️", label: "This Week",   dot: "#3b82f6" },
+  { to: "/levels",    emoji: "📈", label: "My Levels",    dot: "#22c55e" },
+  { to: "/proud",     emoji: "🌟", label: "Proud Wall",   dot: "#ec4899" },
   { to: "/rewards",   emoji: "⭐", label: "Rewards",       dot: "#f59e0b" },
   { to: "/bookshelf", emoji: "📚", label: "Bookshelf",    dot: "#ef4444" },
   { to: "/notes",     emoji: "📝", label: "Notebook",     dot: "#a855f7" },

@@ -14,6 +14,7 @@ import { subjectTint, tintCardStyle, tintInkStyle, tintPillStyle, rainbowCardSty
 import { celebrateKiwi } from "@/components/KiwiPerch";
 import ThemePickerStrip from "@/components/ThemePickerStrip";
 import KiwiIntroStrip from "@/components/KiwiIntroStrip";
+import SkillBuilderTile from "@/components/SkillBuilderTile";
 
 // Neutral classroom mood language + classroom-y icons
 const ZONES = [
@@ -214,6 +215,9 @@ export default function Today() {
 
       {/* Kiwi intro — dismissible, plain-language */}
       <KiwiIntroStrip />
+
+      {/* Daily 15-min Skill Builder — next-up skill from her ladder */}
+      <SkillBuilderTile />
 
       {/* Tour Mode — calm pinned strip, no ombre gradient */}
       <TourModeCard />

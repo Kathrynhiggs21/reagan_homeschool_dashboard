@@ -37,6 +37,8 @@ import Academics from "./pages/Academics";
 import ReportCard from "./pages/ReportCard";
 import Whiteboard from "./pages/Whiteboard";
 import Scratch from "./pages/Scratch";
+import MyLevels from "./pages/MyLevels";
+import ProudWall from "./pages/ProudWall";
 import { trpc } from "@/lib/trpc";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
@@ -102,6 +104,8 @@ function Router() {
         <Route path="/review-library">
           <AdultGate><ReviewLibrary /></AdultGate>
         </Route>
+        <Route path="/levels" component={MyLevels} />
+        <Route path="/proud" component={ProudWall} />
         <Route path="/rewards" component={Rewards} />
         {/* Legacy direct links still work and land on the Rewards tabs */}
         <Route path="/stickers" component={Stickers} />

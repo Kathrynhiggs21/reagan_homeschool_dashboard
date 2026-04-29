@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import TrajectoryCard from "@/components/TrajectoryCard";
 
 function MoodArcChart({ moods }: { moods: any[] }) {
   // Map zone to numeric score (green=2, yellow=1, red=0); render the last 14 entries chronologically
@@ -86,6 +87,9 @@ export default function Analytics() {
         <h1 className="text-3xl font-display font-semibold">Analytics 📊</h1>
         <p className="text-muted-foreground text-sm mt-1">For adults — Reagan's growth, patterns, and where she needs support. Never shown to her.</p>
       </header>
+
+      {/* Catch-up trajectory: Reagan's path back to grade level + IEP exit indicators */}
+      <TrajectoryCard />
 
       <Card className="cozy-card p-4">
         <div className="flex items-center justify-between mb-3">
