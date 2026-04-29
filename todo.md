@@ -1113,3 +1113,26 @@ Every feature is judged by 3 questions:
 - [x] auto-celebrate: every level-up auto-creates a "Leveled up!" entry on the Proud Wall
 - [x] tests: `server/skillLadder.test.ts` covers list, nextUp, practice→levelUp→proud-moment, summary, proud.add, proud.heart (6 tests, all pass)
 - [x] full vitest suite: 10 files / 55 tests passing
+
+
+---
+
+## URGENT (Apr 28 2026): Scrub fake/seeded analytics — adult section must be 100% real
+- [ ] Inventory every Adult Analytics widget + admin view; list each data source it queries (table + filter)
+- [ ] Identify every seed script that wrote demo/sample/example/placeholder rows into those tables (moods, events, uploads, submissions, grades, summaries, parentFlags, struggles, gradesByDay, etc.)
+- [ ] Run a one-shot SQL cleanup that deletes ONLY the seeded/demo rows (preserve any rows actually entered by parent / Reagan / tutor)
+- [ ] Disable any future runs of those demo seeders (delete or comment out the seed scripts; remove any auto-seed-on-empty logic in routers)
+- [ ] Verify on the live preview that Adult Analytics shows zero phantom entries
+- [ ] Vitest: assert listMoods/listEvents/listSubmissions/listParentFlags return [] on a fresh DB (no auto-seed)
+
+## URGENT (Apr 28 2026): Empty-state pass on Adult Analytics
+- [ ] Every widget renders a clean "No data yet — start logging" message instead of phantom rows
+- [ ] Empty state suggests the next concrete action (e.g. "Log her first mood" / "Add her first proud moment" / "Record her first practice")
+
+## NEW (Apr 28 2026): Upload or Sync experience — explicit wording, NOT "drop it"
+- [ ] Single big "Upload or Sync" button on Today page (parent-side header)
+- [ ] Dedicated /upload page with two clear tabs: "Upload from this device" and "Sync from Gmail / Google Drive"
+- [ ] Upload tab: file/photo picker + paste-link + paste-text; auto-classifies into worksheet / homework photo / tutor note / curriculum doc / link / text-note; routes to right table
+- [ ] Sync tab: "Sync from Gmail" pulls Froehlich + tutor + IH emails on demand; "Sync from Google Drive" pulls IH curriculum folder + Reagan folder
+- [ ] Confirmation toast after each upload/sync: "Saved to [section]. View it →"
+- [ ] Vitest: upload classifier routes to correct table for each input kind

@@ -1206,3 +1206,18 @@ export const parentFlags = mysqlTable("parentFlags", {
   acknowledgedAt: timestamp("acknowledgedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
+
+
+/* ==========================================================================
+ * TUTOR SESSION ↔ SKILL LINKS (Phase 8)
+ * Link a tutor session to specific skill ladder rows + outcomes.
+ * Tutor outcomes feed the adaptation engine.
+ * ========================================================================== */
+export const tutorSessionSkills = mysqlTable("tutorSessionSkills", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionId: int("sessionId").notNull(),
+  skillLadderId: int("skillLadderId").notNull(),
+  outcome: mysqlEnum("outcome", ["strong", "gettingIt", "needsMore", "notWorked"]).default("gettingIt").notNull(),
+  tutorNote: text("tutorNote"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});

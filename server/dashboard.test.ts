@@ -1,5 +1,14 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterAll } from "vitest";
 import * as db from "./db";
+import { getDb } from "./db";
+import { sql } from "drizzle-orm";
+
+afterAll(async () => {
+  // CRITICAL: this file inserts a 'vitest fixture' struggle into the prod table.
+  // Wipe ALL vitest-fixture / TEST-prefixed rows from emotionalStruggles after the run
+  // so Adult Analytics never shows fake data.
+  await getDb().execute(sql`DELETE FROM emotionalStruggles WHERE description LIKE '%vitest%' OR description LIKE '%fixture%' OR description LIKE 'TEST%'`);
+});
 
 describe("Reagan Dashboard core helpers", () => {
   it("wellness score returns valid shape", async () => {

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { appRouter } from "./routers";
 import type { TrpcContext } from "./_core/context";
 import { getDb } from "./db";
@@ -48,6 +48,17 @@ beforeAll(async () => {
   testSkillId = row.id;
   // Clean any leftover progress for this test skill from prior runs
   await db.delete(skillProgress).where(eq(skillProgress.skillLadderId, testSkillId));
+});
+
+afterAll(async () => {
+  // CRITICAL: tests must NOT leak rows into Adult Analytics tables.
+  const db = getDb();
+  await db.delete(proudMoments).where(eq(proudMoments.skillLadderId, testSkillId));
+  // Anything Reagan-sourced from this test
+  const { sql } = await import("drizzle-orm");
+  await db.execute(sql`DELETE FROM proudMoments WHERE title LIKE 'VITEST%' OR title LIKE '%vitest%'`);
+  await db.delete(skillProgress).where(eq(skillProgress.skillLadderId, testSkillId));
+  await db.delete(skillLadder).where(eq(skillLadder.id, testSkillId));
 });
 
 describe("skillLadder", () => {

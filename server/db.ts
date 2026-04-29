@@ -1,7 +1,7 @@
 import { ENV } from "./_core/env";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
-import { eq, desc, and, gte, lte, sql, isNotNull } from "drizzle-orm";
+import { eq, desc, and, gte, lte, sql, isNotNull, asc } from "drizzle-orm";
 import {
   users, type InsertUser,
   subjects, dailyPlans, scheduleBlocks, bookAssignments, adventures,
@@ -2299,4 +2299,112 @@ export async function listParentFlags(opts: { unacknowledgedOnly?: boolean } = {
 
 export async function ackParentFlag(id: number) {
   await getDb().update(parentFlags).set({ acknowledged: true, acknowledgedAt: new Date() } as any).where(eq(parentFlags.id, id));
+}
+
+
+/* ============================== TUTORS (Phase 8) ============================== */
+import { tutors, tutorSessions, tutorSessionSkills } from "../drizzle/schema";
+
+export async function listTutors(activeOnly: boolean = true) {
+  const db = getDb();
+  if (activeOnly) return db.select().from(tutors).where(eq(tutors.active, true)).orderBy(asc(tutors.name));
+  return db.select().from(tutors).orderBy(asc(tutors.name));
+}
+
+export async function getTutor(id: number) {
+  const [row] = await getDb().select().from(tutors).where(eq(tutors.id, id));
+  return row || null;
+}
+
+export async function upsertTutor(opts: { id?: number; name: string; role?: string; email?: string; phone?: string; bio?: string; subjects?: string; avatarUrl?: string; active?: boolean; notes?: string; }) {
+  const db = getDb();
+  if (opts.id) {
+    await db.update(tutors).set({
+      name: opts.name, role: opts.role, email: opts.email, phone: opts.phone,
+      bio: opts.bio, subjects: opts.subjects, avatarUrl: opts.avatarUrl,
+      active: opts.active ?? true, notes: opts.notes,
+    } as any).where(eq(tutors.id, opts.id));
+    return { id: opts.id };
+  }
+  const [r] = await db.insert(tutors).values({
+    name: opts.name, role: opts.role, email: opts.email, phone: opts.phone,
+    bio: opts.bio, subjects: opts.subjects, avatarUrl: opts.avatarUrl,
+    active: opts.active ?? true, notes: opts.notes,
+  } as any) as any;
+  return { id: r?.insertId ?? null };
+}
+
+export async function recentTutorSessions(tutorId: number, limit: number = 10) {
+  return getDb().select().from(tutorSessions)
+    .where(eq(tutorSessions.tutorId, tutorId))
+    .orderBy(desc(tutorSessions.scheduledAt))
+    .limit(limit);
+}
+
+export async function recordTutorSession(opts: {
+  tutorId: number;
+  scheduledAt?: Date;
+  durationMin?: number;
+  focus?: string;
+  status?: "scheduled" | "completed" | "missed" | "trial" | "cancelled";
+  sessionNotes?: string;
+  skills?: Array<{ skillLadderId: number; outcome: "strong" | "gettingIt" | "needsMore" | "notWorked"; tutorNote?: string }>;
+}) {
+  const db = getDb();
+  const [r] = await db.insert(tutorSessions).values({
+    tutorId: opts.tutorId,
+    scheduledAt: opts.scheduledAt ?? new Date(),
+    durationMin: opts.durationMin ?? 60,
+    focus: opts.focus,
+    status: opts.status ?? "completed",
+    sessionNotes: opts.sessionNotes,
+  } as any) as any;
+  const sessionId = r?.insertId;
+
+  // Link skills + feed adaptation engine
+  for (const s of opts.skills || []) {
+    await db.insert(tutorSessionSkills).values({
+      sessionId, skillLadderId: s.skillLadderId, outcome: s.outcome, tutorNote: s.tutorNote ?? null,
+    } as any);
+
+    // Adaptation feed
+    if (s.outcome === "strong" || s.outcome === "gettingIt") {
+      // Bump confidence as if a strong practice round happened
+      try {
+        await recordSkillPractice({ skillLadderId: s.skillLadderId, mode: "tutor" as any, selfRating: s.outcome === "strong" ? 5 : 4 });
+      } catch { /* best-effort */ }
+    } else if (s.outcome === "needsMore") {
+      try {
+        // Mirror as a moodSignal "hard" so the adaptation engine sees the struggle
+        await db.insert(moodSignals).values({
+          source: "manual", subjectSlug: null, skillLadderId: s.skillLadderId, feltIt: "hard", note: `Tutor flagged: ${s.tutorNote || "needs more work"}`,
+        } as any);
+        await recomputeAdaptiveHint(s.skillLadderId);
+      } catch { /* best-effort */ }
+    }
+  }
+  return { sessionId };
+}
+
+export async function tutorSessionSkillsFor(sessionId: number) {
+  return getDb().select().from(tutorSessionSkills).where(eq(tutorSessionSkills.sessionId, sessionId));
+}
+
+/** Top N priority skills for a tutor's subjects (handoff briefing). */
+export async function priorityForTutor(tutorId: number, limit: number = 5) {
+  const t = await getTutor(tutorId);
+  if (!t) return [];
+  const wantedSubjects = (t.subjects || "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+  const all = await listSkillsWithProgress();
+  const filtered = wantedSubjects.length
+    ? all.filter((s: any) => wantedSubjects.includes(String(s.subjectSlug || "").toLowerCase()))
+    : all;
+  // Lowest mastery first; ties broken by ladderOrder
+  return [...filtered].sort((a: any, b: any) => {
+    const aL = a.level ?? 0, bL = b.level ?? 0;
+    if (aL !== bL) return aL - bL;
+    const aC = a.confidence ?? 0, bC = b.confidence ?? 0;
+    if (aC !== bC) return aC - bC;
+    return (a.ladderOrder ?? 0) - (b.ladderOrder ?? 0);
+  }).slice(0, limit);
 }

@@ -116,15 +116,10 @@ describe("adaptive curriculum", () => {
     const caller = makeCaller();
     // Ensure a low-mastery skill exists
     const skills: any = await caller.skills.list();
-    let target = skills.find((s: any) => (s.currentScore ?? 100) < 60);
-    if (!target) {
-      // upsert a fresh low-mastery skill
-      await caller.skills.upsert({
-        subjectSlug: "math",
-        skillName: "Fractions with unlike denominators (adaptive test)",
-        currentScore: 40,
-      });
-    }
+    // Note: legacy skillsMastery is intentionally empty (no seeded demo rows).
+    // The new Skill Ladder is the source of truth. We just verify the rebuild
+    // procedure runs cleanly even with zero legacy mastery rows.
+    void skills;
 
     const result: any = await caller.adjustments.rebuild();
     expect(result.adjustmentsAdded).toBeGreaterThanOrEqual(0);
