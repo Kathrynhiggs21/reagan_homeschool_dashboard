@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import TrajectoryCard from "@/components/TrajectoryCard";
 import ParentFlagsBanner from "@/components/ParentFlagsBanner";
 import CurrentLevelsFromIep from "@/components/CurrentLevelsFromIep";
+import PowerSchoolGradesCard from "@/components/PowerSchoolGradesCard";
 
 function MoodArcChart({ moods }: { moods: any[] }) {
   // Map zone to numeric score (green=2, yellow=1, red=0); render the last 14 entries chronologically
@@ -131,6 +132,9 @@ export default function Analytics() {
         goals={uniqueGoals as any[]}
         screenings={(screenings.data as any[]) || []}
       />
+
+      {/* Indian Hill PowerSchool — paste or scheduled-scraper imports */}
+      <PowerSchoolGradesCard />
 
       <Card className="cozy-card p-4">
         <div className="flex items-center justify-between mb-3">
