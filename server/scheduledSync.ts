@@ -1,16 +1,16 @@
 import type { Express, Request, Response } from "express";
 import * as db from "./db";
+import { sdk } from "./_core/sdk";
 
 /**
  * Endpoint the daily Manus scheduled task POSTs to with already-classified items
  * pulled from Gmail / Google Drive. The scheduled-task agent has the Google
  * scopes; the deployed site is just the persistence target.
  *
- * Auth model: cookie-gated by the platform-injected SCHEDULED_TASK_COOKIE on
- * the scheduler side. We accept any caller server-side and rely on platform
- * cookie middleware + the fact that the only writes performed are append-only
- * sync_runs and downstream classifyAndRoute calls (which themselves create
- * routine, parent-visible audit rows).
+ * Auth model: requires the platform-injected SCHEDULED_TASK_COOKIE
+ * (`app_session_id=...`). The platform issues role="user" for scheduled-task
+ * sessions; manual parent calls hit it as role="admin". Anonymous callers are
+ * rejected so no random internet POST can write into Reagan's data.
  *
  * Body shape:
  * {
@@ -28,6 +28,18 @@ import * as db from "./db";
  */
 export function registerScheduledSync(app: Express) {
   app.post("/api/scheduled/upload-sync", async (req: Request, res: Response) => {
+    // ---- Auth gate: must be a logged-in platform session (scheduled task or parent) ----
+    let role: string | null = null;
+    try {
+      const u = await sdk.authenticateRequest(req);
+      role = u?.role ?? null;
+    } catch {
+      role = null;
+    }
+    if (!role || (role !== "user" && role !== "admin")) {
+      return res.status(401).json({ ok: false, error: "Unauthorized — scheduled-task cookie required." });
+    }
+
     try {
       const { source, items, triggeredBy, errors } = req.body ?? {};
 
@@ -41,19 +53,28 @@ export function registerScheduledSync(app: Express) {
       const run = await db.startSyncRun({ source, triggeredBy: triggeredBy || "schedule" });
       let routed = 0;
       let skipped = 0;
+      const itemResults: Array<{ externalId: string; routedTo: string; recordId: number; message: string }> = [];
 
       for (const raw of items) {
+        const externalId = String(raw.externalId ?? raw.fileUrl ?? raw.url ?? `${Date.now()}-${routed + skipped}`);
         try {
+          // Dedupe: if we've already seen this externalId in a previous run, skip it.
+          const seen = await db.findSyncItemByExternalId(externalId);
+          if (seen) {
+            skipped += 1;
+            continue;
+          }
           const result = await db.classifyAndRoute(raw);
           await db.appendSyncRunItem({
             runId: run.id,
             source: raw.kind === "email" ? "gmail" : source === "both" ? "drive" : (source as "gmail" | "drive"),
-            externalId: String(raw.externalId ?? raw.fileUrl ?? raw.url ?? `${Date.now()}-${routed}`),
+            externalId,
             routedTo: result.routedTo,
             recordId: result.recordId,
             title: raw.subject ?? raw.title ?? raw.fileName ?? null,
             message: result.message,
           });
+          itemResults.push({ externalId, routedTo: result.routedTo, recordId: result.recordId, message: result.message });
           routed += 1;
         } catch (e: any) {
           skipped += 1;
@@ -74,6 +95,7 @@ export function registerScheduledSync(app: Express) {
         itemsScanned: items.length,
         itemsRouted: routed,
         itemsSkipped: skipped,
+        items: itemResults,
       });
     } catch (e: any) {
       return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
@@ -82,7 +104,18 @@ export function registerScheduledSync(app: Express) {
 
   /** Read endpoint the scheduled-task agent calls before running, to learn
    *  which sources / lookback windows the parent has manually requested. */
-  app.get("/api/scheduled/upload-sync/pending", async (_req: Request, res: Response) => {
+  app.get("/api/scheduled/upload-sync/pending", async (req: Request, res: Response) => {
+    let role: string | null = null;
+    try {
+      const u = await sdk.authenticateRequest(req);
+      role = u?.role ?? null;
+    } catch {
+      role = null;
+    }
+    if (!role || (role !== "user" && role !== "admin")) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
+
     try {
       const pending = await db.popPendingSyncRequests();
       return res.json({ ok: true, pending });

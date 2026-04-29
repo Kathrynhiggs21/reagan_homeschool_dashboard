@@ -2828,3 +2828,18 @@ async function ensurePlaceholderTutorId(name: string): Promise<number> {
   const [latest] = await dbi.select().from(_tutors_for_classifier).orderBy(desc(_tutors_for_classifier.id)).limit(1);
   return latest?.id ?? 0;
 }
+
+
+/* ============== Scheduled-sync dedupe helper ============================ */
+import { syncRunItems as _sri_for_dedupe } from "../drizzle/schema";
+
+export async function findSyncItemByExternalId(externalId: string) {
+  if (!externalId) return null;
+  const dbi = getDb();
+  const [row] = await dbi
+    .select()
+    .from(_sri_for_dedupe)
+    .where(eq(_sri_for_dedupe.externalId, externalId))
+    .limit(1);
+  return row ?? null;
+}
