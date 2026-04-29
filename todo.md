@@ -1136,3 +1136,16 @@ Every feature is judged by 3 questions:
 - [ ] Sync tab: "Sync from Gmail" pulls Froehlich + tutor + IH emails on demand; "Sync from Google Drive" pulls IH curriculum folder + Reagan folder
 - [ ] Confirmation toast after each upload/sync: "Saved to [section]. View it →"
 - [ ] Vitest: upload classifier routes to correct table for each input kind
+
+---
+## Phase 5 — Weekly Digest (Apr 29 2026)
+- [x] Schema: `weeklyDigests` table (week_start, week_end, payload JSON, emailed_at, email_status enum) — migration 0026
+- [x] DB helpers: `buildWeeklyDigestPayload` (level-ups, tutor sessions, mood arc, what helped, subject confidence, IH alignment, parent flags), `saveWeeklyDigest`, `listRecentDigests`, `markDigestEmailed`
+- [x] tRPC router: `digest.preview` + `digest.recent` (both protectedProcedure — parent-only)
+- [x] Scheduled-task endpoints: `GET /api/scheduled/weekly-digest` (build+save+return), `POST /api/scheduled/weekly-digest/sent` (mark sent/failed) — both locked to platform cookie auth
+- [x] Component: `WeeklyDigestCard` mounted at top of `/upload` page (above AutomationFeedCard)
+- [x] Empty state: "No digest sent yet — first one goes Sunday 7 PM"
+- [x] Recent digests list with sent/failed/pending badges
+- [x] Combined cron task registered: daily Gmail+Drive sync (6:30 AM) AND Sunday-only digest email to spear.cpt@gmail.com (7:00 PM ET)
+- [x] Vitest `weeklyDigest.test.ts` — 8 tests: payload shape, save lifecycle, status transitions (sent/failed), sort order, auth gate, end-to-end tRPC
+- [x] Full suite green: 21 files / 101 tests passing

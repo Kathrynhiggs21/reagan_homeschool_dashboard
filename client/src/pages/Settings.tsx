@@ -245,9 +245,70 @@ export default function Settings() {
       {/* ============================ TUTORS ============================ */}
       <TutorsManager />
 
+      {/* ============================ AUTOMATION EXPLAINER ============================ */}
+      <AutomationExplainerCard />
+
       {/* ============================ AUDIT LOG ============================ */}
       <AuditCard />
     </div>
+  );
+}
+
+function AutomationExplainerCard() {
+  const Item = ({ icon, title, lines }: { icon: string; title: string; lines: string[] }) => (
+    <div className="rounded-lg border border-white/10 bg-background/30 p-4 space-y-1">
+      <div className="flex items-center gap-2 font-display font-semibold">
+        <span className="text-2xl" aria-hidden>{icon}</span>
+        <span>{title}</span>
+      </div>
+      {lines.map((l, i) => <p key={i} className="text-xs text-muted-foreground">{l}</p>)}
+    </div>
+  );
+  return (
+    <Card className="classroom-card p-5">
+      <h2 className="font-display text-xl mb-1">What runs by itself</h2>
+      <p className="text-xs text-muted-foreground mb-4">
+        Plain English explainer of the auto-jobs that keep this dashboard alive without you having to remember anything.
+      </p>
+      <div className="grid md:grid-cols-2 gap-3">
+        <Item
+          icon="⏰"
+          title="Daily 6:30 AM — Gmail + Drive sync"
+          lines={[
+            "Pulls new emails from anything @ihsd.us and from Reagan's tutors.",
+            "Pulls any new files from your Reagan / Reagan-IHES Drive folders.",
+            "Auto-classifies each one and routes to the right tab. You only see exceptions.",
+          ]}
+        />
+        <Item
+          icon="📨"
+          title="Sundays 7 PM — Weekly digest"
+          lines={[
+            "Builds her week-in-review (level-ups, tutor sessions, mood arc, what helped).",
+            "Emails it to spear.cpt@gmail.com.",
+            "Marked sent/failed on the Upload page so you can see it landed.",
+          ]}
+        />
+        <Item
+          icon="🧠"
+          title="After every practice — Adaptation engine"
+          lines={[
+            "Watches her self-rating + chips after each Skill Builder block.",
+            "If 2+ Hard in a row → rotates teaching mode and blocks the next level-up so it doesn't get harder.",
+            "3 Hards on the same skill → raises a parent flag for you on Analytics.",
+          ]}
+        />
+        <Item
+          icon="🎮"
+          title="During practice — Mood + game break"
+          lines={[
+            "2+ Hard in 30 minutes triggers a gentle break suggestion (with her chosen game/activity).",
+            "2+ Got it! with no Hard triggers an earned-reward suggestion.",
+            "You can edit the games/activities list above in Games & Breaks.",
+          ]}
+        />
+      </div>
+    </Card>
   );
 }
 

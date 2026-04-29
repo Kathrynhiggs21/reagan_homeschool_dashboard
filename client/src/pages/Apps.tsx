@@ -122,21 +122,20 @@ export default function Apps() {
                 <span className="text-xs text-muted-foreground">{meta.subtitle}</span>
               )}
             </div>
-            <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {items.map((a) => (
                 <div key={a.id} className="group relative">
-                  <a href={a.url} target="_blank" rel="noreferrer">
-                    <Card className="classroom-card p-4 h-full hover:-translate-y-0.5 hover:shadow-md transition-all">
-                      <div className="flex items-center gap-3">
-                        <span className={`time-chip ${CAT_COLOR[key] || "chip-yellow"} !w-12 !h-12 !text-2xl !rounded-xl shrink-0`}>
-                          {a.emoji || "✨"}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <div className="font-display font-semibold text-[15px] leading-tight truncate">{a.name}</div>
-                          <div className="text-[11px] text-neutral-500 truncate">
-                            {(() => { try { return new URL(a.url).hostname.replace(/^www\./, ""); } catch { return a.url; } })()}
-                          </div>
-                        </div>
+                  <a href={a.url} target="_blank" rel="noreferrer" aria-label={a.name}>
+                    <Card className="classroom-card p-5 h-full flex flex-col items-center justify-center text-center gap-2 hover:-translate-y-1 hover:shadow-lg transition-all min-h-[140px]">
+                      <span
+                        className={`time-chip ${CAT_COLOR[key] || "chip-yellow"} !w-20 !h-20 !text-5xl !rounded-2xl shrink-0 flex items-center justify-center`}
+                        aria-hidden
+                      >
+                        {a.emoji || "✨"}
+                      </span>
+                      <div className="font-display font-semibold text-[15px] leading-tight">{a.name}</div>
+                      <div className="text-[10px] text-neutral-500 truncate w-full">
+                        {(() => { try { return new URL(a.url).hostname.replace(/^www\./, ""); } catch { return a.url; } })()}
                       </div>
                     </Card>
                   </a>

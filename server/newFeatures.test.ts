@@ -214,19 +214,21 @@ describe("adult edit-mode mutations", () => {
 
   it("appLinks: create → update → delete", async () => {
     const caller = makeAdminCaller();
+    const fixtureName = "VITEST-FIXTURE App " + Date.now();
+    const fixtureUrl = "https://vitest-fixture.invalid/app-" + Date.now();
     await caller.appLinks.create({
-      name: "Test App " + Date.now(),
-      url: "https://example.com/test-" + Date.now(),
+      name: fixtureName,
+      url: fixtureUrl,
       emoji: "🧪",
       category: "learning",
     });
     const list: any[] = await caller.appLinks.list();
-    const last = list[list.length - 1];
+    const last = list.find((a) => a.name === fixtureName);
     expect(last).toBeTruthy();
 
-    await caller.appLinks.update({ id: last.id, name: "Test App Renamed" });
+    await caller.appLinks.update({ id: last.id, name: "VITEST-FIXTURE App Renamed" });
     const list2: any[] = await caller.appLinks.list();
-    expect(list2.find((a) => a.id === last.id)?.name).toBe("Test App Renamed");
+    expect(list2.find((a) => a.id === last.id)?.name).toBe("VITEST-FIXTURE App Renamed");
 
     await caller.appLinks.delete({ id: last.id });
     const list3: any[] = await caller.appLinks.list();
