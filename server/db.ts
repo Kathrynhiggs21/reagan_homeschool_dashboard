@@ -198,10 +198,14 @@ export async function insertAppLink(a: typeof appLinks.$inferInsert) {
 /* ============================== BOOKS ===================================== */
 export async function listBooks() {
   const rows = await getDb().select().from(books).orderBy(books.title);
-  // Guard: vitest-seeded test rows (any title containing __vitest) must never
-  // surface to the UI even if the DB still has them between runs.
+  // Guard: vitest-seeded test rows (title or author containing "vitest") must
+  // never surface to the UI even if the DB still has them between runs.
   return (rows as any[]).filter(
-    (r) => !String(r.title ?? "").toLowerCase().includes("__vitest"),
+    (r) => {
+      const t = String(r.title ?? "").toLowerCase();
+      const a = String((r as any).author ?? "").toLowerCase();
+      return !t.includes("vitest") && !a.includes("vitest");
+    },
   );
 }
 export async function getBook(id: number) {
