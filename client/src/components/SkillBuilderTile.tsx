@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { useKiwi } from "@/contexts/KiwiContext";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import FeedbackChips from "@/components/FeedbackChips";
 
@@ -44,7 +44,21 @@ export default function SkillBuilderTile() {
   });
 
   const [mode, setMode] = useState<string>("story");
+  const [adoptedHintFor, setAdoptedHintFor] = useState<number | null>(null);
   const skill: any = next.data;
+  const hint = trpc.adapt.hintFor.useQuery(
+    { skillLadderId: skill?.id ?? 0 },
+    { enabled: !!skill?.id }
+  );
+  const suggested: string | null = (hint.data as any)?.suggestedMode ?? null;
+  const softerNext: boolean = !!(hint.data as any)?.softerNext;
+  // Adopt the suggested mode once per skill (no re-render loops)
+  useEffect(() => {
+    if (skill?.id && suggested && adoptedHintFor !== skill.id) {
+      setMode(suggested);
+      setAdoptedHintFor(skill.id);
+    }
+  }, [skill?.id, suggested, adoptedHintFor]);
 
   if (next.isLoading) return null;
   if (!skill) return null;
@@ -76,7 +90,17 @@ export default function SkillBuilderTile() {
 
       {/* Mode picker */}
       <div className="space-y-1.5">
-        <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Pick how you want to learn it</div>
+        <div className="flex items-center justify-between">
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Pick how you want to learn it</div>
+          {suggested && (
+            <div className="text-[11px] flex items-center gap-1" title={(hint.data as any)?.reason || ""}>
+              <span>💡</span>
+              <span className="text-amber-300">Kiwi suggests:</span>
+              <span className="font-semibold text-amber-200">{suggested}</span>
+              {softerNext && <span className="ml-1 rounded-full bg-amber-500/20 text-amber-200 px-1.5 py-0.5">no level-up pressure</span>}
+            </div>
+          )}
+        </div>
         <div className="flex flex-wrap gap-1.5">
           {MODES.map((m) => (
             <button

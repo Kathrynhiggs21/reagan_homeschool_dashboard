@@ -494,6 +494,22 @@ export const appRouter = router({
       .query(({ input }) => db.whatHelpedSummary(input?.limit ?? 50)),
   }),
 
+  /* =================== ADAPTATION ENGINE V2 (Phase 7) =================== */
+  adapt: router({
+    hintFor: publicProcedure.input(z.object({ skillLadderId: z.number() }))
+      .query(({ input }) => db.getAdaptiveHint(input.skillLadderId)),
+    /** Force a recompute (parent debugging). */
+    recompute: protectedProcedure.input(z.object({ skillLadderId: z.number() }))
+      .mutation(({ input }) => db.recomputeAdaptiveHint(input.skillLadderId)),
+  }),
+
+  parentFlags: router({
+    list: publicProcedure.input(z.object({ unacknowledgedOnly: z.boolean().default(true) }).optional())
+      .query(({ input }) => db.listParentFlags({ unacknowledgedOnly: input?.unacknowledgedOnly ?? true })),
+    ack: protectedProcedure.input(z.object({ id: z.number() }))
+      .mutation(({ input }) => db.ackParentFlag(input.id)),
+  }),
+
   /* =================== DIAGNOSTIC PLACEMENT (Phase 3) =================== */
   placement: router({
     /** Status across subjects: how many tasks done, how many skills placed. */

@@ -1172,3 +1172,37 @@ export const skillFeedback = mysqlTable("skillFeedback", {
   note: text("note"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
+
+
+/* ==========================================================================
+ * ADAPTATION ENGINE V2 (Phase 7)
+ * Per-skill smart hints + private parent flags.
+ * ========================================================================== */
+
+export const adaptiveHints = mysqlTable("adaptiveHints", {
+  id: int("id").autoincrement().primaryKey(),
+  skillLadderId: int("skillLadderId").notNull(),
+  // Suggested next mode for the kid-facing UI
+  suggestedMode: mysqlEnum("suggestedMode", ["story", "visual", "handsOn", "watch", "practice", "kiwiTalk", "tutor", "movement"]).default("practice").notNull(),
+  // If true, never auto-bump level after this round — just rebuild confidence
+  softerNext: boolean("softerNext").default(false).notNull(),
+  // Counts driving the recommendation (last 5 feedback rows)
+  hardCount: int("hardCount").default(0).notNull(),
+  okCount: int("okCount").default(0).notNull(),
+  easyCount: int("easyCount").default(0).notNull(),
+  /** Reason text for parents / debugging */
+  reason: text("reason"),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull().onUpdateNow(),
+});
+
+export const parentFlags = mysqlTable("parentFlags", {
+  id: int("id").autoincrement().primaryKey(),
+  skillLadderId: int("skillLadderId"),
+  subjectSlug: varchar("subjectSlug", { length: 32 }),
+  severity: mysqlEnum("severity", ["info", "watch", "alert"]).default("watch").notNull(),
+  title: varchar("title", { length: 200 }).notNull(),
+  body: text("body"),
+  acknowledged: boolean("acknowledged").default(false).notNull(),
+  acknowledgedAt: timestamp("acknowledgedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});

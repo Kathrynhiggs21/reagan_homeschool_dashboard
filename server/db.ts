@@ -1723,7 +1723,13 @@ export async function recordSkillPractice(opts: {
   let newConf = Math.min(100, (prev.confidence ?? 0) + selfBoost);
   let newLevel = prev.level ?? 0;
   let newEvidence = (prev.evidenceCount ?? 0) + 1;
-  if (newConf >= 75 && newEvidence >= 3 && newLevel < 5) {
+  // Adaptation v2: if softerNext is set, do NOT level up this round
+  let blockLevelUp = false;
+  try {
+    const [hint] = await db.select().from(adaptiveHints).where(eq(adaptiveHints.skillLadderId, opts.skillLadderId));
+    if (hint?.softerNext) blockLevelUp = true;
+  } catch { /* best-effort */ }
+  if (!blockLevelUp && newConf >= 75 && newEvidence >= 3 && newLevel < 5) {
     newLevel += 1;
     newConf = 50; // reset confidence at new level
     newEvidence = 0;
@@ -2170,6 +2176,10 @@ export async function recordSkillFeedback(opts: {
       } as any);
     } catch { /* best-effort */ }
   }
+  // Refresh adaptation hint for this skill
+  if (opts.skillLadderId) {
+    try { await recomputeAdaptiveHint(opts.skillLadderId); } catch { /* best-effort */ }
+  }
   return { ok: true };
 }
 
@@ -2188,4 +2198,105 @@ export async function whatHelpedSummary(limit: number = 50) {
   }
   const ranked = Object.entries(counts).sort((a, b) => b[1] - a[1]);
   return { ranked, total: rows.length, top: ranked[0]?.[0] || null };
+}
+
+
+/* ============================== ADAPTATION ENGINE V2 (Phase 7) ============================== */
+import { adaptiveHints, parentFlags } from "../drizzle/schema";
+
+const MODE_ROTATION = ["story", "visual", "handsOn", "watch", "practice"] as const;
+
+/**
+ * Recompute the adaptiveHint for a given skill based on its last 5 feedback rows.
+ * - If 2+ Hard or wantedBreak in last 5 → suggest a *different* mode (rotated) and softerNext=true.
+ * - Else if a clear whatHelped winner exists → default to that mode, softerNext=false.
+ * - Else fall back to "practice".
+ *
+ * Also raises a parentFlag if 3+ consecutive Hard signals stack on the same skill.
+ */
+export async function recomputeAdaptiveHint(skillLadderId: number) {
+  const db = getDb();
+  const recent = await db.select().from(skillFeedback)
+    .where(eq(skillFeedback.skillLadderId, skillLadderId))
+    .orderBy(desc(skillFeedback.createdAt))
+    .limit(5);
+
+  const hardCount = recent.filter((r: any) => r.feltIt === "hard").length;
+  const okCount = recent.filter((r: any) => r.feltIt === "ok").length;
+  const easyCount = recent.filter((r: any) => r.feltIt === "easy").length;
+  const breakCount = recent.filter((r: any) => r.wantedBreak).length;
+  const helpedCounts: Record<string, number> = {};
+  for (const r of recent as any[]) {
+    if (r.whatHelped && r.whatHelped !== "none") helpedCounts[r.whatHelped] = (helpedCounts[r.whatHelped] || 0) + 1;
+  }
+  const helpedTop = Object.entries(helpedCounts).sort((a, b) => b[1] - a[1])[0]?.[0];
+  const lastModeUsed = (recent[0] as any)?.whatHelped as string | undefined;
+
+  let suggestedMode: typeof MODE_ROTATION[number] = "practice";
+  let softerNext = false;
+  let reason = "";
+
+  if (hardCount >= 2 || breakCount >= 2) {
+    // Struggle pattern → rotate to something different + soften
+    const idx = MODE_ROTATION.indexOf((lastModeUsed as any) || "practice");
+    suggestedMode = MODE_ROTATION[(Math.max(0, idx) + 1) % MODE_ROTATION.length];
+    softerNext = true;
+    reason = `Recent struggle (hard×${hardCount}${breakCount ? `, break×${breakCount}` : ""}); switching to ${suggestedMode} and pausing level-up.`;
+  } else if (helpedTop && (MODE_ROTATION as readonly string[]).includes(helpedTop)) {
+    suggestedMode = helpedTop as any;
+    reason = `"${helpedTop}" worked best in recent rounds.`;
+  } else {
+    suggestedMode = "practice";
+    reason = "Not enough signal yet — defaulting to practice.";
+  }
+
+  // Upsert
+  const [existing] = await db.select().from(adaptiveHints).where(eq(adaptiveHints.skillLadderId, skillLadderId));
+  if (existing) {
+    await db.update(adaptiveHints).set({
+      suggestedMode: suggestedMode as any, softerNext, hardCount, okCount, easyCount, reason,
+    } as any).where(eq(adaptiveHints.id, existing.id));
+  } else {
+    await db.insert(adaptiveHints).values({
+      skillLadderId, suggestedMode: suggestedMode as any, softerNext, hardCount, okCount, easyCount, reason,
+    } as any);
+  }
+
+  // Stacked struggle → parentFlag (do not duplicate within last 7 days for same skill)
+  if (recent.length >= 3 && recent.slice(0, 3).every((r: any) => r.feltIt === "hard")) {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60_000);
+    const existingFlags = await db.select().from(parentFlags)
+      .where(eq(parentFlags.skillLadderId, skillLadderId));
+    const recentFlag = (existingFlags as any[]).find((f) => new Date(f.createdAt) >= sevenDaysAgo && !f.acknowledged);
+    if (!recentFlag) {
+      const [skill] = await db.select().from(skillLadder).where(eq(skillLadder.id, skillLadderId));
+      await db.insert(parentFlags).values({
+        skillLadderId,
+        subjectSlug: skill?.subjectSlug ?? null,
+        severity: "watch",
+        title: `3 hard rounds in a row on "${skill?.title || "a skill"}"`,
+        body: "Reagan signaled 'Hard' on this skill three times this week. Worth a side-by-side reteach or a tutor session.",
+      } as any);
+    }
+  }
+
+  return { suggestedMode, softerNext, hardCount, okCount, easyCount, reason };
+}
+
+export async function getAdaptiveHint(skillLadderId: number) {
+  const db = getDb();
+  const [row] = await db.select().from(adaptiveHints).where(eq(adaptiveHints.skillLadderId, skillLadderId));
+  return row || null;
+}
+
+export async function listParentFlags(opts: { unacknowledgedOnly?: boolean } = {}) {
+  const db = getDb();
+  if (opts.unacknowledgedOnly) {
+    return db.select().from(parentFlags).where(eq(parentFlags.acknowledged, false)).orderBy(desc(parentFlags.createdAt));
+  }
+  return db.select().from(parentFlags).orderBy(desc(parentFlags.createdAt)).limit(20);
+}
+
+export async function ackParentFlag(id: number) {
+  await getDb().update(parentFlags).set({ acknowledged: true, acknowledgedAt: new Date() } as any).where(eq(parentFlags.id, id));
 }
