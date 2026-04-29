@@ -1284,3 +1284,23 @@ export const weeklyDigests = mysqlTable("weekly_digests", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 export type WeeklyDigest = typeof weeklyDigests.$inferSelect;
+
+/* -------------------------------------------------------------------------- */
+/*  DRIVE PUSH QUEUE — auto-mirrors uploads into the Reagan/IHES Drive folder */
+/* -------------------------------------------------------------------------- */
+export const drivePushQueue = mysqlTable("drive_push_queue", {
+  id: int("id").autoincrement().primaryKey(),
+  fileKey: varchar("file_key", { length: 500 }).notNull(),
+  fileUrl: varchar("file_url", { length: 500 }).notNull(),
+  fileName: varchar("file_name", { length: 300 }).notNull(),
+  mimeType: varchar("mime_type", { length: 100 }),
+  // Which Drive folder the scheduled task should mirror this file into.
+  // The agent prompt knows the folder mapping (root of "Reagan" Drive folder + subfolders).
+  targetFolder: mysqlEnum("target_folder", ["reagan", "reagan_ihes", "reagan_tutor", "reagan_artwork", "reagan_assignments"]).default("reagan").notNull(),
+  status: mysqlEnum("status", ["pending", "pushed", "skipped", "failed"]).default("pending").notNull(),
+  driveFileId: varchar("drive_file_id", { length: 200 }),
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  pushedAt: timestamp("pushed_at"),
+});
+export type DrivePushQueueRow = typeof drivePushQueue.$inferSelect;

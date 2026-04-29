@@ -176,4 +176,62 @@ export function registerScheduledSync(app: Express) {
       return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
     }
   });
+
+  /**
+   * Drive auto-push endpoints. The daily 6:30 AM scheduled task hits these to mirror
+   * uploaded files into the right Reagan/IHES Google Drive subfolder.
+   *
+   * GET  /api/scheduled/drive-push/pending  → returns up to 100 pending queue rows
+   * POST /api/scheduled/drive-push/result   → marks one row { id, status, driveFileId?, errorMessage? }
+   */
+  app.get("/api/scheduled/drive-push/pending", async (req: Request, res: Response) => {
+    let role: string | null = null;
+    try {
+      const u = await sdk.authenticateRequest(req);
+      role = u?.role ?? null;
+    } catch {
+      role = null;
+    }
+    if (!role || (role !== "user" && role !== "admin")) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
+    try {
+      const rows = await db.listPendingDrivePushes(100);
+      return res.json({ ok: true, count: rows.length, items: rows });
+    } catch (e: any) {
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
+
+  app.post("/api/scheduled/drive-push/result", async (req: Request, res: Response) => {
+    let role: string | null = null;
+    try {
+      const u = await sdk.authenticateRequest(req);
+      role = u?.role ?? null;
+    } catch {
+      role = null;
+    }
+    if (!role || (role !== "user" && role !== "admin")) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
+    try {
+      const { id, status, driveFileId, errorMessage } = req.body ?? {};
+      if (typeof id !== "number" || !status) {
+        return res.status(400).json({ ok: false, error: "Expected { id, status, driveFileId?, errorMessage? }" });
+      }
+      const valid = ["pushed", "skipped", "failed"] as const;
+      if (!valid.includes(status)) {
+        return res.status(400).json({ ok: false, error: "status must be pushed|skipped|failed" });
+      }
+      await db.markDrivePushResult({
+        id,
+        status,
+        driveFileId: driveFileId ?? null,
+        errorMessage: errorMessage ?? null,
+      });
+      return res.json({ ok: true });
+    } catch (e: any) {
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
 }

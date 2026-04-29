@@ -1327,14 +1327,31 @@ export const appRouter = router({
       const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
       const key = `uploads/${Date.now()}-${safeName}`;
       const stored = await storagePut(key, buf, mime);
-      return db.classifyAndRoute({
-        kind: "file",
+      const item = {
+        kind: "file" as const,
         fileUrl: stored.url,
         fileName: input.fileName,
         mimeType: mime,
         subjectSlug: input.subjectSlug ?? null,
         note: input.note ?? null,
-      });
+        fileKey: stored.key,
+      };
+      const routed = await db.classifyAndRoute(item);
+      // Mirror to Google Drive via the daily scheduled task.
+      try {
+        const folder = db.pickDriveFolderForRouted(routed, item);
+        await db.enqueueDrivePush({
+          fileKey: stored.key,
+          fileUrl: stored.url,
+          fileName: input.fileName,
+          mimeType: mime,
+          targetFolder: folder,
+        });
+      } catch (e) {
+        // Non-fatal: the upload itself already succeeded.
+        console.warn("[drive-push] enqueue failed:", (e as any)?.message);
+      }
+      return routed;
     }),
     /** Paste a link -> auto-routed to Apps & Tools / Bookshelf / Parent Notes */
     classifyLink: protectedProcedure.input(z.object({
@@ -1441,6 +1458,13 @@ export const appRouter = router({
     preview: protectedProcedure.query(() => db.buildWeeklyDigestPayload()),
     recent: protectedProcedure.input(z.object({ limit: z.number().default(12) }).optional())
       .query(({ input }) => db.listRecentDigests(input?.limit ?? 12)),
+  }),
+
+  /* =================== DRIVE AUTO-PUSH (mirrors uploads to Reagan Drive folder) =================== */
+  drive: router({
+    pending: protectedProcedure.query(() => db.listPendingDrivePushes(100)),
+    recent: protectedProcedure.input(z.object({ limit: z.number().default(20) }).optional())
+      .query(({ input }) => db.listRecentDrivePushes(input?.limit ?? 20)),
   }),
 });
 export type AppRouter = typeof appRouter;

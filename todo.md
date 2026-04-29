@@ -1149,3 +1149,16 @@ Every feature is judged by 3 questions:
 - [x] Combined cron task registered: daily Gmail+Drive sync (6:30 AM) AND Sunday-only digest email to spear.cpt@gmail.com (7:00 PM ET)
 - [x] Vitest `weeklyDigest.test.ts` — 8 tests: payload shape, save lifecycle, status transitions (sent/failed), sort order, auth gate, end-to-end tRPC
 - [x] Full suite green: 21 files / 101 tests passing
+
+
+---
+## Phase 6 — Drive auto-push (Apr 28 2026)
+- [x] schema: `drive_push_queue` table (migration 0027)
+- [x] db helpers: `enqueueDrivePush`, `listPendingDrivePushes`, `listRecentDrivePushes`, `markDrivePushResult`, `pickDriveFolderForRouted`
+- [x] hook: `upload.classifyFile` auto-enqueues every file upload with the correct target subfolder
+- [x] tRPC: `drive.pending` + `drive.recent` (protected, parent-only)
+- [x] scheduled-task endpoints: `GET /api/scheduled/drive-push/pending` + `POST /api/scheduled/drive-push/result` (auth-gated)
+- [x] UI: `DrivePushQueueCard` mounted on /upload between WeeklyDigest and AutomationFeed; live status pills (pending / pushed / failed)
+- [x] cron updated: combined daily 6:30 AM + 7 PM job now also processes Job B (Drive auto-push) every fire
+- [x] tests: `server/drivePush.test.ts` (4 tests: enqueue+list, mark pushed, folder-picker mapping, 401 on anon endpoints)
+- [x] full vitest: 23 files / 107 tests passing

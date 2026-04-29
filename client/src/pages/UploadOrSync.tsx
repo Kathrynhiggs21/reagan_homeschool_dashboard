@@ -8,6 +8,7 @@ import { Upload, Link as LinkIcon, FileText, RefreshCw, Mail, FolderOpen, CheckC
 import { trpc } from "@/lib/trpc";
 import AutomationFeedCard from "@/components/AutomationFeedCard";
 import WeeklyDigestCard from "@/components/WeeklyDigestCard";
+import DrivePushQueueCard from "@/components/DrivePushQueueCard";
 import { toast } from "sonner";
 
 type RoutedResult = {
@@ -115,6 +116,8 @@ export default function UploadOrSync() {
       </header>
 
       <WeeklyDigestCard />
+
+      <DrivePushQueueCard />
 
       <AutomationFeedCard />
 

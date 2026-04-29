@@ -2417,7 +2417,7 @@ export async function priorityForTutor(tutorId: number, limit: number = 5) {
  * ========================================================================== */
 
 export type ClassifiedItem =
-  | { kind: "file"; fileUrl: string; fileName: string; mimeType: string; subjectSlug?: string | null; note?: string | null }
+  | { kind: "file"; fileUrl: string; fileName: string; mimeType: string; subjectSlug?: string | null; note?: string | null; fileKey?: string | null }
   | { kind: "link"; url: string; title?: string | null; subjectSlug?: string | null; note?: string | null }
   | { kind: "text"; text: string; subjectSlug?: string | null; sender?: string | null; subject?: string | null }
   | { kind: "email"; subject: string; bodyText: string; senderEmail: string; senderName?: string | null; receivedAt?: Date | null; subjectSlug?: string | null };
@@ -3059,4 +3059,95 @@ export async function markDigestEmailed(id: number, status: "sent" | "failed" = 
     emailedAt: new Date(),
     emailStatus: status,
   } as any).where(eq(weeklyDigests.id, id));
+}
+
+
+/* ============================================================================
+ * DRIVE PUSH QUEUE
+ *   Every file the parent or Reagan uploads is mirrored into the right
+ *   Reagan/IHES Google Drive subfolder by the daily scheduled task.
+ *   This module just runs the queue.
+ * ========================================================================== */
+import { drivePushQueue, type DrivePushQueueRow } from "../drizzle/schema";
+
+export type DrivePushTarget = "reagan" | "reagan_ihes" | "reagan_tutor" | "reagan_artwork" | "reagan_assignments";
+
+/** Decide which Drive folder a file belongs in based on the classifier's RoutedResult. */
+export function pickDriveFolderForRouted(routed: RoutedResult, item: ClassifiedItem): DrivePushTarget {
+  if (item.kind !== "file") return "reagan"; // links/text/email don't push
+  // Curriculum docs live in the IHES subfolder
+  if (routed.routedToLabel === "Curriculum library") return "reagan_ihes";
+  // Submitted homework photos / worksheets
+  if (routed.routedTo === "submission") return "reagan_assignments";
+  // Tutor-provided files
+  if (routed.routedTo === "tutorSession") return "reagan_tutor";
+  // Anything else parent uploaded → top-level Reagan
+  return "reagan";
+}
+
+export async function enqueueDrivePush(args: {
+  fileKey: string;
+  fileUrl: string;
+  fileName: string;
+  mimeType?: string | null;
+  targetFolder: DrivePushTarget;
+}) {
+  const db = getDb();
+  const r = await db.insert(drivePushQueue).values({
+    fileKey: args.fileKey,
+    fileUrl: args.fileUrl,
+    fileName: args.fileName,
+    mimeType: args.mimeType ?? null,
+    targetFolder: args.targetFolder,
+    status: "pending",
+  } as any);
+  let id = Number((r as any)?.[0]?.insertId ?? (r as any)?.insertId ?? 0);
+  if (!id) {
+    // mysql2 / TiDB sometimes doesn't surface insertId; look up by unique fileKey
+    const [row] = (await db
+      .select()
+      .from(drivePushQueue)
+      .where(eq(drivePushQueue.fileKey, args.fileKey))
+      .orderBy(desc(drivePushQueue.id))
+      .limit(1)) as any[];
+    id = row?.id ?? 0;
+  }
+  return { id };
+}
+
+export async function listPendingDrivePushes(limit = 100): Promise<DrivePushQueueRow[]> {
+  const db = getDb();
+  return db
+    .select()
+    .from(drivePushQueue)
+    .where(eq(drivePushQueue.status, "pending"))
+    .orderBy(asc(drivePushQueue.createdAt))
+    .limit(limit) as any;
+}
+
+export async function listRecentDrivePushes(limit = 20): Promise<DrivePushQueueRow[]> {
+  const db = getDb();
+  return db
+    .select()
+    .from(drivePushQueue)
+    .orderBy(desc(drivePushQueue.createdAt))
+    .limit(limit) as any;
+}
+
+export async function markDrivePushResult(args: {
+  id: number;
+  status: "pushed" | "skipped" | "failed";
+  driveFileId?: string | null;
+  errorMessage?: string | null;
+}) {
+  const db = getDb();
+  await db
+    .update(drivePushQueue)
+    .set({
+      status: args.status,
+      driveFileId: args.driveFileId ?? null,
+      errorMessage: args.errorMessage ?? null,
+      pushedAt: new Date(),
+    } as any)
+    .where(eq(drivePushQueue.id, args.id));
 }
