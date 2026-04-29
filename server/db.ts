@@ -1,7 +1,7 @@
 import { ENV } from "./_core/env";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
-import { eq, desc, and, gte, lte, sql, isNotNull, asc } from "drizzle-orm";
+import { eq, desc, and, gte, lte, sql, isNotNull, isNull, asc } from "drizzle-orm";
 import {
   users, type InsertUser,
   subjects, dailyPlans, scheduleBlocks, bookAssignments, adventures,
@@ -2407,4 +2407,424 @@ export async function priorityForTutor(tutorId: number, limit: number = 5) {
     if (aC !== bC) return aC - bC;
     return (a.ladderOrder ?? 0) - (b.ladderOrder ?? 0);
   }).slice(0, limit);
+}
+
+
+/* ============================== UPLOAD OR SYNC ============================
+ * Unified classifier — given any kind of incoming item (uploaded file URL,
+ * pasted link, pasted text, or pulled email), routes it into the right table
+ * automatically and returns a typed result the UI can show as confirmation.
+ * ========================================================================== */
+
+export type ClassifiedItem =
+  | { kind: "file"; fileUrl: string; fileName: string; mimeType: string; subjectSlug?: string | null; note?: string | null }
+  | { kind: "link"; url: string; title?: string | null; subjectSlug?: string | null; note?: string | null }
+  | { kind: "text"; text: string; subjectSlug?: string | null; sender?: string | null; subject?: string | null }
+  | { kind: "email"; subject: string; bodyText: string; senderEmail: string; senderName?: string | null; receivedAt?: Date | null; subjectSlug?: string | null };
+
+export type RoutedResult = {
+  kind: ClassifiedItem["kind"];
+  routedTo: "submission" | "timelineEvent" | "appLink" | "bookAssignment" | "tutorSession" | "weeklyTopicQueue";
+  recordId: number;
+  routedToLabel: string;
+  routedToHref: string;
+  message: string;
+};
+
+const TUTOR_EMAIL_HINTS = [
+  /@congertutoring/i,
+  /tutor/i,
+  /marisa/i,
+  /mama bear/i,
+];
+const IH_EMAIL_HINTS = [
+  /@ihsd\.us$/i,
+  /froehlich/i,
+  /wells/i,
+  /5th grade/i,
+  /indian hill/i,
+];
+const CURRICULUM_HINTS = /(curriculum|syllabus|inquiry|standards|scope|sequence|pacing)/i;
+const HOMEWORK_HINTS = /(homework|worksheet|practice|assignment|hw|hw_)/i;
+
+function inferSubjectSlugFromText(text: string): string | null {
+  const t = text.toLowerCase();
+  if (/(math|fraction|decimal|algebra|geometry|multiply|divide|add|subtract|number)/.test(t)) return "math";
+  if (/(read|write|spell|grammar|essay|paragraph|story|book|literature)/.test(t)) return "ela";
+  if (/(science|experiment|inquiry|hypothesis|variable|observation)/.test(t)) return "science";
+  if (/(history|geography|civic|government|social\s*studies)/.test(t)) return "social-studies";
+  return null;
+}
+
+export async function classifyAndRoute(item: ClassifiedItem): Promise<RoutedResult> {
+  const db = getDb();
+
+  // ----- 1. EMAIL → tutor session (if from a known tutor) OR timeline event (if from IH/teacher) -----
+  if (item.kind === "email") {
+    const isTutor = TUTOR_EMAIL_HINTS.some((re) => re.test(item.senderEmail) || re.test(item.senderName || "") || re.test(item.subject));
+    const isIH = IH_EMAIL_HINTS.some((re) => re.test(item.senderEmail) || re.test(item.senderName || "") || re.test(item.subject));
+
+    if (isTutor) {
+      // Insert a lightweight tutor session note.
+      const subjectSlug = item.subjectSlug ?? inferSubjectSlugFromText(item.subject + " " + item.bodyText);
+      const inserted = await db.insert(tutorSessions).values({
+        tutorId: await ensurePlaceholderTutorId(item.senderName || item.senderEmail || "Tutor"),
+        scheduledAt: item.receivedAt ?? new Date(),
+        durationMin: 60,
+        focus: subjectSlug ? `Subject: ${subjectSlug}` : null,
+        status: "completed",
+        sessionNotes: `From email "${item.subject}" — ${item.senderEmail}\n\n${item.bodyText.slice(0, 4000)}`,
+      } as any);
+      const id = (inserted as any).insertId ?? 0;
+      return {
+        kind: "email",
+        routedTo: "tutorSession",
+        recordId: Number(id),
+        routedToLabel: "Tutor Handoff",
+        routedToHref: "/tutor",
+        message: `Saved as a tutor session (from ${item.senderEmail}).`,
+      };
+    }
+
+    // IH/teacher (or anything else) → timeline event so it shows in This Week + parent dashboard
+    const subjectSlug = item.subjectSlug ?? inferSubjectSlugFromText(item.subject + " " + item.bodyText);
+    const occurredAt = item.receivedAt ?? new Date();
+    await db.insert(timelineEvents).values({
+      eventType: "reflection",
+      date: toDateString(occurredAt),
+      title: item.subject || `Email from ${item.senderName || item.senderEmail}`,
+      description: item.bodyText.slice(0, 4000),
+      subjectSlug: subjectSlug || null,
+      mediaUrl: null,
+      createdByUserId: null,
+    } as any);
+    const [latest] = await db.select().from(timelineEvents).orderBy(desc(timelineEvents.id)).limit(1);
+    return {
+      kind: "email",
+      routedTo: "timelineEvent",
+      recordId: latest?.id ?? 0,
+      routedToLabel: isIH ? "This Week (IH update)" : "Parent Notes",
+      routedToHref: isIH ? "/week" : "/whiteboard",
+      message: isIH ? `Saved as an Indian Hill update.` : `Saved as a parent note.`,
+    };
+  }
+
+  // ----- 2. FILE upload -----
+  if (item.kind === "file") {
+    const isImage = item.mimeType.startsWith("image/");
+    const isPdf = item.mimeType === "application/pdf";
+    const isCurriculum = CURRICULUM_HINTS.test(item.fileName);
+    const isHomework = HOMEWORK_HINTS.test(item.fileName);
+
+    if (isCurriculum && isPdf) {
+      // Curriculum doc → timeline event tagged "reflection" (closest enum) ;
+      // parent later parses it manually (we don't auto-parse here — keeps Adult
+      // Analytics free of inferred fake topics)
+      await db.insert(timelineEvents).values({
+        eventType: "reflection",
+        date: toDateString(new Date()),
+        title: `Curriculum doc: ${item.fileName}`,
+        description: item.note || "Uploaded curriculum document — open it from the link below.",
+        subjectSlug: item.subjectSlug || null,
+        mediaUrl: item.fileUrl,
+        createdByUserId: null,
+      } as any);
+      const [latest] = await db.select().from(timelineEvents).orderBy(desc(timelineEvents.id)).limit(1);
+      return {
+        kind: "file",
+        routedTo: "timelineEvent",
+        recordId: latest?.id ?? 0,
+        routedToLabel: "Curriculum library",
+        routedToHref: "/whiteboard",
+        message: `Saved "${item.fileName}" to the curriculum library.`,
+      };
+    }
+
+    if (isImage || isHomework || isPdf) {
+      // Photo of finished work / printed worksheet → assignment submission
+      const subRow = await createAssignmentSubmission({
+        blockId: null,
+        mode: isImage ? "photo" : "file",
+        photoUrl: isImage ? item.fileUrl : null,
+        fileUrl: !isImage ? item.fileUrl : null,
+        fileName: item.fileName,
+        fileMime: item.mimeType,
+        answersText: null,
+        kidNotes: item.note || null,
+        autoScore: null,
+        manualScore: null,
+        letter: null,
+        graded: false,
+      } as any);
+      return {
+        kind: "file",
+        routedTo: "submission",
+        recordId: (subRow as any)?.id ?? 0,
+        routedToLabel: "Today (turn-in)",
+        routedToHref: "/today",
+        message: `Saved "${item.fileName}" as a turn-in. Auto-grading runs when an answer key is attached.`,
+      };
+    }
+
+    // Anything else → generic timeline note with attachment link
+    await db.insert(timelineEvents).values({
+      eventType: "reflection",
+      date: toDateString(new Date()),
+      title: item.fileName,
+      description: item.note || "Uploaded file.",
+      subjectSlug: item.subjectSlug || null,
+      mediaUrl: item.fileUrl,
+      createdByUserId: null,
+    } as any);
+    const [latest] = await db.select().from(timelineEvents).orderBy(desc(timelineEvents.id)).limit(1);
+    return {
+      kind: "file",
+      routedTo: "timelineEvent",
+      recordId: latest?.id ?? 0,
+      routedToLabel: "Parent Notes",
+      routedToHref: "/whiteboard",
+      message: `Saved "${item.fileName}" to Parent Notes.`,
+    };
+  }
+
+  // ----- 3. LINK -----
+  if (item.kind === "link") {
+    const url = item.url;
+    const looksLikeBook = /(amazon|bookshop|libby|epic|goodreads|book)/i.test(url);
+    const looksLikeKidApp = /(khan|ixl|prodigy|abcmouse|toca|roblox|duolingo|youtube|brainpop)/i.test(url);
+
+    if (looksLikeKidApp) {
+      await db.insert(appLinks).values({
+        name: item.title || new URL(url).hostname,
+        url,
+        emoji: pickEmojiForLink(url),
+        category: pickCategoryForLink(url),
+        description: item.note || null,
+      } as any);
+      const [latestApp] = await db.select().from(appLinks).orderBy(desc(appLinks.id)).limit(1);
+      const recordId = latestApp?.id ?? 0;
+      return {
+        kind: "link",
+        routedTo: "appLink",
+        recordId,
+        routedToLabel: "Apps & Tools",
+        routedToHref: "/apps",
+        message: `Saved "${item.title || url}" to Apps & Tools.`,
+      };
+    }
+
+    if (looksLikeBook) {
+      // Insert as a book assignment shell
+      await db.insert(books).values({
+        title: item.title || url,
+        author: null,
+        type: "novel",
+        subjectSlug: item.subjectSlug || "ela",
+        currentPage: 1,
+        totalPages: null,
+        notes: `Link: ${url}\n${item.note || ""}`,
+      } as any);
+      const [b] = await db.select().from(books).orderBy(desc(books.id)).limit(1);
+      return {
+        kind: "link",
+        routedTo: "bookAssignment",
+        recordId: b?.id ?? 0,
+        routedToLabel: "Bookshelf",
+        routedToHref: "/bookshelf",
+        message: `Saved "${item.title || url}" to the Bookshelf.`,
+      };
+    }
+
+    // Generic link → timeline note
+    await db.insert(timelineEvents).values({
+      eventType: "reflection",
+      date: toDateString(new Date()),
+      title: item.title || url,
+      description: `Link saved: ${url}\n${item.note || ""}`.trim(),
+      subjectSlug: item.subjectSlug || null,
+      mediaUrl: url,
+      createdByUserId: null,
+    } as any);
+    const [latest] = await db.select().from(timelineEvents).orderBy(desc(timelineEvents.id)).limit(1);
+    return {
+      kind: "link",
+      routedTo: "timelineEvent",
+      recordId: latest?.id ?? 0,
+      routedToLabel: "Parent Notes",
+      routedToHref: "/whiteboard",
+      message: `Saved link to Parent Notes.`,
+    };
+  }
+
+  // ----- 4. TEXT -----
+  // Tutor-flavored text → tutor session; otherwise → timeline note
+  const text = (item as { text: string }).text;
+  const isTutor = TUTOR_EMAIL_HINTS.some((re) => re.test(text)) || TUTOR_EMAIL_HINTS.some((re) => re.test(item.sender || ""));
+  const subjectSlug = item.subjectSlug ?? inferSubjectSlugFromText(text);
+
+  if (isTutor) {
+    const inserted = await db.insert(tutorSessions).values({
+      tutorId: await ensurePlaceholderTutorId(item.sender || "Tutor"),
+      scheduledAt: new Date(),
+      durationMin: 60,
+      focus: subjectSlug ? `Subject: ${subjectSlug}` : null,
+      status: "completed",
+      sessionNotes: text.slice(0, 4000),
+    } as any);
+    const id = (inserted as any).insertId ?? 0;
+    return {
+      kind: "text",
+      routedTo: "tutorSession",
+      recordId: Number(id),
+      routedToLabel: "Tutor Handoff",
+      routedToHref: "/tutor",
+      message: `Saved as a tutor session note.`,
+    };
+  }
+
+  await db.insert(timelineEvents).values({
+    eventType: "reflection",
+    date: toDateString(new Date()),
+    title: item.subject || (text.slice(0, 60) + (text.length > 60 ? "…" : "")),
+    description: text.slice(0, 4000),
+    subjectSlug: subjectSlug || null,
+    mediaUrl: null,
+    createdByUserId: null,
+  } as any);
+  const [latest] = await db.select().from(timelineEvents).orderBy(desc(timelineEvents.id)).limit(1);
+  return {
+    kind: "text",
+    routedTo: "timelineEvent",
+    recordId: latest?.id ?? 0,
+    routedToLabel: "Parent Notes",
+    routedToHref: "/whiteboard",
+    message: `Saved as a parent note.`,
+  };
+}
+
+
+/* ============================== SYNC RUNS ================================== */
+import { syncRequests, syncRuns, syncRunItems } from "../drizzle/schema";
+
+export async function recordSyncRequest(input: { source: "gmail" | "drive" | "both"; lookbackDays: number }) {
+  await getDb().insert(syncRequests).values({
+    source: input.source,
+    lookbackDays: input.lookbackDays,
+  } as any);
+}
+
+export async function popPendingSyncRequests() {
+  const db = getDb();
+  const pending = await db.select().from(syncRequests).where(isNull(syncRequests.consumedAt)).orderBy(syncRequests.requestedAt);
+  if (pending.length > 0) {
+    const ids = pending.map((p) => p.id);
+    await db.update(syncRequests).set({ consumedAt: new Date() }).where(inArray(syncRequests.id, ids));
+  }
+  return pending;
+}
+
+export async function startSyncRun(input: { source: "gmail" | "drive" | "both"; triggeredBy?: "schedule" | "parent" | "manual" }) {
+  const db = getDb();
+  await db.insert(syncRuns).values({
+    source: input.source,
+    triggeredBy: input.triggeredBy ?? "schedule",
+  } as any);
+  const [latest] = await db.select().from(syncRuns).orderBy(desc(syncRuns.id)).limit(1);
+  return latest;
+}
+
+export async function appendSyncRunItem(input: {
+  runId: number;
+  source: "gmail" | "drive";
+  externalId: string;
+  routedTo: string;
+  recordId: number;
+  title?: string | null;
+  message?: string | null;
+}) {
+  await getDb().insert(syncRunItems).values({
+    runId: input.runId,
+    source: input.source,
+    externalId: input.externalId,
+    routedTo: input.routedTo,
+    recordId: input.recordId,
+    title: input.title ?? null,
+    message: input.message ?? null,
+  } as any);
+}
+
+export async function finishSyncRun(input: {
+  runId: number;
+  itemsScanned: number;
+  itemsRouted: number;
+  itemsSkipped: number;
+  errors?: string | null;
+}) {
+  await getDb().update(syncRuns).set({
+    finishedAt: new Date(),
+    itemsScanned: input.itemsScanned,
+    itemsRouted: input.itemsRouted,
+    itemsSkipped: input.itemsSkipped,
+    errors: input.errors ?? null,
+  } as any).where(eq(syncRuns.id, input.runId));
+}
+
+export async function getMostRecentSyncSummary() {
+  const db = getDb();
+  const rows = await db.select().from(syncRuns).orderBy(desc(syncRuns.startedAt)).limit(1);
+  if (!rows.length) return null;
+  const run = rows[0];
+  const items = await db.select().from(syncRunItems).where(eq(syncRunItems.runId, run.id)).orderBy(desc(syncRunItems.createdAt)).limit(20);
+  return { ...run, items };
+}
+
+export async function listRecentSyncRuns(limit = 10) {
+  return getDb().select().from(syncRuns).orderBy(desc(syncRuns.startedAt)).limit(limit);
+}
+
+
+/* ============== Classifier helpers (toDateString / pickEmoji / etc) ====== */
+import { tutors as _tutors_for_classifier } from "../drizzle/schema";
+
+function toDateString(d: Date): string {
+  // YYYY-MM-DD for the timelineEvents.date column
+  return d.toISOString().slice(0, 10);
+}
+
+function pickEmojiForLink(url: string): string {
+  const u = url.toLowerCase();
+  if (u.includes("khan")) return "🧮";
+  if (u.includes("ixl")) return "📐";
+  if (u.includes("prodigy")) return "🐉";
+  if (u.includes("youtube")) return "📺";
+  if (u.includes("brainpop")) return "🧠";
+  if (u.includes("duolingo")) return "🦉";
+  if (u.includes("toca")) return "🌸";
+  if (u.includes("roblox")) return "🎮";
+  return "🔗";
+}
+
+function pickCategoryForLink(url: string): "learning" | "creativity" | "school" | "nature" | "reading" | "google" | "video" {
+  const u = url.toLowerCase();
+  if (u.includes("youtube")) return "video";
+  if (u.includes("toca") || u.includes("roblox")) return "creativity";
+  if (u.includes("google")) return "google";
+  if (u.includes("epic") || u.includes("libby") || u.includes("book")) return "reading";
+  return "learning";
+}
+
+async function ensurePlaceholderTutorId(name: string): Promise<number> {
+  const dbi = getDb();
+  const trimmed = (name || "Tutor").trim().slice(0, 120);
+  const existing = await dbi.select().from(_tutors_for_classifier).where(eq(_tutors_for_classifier.name, trimmed)).limit(1);
+  if (existing.length) return existing[0].id;
+  const inserted = await dbi.insert(_tutors_for_classifier).values({
+    name: trimmed,
+    role: "tutor",
+    active: true,
+  } as any);
+  const id = Number((inserted as any).insertId ?? 0);
+  if (id > 0) return id;
+  const [latest] = await dbi.select().from(_tutors_for_classifier).orderBy(desc(_tutors_for_classifier.id)).limit(1);
+  return latest?.id ?? 0;
 }

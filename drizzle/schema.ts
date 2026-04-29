@@ -1221,3 +1221,45 @@ export const tutorSessionSkills = mysqlTable("tutorSessionSkills", {
   tutorNote: text("tutorNote"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
+
+
+/* ============================== UPLOAD OR SYNC ============================
+ * Tracks parent-triggered "Sync now" requests + the actual scheduled runs
+ * so the parent home can show "What ran today / this week".
+ * ========================================================================== */
+
+export const syncRequests = mysqlTable("sync_requests", {
+  id: int("id").primaryKey().autoincrement(),
+  source: varchar("source", { length: 16 }).notNull(), // 'gmail' | 'drive' | 'both'
+  lookbackDays: int("lookback_days").notNull().default(2),
+  requestedAt: timestamp("requested_at").defaultNow().notNull(),
+  consumedAt: timestamp("consumed_at"), // when the next scheduled run picked it up
+});
+
+export const syncRuns = mysqlTable("sync_runs", {
+  id: int("id").primaryKey().autoincrement(),
+  source: varchar("source", { length: 16 }).notNull(),
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  finishedAt: timestamp("finished_at"),
+  itemsScanned: int("items_scanned").notNull().default(0),
+  itemsRouted: int("items_routed").notNull().default(0),
+  itemsSkipped: int("items_skipped").notNull().default(0),
+  errors: text("errors"), // newline-separated short reasons
+  triggeredBy: varchar("triggered_by", { length: 16 }).notNull().default("schedule"), // 'schedule' | 'parent' | 'manual'
+});
+
+export const syncRunItems = mysqlTable("sync_run_items", {
+  id: int("id").primaryKey().autoincrement(),
+  runId: int("run_id").notNull(),
+  source: varchar("source", { length: 16 }).notNull(),
+  externalId: varchar("external_id", { length: 255 }).notNull(), // e.g. gmail message id
+  routedTo: varchar("routed_to", { length: 32 }).notNull(),
+  recordId: int("record_id").notNull(),
+  title: varchar("title", { length: 255 }),
+  message: varchar("message", { length: 500 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type SyncRequest = typeof syncRequests.$inferSelect;
+export type SyncRun = typeof syncRuns.$inferSelect;
+export type SyncRunItem = typeof syncRunItems.$inferSelect;

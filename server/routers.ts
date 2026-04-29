@@ -1311,5 +1311,76 @@ export const appRouter = router({
     addFavorite: publicProcedure.input(z.object({ sourceId: z.number(), title: z.string(), url: z.string(), subjectSlug: z.string().optional(), note: z.string().optional() })).mutation(({ input }) => db.addPrintableFavorite(input)),
     removeFavorite: publicProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deletePrintableFavorite(input.id)),
   }),
+  /* =================== UPLOAD OR SYNC =================== */
+  upload: router({
+    /** Direct file upload from the browser (data URL) -> S3 -> auto-classify -> right table */
+    classifyFile: protectedProcedure.input(z.object({
+      dataUrl: z.string(),
+      fileName: z.string(),
+      subjectSlug: z.string().optional(),
+      note: z.string().optional(),
+    })).mutation(async ({ input }) => {
+      const m = /^data:([^;]+);base64,(.+)$/.exec(input.dataUrl);
+      if (!m) throw new Error("Expected a data URL.");
+      const mime = m[1];
+      const buf = Buffer.from(m[2], "base64");
+      const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const key = `uploads/${Date.now()}-${safeName}`;
+      const stored = await storagePut(key, buf, mime);
+      return db.classifyAndRoute({
+        kind: "file",
+        fileUrl: stored.url,
+        fileName: input.fileName,
+        mimeType: mime,
+        subjectSlug: input.subjectSlug ?? null,
+        note: input.note ?? null,
+      });
+    }),
+    /** Paste a link -> auto-routed to Apps & Tools / Bookshelf / Parent Notes */
+    classifyLink: protectedProcedure.input(z.object({
+      url: z.string(),
+      title: z.string().optional(),
+      subjectSlug: z.string().optional(),
+      note: z.string().optional(),
+    })).mutation(({ input }) => db.classifyAndRoute({
+      kind: "link",
+      url: input.url,
+      title: input.title ?? null,
+      subjectSlug: input.subjectSlug ?? null,
+      note: input.note ?? null,
+    })),
+    /** Paste text (note, tutor message, etc.) -> auto-routed */
+    classifyText: protectedProcedure.input(z.object({
+      text: z.string(),
+      subject: z.string().optional(),
+      sender: z.string().optional(),
+      subjectSlug: z.string().optional(),
+    })).mutation(({ input }) => db.classifyAndRoute({
+      kind: "text",
+      text: input.text,
+      subject: input.subject ?? null,
+      sender: input.sender ?? null,
+      subjectSlug: input.subjectSlug ?? null,
+    })),
+    /** Manual sync trigger — runs the same logic the daily scheduler does */
+    syncNow: protectedProcedure.input(z.object({
+      source: z.enum(["gmail", "drive", "both"]).default("both"),
+      lookbackDays: z.number().min(1).max(30).default(2),
+    })).mutation(async ({ input }) => {
+      // The actual sync runs from the scheduled task (which has Google scopes
+      // attached). From inside the deployed site we just record an intent row
+      // so the next scheduled run picks it up immediately, and we report what
+      // the most-recent sync produced.
+      await db.recordSyncRequest({ source: input.source, lookbackDays: input.lookbackDays });
+      const summary = await db.getMostRecentSyncSummary();
+      return {
+        ok: true,
+        message: `Sync requested. The next automatic run (within an hour) will include the last ${input.lookbackDays} day(s) of ${input.source === "both" ? "Gmail + Drive" : input.source}.`,
+        lastRun: summary,
+      };
+    }),
+    /** What the latest scheduled sync did, for the parent-home 'What ran today' card */
+    lastSyncSummary: publicProcedure.query(() => db.getMostRecentSyncSummary()),
+  }),
 });
 export type AppRouter = typeof appRouter;
