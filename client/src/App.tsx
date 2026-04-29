@@ -24,6 +24,7 @@ import Timeline from "./pages/Timeline";
 import Profile from "./pages/Profile";
 import Analytics from "./pages/Analytics";
 import TutorHandoff from "./pages/TutorHandoff";
+import TutorBriefing from "./pages/TutorBriefing";
 import Knowledge from "./pages/Knowledge";
 import Settings from "@/pages/Settings";
 import Onboarding from "./pages/Onboarding";
@@ -81,6 +82,9 @@ function Router() {
         </Route>
         <Route path="/tutor">
           <AdultGate><TutorHandoff /></AdultGate>
+        </Route>
+        <Route path="/tutor/:id">
+          <AdultGate><TutorBriefing /></AdultGate>
         </Route>
         <Route path="/knowledge">
           <AdultGate><Knowledge /></AdultGate>

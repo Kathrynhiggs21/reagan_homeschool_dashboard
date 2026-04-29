@@ -5,7 +5,23 @@ import { Badge } from "@/components/ui/badge";
 import { useKiwi } from "@/contexts/KiwiContext";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { Link } from "wouter";
 import { subjectTint, tintCardStyle, tintInkStyle } from "@/lib/subjectColors";
+
+function TutorQuickPick() {
+  const { data: tutors = [] } = trpc.tutors.list.useQuery({ activeOnly: true });
+  if (!tutors.length) return null;
+  return (
+    <div className="mt-2 flex flex-wrap gap-1.5">
+      <span className="text-xs opacity-60 self-center mr-1">Quick briefings:</span>
+      {tutors.map((t: any) => (
+        <Link key={t.id} href={`/tutor/${t.id}`} className="text-xs px-2 py-0.5 rounded-full border border-border/40 hover:bg-accent">
+          {t.name}
+        </Link>
+      ))}
+    </div>
+  );
+}
 
 function SendDigestButton() {
   const send = trpc.notifications.sendTodayDigest.useMutation();
@@ -36,6 +52,7 @@ export default function TutorHandoff() {
         <div>
           <h1 className="text-3xl font-display font-semibold">Tutor / Adult Handoff</h1>
           <p className="text-muted-foreground text-sm mt-1">Everything you need to support Reagan today.</p>
+          <TutorQuickPick />
         </div>
         <div className="flex items-center gap-2 text-sm">
           <span>Adult present mode</span>

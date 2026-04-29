@@ -1395,5 +1395,43 @@ export const appRouter = router({
     flagItem: protectedProcedure.input(z.object({ itemId: z.number(), parentNote: z.string().optional() }))
       .mutation(({ input }) => db.flagAutomationItem(input.itemId, input.parentNote)),
   }),
+
+  tutors: router({
+    list: publicProcedure.input(z.object({ activeOnly: z.boolean().default(true) }).optional())
+      .query(({ input }) => db.listTutors(input?.activeOnly ?? true)),
+    get: publicProcedure.input(z.object({ id: z.number() }))
+      .query(({ input }) => db.getTutor(input.id)),
+    upsert: protectedProcedure.input(z.object({
+      id: z.number().optional(),
+      name: z.string().min(1),
+      role: z.string().optional(),
+      email: z.string().optional(),
+      phone: z.string().optional(),
+      bio: z.string().optional(),
+      subjects: z.string().optional(),
+      avatarUrl: z.string().optional(),
+      active: z.boolean().optional(),
+      notes: z.string().optional(),
+    })).mutation(({ input }) => db.upsertTutor(input)),
+    recentSessions: publicProcedure.input(z.object({ tutorId: z.number(), limit: z.number().default(10) }))
+      .query(({ input }) => db.recentTutorSessions(input.tutorId, input.limit)),
+    priority: publicProcedure.input(z.object({ tutorId: z.number(), limit: z.number().default(5) }))
+      .query(({ input }) => db.priorityForTutor(input.tutorId, input.limit)),
+    sessionSkills: publicProcedure.input(z.object({ sessionId: z.number() }))
+      .query(({ input }) => db.tutorSessionSkillsFor(input.sessionId)),
+    recordSession: protectedProcedure.input(z.object({
+      tutorId: z.number(),
+      scheduledAt: z.date().optional(),
+      durationMin: z.number().optional(),
+      focus: z.string().optional(),
+      status: z.enum(["scheduled", "completed", "missed", "trial", "cancelled"]).optional(),
+      sessionNotes: z.string().optional(),
+      skills: z.array(z.object({
+        skillLadderId: z.number(),
+        outcome: z.enum(["strong", "gettingIt", "needsMore", "notWorked"]),
+        tutorNote: z.string().optional(),
+      })).optional(),
+    })).mutation(({ input }) => db.recordTutorSession(input)),
+  }),
 });
 export type AppRouter = typeof appRouter;

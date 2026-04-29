@@ -2371,7 +2371,7 @@ export async function recordTutorSession(opts: {
     if (s.outcome === "strong" || s.outcome === "gettingIt") {
       // Bump confidence as if a strong practice round happened
       try {
-        await recordSkillPractice({ skillLadderId: s.skillLadderId, mode: "tutor" as any, selfRating: s.outcome === "strong" ? 5 : 4 });
+        await recordSkillPractice({ skillLadderId: s.skillLadderId, mode: "practice", selfRating: s.outcome === "strong" ? 5 : 4, parentNote: s.tutorNote ? `Tutor: ${s.tutorNote}` : `Tutor: ${s.outcome}` });
       } catch { /* best-effort */ }
     } else if (s.outcome === "needsMore") {
       try {
