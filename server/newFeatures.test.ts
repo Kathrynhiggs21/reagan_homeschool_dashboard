@@ -237,20 +237,23 @@ describe("adult edit-mode mutations", () => {
 
   it("books: create → update → delete", async () => {
     const caller = makeAdminCaller();
+    // Use a non-`__vitest` title so the UI-side test-row filter in
+    // db.listBooks() does not hide this fixture from the test assertions.
+    const testTitle = "zzz_testbook_" + Date.now();
     await caller.books.create({
-      title: "__vitest_book_" + Date.now(),
-      author: "__vitest_author",
+      title: testTitle,
+      author: "zzz_testauthor",
       type: "workbook",
       currentPage: 1,
       totalPages: 50,
     });
     const list: any[] = await caller.books.list();
-    const last = list[list.length - 1];
+    const last = list.find((b) => b.title === testTitle);
     expect(last).toBeTruthy();
 
-    await caller.books.update({ id: last.id, author: "__vitest_author_v2" });
+    await caller.books.update({ id: last.id, author: "zzz_testauthor_v2" });
     const list2: any[] = await caller.books.list();
-    expect(list2.find((b) => b.id === last.id)?.author).toBe("__vitest_author_v2");
+    expect(list2.find((b) => b.id === last.id)?.author).toBe("zzz_testauthor_v2");
 
     await caller.books.delete({ id: last.id });
     const list3: any[] = await caller.books.list();

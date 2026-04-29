@@ -1246,3 +1246,9 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] **Mom note:** Google sign-in prompt on phone 926-5808 for the IH PowerSchool portal login (to use when we flip on Option A scraper in the morning)
 
 - [x] **Mom confirmed:** IH PowerSchool uses Google SSO via spear.cpt@gmail.com — scraper will log in via "Continue with Google" (pause for one-time Mom takeover)
+
+
+## Bugs reported Apr 29 AM
+- [x] Cream Homeschool (light) theme: fixed — redeclared --foreground / --card-foreground / --popover-foreground on data-rtheme="cream" + "notebook" so every card reads dark
+- [x] Bookshelf: listBooks() now filters out any title containing __vitest; UI will only show the real three books (Spectrum Science 5, 180 Days of Language 5, Tuck Everlasting)
+- [x] Test-row guard on listBooks; covered by new server/listBooksFilter.test.ts

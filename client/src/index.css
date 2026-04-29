@@ -744,3 +744,98 @@ html[data-rtheme="chalkboard"] textarea::placeholder,
 html[data-rtheme="chalkboard"] input::placeholder {
   color: rgba(240, 235, 224, 0.55) !important;
 }
+
+
+/* ===== Pass 5 (Apr 29 bug): force dark body text on Cream + Notebook themes =====
+ * Earlier passes fixed common classes, but many deep components still resolve to
+ * the base `--foreground` token (which is white for the default dark palette).
+ * The rules below re-declare the semantic tokens under the two light themes so
+ * EVERY component — even ones we haven't enumerated — picks up dark ink.
+ */
+html[data-rtheme="cream"] {
+  --background: oklch(0.96 0.02 85);
+  --foreground: oklch(0.22 0.03 60);      /* dark espresso */
+  --card: oklch(0.985 0.02 85);
+  --card-foreground: oklch(0.22 0.03 60);
+  --popover: oklch(0.985 0.02 85);
+  --popover-foreground: oklch(0.22 0.03 60);
+  --muted: oklch(0.92 0.03 85);
+  --muted-foreground: oklch(0.38 0.04 60);
+  --primary: oklch(0.6 0.13 60);
+  --primary-foreground: oklch(0.98 0.01 85);
+  --secondary: oklch(0.88 0.06 85);
+  --secondary-foreground: oklch(0.22 0.03 60);
+  --accent: oklch(0.85 0.09 85);
+  --accent-foreground: oklch(0.22 0.03 60);
+  --border: oklch(0.82 0.04 70);
+  --input: oklch(0.88 0.04 70);
+  --ring: oklch(0.72 0.11 75);
+}
+html[data-rtheme="notebook"] {
+  --background: oklch(0.97 0.015 95);
+  --foreground: oklch(0.25 0.05 260);     /* ink-blue */
+  --card: oklch(0.99 0.01 95);
+  --card-foreground: oklch(0.25 0.05 260);
+  --popover: oklch(0.99 0.01 95);
+  --popover-foreground: oklch(0.25 0.05 260);
+  --muted: oklch(0.93 0.02 260);
+  --muted-foreground: oklch(0.42 0.05 260);
+  --primary: oklch(0.5 0.12 260);
+  --primary-foreground: oklch(0.99 0.005 90);
+  --secondary: oklch(0.9 0.03 260);
+  --secondary-foreground: oklch(0.25 0.05 260);
+  --accent: oklch(0.85 0.06 260);
+  --accent-foreground: oklch(0.25 0.05 260);
+  --border: oklch(0.82 0.04 260);
+  --input: oklch(0.88 0.03 260);
+  --ring: oklch(0.65 0.12 260);
+}
+
+/* Belt-and-braces: any descendant that inherits text-foreground via CSS
+ * variables still picks the correct dark value, even on hard-coded white cards.
+ */
+html[data-rtheme="cream"] .text-foreground,
+html[data-rtheme="cream"] .text-card-foreground,
+html[data-rtheme="cream"] .text-popover-foreground {
+  color: #2d2317 !important;
+}
+html[data-rtheme="notebook"] .text-foreground,
+html[data-rtheme="notebook"] .text-card-foreground,
+html[data-rtheme="notebook"] .text-popover-foreground {
+  color: #1e2e52 !important;
+}
+
+/* Cards using bg-white / bg-white/40 etc. must have dark text on cream/notebook */
+html[data-rtheme="cream"] .bg-white,
+html[data-rtheme="cream"] [class*="bg-white/"],
+html[data-rtheme="cream"] .bg-card,
+html[data-rtheme="cream"] .bg-popover {
+  color: #2d2317;
+}
+html[data-rtheme="notebook"] .bg-white,
+html[data-rtheme="notebook"] [class*="bg-white/"],
+html[data-rtheme="notebook"] .bg-card,
+html[data-rtheme="notebook"] .bg-popover {
+  color: #1e2e52;
+}
+
+/* Default paragraph / li / td / span color on light themes, in case a parent
+ * was overridden to white elsewhere */
+html[data-rtheme="cream"] p,
+html[data-rtheme="cream"] li,
+html[data-rtheme="cream"] td,
+html[data-rtheme="cream"] th,
+html[data-rtheme="cream"] label,
+html[data-rtheme="cream"] dt,
+html[data-rtheme="cream"] dd {
+  color: #2d2317;
+}
+html[data-rtheme="notebook"] p,
+html[data-rtheme="notebook"] li,
+html[data-rtheme="notebook"] td,
+html[data-rtheme="notebook"] th,
+html[data-rtheme="notebook"] label,
+html[data-rtheme="notebook"] dt,
+html[data-rtheme="notebook"] dd {
+  color: #1e2e52;
+}

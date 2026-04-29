@@ -197,7 +197,12 @@ export async function insertAppLink(a: typeof appLinks.$inferInsert) {
 
 /* ============================== BOOKS ===================================== */
 export async function listBooks() {
-  return getDb().select().from(books).orderBy(books.title);
+  const rows = await getDb().select().from(books).orderBy(books.title);
+  // Guard: vitest-seeded test rows (any title containing __vitest) must never
+  // surface to the UI even if the DB still has them between runs.
+  return (rows as any[]).filter(
+    (r) => !String(r.title ?? "").toLowerCase().includes("__vitest"),
+  );
 }
 export async function getBook(id: number) {
   const rows = await getDb().select().from(books).where(eq(books.id, id)).limit(1);
