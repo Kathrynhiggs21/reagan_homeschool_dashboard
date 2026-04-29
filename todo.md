@@ -1035,3 +1035,63 @@
 - [ ] Printables admin: collapse into AI-prompted flow instead of tiled source list
 
 - [ ] Theme picker must also swap the sidebar + "Reagan's Classroom" profile card colors to match the active theme
+
+
+## Pass 4 — Adaptive learning system (Apr 29 onward)
+
+- [ ] Avatar uploader on Settings (uploads to Manus storage; replaces URL-pasted photo)
+- [ ] Pull Ohio 5th-grade learning standards (ELA, Math, Science, Social Studies) and seed as curriculum spine
+- [ ] Map Indian Hill 5th-grade sequencing on top of Ohio standards
+- [ ] Placement assessment week: low-pressure per-subject diagnostic flow (logs starting level)
+- [ ] Save assessment results to Drive (Reagan School Hub > Analytics)
+- [ ] Parent-facing past-data import (paste / drop PDFs of MES Q1 + year-to-date analytics)
+- [ ] LLM extraction of pasted/PDF analytics into academic_records table
+- [ ] Google OAuth for reagan.higgs33@ihsd.us with Classroom + Gmail + Drive read scopes
+- [ ] Daily Google Classroom assignment sync into Today + Week
+- [ ] Gmail watch for IH teacher emails (homework / notes)
+- [ ] Drive auto-backup of every assignment submission, journal entry, photo, and tutor handoff to existing Reagan School Hub subfolders
+- [ ] Dual-tutor profile setup in Settings (schedules + contacts)
+- [ ] Per-tutor handoff page with tutor notes feeding the adaptation engine
+- [ ] Reagan-facing post-block feedback chips (hard/easy, liked/didn't, what helped, break needed, time felt right)
+- [ ] Adaptation engine v2: read feedback + grades + tutor notes; tune next-block level / technique / time / break frequency
+- [ ] Auto-flag parent (and grandma) when stuck or needs decision
+- [ ] Settings explainers for Reagan (what she can do, flexibility, rewards meaning, activities ideas)
+- [ ] Kiwi intro: short video or animated explainer of what Kiwi is and can help with
+- [ ] Apps & Tools list: prune to actually-used apps; large centered icon per card (not small icon + label)
+- [ ] Daily auto-summary email after school day (short)
+- [ ] Weekly auto-summary email (long, with observations + recommendations + suggested changes)
+- [ ] Confirm parent email address for summaries
+
+
+---
+
+## RE-ANCHOR (Apr 28 2026): Confidence + Catch-Up are the North Star
+
+User clarified: "The biggest thing I want her to get is feel safe and comfortable and understanding of content and mostly get back up in her academic levels so eventually she doesn't need IEP. She is smart but doubts herself a lot. I want her to feel smart and catch up to her peers."
+
+Every feature is judged by 3 questions:
+1. Does it lower her anxiety?
+2. Does it deepen her understanding?
+3. Does it visibly move her academic level up toward grade-level (so she can graduate the IEP)?
+
+### Catch-up plan items (priority order)
+- [ ] Confidence Principles card on Today + Settings (kid-readable, plain language)
+- [ ] Kiwi intro card on Today: "I'm here to help you feel smart and figure stuff out — never to test you"
+- [ ] Parent dashboard banner: "Goal: re-enter 6th grade at or above grade level — IEP optional"
+- [ ] Confidence Engine: Kiwi reflects effort + strengths back, never corrects, "Things I'm proud of" wall
+- [ ] Skill-Gap Closer: per-subject skill ladder seeded from Ohio 5th std + her real MAP/Acadience baseline (already in DB from IEP seed)
+- [ ] Diagnostic Placement Week: low-pressure tasks, she sees only encouragement, scores hidden
+- [ ] Multi-modal teaching paths per skill (Story / Visual / Hands-on / Watch / Practice — she picks)
+- [ ] Mastery gate, not minute gate — block ends when she shows she gets it
+- [ ] Visible Level-Up chart she can see going up
+- [ ] Parent-private trajectory dashboard vs grade-level + IEP exit criteria
+- [ ] Pull IH curriculum context (Wells 4th-quarter PDF, AJ Froehlich weekly updates, IH curriculum slide deck) into the Skill Ladder
+- [ ] Khan Academy + IXL deep-link per skill
+- [ ] Game-as-reward / mood break with Roblox preference tracking
+- [ ] Post-block feedback chips feed adaptation
+- [ ] Adaptation engine v2: never increases difficulty after a struggle; offers re-teach in different mode
+- [ ] Dual-tutor profiles + per-tutor handoff
+- [ ] Daily + weekly auto-summaries focused on confidence wins + skill-level movement
+- [ ] Apps & Tools prune to actually-used apps with big centered icons
+- [ ] Settings explainers in plain language + Kiwi intro video
+- [ ] Finish AvatarUploader wiring into Settings

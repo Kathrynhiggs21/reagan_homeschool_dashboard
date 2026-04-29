@@ -1,5 +1,7 @@
 import { Card } from "@/components/ui/card";
 import CalendarSyncCard from "@/components/CalendarSyncCard";
+import AvatarUploader from "@/components/AvatarUploader";
+import ConfidencePrinciplesCard from "@/components/ConfidencePrinciplesCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -81,6 +83,9 @@ export default function Settings() {
         <p className="text-sm text-muted-foreground mt-2">Only visible with the adult passcode.</p>
       </header>
 
+      {/* ============================ CONFIDENCE PRINCIPLES ============================ */}
+      <ConfidencePrinciplesCard />
+
       {/* ============================ MY SETUP ============================ */}
       <Card className="classroom-card p-5 space-y-4">
         <div className="flex items-center justify-between">
@@ -102,19 +107,11 @@ export default function Settings() {
         </div>
 
         <div>
-          <label className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Photo URL</label>
-          <Input
-            value={photoUrl}
-            onChange={(e) => setPhotoUrl(e.target.value)}
-            placeholder="https://..."
-            className="mt-1"
-          />
-          {photoUrl && (
-            <div className="flex items-center gap-3 mt-2">
-              <img src={photoUrl} alt="" className="w-12 h-12 rounded-full object-cover border border-neutral-200" />
-              <span className="text-xs text-neutral-500">preview</span>
-            </div>
-          )}
+          <label className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-2 block">Reagan's photo</label>
+          <AvatarUploader />
+          <p className="text-[11px] text-muted-foreground mt-2">
+            Photo is private and only shows on this dashboard. Replaces the "R" placeholder in the corner card.
+          </p>
         </div>
 
         <div>

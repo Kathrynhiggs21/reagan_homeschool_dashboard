@@ -13,6 +13,7 @@ import TurnInDialog from "@/components/TurnInDialog";
 import { subjectTint, tintCardStyle, tintInkStyle, tintPillStyle, rainbowCardStyle, rainbowPillStyle, rainbowInkStyle, rainbowStop } from "@/lib/subjectColors";
 import { celebrateKiwi } from "@/components/KiwiPerch";
 import ThemePickerStrip from "@/components/ThemePickerStrip";
+import KiwiIntroStrip from "@/components/KiwiIntroStrip";
 
 // Neutral classroom mood language + classroom-y icons
 const ZONES = [
@@ -210,6 +211,9 @@ export default function Today() {
           </div>
         </Card>
       )}
+
+      {/* Kiwi intro — dismissible, plain-language */}
+      <KiwiIntroStrip />
 
       {/* Tour Mode — calm pinned strip, no ombre gradient */}
       <TourModeCard />
