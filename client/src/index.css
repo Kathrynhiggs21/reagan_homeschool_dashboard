@@ -599,3 +599,148 @@ html[data-rtheme="notebook"] aside button { color: #1e2e52 !important; }
 /* The "Kiwi / Tap button on any page to talk" footer section */
 html[data-rtheme="cream"] aside .border-t { border-top-color: rgba(160, 120, 60, 0.25) !important; }
 html[data-rtheme="notebook"] aside .border-t { border-top-color: rgba(30, 46, 82, 0.25) !important; }
+
+
+/* ===== Pass 4: Universal text-contrast rescue across themes ===== */
+/*
+ * Reagan dashboard bug (Apr 29): several panels used text-white / text-white/70
+ * which renders as near-invisible on the two LIGHT themes (cream + notebook).
+ * Mirror problem on dark: grey "muted" text fell below AA contrast.
+ * Below: force readable foregrounds + lift textarea/input readability.
+ */
+
+/* --- LIGHT themes (cream, notebook) --- */
+html[data-rtheme="cream"] .text-white,
+html[data-rtheme="cream"] [class*="text-white"],
+html[data-rtheme="cream"] .text-gray-50,
+html[data-rtheme="cream"] .text-gray-100,
+html[data-rtheme="cream"] .text-gray-200,
+html[data-rtheme="cream"] .text-gray-300,
+html[data-rtheme="cream"] .text-slate-100,
+html[data-rtheme="cream"] .text-slate-200,
+html[data-rtheme="cream"] .text-slate-300,
+html[data-rtheme="cream"] .text-neutral-100,
+html[data-rtheme="cream"] .text-neutral-200,
+html[data-rtheme="cream"] .text-neutral-300,
+html[data-rtheme="cream"] .text-zinc-100,
+html[data-rtheme="cream"] .text-zinc-200,
+html[data-rtheme="cream"] .text-zinc-300 {
+  color: #2d2317 !important;
+}
+
+html[data-rtheme="notebook"] .text-white,
+html[data-rtheme="notebook"] [class*="text-white"],
+html[data-rtheme="notebook"] .text-gray-50,
+html[data-rtheme="notebook"] .text-gray-100,
+html[data-rtheme="notebook"] .text-gray-200,
+html[data-rtheme="notebook"] .text-gray-300,
+html[data-rtheme="notebook"] .text-slate-100,
+html[data-rtheme="notebook"] .text-slate-200,
+html[data-rtheme="notebook"] .text-slate-300,
+html[data-rtheme="notebook"] .text-neutral-100,
+html[data-rtheme="notebook"] .text-neutral-200,
+html[data-rtheme="notebook"] .text-neutral-300,
+html[data-rtheme="notebook"] .text-zinc-100,
+html[data-rtheme="notebook"] .text-zinc-200,
+html[data-rtheme="notebook"] .text-zinc-300 {
+  color: #1e2e52 !important;
+}
+
+/* Muted text (subtitles, helper copy) should remain readable on light bg */
+html[data-rtheme="cream"] .text-white\/60,
+html[data-rtheme="cream"] .text-white\/70,
+html[data-rtheme="cream"] .text-white\/80,
+html[data-rtheme="cream"] .text-white\/90 { color: rgba(45, 35, 23, 0.78) !important; }
+
+html[data-rtheme="notebook"] .text-white\/60,
+html[data-rtheme="notebook"] .text-white\/70,
+html[data-rtheme="notebook"] .text-white\/80,
+html[data-rtheme="notebook"] .text-white\/90 { color: rgba(30, 46, 82, 0.78) !important; }
+
+/* Chips / tag pills lose their dark-theme light text on light bg */
+html[data-rtheme="cream"] .bg-muted,
+html[data-rtheme="cream"] .bg-muted\/50 {
+  background: rgba(255, 234, 190, 0.55) !important;
+  color: #2d2317 !important;
+}
+html[data-rtheme="notebook"] .bg-muted,
+html[data-rtheme="notebook"] .bg-muted\/50 {
+  background: rgba(220, 232, 255, 0.6) !important;
+  color: #1e2e52 !important;
+}
+
+/* Textareas + inputs: readable across all themes */
+html[data-rtheme="cream"] textarea,
+html[data-rtheme="cream"] input[type="text"],
+html[data-rtheme="cream"] input[type="number"],
+html[data-rtheme="cream"] input[type="email"],
+html[data-rtheme="cream"] input[type="search"],
+html[data-rtheme="cream"] input:not([type]) {
+  background: #fffdf5 !important;
+  color: #2d2317 !important;
+  border: 1px solid rgba(160, 120, 60, 0.35) !important;
+}
+html[data-rtheme="cream"] textarea::placeholder,
+html[data-rtheme="cream"] input::placeholder { color: rgba(45, 35, 23, 0.45) !important; }
+
+html[data-rtheme="notebook"] textarea,
+html[data-rtheme="notebook"] input[type="text"],
+html[data-rtheme="notebook"] input[type="number"],
+html[data-rtheme="notebook"] input[type="email"],
+html[data-rtheme="notebook"] input[type="search"],
+html[data-rtheme="notebook"] input:not([type]) {
+  background: #fffef6 !important;
+  color: #1e2e52 !important;
+  border: 1px solid rgba(30, 46, 82, 0.35) !important;
+}
+html[data-rtheme="notebook"] textarea::placeholder,
+html[data-rtheme="notebook"] input::placeholder { color: rgba(30, 46, 82, 0.45) !important; }
+
+/* --- DARK themes (starry, chalkboard): lift muted/grey card text --- */
+html[data-rtheme="starry"] .text-gray-400,
+html[data-rtheme="starry"] .text-gray-500,
+html[data-rtheme="starry"] .text-slate-400,
+html[data-rtheme="starry"] .text-slate-500,
+html[data-rtheme="starry"] .text-neutral-400,
+html[data-rtheme="starry"] .text-zinc-400,
+html[data-rtheme="chalkboard"] .text-gray-400,
+html[data-rtheme="chalkboard"] .text-gray-500,
+html[data-rtheme="chalkboard"] .text-slate-400,
+html[data-rtheme="chalkboard"] .text-slate-500,
+html[data-rtheme="chalkboard"] .text-neutral-400,
+html[data-rtheme="chalkboard"] .text-zinc-400 {
+  color: rgba(240, 235, 224, 0.82) !important;
+}
+
+/* Grey card backgrounds on dark themes need lighter text */
+html[data-rtheme="starry"] .bg-muted,
+html[data-rtheme="starry"] .bg-muted\/50,
+html[data-rtheme="chalkboard"] .bg-muted,
+html[data-rtheme="chalkboard"] .bg-muted\/50 {
+  background: rgba(55, 55, 58, 0.75) !important;
+  color: #f5f1e6 !important;
+}
+
+/* Dark-theme textareas: ensure user text + placeholder are readable */
+html[data-rtheme="starry"] textarea,
+html[data-rtheme="starry"] input[type="text"],
+html[data-rtheme="starry"] input[type="number"],
+html[data-rtheme="starry"] input[type="email"],
+html[data-rtheme="starry"] input[type="search"],
+html[data-rtheme="starry"] input:not([type]),
+html[data-rtheme="chalkboard"] textarea,
+html[data-rtheme="chalkboard"] input[type="text"],
+html[data-rtheme="chalkboard"] input[type="number"],
+html[data-rtheme="chalkboard"] input[type="email"],
+html[data-rtheme="chalkboard"] input[type="search"],
+html[data-rtheme="chalkboard"] input:not([type]) {
+  background: rgba(25, 25, 28, 0.85) !important;
+  color: #f5f1e6 !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+}
+html[data-rtheme="starry"] textarea::placeholder,
+html[data-rtheme="starry"] input::placeholder,
+html[data-rtheme="chalkboard"] textarea::placeholder,
+html[data-rtheme="chalkboard"] input::placeholder {
+  color: rgba(240, 235, 224, 0.55) !important;
+}

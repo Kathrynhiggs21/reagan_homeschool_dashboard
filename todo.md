@@ -1200,3 +1200,47 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] FEATURE: ensure Care Team / contacts editable from Settings (Mom will fill phones/teacher/specialist/allergies/meds later)
 - [ ] Run vitest suite (target: all green)
 - [ ] Save checkpoint, ask user to publish to reaganschool.manus.space
+
+
+---
+## Live issues from Mom (Apr 29 — reaganschool.manus.space)
+
+- [ ] Cream Homeschool theme: body text invisible on light bg — fix contrast
+- [ ] Dark theme: grey cards in Today/Settings "Four pillars" hard to read
+- [ ] Textareas across site hard to read/edit (low contrast text + placeholders)
+- [ ] Bookshelf: keep exactly 4 books (Tuck Everlasting, Michael's World, + 2 academic) — delete the rest
+- [ ] IEP info → Analytics "current level" indicator (present-level feed per subject)
+- [ ] Deliver done-vs-open audit to Mom
+
+
+---
+## Overnight session (Apr 29 night → Apr 30 morning)
+
+- [ ] Verify contrast CSS fixes visually (Cream, Notebook, Chalkboard, Starry)
+- [ ] Bookshelf pruned to exactly 4 books (Tuck Everlasting, Michael's World, + 2 academic)
+- [ ] IEP present-levels → Analytics subject-level indicator chip
+- [ ] 5+1 subject palette (Math/Science/Social/ELA/Specials/Other) across subjectColors.ts
+- [ ] Remap blocks/skills/skillsMastery/adventures/weeklyTopics to 5+1 subject slugs
+- [ ] academicRecords schema extension + CSV/PDF uploader stubs (scraping skipped — needs Mom's PowerSchool session)
+- [ ] classroom-ingest scheduled-task endpoint
+- [ ] iep-refresh scheduled-task endpoint
+- [ ] Mark genuinely-completed older items as [x]; tag Mom-blocked items with "⚠ Mom"
+- [ ] Run full vitest; save morning checkpoint
+- [ ] Write /home/ubuntu/reagan_homeschool_dashboard/AUDIT_MORNING.md
+
+
+---
+## PowerSchool import (Indian Hill) — added overnight Apr 29
+
+- [ ] Ask Mom for Indian Hill PowerSchool parent portal URL
+- [ ] Build `powerschool_imports` table (snapshot JSON + raw paste + parsedCount)
+- [ ] Build `powerschool_assignments` + `powerschool_grades` tables
+- [ ] Write flexible pasteable-text parser (accepts print-view or email report)
+- [ ] Write CSV parser (accepts PowerSchool "Download as CSV" exports)
+- [ ] Build Settings uploader UI (paste textarea + file picker, preview, confirm-import)
+- [ ] Expose imported assignments + grades on Analytics alongside homeschool data
+- [ ] Vitest: parser round-trips against a known PowerSchool fixture
+- [ ] Scheduled scraper stub (Option A) — endpoint + cron job hook, disabled until login flip
+- [ ] Document one-time login flow in Settings explainer
+
+- [ ] **Mom note:** Google sign-in prompt on phone 926-5808 for the IH PowerSchool portal login (to use when we flip on Option A scraper in the morning)

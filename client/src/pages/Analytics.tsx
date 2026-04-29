@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import TrajectoryCard from "@/components/TrajectoryCard";
 import ParentFlagsBanner from "@/components/ParentFlagsBanner";
+import CurrentLevelsFromIep from "@/components/CurrentLevelsFromIep";
 
 function MoodArcChart({ moods }: { moods: any[] }) {
   // Map zone to numeric score (green=2, yellow=1, red=0); render the last 14 entries chronologically
@@ -124,6 +125,12 @@ export default function Analytics() {
 
       {/* Catch-up trajectory: Reagan's path back to grade level + IEP exit indicators */}
       <TrajectoryCard />
+
+      {/* Current levels derived from IEP present-levels + latest screenings (parent-visible only) */}
+      <CurrentLevelsFromIep
+        goals={uniqueGoals as any[]}
+        screenings={(screenings.data as any[]) || []}
+      />
 
       <Card className="cozy-card p-4">
         <div className="flex items-center justify-between mb-3">

@@ -43,7 +43,7 @@ export default function ConfidencePrinciplesCard() {
         />
       </div>
 
-      <div className="rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-200/60 p-3 text-sm">
+      <div className="rounded-lg bg-amber-100 dark:bg-amber-500/15 border border-amber-300 dark:border-amber-400/40 p-3 text-sm text-amber-950 dark:text-amber-100">
         <span className="font-semibold">Goal for 6th grade:</span> re-enter at or above grade level so the IEP becomes
         optional. The parent dashboard tracks her trajectory toward that quietly — Reagan never sees the score, only her
         own progress going up.
@@ -59,12 +59,12 @@ export default function ConfidencePrinciplesCard() {
 
 function Principle({ emoji, title, body }: { emoji: string; title: string; body: string }) {
   return (
-    <div className="rounded-lg border border-neutral-200/60 dark:border-white/10 bg-white/40 dark:bg-white/5 p-3">
-      <div className="flex items-center gap-2 font-display font-semibold">
+    <div className="rounded-lg border border-neutral-300 dark:border-white/20 bg-white/70 dark:bg-white/10 p-3">
+      <div className="flex items-center gap-2 font-display font-semibold text-neutral-900 dark:text-white">
         <span className="text-xl" aria-hidden>{emoji}</span>
         <span>{title}</span>
       </div>
-      <p className="mt-1 text-[13px] leading-snug text-neutral-700 dark:text-neutral-300">{body}</p>
+      <p className="mt-1 text-[13px] leading-snug text-neutral-800 dark:text-neutral-100">{body}</p>
     </div>
   );
 }
