@@ -1506,5 +1506,58 @@ export const appRouter = router({
     recent: protectedProcedure.input(z.object({ limit: z.number().default(20) }).optional())
       .query(({ input }) => db.listRecentDrivePushes(input?.limit ?? 20)),
   }),
+
+  /* =================== POWERSCHOOL IMPORT (Indian Hill grades + assignments) =================== */
+  powerschool: router({
+    importPaste: protectedProcedure
+      .input(
+        z.object({
+          raw: z.string().min(1),
+          source: z
+            .enum(["paste", "csv", "scraper", "email"])
+            .default("paste"),
+          notes: z.string().optional(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        const { parsePowerSchoolPaste } = await import(
+          "./_lib/powerschoolParser"
+        );
+        const parsed = parsePowerSchoolPaste(input.raw);
+        const parsedCount = parsed.grades.length + parsed.assignments.length;
+        const importRow = await db.recordPowerschoolImport({
+          source: input.source,
+          rawBody: input.raw,
+          parsedCount,
+          errorCount: parsed.unparsedLines.length,
+          notes: input.notes ?? parsed.notes.join(" · "),
+          importedBy: ctx.user?.email ?? ctx.user?.openId,
+        });
+        await db.bulkInsertPowerschoolGrades(importRow.id, parsed.grades);
+        await db.bulkInsertPowerschoolAssignments(
+          importRow.id,
+          parsed.assignments,
+        );
+        return {
+          importId: importRow.id,
+          grades: parsed.grades.length,
+          assignments: parsed.assignments.length,
+          unparsed: parsed.unparsedLines,
+          kind: parsed.kind,
+          notes: parsed.notes,
+        };
+      }),
+    listGrades: protectedProcedure
+      .input(z.object({ limit: z.number().default(200) }).optional())
+      .query(({ input }) => db.listPowerschoolGrades(input?.limit ?? 200)),
+    listAssignments: protectedProcedure
+      .input(z.object({ limit: z.number().default(200) }).optional())
+      .query(({ input }) =>
+        db.listPowerschoolAssignments(input?.limit ?? 200),
+      ),
+    listImports: protectedProcedure
+      .input(z.object({ limit: z.number().default(20) }).optional())
+      .query(({ input }) => db.listPowerschoolImports(input?.limit ?? 20)),
+  }),
 });
 export type AppRouter = typeof appRouter;

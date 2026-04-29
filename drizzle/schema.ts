@@ -1366,3 +1366,49 @@ export const assignmentBacklog = mysqlTable("assignmentBacklog", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 export type AssignmentBacklogRow = typeof assignmentBacklog.$inferSelect;
+
+
+// -------- PowerSchool (Indian Hill) imports --------
+// A single "import event" (paste or upload or scraped snapshot).
+// We keep the raw HTML/CSV/text body so we can re-parse later if the parser improves.
+export const powerschoolImports = mysqlTable("powerschool_imports", {
+  id: int("id").autoincrement().primaryKey(),
+  source: varchar("source", { length: 32 }).notNull().default("paste"), // paste | csv | scraper | email
+  rawBody: text("raw_body").notNull(),
+  rawMime: varchar("raw_mime", { length: 128 }).default("text/plain"),
+  parsedCount: int("parsed_count").notNull().default(0),
+  errorCount: int("error_count").notNull().default(0),
+  notes: text("notes"),
+  importedBy: varchar("imported_by", { length: 256 }),
+  importedAt: timestamp("imported_at").defaultNow().notNull(),
+});
+
+// One row per (class, term) grade snapshot from PowerSchool.
+export const powerschoolGrades = mysqlTable("powerschool_grades", {
+  id: int("id").autoincrement().primaryKey(),
+  importId: int("import_id"),
+  term: varchar("term", { length: 32 }).notNull(), // "Q1", "Q2", "Q3", "Q4", "S1", "Y1"
+  course: varchar("course", { length: 256 }).notNull(),
+  teacher: varchar("teacher", { length: 256 }),
+  letter: varchar("letter", { length: 8 }),
+  percent: varchar("percent", { length: 16 }),
+  comments: text("comments"),
+  snapshotDate: varchar("snapshot_date", { length: 32 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// One row per assignment from PowerSchool.
+export const powerschoolAssignments = mysqlTable("powerschool_assignments", {
+  id: int("id").autoincrement().primaryKey(),
+  importId: int("import_id"),
+  course: varchar("course", { length: 256 }).notNull(),
+  category: varchar("category", { length: 128 }),
+  title: varchar("title", { length: 512 }).notNull(),
+  dueDate: varchar("due_date", { length: 32 }),
+  assignedDate: varchar("assigned_date", { length: 32 }),
+  score: varchar("score", { length: 64 }),
+  pointsPossible: varchar("points_possible", { length: 64 }),
+  status: varchar("status", { length: 32 }), // late | missing | collected | scored | exempt
+  teacherComment: text("teacher_comment"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

@@ -1244,3 +1244,5 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Document one-time login flow in Settings explainer
 
 - [ ] **Mom note:** Google sign-in prompt on phone 926-5808 for the IH PowerSchool portal login (to use when we flip on Option A scraper in the morning)
+
+- [x] **Mom confirmed:** IH PowerSchool uses Google SSO via spear.cpt@gmail.com — scraper will log in via "Continue with Google" (pause for one-time Mom takeover)

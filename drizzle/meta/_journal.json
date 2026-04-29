@@ -225,6 +225,13 @@
       "when": 1777436391751,
       "tag": "0031_closed_zodiak",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "5",
+      "when": 1777439266663,
+      "tag": "0032_bored_tomorrow_man",
+      "breakpoints": true
     }
   ]
 }
