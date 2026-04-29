@@ -42,6 +42,7 @@ import MyLevels from "./pages/MyLevels";
 import ProudWall from "./pages/ProudWall";
 import Placement from "./pages/Placement";
 import UploadOrSync from "./pages/UploadOrSync";
+import DailyAgendas from "./pages/DailyAgendas";
 import { trpc } from "@/lib/trpc";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
@@ -115,6 +116,9 @@ function Router() {
         <Route path="/placement" component={Placement} />
         <Route path="/upload">
           <AdultGate><UploadOrSync /></AdultGate>
+        </Route>
+        <Route path="/agendas">
+          <AdultGate><DailyAgendas /></AdultGate>
         </Route>
         <Route path="/rewards" component={Rewards} />
         {/* Legacy direct links still work and land on the Rewards tabs */}

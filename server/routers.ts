@@ -1507,6 +1507,50 @@ export const appRouter = router({
       .query(({ input }) => db.listRecentDrivePushes(input?.limit ?? 20)),
   }),
 
+  /* =================== CLASSROOM AGENDAS (Daily Agendas) =================== */
+  classroom: router({
+    list: protectedProcedure
+      .input(z.object({ limit: z.number().default(60) }).optional())
+      .query(({ input }) => db.listRecentClassroomAgendas(input?.limit ?? 60)),
+    gaps: protectedProcedure
+      .input(z.object({ daysBack: z.number().default(7) }).optional())
+      .query(({ input }) => db.listAgendaHydrationGaps(input?.daysBack ?? 7)),
+    insert: protectedProcedure
+      .input(
+        z.object({
+          agendaDate: z.string(),
+          teacher: z.string().optional(),
+          course: z.string().optional(),
+          subjectSlug: z.string().optional(),
+          school: z.string().optional(),
+          term: z.string().optional(),
+          source: z.enum(["classroom", "drive", "gmail", "image", "manual"]).default("manual"),
+          sourceUrl: z.string().optional(),
+          rawText: z.string().optional(),
+          topics: z.array(z.string()).optional(),
+          assignments: z
+            .array(z.object({ title: z.string(), dueAt: z.string().optional(), notes: z.string().optional() }))
+            .optional(),
+        }),
+      )
+      .mutation(async ({ input }) => {
+        const row = await db.insertClassroomAgenda({
+          agendaDate: input.agendaDate,
+          teacher: input.teacher ?? null,
+          course: input.course ?? null,
+          subjectSlug: input.subjectSlug ?? null,
+          school: input.school ?? "indian_hill",
+          term: input.term ?? null,
+          source: input.source,
+          sourceUrl: input.sourceUrl ?? null,
+          rawText: input.rawText ?? null,
+          topics: input.topics ?? null,
+          assignments: input.assignments ?? null,
+        });
+        return row;
+      }),
+  }),
+
   /* =================== POWERSCHOOL IMPORT (Indian Hill grades + assignments) =================== */
   powerschool: router({
     importPaste: protectedProcedure

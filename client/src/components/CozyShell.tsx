@@ -36,6 +36,7 @@ const MORE_NAV: NavItem[] = [
 // Full admin pages still reachable via direct URL but hidden from sidebar.
 const ADULT_NAV: NavItem[] = [
   { to: "/upload",     emoji: "⬆️", label: "Upload or Sync" },
+  { to: "/agendas",    emoji: "🗓️", label: "Daily Agendas" },
   { to: "/tutor",      emoji: "🤝", label: "Tutor Handoff" },
   { to: "/analytics",  emoji: "📊", label: "Analytics" },
   { to: "/whiteboard", emoji: "📌", label: "Parent Notes" },

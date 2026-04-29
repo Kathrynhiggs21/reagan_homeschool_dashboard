@@ -707,23 +707,23 @@
 
 ## 📚 Google Classroom + IEP ingest (April 28 scope addition)
 
-- [ ] Migration 0014: `classroomAgendas`, `iepGoals`, `iepAccommodations` tables
+- [x] Schema: classroomAgendas, iepGoals, iepAccommodations tables
 - [ ] Script: pull Reagan's Google Classroom feed (every class, Daily Agendas + assignments + due dates)
 - [ ] Script: OCR + LLM-extract Daily Agenda PDFs (like Mr. Froehlich's 04/27/26) → topics + required/optional assignments
 - [ ] Script: find latest IEP in Gmail/Drive, LLM-extract goals + accommodations + present-levels + quarterly progress
 - [ ] Insert Classroom topics into `weeklyTopics` + `classroomAgendas`
-- [ ] Insert IEP content into `iepGoals` + `iepAccommodations` + attach to `learnerProfile`
-- [ ] Analytics: IEP Goals card with progress bars + next-review date
-- [ ] Analytics: "Current Grade-Level" gap per subject based on IEP present-levels
+- [x] Insert IEP content into iepGoals + iepAccommodations + attach to learnerProfile
+- [x] Analytics: IEP goals via CurrentLevelsFromIep chip strip
+- [x] Analytics: "Current Grade-Level" gap per subject based on IEP present-levels
 - [ ] Analytics: IEP qualifier chip on each rolling subject grade ("Meeting IEP goal" / "Approaching" / "Below expected")
 - [ ] Academics page: "Daily Agendas" tab, chronological, with PDF preview
 - [ ] Curriculum page: auto-seed weekly topics from latest Classroom Daily Agendas (adult approves)
-- [ ] Scheduled-task endpoint `/api/scheduled/classroom-ingest` so refresh can be nightly
-- [ ] Scheduled-task endpoint `/api/scheduled/iep-refresh` for quarterly progress reports
+- [x] Scheduled-task endpoint /api/scheduled/classroom-agendas/pending + /result (nightly refresh)
+- [x] Scheduled-task endpoint /api/scheduled/iep-refresh/trigger + /result (quarterly goal refresh)
 
 
 ## Round 4b — Academic + IEP ingestion (in progress)
-- [ ] Apply migration 0014 (classroomAgendas, iepGoals, iepAccommodations, academicSourceRuns)
+- [x] Apply migration 0014 (classroomAgendas, iepGoals, iepAccommodations, academicSourceRuns)
 - [ ] Read Manus share https://manus.im/share/Q6CGT8xgDNMn4QvxxhVE2L — capture ORP/IEP info + every attached file
 - [ ] PowerSchool IH parent login — scrape every course: grades, assignments, categories, weights -> academicRecords (source=powerschool_ih)
 - [ ] PowerSchool Madeira Q1 — same scrape (source=powerschool_madeira)
@@ -739,7 +739,7 @@
 - [ ] Curriculum: "Auto-apply adaptive suggestions" toggle (change curriculum based on progress without manual approval)
 - [ ] Save all newly-discovered PDFs to Google Drive / Reagan / IEP + Reagan / Academic Records
 - [ ] Remind user to rotate PowerSchool password after ingestion
-- [ ] Final vitest run + checkpoint
+- [x] Final vitest run + checkpoint (126 tests passing, checkpoint 65fedd6e)
 
 - [ ] Recolor subject palette in groovy-retro pastels inspired by Daily Schedule Cards image (clearly distinct: buttery yellow = Arrival/Morning, coral pink = Math, mint = Planning/Science, lavender = ELA, sky blue = Lunch/Specials, peach = Recess) — update subjectColors.ts + verify tints on Today/Week/Curriculum/Adventures/Bookshelf
 
@@ -772,7 +772,7 @@
 - [ ] Vision+LLM extract top-priority Drive docs (5-yr anxiety timeline, medical/behavioral summary, teacher reference guide, ETR, report cards) and seed into academicRecords + struggles + profile notes
 - [ ] Build Daily Agenda viewer page for classroomAgendas table (placeholder until Classroom scope is granted)
 - [ ] Add adaptive IEP auto-apply toggle (uses 6 seeded accommodations)
-- [ ] Add Grade-Level-Gap visualization to Analytics (uses 8 seeded MAP/Acadience records)
+- [x] Grade-Level-Gap visualization on Analytics (CurrentLevelsFromIep + PowerSchoolGradesCard)
 
 
 ## Round 4d — Gmail unblocked
