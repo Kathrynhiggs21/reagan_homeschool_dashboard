@@ -1,4 +1,5 @@
 import { trpc } from "@/lib/trpc";
+import { popConfettiFromElement } from "@/lib/confetti";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -94,6 +95,9 @@ export default function Today() {
   const [gradeDialog, setGradeDialog] = useState<{ open: boolean; block?: { id: number; title?: string; subjectSlug?: string | null } }>({ open: false });
   const [keyDialog, setKeyDialog] = useState<{ open: boolean; blockId?: number; title?: string }>({ open: false });
   const [turnIn, setTurnIn] = useState<{ open: boolean; block?: { id: number; title?: string; subjectSlug?: string | null } }>({ open: false });
+  const [goodWorkDialog, setGoodWorkDialog] = useState<{ open: boolean; blockId?: number; title?: string }>({ open: false });
+  const [goodWorkText, setGoodWorkText] = useState("");
+  const saveGoodWorkM = trpc.prefs.set.useMutation();
 
   const today_str = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
   const blocks = today.data?.blocks ?? [];
@@ -369,6 +373,15 @@ export default function Today() {
                           size="sm"
                           variant="ghost"
                           className="h-7 px-2 text-xs text-neutral-700 hover:bg-white"
+                          onClick={() => setGoodWorkDialog({ open: true, blockId: b.id, title: b.title })}
+                          title="Adult: attach a Good Work note"
+                        >
+                          ★ Good Work
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs text-neutral-700 hover:bg-white"
                           onClick={() => moveBlockM.mutate(
                             { id: b.id, direction: "up" },
                             { onSuccess: () => { utils.plans.today.invalidate(); } },
@@ -401,8 +414,10 @@ export default function Today() {
                   aria-label={isDone ? "Completed" : "Mark complete"}
                   className={`schedule-check ${isDone ? "is-checked" : ""}`}
                   style={{ ['--check-accent' as any]: stop.border }}
-                  onClick={() => {
+                  onClick={(ev) => {
                     if (isDone) return;
+                    const tgt = ev.currentTarget as HTMLElement;
+                    popConfettiFromElement(tgt);
                     completeM.mutate({ id: b.id }, { onSuccess: () => { toast.success("Done!"); celebrateKiwi("Yay! 🎉 +1 sticker!"); utils.plans.today.invalidate(); }});
                   }}
                 >
@@ -596,6 +611,46 @@ export default function Today() {
           <DialogFooter>
             <Button variant="outline" onClick={() => animalVideo.refetch()}>Another</Button>
             <Button onClick={() => setVideoOpen(false)}>Done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* ============ Good Work note dialog (adult) ============ */}
+      <Dialog open={goodWorkDialog.open} onOpenChange={(o) => { setGoodWorkDialog({ open: o }); if (!o) setGoodWorkText(""); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>★ Good Work note — {goodWorkDialog.title}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <div className="text-muted-foreground">A short message that will stamp onto this work in her Notebook/Portfolio.</div>
+            <textarea
+              value={goodWorkText}
+              onChange={(e) => setGoodWorkText(e.target.value)}
+              rows={4}
+              maxLength={280}
+              placeholder="You showed up even when it felt hard. That's the whole game. ★"
+              className="w-full rounded-md border p-2 text-sm bg-white text-neutral-900"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setGoodWorkDialog({ open: false })}>Cancel</Button>
+            <Button
+              disabled={!goodWorkText.trim() || saveGoodWorkM.isPending}
+              onClick={() => {
+                if (!goodWorkDialog.blockId) return;
+                saveGoodWorkM.mutate(
+                  { key: `block:${goodWorkDialog.blockId}:goodWork`, value: goodWorkText.trim() },
+                  {
+                    onSuccess: () => {
+                      toast.success("Good Work note saved ★");
+                      setGoodWorkDialog({ open: false });
+                      setGoodWorkText("");
+                    },
+                  },
+                );
+              }}
+            >
+              Save note
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
