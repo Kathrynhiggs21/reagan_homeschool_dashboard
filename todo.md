@@ -1318,3 +1318,17 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Home "Resume where we left off" card — shows the next uncompleted schedule block + a Jump button
 - [ ] Vitest: coverage on the new `today.resumePointer` / `analytics.todayCoverage` helpers
 - [ ] Checkpoint + ask Mom to Publish
+
+
+## Tonight polish batch (Apr 30)
+- [x] IXL links: route through Indian Hill SSO when "IH IXL" switch is on; falls back to public ixl.com search when off (default on)
+- [x] Khan Kids fallback: scaffolded-flagged topics (notes contain "scaffold/kids/below-grade") open khanacademykids.org when toggle is on (default off)
+- [x] Settings: "Practice-link mode" card with two switches, copy explains trade-offs
+- [x] Persist both switches in localStorage (reagan.practicePrefs.v1)
+- [x] 8 vitests in server/practiceLinks.test.ts cover explicit/derived URLs, IH SSO wrapping, Khan Kids toggle, stacked prefs
+- [ ] Bookshelf: real cover slot for the 3 known books (Spectrum Science 5, 180 Days of Language 5, Tuck Everlasting)
+- [ ] Weekly digest: scheduled endpoint emails Mom + tutor Sunday with coverage %, mood trend, IEP progress
+- [ ] Settings: weekly-digest recipient editor
+- [ ] Schedule blocks: keyboard up/down reorder handle (drag already present)
+- [ ] Rewards: stickers → prize ladder visualization with milestone markers
+- [ ] Settings: edit the prize ladder milestones

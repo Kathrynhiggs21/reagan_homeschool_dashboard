@@ -6,14 +6,34 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-// inlined practice-link helper (mirrors shared/practiceLinks.ts)
-function derivePracticeLinks(opts: { subject: string; title: string; standardRef?: string | null; khanUrl?: string | null; ixlUrl?: string | null; }) {
+import { usePracticePrefs } from "@/hooks/usePracticePrefs";
+
+// Inlined prefs-aware version of shared/practiceLinks.ts — kept in this file
+// because the client tsconfig paths don't alias the shared/ dir yet.
+const IH_IXL_SIGNIN = "https://www.ixl.com/signin/indianhill";
+const KHAN_KIDS_HOME = "https://www.khanacademykids.org";
+function derivePracticeLinks(opts: {
+  subject: string;
+  title: string;
+  standardRef?: string | null;
+  khanUrl?: string | null;
+  ixlUrl?: string | null;
+  scaffolded?: boolean;
+  prefs?: { ihIxl?: boolean; khanKids?: boolean };
+}) {
+  const prefs = opts.prefs ?? {};
   const baseQ = (opts.standardRef ? opts.standardRef + " " : "") + opts.title;
   const q = encodeURIComponent(baseQ.trim());
-  return {
-    khan: opts.khanUrl || `https://www.khanacademy.org/search?page_search_query=${q}`,
-    ixl: opts.ixlUrl || `https://www.ixl.com/search?q=${q}`,
-  };
+  const useKhanKids = Boolean(opts.scaffolded && prefs.khanKids);
+  const khanSearchRoot = useKhanKids
+    ? `${KHAN_KIDS_HOME}/?search=`
+    : `https://www.khanacademy.org/search?page_search_query=`;
+  const khan = opts.khanUrl && !useKhanKids ? opts.khanUrl : `${khanSearchRoot}${q}`;
+  const rawIxl = opts.ixlUrl || `https://www.ixl.com/search?q=${q}`;
+  const ixl = prefs.ihIxl
+    ? `${IH_IXL_SIGNIN}?returnUrl=${encodeURIComponent(rawIxl)}`
+    : rawIxl;
+  return { khan, ixl, usedIhSso: Boolean(prefs.ihIxl), usedKhanKids: useKhanKids };
 }
 
 type Topic = {
@@ -32,20 +52,29 @@ type Topic = {
 };
 
 function PracticeLinks({ t, small = false }: { t: Topic; small?: boolean }) {
+  const { prefs } = usePracticePrefs();
+  // A topic is "scaffolded" when it's flagged Q1 and still marked notStarted,
+  // or when the tutor has added notes asking for extra support. Falls back to
+  // "not scaffolded" in the common case.
+  const scaffolded = Boolean(t.notes && /scaffold|kids|below-grade/i.test(t.notes));
   const links = derivePracticeLinks({
     subject: t.subject,
     title: t.title,
     standardRef: t.standardRef,
     khanUrl: t.khanUrl,
     ixlUrl: t.ixlUrl,
+    scaffolded,
+    prefs,
   });
   const cls = small
     ? "text-[9px] px-1 py-0 h-4 rounded border bg-transparent"
     : "text-[10px] px-1.5 py-0 h-5 rounded border bg-transparent";
+  const khanLabel = links.usedKhanKids ? "Khan Kids" : "Khan";
+  const ixlLabel = links.usedIhSso ? "IXL (IH)" : "IXL";
   return (
     <span className="inline-flex gap-1 ml-1">
-      <a href={links.khan} target="_blank" rel="noopener noreferrer" className={cls + " border-emerald-400 text-emerald-700 hover:bg-emerald-50"} title="Open on Khan Academy">Khan</a>
-      <a href={links.ixl} target="_blank" rel="noopener noreferrer" className={cls + " border-rose-400 text-rose-700 hover:bg-rose-50"} title="Open on IXL">IXL</a>
+      <a href={links.khan} target="_blank" rel="noopener noreferrer" className={cls + " border-emerald-400 text-emerald-700 hover:bg-emerald-50"} title={links.usedKhanKids ? "Open on Khan Academy Kids" : "Open on Khan Academy"}>{khanLabel}</a>
+      <a href={links.ixl} target="_blank" rel="noopener noreferrer" className={cls + " border-rose-400 text-rose-700 hover:bg-rose-50"} title={links.usedIhSso ? "Open IXL via Indian Hill SSO" : "Open on IXL"}>{ixlLabel}</a>
     </span>
   );
 }
