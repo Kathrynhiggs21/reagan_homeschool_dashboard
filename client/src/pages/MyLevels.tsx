@@ -181,30 +181,69 @@ function SubjectView({ subject, onBack }: { subject: SubjectTile; onBack: () => 
         </Card>
       )}
 
-      <div className="grid md:grid-cols-2 gap-3">
+      <div className="flex flex-col gap-3">
         {(skills.data || []).map((s: any) => {
           const lvl = s.progress?.level ?? 0;
           const meta = LEVEL_NAMES[lvl] || LEVEL_NAMES[0];
+          // pick a representative emoji thumbnail from the skill's visual hook,
+          // strand, or fall back to the subject's emoji so every card has a face
+          const findEmoji = (str: string | undefined | null): string | undefined => {
+            if (!str) return undefined;
+            // scan code-points for the common emoji ranges; avoids \p{} flags that
+            // require a newer regex target than the project's tsconfig.
+            for (const ch of str) {
+              const cp = ch.codePointAt(0) || 0;
+              if (
+                (cp >= 0x1f300 && cp <= 0x1faff) ||
+                (cp >= 0x2600 && cp <= 0x27bf)
+              ) return ch;
+            }
+            return undefined;
+          };
+          const thumb =
+            (s.thumbEmoji as string | undefined) ||
+            (s.iconEmoji as string | undefined) ||
+            findEmoji(s.kidFriendly) ||
+            findEmoji(s.visualHook) ||
+            subject.emoji;
           return (
             <Card
               key={s.id}
-              className="p-4 space-y-2"
+              className="p-3 md:p-4"
               style={{
                 background: `linear-gradient(180deg, ${subject.bgFrom}cc, ${subject.bgTo}66)`,
                 border: `2px solid ${subject.color}`,
                 color: "#1a1a1a",
               }}
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <div className="text-[11px] uppercase tracking-wider opacity-70">{s.strand}</div>
-                  <div className="font-display text-base leading-tight mt-0.5 text-slate-900">{s.title}</div>
-                  {s.kidFriendly && (
-                    <p className="text-[13px] mt-1 leading-snug text-slate-800">{s.kidFriendly}</p>
-                  )}
+              <div className="flex items-stretch gap-3">
+                {/* big emoji thumbnail on the left so Reagan can recognize the skill at a glance */}
+                <div
+                  className="shrink-0 flex items-center justify-center rounded-xl"
+                  style={{
+                    width: 86,
+                    height: 86,
+                    background: `linear-gradient(160deg, ${subject.bgTo}, ${subject.bgFrom})`,
+                    border: `2px solid ${subject.color}`,
+                    boxShadow: `inset 0 0 0 2px rgba(255,255,255,0.6), 0 6px 16px -8px ${subject.color}99`,
+                    fontSize: 44,
+                    lineHeight: 1,
+                  }}
+                  aria-hidden
+                >
+                  {thumb}
                 </div>
-                <div className="text-2xl shrink-0" aria-hidden>{meta.emoji}</div>
-              </div>
+                <div className="flex-1 min-w-0 space-y-1">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[11px] uppercase tracking-wider opacity-70">{s.strand}</div>
+                      <div className="font-display text-base md:text-lg leading-tight mt-0.5 text-slate-900">{s.title}</div>
+                      {s.kidFriendly && (
+                        <p className="text-[13px] mt-1 leading-snug text-slate-800">{s.kidFriendly}</p>
+                      )}
+                    </div>
+                    <div className="text-2xl shrink-0" aria-hidden>{meta.emoji}</div>
+                  </div>
 
               <div className="flex items-center gap-1 mt-1">
                 {[1, 2, 3, 4, 5].map((n) => (
@@ -228,6 +267,8 @@ function SubjectView({ subject, onBack }: { subject: SubjectTile; onBack: () => 
                 )}
               </div>
 
+                </div>
+              </div>
               {(s.storyHook || s.visualHook || s.handsOnHook) && (
                 <details className="mt-1">
                   <summary className="text-[12px] font-semibold cursor-pointer select-none" style={{ color: subject.color }}>
@@ -273,7 +314,7 @@ function SubjectView({ subject, onBack }: { subject: SubjectTile; onBack: () => 
                   🌟 I got it!
                 </Button>
               </div>
-            </Card>
+              </Card>
           );
         })}
       </div>
