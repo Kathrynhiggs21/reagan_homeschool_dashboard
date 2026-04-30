@@ -24,12 +24,24 @@ import { chirp } from "@/lib/birdVoice";
 
 type Pos = { x: number; y: number };
 
-const PERCH_SIZE = 96;
-const LS_KEY = "kiwiPerchPos";
+// Perch is smaller on mobile so it doesn't cover half the screen
+function perchSize(): number {
+  if (typeof window === "undefined") return 80;
+  return window.innerWidth < 640 ? 60 : 80;
+}
 
-function loadPos(): Pos {
+// Per-route persistence so she doesn't block the same button on every page
+function routeKey(): string {
+  if (typeof window === "undefined") return "_global";
+  const p = window.location.pathname || "/";
+  return p.replace(/\/+$/, "") || "/";
+}
+const LS_PREFIX = "kiwiPerchPos:";
+
+function loadPos(size: number): Pos {
   try {
-    const raw = localStorage.getItem(LS_KEY);
+    const key = LS_PREFIX + routeKey();
+    const raw = localStorage.getItem(key) || localStorage.getItem(LS_PREFIX + "_last");
     if (raw) {
       const p = JSON.parse(raw);
       if (typeof p.x === "number" && typeof p.y === "number") return p;
@@ -37,17 +49,26 @@ function loadPos(): Pos {
   } catch {}
   const w = typeof window !== "undefined" ? window.innerWidth : 1024;
   const h = typeof window !== "undefined" ? window.innerHeight : 768;
-  return { x: Math.max(16, w - PERCH_SIZE - 24), y: Math.max(16, h - PERCH_SIZE - 96) };
+  return { x: Math.max(16, w - size - 24), y: Math.max(16, h - size - 120) };
 }
 
-function clamp(p: Pos): Pos {
+function clamp(p: Pos, size: number, chatOpen?: boolean): Pos {
   if (typeof window === "undefined") return p;
   const w = window.innerWidth;
   const h = window.innerHeight;
-  return {
-    x: Math.max(8, Math.min(w - PERCH_SIZE - 8, p.x)),
-    y: Math.max(8, Math.min(h - PERCH_SIZE - 8, p.y)),
-  };
+  let x = Math.max(8, Math.min(w - size - 8, p.x));
+  let y = Math.max(8, Math.min(h - size - 8, p.y));
+  // Keep Kiwi away from an open chat panel (bottom-center on mobile, right side on desktop)
+  if (chatOpen) {
+    if (w < 640) {
+      // Chat takes the bottom ~420px on mobile; push her up
+      if (y > h - size - 440) y = Math.max(8, h - size - 460);
+    } else {
+      // Chat anchors right; nudge her to the left third
+      if (x > w * 0.45) x = Math.max(8, Math.min(x, w * 0.45));
+    }
+  }
+  return { x, y };
 }
 
 const FRIENDLY_LINES = [
@@ -79,7 +100,8 @@ const QUICK_CHIRPS = [
 export default function KiwiPerch() {
   const { enabled, open, setOpen, adultPresent, mode } = useKiwi();
   const [pose, setPose] = useState<KiwiPose>("idle");
-  const [pos, setPos] = useState<Pos>(() => loadPos());
+  const [size, setSize] = useState<number>(() => perchSize());
+  const [pos, setPos] = useState<Pos>(() => loadPos(perchSize()));
   const [dragging, setDragging] = useState(false);
   const [flying, setFlying] = useState(false);
   const [bubbleText, setBubbleText] = useState<string | null>(null);
@@ -89,17 +111,38 @@ export default function KiwiPerch() {
   const bubbleTimeoutRef = useRef<number | null>(null);
   const dragOffsetRef = useRef<{ dx: number; dy: number } | null>(null);
 
-  // Persist position
+  // Persist position per-route + keep a _last fallback
   useEffect(() => {
-    try { localStorage.setItem(LS_KEY, JSON.stringify(pos)); } catch {}
+    try {
+      const key = LS_PREFIX + routeKey();
+      const s = JSON.stringify(pos);
+      localStorage.setItem(key, s);
+      localStorage.setItem(LS_PREFIX + "_last", s);
+    } catch {}
   }, [pos]);
 
-  // Reclamp on resize
+  // Reload position when route changes (listens for wouter/history popstate)
   useEffect(() => {
-    const onResize = () => setPos((p) => clamp(p));
+    const onNav = () => setPos(loadPos(size));
+    window.addEventListener("popstate", onNav);
+    return () => window.removeEventListener("popstate", onNav);
+  }, [size]);
+
+  // Reclamp on resize + re-evaluate mobile size
+  useEffect(() => {
+    const onResize = () => {
+      const s = perchSize();
+      setSize(s);
+      setPos((p) => clamp(p, s, open));
+    };
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, []);
+  }, [open]);
+
+  // Re-clamp when chat opens/closes so she dodges the panel
+  useEffect(() => {
+    setPos((p) => clamp(p, size, open));
+  }, [open, size]);
 
   /* ============================ MAIN ACTION LOOP ============================
    * Runs ALL the time. Picks a random micro-action every ~2.5s so Kiwi is
@@ -124,8 +167,8 @@ export default function KiwiPerch() {
       } else if (roll < 0.55) {
         // Small bob-hop
         setPose("flap");
-        setPos((p) => clamp({ x: p.x + (Math.random() - 0.5) * 40, y: p.y - 12 }));
-        window.setTimeout(() => setPos((p) => clamp({ x: p.x, y: p.y + 12 })), 280);
+        setPos((p) => clamp({ x: p.x + (Math.random() - 0.5) * 40, y: p.y - 12 }, size, open));
+        window.setTimeout(() => setPos((p) => clamp({ x: p.x, y: p.y + 12 }, size, open)), 280);
         window.setTimeout(() => setPose("idle"), 520);
       } else if (roll < 0.78) {
         // Chirp with a tiny bubble
@@ -166,7 +209,7 @@ export default function KiwiPerch() {
           setPos((p) => clamp({
             x: p.x + (Math.random() - 0.5) * 200,
             y: p.y + (Math.random() - 0.5) * 120,
-          }));
+          }, size, open));
           window.setTimeout(() => setPose("idle"), 600);
         }
         schedule();
@@ -188,15 +231,15 @@ export default function KiwiPerch() {
           setPose("flap");
           const w = window.innerWidth;
           const h = window.innerHeight;
-          const startX = pos.x > w / 2 ? -PERCH_SIZE : w + PERCH_SIZE;
-          const endX = pos.x > w / 2 ? w + PERCH_SIZE : -PERCH_SIZE;
+          const startX = pos.x > w / 2 ? -size : w + size;
+          const endX = pos.x > w / 2 ? w + size : -size;
           const midY = 80 + Math.random() * (h - 200);
           setPos({ x: startX, y: midY });
           window.setTimeout(() => setPos({ x: endX, y: midY }), 100);
           window.setTimeout(() => {
             setFlying(false);
             setPose("idle");
-            setPos(clamp({ x: w - PERCH_SIZE - 40, y: h - PERCH_SIZE - 120 }));
+            setPos(clamp({ x: w - size - 40, y: h - size - 120 }, size, open));
           }, 2400);
         }
         schedule();
@@ -290,8 +333,8 @@ export default function KiwiPerch() {
   const onPointerMove = useCallback((e: React.PointerEvent) => {
     if (!dragging || !dragOffsetRef.current) return;
     const { dx, dy } = dragOffsetRef.current;
-    setPos(clamp({ x: e.clientX - dx, y: e.clientY - dy }));
-  }, [dragging]);
+    setPos(clamp({ x: e.clientX - dx, y: e.clientY - dy }, size, open));
+  }, [dragging, size, open]);
 
   const onPointerUp = useCallback((e: React.PointerEvent) => {
     if (!dragging) return;
@@ -330,6 +373,7 @@ export default function KiwiPerch() {
           ? "left 2.2s ease-in-out, top 2.2s ease-in-out"
           : "left 0.5s cubic-bezier(0.34,1.56,0.64,1), top 0.5s cubic-bezier(0.34,1.56,0.64,1)",
         touchAction: "none",
+        pointerEvents: "auto",
       }}
     >
       <div className="relative">
@@ -337,7 +381,7 @@ export default function KiwiPerch() {
           <div
             className="absolute bg-white text-slate-800 border-2 border-amber-200 rounded-2xl px-3 py-2 text-xs font-medium shadow-lg max-w-[180px]"
             style={{
-              bottom: PERCH_SIZE + 4,
+              bottom: size + 4,
               left: "50%",
               transform: "translateX(-50%)",
               fontFamily: "'Patrick Hand','Comic Sans MS',cursive",
@@ -350,7 +394,7 @@ export default function KiwiPerch() {
           </div>
         )}
 
-        {popBurst > 0 && <PopBurst key={popBurst} />}
+        {popBurst > 0 && <PopBurst key={popBurst} size={size} />}
 
         <div
           onPointerDown={onPointerDown}
@@ -359,15 +403,15 @@ export default function KiwiPerch() {
           onPointerCancel={onPointerUp}
           style={{
             cursor: dragging ? "grabbing" : "grab",
-            width: PERCH_SIZE,
-            height: PERCH_SIZE,
+            width: size,
+            height: size,
             transform: `${flying ? "rotate(-6deg) scale(1.05)" : dragging ? "scale(1.08)" : `rotate(${tilt}deg)`}`,
             transition: "transform 0.25s ease-out",
             filter: dragging ? "drop-shadow(0 8px 18px rgba(0,0,0,0.35))" : undefined,
           }}
           title="Drag Kiwi anywhere — tap to chat"
         >
-          <KiwiSprite pose={pose} size={PERCH_SIZE} animate ariaLabel="Kiwi the parakeet — drag me or tap to chat" />
+          <KiwiSprite pose={pose} size={size} animate ariaLabel="Kiwi the parakeet — drag me or tap to chat" />
         </div>
 
         <div
@@ -396,7 +440,7 @@ export default function KiwiPerch() {
   );
 }
 
-function PopBurst() {
+function PopBurst({ size = 80 }: { size?: number }) {
   const items = Array.from({ length: 6 }).map((_, i) => {
     const angle = (i / 6) * Math.PI * 2;
     const r = 40 + Math.random() * 20;
@@ -408,8 +452,8 @@ function PopBurst() {
         key={i}
         style={{
           position: "absolute",
-          left: PERCH_SIZE / 2 - 8,
-          top: PERCH_SIZE / 2 - 8,
+          left: size / 2 - 8,
+          top: size / 2 - 8,
           fontSize: 18,
           pointerEvents: "none",
           // @ts-expect-error CSS variables

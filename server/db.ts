@@ -3639,3 +3639,103 @@ export async function autoCompleteFromHistory(): Promise<{ checked: number; byQu
   }
   return { checked: q1Count + hits, byQuarter: q1Count };
 }
+
+
+// ------------------------------------------------------------------
+// Today coverage + resume pointer (Apr 29 late build)
+// ------------------------------------------------------------------
+
+/**
+ * Returns per-subject % complete for today's plan.
+ */
+export async function todayCoverage(): Promise<Array<{ subjectSlug: string; total: number; done: number; pct: number }>> {
+  const db = getDb();
+  const today = new Date().toISOString().slice(0, 10);
+  const plans = await db.select({ id: dailyPlans.id })
+    .from(dailyPlans)
+    .where(sql`DATE(${dailyPlans.date}) = ${today}`)
+    .orderBy(desc(dailyPlans.id))
+    .limit(1);
+  const planId = plans[0]?.id;
+  if (!planId) return [];
+  const subjectList = await db.select({ id: subjects.id, slug: subjects.slug }).from(subjects);
+  const subjectBySlugId = new Map<number, string>();
+  for (const s of subjectList) subjectBySlugId.set(s.id as number, s.slug as string);
+  const rows = await db.select({ subjectId: scheduleBlocks.subjectId, status: scheduleBlocks.status })
+    .from(scheduleBlocks)
+    .where(eq(scheduleBlocks.planId, planId));
+  const map = new Map<string, { total: number; done: number }>();
+  for (const r of rows) {
+    const key = subjectBySlugId.get(r.subjectId as number) || "other";
+    const cur = map.get(key) || { total: 0, done: 0 };
+    cur.total += 1;
+    if (r.status === "complete") cur.done += 1;
+    map.set(key, cur);
+  }
+  return Array.from(map.entries()).map(([subjectSlug, v]) => ({
+    subjectSlug,
+    total: v.total,
+    done: v.done,
+    pct: v.total > 0 ? Math.round((v.done / v.total) * 100) : 0,
+  }));
+}
+
+/**
+ * Next incomplete schedule block for today (or null).
+ */
+export async function resumePointer(): Promise<{ id: number; title: string; subjectSlug: string; description: string | null } | null> {
+  const db = getDb();
+  const today = new Date().toISOString().slice(0, 10);
+  const plans = await db.select({ id: dailyPlans.id })
+    .from(dailyPlans)
+    .where(sql`DATE(${dailyPlans.date}) = ${today}`)
+    .orderBy(desc(dailyPlans.id))
+    .limit(1);
+  const planId = plans[0]?.id;
+  if (!planId) return null;
+  const rows = await db.select({
+    id: scheduleBlocks.id,
+    title: scheduleBlocks.title,
+    subjectId: scheduleBlocks.subjectId,
+    description: scheduleBlocks.description,
+  })
+    .from(scheduleBlocks)
+    .where(and(eq(scheduleBlocks.planId, planId), sql`(${scheduleBlocks.status} IS NULL OR ${scheduleBlocks.status} NOT IN ('complete','skipped'))`))
+    .orderBy(asc(scheduleBlocks.sortOrder))
+    .limit(1);
+  const r = rows[0];
+  if (!r) return null;
+  let slug = "other";
+  if (r.subjectId != null) {
+    const s = await db.select({ slug: subjects.slug }).from(subjects).where(eq(subjects.id, r.subjectId as number)).limit(1);
+    if (s[0]) slug = s[0].slug as string;
+  }
+  return { id: r.id, title: r.title ?? "", subjectSlug: slug, description: r.description ?? null };
+}
+
+/**
+ * Last N days of mood logs, most recent first.
+ */
+export async function recentMoodStrip(days: number = 3): Promise<Array<{ date: string; zone: string | null }>> {
+  const db = getDb();
+  const out: Array<{ date: string; zone: string | null }> = [];
+  for (let i = 0; i < days; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const day = d.toISOString().slice(0, 10);
+    const plans = await db.select({ id: dailyPlans.id })
+      .from(dailyPlans)
+      .where(sql`DATE(${dailyPlans.date}) = ${day}`)
+      .orderBy(desc(dailyPlans.id))
+      .limit(1);
+    const planId = plans[0]?.id;
+    if (!planId) { out.push({ date: day, zone: null }); continue; }
+    const moods = await db.select({ zone: moodLogs.zone })
+      .from(moodLogs)
+      .where(eq(moodLogs.planId, planId))
+      .orderBy(desc(moodLogs.loggedAt))
+      .limit(1);
+    out.push({ date: day, zone: moods[0]?.zone ?? null });
+  }
+  return out;
+}

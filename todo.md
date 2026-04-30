@@ -1308,3 +1308,13 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] CurriculumChip rendered on Today schedule blocks and Skill Builder; short IH code on chip + real Ohio standard in tooltip
 - [x] Auto-complete: Q1 rows auto-done + title-match heuristic against powerschool_assignments/ihAssignments (Mom can un-tick any that were over-eager)
 - [x] Coding scheme live: IH textbook-style code on chip (Math 1, Math 1-2, ELA M1, etc.), Ohio standard ref stored on each row and shown in tooltip
+
+
+## Tonight build batch (Apr 29 late)
+- [ ] KiwiPerch polish: smaller size on mobile, clamp so it never overlaps the open Kiwi chat panel
+- [ ] KiwiPerch polish: persist perch position PER-ROUTE (so she doesn't always block the same button on every page)
+- [ ] Home "Today's coverage" tiny strip — one bar per subject with % done today, links to Analytics on tap
+- [ ] Home "3-day mood" micro-strip (green/yellow/red dots for last 3 days), links to Timeline
+- [ ] Home "Resume where we left off" card — shows the next uncompleted schedule block + a Jump button
+- [ ] Vitest: coverage on the new `today.resumePointer` / `analytics.todayCoverage` helpers
+- [ ] Checkpoint + ask Mom to Publish

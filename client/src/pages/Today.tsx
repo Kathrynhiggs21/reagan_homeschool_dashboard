@@ -19,6 +19,7 @@ import PlacementInviteCard from "@/components/PlacementInviteCard";
 import IHThisWeekStrip from "@/components/IHThisWeekStrip";
 import CurriculumChip from "@/components/CurriculumChip";
 import GameBreakCard from "@/components/GameBreakCard";
+import HomeAnalyticsStrip from "@/components/HomeAnalyticsStrip";
 
 // Neutral classroom mood language + classroom-y icons
 const ZONES = [
@@ -187,6 +188,7 @@ export default function Today() {
               </Button>
             </div>
           </div>
+          <HomeAnalyticsStrip />
         </Card>
       )}
 

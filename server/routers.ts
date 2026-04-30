@@ -1618,5 +1618,12 @@ export const appRouter = router({
       .mutation(({ input }) => db.setCurriculumNote(input.id, input.notes)),
     autoCompleteFromHistory: protectedProcedure.mutation(() => db.autoCompleteFromHistory()),
   }),
+  today: router({
+    coverage: protectedProcedure.query(() => db.todayCoverage()),
+    resumePointer: protectedProcedure.query(() => db.resumePointer()),
+    moodStrip: protectedProcedure
+      .input(z.object({ days: z.number().min(1).max(14).optional() }).optional())
+      .query(({ input }) => db.recentMoodStrip(input?.days ?? 3)),
+  }),
 });
 export type AppRouter = typeof appRouter;
