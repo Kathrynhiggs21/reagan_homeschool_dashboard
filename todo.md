@@ -1454,3 +1454,12 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] Prizes start EMPTY (auto-seed disabled per spec)
 - [x] Adult Rewards Manager card in Settings: manual create form + 10-preset library + edit/delete
 - [x] All TS clean, all 161 vitest tests still pass
+
+
+## Apr 30 — Schedule block → printable wiring
+- [x] Add subject-slug helper that maps a schedule block (LA / math / reading / science / SS) to its best matching printable for today
+- [x] Add an "Open" button to every block card on Today's schedule
+- [x] Show a "📄 printable ready" badge on blocks that have a linked printable
+- [x] If a block has a linked printable, Open → popup opens directly (reuse Today's School Work popup)
+- [x] If no linked printable, Open → smooth-scroll to Today's School Work card and briefly highlight
+- [x] TS clean + vitest green (161/161)

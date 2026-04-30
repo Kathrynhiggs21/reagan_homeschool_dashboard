@@ -22,7 +22,9 @@ import GameBreakCard from "@/components/GameBreakCard";
 import HomeAnalyticsStrip from "@/components/HomeAnalyticsStrip";
 import BrainBreakTvBox from "@/components/BrainBreakTvBox";
 import MascotGreeting from "@/components/MascotGreeting";
-import TodaySchoolWork from "@/components/TodaySchoolWork";
+import TodaySchoolWork, { type TodaySchoolWorkHandle, type TodayPrintableItem } from "@/components/TodaySchoolWork";
+import { detectSubjectSlug, findBestPrintableForSubject } from "@/lib/matchPrintable";
+import { useRef } from "react";
 
 // Neutral classroom mood language + classroom-y icons
 const ZONES = [
@@ -84,6 +86,26 @@ export default function Today() {
   const joke = trpc.kiwi.joke.useQuery();
   const recap = trpc.kiwi.endOfDayRecap.useQuery();
   const utils = trpc.useUtils();
+
+  const todaySchoolWorkRef = useRef<TodaySchoolWorkHandle>(null);
+  const [printableItems, setPrintableItems] = useState<TodayPrintableItem[]>([]);
+  const [flashTile, setFlashTile] = useState<number | null>(null);
+
+  function openPrintableForBlock(block: { title?: string | null; blockType?: string | null; subjectSlug?: string | null }) {
+    const slug = detectSubjectSlug(block);
+    const items = todaySchoolWorkRef.current?.getItems() ?? printableItems;
+    const match = findBestPrintableForSubject(items, slug);
+    if (match && todaySchoolWorkRef.current?.openById(match.id)) return;
+    // Fallback: scroll + highlight the Today's School Work card
+    const el = document.getElementById("today-school-work");
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      el.classList.add("ring-4", "ring-amber-300", "ring-offset-2");
+      setTimeout(() => el.classList.remove("ring-4", "ring-amber-300", "ring-offset-2"), 1600);
+    }
+    if (match?.id) setFlashTile(match.id);
+    toast.message(slug ? `No ${slug.toUpperCase()} printable picked yet — scroll to School Work.` : "Scroll to Today's School Work to pick one.");
+  }
 
   const [struggleDialog, setStruggleDialog] = useState<{ open: boolean; blockId?: number; subjectSlug?: string | null }>({ open: false });
   const [intensity, setIntensity] = useState<"yellow" | "red">("yellow");
@@ -338,6 +360,26 @@ export default function Today() {
                     <p className="mt-1 chalk-white/90" style={{ fontSize: "0.95rem", opacity: 0.82, lineHeight: 1.35 }}>{b.description}</p>
                   )}
                   <div className="flex gap-1.5 mt-2 flex-wrap">
+                    {(() => {
+                      const slug = detectSubjectSlug(b);
+                      const match = findBestPrintableForSubject(printableItems, slug);
+                      return (
+                        <>
+                          <Button
+                            size="sm"
+                            className="h-8 px-3 text-xs font-bold bg-amber-300 text-amber-950 hover:bg-amber-200"
+                            onClick={() => openPrintableForBlock(b)}
+                          >
+                            📄 Open{match ? "" : " …"}
+                          </Button>
+                          {match && (
+                            <span className="h-8 inline-flex items-center px-2 rounded-md bg-emerald-400/20 border border-emerald-300/40 text-emerald-50 text-[10px] font-semibold">
+                              printable ready
+                            </span>
+                          )}
+                        </>
+                      );
+                    })()}
                     <Button
                       size="sm"
                       variant="outline"
@@ -459,7 +501,7 @@ export default function Today() {
       </section>
 
       {/* Today's School Work — three-bucket printables from morning brief */}
-      <TodaySchoolWork />
+      <TodaySchoolWork ref={todaySchoolWorkRef} onItemsChanged={setPrintableItems} />
 
       {/* Daily 15-min Skill Builder — next-up skill from her ladder */}
       <SkillBuilderTile />
