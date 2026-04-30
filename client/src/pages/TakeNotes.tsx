@@ -14,8 +14,46 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import DrawCanvas, { type PFStroke, type DrawCanvasHandle } from "@/components/DrawCanvas";
 import { toast } from "sonner";
+import PrintButton from "@/components/PrintButton";
 
 const COMMON_SUBJECTS = ["math", "ela", "reading", "writing", "science", "ss", "art", "music"];
+
+// Paper templates Reagan can pick — pure CSS so they print cleanly too.
+const PAPER_TEMPLATES: Record<string, { label: string; emoji: string; backgroundImage: string; backgroundSize: string; backgroundColor: string }> = {
+  blank: {
+    label: "Blank", emoji: "⬜",
+    backgroundColor: "#fffdf6",
+    backgroundImage: "none",
+    backgroundSize: "auto",
+  },
+  lined: {
+    label: "Lined", emoji: "📝",
+    backgroundColor: "#fffdf6",
+    backgroundImage: "linear-gradient(transparent 30px, rgba(0,80,200,0.18) 31px)",
+    backgroundSize: "100% 32px",
+  },
+  graph: {
+    label: "Graph", emoji: "📐",
+    backgroundColor: "#fffdf6",
+    backgroundImage:
+      "linear-gradient(rgba(0,128,128,0.18) 1px, transparent 1px), linear-gradient(90deg, rgba(0,128,128,0.18) 1px, transparent 1px)",
+    backgroundSize: "24px 24px",
+  },
+  dotted: {
+    label: "Dotted", emoji: "⠿",
+    backgroundColor: "#fffdf6",
+    backgroundImage:
+      "radial-gradient(rgba(60,40,20,0.4) 1px, transparent 1.5px)",
+    backgroundSize: "20px 20px",
+  },
+  handwriting: {
+    label: "Handwriting", emoji: "✍️",
+    backgroundColor: "#fffdf6",
+    backgroundImage:
+      "linear-gradient(transparent 28px, rgba(220,40,40,0.45) 29px, rgba(220,40,40,0.45) 30px, transparent 31px, transparent 44px, rgba(0,80,200,0.4) 45px, rgba(0,80,200,0.4) 46px, transparent 47px, transparent 60px, rgba(220,40,40,0.45) 61px, rgba(220,40,40,0.45) 62px, transparent 63px)",
+    backgroundSize: "100% 64px",
+  },
+};
 
 function fmt(d: string | Date | null | undefined): string {
   if (!d) return "";
@@ -39,6 +77,34 @@ export default function TakeNotes() {
   const drawRef = useRef<DrawCanvasHandle>(null);
   const [query, setQuery] = useState("");
   const [mode, setMode] = useState<"type" | "draw" | "mixed">("type");
+  const [paper, setPaper] = useState<keyof typeof PAPER_TEMPLATES>("lined");
+
+  // Simple read-aloud helper using the browser's speech synthesis.
+  const readAloud = (text: string | null | undefined) => {
+    if (!text) {
+      toast.message("Nothing to read here yet.");
+      return;
+    }
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      toast.error("This browser doesn't support read-aloud.");
+      return;
+    }
+    try {
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 0.95;
+      u.pitch = 1.05;
+      u.lang = "en-US";
+      window.speechSynthesis.speak(u);
+    } catch {
+      toast.error("Couldn't start read-aloud.");
+    }
+  };
+  const stopReading = () => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      try { window.speechSynthesis.cancel(); } catch { /* ignore */ }
+    }
+  };
 
   const notes = useMemo(() => (list.data as any[] | undefined) ?? [], [list.data]);
   const filtered = useMemo(() => {
@@ -147,6 +213,29 @@ export default function TakeNotes() {
             </Select>
           </div>
 
+          {/* Paper-template + read-aloud + print toolbar */}
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="text-muted-foreground font-semibold">Paper:</span>
+            {(Object.keys(PAPER_TEMPLATES) as Array<keyof typeof PAPER_TEMPLATES>).map((k) => (
+              <button
+                key={k}
+                onClick={() => setPaper(k)}
+                className={`px-2 py-1 rounded-md border ${paper === k ? "bg-primary text-primary-foreground border-primary" : "bg-white/5 border-white/10"}`}
+              >
+                {PAPER_TEMPLATES[k].emoji} {PAPER_TEMPLATES[k].label}
+              </button>
+            ))}
+            <div className="ml-auto flex items-center gap-2">
+              <Button size="sm" variant="outline" className="bg-transparent" onClick={() => readAloud(`${title}. ${body}`)}>
+                🔊 Read this to me
+              </Button>
+              <Button size="sm" variant="outline" className="bg-transparent" onClick={stopReading}>
+                ⏹ Stop
+              </Button>
+              <PrintButton size="sm" />
+            </div>
+          </div>
+
           <Tabs value={mode} onValueChange={(v) => setMode(v as any)}>
             <TabsList>
               <TabsTrigger value="type">Type</TabsTrigger>
@@ -154,12 +243,23 @@ export default function TakeNotes() {
               <TabsTrigger value="mixed">Mixed 📝✏️</TabsTrigger>
             </TabsList>
             <TabsContent value="type" className="mt-3">
-              <Textarea
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                rows={16}
-                placeholder="Write freely — you can always come back and add more."
-              />
+              <div
+                className="rounded-md p-3"
+                style={{
+                  backgroundColor: PAPER_TEMPLATES[paper].backgroundColor,
+                  backgroundImage: PAPER_TEMPLATES[paper].backgroundImage,
+                  backgroundSize: PAPER_TEMPLATES[paper].backgroundSize,
+                }}
+              >
+                <Textarea
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  rows={28}
+                  placeholder="Write freely — you can always come back and add more."
+                  className="min-h-[600px] bg-transparent border-0 focus-visible:ring-0 text-base leading-8 text-slate-900"
+                  style={{ fontFamily: "'Caveat', 'Patrick Hand', cursive", fontSize: 22, lineHeight: "32px" }}
+                />
+              </div>
             </TabsContent>
             <TabsContent value="draw" className="mt-3">
               <div className="flex gap-2 mb-2">
