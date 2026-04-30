@@ -1335,3 +1335,9 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 
 - [x] Reorder schedule blocks (adult-only): up/down arrow buttons on each block swap sortOrder with the neighbor; new blocks.move tRPC + db.moveBlock helper + vitest
 - [x] Sticker → prize ladder viz: new PrizeLadder component on /rewards showing coin balance marker + per-prize progress bars + Ready!/coins-to-go labels
+
+- [x] Added Precious (bearded dragon) to animals table via preciousAndReset.test.ts seed
+- [x] Cleared seed-only stickers + coin ledger rows (Mom-approved fresh start)
+- [x] appSettings prefs helpers (get/set/list) + trpc prefs router + 3 vitests
+- [x] Settings: Adaptive IEP auto-apply toggle + editable Prize Ladder milestones (stored in appSettings["iep.autoApply"], appSettings["prize.milestones"])
+- [x] Cleanup punchlist invariants all green (no Brutus, no Test Book, no duplicate IEP rows, no TEST_STRAND skills, no Madeira-only district label)

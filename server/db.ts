@@ -3760,3 +3760,30 @@ export async function recentMoodStrip(days: number = 3): Promise<Array<{ date: s
   }
   return out;
 }
+
+
+// ----- Generic appSettings key/value helpers (Mom-editable flags) -----
+import { appSettings } from "../drizzle/schema";
+
+export async function getAppSetting(key: string): Promise<string | null> {
+  const d = getDb();
+  const rows: any[] = await d.select().from(appSettings).where(eq(appSettings.key as any, key));
+  return rows[0]?.value ?? null;
+}
+
+export async function setAppSetting(key: string, value: string | null): Promise<void> {
+  const d = getDb();
+  const existing: any[] = await d.select().from(appSettings).where(eq(appSettings.key as any, key));
+  if (existing.length === 0) {
+    await d.insert(appSettings).values({ key, value: value ?? null } as any);
+  } else {
+    await d.update(appSettings).set({ value: value ?? null } as any).where(eq(appSettings.key as any, key));
+  }
+}
+
+export async function listAppSettings(prefix?: string): Promise<Array<{ key: string; value: string | null }>> {
+  const d = getDb();
+  const rows: any[] = await d.select({ key: appSettings.key, value: appSettings.value }).from(appSettings);
+  if (!prefix) return rows as any;
+  return (rows as any[]).filter((r) => r.key.startsWith(prefix));
+}

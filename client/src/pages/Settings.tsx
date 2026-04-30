@@ -8,6 +8,7 @@ import { RewardsManager } from "@/components/RewardsManager";
 import { PowerSchoolImporterCard } from "@/components/PowerSchoolImporterCard";
 import CareTeamManager from "@/components/CareTeamManager";
 import PracticePrefsCard from "@/components/PracticePrefsCard";
+import { AdaptiveAndMilestonesCard } from "@/components/AdaptiveAndMilestonesCard";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -249,6 +250,7 @@ export default function Settings() {
 
       {/* ============================ GAMES & BREAKS ============================ */}
       <PracticePrefsCard />
+      <AdaptiveAndMilestonesCard />
       <CareTeamManager />
       <RewardsManager />
       <PowerSchoolImporterCard />

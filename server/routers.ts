@@ -1632,5 +1632,16 @@ export const appRouter = router({
       .input(z.object({ days: z.number().min(1).max(14).optional() }).optional())
       .query(({ input }) => db.recentMoodStrip(input?.days ?? 3)),
   }),
+  prefs: router({
+    get: protectedProcedure
+      .input(z.object({ key: z.string().min(1).max(64) }))
+      .query(({ input }) => db.getAppSetting(input.key)),
+    set: protectedProcedure
+      .input(z.object({ key: z.string().min(1).max(64), value: z.string().nullable() }))
+      .mutation(({ input }) => db.setAppSetting(input.key, input.value)),
+    list: protectedProcedure
+      .input(z.object({ prefix: z.string().optional() }).optional())
+      .query(({ input }) => db.listAppSettings(input?.prefix)),
+  }),
 });
 export type AppRouter = typeof appRouter;
