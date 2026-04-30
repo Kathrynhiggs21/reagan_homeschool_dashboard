@@ -2,8 +2,13 @@ import { trpc } from "@/lib/trpc";
 import { Card } from "@/components/ui/card";
 
 /**
- * Sticker Book — Reagan's collected stickers grid + coin balance.
- * Every completed block earns +1 sticker and +1 coin.
+ * Sticker Book — Reagan's collected stickers + Feathers balance.
+ *
+ * Redesign (Apr 30): drop the ombre gradient hero for a real sticker-book
+ * look — tan paper with a scalloped-page header, striped spine on the left,
+ * and two chunky pill counters. Prize currency renamed from "coins" to
+ * "Feathers" 🪶 (matching Kiwi). Backend field names (coinCost, coins) are
+ * unchanged to keep data stable.
  */
 
 // Inline SVG "stickers" — each slug renders a colorful doodle.
@@ -41,7 +46,6 @@ function StickerArt({ slug, palette }: { slug: string; palette?: string | null }
       <div className="text-4xl sm:text-5xl" style={{ filter: "drop-shadow(0 2px 0 rgba(0,0,0,0.1))" }}>
         {emoji}
       </div>
-      {/* tiny glimmer */}
       <div
         className="absolute w-4 h-4 rounded-full"
         style={{ top: 8, right: 10, background: "rgba(255,255,255,0.7)", filter: "blur(0.5px)" }}
@@ -60,30 +64,79 @@ export default function Stickers() {
 
   return (
     <div className="space-y-6">
-      {/* Hero */}
-      <header
-        className="rounded-2xl p-6 shadow-sm"
-        style={{
-          background: "linear-gradient(135deg, #ffe066 0%, #ffb07a 55%, #ff8fa3 100%)",
-          border: "3px solid #ffffff",
-          color: "#4a1a00",
-        }}
-      >
-        <div className="flex items-end justify-between flex-wrap gap-3">
-          <div>
-            <div className="text-[11px] font-bold uppercase tracking-widest opacity-70">Reagan's</div>
-            <h1 className="font-display text-4xl md:text-5xl leading-tight">Sticker Book ⭐</h1>
-            <p className="mt-2 text-sm opacity-90">Every block done = a sparkly new sticker.</p>
-          </div>
-          <div className="flex gap-3 flex-wrap">
-            <div className="rounded-full bg-white/80 px-4 py-2 text-sm font-bold">
-              ⭐ {rows.length} stickers
+      {/* Sticker-book page header. Tan paper + scalloped bottom + spine stripe. */}
+      <header className="relative">
+        <div
+          className="rounded-[20px] p-6 pl-12 shadow-[0_6px_0_rgba(0,0,0,0.12),0_20px_40px_-20px_rgba(0,0,0,0.4)]"
+          style={{
+            background:
+              "repeating-linear-gradient(135deg, #fff8e6 0 24px, #fff3d4 24px 48px)",
+            color: "#4a3600",
+            border: "4px solid #ffffff",
+            // scalloped lower edge
+            WebkitMaskImage:
+              "radial-gradient(14px at 14px 100%, transparent 98%, #000 100%) bottom left / 28px 14px repeat-x, linear-gradient(#000, #000)",
+            maskImage:
+              "radial-gradient(14px at 14px 100%, transparent 98%, #000 100%) bottom left / 28px 14px repeat-x, linear-gradient(#000, #000)",
+          }}
+        >
+          {/* spiral-binding spine on the left */}
+          <div
+            className="absolute top-3 bottom-6 left-2 w-6 rounded-l-xl"
+            style={{
+              background:
+                "repeating-linear-gradient(to bottom, #e7a96b 0 14px, #c98447 14px 18px)",
+              boxShadow: "inset -1px 0 0 rgba(0,0,0,0.15)",
+            }}
+            aria-hidden
+          />
+
+          <div className="flex items-end justify-between flex-wrap gap-3">
+            <div>
+              <div className="text-[11px] font-bold uppercase tracking-widest opacity-70">
+                Reagan's
+              </div>
+              <h1 className="font-display text-4xl md:text-5xl leading-tight">
+                Sticker Book <span aria-hidden>⭐</span>
+              </h1>
+              <p className="mt-2 text-sm opacity-90">
+                Every block done = a sparkly new sticker.
+              </p>
             </div>
-            <div className="rounded-full bg-white/80 px-4 py-2 text-sm font-bold">
-              🪙 {balance} coins
-            </div>
-            <div className="rounded-full bg-white/60 px-4 py-2 text-xs opacity-80">
-              {earned} coins earned all-time
+            <div className="flex gap-3 flex-wrap">
+              <div
+                className="rounded-full px-4 py-2 text-sm font-extrabold flex items-center gap-1.5"
+                style={{
+                  background: "#fffdf7",
+                  border: "3px solid #ffd97a",
+                  boxShadow: "0 2px 0 rgba(0,0,0,0.08)",
+                  color: "#7a5200",
+                }}
+              >
+                <span aria-hidden>⭐</span>
+                <span className="tabular-nums">{rows.length}</span>
+                <span className="opacity-70 font-semibold">stickers</span>
+              </div>
+              <div
+                className="rounded-full px-4 py-2 text-sm font-extrabold flex items-center gap-1.5"
+                style={{
+                  background: "#fffdf7",
+                  border: "3px solid #7fe3c4",
+                  boxShadow: "0 2px 0 rgba(0,0,0,0.08)",
+                  color: "#0b4a38",
+                }}
+                title="Feathers — Kiwi's reward currency"
+              >
+                <span aria-hidden>🪶</span>
+                <span className="tabular-nums">{balance}</span>
+                <span className="opacity-70 font-semibold">Feathers</span>
+              </div>
+              <div
+                className="rounded-full px-3 py-1.5 text-[11px] font-semibold"
+                style={{ background: "#fffdf7aa", color: "#4a3600", border: "2px solid #e7d6a6" }}
+              >
+                {earned} Feathers earned all-time
+              </div>
             </div>
           </div>
         </div>
@@ -93,7 +146,9 @@ export default function Stickers() {
       {!stks.isLoading && rows.length === 0 && (
         <Card className="classroom-card p-8 text-center">
           <div className="text-5xl mb-2">📖</div>
-          <div className="font-display text-xl font-semibold chalk-white">Your sticker book is empty!</div>
+          <div className="font-display text-xl font-semibold chalk-white">
+            Your sticker book is empty!
+          </div>
           <p className="text-sm text-muted-foreground mt-2">
             Finish any block on your Today page to earn your very first sticker. Kiwi can't wait!
           </p>

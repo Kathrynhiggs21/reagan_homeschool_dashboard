@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useKiwi } from "@/contexts/KiwiContext";
 
 /**
  * MascotGreeting
@@ -35,12 +36,14 @@ export default function MascotGreeting() {
     const idx = dayOfYear() % MASCOTS.length;
     return MASCOTS[idx]!;
   }, []);
+  const kiwi = useKiwi() as unknown as { photoUrl?: string | null };
+  const hasPhoto = !!kiwi?.photoUrl;
 
   return (
     <div
       className="relative hidden sm:flex flex-col items-center justify-center select-none shrink-0"
-      aria-label={`Today's mascot: ${mascot.label}`}
-      title={mascot.label}
+      aria-label={hasPhoto ? "Reagan" : `Today's mascot: ${mascot.label}`}
+      title={hasPhoto ? "Reagan" : mascot.label}
       style={{
         width: 92,
         height: 92,
@@ -49,19 +52,34 @@ export default function MascotGreeting() {
       <div
         className="absolute inset-0 rounded-full"
         style={{
-          background: `radial-gradient(circle at 50% 40%, ${mascot.hue}33, transparent 70%)`,
+          background: `radial-gradient(circle at 50% 40%, ${hasPhoto ? "#ffd97a33" : mascot.hue + "33"}, transparent 70%)`,
           filter: "blur(2px)",
         }}
       />
-      <div
-        className="relative text-5xl md:text-6xl"
-        style={{
-          textShadow: "0 4px 8px rgba(0,0,0,0.35)",
-          animation: "mascot-float 3.6s ease-in-out infinite",
-        }}
-      >
-        {mascot.emoji}
-      </div>
+      {hasPhoto ? (
+        <img
+          src={kiwi!.photoUrl!}
+          alt="Reagan"
+          className="relative rounded-full object-cover"
+          style={{
+            width: 78,
+            height: 78,
+            border: "4px solid #ffffff",
+            boxShadow: "0 6px 14px rgba(0,0,0,0.25), 0 0 0 2px rgba(255,217,122,0.45)",
+            animation: "mascot-float 3.6s ease-in-out infinite",
+          }}
+        />
+      ) : (
+        <div
+          className="relative text-5xl md:text-6xl"
+          style={{
+            textShadow: "0 4px 8px rgba(0,0,0,0.35)",
+            animation: "mascot-float 3.6s ease-in-out infinite",
+          }}
+        >
+          {mascot.emoji}
+        </div>
+      )}
       <style>{`
         @keyframes mascot-float {
           0%, 100% { transform: translateY(0) rotate(-2deg); }

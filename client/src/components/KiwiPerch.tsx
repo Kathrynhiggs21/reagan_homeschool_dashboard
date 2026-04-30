@@ -2,6 +2,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import KiwiSprite, { type KiwiPose } from "./KiwiSprite";
 import { useKiwi } from "@/contexts/KiwiContext";
 import { chirp } from "@/lib/birdVoice";
+import { popStickersAt, popStickersFromElement } from "@/lib/stickerBurst";
 
 /**
  * KiwiPerch — the always-active Kiwi parakeet.
@@ -300,8 +301,18 @@ export default function KiwiPerch() {
       const detail = (e as CustomEvent).detail;
       setPose("flap");
       setBubbleText(detail?.message || "Yay! 🎉");
+      // chirp() is already gated by `kiwiSilent` — no audio unless Mom enables it.
       chirp();
       setPopBurst((n) => n + 1);
+      // Also fire a visual-only emoji sticker burst from the perch. Silent.
+      try {
+        const perchEl =
+          typeof document !== "undefined"
+            ? document.querySelector("[data-kiwi-perch]")
+            : null;
+        if (perchEl) popStickersFromElement(perchEl, { count: 16 });
+        else popStickersAt(window.innerWidth / 2, window.innerHeight * 0.45, { count: 14 });
+      } catch { /* visual sugar only */ }
       lastInteractRef.current = Date.now();
       if (bubbleTimeoutRef.current) window.clearTimeout(bubbleTimeoutRef.current);
       bubbleTimeoutRef.current = window.setTimeout(() => {
@@ -363,6 +374,7 @@ export default function KiwiPerch() {
 
   return (
     <div
+      data-kiwi-perch
       className="fixed z-30 no-print select-none"
       style={{
         left: pos.x,

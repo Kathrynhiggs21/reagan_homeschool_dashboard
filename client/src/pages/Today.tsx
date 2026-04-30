@@ -17,7 +17,6 @@ import ThemePickerStrip from "@/components/ThemePickerStrip";
 import KiwiIntroStrip from "@/components/KiwiIntroStrip";
 import SkillBuilderTile from "@/components/SkillBuilderTile";
 import PlacementInviteCard from "@/components/PlacementInviteCard";
-import IHThisWeekStrip from "@/components/IHThisWeekStrip";
 import CurriculumChip from "@/components/CurriculumChip";
 import GameBreakCard from "@/components/GameBreakCard";
 import HomeAnalyticsStrip from "@/components/HomeAnalyticsStrip";
@@ -128,17 +127,17 @@ export default function Today() {
     <div className="space-y-4">
       {/* Theme picker strip — 4 themes Reagan can pick from */}
       <ThemePickerStrip />
-      {/* Header — calm chalkboard strip, rainbow multi-color title. No ombre banner. */}
-      <header className="relative rounded-2xl p-5 md:p-7" style={{
-        background: "linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.18))",
-        border: "1px solid rgba(255,255,255,0.08)",
-        boxShadow: "0 10px 30px -16px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04)",
+      {/* Header — colorful storybook strip. Works on both dark + light themes. */}
+      <header className="greeting-hero relative rounded-2xl p-5 md:p-7 overflow-hidden" style={{
+        background: "linear-gradient(135deg, #fff4c2 0%, #ffd4a8 40%, #ffb6d0 75%, #c9a7ff 100%)",
+        border: "4px solid #ffffff",
+        boxShadow: "0 10px 30px -14px rgba(0,0,0,0.35), 0 4px 0 rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.6)",
       }}>
         <div className="flex items-end justify-between flex-wrap gap-3">
           <div className="flex items-end gap-4">
             <MascotGreeting />
             <div>
-            <div className="font-chalk-hand text-2xl md:text-3xl leading-none" style={{ color: "#ffd97a", textShadow: "0 0 1px rgba(255,255,255,0.25)" }}>{today_str}</div>
+            <div className="font-chalk-hand text-2xl md:text-3xl leading-none" style={{ color: "#9a5a00", textShadow: "0 1px 0 rgba(255,255,255,0.6)" }}>{today_str}</div>
             <h1 className="font-display mt-2 leading-none flex flex-wrap items-baseline gap-x-3 gap-y-1" style={{ fontSize: "clamp(2.5rem, 6vw, 4.75rem)", letterSpacing: "-0.01em" }}>
               {(() => {
                 const first = (profile.data?.studentName || "Reagan").split(" ")[0];
@@ -150,7 +149,8 @@ export default function Today() {
                 return words.map((w, i) => (
                   <span key={i} className="inline-block" style={{
                     color: w.c,
-                    textShadow: "0 0 1px rgba(255,255,255,0.35), 0 3px 0 rgba(0,0,0,0.35), 0 6px 14px rgba(0,0,0,0.4)",
+                    WebkitTextStroke: "1px rgba(0,0,0,0.18)",
+                    textShadow: "0 2px 0 #ffffff, 0 3px 0 rgba(0,0,0,0.12), 0 8px 14px rgba(0,0,0,0.15)",
                   }}>
                     {w.t}
                   </span>
@@ -255,21 +255,7 @@ export default function Today() {
       {/* Diagnostic Placement invite — gentle, optional, dismisses at 100% */}
       <PlacementInviteCard />
 
-      {/* What her IH class is doing this week (collapsed by default) */}
-      <IHThisWeekStrip />
-
-      {/* Daily 15-min Skill Builder — next-up skill from her ladder */}
-      <SkillBuilderTile />
-
-      {/* Game-as-reward / mood break (only renders on signal) */}
-      <GameBreakCard />
-
-      {/* Brain-Break TV Box — rotating kid-safe short clips */}
-      <BrainBreakTvBox />
-
-      {/* Tour Mode — calm pinned strip, no ombre gradient */}
-      <TourModeCard />
-      {/* Today's Schedule board */}
+      {/* Today's Schedule sits near the top so it's always visible quickly */}
       <section>
         <div className="flex items-baseline justify-between mb-3">
           <h2 className="font-display text-xl font-semibold chalk-white">Today's Schedule</h2>
@@ -442,6 +428,18 @@ export default function Today() {
           })}
         </div>
       </section>
+
+      {/* Daily 15-min Skill Builder — next-up skill from her ladder */}
+      <SkillBuilderTile />
+
+      {/* Game-as-reward / mood break (only renders on signal) */}
+      <GameBreakCard />
+
+      {/* Brain-Break TV Box — rotating kid-safe short clips */}
+      <BrainBreakTvBox />
+
+      {/* Tour Mode — calm pinned strip, no ombre gradient */}
+      <TourModeCard />
 
       {/* ===== Widget grid (everything-after-the-schedule) ===== */}
       <section className="pt-2">

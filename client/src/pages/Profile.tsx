@@ -2,6 +2,8 @@ import { trpc } from "@/lib/trpc";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { REAGAN_PHOTOS } from "@/lib/reaganPhotos";
+import AvatarUploader from "@/components/AvatarUploader";
+import { useKiwi } from "@/contexts/KiwiContext";
 
 function Pills({ items, color = "secondary" }: { items?: string[] | null; color?: "secondary" | "outline" }) {
   if (!items || items.length === 0) return null;
@@ -39,16 +41,40 @@ export default function Profile() {
   const schoolHistory = (data.schoolHistory || []) as Array<{ school: string; district: string; years: string; transferDate?: string }>;
   const family = (data.family || {}) as Record<string, any>;
 
+  const kiwi = useKiwi() as unknown as { photoUrl?: string | null };
+  const photoUrl = kiwi?.photoUrl ?? null;
+
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-3xl font-display font-semibold">About Me 🪪</h1>
-        <p className="text-muted-foreground text-sm mt-1 font-hand text-lg">"{data.studentName || "Reagan"}, the Animal Rescuer"</p>
-        {data.birthday && (
-          <p className="text-xs text-muted-foreground mt-1">
-            Born {data.birthday} · {data.pronouns || "she/her"}
-          </p>
-        )}
+      <header className="flex items-center gap-5 flex-wrap">
+        <div
+          className="rounded-full overflow-hidden shrink-0 flex items-center justify-center"
+          style={{
+            width: 128,
+            height: 128,
+            border: "5px solid #ffffff",
+            background: "linear-gradient(135deg,#fff4c2,#ffb6d0 60%,#c9a7ff)",
+            boxShadow: "0 8px 24px -8px rgba(0,0,0,0.35), 0 0 0 3px rgba(255,217,122,0.45)",
+          }}
+        >
+          {photoUrl ? (
+            <img src={photoUrl} alt={`${data.studentName || "Reagan"}`} className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-6xl" aria-hidden>🦜</span>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-3xl font-display font-semibold">About Me 🪪</h1>
+          <p className="text-muted-foreground text-sm mt-1 font-hand text-lg">"{data.studentName || "Reagan"}, the Animal Rescuer"</p>
+          {data.birthday && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Born {data.birthday} · {data.pronouns || "she/her"}
+            </p>
+          )}
+          <div className="mt-3">
+            <AvatarUploader />
+          </div>
+        </div>
       </header>
 
       {/* Identity statement — uses amber tones inside a dark box too, so pin text to amber-900 always */}

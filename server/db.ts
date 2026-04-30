@@ -216,6 +216,8 @@ export async function insertAppLink(a: typeof appLinks.$inferInsert) {
 
 /* ============================== BOOKS ===================================== */
 export async function listBooks() {
+  // Lazy one-time starter-shelf seed so Reagan's bookshelf is never blank.
+  try { await seedStarterBooksIfEmpty(); } catch {}
   const rows = await getDb().select().from(books).orderBy(books.title);
   // Guard: vitest-seeded test rows (title or author containing "vitest") must
   // never surface to the UI even if the DB still has them between runs.
@@ -233,6 +235,32 @@ export async function getBook(id: number) {
 }
 export async function insertBook(b: typeof books.$inferInsert) {
   await getDb().insert(books).values(b);
+}
+
+/**
+ * Seed a starter shelf of real, legal, kid-appropriate books if the table is
+ * empty. Runs once the first time the app boots (or is hit via the admin
+ * `books.seedStarter` procedure). Idempotent by title+author.
+ */
+export async function seedStarterBooksIfEmpty() {
+  const db = getDb();
+  const existing: any = await db.select().from(books).limit(1);
+  if (existing.length > 0) return { seeded: false };
+  const defaults: Array<typeof books.$inferInsert> = [
+    { title: "Tuck Everlasting",                author: "Natalie Babbitt",         type: "novel",     subjectSlug: "ela",     currentPage: 1, totalPages: 144, notes: "Current tutor read-aloud. 5th grade Ohio ELA anchor text." },
+    { title: "Charlotte's Web",                 author: "E. B. White",             type: "novel",     subjectSlug: "ela",     currentPage: 1, totalPages: 184, notes: "Comfort read. Great for characterization + theme work." },
+    { title: "Because of Winn-Dixie",           author: "Kate DiCamillo",          type: "novel",     subjectSlug: "ela",     currentPage: 1, totalPages: 192, notes: "Gentle, animals + found family." },
+    { title: "The One and Only Ivan",           author: "Katherine Applegate",     type: "novel",     subjectSlug: "ela",     currentPage: 1, totalPages: 305, notes: "Newbery winner. Short chapters help regulation." },
+    { title: "Wonder",                          author: "R. J. Palacio",           type: "novel",     subjectSlug: "ela",     currentPage: 1, totalPages: 320, notes: "Social-emotional rich; multiple narrators." },
+    { title: "Fractions, Decimals, and Percents", author: "David A. Adler",         type: "reference", subjectSlug: "math",    currentPage: 1, totalPages:  32, notes: "Visual picture book \u2014 ties to current math standards." },
+    { title: "National Geographic Kids Almanac 2026", author: "National Geographic Kids", type: "reference", subjectSlug: "science", currentPage: 1, totalPages: 352, notes: "Flip-through science + social studies reference." },
+    { title: "Who Was Jane Goodall?",           author: "Roberta Edwards",         type: "reference", subjectSlug: "ss",      currentPage: 1, totalPages: 112, notes: "Biography \u2014 connects to Reagan's animal-rescuer identity." },
+    { title: "The Milli Adventures",            author: "Marcy Nyerges",           type: "novel",     subjectSlug: "ela",     currentPage: 1, totalPages:  48, notes: "Grandma's book \u2014 Scribbleverse anchor." },
+  ];
+  for (const b of defaults) {
+    await db.insert(books).values(b);
+  }
+  return { seeded: true, count: defaults.length };
 }
 export async function updateBookPage(id: number, currentPage: number) {
   await getDb().update(books).set({ currentPage }).where(eq(books.id, id));

@@ -1355,3 +1355,40 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] Bug: Profile page boxes have low-contrast text (dark card, near-black text → unreadable)
 - [x] Bug: Chrome "site is using microphone" notification fires on every page load when Kiwi wake-word is on, and triggers Chrome notification sound even when notifications are off
 - [x] Bug: Kiwi should be completely silent right now — no chirp, no TTS speech, no notification sound
+
+# Apr 30 — Backlog batch 2
+
+- [x] Sticker burst animation fires from KiwiPerch on block completion (silent, visual only)
+- [ ] Prize Shop preloaded with starter prizes Mom can edit (no auto-chirp)
+
+# Apr 30 — Morning batch 2 (Mom)
+
+- [ ] Identity card — pin text to dark color so it's readable on dark theme (currently near-invisible)
+- [ ] Redesign Levels / Sticker Book bar: drop the ombre, real sticker-book look
+- [ ] Rename "points" to "Feathers" (Kiwi-themed currency)
+- [ ] Prize Ladder with numbered rungs (large numbers on each rung)
+- [ ] Add more books to the bookshelf seed
+- [ ] White-template text readability: homepage title box + any lingering grey-on-white
+- [ ] Today: remove "At Indian Hill this week" banner title, keep Skill Builder but move below Today's Schedule
+- [ ] Today's Schedule sits near the top (always visible early)
+- [ ] Profile image shows on Homepage AND About Me page
+
+# Apr 30 — Morning batch (Mom)
+
+- [x] Rename "points/coins" to Feathers (user-facing only) with 🪶 emoji
+- [x] Redesign Sticker Book page (real storybook look, not ombre)
+- [x] Numbered Prize Ladder with large rung numbers + parchment/wood bg
+- [x] Reorder Today: remove Indian-Hill-this-week strip, move Schedule near top, Skill Builder below Schedule
+- [x] Homepage greeting hero redesigned (colorful gradient works on all themes; title stroked for contrast)
+- [x] Seed starter bookshelf (9 real, legal books: Tuck, Charlotte's Web, Winn-Dixie, Ivan, Wonder, Adler fractions, NG Kids Almanac, Jane Goodall bio, Milli)
+- [x] Profile photo on About Me header + rotating mascot auto-switches to Reagan's photo when uploaded
+
+# Apr 30 — Morning batch (Mom)
+
+- [x] Rename points/coins to Feathers (user-facing only)
+- [x] Redesign Sticker Book page (storybook look)
+- [x] Numbered Prize Ladder rungs
+- [x] Reorder Today: remove Indian-Hill strip; Schedule near top
+- [x] Greeting hero redesigned for all-theme contrast
+- [x] Seed starter bookshelf (9 kid-appropriate books)
+- [x] Profile photo on About Me + mascot auto-switches to photo
