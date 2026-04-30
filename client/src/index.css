@@ -399,7 +399,20 @@
 }
 
 /* ---- Weather widget (glassy upper-left) ---- */
-.weather-widget {
+  /* === Reagan-pickable custom background ============================ */
+  html[data-rbg="color"] body {
+    background-color: var(--reagan-bg-color) !important;
+    background-image: none !important;
+  }
+  html[data-rbg="image"] body {
+    background-image: var(--reagan-bg-image) !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-attachment: fixed !important;
+    background-color: transparent !important;
+  }
+
+  .weather-widget {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;

@@ -1,4 +1,5 @@
 import { Card } from "@/components/ui/card";
+import BackgroundPicker from "@/components/BackgroundPicker";
 import CalendarSyncCard from "@/components/CalendarSyncCard";
 import AvatarUploader from "@/components/AvatarUploader";
 import ConfidencePrinciplesCard from "@/components/ConfidencePrinciplesCard";
@@ -102,6 +103,9 @@ export default function Settings() {
 
       {/* ============================ CONFIDENCE PRINCIPLES ============================ */}
       <ConfidencePrinciplesCard />
+
+      {/* ============================ BACKGROUND PICKER ============================ */}
+      <BackgroundPicker />
 
       {/* ============================ MY SETUP ============================ */}
       <Card className="classroom-card p-5 space-y-4">
