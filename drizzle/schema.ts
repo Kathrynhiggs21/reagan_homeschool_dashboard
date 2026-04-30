@@ -1434,6 +1434,9 @@ export const curriculumTopics = mysqlTable("curriculumTopics", {
   completedAt: timestamp("completed_at"),
   quarter: varchar("quarter", { length: 8 }),                // "Q1" | "Q2" | "Q3" | "Q4" — for IH pacing
   notes: text("notes"),
+  // Apr 30 — surface go-deeper practice links per topic
+  khanUrl: varchar("khan_url", { length: 600 }),
+  ixlUrl: varchar("ixl_url", { length: 600 }),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

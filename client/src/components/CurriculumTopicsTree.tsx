@@ -6,6 +6,15 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+// inlined practice-link helper (mirrors shared/practiceLinks.ts)
+function derivePracticeLinks(opts: { subject: string; title: string; standardRef?: string | null; khanUrl?: string | null; ixlUrl?: string | null; }) {
+  const baseQ = (opts.standardRef ? opts.standardRef + " " : "") + opts.title;
+  const q = encodeURIComponent(baseQ.trim());
+  return {
+    khan: opts.khanUrl || `https://www.khanacademy.org/search?page_search_query=${q}`,
+    ixl: opts.ixlUrl || `https://www.ixl.com/search?q=${q}`,
+  };
+}
 
 type Topic = {
   id: number;
@@ -18,7 +27,28 @@ type Topic = {
   status: "notStarted" | "inProgress" | "done";
   quarter: string | null;
   notes: string | null;
+  khanUrl?: string | null;
+  ixlUrl?: string | null;
 };
+
+function PracticeLinks({ t, small = false }: { t: Topic; small?: boolean }) {
+  const links = derivePracticeLinks({
+    subject: t.subject,
+    title: t.title,
+    standardRef: t.standardRef,
+    khanUrl: t.khanUrl,
+    ixlUrl: t.ixlUrl,
+  });
+  const cls = small
+    ? "text-[9px] px-1 py-0 h-4 rounded border bg-transparent"
+    : "text-[10px] px-1.5 py-0 h-5 rounded border bg-transparent";
+  return (
+    <span className="inline-flex gap-1 ml-1">
+      <a href={links.khan} target="_blank" rel="noopener noreferrer" className={cls + " border-emerald-400 text-emerald-700 hover:bg-emerald-50"} title="Open on Khan Academy">Khan</a>
+      <a href={links.ixl} target="_blank" rel="noopener noreferrer" className={cls + " border-rose-400 text-rose-700 hover:bg-rose-50"} title="Open on IXL">IXL</a>
+    </span>
+  );
+}
 
 const SUBJECTS = ["Math", "ELA", "Science", "Social", "Specials"] as const;
 type Subject = (typeof SUBJECTS)[number];
@@ -172,6 +202,7 @@ export default function CurriculumTopicsTree() {
                         >
                           {t.title}
                         </span>
+                        <PracticeLinks t={t} />
                       </div>
                       {kids.length > 0 && (
                         <ul className="mt-1 ml-2 space-y-0.5">
@@ -195,6 +226,7 @@ export default function CurriculumTopicsTree() {
                               >
                                 {k.title}
                               </span>
+                              <PracticeLinks t={k} small />
                             </li>
                           ))}
                         </ul>

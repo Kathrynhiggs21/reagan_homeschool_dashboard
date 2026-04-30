@@ -3533,7 +3533,8 @@ export async function listCurriculumTopics(subject?: string) {
   if (subject) {
     return (await db.execute(sql`
       SELECT id, subject, code, title, standard_ref AS standardRef, parent_id AS parentId,
-             ord, status, completed_at AS completedAt, quarter, notes
+             ord, status, completed_at AS completedAt, quarter, notes,
+             khan_url AS khanUrl, ixl_url AS ixlUrl
       FROM curriculumTopics
       WHERE subject = ${subject}
       ORDER BY ord ASC
@@ -3541,7 +3542,8 @@ export async function listCurriculumTopics(subject?: string) {
   }
   return (await db.execute(sql`
     SELECT id, subject, code, title, standard_ref AS standardRef, parent_id AS parentId,
-           ord, status, completed_at AS completedAt, quarter, notes
+           ord, status, completed_at AS completedAt, quarter, notes,
+           khan_url AS khanUrl, ixl_url AS ixlUrl
     FROM curriculumTopics
     ORDER BY subject ASC, ord ASC
   `) as any)[0] ?? [];

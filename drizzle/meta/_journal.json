@@ -239,6 +239,13 @@
       "when": 1777512378759,
       "tag": "0033_early_iron_fist",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "5",
+      "when": 1777517160614,
+      "tag": "0034_curly_maverick",
+      "breakpoints": true
     }
   ]
 }
