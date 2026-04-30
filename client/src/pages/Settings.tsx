@@ -16,6 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { useKiwi } from "@/contexts/KiwiContext";
 import { useAdultLock } from "@/contexts/AdultLockContext";
 import { trpc } from "@/lib/trpc";
+import { ClassroomReferencePanel } from "@/components/ClassroomReferencePanel";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
@@ -90,6 +91,9 @@ export default function Settings() {
         <h1 className="font-display text-3xl md:text-4xl mt-1 chalk-white">Settings</h1>
         <p className="text-sm text-muted-foreground mt-2">Only visible with the adult passcode.</p>
       </header>
+
+      {/* Reference panel: Indian Hill Google Classroom (read-only, never drives Reagan's day) */}
+      <ClassroomReferencePanel />
 
       {/* ============================ CONFIDENCE PRINCIPLES ============================ */}
       <ConfidencePrinciplesCard />

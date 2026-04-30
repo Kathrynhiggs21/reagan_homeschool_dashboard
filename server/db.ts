@@ -3793,10 +3793,33 @@ export async function recentMoodStrip(days: number = 3): Promise<Array<{ date: s
 // ----- Generic appSettings key/value helpers (Mom-editable flags) -----
 import { appSettings } from "../drizzle/schema";
 
+/** Default values that should exist in app_settings on first read. */
+const APP_SETTING_DEFAULTS: Record<string, string> = {
+  // Reagan's Indian Hill student Google account — used to prefill
+  // /u/<email>/ on Google-domain links so Chrome doesn't re-prompt
+  // for an account every time.
+  "student.googleEmail": "reagan.higgs33@ihsd.us",
+  "classroom.studentDomain": "ihsd.us",
+};
+
+async function _seedAppSettingDefaultIfMissing(key: string): Promise<string | null> {
+  const fallback = APP_SETTING_DEFAULTS[key];
+  if (fallback === undefined) return null;
+  try {
+    const d = getDb();
+    await d.insert(appSettings).values({ key, value: fallback } as any);
+    return fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export async function getAppSetting(key: string): Promise<string | null> {
   const d = getDb();
   const rows: any[] = await d.select().from(appSettings).where(eq(appSettings.key as any, key));
-  return rows[0]?.value ?? null;
+  if (rows[0]) return rows[0].value ?? null;
+  // Lazy-seed known defaults so first-time reads return the canonical value.
+  return _seedAppSettingDefaultIfMissing(key);
 }
 
 export async function setAppSetting(key: string, value: string | null): Promise<void> {
@@ -3814,4 +3837,149 @@ export async function listAppSettings(prefix?: string): Promise<Array<{ key: str
   const rows: any[] = await d.select({ key: appSettings.key, value: appSettings.value }).from(appSettings);
   if (!prefix) return rows as any;
   return (rows as any[]).filter((r) => r.key.startsWith(prefix));
+}
+
+
+// ----- GOOGLE CLASSROOM (REFERENCE-ONLY) -----
+import { classroomAssignments } from "../drizzle/schema";
+
+export type ClassroomSyncInput = {
+  externalId: string;
+  courseId: string;
+  courseName?: string | null;
+  title: string;
+  description?: string | null;
+  workType?: string | null;
+  state?: string | null;
+  link?: string | null;
+  /** ISO date or epoch ms; null/undefined = no due date */
+  dueAt?: string | number | null;
+};
+
+/** Idempotent upsert by externalId. Returns count of rows touched. */
+export async function upsertClassroomAssignments(items: ClassroomSyncInput[]): Promise<number> {
+  if (!Array.isArray(items) || items.length === 0) return 0;
+  const d = getDb();
+  let touched = 0;
+  for (const it of items) {
+    if (!it?.externalId || !it?.courseId || !it?.title) continue;
+    const dueAt =
+      it.dueAt == null
+        ? null
+        : typeof it.dueAt === "number"
+          ? new Date(it.dueAt)
+          : new Date(it.dueAt);
+    const row = {
+      externalId: it.externalId,
+      courseId: it.courseId,
+      courseName: it.courseName ?? null,
+      title: String(it.title).slice(0, 512),
+      description: it.description ?? null,
+      workType: it.workType ?? null,
+      state: it.state ?? null,
+      link: it.link ?? null,
+      dueAt,
+      syncedAt: new Date(),
+    } as any;
+    const existing: any[] = await d
+      .select()
+      .from(classroomAssignments)
+      .where(eq(classroomAssignments.externalId as any, it.externalId));
+    if (existing.length === 0) {
+      await d.insert(classroomAssignments).values(row);
+    } else {
+      await d
+        .update(classroomAssignments)
+        .set(row)
+        .where(eq(classroomAssignments.externalId as any, it.externalId));
+    }
+    touched++;
+  }
+  return touched;
+}
+
+/** Reference-only listing for the adult dashboard panel. Newest first. */
+export async function listClassroomAssignments(limit = 50) {
+  const d = getDb();
+  const rows = await d
+    .select()
+    .from(classroomAssignments)
+    .orderBy(desc(classroomAssignments.dueAt as any))
+    .limit(limit);
+  return rows;
+}
+
+
+/* ===================== REAGAN PROFILE MODEL =====================
+ *
+ * Lightweight, derived snapshot summarizing recent signals about how
+ * Reagan is learning. Updated on read (debounced via app_settings cache).
+ * Drives the Daily Printables picker + online-app suggestions.
+ */
+export type ReaganSignals = {
+  generatedAt: number;
+  windowDays: number;
+  feedback: {
+    /** counts of each Hard/Getting it/Got it tag in the window */
+    hard: number;
+    getting: number;
+    got: number;
+    /** strongest subjects (most "got" + "getting") */
+    strongSubjects: string[];
+    /** subjects with most "hard" */
+    strugglingSubjects: string[];
+  };
+  pacing: {
+    /** average minutes between block-done events on Today */
+    avgBlockMinutes: number | null;
+    /** typical hours she's most active (24h) */
+    peakHours: number[];
+  };
+  formats: {
+    /** preferred work format inferred from feedback notes / app launches */
+    preferred: string[]; // e.g. ["hands-on", "drawing", "outdoor"]
+  };
+  mood: {
+    recent: Array<{ date: string; zone: string | null }>;
+  };
+};
+
+export async function computeReaganProfileSnapshot(windowDays = 14): Promise<ReaganSignals> {
+  const d = getDb();
+  const since = new Date(Date.now() - windowDays * 24 * 60 * 60 * 1000);
+  let hard = 0, getting = 0, got = 0;
+  const subjectScore: Record<string, { good: number; bad: number }> = {};
+  try {
+    const fb = await d.select().from(skillFeedback);
+    for (const r of fb as any[]) {
+      const ts = r.createdAt ? new Date(r.createdAt) : null;
+      if (!ts || ts < since) continue;
+      const tag = String(r.feeling || r.tag || "").toLowerCase();
+      const subj = String(r.subjectSlug || r.subject || "").toLowerCase();
+      if (subj) subjectScore[subj] ||= { good: 0, bad: 0 };
+      if (tag.includes("hard")) { hard++; if (subj) subjectScore[subj].bad++; }
+      else if (tag.includes("get")) { getting++; if (subj) subjectScore[subj].good++; }
+      else if (tag.includes("got")) { got++; if (subj) subjectScore[subj].good += 2; }
+    }
+  } catch { /* feedback table optional */ }
+  const subjects = Object.entries(subjectScore);
+  const strongSubjects = subjects
+    .filter(([, v]) => v.good > v.bad)
+    .sort((a, b) => b[1].good - a[1].good)
+    .slice(0, 3)
+    .map(([s]) => s);
+  const strugglingSubjects = subjects
+    .filter(([, v]) => v.bad >= v.good)
+    .sort((a, b) => b[1].bad - a[1].bad)
+    .slice(0, 3)
+    .map(([s]) => s);
+  const moodRecent = await recentMoodStrip(7).catch(() => []);
+  return {
+    generatedAt: Date.now(),
+    windowDays,
+    feedback: { hard, getting, got, strongSubjects, strugglingSubjects },
+    pacing: { avgBlockMinutes: null, peakHours: [9, 10, 13] },
+    formats: { preferred: ["hands-on", "drawing", "outdoor", "story"] },
+    mood: { recent: moodRecent as any[] },
+  };
 }

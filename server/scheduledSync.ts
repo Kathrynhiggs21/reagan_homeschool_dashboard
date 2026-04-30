@@ -372,6 +372,38 @@ export function registerScheduledSync(app: Express) {
     }
   });
 
+  /* ====================== GOOGLE CLASSROOM SYNC (reference-only) ======================
+   *
+   * Daily Manus scheduled task pulls Reagan's Google Classroom assignments via
+   * the gws CLI (under spear.cpt@gmail.com) and POSTs them here. We upsert into
+   * classroomAssignments by externalId so re-runs are idempotent.
+   *
+   * IHES Classroom is reference-only — the adult dashboard renders these in a
+   * collapsed panel. They never auto-populate Reagan's daily plan.
+   */
+  app.post("/api/scheduled/classroom-sync", async (req: Request, res: Response) => {
+    let role: string | null = null;
+    try {
+      const u = await sdk.authenticateRequest(req);
+      role = u?.role ?? null;
+    } catch {
+      role = null;
+    }
+    if (!role || (role !== "user" && role !== "admin")) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
+    try {
+      const { items } = req.body ?? {};
+      if (!Array.isArray(items)) {
+        return res.status(400).json({ ok: false, error: "Expected { items: […] }" });
+      }
+      const upsertCount = await db.upsertClassroomAssignments(items as any[]);
+      return res.json({ ok: true, upserts: upsertCount });
+    } catch (e: any) {
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
+
   /* ====================== POWERSCHOOL INGEST (daily scraper) ====================== */
   app.post("/api/scheduled/powerschool/ingest", async (req: Request, res: Response) => {
     let role: string | null = null;

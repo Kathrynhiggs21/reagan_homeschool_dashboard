@@ -1632,6 +1632,21 @@ export const appRouter = router({
       .input(z.object({ days: z.number().min(1).max(14).optional() }).optional())
       .query(({ input }) => db.recentMoodStrip(input?.days ?? 3)),
   }),
+  reagan: router({
+    /** Read-only Reagan Profile Model snapshot for printables/online picker. */
+    profile: protectedProcedure
+      .input(z.object({ windowDays: z.number().min(3).max(60).default(14) }).optional())
+      .query(({ input }) => db.computeReaganProfileSnapshot(input?.windowDays ?? 14)),
+  }),
+  gclassroom: router({
+    /** Adult-only: list synced Google Classroom assignments (reference panel). */
+    list: protectedProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(200).default(50) }).optional())
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin" && ctx.user.role !== "tutor" && ctx.user.role !== "user") return [];
+        return db.listClassroomAssignments(input?.limit ?? 50);
+      }),
+  }),
   prefs: router({
     /** Public-safe key allowlist Reagan's UI may read (no secrets, no creds). */
     getPublic: publicProcedure

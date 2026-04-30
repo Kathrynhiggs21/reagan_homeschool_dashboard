@@ -1440,3 +1440,5 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] IHES Google Classroom = reference-only side panel (today + week glance), never the daily plan driver
 - [ ] Daily Printables = SCHOOL-DAY work, NOT homework. Frame as "today's school work" everywhere; finish before end of school day.
 - [ ] Three buckets in UI + email: Have-to-do | Optional | Extras (if she wants)
+- [ ] Automate Classroom sync via Manus scheduled task (uses gws, runs daily, POSTs to /api/scheduled/classroom-sync)
+- [ ] Automate 7am morning printables email via Manus scheduled task (POSTs to /api/scheduled/morning-brief, then emails via gmail MCP)

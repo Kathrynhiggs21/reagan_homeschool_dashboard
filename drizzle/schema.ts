@@ -1441,3 +1441,28 @@ export const curriculumTopics = mysqlTable("curriculumTopics", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+/* -------------------------------------------------------------------------- */
+/*  GOOGLE CLASSROOM (REFERENCE-ONLY)                                         */
+/*                                                                            */
+/*  Synced from spear.cpt@gmail.com's Google Classroom (where Reagan is       */
+/*  enrolled). NOT used to drive Reagan's daily plan — adults view this       */
+/*  in a collapsed reference panel only.                                       */
+/* -------------------------------------------------------------------------- */
+export const classroomAssignments = mysqlTable("classroomAssignments", {
+  id: int("id").autoincrement().primaryKey(),
+  // Stable id from Google (`courseId/courseWorkId` joined) so re-syncs idempotent.
+  externalId: varchar("externalId", { length: 128 }).notNull().unique(),
+  courseId: varchar("courseId", { length: 64 }).notNull(),
+  courseName: varchar("courseName", { length: 256 }),
+  title: varchar("title", { length: 512 }).notNull(),
+  description: text("description"),
+  workType: varchar("workType", { length: 32 }), // ASSIGNMENT | SHORT_ANSWER_QUESTION | MULTIPLE_CHOICE_QUESTION | …
+  state: varchar("state", { length: 32 }),       // PUBLISHED | DRAFT | DELETED
+  link: text("link"),                             // alternateLink to the Classroom item
+  dueAt: timestamp("dueAt"),                      // null if no due date
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  syncedAt: timestamp("syncedAt").defaultNow().notNull(),
+});
+export type ClassroomAssignment = typeof classroomAssignments.$inferSelect;
+export type InsertClassroomAssignment = typeof classroomAssignments.$inferInsert;

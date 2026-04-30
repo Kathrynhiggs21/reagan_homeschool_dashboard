@@ -253,6 +253,13 @@
       "when": 1777521010563,
       "tag": "0035_colossal_gorilla_man",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "5",
+      "when": 1777546313810,
+      "tag": "0036_regular_lady_deathstrike",
+      "breakpoints": true
     }
   ]
 }

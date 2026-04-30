@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { withGoogleAuthUser } from "@/lib/googleAuthLink";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -81,6 +82,8 @@ export default function Apps() {
   const { unlocked } = useAdultLock();
   const utils = trpc.useUtils();
   const apps = trpc.appLinks.list.useQuery();
+  const studentGoogleEmail = trpc.prefs.getPublic.useQuery({ key: "student.googleEmail" });
+  const reaganEmail = (studentGoogleEmail.data as string | null) ?? null;
   const list = (apps.data ?? []) as App[];
   const del = trpc.appLinks.delete.useMutation({ onSuccess: () => utils.appLinks.list.invalidate() });
   const [adding, setAdding] = useState(false);
@@ -125,7 +128,7 @@ export default function Apps() {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {items.map((a) => (
                 <div key={a.id} className="group relative">
-                  <a href={a.url} target="_blank" rel="noreferrer" aria-label={a.name}>
+                  <a href={withGoogleAuthUser(a.url, reaganEmail)} target="_blank" rel="noreferrer" aria-label={a.name}>
                     <Card className="classroom-card p-5 h-full flex flex-col items-center justify-center text-center gap-2 hover:-translate-y-1 hover:shadow-lg transition-all min-h-[140px]">
                       <span
                         className={`time-chip ${CAT_COLOR[key] || "chip-yellow"} !w-20 !h-20 !text-5xl !rounded-2xl shrink-0 flex items-center justify-center`}
