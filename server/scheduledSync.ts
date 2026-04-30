@@ -2,6 +2,39 @@ import type { Express, Request, Response } from "express";
 import * as db from "./db";
 import { sdk } from "./_core/sdk";
 
+/** Build the HTML email body for the 7am Morning Brief. */
+export function renderMorningBriefHtml(
+  forDate: string,
+  data: { date?: string; have_to_do?: any[]; optional?: any[]; extra?: any[] },
+): string {
+  const fmt = (iso: string) => {
+    try {
+      const d = new Date(iso + "T12:00:00Z");
+      return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
+    } catch { return iso; }
+  };
+  const esc = (s: any) => String(s ?? "").replace(/[&<>\"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" } as any)[c]);
+  const section = (title: string, color: string, items: any[]) => {
+    if (!items || items.length === 0) {
+      return `<div style="margin:20px 0;padding:14px 16px;border-left:4px solid ${color};background:#fafafa;border-radius:8px;"><div style="font-weight:700;color:${color};font-size:15px;">${esc(title)}</div><div style="color:#777;font-size:13px;margin-top:6px;">Nothing in this bucket today.</div></div>`;
+    }
+    const rows = items.map((it: any) => {
+      const link = it.sourceUrl ? `<a href="${esc(it.sourceUrl)}" style="color:#0a66c2;text-decoration:none;">Open &rarr;</a>` : "";
+      const meta = [it.source, it.estMinutes ? `~${it.estMinutes} min` : null, it.coinReward ? `${it.coinReward} Kiwi Coins` : null].filter(Boolean).join(" &middot; ");
+      const desc = it.description ? `<div style="color:#444;font-size:13px;margin-top:4px;">${esc(it.description)}</div>` : "";
+      return `<div style="padding:10px 0;border-bottom:1px solid #eee;"><div style="font-weight:600;color:#222;font-size:14px;">${esc(it.title)}</div><div style="color:#888;font-size:12px;margin-top:2px;">${esc(meta)}</div>${desc}<div style="margin-top:6px;font-size:13px;">${link}</div></div>`;
+    }).join("");
+    return `<div style="margin:20px 0;padding:14px 16px;border-left:4px solid ${color};background:#fafafa;border-radius:8px;"><div style="font-weight:700;color:${color};font-size:15px;margin-bottom:6px;">${esc(title)} (${items.length})</div>${rows}</div>`;
+  };
+  return `<!doctype html><html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#222;max-width:680px;margin:0 auto;padding:20px;">
+<div style="text-align:center;margin-bottom:8px;"><div style="font-size:22px;font-weight:800;color:#1f3a2e;">Reagan&rsquo;s Morning Brief</div><div style="color:#666;font-size:14px;">${esc(fmt(forDate))}</div></div>
+${section("Have-to-do", "#c0392b", data.have_to_do ?? [])}
+${section("Optional", "#2e86de", data.optional ?? [])}
+${section("Extras", "#27ae60", data.extra ?? [])}
+<div style="margin-top:24px;color:#888;font-size:12px;text-align:center;">School-day work only &middot; No homework &middot; Picked from free, kid-safe sources</div>
+</body></html>`;
+}
+
 /**
  * Endpoint the daily Manus scheduled task POSTs to with already-classified items
  * pulled from Gmail / Google Drive. The scheduled-task agent has the Google
@@ -367,6 +400,41 @@ export function registerScheduledSync(app: Express) {
         notes,
       });
       return res.json({ ok: true, ...result });
+    } catch (e: any) {
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
+
+  /* ====================== MORNING BRIEF (Daily Printables) ======================
+   *
+   * Each morning the Manus scheduled task picks the day's printables (ranked free
+   * sources, Reagan Profile Model-aware) and POSTs them here. We replace today's
+   * "pending" rows for the date and return an HTML email body the scheduled task
+   * then emails to spear.cpt@gmail.com and marcy.spear@gmail.com via gmail MCP.
+   */
+  app.post("/api/scheduled/morning-brief", async (req: Request, res: Response) => {
+    let role: string | null = null;
+    try {
+      const u = await sdk.authenticateRequest(req);
+      role = u?.role ?? null;
+    } catch {
+      role = null;
+    }
+    if (!role || (role !== "user" && role !== "admin")) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
+    try {
+      const { forDate, items } = req.body ?? {};
+      if (typeof forDate !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(forDate)) {
+        return res.status(400).json({ ok: false, error: "Expected forDate=YYYY-MM-DD" });
+      }
+      if (!Array.isArray(items)) {
+        return res.status(400).json({ ok: false, error: "Expected items[]" });
+      }
+      const n = await db.replaceDailyPrintables(forDate, items as any[]);
+      const today = await db.listDailyPrintables(forDate);
+      const html = renderMorningBriefHtml(forDate, today as any);
+      return res.json({ ok: true, replaced: n, emailHtml: html });
     } catch (e: any) {
       return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
     }

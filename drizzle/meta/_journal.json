@@ -260,6 +260,13 @@
       "when": 1777546313810,
       "tag": "0036_regular_lady_deathstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "5",
+      "when": 1777546759773,
+      "tag": "0037_salty_avengers",
+      "breakpoints": true
     }
   ]
 }

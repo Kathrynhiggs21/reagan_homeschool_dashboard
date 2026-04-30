@@ -1357,6 +1357,98 @@ export const appRouter = router({
     listFavorites: publicProcedure.query(() => db.listPrintableFavorites()),
     addFavorite: publicProcedure.input(z.object({ sourceId: z.number(), title: z.string(), url: z.string(), subjectSlug: z.string().optional(), note: z.string().optional() })).mutation(({ input }) => db.addPrintableFavorite(input)),
     removeFavorite: publicProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deletePrintableFavorite(input.id)),
+    /** Today's daily printables grouped by bucket (have_to_do / optional / extra). */
+    today: protectedProcedure
+      .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() }).optional())
+      .query(({ input }) => {
+        const d = input?.date ?? new Date().toISOString().slice(0, 10);
+        return db.listDailyPrintables(d);
+      }),
+    /** Mark a daily printable as done. Pure mark-done (no photo). */
+    markDone: protectedProcedure
+      .input(z.object({
+        id: z.number().int().positive(),
+        photoKey: z.string().optional(),
+        autoGrade: z.string().optional(),
+        driveFileId: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const row = await db.markPrintableDone(input.id, {
+          photoKey: input.photoKey ?? null,
+          autoGrade: input.autoGrade ?? null,
+          driveFileId: input.driveFileId ?? null,
+        });
+        // Award Kiwi Coins on completion
+        const coins = (row as any)?.coinReward ?? 5;
+        try {
+          await db.awardSticker({
+            userId: (ctx.user as any)?.id ?? null,
+            reason: "adult_bonus",
+            coins,
+            shortLyric: null,
+            addedByUserId: null,
+          });
+        } catch (e) {
+          console.warn("[printables] coin award failed", e);
+        }
+        return { ok: true, coins };
+      }),
+    /** Submit a finished printable with a photo. Uploads, auto-grades, files to Drive queue, awards coins. */
+    submitWork: protectedProcedure
+      .input(z.object({
+        id: z.number().int().positive(),
+        photoDataUrl: z.string().regex(/^data:image\/[a-zA-Z+.-]+;base64,/),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const m = /^data:([^;]+);base64,(.+)$/.exec(input.photoDataUrl);
+        if (!m) throw new Error("Expected an image data URL.");
+        const mime = m[1];
+        const buf = Buffer.from(m[2], "base64");
+        const ext = (mime.split("/")[1] ?? "png").replace(/[^a-z0-9]/gi, "") || "png";
+        const key = `printables/${input.id}-${Date.now()}.${ext}`;
+        const stored = await storagePut(key, buf, mime);
+        // Quick LLM-vision auto-grade (cheap, kid-friendly summary)
+        let autoGrade = "Looks complete";
+        try {
+          const r = await invokeLLM({
+            messages: [
+              { role: "system", content: "You are a kind 5th-grade tutor. Look at this photo of a finished printable. In 1-2 short, encouraging sentences, note completeness and effort (e.g. \"Looks complete · neat handwriting · strong effort\"). Do NOT grade harshly; this is encouragement-first." },
+              { role: "user", content: [{ type: "image_url" as const, image_url: { url: stored.url } }, { type: "text" as const, text: "Please give the encouraging summary." }] as any },
+            ],
+          });
+          const txt = (r as any)?.choices?.[0]?.message?.content;
+          if (typeof txt === "string" && txt.trim()) autoGrade = txt.trim().slice(0, 280);
+        } catch (e) {
+          console.warn("[printables] auto-grade failed", e);
+        }
+        const row = await db.markPrintableDone(input.id, {
+          photoKey: stored.key,
+          autoGrade,
+          driveFileId: null,
+        });
+        // Queue to Drive for filing
+        try {
+          await db.enqueueDrivePush({
+            fileKey: stored.key,
+            fileUrl: stored.url,
+            fileName: `printable-${input.id}.${ext}`,
+            mimeType: mime,
+            targetFolder: "reagan_assignments",
+          });
+        } catch (e) { console.warn("[printables] drive enqueue failed", e); }
+        // Award coins
+        const coins = (row as any)?.coinReward ?? 5;
+        try {
+          await db.awardSticker({
+            userId: (ctx.user as any)?.id ?? null,
+            reason: "adult_bonus",
+            coins,
+            shortLyric: null,
+            addedByUserId: null,
+          });
+        } catch {}
+        return { ok: true, photoUrl: stored.url, autoGrade, coins };
+      }),
   }),
   /* =================== UPLOAD OR SYNC =================== */
   upload: router({

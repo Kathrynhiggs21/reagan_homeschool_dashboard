@@ -22,6 +22,7 @@ import GameBreakCard from "@/components/GameBreakCard";
 import HomeAnalyticsStrip from "@/components/HomeAnalyticsStrip";
 import BrainBreakTvBox from "@/components/BrainBreakTvBox";
 import MascotGreeting from "@/components/MascotGreeting";
+import TodaySchoolWork from "@/components/TodaySchoolWork";
 
 // Neutral classroom mood language + classroom-y icons
 const ZONES = [
@@ -456,6 +457,9 @@ export default function Today() {
           })}
         </div>
       </section>
+
+      {/* Today's School Work — three-bucket printables from morning brief */}
+      <TodaySchoolWork />
 
       {/* Daily 15-min Skill Builder — next-up skill from her ladder */}
       <SkillBuilderTile />

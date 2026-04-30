@@ -1,0 +1,23 @@
+CREATE TABLE `daily_printables` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`for_date` varchar(10) NOT NULL,
+	`bucket` varchar(16) NOT NULL,
+	`title` varchar(256) NOT NULL,
+	`description` text,
+	`subject_slug` varchar(64),
+	`skill_ladder_id` int,
+	`source` varchar(64) NOT NULL,
+	`source_url` text,
+	`pdf_key` varchar(256),
+	`thumb_key` varchar(256),
+	`est_minutes` int,
+	`coin_reward` int NOT NULL DEFAULT 5,
+	`status` varchar(16) NOT NULL DEFAULT 'pending',
+	`completed_at` timestamp,
+	`photo_key` varchar(256),
+	`auto_grade` text,
+	`drive_file_id` varchar(128),
+	`created_at` timestamp NOT NULL DEFAULT (now()),
+	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `daily_printables_id` PRIMARY KEY(`id`)
+);

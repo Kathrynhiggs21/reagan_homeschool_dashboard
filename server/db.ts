@@ -3983,3 +3983,94 @@ export async function computeReaganProfileSnapshot(windowDays = 14): Promise<Rea
     mood: { recent: moodRecent as any[] },
   };
 }
+
+
+// ----- DAILY PRINTABLES -----
+import { dailyPrintables } from "../drizzle/schema";
+
+export type PrintableSyncInput = {
+  forDate: string; // YYYY-MM-DD
+  bucket: "have_to_do" | "optional" | "extra";
+  title: string;
+  description?: string | null;
+  subjectSlug?: string | null;
+  skillLadderId?: number | null;
+  source: string;
+  sourceUrl?: string | null;
+  pdfKey?: string | null;
+  thumbKey?: string | null;
+  estMinutes?: number | null;
+  coinReward?: number;
+};
+
+/** Replace today's printables with a fresh batch. Idempotent per forDate. */
+export async function replaceDailyPrintables(forDate: string, items: PrintableSyncInput[]): Promise<number> {
+  const d = getDb();
+  // Wipe existing pending rows for the date (preserve already-done ones)
+  await d
+    .delete(dailyPrintables)
+    .where(and(eq(dailyPrintables.forDate, forDate), eq(dailyPrintables.status, "pending")));
+  let n = 0;
+  for (const it of items) {
+    if (!it?.title || !it?.bucket || !it?.forDate || !it?.source) continue;
+    await d.insert(dailyPrintables).values({
+      forDate: it.forDate,
+      bucket: it.bucket,
+      title: String(it.title).slice(0, 255),
+      description: it.description ?? null,
+      subjectSlug: it.subjectSlug ?? null,
+      skillLadderId: it.skillLadderId ?? null,
+      source: it.source,
+      sourceUrl: it.sourceUrl ?? null,
+      pdfKey: it.pdfKey ?? null,
+      thumbKey: it.thumbKey ?? null,
+      estMinutes: it.estMinutes ?? null,
+      coinReward: it.coinReward ?? 5,
+    } as any);
+    n++;
+  }
+  return n;
+}
+
+/** Reagan's view: today's printables grouped by bucket. */
+export async function listDailyPrintables(forDate: string) {
+  const d = getDb();
+  const rows = await d
+    .select()
+    .from(dailyPrintables)
+    .where(eq(dailyPrintables.forDate, forDate))
+    .orderBy(asc(dailyPrintables.bucket as any), asc(dailyPrintables.id));
+  const byBucket: Record<string, typeof rows> = { have_to_do: [], optional: [], extra: [] };
+  for (const r of rows) {
+    const k = (r as any).bucket as string;
+    (byBucket[k] ||= []).push(r);
+  }
+  return { date: forDate, ...byBucket };
+}
+
+export async function markPrintableDone(id: number, opts: { photoKey?: string | null; autoGrade?: string | null; driveFileId?: string | null }) {
+  const d = getDb();
+  await d
+    .update(dailyPrintables)
+    .set({
+      status: "done",
+      completedAt: new Date(),
+      photoKey: opts.photoKey ?? null,
+      autoGrade: opts.autoGrade ?? null,
+      driveFileId: opts.driveFileId ?? null,
+    } as any)
+    .where(eq(dailyPrintables.id, id));
+  let row: any = null;
+  try {
+    const rows: any[] = await d.select().from(dailyPrintables).where(eq(dailyPrintables.id, id));
+    row = rows[0] ?? null;
+    if (row?.coinReward && row.coinReward > 0) {
+      await d.insert(coinLedger).values({
+        ledgerType: "earn",
+        delta: row.coinReward,
+        reason: `Printable: ${row.title}`,
+      } as any);
+    }
+  } catch { /* coins are best-effort */ }
+  return row;
+}

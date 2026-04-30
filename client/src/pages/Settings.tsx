@@ -17,6 +17,7 @@ import { useKiwi } from "@/contexts/KiwiContext";
 import { useAdultLock } from "@/contexts/AdultLockContext";
 import { trpc } from "@/lib/trpc";
 import { ClassroomReferencePanel } from "@/components/ClassroomReferencePanel";
+import RewardsManagerCard from "@/components/RewardsManagerCard";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
@@ -94,6 +95,9 @@ export default function Settings() {
 
       {/* Reference panel: Indian Hill Google Classroom (read-only, never drives Reagan's day) */}
       <ClassroomReferencePanel />
+
+      {/* Adult Rewards Manager: manual create + preset library + edit existing prizes */}
+      <RewardsManagerCard />
 
       {/* ============================ CONFIDENCE PRINCIPLES ============================ */}
       <ConfidencePrinciplesCard />

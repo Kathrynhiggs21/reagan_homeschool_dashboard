@@ -1442,3 +1442,15 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Three buckets in UI + email: Have-to-do | Optional | Extras (if she wants)
 - [ ] Automate Classroom sync via Manus scheduled task (uses gws, runs daily, POSTs to /api/scheduled/classroom-sync)
 - [ ] Automate 7am morning printables email via Manus scheduled task (POSTs to /api/scheduled/morning-brief, then emails via gmail MCP)
+
+
+## Apr 30 batch — Daily Printables + Rewards rebuild
+- [x] Merge `printables.today` + `printables.markDone` + `printables.submitWork` into existing printables router
+- [x] Add `renderMorningBriefHtml` helper to scheduledSync
+- [x] `/api/scheduled/morning-brief` endpoint accepts forDate + items, returns email HTML
+- [x] `TodaySchoolWork` component on Today page (three buckets, image+title tiles, popup)
+- [x] Printable popup supports photo upload → submitWork → S3 + LLM auto-grade + Drive queue + Kiwi Coins
+- [x] Rewards/Prizes Reagan view: Kiwi Coins balance + nearest-prize progress + image-tile cards + popup redeem
+- [x] Prizes start EMPTY (auto-seed disabled per spec)
+- [x] Adult Rewards Manager card in Settings: manual create form + 10-preset library + edit/delete
+- [x] All TS clean, all 161 vitest tests still pass
