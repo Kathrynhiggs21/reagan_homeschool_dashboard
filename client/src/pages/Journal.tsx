@@ -106,7 +106,7 @@ export default function Journal() {
   }
 
   return (
-    <div className="container py-6 space-y-8 max-w-3xl">
+    <div className="container py-5 space-y-5 max-w-3xl">
       {/* Page hero */}
       <div className="chalkboard">
         <p className="font-chalk-hand text-lg mb-1" style={{ color: "#ffe27a" }}>

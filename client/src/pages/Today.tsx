@@ -21,6 +21,8 @@ import IHThisWeekStrip from "@/components/IHThisWeekStrip";
 import CurriculumChip from "@/components/CurriculumChip";
 import GameBreakCard from "@/components/GameBreakCard";
 import HomeAnalyticsStrip from "@/components/HomeAnalyticsStrip";
+import BrainBreakTvBox from "@/components/BrainBreakTvBox";
+import MascotGreeting from "@/components/MascotGreeting";
 
 // Neutral classroom mood language + classroom-y icons
 const ZONES = [
@@ -123,7 +125,7 @@ export default function Today() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Theme picker strip — 4 themes Reagan can pick from */}
       <ThemePickerStrip />
       {/* Header — calm chalkboard strip, rainbow multi-color title. No ombre banner. */}
@@ -133,7 +135,9 @@ export default function Today() {
         boxShadow: "0 10px 30px -16px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.04)",
       }}>
         <div className="flex items-end justify-between flex-wrap gap-3">
-          <div>
+          <div className="flex items-end gap-4">
+            <MascotGreeting />
+            <div>
             <div className="font-chalk-hand text-2xl md:text-3xl leading-none" style={{ color: "#ffd97a", textShadow: "0 0 1px rgba(255,255,255,0.25)" }}>{today_str}</div>
             <h1 className="font-display mt-2 leading-none flex flex-wrap items-baseline gap-x-3 gap-y-1" style={{ fontSize: "clamp(2.5rem, 6vw, 4.75rem)", letterSpacing: "-0.01em" }}>
               {(() => {
@@ -153,6 +157,7 @@ export default function Today() {
                 ));
               })()}
             </h1>
+            </div>
           </div>
           <Button
             onClick={() => setOpen(true)}
@@ -258,6 +263,9 @@ export default function Today() {
 
       {/* Game-as-reward / mood break (only renders on signal) */}
       <GameBreakCard />
+
+      {/* Brain-Break TV Box — rotating kid-safe short clips */}
+      <BrainBreakTvBox />
 
       {/* Tour Mode — calm pinned strip, no ombre gradient */}
       <TourModeCard />

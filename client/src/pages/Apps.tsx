@@ -97,7 +97,7 @@ export default function Apps() {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-5">
       <header className="flex items-end justify-between gap-4 flex-wrap">
         <div>
           <div className="font-chalk-hand text-xl leading-none chalk-yellow">Everything you need</div>

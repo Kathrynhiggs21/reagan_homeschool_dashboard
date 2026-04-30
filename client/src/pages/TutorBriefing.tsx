@@ -60,7 +60,7 @@ export default function TutorBriefing() {
   }
 
   return (
-    <div className="container py-8 space-y-6 max-w-4xl">
+    <div className="container py-5 space-y-5 max-w-4xl">
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <Link href="/tutor" className="text-xs opacity-60 hover:underline">← Tutor handoff (general)</Link>

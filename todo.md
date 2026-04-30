@@ -1341,3 +1341,11 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] appSettings prefs helpers (get/set/list) + trpc prefs router + 3 vitests
 - [x] Settings: Adaptive IEP auto-apply toggle + editable Prize Ladder milestones (stored in appSettings["iep.autoApply"], appSettings["prize.milestones"])
 - [x] Cleanup punchlist invariants all green (no Brutus, no Test Book, no duplicate IEP rows, no TEST_STRAND skills, no Madeira-only district label)
+
+# Apr 30 — Tonight polish batch (closed)
+
+- [x] Confetti burst on block Done-tap (client/src/lib/confetti.ts)
+- [x] Good Work note button + dialog (adult only, saves via prefs.set)
+- [x] Brain-Break TV Box with rotating kid-safe clips (BrainBreakTvBox.tsx)
+- [x] Rotating daily mascot illustration next to Good Morning greeting (MascotGreeting.tsx)
+- [x] Tighten card spacing: Today, Apps, Journal, TutorBriefing
