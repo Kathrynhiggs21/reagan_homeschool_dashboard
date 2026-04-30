@@ -1392,3 +1392,6 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] Greeting hero redesigned for all-theme contrast
 - [x] Seed starter bookshelf (9 kid-appropriate books)
 - [x] Profile photo on About Me + mascot auto-switches to photo
+
+# Apr 30 — Quick fix
+- [x] Revert home/Today title hero back to chalkboard look

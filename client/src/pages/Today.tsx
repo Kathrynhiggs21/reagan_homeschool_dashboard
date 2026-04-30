@@ -127,36 +127,64 @@ export default function Today() {
     <div className="space-y-4">
       {/* Theme picker strip — 4 themes Reagan can pick from */}
       <ThemePickerStrip />
-      {/* Header — colorful storybook strip. Works on both dark + light themes. */}
-      <header className="greeting-hero relative rounded-2xl p-5 md:p-7 overflow-hidden" style={{
-        background: "linear-gradient(135deg, #fff4c2 0%, #ffd4a8 40%, #ffb6d0 75%, #c9a7ff 100%)",
-        border: "4px solid #ffffff",
-        boxShadow: "0 10px 30px -14px rgba(0,0,0,0.35), 0 4px 0 rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.6)",
-      }}>
+      {/* Header — chalkboard slate hero. Chalk-style text on green slate, framed in oak. */}
+      <header
+        className="greeting-hero relative rounded-2xl p-5 md:p-7 overflow-hidden"
+        style={{
+          // Layered: subtle chalk-dust noise + a deep slate-green gradient
+          background:
+            "radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.07), transparent 55%)," +
+            "radial-gradient(ellipse at 80% 90%, rgba(255,255,255,0.05), transparent 60%)," +
+            "linear-gradient(160deg, #1f3a32 0%, #2a4a3e 45%, #1c3329 100%)",
+          border: "6px solid #6b4a2b",
+          boxShadow:
+            "0 10px 30px -14px rgba(0,0,0,0.55)," +
+            "inset 0 0 0 2px #4a3320," +
+            "inset 0 0 80px rgba(0,0,0,0.35)",
+        }}
+      >
         <div className="flex items-end justify-between flex-wrap gap-3">
           <div className="flex items-end gap-4">
             <MascotGreeting />
             <div>
-            <div className="font-chalk-hand text-2xl md:text-3xl leading-none" style={{ color: "#9a5a00", textShadow: "0 1px 0 rgba(255,255,255,0.6)" }}>{today_str}</div>
-            <h1 className="font-display mt-2 leading-none flex flex-wrap items-baseline gap-x-3 gap-y-1" style={{ fontSize: "clamp(2.5rem, 6vw, 4.75rem)", letterSpacing: "-0.01em" }}>
-              {(() => {
-                const first = (profile.data?.studentName || "Reagan").split(" ")[0];
-                const words = [
-                  { t: "Good",      c: "#ff9fb2" }, // coral pink
-                  { t: "Morning,",  c: "#ffd97a" }, // butter yellow
-                  { t: first + "!", c: "#7fe3c4" }, // mint
-                ];
-                return words.map((w, i) => (
-                  <span key={i} className="inline-block" style={{
-                    color: w.c,
-                    WebkitTextStroke: "1px rgba(0,0,0,0.18)",
-                    textShadow: "0 2px 0 #ffffff, 0 3px 0 rgba(0,0,0,0.12), 0 8px 14px rgba(0,0,0,0.15)",
-                  }}>
-                    {w.t}
-                  </span>
-                ));
-              })()}
-            </h1>
+              <div
+                className="font-chalk-hand text-2xl md:text-3xl leading-none"
+                style={{
+                  color: "#f5e7c7",
+                  textShadow: "0 0 6px rgba(255,255,255,0.18)",
+                  opacity: 0.9,
+                }}
+              >
+                {today_str}
+              </div>
+              <h1
+                className="font-display mt-2 leading-none flex flex-wrap items-baseline gap-x-3 gap-y-1"
+                style={{ fontSize: "clamp(2.5rem, 6vw, 4.75rem)", letterSpacing: "-0.01em" }}
+              >
+                {(() => {
+                  const first = (profile.data?.studentName || "Reagan").split(" ")[0];
+                  const words = [
+                    { t: "Good",      c: "#fff4d6" }, // chalk cream
+                    { t: "Morning,",  c: "#ffe9a8" }, // soft chalk yellow
+                    { t: first + "!", c: "#bdf0d6" }, // chalk mint
+                  ];
+                  return words.map((w, i) => (
+                    <span
+                      key={i}
+                      className="inline-block"
+                      style={{
+                        color: w.c,
+                        textShadow:
+                          "0 0 1px rgba(255,255,255,0.55), 0 0 12px rgba(255,255,255,0.18)",
+                        // Subtle chalk-edge feel
+                        WebkitTextStroke: "0.4px rgba(255,255,255,0.25)",
+                      }}
+                    >
+                      {w.t}
+                    </span>
+                  ));
+                })()}
+              </h1>
             </div>
           </div>
           <Button
