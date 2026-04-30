@@ -1349,3 +1349,9 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] Brain-Break TV Box with rotating kid-safe clips (BrainBreakTvBox.tsx)
 - [x] Rotating daily mascot illustration next to Good Morning greeting (MascotGreeting.tsx)
 - [x] Tighten card spacing: Today, Apps, Journal, TutorBriefing
+
+# Apr 30 — Morning bug triage (Mom)
+
+- [x] Bug: Profile page boxes have low-contrast text (dark card, near-black text → unreadable)
+- [x] Bug: Chrome "site is using microphone" notification fires on every page load when Kiwi wake-word is on, and triggers Chrome notification sound even when notifications are off
+- [x] Bug: Kiwi should be completely silent right now — no chirp, no TTS speech, no notification sound

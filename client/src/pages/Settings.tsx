@@ -9,6 +9,7 @@ import { PowerSchoolImporterCard } from "@/components/PowerSchoolImporterCard";
 import CareTeamManager from "@/components/CareTeamManager";
 import PracticePrefsCard from "@/components/PracticePrefsCard";
 import { AdaptiveAndMilestonesCard } from "@/components/AdaptiveAndMilestonesCard";
+import KiwiSoundAndMicToggles from "@/components/KiwiSoundAndMicToggles";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -195,7 +196,7 @@ export default function Settings() {
           <div className="text-sm font-medium mb-1">Listening mode</div>
           <div className="text-xs text-muted-foreground mb-2">
             <strong>Wake word</strong> listens for “Kiwi” or “Hi Kiwi” and opens the chat.
-            Requires mic permission in the browser.
+            Requires the <em>Microphone access</em> toggle below to be on.
           </div>
           <div className="flex gap-2 flex-wrap">
             {[
@@ -216,6 +217,8 @@ export default function Settings() {
             ))}
           </div>
         </div>
+
+        <KiwiSoundAndMicToggles />
       </Card>
 
       {/* ============================ ADULT LOCK ============================ */}

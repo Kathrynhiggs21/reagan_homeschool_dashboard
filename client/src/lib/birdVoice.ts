@@ -14,6 +14,23 @@ export const BIRD_VOICE_CONFIG = {
   volume: 0.9,
 } as const;
 
+/**
+ * Global silence gate. While true, chirp() and speakLikeBird() are hard no-ops
+ * — no WebAudio chirp and no SpeechSynthesis speech. This is driven by the
+ * `kiwiSilent` localStorage flag, which defaults to "1" (silent) until the user
+ * explicitly un-mutes Kiwi in Settings.
+ */
+function isSilenced(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    const v = window.localStorage?.getItem("kiwiSilent");
+    // Default to silent ("1") when the key is missing.
+    return v === null || v === "1";
+  } catch {
+    return true;
+  }
+}
+
 /** Rank a voice list to find the best "small bright bird" voice available. */
 export function pickBirdVoice(
   voices: SpeechSynthesisVoice[],
@@ -58,8 +75,10 @@ function getCtx(): AudioContext | null {
   return sharedCtx;
 }
 
-/** Play a 3-note parakeet-style chirp. Safe no-op if WebAudio unavailable. */
+/** Play a 3-note parakeet-style chirp. Safe no-op if WebAudio unavailable
+ *  or if the global silence gate is on. */
 export function chirp() {
+  if (isSilenced()) return;
   const ctx = getCtx();
   if (!ctx) return;
   // Three ascending-then-descending notes, each ~80-120ms, with fast envelope.
@@ -93,9 +112,11 @@ export function chirp() {
   }
 }
 
-/** Chirp once, then speak with bird-voice TTS settings. */
+/** Chirp once, then speak with bird-voice TTS settings.
+ *  When the global silence gate is on, this is a full no-op. */
 export function speakLikeBird(text: string) {
   if (typeof window === "undefined") return;
+  if (isSilenced()) return;
   if (!("speechSynthesis" in window)) return;
   chirp();
   const u = new SpeechSynthesisUtterance(text);

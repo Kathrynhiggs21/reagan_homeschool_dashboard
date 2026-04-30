@@ -30,8 +30,10 @@ const Ctx = createContext<KiwiState | null>(null);
 
 export function KiwiProvider({ children }: { children: ReactNode }) {
   const [enabled, setEnabled] = useState(true);
+  // Default to "off" so that nothing prompts Chrome to request microphone
+  // access on first load. Mom can flip this to wake/tap/always in Settings.
   const [mode, setMode] = useState<KiwiMode>(
-    (localStorage.getItem("kiwiMode") as KiwiMode) || "wake"
+    (localStorage.getItem("kiwiMode") as KiwiMode) || "off"
   );
   const [voiceMode, setVoiceMode] = useState<KiwiVoiceMode>(
     (localStorage.getItem("kiwiVoiceMode") as KiwiVoiceMode) || "text"

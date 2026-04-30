@@ -52,9 +52,19 @@ export default function KiwiCompanion() {
   function speak(text: string) { speakLikeBird(text); }
 
   // Wake word listener (lightweight, browser SpeechRecognition)
+  // Gated behind `kiwiMicConsent` localStorage flag so that Chrome's
+  // "site is using microphone" indicator + sound does NOT fire on every
+  // page load. Mom explicitly turns mic access ON in Settings.
   const recognitionRef = useRef<any>(null);
   useEffect(() => {
     if (!enabled || mode !== "wake" || adultPresent || open) return;
+    try {
+      if (typeof window === "undefined" || window.localStorage?.getItem("kiwiMicConsent") !== "1") {
+        return;
+      }
+    } catch {
+      return;
+    }
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) return;
     const r = new SR();

@@ -51,14 +51,14 @@ export default function Profile() {
         )}
       </header>
 
-      {/* Identity statement */}
-      <Card className="cozy-card p-5 bg-gradient-to-br from-amber-50 to-rose-50 border-amber-200">
-        <div className="font-display font-semibold mb-2">My identity</div>
-        <p className="font-hand text-lg leading-snug">
+      {/* Identity statement — uses amber tones inside a dark box too, so pin text to amber-900 always */}
+      <Card className="cozy-card p-5 bg-gradient-to-br from-amber-50 to-rose-50 border-amber-200 !text-amber-900">
+        <div className="font-display font-semibold mb-2 !text-amber-900">My identity</div>
+        <p className="font-hand text-lg leading-snug !text-amber-900">
           {data.selfStatement || "I am an animal rescuer. I always have been."}
         </p>
         {data.selfAdvocacyStatement && (
-          <p className="text-sm text-muted-foreground mt-3 italic">{data.selfAdvocacyStatement}</p>
+          <p className="text-sm mt-3 italic !text-amber-800/90">{data.selfAdvocacyStatement}</p>
         )}
       </Card>
 
@@ -67,10 +67,10 @@ export default function Profile() {
         <Section title="My pets" emoji="🐾">
           <div className="grid sm:grid-cols-2 gap-2">
             {pets.map((pet) => (
-              <div key={`${pet.name}-${pet.species}`} className="p-3 rounded-md border bg-white/40">
+              <div key={`${pet.name}-${pet.species}`} className="p-3 rounded-md border border-white/20 bg-white/10 text-foreground">
                 <div className="font-semibold">{pet.name}</div>
-                <div className="text-xs text-muted-foreground">{pet.species}</div>
-                {pet.role && <div className="text-xs mt-1 italic">{pet.role}</div>}
+                <div className="text-xs opacity-80">{pet.species}</div>
+                {pet.role && <div className="text-xs mt-1 italic opacity-90">{pet.role}</div>}
               </div>
             ))}
           </div>
@@ -80,10 +80,10 @@ export default function Profile() {
       {/* Family */}
       {Object.keys(family).length > 0 && (
         <Section title="My family" emoji="👨‍👩‍👧">
-          <ul className="text-sm space-y-1 list-disc list-inside text-muted-foreground">
+          <ul className="text-sm space-y-1 list-disc list-inside opacity-90">
             {Object.entries(family).map(([role, val]) => (
               <li key={role}>
-                <span className="font-medium text-foreground capitalize">{role.replace(/_/g, " ")}:</span>{" "}
+                <span className="font-medium capitalize">{role.replace(/_/g, " ")}:</span>{" "}
                 {typeof val === "string" ? val : JSON.stringify(val)}
               </li>
             ))}
@@ -96,9 +96,9 @@ export default function Profile() {
         <Section title="My school history" emoji="🎒">
           <ol className="text-sm space-y-2">
             {schoolHistory.map((s, i) => (
-              <li key={`${s.school}-${i}`} className="p-2 rounded-md border bg-white/40">
+              <li key={`${s.school}-${i}`} className="p-2 rounded-md border border-white/20 bg-white/10 text-foreground">
                 <div className="font-semibold">{s.school}</div>
-                <div className="text-xs text-muted-foreground">{s.district} · {s.years}{s.transferDate ? ` · transferred ${s.transferDate}` : ""}</div>
+                <div className="text-xs opacity-80">{s.district} · {s.years}{s.transferDate ? ` · transferred ${s.transferDate}` : ""}</div>
               </li>
             ))}
           </ol>
@@ -176,7 +176,7 @@ export default function Profile() {
 
       {data.whatWorks && (
         <Section title="What helps me" emoji="🤍">
-          <ul className="text-sm space-y-1 list-disc list-inside text-muted-foreground">
+          <ul className="text-sm space-y-1 list-disc list-inside opacity-90">
             {(data.whatWorks as string[]).map((w: string) => (
               <li key={w}>{w}</li>
             ))}
@@ -186,7 +186,7 @@ export default function Profile() {
 
       {data.whatHarms && (data.whatHarms as string[]).length > 0 && (
         <Section title="What doesn't help" emoji="🛑">
-          <ul className="text-sm space-y-1 list-disc list-inside text-muted-foreground">
+          <ul className="text-sm space-y-1 list-disc list-inside opacity-90">
             {(data.whatHarms as string[]).map((w: string) => (
               <li key={w}>{w}</li>
             ))}
