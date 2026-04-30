@@ -1630,3 +1630,25 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 
 - [ ] Bug: phantom Chrome notification sound on page load when mic blocked (gate SpeechRecognition + audio elements behind explicit consent)
 - [ ] Final audit doc at end: shipped/deferred + every integration status + errors + pending manual steps
+
+## Checkpoint #2 (Apr 30 PM) — focus
+- [ ] Customizable background picker (color + image, persisted)
+- [ ] Notebook upgrade: paper templates (lined/blank/graph/handwriting/dotted) + larger canvas + larger writing area
+- [ ] Kiwi read-aloud on demand: "🔊 Read this to me" on Notebook, TurnInDialog body, grey instruction boxes
+- [ ] MyLevels full-width row layout with bigger emoji thumbnail + title visible
+- [ ] Filter test/quiz/screener items off Reagan's Today list
+- [ ] Adult Settings: pick-your-background panel
+- [ ] Tests: background picker round-trip, notebook template select, read-aloud invokes speechSynthesis, today filter excludes test/quiz
+
+## Phase 3 (NEW priority — daily auto-build)
+- [ ] Server `today.refresh` mutation: builds today plan from active curriculum + recommended-apps map + skips test/quiz/screener kinds
+- [ ] Today page mounts: if today plan empty or stale (>12h), auto-trigger today.refresh once
+- [ ] Each Today item: shows file/link tappable + "Turn in" button + recommended app chip
+- [ ] Daily tip strip at top of Today (rotating pool, deterministic by date)
+- [ ] Server route `/api/scheduled/build-today` so a schedule task can pre-build at 5am
+
+## Phase 3 add-on (auto-update from interactions)
+- [ ] On submissions.create → mark blocks.curriculumTopicId covered + lastCoveredAt now
+- [ ] On submissions.create → if block has skillLadderId, auto-call skillLadder.practice with selfRating derived from kidDifficulty (easy=5, just=4, tricky=3, hard=2)
+- [ ] On appLinks.open → register engagement → tiny skill bump (selfRating=2) for that subject
+- [ ] Soft-skill levels auto-bump from journal effort/courage/kindness mentions and 3-day streaks

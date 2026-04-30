@@ -6,6 +6,7 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { KiwiProvider } from "./contexts/KiwiContext";
 import { AdultLockProvider } from "./contexts/AdultLockContext";
+import { CustomBackgroundProvider } from "./contexts/CustomBackgroundContext";
 import AdultGate from "./components/AdultGate";
 import AssignmentsLibrary from "./pages/AssignmentsLibrary";
 import CozyShell from "./components/CozyShell";
@@ -159,8 +160,10 @@ function App() {
         <TooltipProvider>
           <KiwiProvider>
             <AdultLockProvider>
-              <Toaster />
-              <Router />
+              <CustomBackgroundProvider>
+                <Toaster />
+                <Router />
+              </CustomBackgroundProvider>
             </AdultLockProvider>
           </KiwiProvider>
         </TooltipProvider>
