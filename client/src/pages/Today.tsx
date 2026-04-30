@@ -92,13 +92,44 @@ export default function Today() {
   const [printableItems, setPrintableItems] = useState<TodayPrintableItem[]>([]);
   const [flashTile, setFlashTile] = useState<number | null>(null);
 
-  function openPrintableForBlock(block: { title?: string | null; blockType?: string | null; subjectSlug?: string | null }) {
+  // Library lookup for the schedule-block Open button. Cheap to mount
+  // because list is also useful elsewhere on the page.
+  const todayDate = new Date().toISOString().slice(0, 10);
+  const libraryToday = trpc.library.list.useQuery({
+    dateFor: todayDate,
+    status: "pending",
+    orderBy: "recommendedUse",
+    limit: 200,
+    offset: 0,
+  });
+
+  async function openPrintableForBlock(block: { title?: string | null; blockType?: string | null; subjectSlug?: string | null }) {
     const slug = detectSubjectSlug(block);
+    // 1. Today's printables (Morning Brief)
     const items = todaySchoolWorkRef.current?.getItems() ?? printableItems;
     const match = findBestPrintableForSubject(items, slug);
     if (match && todaySchoolWorkRef.current?.openById(match.id)) return;
-    // No real printable picked yet — open a curated fallback so Reagan ALWAYS
-    // sees a real worksheet/page when she taps Open.
+    // 2. Adult Library, today's date, this subject — prefer the highest ★
+    const libRows = (libraryToday.data ?? []).filter(
+      (r) => !slug || r.subjectSlug === slug,
+    );
+    const lib = libRows.sort((a, b) => (b.recommendedUse ?? 0) - (a.recommendedUse ?? 0))[0];
+    if (lib) {
+      todaySchoolWorkRef.current?.openFallback({
+        title: lib.title,
+        description:
+          (lib.notes || lib.topic || "") +
+          (lib.fromSource ? `  \u00b7 from ${lib.fromSource}${lib.ihClassroom ? " (IH)" : ""}` : ""),
+        source: lib.fromSource ?? "Library",
+        sourceUrl: lib.sourceUrl ?? lib.fileLink ?? null,
+        pdfKey: lib.fileLink ?? null,
+        estMinutes: 15,
+        coinReward: 5,
+        subjectSlug: slug,
+      });
+      return;
+    }
+    // 3. Curated fallback so Reagan ALWAYS sees a real worksheet/page
     const fb = fallbackActivityFor(slug, block.title);
     todaySchoolWorkRef.current?.openFallback({
       title: fb.title,

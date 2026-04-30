@@ -1507,3 +1507,59 @@ export const dailyPrintables = mysqlTable("daily_printables", {
 });
 export type DailyPrintable = typeof dailyPrintables.$inferSelect;
 export type NewDailyPrintable = typeof dailyPrintables.$inferInsert;
+
+
+/**
+ * Adult Assignments Library (Apr 30 batch)
+ *
+ * One row per assignment-thing Reagan does or could do, regardless of where it
+ * came from (IH printout, IXL, Khan, Email, Drive, Manual, etc). Bundles tie
+ * lesson plan ↔ slides ↔ worksheet ↔ answer key together so the daily Open
+ * button on a schedule block can run them in the correct order:
+ *   step 1 = lesson plan / video
+ *   step 2 = slides / instructions / vocabulary
+ *   step 3 = worksheet / quiz / activity (the doing part)
+ *   step 4 = answer key / exit ticket (adult-only)
+ */
+export const assignmentsLibrary = mysqlTable("assignments_library", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 300 }).notNull(),
+  subjectSlug: varchar("subject_slug", { length: 32 }),                    // math | ela | reading | writing | science | ss | art | music | other
+  type: varchar("type", { length: 32 }).notNull(),                          // worksheet | video | slideshow | lesson_plan | quiz | answer_key | project | app_activity | reading | other
+  topic: varchar("topic", { length: 200 }),
+  tags: json("tags").$type<string[]>(),
+  fromSource: varchar("from_source", { length: 80 }).notNull().default("manual"), // "IH (printout)" | "IXL" | "Khan Academy" | "ReadWorks" | "Schoology" | "Education.com" | "NASA" | "Google Drive" | "Email" | "Manual" | etc.
+  ihClassroom: boolean("ih_classroom").default(false).notNull(),            // sortable Yes/No: was this assigned by Indian Hill?
+  dateReceived: varchar("date_received", { length: 10 }),                   // YYYY-MM-DD when it came in
+  dateFor: varchar("date_for", { length: 10 }),                             // YYYY-MM-DD when it should be done
+  status: varchar("status", { length: 16 }).notNull().default("pending"),   // pending | in_progress | completed | absent | skipped
+  recommendedUse: int("recommended_use").default(3).notNull(),              // 1 (skip) … 5 (highly recommended)
+  sourceUrl: varchar("source_url", { length: 1000 }),                       // the page/app/source
+  fileLink: varchar("file_link", { length: 1000 }),                         // direct file URL (Drive editable copy / attachment)
+  bundleId: int("bundle_id"),                                               // FK to assignmentBundles
+  bundleStep: int("bundle_step"),                                           // 1=lesson, 2=slides, 3=worksheet, 4=answer_key
+  linkedItemIds: json("linked_item_ids").$type<number[]>(),                 // related rows (legacy free-form linking)
+  notes: text("notes"),
+  reaganClicked: boolean("reagan_clicked").default(false).notNull(),        // used? (auto)
+  completedAt: timestamp("completed_at"),
+  blockId: int("block_id"),                                                 // optional: pinned to a specific schedule block
+  autoGradeScore: int("auto_grade_score"),                                  // 0-100 if auto-graded
+  autoGradeFeedback: text("auto_grade_feedback"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+/**
+ * Assignment bundle: groups items that should run together in step order.
+ */
+export const assignmentBundles = mysqlTable("assignment_bundles", {
+  id: int("id").autoincrement().primaryKey(),
+  name: varchar("name", { length: 300 }).notNull(),
+  subjectSlug: varchar("subject_slug", { length: 32 }),
+  topic: varchar("topic", { length: 200 }),
+  dateFor: varchar("date_for", { length: 10 }),                             // intended day, optional
+  reminderOnly: boolean("reminder_only").default(false).notNull(),          // skip lesson; jump straight to worksheet
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});

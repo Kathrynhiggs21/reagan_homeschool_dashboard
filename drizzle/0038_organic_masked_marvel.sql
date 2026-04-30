@@ -1,0 +1,41 @@
+CREATE TABLE `assignment_bundles` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`name` varchar(300) NOT NULL,
+	`subject_slug` varchar(32),
+	`topic` varchar(200),
+	`date_for` varchar(10),
+	`reminder_only` boolean NOT NULL DEFAULT false,
+	`notes` text,
+	`created_at` timestamp NOT NULL DEFAULT (now()),
+	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `assignment_bundles_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `assignments_library` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`title` varchar(300) NOT NULL,
+	`subject_slug` varchar(32),
+	`type` varchar(32) NOT NULL,
+	`topic` varchar(200),
+	`tags` json,
+	`from_source` varchar(80) NOT NULL DEFAULT 'manual',
+	`ih_classroom` boolean NOT NULL DEFAULT false,
+	`date_received` varchar(10),
+	`date_for` varchar(10),
+	`status` varchar(16) NOT NULL DEFAULT 'pending',
+	`recommended_use` int NOT NULL DEFAULT 3,
+	`source_url` varchar(1000),
+	`file_link` varchar(1000),
+	`bundle_id` int,
+	`bundle_step` int,
+	`linked_item_ids` json,
+	`notes` text,
+	`reagan_clicked` boolean NOT NULL DEFAULT false,
+	`completed_at` timestamp,
+	`block_id` int,
+	`auto_grade_score` int,
+	`auto_grade_feedback` text,
+	`created_at` timestamp NOT NULL DEFAULT (now()),
+	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `assignments_library_id` PRIMARY KEY(`id`)
+);

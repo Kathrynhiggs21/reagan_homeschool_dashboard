@@ -35,6 +35,7 @@ const MORE_NAV: NavItem[] = [
 // Adult section simplified: only the 5 things the parent actually uses.
 // Full admin pages still reachable via direct URL but hidden from sidebar.
 const ADULT_NAV: NavItem[] = [
+  { to: "/library",    emoji: "📚", label: "Assignments Library" },
   { to: "/upload",     emoji: "⬆️", label: "Upload or Sync" },
   { to: "/agendas",    emoji: "🗓️", label: "Daily Agendas" },
   { to: "/tutor",      emoji: "🤝", label: "Tutor Handoff" },

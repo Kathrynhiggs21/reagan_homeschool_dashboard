@@ -1472,3 +1472,23 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] Big primary button "📄 Open the worksheet →" + secondary "📑 Open the printable PDF →"
 - [x] Test (162/162), checkpoint, sync to Drive
 - [ ] (followup) Server: backfill missing sourceUrl from fallbacks during morning brief intake
+
+
+## Apr 30 — Adult Assignments Library + Daily Classroom Sync
+- [ ] DB: add `assignmentsLibrary` table (title, subject, type, topic, tags, fromSource, ihClassroom bool, dateReceived, dateFor, status, recommendedUse 1-5, sourceUrl, fileLink, bundleId, bundleStep, linkedItemIds JSON, notes, createdAt)
+- [ ] DB: add `assignmentBundles` table (id, subject, topic, dateFor, name, createdAt)
+- [ ] tRPC procedures: `library.list`, `library.search`, `library.add`, `library.update`, `library.markStatus`, `library.attachToToday`, `library.bundle.create`, `library.bundle.list`, `library.bundle.addItem`
+- [ ] Adult-only Library page (`/admin/library`) with searchable + sortable table, all columns, status filters, type filters, ★ recommendation badges
+- [ ] Adult Library: "Use today" button → drops the bundle's items into today's daily plan in step order
+- [ ] Today schedule block Open: lookup chain = today's printable → matching Library row by subject → curated fallback (NEVER empty)
+- [ ] Today schedule block Open: when item is part of a bundle, run lesson → slides → worksheet → (adult) answer-key in order
+- [ ] Daily 6 AM scheduled task: pull from gmail (reagan.higgs33@ihsd.us forwarded → spear.cpt@gmail.com), Drive `Reagan/IHES`, Classroom; classify; create editable Drive copies; insert Library rows
+- [ ] In-app worksheet runner: open → Start → autosave on close/blur → Resume → Turn in → auto-grade if gradable
+- [ ] Auto-grade gradable submissions; results into Adult Grades & Analytics
+- [ ] Absent button on adult Settings (bottom): mark today absent, halt coin awards, log to analytics
+- [ ] Tests + checkpoint + Drive sync
+- [ ] Auto-create editable Google Doc/Sheet/Slide copies for all writable types (worksheet/quiz/lesson_plan/project) into `Reagan/Assignments/Editable Copies/`; store link in fileLink
+- [ ] Read-only types (video/slideshow) just keep their source URL
+- [ ] PDF fallback: render with the in-app annotation runner (Apple-Pencil-friendly)
+- [ ] Set up Gmail forwarding rule reagan.higgs33@ihsd.us → spear.cpt@gmail.com (auto-forward all from @ihsd.us / IH Classroom / IH teachers)
+- [ ] Confirm forwarding via verification link, then label forwarded items in spear.cpt@gmail.com as "IH-Reagan" so the daily sync can grab them with one query

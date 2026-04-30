@@ -1,12 +1,13 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
-import { Route, Switch } from "wouter";
+import { Route, Switch, Redirect } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { KiwiProvider } from "./contexts/KiwiContext";
 import { AdultLockProvider } from "./contexts/AdultLockContext";
 import AdultGate from "./components/AdultGate";
+import AssignmentsLibrary from "./pages/AssignmentsLibrary";
 import CozyShell from "./components/CozyShell";
 import KiwiCompanion from "./components/KiwiCompanion";
 import KiwiPerch from "./components/KiwiPerch";
@@ -31,7 +32,6 @@ import Onboarding from "./pages/Onboarding";
 import NeedsWork from "./pages/NeedsWork";
 import Printables from "./pages/Printables";
 import TakeNotes from "./pages/TakeNotes";
-import Stickers from "./pages/Stickers";
 import Prizes from "./pages/Prizes";
 import Rewards from "./pages/Rewards";
 import Academics from "./pages/Academics";
@@ -117,12 +117,18 @@ function Router() {
         <Route path="/upload">
           <AdultGate><UploadOrSync /></AdultGate>
         </Route>
+        <Route path="/library">
+          <AdultGate><AssignmentsLibrary /></AdultGate>
+        </Route>
         <Route path="/agendas">
           <AdultGate><DailyAgendas /></AdultGate>
         </Route>
         <Route path="/rewards" component={Rewards} />
         {/* Legacy direct links still work and land on the Rewards tabs */}
-        <Route path="/stickers" component={Stickers} />
+        {/* /stickers retired — Stickers UI removed from Reagan's view per user request. */}
+        <Route path="/stickers">
+          <Redirect to="/rewards" />
+        </Route>
         <Route path="/prizes" component={Prizes} />
         <Route path="/notes" component={TakeNotes} />
         <Route path="/scratch" component={Scratch} />

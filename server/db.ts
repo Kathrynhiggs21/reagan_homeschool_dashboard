@@ -4074,3 +4074,190 @@ export async function markPrintableDone(id: number, opts: { photoKey?: string | 
   } catch { /* coins are best-effort */ }
   return row;
 }
+
+
+// ─── Adult Assignments Library (Apr 30 batch) ─────────────────────────────
+import {
+  assignmentsLibrary,
+  assignmentBundles,
+} from "../drizzle/schema";
+
+export type AssignmentLibraryRow = typeof assignmentsLibrary.$inferSelect;
+export type AssignmentBundleRow = typeof assignmentBundles.$inferSelect;
+
+export type AssignmentLibraryFilters = {
+  q?: string;                          // free-text search across title/topic/tags/notes
+  subjectSlug?: string | null;
+  type?: string | null;                // worksheet | video | slideshow | lesson_plan | quiz | answer_key | project | app_activity | reading | other
+  status?: string | null;              // pending | in_progress | completed | absent | skipped
+  fromSource?: string | null;
+  ihClassroomOnly?: boolean;
+  dateFor?: string | null;             // YYYY-MM-DD
+  bundleId?: number | null;
+  limit?: number;
+  offset?: number;
+  orderBy?: "recent" | "dateFor" | "recommendedUse" | "title";
+};
+
+export async function listAssignmentsLibrary(filters: AssignmentLibraryFilters = {}) {
+  const d = getDb();
+  const where: any[] = [];
+  if (filters.subjectSlug) where.push(eq(assignmentsLibrary.subjectSlug, filters.subjectSlug));
+  if (filters.type) where.push(eq(assignmentsLibrary.type, filters.type));
+  if (filters.status) where.push(eq(assignmentsLibrary.status, filters.status));
+  if (filters.fromSource) where.push(eq(assignmentsLibrary.fromSource, filters.fromSource));
+  if (filters.ihClassroomOnly) where.push(eq(assignmentsLibrary.ihClassroom, true));
+  if (filters.dateFor) where.push(eq(assignmentsLibrary.dateFor, filters.dateFor));
+  if (filters.bundleId != null) where.push(eq(assignmentsLibrary.bundleId, filters.bundleId));
+  if (filters.q) {
+    const like = `%${filters.q.replace(/%/g, "")}%`;
+    where.push(sql`(${assignmentsLibrary.title} LIKE ${like} OR ${assignmentsLibrary.topic} LIKE ${like} OR ${assignmentsLibrary.notes} LIKE ${like})`);
+  }
+
+  const orderClause = (() => {
+    switch (filters.orderBy) {
+      case "dateFor":
+        return [desc(assignmentsLibrary.dateFor), desc(assignmentsLibrary.id)];
+      case "recommendedUse":
+        return [desc(assignmentsLibrary.recommendedUse), desc(assignmentsLibrary.id)];
+      case "title":
+        return [asc(assignmentsLibrary.title)];
+      default:
+        return [desc(assignmentsLibrary.createdAt), desc(assignmentsLibrary.id)];
+    }
+  })();
+
+  let q: any = d.select().from(assignmentsLibrary);
+  if (where.length) q = q.where(and(...where));
+  q = q.orderBy(...orderClause);
+  if (filters.limit) q = q.limit(filters.limit);
+  if (filters.offset) q = q.offset(filters.offset);
+  const rows = await q;
+  return rows as AssignmentLibraryRow[];
+}
+
+export async function countAssignmentsLibrary(filters: AssignmentLibraryFilters = {}) {
+  const d = getDb();
+  const where: any[] = [];
+  if (filters.subjectSlug) where.push(eq(assignmentsLibrary.subjectSlug, filters.subjectSlug));
+  if (filters.type) where.push(eq(assignmentsLibrary.type, filters.type));
+  if (filters.status) where.push(eq(assignmentsLibrary.status, filters.status));
+  if (filters.fromSource) where.push(eq(assignmentsLibrary.fromSource, filters.fromSource));
+  if (filters.ihClassroomOnly) where.push(eq(assignmentsLibrary.ihClassroom, true));
+  if (filters.dateFor) where.push(eq(assignmentsLibrary.dateFor, filters.dateFor));
+  if (filters.q) {
+    const like = `%${filters.q.replace(/%/g, "")}%`;
+    where.push(sql`(${assignmentsLibrary.title} LIKE ${like} OR ${assignmentsLibrary.topic} LIKE ${like} OR ${assignmentsLibrary.notes} LIKE ${like})`);
+  }
+  let q: any = d.select({ n: sql<number>`COUNT(*)` }).from(assignmentsLibrary);
+  if (where.length) q = q.where(and(...where));
+  const r: any = await q;
+  return Number(r?.[0]?.n ?? 0);
+}
+
+export async function getAssignmentLibraryRow(id: number) {
+  const d = getDb();
+  const rows = await d.select().from(assignmentsLibrary).where(eq(assignmentsLibrary.id, id));
+  return (rows[0] ?? null) as AssignmentLibraryRow | null;
+}
+
+export type AssignmentLibraryInput = Partial<AssignmentLibraryRow> & {
+  title: string;
+  type: string;
+};
+
+export async function addAssignmentLibrary(input: AssignmentLibraryInput) {
+  const d = getDb();
+  const res: any = await d.insert(assignmentsLibrary).values({
+    title: input.title,
+    subjectSlug: input.subjectSlug ?? null,
+    type: input.type,
+    topic: input.topic ?? null,
+    tags: (input.tags as any) ?? null,
+    fromSource: input.fromSource ?? "manual",
+    ihClassroom: input.ihClassroom ?? false,
+    dateReceived: input.dateReceived ?? null,
+    dateFor: input.dateFor ?? null,
+    status: input.status ?? "pending",
+    recommendedUse: input.recommendedUse ?? 3,
+    sourceUrl: input.sourceUrl ?? null,
+    fileLink: input.fileLink ?? null,
+    bundleId: input.bundleId ?? null,
+    bundleStep: input.bundleStep ?? null,
+    linkedItemIds: (input.linkedItemIds as any) ?? null,
+    notes: input.notes ?? null,
+    blockId: input.blockId ?? null,
+  } as any);
+  const id = (res as any)?.[0]?.insertId ?? (res as any)?.insertId ?? null;
+  return id ? await getAssignmentLibraryRow(Number(id)) : null;
+}
+
+export async function updateAssignmentLibrary(id: number, patch: Partial<AssignmentLibraryRow>) {
+  const d = getDb();
+  await d.update(assignmentsLibrary).set({ ...patch, updatedAt: new Date() } as any).where(eq(assignmentsLibrary.id, id));
+  return getAssignmentLibraryRow(id);
+}
+
+export async function setAssignmentLibraryStatus(id: number, status: string) {
+  const d = getDb();
+  const completedAt = status === "completed" ? new Date() : null;
+  await d.update(assignmentsLibrary)
+    .set({ status, completedAt: completedAt as any, updatedAt: new Date() } as any)
+    .where(eq(assignmentsLibrary.id, id));
+  return getAssignmentLibraryRow(id);
+}
+
+export async function findLibraryItemsForToday(forDate: string, subjectSlug: string | null) {
+  const d = getDb();
+  const where: any[] = [eq(assignmentsLibrary.dateFor, forDate)];
+  if (subjectSlug) where.push(eq(assignmentsLibrary.subjectSlug, subjectSlug));
+  // not yet completed/skipped
+  where.push(sql`${assignmentsLibrary.status} IN ('pending','in_progress')`);
+  const rows = await d.select().from(assignmentsLibrary).where(and(...where)).orderBy(asc(assignmentsLibrary.bundleStep), desc(assignmentsLibrary.recommendedUse));
+  return rows as AssignmentLibraryRow[];
+}
+
+// ─── Bundles ────────────────────────────────────────────────────────────────
+
+export async function listAssignmentBundles(filters: { dateFor?: string | null; subjectSlug?: string | null } = {}) {
+  const d = getDb();
+  const where: any[] = [];
+  if (filters.dateFor) where.push(eq(assignmentBundles.dateFor, filters.dateFor));
+  if (filters.subjectSlug) where.push(eq(assignmentBundles.subjectSlug, filters.subjectSlug));
+  let q: any = d.select().from(assignmentBundles);
+  if (where.length) q = q.where(and(...where));
+  q = q.orderBy(desc(assignmentBundles.createdAt));
+  return await q as AssignmentBundleRow[];
+}
+
+export async function createAssignmentBundle(input: Partial<AssignmentBundleRow> & { name: string }) {
+  const d = getDb();
+  const res: any = await d.insert(assignmentBundles).values({
+    name: input.name,
+    subjectSlug: input.subjectSlug ?? null,
+    topic: input.topic ?? null,
+    dateFor: input.dateFor ?? null,
+    reminderOnly: input.reminderOnly ?? false,
+    notes: input.notes ?? null,
+  } as any);
+  const id = (res as any)?.[0]?.insertId ?? (res as any)?.insertId ?? null;
+  if (!id) return null;
+  const rows = await d.select().from(assignmentBundles).where(eq(assignmentBundles.id, Number(id)));
+  return (rows[0] ?? null) as AssignmentBundleRow | null;
+}
+
+export async function attachLibraryItemToBundle(itemId: number, bundleId: number, step: number) {
+  const d = getDb();
+  await d.update(assignmentsLibrary)
+    .set({ bundleId, bundleStep: step, updatedAt: new Date() } as any)
+    .where(eq(assignmentsLibrary.id, itemId));
+  return getAssignmentLibraryRow(itemId);
+}
+
+export async function getBundleWithItems(bundleId: number) {
+  const d = getDb();
+  const bRows = await d.select().from(assignmentBundles).where(eq(assignmentBundles.id, bundleId));
+  if (!bRows[0]) return null;
+  const items = await d.select().from(assignmentsLibrary).where(eq(assignmentsLibrary.bundleId, bundleId)).orderBy(asc(assignmentsLibrary.bundleStep));
+  return { bundle: bRows[0] as AssignmentBundleRow, items: items as AssignmentLibraryRow[] };
+}

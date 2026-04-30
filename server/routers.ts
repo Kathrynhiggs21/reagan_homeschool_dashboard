@@ -1762,5 +1762,85 @@ export const appRouter = router({
       .input(z.object({ prefix: z.string().optional() }).optional())
       .query(({ input }) => db.listAppSettings(input?.prefix)),
   }),
+  // ── Adult Assignments Library ─────────────────────────────────────────
+  library: router({
+    list: protectedProcedure
+      .input(z.object({
+        q: z.string().optional(),
+        subjectSlug: z.string().nullable().optional(),
+        type: z.string().nullable().optional(),
+        status: z.string().nullable().optional(),
+        fromSource: z.string().nullable().optional(),
+        ihClassroomOnly: z.boolean().optional(),
+        dateFor: z.string().nullable().optional(),
+        bundleId: z.number().nullable().optional(),
+        limit: z.number().min(1).max(500).default(100),
+        offset: z.number().min(0).default(0),
+        orderBy: z.enum(["recent", "dateFor", "recommendedUse", "title"]).default("recent"),
+      }).optional())
+      .query(({ input }) => db.listAssignmentsLibrary(input ?? {})),
+    count: protectedProcedure
+      .input(z.object({
+        q: z.string().optional(),
+        subjectSlug: z.string().nullable().optional(),
+        type: z.string().nullable().optional(),
+        status: z.string().nullable().optional(),
+        ihClassroomOnly: z.boolean().optional(),
+      }).optional())
+      .query(({ input }) => db.countAssignmentsLibrary(input ?? {})),
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(({ input }) => db.getAssignmentLibraryRow(input.id)),
+    add: protectedProcedure
+      .input(z.object({
+        title: z.string().min(1).max(300),
+        subjectSlug: z.string().nullable().optional(),
+        type: z.string().min(1).max(32),
+        topic: z.string().nullable().optional(),
+        tags: z.array(z.string()).optional(),
+        fromSource: z.string().default("manual"),
+        ihClassroom: z.boolean().default(false),
+        dateReceived: z.string().nullable().optional(),
+        dateFor: z.string().nullable().optional(),
+        recommendedUse: z.number().min(1).max(5).default(3),
+        sourceUrl: z.string().nullable().optional(),
+        fileLink: z.string().nullable().optional(),
+        bundleId: z.number().nullable().optional(),
+        bundleStep: z.number().nullable().optional(),
+        notes: z.string().nullable().optional(),
+        blockId: z.number().nullable().optional(),
+      }))
+      .mutation(({ input }) => db.addAssignmentLibrary(input as any)),
+    update: protectedProcedure
+      .input(z.object({ id: z.number(), patch: z.record(z.string(), z.any()) }))
+      .mutation(({ input }) => db.updateAssignmentLibrary(input.id, input.patch as any)),
+    setStatus: protectedProcedure
+      .input(z.object({ id: z.number(), status: z.enum(["pending","in_progress","completed","absent","skipped"]) }))
+      .mutation(({ input }) => db.setAssignmentLibraryStatus(input.id, input.status)),
+    findForToday: protectedProcedure
+      .input(z.object({ forDate: z.string(), subjectSlug: z.string().nullable().optional() }))
+      .query(({ input }) => db.findLibraryItemsForToday(input.forDate, input.subjectSlug ?? null)),
+    bundles: router({
+      list: protectedProcedure
+        .input(z.object({ dateFor: z.string().nullable().optional(), subjectSlug: z.string().nullable().optional() }).optional())
+        .query(({ input }) => db.listAssignmentBundles(input ?? {})),
+      create: protectedProcedure
+        .input(z.object({
+          name: z.string().min(1).max(300),
+          subjectSlug: z.string().nullable().optional(),
+          topic: z.string().nullable().optional(),
+          dateFor: z.string().nullable().optional(),
+          reminderOnly: z.boolean().default(false),
+          notes: z.string().nullable().optional(),
+        }))
+        .mutation(({ input }) => db.createAssignmentBundle(input as any)),
+      attach: protectedProcedure
+        .input(z.object({ itemId: z.number(), bundleId: z.number(), step: z.number().min(1).max(4) }))
+        .mutation(({ input }) => db.attachLibraryItemToBundle(input.itemId, input.bundleId, input.step)),
+      get: protectedProcedure
+        .input(z.object({ bundleId: z.number() }))
+        .query(({ input }) => db.getBundleWithItems(input.bundleId)),
+    }),
+  }),
 });
 export type AppRouter = typeof appRouter;
