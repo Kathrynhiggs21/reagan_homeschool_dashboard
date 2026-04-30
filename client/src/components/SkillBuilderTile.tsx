@@ -6,6 +6,7 @@ import { useKiwi } from "@/contexts/KiwiContext";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import FeedbackChips from "@/components/FeedbackChips";
+import CurriculumChip from "@/components/CurriculumChip";
 
 /**
  * SkillBuilderTile — the daily 15-minute Skill Builder block.
@@ -80,7 +81,10 @@ export default function SkillBuilderTile() {
               </span>
             )}
           </div>
-          <div className="font-display text-lg leading-tight mt-0.5">Today's next step: {skill.title}</div>
+          <div className="font-display text-lg leading-tight mt-0.5 flex items-center gap-2 flex-wrap">
+            <span>Today's next step: {skill.title}</span>
+            <CurriculumChip match={skill.title} />
+          </div>
           {skill.kidFriendly && (
             <p className="text-sm text-neutral-300 mt-1 leading-snug">{skill.kidFriendly}</p>
           )}

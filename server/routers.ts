@@ -1604,5 +1604,19 @@ export const appRouter = router({
       .input(z.object({ limit: z.number().default(20) }).optional())
       .query(({ input }) => db.listPowerschoolImports(input?.limit ?? 20)),
   }),
+  curriculum: router({
+    list: protectedProcedure
+      .input(z.object({ subject: z.string().optional() }).optional())
+      .query(({ input }) => db.listCurriculumTopics(input?.subject)),
+    progress: protectedProcedure.query(() => db.curriculumProgress()),
+    ensureSeeded: protectedProcedure.mutation(() => db.ensureCurriculumSeeded()),
+    toggle: protectedProcedure
+      .input(z.object({ id: z.number(), status: z.enum(["notStarted", "inProgress", "done"]) }))
+      .mutation(({ input }) => db.toggleCurriculumTopic(input.id, input.status)),
+    setNote: protectedProcedure
+      .input(z.object({ id: z.number(), notes: z.string().max(2000) }))
+      .mutation(({ input }) => db.setCurriculumNote(input.id, input.notes)),
+    autoCompleteFromHistory: protectedProcedure.mutation(() => db.autoCompleteFromHistory()),
+  }),
 });
 export type AppRouter = typeof appRouter;

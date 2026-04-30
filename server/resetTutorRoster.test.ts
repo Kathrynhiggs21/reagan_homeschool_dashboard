@@ -11,17 +11,17 @@ describe("resetTutorRoster", () => {
     await db.listTutors(false);
   });
 
-  it("returns exactly the three canonical tutors (Mike, Sophie, College tutor)", async () => {
+  it("returns exactly the three canonical tutors (Tutor A, Tutor B, Tutor C)", async () => {
     const res = await db.resetTutorRoster();
     expect(res.count).toBeGreaterThanOrEqual(3);
-    expect(res.roster).toEqual(expect.arrayContaining(["Mike", "Sophie", "College tutor"]));
+    expect(res.roster).toEqual(expect.arrayContaining(["Tutor A", "Tutor B", "Tutor C"]));
   });
 
   it("leaves each canonical tutor active with no fake contact info", async () => {
     await db.resetTutorRoster();
     const active = await db.listTutors(true);
     const byName = Object.fromEntries(active.map((t: any) => [t.name, t]));
-    for (const n of ["Mike", "Sophie", "College tutor"]) {
+    for (const n of ["Tutor A", "Tutor B", "Tutor C"]) {
       expect(byName[n], `${n} should exist in the active roster`).toBeTruthy();
       expect(byName[n].active).toBe(true);
       // No email/phone seeded — guard against accidentally leaking test contact info

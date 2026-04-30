@@ -17,6 +17,7 @@ import KiwiIntroStrip from "@/components/KiwiIntroStrip";
 import SkillBuilderTile from "@/components/SkillBuilderTile";
 import PlacementInviteCard from "@/components/PlacementInviteCard";
 import IHThisWeekStrip from "@/components/IHThisWeekStrip";
+import CurriculumChip from "@/components/CurriculumChip";
 import GameBreakCard from "@/components/GameBreakCard";
 
 // Neutral classroom mood language + classroom-y icons
@@ -169,6 +170,26 @@ export default function Today() {
         </Card>
       )}
 
+      {/* Adult quick-links — Curriculum + Analytics */}
+      {unlocked && (
+        <Card className="classroom-card p-4">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div className="font-display text-sm font-semibold chalk-white">Adult tools</div>
+            <div className="flex gap-2 flex-wrap">
+              <Button size="sm" variant="outline" className="bg-transparent" onClick={() => (window.location.href = "/curriculum")}>
+                📚 Curriculum & Standards
+              </Button>
+              <Button size="sm" variant="outline" className="bg-transparent" onClick={() => (window.location.href = "/analytics")}>
+                📊 Analytics
+              </Button>
+              <Button size="sm" variant="outline" className="bg-transparent" onClick={() => (window.location.href = "/agendas")}>
+                📝 Daily Agendas
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Check-in strip — adult-only, since mood tracking is parent-facing, not kid-facing. */}
       {unlocked && (
         <Card className="classroom-card p-4">
@@ -281,6 +302,7 @@ export default function Today() {
                     <span className="time-chip time-chip-v2" style={rainbowPillStyle(i)}>{blockTimeLabel(i)}</span>
                     <span className="text-xl" aria-hidden="true">{tint.emoji}</span>
                     <div className="font-display font-bold leading-tight" style={{ ...rainbowInkStyle(i), fontSize: "clamp(1.05rem, 2.1vw, 1.35rem)" }}>{b.title}</div>
+                    <CurriculumChip match={`${b.title || ""} ${b.description || ""}`} />
                   </div>
                   {b.description && (
                     <p className="mt-1 chalk-white/90" style={{ fontSize: "0.95rem", opacity: 0.82, lineHeight: 1.35 }}>{b.description}</p>

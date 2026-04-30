@@ -232,6 +232,13 @@
       "when": 1777439266663,
       "tag": "0032_bored_tomorrow_man",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "5",
+      "when": 1777512378759,
+      "tag": "0033_early_iron_fist",
+      "breakpoints": true
     }
   ]
 }

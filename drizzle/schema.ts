@@ -1412,3 +1412,28 @@ export const powerschoolAssignments = mysqlTable("powerschool_assignments", {
   teacherComment: text("teacher_comment"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// ─────────────────────────────────────────────────────────────────────
+// Curriculum Topics — 5th grade Ohio / Indian Hill scope+sequence.
+// Hierarchical: parent=null is a top-level Topic (Math Topic 3),
+// parent set on a child row makes it a lesson/sub-topic.
+// `code` is the short IH-textbook-style chip (e.g. "Math 7-4").
+// `standardRef` is the full Ohio Learning Standard code (e.g. "5.NBT.A.1").
+// `ord` drives the display order within a subject so tree mirrors the
+// school's actual pacing.
+// ─────────────────────────────────────────────────────────────────────
+export const curriculumTopics = mysqlTable("curriculumTopics", {
+  id: int("id").autoincrement().primaryKey(),
+  subject: varchar("subject", { length: 64 }).notNull(),     // "Math" | "ELA" | "Science" | "Social" | "Specials"
+  code: varchar("code", { length: 48 }).notNull(),           // e.g. "Math 7-4", "ELA M2-L5"
+  title: varchar("title", { length: 512 }).notNull(),
+  standardRef: varchar("standard_ref", { length: 128 }),     // Ohio code, nullable for Specials
+  parentId: int("parent_id"),                                // null = top-level topic
+  ord: int("ord").notNull().default(0),                      // display order within subject
+  status: varchar("status", { length: 16 }).notNull().default("notStarted"), // notStarted | inProgress | done
+  completedAt: timestamp("completed_at"),
+  quarter: varchar("quarter", { length: 8 }),                // "Q1" | "Q2" | "Q3" | "Q4" — for IH pacing
+  notes: text("notes"),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

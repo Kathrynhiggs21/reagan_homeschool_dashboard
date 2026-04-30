@@ -1289,5 +1289,22 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 
 
 ## Tutor roster (Apr 29 PM)
-- [x] Seeded Mike, Sophie, College tutor (names only, no contact info) via db.resetTutorRoster() — ran as part of vitest suite
+- [x] Tutor roster now Tutor A / Tutor B / Tutor C via db.resetTutorRoster() — Mom adds real tutors in Settings → Tutors when assigned
 - [x] All previous tutors marked inactive (history preserved, hidden from pickers); new "Reset roster" button in Settings → Tutors for future cleanup
+
+
+## Ohio 5th-grade Curriculum tracker (Apr 29 PM-3)
+- [x] Rename active tutor roster to Tutor A / Tutor B / Tutor C (resetTutorRoster now emits these three; Mom adds real names when assigned)
+- [x] Ohio 5th-grade Learning Standards compiled in curriculumSeed.ts (Math 5.OA/NBT/NF/MD/G, ELA 5.RL/RI/RF/W/SL/L, Science 5.PS/LS/ESS, Social 5.HIS/GEO/GOV/ECO, Specials PE/Art/Music/Tech)
+- [x] curriculumTopics table created (migration 0033_early_iron_fist.sql): id, subject, code, title, standardRef, parent_id, ord, status, completed_at, quarter, notes
+- [x] Seeder in server/curriculumSeed.ts runs via curriculum.ensureSeeded mutation; 80+ rows in IH pacing order
+- [x] Adult-only /curriculum page now has CurriculumTopicsTree section at the top: subject chips, progress bars, 2-level tree, checkboxes
+- [x] tRPC curriculum router: list / progress / ensureSeeded / toggle / setNote / autoCompleteFromHistory
+- [x] CurriculumChip uses fuzzy title/standard match instead of schema FK — no migration needed on legacy tables
+- [x] Render curriculum code chip on Today's schedule cards + SkillBuilderTile (tooltip = full Ohio standard)
+- [x] Vitest: curriculum.test.ts covers seeding idempotency, ordering, per-subject progress %, Q1 auto-complete (4 tests)
+- [x] Final checkpoint + ask Mom to Publish
+- [x] Home (Today) page: adult-only "Adult tools" row with Curriculum & Standards + Analytics + Daily Agendas buttons
+- [x] CurriculumChip rendered on Today schedule blocks and Skill Builder; short IH code on chip + real Ohio standard in tooltip
+- [x] Auto-complete: Q1 rows auto-done + title-match heuristic against powerschool_assignments/ihAssignments (Mom can un-tick any that were over-eager)
+- [x] Coding scheme live: IH textbook-style code on chip (Math 1, Math 1-2, ELA M1, etc.), Ohio standard ref stored on each row and shown in tooltip

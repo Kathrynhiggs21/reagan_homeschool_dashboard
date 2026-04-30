@@ -3470,9 +3470,9 @@ export async function resetTutorRoster() {
   const dbi = getDb();
   await dbi.update(tutors).set({ active: false });
   const want = [
-    { name: "Mike", role: "tutor" },
-    { name: "Sophie", role: "tutor" },
-    { name: "College tutor", role: "tutor" },
+    { name: "Tutor A", role: "tutor" },
+    { name: "Tutor B", role: "tutor" },
+    { name: "Tutor C", role: "tutor" },
   ];
   for (const w of want) {
     const existing = await dbi.select().from(tutors).where(eq(tutors.name, w.name)).limit(1);
@@ -3490,4 +3490,152 @@ export async function resetTutorRoster() {
   }
   const final = await dbi.select().from(tutors).where(eq(tutors.active, true));
   return { count: final.length, roster: final.map((t) => t.name) };
+}
+
+
+/* ============================== CURRICULUM ================================ */
+/* Raw-SQL helpers (curriculumTopics isn't in the drizzle `schema` import    */
+/* yet — declaring via getDb().execute keeps the footprint tiny).            */
+
+import { CURRICULUM_SEED } from "./curriculumSeed";
+
+/** Seed the curriculumTopics table if it's empty. Idempotent. */
+export async function ensureCurriculumSeeded() {
+  const db = getDb();
+  const [countRow]: any = await db.execute(sql`SELECT COUNT(*) AS c FROM curriculumTopics`);
+  const c = Number((countRow?.[0] ?? countRow)?.c ?? 0);
+  if (c > 0) return { seeded: false, count: c };
+
+  // Pass 1: insert every row without parent so we can look up IDs by code.
+  for (let i = 0; i < CURRICULUM_SEED.length; i++) {
+    const r = CURRICULUM_SEED[i];
+    await db.execute(sql`
+      INSERT INTO curriculumTopics (subject, code, title, standard_ref, ord, quarter)
+      VALUES (${r.subject}, ${r.code}, ${r.title}, ${r.standardRef ?? null}, ${i}, ${r.quarter ?? null})
+    `);
+  }
+  // Pass 2: resolve parentCode → parent_id.
+  for (const r of CURRICULUM_SEED) {
+    if (!r.parentCode) continue;
+    await db.execute(sql`
+      UPDATE curriculumTopics c
+      JOIN curriculumTopics p ON p.code = ${r.parentCode}
+      SET c.parent_id = p.id
+      WHERE c.code = ${r.code}
+    `);
+  }
+  const [after]: any = await db.execute(sql`SELECT COUNT(*) AS c FROM curriculumTopics`);
+  return { seeded: true, count: Number((after?.[0] ?? after)?.c ?? 0) };
+}
+
+export async function listCurriculumTopics(subject?: string) {
+  const db = getDb();
+  if (subject) {
+    return (await db.execute(sql`
+      SELECT id, subject, code, title, standard_ref AS standardRef, parent_id AS parentId,
+             ord, status, completed_at AS completedAt, quarter, notes
+      FROM curriculumTopics
+      WHERE subject = ${subject}
+      ORDER BY ord ASC
+    `) as any)[0] ?? [];
+  }
+  return (await db.execute(sql`
+    SELECT id, subject, code, title, standard_ref AS standardRef, parent_id AS parentId,
+           ord, status, completed_at AS completedAt, quarter, notes
+    FROM curriculumTopics
+    ORDER BY subject ASC, ord ASC
+  `) as any)[0] ?? [];
+}
+
+export async function toggleCurriculumTopic(id: number, nextStatus: "notStarted" | "inProgress" | "done") {
+  const db = getDb();
+  const completedAt = nextStatus === "done" ? new Date() : null;
+  await db.execute(sql`
+    UPDATE curriculumTopics SET status = ${nextStatus}, completed_at = ${completedAt}
+    WHERE id = ${id}
+  `);
+  return { id, status: nextStatus };
+}
+
+export async function setCurriculumNote(id: number, notes: string) {
+  const db = getDb();
+  await db.execute(sql`UPDATE curriculumTopics SET notes = ${notes} WHERE id = ${id}`);
+  return { id, notes };
+}
+
+export async function curriculumProgress() {
+  const db = getDb();
+  const rows: any = (await db.execute(sql`
+    SELECT subject,
+           SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) AS done,
+           COUNT(*) AS total
+    FROM curriculumTopics
+    GROUP BY subject
+  `))[0];
+  return (rows as any[]).map((r) => ({
+    subject: String(r.subject),
+    done: Number(r.done ?? 0),
+    total: Number(r.total ?? 0),
+    pct: r.total ? Math.round((Number(r.done) / Number(r.total)) * 100) : 0,
+  }));
+}
+
+/**
+ * Auto-tick topics whose titles or codes substring-match assignment titles
+ * already in PowerSchool or IH assignments. Uses an extremely permissive
+ * heuristic — easy for Mom to un-tick manually — but hits the common "Topic 7
+ * quiz → Math 7 family" kinds of matches that make the tree feel lived-in.
+ * Also marks anything flagged Q1 as done (since Q1 is complete on IH calendar).
+ */
+export async function autoCompleteFromHistory(): Promise<{ checked: number; byQuarter: number }> {
+  const db = getDb();
+
+  // 1. Quarter-wide auto-complete: Q1 is done by definition (we're past it),
+  //    and any Q2 topic whose text matches an in-DB assignment gets ticked too.
+  const [q1]: any = await db.execute(sql`
+    UPDATE curriculumTopics
+    SET status = 'done', completed_at = ${new Date()}
+    WHERE quarter = 'Q1' AND status != 'done'
+  `);
+  const q1Count = Number((q1 as any)?.affectedRows ?? 0);
+
+  // 2. Title-match auto-complete — pull titles from whichever assignment tables
+  //    actually exist in this DB.
+  let titles: string[] = [];
+  try {
+    const [psRows]: any = await db.execute(sql`
+      SELECT DISTINCT title FROM powerschool_assignments WHERE status IN ('collected','scored')
+    `);
+    titles.push(...(psRows as any[]).map((r) => String(r.title || "")));
+  } catch { /* table may not exist */ }
+  try {
+    const [ihRows]: any = await db.execute(sql`
+      SELECT DISTINCT title FROM ihAssignments WHERE status = 'done' OR status = 'completed'
+    `);
+    titles.push(...(ihRows as any[]).map((r) => String(r.title || "")));
+  } catch { /* table may not exist */ }
+
+  if (titles.length === 0) {
+    return { checked: q1Count, byQuarter: q1Count };
+  }
+
+  const [topicRows]: any = await db.execute(sql`
+    SELECT id, code, title FROM curriculumTopics WHERE status != 'done'
+  `);
+  let hits = 0;
+  for (const t of (topicRows as any[])) {
+    const tc = String(t.code || "").toLowerCase();
+    const tt = String(t.title || "").toLowerCase();
+    const matched = titles.some((a) => {
+      const al = String(a || "").toLowerCase();
+      return al.includes(tc) || (tt.length > 8 && al.includes(tt.slice(0, Math.min(tt.length, 30))));
+    });
+    if (matched) {
+      await db.execute(sql`
+        UPDATE curriculumTopics SET status = 'done', completed_at = ${new Date()} WHERE id = ${t.id}
+      `);
+      hits++;
+    }
+  }
+  return { checked: q1Count + hits, byQuarter: q1Count };
 }

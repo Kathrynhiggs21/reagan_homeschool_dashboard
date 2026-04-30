@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import SubjectColorKey from "@/components/SubjectColorKey";
+import CurriculumTopicsTree from "@/components/CurriculumTopicsTree";
 import { subjectTint, tintCardStyle, tintInkStyle } from "@/lib/subjectColors";
 
 export default function Curriculum() {
@@ -39,6 +40,8 @@ export default function Curriculum() {
       </header>
 
       <SubjectColorKey variant="schedule" />
+
+      <CurriculumTopicsTree />
 
       <Card className="cozy-card p-4">
         <div className="flex items-center justify-between mb-3">

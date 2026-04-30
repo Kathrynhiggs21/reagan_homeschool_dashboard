@@ -1,0 +1,211 @@
+import { useMemo, useState } from "react";
+import { trpc } from "@/lib/trpc";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
+
+type Topic = {
+  id: number;
+  subject: string;
+  code: string;
+  title: string;
+  standardRef: string | null;
+  parentId: number | null;
+  ord: number;
+  status: "notStarted" | "inProgress" | "done";
+  quarter: string | null;
+  notes: string | null;
+};
+
+const SUBJECTS = ["Math", "ELA", "Science", "Social", "Specials"] as const;
+type Subject = (typeof SUBJECTS)[number];
+
+const subjectEmoji: Record<Subject, string> = {
+  Math: "➗",
+  ELA: "📖",
+  Science: "🔬",
+  Social: "🌎",
+  Specials: "🎨",
+};
+
+export default function CurriculumTopicsTree() {
+  const [tab, setTab] = useState<Subject>("Math");
+  const list = trpc.curriculum.list.useQuery();
+  const progress = trpc.curriculum.progress.useQuery();
+  const seed = trpc.curriculum.ensureSeeded.useMutation();
+  const autoComp = trpc.curriculum.autoCompleteFromHistory.useMutation();
+  const toggle = trpc.curriculum.toggle.useMutation();
+  const utils = trpc.useUtils();
+
+  const rows = (list.data as any[]) ?? [];
+  const byId = useMemo(() => {
+    const m = new Map<number, Topic>();
+    for (const r of rows) m.set(r.id, r as Topic);
+    return m;
+  }, [rows]);
+
+  const forSubject = useMemo(
+    () => rows.filter((r: Topic) => r.subject === tab),
+    [rows, tab],
+  );
+
+  const topLevel = forSubject.filter((r: Topic) => !r.parentId);
+  const childrenOf = (pid: number) =>
+    forSubject.filter((r: Topic) => r.parentId === pid).sort((a, b) => a.ord - b.ord);
+
+  async function flipStatus(row: Topic) {
+    const next = row.status === "done" ? "notStarted" : "done";
+    await toggle.mutateAsync({ id: row.id, status: next });
+    utils.curriculum.list.invalidate();
+    utils.curriculum.progress.invalidate();
+  }
+
+  async function handleSeed() {
+    const r: any = await seed.mutateAsync();
+    toast.success(r.seeded ? `Seeded ${r.count} topics` : `Already seeded (${r.count})`);
+    utils.curriculum.list.invalidate();
+    utils.curriculum.progress.invalidate();
+  }
+
+  async function handleAuto() {
+    const r: any = await autoComp.mutateAsync();
+    toast.success(`Auto-checked ${r.checked} topics (${r.byQuarter} by Q1)`);
+    utils.curriculum.list.invalidate();
+    utils.curriculum.progress.invalidate();
+  }
+
+  return (
+    <Card className="cozy-card p-4">
+      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+        <div>
+          <h2 className="font-display font-semibold text-lg">Topics & Standards</h2>
+          <p className="text-xs text-muted-foreground">
+            Ohio 5th-grade scope, in Indian Hill pacing order. Tick to mark complete.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          {rows.length === 0 && (
+            <Button size="sm" onClick={handleSeed} disabled={seed.isPending}>
+              {seed.isPending ? "Seeding…" : "Seed curriculum"}
+            </Button>
+          )}
+          <Button size="sm" variant="outline" className="bg-transparent" onClick={handleAuto} disabled={autoComp.isPending}>
+            {autoComp.isPending ? "Scanning…" : "Auto-check from history"}
+          </Button>
+        </div>
+      </div>
+
+      {/* progress strip */}
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">
+        {SUBJECTS.map((s) => {
+          const p = (progress.data as any[])?.find((x) => x.subject === s);
+          const pct = p?.pct ?? 0;
+          const done = p?.done ?? 0;
+          const total = p?.total ?? 0;
+          const active = tab === s;
+          return (
+            <button
+              key={s}
+              onClick={() => setTab(s)}
+              className={`text-left rounded-md px-2 py-1.5 border transition ${
+                active ? "bg-primary/10 border-primary" : "bg-background/40 border-border hover:bg-primary/5"
+              }`}
+            >
+              <div className="text-xs font-semibold flex items-center gap-1">
+                <span>{subjectEmoji[s]}</span>
+                <span>{s}</span>
+              </div>
+              <div className="text-[10px] text-muted-foreground">
+                {done}/{total} · {pct}%
+              </div>
+              <Progress value={pct} className="h-1 mt-1" />
+            </button>
+          );
+        })}
+      </div>
+
+      {/* topic tree */}
+      {rows.length === 0 ? (
+        <p className="text-sm text-muted-foreground italic">
+          No topics seeded yet. Click <em>Seed curriculum</em> above.
+        </p>
+      ) : (
+        <div className="space-y-3">
+          {topLevel
+            .sort((a, b) => a.ord - b.ord)
+            .map((t: Topic) => {
+              const kids = childrenOf(t.id);
+              const allDone = kids.length > 0 && kids.every((k) => k.status === "done");
+              return (
+                <div key={t.id} className="rounded-md border border-border/60 bg-white/40 p-2">
+                  <div className="flex items-start gap-2">
+                    <Checkbox
+                      checked={t.status === "done" || allDone}
+                      onCheckedChange={() => flipStatus(t)}
+                      className="mt-1"
+                    />
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-primary/10 text-primary border border-primary/30">
+                          {t.code}
+                        </span>
+                        {t.standardRef && (
+                          <span
+                            className="text-[10px] font-mono opacity-60"
+                            title={`Ohio Learning Standard: ${t.standardRef}`}
+                          >
+                            {t.standardRef}
+                          </span>
+                        )}
+                        {t.quarter && (
+                          <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 bg-transparent">
+                            {t.quarter}
+                          </Badge>
+                        )}
+                        <span
+                          className={`text-sm ${
+                            t.status === "done" ? "line-through text-muted-foreground" : "font-medium"
+                          }`}
+                        >
+                          {t.title}
+                        </span>
+                      </div>
+                      {kids.length > 0 && (
+                        <ul className="mt-1 ml-2 space-y-0.5">
+                          {kids.map((k) => (
+                            <li key={k.id} className="flex items-start gap-2 text-xs">
+                              <Checkbox
+                                checked={k.status === "done"}
+                                onCheckedChange={() => flipStatus(k)}
+                                className="mt-0.5 size-3.5"
+                              />
+                              <span className="font-mono text-[9px] px-1 rounded bg-muted text-muted-foreground">
+                                {k.code}
+                              </span>
+                              {k.standardRef && (
+                                <span className="font-mono text-[9px] opacity-50" title={k.standardRef}>
+                                  {k.standardRef}
+                                </span>
+                              )}
+                              <span
+                                className={k.status === "done" ? "line-through text-muted-foreground" : ""}
+                              >
+                                {k.title}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+      )}
+    </Card>
+  );
+}
