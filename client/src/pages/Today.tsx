@@ -83,6 +83,8 @@ export default function Today() {
   const completeM = trpc.blocks.complete.useMutation();
   const moveBlockM = trpc.blocks.move.useMutation();
   const specialDay = trpc.specialDays.today.useQuery();
+  const absentToday = trpc.prefs.getPublic.useQuery({ key: `absence:${new Date().toISOString().slice(0,10)}` });
+  const isAbsentToday = absentToday.data === "1";
   const encouragement = trpc.encouragement.list.useQuery({ unreadOnly: false });
   const joke = trpc.kiwi.joke.useQuery();
   const recap = trpc.kiwi.endOfDayRecap.useQuery();
@@ -255,6 +257,18 @@ export default function Today() {
           </Button>
         </div>
       </header>
+
+      {isAbsentToday && (
+        <Card className="p-4 rounded-2xl border-2 border-rose-300 bg-gradient-to-br from-rose-50 to-rose-100">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">🏠</span>
+            <div className="flex-1">
+              <div className="font-extrabold text-base text-rose-900">Today's an absent day</div>
+              <p className="text-sm text-rose-800 mt-1">No coins for school work today — rest, doctor visits, or family time. Tomorrow's a fresh start!</p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {specialDay.data && (
         <Card className="classroom-card p-4">

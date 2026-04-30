@@ -65,6 +65,51 @@ const TodaySchoolWork = forwardRef<TodaySchoolWorkHandle, { onItemsChanged?: (it
     const [open, setOpen] = useState<TodayPrintableItem | null>(null);
     const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
     const [grading, setGrading] = useState(false);
+    const [started, setStarted] = useState(false);
+    const [notes, setNotes] = useState("");
+
+    function autosaveKey(it?: TodayPrintableItem | null) {
+      if (!it) return null;
+      const today = new Date().toISOString().slice(0, 10);
+      return `tsw:autosave:${it.id}:${today}`;
+    }
+    function loadAutosave(it: TodayPrintableItem) {
+      const key = autosaveKey(it);
+      if (!key) return;
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) { setStarted(false); setNotes(""); setPhotoDataUrl(null); return; }
+        const j = JSON.parse(raw);
+        setStarted(!!j.started);
+        setNotes(j.notes ?? "");
+        setPhotoDataUrl(j.photoDataUrl ?? null);
+      } catch { /* ignore */ }
+    }
+    function saveAutosave(it: TodayPrintableItem | null, patch: { started?: boolean; notes?: string; photoDataUrl?: string | null }) {
+      const key = autosaveKey(it);
+      if (!key) return;
+      try {
+        const raw = localStorage.getItem(key);
+        const cur = raw ? JSON.parse(raw) : { started: false, notes: "", photoDataUrl: null };
+        const next = { ...cur, ...patch };
+        localStorage.setItem(key, JSON.stringify(next));
+      } catch { /* ignore */ }
+    }
+    function clearAutosave(it: TodayPrintableItem | null) {
+      const key = autosaveKey(it);
+      if (!key) return;
+      try { localStorage.removeItem(key); } catch { /* ignore */ }
+    }
+    function hasAutosave(it: TodayPrintableItem) {
+      const key = autosaveKey(it);
+      if (!key) return false;
+      try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return false;
+        const j = JSON.parse(raw);
+        return !!(j.started || j.notes || j.photoDataUrl);
+      } catch { return false; }
+    }
 
     const data = today.data as { date: string; have_to_do?: TodayPrintableItem[]; optional?: TodayPrintableItem[]; extra?: TodayPrintableItem[] } | undefined;
 
@@ -79,12 +124,12 @@ const TodaySchoolWork = forwardRef<TodaySchoolWorkHandle, { onItemsChanged?: (it
     useImperativeHandle(ref, () => ({
       openById: (id: number) => {
         const hit = allItems.find(i => i.id === id);
-        if (hit) { setOpen(hit); setPhotoDataUrl(null); return true; }
+        if (hit) { setOpen(hit); setPhotoDataUrl(null); loadAutosave(hit); return true; }
         return false;
       },
       getItems: () => allItems,
       openFallback: (item) => {
-        setOpen({
+        const it: TodayPrintableItem = {
           id: item.id ?? -1,
           title: item.title,
           description: item.description ?? null,
@@ -97,8 +142,10 @@ const TodaySchoolWork = forwardRef<TodaySchoolWorkHandle, { onItemsChanged?: (it
           status: item.status ?? "pending",
           subjectSlug: item.subjectSlug ?? null,
           bucket: item.bucket,
-        });
+        };
+        setOpen(it);
         setPhotoDataUrl(null);
+        loadAutosave(it);
       },
     }), [today.dataUpdatedAt]);
 
@@ -116,7 +163,11 @@ const TodaySchoolWork = forwardRef<TodaySchoolWorkHandle, { onItemsChanged?: (it
       const f = e.target.files?.[0];
       if (!f) return;
       const reader = new FileReader();
-      reader.onload = () => setPhotoDataUrl(String(reader.result));
+      reader.onload = () => {
+        const url = String(reader.result);
+        setPhotoDataUrl(url);
+        saveAutosave(open, { photoDataUrl: url });
+      };
       reader.readAsDataURL(f);
     }
 
@@ -130,11 +181,27 @@ const TodaySchoolWork = forwardRef<TodaySchoolWorkHandle, { onItemsChanged?: (it
         } else {
           await markM.mutateAsync({ id: open.id });
         }
+        clearAutosave(open);
         setOpen(null);
         setPhotoDataUrl(null);
+        setStarted(false);
+        setNotes("");
       } finally {
         setGrading(false);
       }
+    }
+
+    function handleStart() {
+      setStarted(true);
+      saveAutosave(open, { started: true });
+    }
+    function handleNotesChange(v: string) {
+      setNotes(v);
+      saveAutosave(open, { notes: v });
+    }
+    function handleCloseDialog() {
+      // Autosave already up-to-date; just close.
+      setOpen(null);
     }
 
     return (
@@ -191,6 +258,9 @@ const TodaySchoolWork = forwardRef<TodaySchoolWorkHandle, { onItemsChanged?: (it
                           {isDone && (
                             <div className="absolute top-1 right-1 bg-emerald-500 text-white rounded-full text-[10px] font-bold px-2 py-0.5">✓ done</div>
                           )}
+                          {!isDone && hasAutosave(it) && (
+                            <div className="absolute top-1 right-1 bg-amber-300 text-amber-950 rounded-full text-[10px] font-bold px-2 py-0.5">⏯ Resume</div>
+                          )}
                         </button>
                       );
                     })}
@@ -202,7 +272,7 @@ const TodaySchoolWork = forwardRef<TodaySchoolWorkHandle, { onItemsChanged?: (it
         )}
 
         {open && (
-          <Dialog open onOpenChange={() => setOpen(null)}>
+          <Dialog open onOpenChange={(v) => { if (!v) handleCloseDialog(); }}>
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle>{open.title}</DialogTitle>
@@ -210,6 +280,17 @@ const TodaySchoolWork = forwardRef<TodaySchoolWorkHandle, { onItemsChanged?: (it
                   {open.source}{open.estMinutes ? ` · ${open.estMinutes} min` : ""}{open.coinReward ? ` · ${open.coinReward} Kiwi Coins 🪙` : ""}
                 </DialogDescription>
               </DialogHeader>
+
+              {!started && open.id >= 0 && open.status !== "done" && (
+                <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-3 mb-1">
+                  <div className="font-semibold text-emerald-900 text-sm mb-2">Ready when you are.</div>
+                  <div className="text-xs text-emerald-800 mb-3">Tap Start, then read/watch/work. Your progress saves automatically.</div>
+                  <Button onClick={handleStart} className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold">
+                    ▶ Start
+                  </Button>
+                </div>
+              )}
+
               <div className="space-y-3 text-sm">
                 {open.description && <div>{open.description}</div>}
               {open.sourceUrl ? (
@@ -234,6 +315,18 @@ const TodaySchoolWork = forwardRef<TodaySchoolWorkHandle, { onItemsChanged?: (it
                   📑 Open the printable PDF →
                 </a>
               )}
+                {started && (
+                  <div className="rounded-lg border bg-white p-2">
+                    <div className="text-[10px] font-semibold uppercase tracking-wider opacity-60 mb-1">My notes (autosaved)</div>
+                    <textarea
+                      value={notes}
+                      onChange={(e) => handleNotesChange(e.target.value)}
+                      rows={3}
+                      placeholder="Type answers, thoughts, or what you learned…"
+                      className="w-full text-xs border rounded p-1 outline-none focus:border-amber-400"
+                    />
+                  </div>
+                )}
                 <div className="border-t pt-3">
                   <div className="font-semibold text-xs mb-1">All done? Snap a photo (optional):</div>
                   <input type="file" accept="image/*" capture="environment" onChange={handlePhoto} className="text-xs" />
@@ -241,9 +334,9 @@ const TodaySchoolWork = forwardRef<TodaySchoolWorkHandle, { onItemsChanged?: (it
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setOpen(null)}>Close</Button>
+                <Button variant="outline" onClick={handleCloseDialog}>Close (saves)</Button>
               <Button disabled={grading || open.status === "done" || open.id < 0} onClick={submitDone}>
-                {open.id < 0 ? "Pick a printable to track 🪙" : open.status === "done" ? "Already done ✓" : grading ? (photoDataUrl ? "Auto-grading…" : "Saving…") : photoDataUrl ? "Submit photo & earn 🪙" : "Mark done & earn 🪙"}
+                {open.id < 0 ? "Pick a printable to track 🪙" : open.status === "done" ? "Already done ✓" : grading ? (photoDataUrl ? "Auto-grading…" : "Saving…") : photoDataUrl ? "Turn in photo & earn 🪙" : "Turn in & earn 🪙"}
               </Button>
               </DialogFooter>
             </DialogContent>

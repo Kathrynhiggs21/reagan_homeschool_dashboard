@@ -18,6 +18,7 @@ import { useAdultLock } from "@/contexts/AdultLockContext";
 import { trpc } from "@/lib/trpc";
 import { ClassroomReferencePanel } from "@/components/ClassroomReferencePanel";
 import RewardsManagerCard from "@/components/RewardsManagerCard";
+import AbsentTodayCard from "@/components/AbsentTodayCard";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
@@ -276,6 +277,9 @@ export default function Settings() {
 
       {/* ============================ AUDIT LOG ============================ */}
       <AuditCard />
+
+      {/* ============================ ABSENT TODAY ============================ */}
+      <AbsentTodayCard />
     </div>
   );
 }

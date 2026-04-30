@@ -1378,20 +1378,25 @@ export const appRouter = router({
           autoGrade: input.autoGrade ?? null,
           driveFileId: input.driveFileId ?? null,
         });
-        // Award Kiwi Coins on completion
-        const coins = (row as any)?.coinReward ?? 5;
-        try {
-          await db.awardSticker({
-            userId: (ctx.user as any)?.id ?? null,
-            reason: "adult_bonus",
-            coins,
-            shortLyric: null,
-            addedByUserId: null,
-          });
-        } catch (e) {
-          console.warn("[printables] coin award failed", e);
+        // Award Kiwi Coins on completion (skip on absent days)
+        const todayKey = `absence:${new Date().toISOString().slice(0,10)}`;
+        const absentVal = await db.getAppSetting(todayKey).catch(() => null);
+        const isAbsent = absentVal === "1";
+        const coins = isAbsent ? 0 : ((row as any)?.coinReward ?? 5);
+        if (!isAbsent) {
+          try {
+            await db.awardSticker({
+              userId: (ctx.user as any)?.id ?? null,
+              reason: "adult_bonus",
+              coins,
+              shortLyric: null,
+              addedByUserId: null,
+            });
+          } catch (e) {
+            console.warn("[printables] coin award failed", e);
+          }
         }
-        return { ok: true, coins };
+        return { ok: true, coins, absent: isAbsent };
       }),
     /** Submit a finished printable with a photo. Uploads, auto-grades, files to Drive queue, awards coins. */
     submitWork: protectedProcedure
@@ -1436,18 +1441,23 @@ export const appRouter = router({
             targetFolder: "reagan_assignments",
           });
         } catch (e) { console.warn("[printables] drive enqueue failed", e); }
-        // Award coins
-        const coins = (row as any)?.coinReward ?? 5;
-        try {
-          await db.awardSticker({
-            userId: (ctx.user as any)?.id ?? null,
-            reason: "adult_bonus",
-            coins,
-            shortLyric: null,
-            addedByUserId: null,
-          });
-        } catch {}
-        return { ok: true, photoUrl: stored.url, autoGrade, coins };
+        // Award coins (skip on absent days)
+        const todayKey = `absence:${new Date().toISOString().slice(0,10)}`;
+        const absentVal = await db.getAppSetting(todayKey).catch(() => null);
+        const isAbsent = absentVal === "1";
+        const coins = isAbsent ? 0 : ((row as any)?.coinReward ?? 5);
+        if (!isAbsent) {
+          try {
+            await db.awardSticker({
+              userId: (ctx.user as any)?.id ?? null,
+              reason: "adult_bonus",
+              coins,
+              shortLyric: null,
+              addedByUserId: null,
+            });
+          } catch {}
+        }
+        return { ok: true, photoUrl: stored.url, autoGrade, coins, absent: isAbsent };
       }),
   }),
   /* =================== UPLOAD OR SYNC =================== */
@@ -1749,7 +1759,9 @@ export const appRouter = router({
           "student.googleAuthUser",     // 0/1/2 picker hint for Chrome multi-account
           "classroom.studentDomain",    // e.g. indianhill.k12.oh.us
         ]);
-        if (!ALLOW.has(input.key)) return null;
+        // absence:YYYY-MM-DD flags are non-sensitive and Reagan's UI needs to read them
+        const isAbsenceFlag = /^absence:\d{4}-\d{2}-\d{2}$/.test(input.key);
+        if (!ALLOW.has(input.key) && !isAbsenceFlag) return null;
         return db.getAppSetting(input.key);
       }),
     get: protectedProcedure
