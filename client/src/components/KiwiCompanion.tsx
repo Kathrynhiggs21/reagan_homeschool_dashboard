@@ -30,23 +30,10 @@ export default function KiwiCompanion() {
   });
   const utils = trpc.useUtils();
 
-  // Proactive idle nudge: if no interaction for 12+ minutes and no adult present, gently check in (once)
-  useEffect(() => {
-    if (!enabled || adultPresent || proactivePrompted) return;
-    const t = setInterval(() => {
-      const idleMs = Date.now() - lastInteractionAt;
-      if (idleMs > 12 * 60 * 1000) {
-        setProactivePrompted(true);
-        // Send a gentle check-in via the chat (counts as user-initiated to surface a response)
-        sendMsg.mutate({
-          userMessage: "(silent prompt) Reagan has been quiet for a while. Drop a soft, real check-in — one short sentence. No pressure. Maybe ask about an animal.",
-          adultPresent: false,
-        });
-        if (!open) setOpen(true);
-      }
-    }, 60 * 1000);
-    return () => clearInterval(t);
-  }, [enabled, adultPresent, proactivePrompted, lastInteractionAt, open, setOpen]);
+  // (Removed: 12-min proactive auto-open. Per Mom's request, Kiwi never opens
+  // herself — only on direct click or wake word.)
+  void lastInteractionAt; void proactivePrompted;
+  // setLastInteractionAt and setProactivePrompted are still set by sendMsg's onSuccess above.
 
   // Kiwi now speaks with a parakeet voice (chirp + higher pitch/rate).
   function speak(text: string) { speakLikeBird(text); }

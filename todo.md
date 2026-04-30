@@ -1395,3 +1395,43 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 
 # Apr 30 — Quick fix
 - [x] Revert home/Today title hero back to chalkboard look
+
+# Apr 30 — Afternoon batch (Mom)
+- [ ] Hero is true blackboard (charcoal/black), not green slate
+- [ ] Light themes: sidebar text dark + legible
+- [ ] My Levels: subjects color-differentiated, cards visually distinct
+- [ ] Rewards Reagan-view: Feathers progress bar + image-tile rewards (no white list)
+- [ ] Rewards Adult Manager: manual create + one-click preset library
+- [ ] Reward auto-Feathers from completion based on time + difficulty (already partially there — verify)
+
+# Apr 30 — Afternoon batch (Mom)
+- [ ] Hero is true blackboard (charcoal/black), not green slate
+- [ ] Light themes: sidebar text dark + legible
+- [ ] My Levels: subjects color-differentiated, cards visually distinct
+- [ ] Rewards Reagan-view: Feathers progress bar + image-tile rewards (no white list)
+- [ ] Rewards Adult Manager: manual create + one-click preset library
+- [ ] Reward auto-Feathers from completion based on time + difficulty
+- [ ] My Levels: restructure into subject categories with kid-friendly progress UI (not wall of text)
+- [ ] Apply Reagan design rule globally: not overwhelming, image+title tile-first layouts everywhere
+- [ ] Wire Reagan app tiles to auto-launch under her Indian Hill Google account (use authuser= or AccountChooser?Email= so Chrome doesn't re-prompt)
+- [ ] Pull Google Classroom assignments under spear.cpt@gmail.com into adult dashboard
+- [ ] Surface Indian Hill Classroom assignments inside Reagan's Today schedule when present
+- [ ] Audit Kiwi: she only speaks AFTER wake word recognized, no auto-speak on page load
+- [ ] No Chrome mic banner unless adult flips Mic Consent + Wake-word mode in Settings
+- [ ] Rename Feathers -> Kiwi Coins across UI (keep DB field names as-is)
+- [ ] Preset Reagan's school email Reagan.higgs33@ihsd.us into student.googleEmail at first boot
+- [ ] Kiwi behavior contract: opens speech bubble ONLY on direct click or wake word; never on auto/timer
+- [ ] Keep all idle visual animations (preening, popping, nibbling, look-around, blink) and drag-to-reposition
+- [ ] No auto chirp on Got-it/celebrate/perch-tap unless user explicitly clicks Kiwi
+- [ ] Kiwi may quietly fly/wander to a new perch every few minutes (visual only, no sound)
+- [ ] Daily Printables — full page (US Letter portrait, 0.5" margins), fun layout (bold title, big illustration, single instruction, large work area)
+- [ ] Daily Printables — ranked free-source picker: Khan Academy, Education.com free, K5 Learning, Math-Drills, SuperTeacherWorksheets free, ReadWorks, CommonLit, Beestar free, NASA Education, Smithsonian Learning Lab, LoC Primary Sources, OpenEd, IXL skill page link
+- [ ] Daily Printables — Kiwi-built full-page worksheet fallback when no source matches
+- [ ] Daily Printables — 7am morning email to spear.cpt@gmail.com AND marcy.spear@gmail.com with the day's printables linked + attached
+- [ ] Daily Printables — Reagan upload-photo flow: snap finished page, preview, submit
+- [ ] Daily Printables — auto-grade: invokeLLM vision pass returns score + 1-line feedback for each upload
+- [ ] Daily Printables — award Kiwi Coins on submit (base + difficulty/time bonus)
+- [ ] Daily Printables — file PDF + uploaded photo into Reagan/IHES Drive folder, dated
+- [ ] Adult Rewards Manager — manual create + one-click preset library (image+title+cost+description), Reagan view shows image tiles with popup
+- [ ] Reagan app tiles auto-launch under Reagan.higgs33@ihsd.us (use authuser= prefill)
+- [ ] Google Classroom pull under spear.cpt@gmail.com — daily sync of assignments into dashboard

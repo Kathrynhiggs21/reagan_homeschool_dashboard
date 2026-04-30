@@ -753,6 +753,15 @@ html[data-rtheme="chalkboard"] input::placeholder {
  * EVERY component — even ones we haven't enumerated — picks up dark ink.
  */
 html[data-rtheme="cream"] {
+  /* Cream theme: warm dark text on warm-cream sidebar */
+  --sidebar: oklch(0.96 0.03 85);
+  --sidebar-foreground: oklch(0.28 0.04 60);
+  --sidebar-primary: oklch(0.78 0.13 70);
+  --sidebar-primary-foreground: oklch(0.22 0.05 60);
+  --sidebar-accent: oklch(0.92 0.04 80);
+  --sidebar-accent-foreground: oklch(0.25 0.05 60);
+  --sidebar-border: oklch(0.45 0.04 60 / 25%);
+  --sidebar-ring: oklch(0.65 0.12 70);
   --background: oklch(0.96 0.02 85);
   --foreground: oklch(0.22 0.03 60);      /* dark espresso */
   --card: oklch(0.985 0.02 85);
@@ -772,6 +781,15 @@ html[data-rtheme="cream"] {
   --ring: oklch(0.72 0.11 75);
 }
 html[data-rtheme="notebook"] {
+  /* Notebook theme: ink-blue dark text on paper-white sidebar */
+  --sidebar: oklch(0.97 0.02 95);
+  --sidebar-foreground: oklch(0.28 0.06 260);
+  --sidebar-primary: oklch(0.78 0.10 240);
+  --sidebar-primary-foreground: oklch(0.22 0.06 260);
+  --sidebar-accent: oklch(0.92 0.04 240);
+  --sidebar-accent-foreground: oklch(0.25 0.07 260);
+  --sidebar-border: oklch(0.40 0.05 260 / 25%);
+  --sidebar-ring: oklch(0.65 0.12 240);
   --background: oklch(0.97 0.015 95);
   --foreground: oklch(0.25 0.05 260);     /* ink-blue */
   --card: oklch(0.99 0.01 95);

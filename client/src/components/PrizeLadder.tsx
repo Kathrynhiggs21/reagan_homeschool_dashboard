@@ -7,12 +7,12 @@ import { trpc } from "@/lib/trpc";
  * Shows Reagan each active prize as a rung on a wooden ladder, numbered
  * 1..N from bottom to top. Big chunky rung numbers so she can say
  * "I'm on rung 2, I want to get to rung 5." Prize currency is now
- * labeled "Feathers" 🪶 (backend field `coinCost` unchanged).
+ * labeled "Kiwi Coins" 🪙 (backend field `coinCost` unchanged).
  *
  * Design notes:
  *   - Storybook parchment card, wooden side-rails, rope-stitched rungs.
  *   - A glowing feather marker slides up the rail to show current balance.
- *   - Each rung row shows: rung number, emoji, prize name, Feathers cost,
+ *   - Each rung row shows: rung number, emoji, prize name, Kiwi Coins cost,
  *     and a progress pill ("Ready!" / "N to go").
  *   - No ombre gradient. Tan + mint + warm amber palette.
  */
@@ -60,11 +60,11 @@ export default function PrizeLadder() {
             boxShadow: "0 2px 0 rgba(0,0,0,0.08)",
             color: "#0b4a38",
           }}
-          title="Feathers — Kiwi's reward currency"
+          title="Kiwi Coins — earn them by finishing schedule blocks"
         >
-          <span aria-hidden>🪶</span>
+          <span aria-hidden>🪙</span>
           <span className="tabular-nums">{balance}</span>
-          <span className="opacity-70 font-semibold">Feathers</span>
+          <span className="opacity-70 font-semibold">Kiwi Coins</span>
         </span>
       }
     >
@@ -85,10 +85,10 @@ export default function PrizeLadder() {
             bottom: `calc(${balancePct}% + 4px)`,
             filter: "drop-shadow(0 2px 2px rgba(0,0,0,0.25))",
           }}
-          aria-label={`You have ${balance} Feathers`}
-          title={`You have ${balance} Feathers`}
+          aria-label={`You have ${balance} Kiwi Coins`}
+          title={`You have ${balance} Kiwi Coins`}
         >
-          🪶
+          🪙
         </div>
 
         {/* Rungs, bottom-to-top visually, so reverse sorted for render */}
@@ -139,9 +139,9 @@ export default function PrizeLadder() {
                     style={{ color: "#6b4a00" }}
                   >
                     <span className="inline-flex items-center gap-1">
-                      <span aria-hidden>🪶</span>
+                      <span aria-hidden>🪙</span>
                       <span className="tabular-nums">{p.coinCost}</span>
-                      <span className="opacity-70">Feathers</span>
+                      <span className="opacity-70">Kiwi Coins</span>
                     </span>
                     <span
                       className="h-1.5 flex-1 rounded-full overflow-hidden"
@@ -177,8 +177,8 @@ export default function PrizeLadder() {
         </ol>
 
         <p className="mt-3 text-[11px] leading-snug px-1" style={{ color: "#5a4000" }}>
-          Finish schedule blocks to earn <strong>Feathers</strong> 🪶. Adults can give bonus
-          stickers in Settings.
+          Finish schedule blocks to earn <strong>Kiwi Coins</strong> 🪙. Adults can also
+          give bonus coins in Settings.
         </p>
       </div>
     </LadderShell>

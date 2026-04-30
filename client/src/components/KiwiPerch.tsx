@@ -1,7 +1,9 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import KiwiSprite, { type KiwiPose } from "./KiwiSprite";
 import { useKiwi } from "@/contexts/KiwiContext";
-import { chirp } from "@/lib/birdVoice";
+// Kiwi is silent by default. We deliberately do NOT import chirp() here so the
+// perch never makes sound on its own. Voice/chirp only fires through KiwiCompanion
+// (chat reply) and only when Mom has flipped Silent mode off in Settings.
 import { popStickersAt, popStickersFromElement } from "@/lib/stickerBurst";
 
 /**
@@ -72,31 +74,9 @@ function clamp(p: Pos, size: number, chatOpen?: boolean): Pos {
   return { x, y };
 }
 
-const FRIENDLY_LINES = [
-  "You've got this! 🌟",
-  "I'm watching — good job!",
-  "Deep breath, then try.",
-  "Science time soon?",
-  "Don't forget to smile 🌈",
-  "I love your brain.",
-  "Little steps count.",
-  "You're doing better than you think.",
-  "What's your favorite animal today?",
-  "Sparkles in your eyes today ✨",
-  "Chirp chirp!",
-  "Wing flap — hi!",
-];
-
-const QUICK_CHIRPS = [
-  "Chirp!",
-  "Tweet!",
-  "Hi!",
-  "Cheep!",
-  "Boop.",
-  "💛",
-  "🌿",
-  "✨",
-];
+// Friendly lines + auto-chirp arrays were intentionally removed. Kiwi only
+// speaks/opens her bubble when the user taps her or says the wake word.
+// (See KiwiCompanion.tsx for the wake-word path.)
 
 export default function KiwiPerch() {
   const { enabled, open, setOpen, adultPresent, mode } = useKiwi();
@@ -172,15 +152,9 @@ export default function KiwiPerch() {
         window.setTimeout(() => setPos((p) => clamp({ x: p.x, y: p.y + 12 }, size, open)), 280);
         window.setTimeout(() => setPose("idle"), 520);
       } else if (roll < 0.78) {
-        // Chirp with a tiny bubble
+        // Silent peck/chirp pose only — no bubble, no sound
         setPose("chirp");
-        const quick = QUICK_CHIRPS[Math.floor(Math.random() * QUICK_CHIRPS.length)];
-        setBubbleText(quick);
-        if (bubbleTimeoutRef.current) window.clearTimeout(bubbleTimeoutRef.current);
-        bubbleTimeoutRef.current = window.setTimeout(() => {
-          setBubbleText(null);
-          setPose("idle");
-        }, 1400);
+        window.setTimeout(() => setPose("idle"), 700);
       } else if (roll < 0.9) {
         // Peck — quick chirp→idle flash
         setPose("chirp");
@@ -256,23 +230,7 @@ export default function KiwiPerch() {
     else if (pose === "sleep") setPose("idle");
   }, [adultPresent]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Longer friendly bubble every ~45s
-  useEffect(() => {
-    if (!enabled || adultPresent) return;
-    const interval = window.setInterval(() => {
-      if (pose === "sleep" || flying || dragging) return;
-      const line = FRIENDLY_LINES[Math.floor(Math.random() * FRIENDLY_LINES.length)];
-      setBubbleText(line);
-      setPose("chirp");
-      chirp();
-      if (bubbleTimeoutRef.current) window.clearTimeout(bubbleTimeoutRef.current);
-      bubbleTimeoutRef.current = window.setTimeout(() => {
-        setBubbleText(null);
-        setPose("idle");
-      }, 4500);
-    }, 45_000);
-    return () => window.clearInterval(interval);
-  }, [enabled, adultPresent, pose, flying, dragging]);
+  // (Removed: timed friendly-bubble. Kiwi's bubble now only opens on tap or wake word.)
 
   // React to user activity — flap briefly when mouse/touch moves
   useEffect(() => {
@@ -295,14 +253,12 @@ export default function KiwiPerch() {
     };
   }, [enabled, adultPresent, dragging, flying]);
 
-  // Celebrate event
+  // Celebrate event — visual only (sticker burst + flap pose). No sound, no auto-bubble.
   useEffect(() => {
     const onCelebrate = (e: Event) => {
       const detail = (e as CustomEvent).detail;
+      void detail;
       setPose("flap");
-      setBubbleText(detail?.message || "Yay! 🎉");
-      // chirp() is already gated by `kiwiSilent` — no audio unless Mom enables it.
-      chirp();
       setPopBurst((n) => n + 1);
       // Also fire a visual-only emoji sticker burst from the perch. Silent.
       try {
@@ -314,22 +270,15 @@ export default function KiwiPerch() {
         else popStickersAt(window.innerWidth / 2, window.innerHeight * 0.45, { count: 14 });
       } catch { /* visual sugar only */ }
       lastInteractRef.current = Date.now();
-      if (bubbleTimeoutRef.current) window.clearTimeout(bubbleTimeoutRef.current);
-      bubbleTimeoutRef.current = window.setTimeout(() => {
-        setBubbleText(null);
-        setPose("idle");
-      }, 3000);
+      window.setTimeout(() => setPose("idle"), 1200);
     };
     window.addEventListener("kiwi:celebrate", onCelebrate as EventListener);
     return () => window.removeEventListener("kiwi:celebrate", onCelebrate as EventListener);
   }, []);
 
-  // Pop burst when chat opens
+  // Pop burst when chat opens — visual only.
   useEffect(() => {
-    if (open) {
-      setPopBurst((n) => n + 1);
-      chirp();
-    }
+    if (open) setPopBurst((n) => n + 1);
   }, [open]);
 
   // Drag handlers
@@ -354,8 +303,8 @@ export default function KiwiPerch() {
     setPose("idle");
     const moved = Math.abs((e.clientX - (pos.x + 48))) + Math.abs((e.clientY - (pos.y + 48)));
     if (moved < 10) {
+      // Direct tap on Kiwi — this IS the user click, so opening + bubble is fine.
       setPose("chirp");
-      chirp();
       setBubbleText("Hi! 💛");
       setPopBurst((n) => n + 1);
       if (bubbleTimeoutRef.current) window.clearTimeout(bubbleTimeoutRef.current);

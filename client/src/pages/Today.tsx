@@ -131,11 +131,11 @@ export default function Today() {
       <header
         className="greeting-hero relative rounded-2xl p-5 md:p-7 overflow-hidden"
         style={{
-          // Layered: subtle chalk-dust noise + a deep slate-green gradient
+          // True blackboard: charcoal/black slate with chalk-dust haze
           background:
-            "radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.07), transparent 55%)," +
+            "radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.08), transparent 55%)," +
             "radial-gradient(ellipse at 80% 90%, rgba(255,255,255,0.05), transparent 60%)," +
-            "linear-gradient(160deg, #1f3a32 0%, #2a4a3e 45%, #1c3329 100%)",
+            "linear-gradient(160deg, #181818 0%, #232323 45%, #121212 100%)",
           border: "6px solid #6b4a2b",
           boxShadow:
             "0 10px 30px -14px rgba(0,0,0,0.55)," +

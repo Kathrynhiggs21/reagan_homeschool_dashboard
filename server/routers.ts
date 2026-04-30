@@ -1633,6 +1633,18 @@ export const appRouter = router({
       .query(({ input }) => db.recentMoodStrip(input?.days ?? 3)),
   }),
   prefs: router({
+    /** Public-safe key allowlist Reagan's UI may read (no secrets, no creds). */
+    getPublic: publicProcedure
+      .input(z.object({ key: z.string().min(1).max(64) }))
+      .query(({ input }) => {
+        const ALLOW = new Set([
+          "student.googleEmail",        // Reagan's school Google account email
+          "student.googleAuthUser",     // 0/1/2 picker hint for Chrome multi-account
+          "classroom.studentDomain",    // e.g. indianhill.k12.oh.us
+        ]);
+        if (!ALLOW.has(input.key)) return null;
+        return db.getAppSetting(input.key);
+      }),
     get: protectedProcedure
       .input(z.object({ key: z.string().min(1).max(64) }))
       .query(({ input }) => db.getAppSetting(input.key)),

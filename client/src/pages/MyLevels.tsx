@@ -6,37 +6,135 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 /**
- * MyLevels — Reagan's view of her own progress.
+ * MyLevels — Reagan-friendly progress page.
  *
- * Design rules (re-anchor: feel safe, feel smart):
- *   • NEVER show absolute grade level or "behind grade level" labels.
- *   • Show ONLY her ladder going up. The point of comparison is her past self.
- *   • Levels are 0-5 with kid-friendly names (Just Starting → I Got It!).
- *   • She can tap "I tried this!" or "I'm getting it!" to log practice — never
- *     a wrong answer, never a score.
- *   • Visual emphasis: filled level pips, bright color when she levels up.
+ * Design rules:
+ *   - Don't dump 20 skill cards at once. Show 4 big SUBJECT TILES first.
+ *   - Tap a subject -> see only that subject's skills (still tile-style, not list).
+ *   - Keep her safe: no scores, no "behind grade level," only her ladder going up.
+ *   - Levels 0-5 with kid-friendly names.
  */
 
 const LEVEL_NAMES = [
-  { n: 0, label: "Just Starting",   emoji: "🌱", color: "#94a3b8" },
-  { n: 1, label: "I Met This",      emoji: "👋", color: "#60a5fa" },
-  { n: 2, label: "I'm Trying It",   emoji: "🎯", color: "#a78bfa" },
-  { n: 3, label: "Mostly Got It",   emoji: "💪", color: "#fbbf24" },
-  { n: 4, label: "I Got This!",     emoji: "🌟", color: "#34d399" },
-  { n: 5, label: "I Could Teach Kiwi!", emoji: "🏆", color: "#f472b6" },
+  { n: 0, label: "Just Starting",        emoji: "🌱", color: "#94a3b8" },
+  { n: 1, label: "I Met This",            emoji: "👋", color: "#60a5fa" },
+  { n: 2, label: "I'm Trying It",         emoji: "🎯", color: "#a78bfa" },
+  { n: 3, label: "Mostly Got It",         emoji: "💪", color: "#fbbf24" },
+  { n: 4, label: "I Got This!",           emoji: "🌟", color: "#34d399" },
+  { n: 5, label: "I Could Teach Kiwi!",   emoji: "🏆", color: "#f472b6" },
 ];
 
-const SUBJECT_PILLS: { slug: string; label: string; emoji: string; color: string }[] = [
-  { slug: "math",    label: "Math",            emoji: "🔢", color: "#fbbf24" },
-  { slug: "ela",     label: "Reading & Writing", emoji: "📖", color: "#60a5fa" },
-  { slug: "science", label: "Science",         emoji: "🔬", color: "#34d399" },
-  { slug: "ss",      label: "Social Studies",  emoji: "🌎", color: "#f472b6" },
+type SubjectTile = {
+  slug: string;
+  label: string;
+  emoji: string;
+  color: string;
+  bgFrom: string;
+  bgTo: string;
+  blurb: string;
+};
+
+const SUBJECTS: SubjectTile[] = [
+  { slug: "math",    label: "Math",            emoji: "🔢", color: "#fbbf24", bgFrom: "#fff7d6", bgTo: "#ffd97a", blurb: "Numbers, shapes, patterns." },
+  { slug: "ela",     label: "Reading & Writing", emoji: "📖", color: "#60a5fa", bgFrom: "#dceaff", bgTo: "#9ec1ff", blurb: "Books, stories, words." },
+  { slug: "science", label: "Science",         emoji: "🔬", color: "#34d399", bgFrom: "#d6f5e3", bgTo: "#86e5b3", blurb: "How the world works." },
+  { slug: "ss",      label: "Social Studies",  emoji: "🌎", color: "#f472b6", bgFrom: "#ffdaeb", bgTo: "#ffa9d2", blurb: "People, places, history." },
 ];
 
 export default function MyLevels() {
   const { companionName, companionAvatar } = useKiwi();
-  const [subject, setSubject] = useState<string>("math");
-  const skills = trpc.skillLadder.list.useQuery({ subjectSlug: subject });
+  const [subject, setSubject] = useState<string | null>(null);
+
+  return (
+    <div className="space-y-5">
+      <header>
+        <div className="font-chalk-hand text-amber-400 text-lg">Just for you, Reagan</div>
+        <h1 className="font-display text-3xl md:text-4xl chalk-white">My Levels</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Pick a subject to see your skills. There are no scores — just your ladder going up.
+          {" "}{companionName || "Kiwi"} {companionAvatar} is rooting for you.
+        </p>
+      </header>
+
+      {!subject && <SubjectGrid onPick={setSubject} />}
+      {subject && (
+        <SubjectView
+          subject={SUBJECTS.find((s) => s.slug === subject)!}
+          onBack={() => setSubject(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ============================================================
+ * Subject Grid: the simplified "pick a subject" tile gateway
+ * ============================================================ */
+
+function SubjectGrid({ onPick }: { onPick: (slug: string) => void }) {
+  // Pull a per-subject summary so we can show a friendly progress chip on each tile
+  const summaries = trpc.skillLadder.summary.useQuery();
+
+  const summaryFor = (slug: string) => {
+    if (!summaries.data) return null;
+    return (summaries.data as any[]).find((r) => r.subjectSlug === slug);
+  };
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {SUBJECTS.map((s) => {
+        const sum = summaryFor(s.slug);
+        const totalSkills = sum?.skills ?? 0;
+        const stars = sum?.mastered ?? 0;
+        return (
+          <button
+            key={s.slug}
+            onClick={() => onPick(s.slug)}
+            className="text-left rounded-2xl p-5 transition-transform hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-4 focus:ring-amber-300"
+            style={{
+              background: `linear-gradient(160deg, ${s.bgFrom} 0%, ${s.bgTo} 100%)`,
+              border: `3px solid ${s.color}`,
+              boxShadow: `0 6px 24px -10px ${s.color}77, inset 0 0 0 2px rgba(255,255,255,0.5)`,
+              color: "#1a1a1a",
+            }}
+            aria-label={`Open ${s.label} skills`}
+          >
+            <div className="flex items-center gap-3">
+              <div className="text-5xl drop-shadow-sm" aria-hidden>{s.emoji}</div>
+              <div className="flex-1 min-w-0">
+                <div className="font-display text-2xl leading-tight">{s.label}</div>
+                <div className="text-[13px] opacity-80">{s.blurb}</div>
+              </div>
+            </div>
+            <div className="mt-3 flex items-center gap-2 text-[12px]">
+              <span
+                className="px-2 py-0.5 rounded-full font-semibold"
+                style={{ background: "rgba(255,255,255,0.7)", color: "#1a1a1a" }}
+              >
+                ⭐ {stars} stars
+              </span>
+              <span
+                className="px-2 py-0.5 rounded-full font-semibold"
+                style={{ background: "rgba(255,255,255,0.55)", color: "#1a1a1a" }}
+              >
+                {totalSkills} skills
+              </span>
+              <span className="ml-auto opacity-70">Tap to open →</span>
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ============================================================
+ * Subject View: shows only one subject's skills, still tile-y
+ * ============================================================ */
+
+function SubjectView({ subject, onBack }: { subject: SubjectTile; onBack: () => void }) {
+  const { companionName, companionAvatar } = useKiwi();
+  const skills = trpc.skillLadder.list.useQuery({ subjectSlug: subject.slug });
   const utils = trpc.useUtils();
   const practice = trpc.skillLadder.practice.useMutation({
     onSuccess: (res: any) => {
@@ -56,45 +154,25 @@ export default function MyLevels() {
   }, [skills.data]);
 
   return (
-    <div className="space-y-6">
-      <header>
-        <div className="font-chalk-hand text-amber-400 text-lg">Just for you, Reagan</div>
-        <h1 className="font-display text-3xl md:text-4xl chalk-white">My Levels</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Every skill has a level. The more you practice, the higher it goes. There are no scores here — just your
-          progress. {companionName || "Kiwi"} is rooting for you.
-        </p>
-      </header>
-
-      {/* Subject pills */}
-      <div className="flex flex-wrap gap-2">
-        {SUBJECT_PILLS.map((p) => (
-          <button
-            key={p.slug}
-            onClick={() => setSubject(p.slug)}
-            className="px-3 py-1.5 rounded-full font-display text-sm transition-all border-2"
-            style={{
-              background: subject === p.slug ? p.color : "transparent",
-              color: subject === p.slug ? "#1a1a1a" : "#f7f1e3",
-              borderColor: p.color,
-            }}
-          >
-            <span className="mr-1.5" aria-hidden>{p.emoji}</span>
-            {p.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Summary strip */}
-      <Card className="classroom-card p-4 flex items-center gap-3">
-        <div className="text-3xl" aria-hidden>📈</div>
-        <div className="flex-1">
-          <div className="font-display text-lg">
-            You've leveled up <span className="text-amber-400">{totalLeveled}</span> times in {SUBJECT_PILLS.find(p => p.slug === subject)?.label}.
-          </div>
-          <div className="text-xs text-muted-foreground">Every star you fill is something you can DO that you couldn't before.</div>
+    <div className="space-y-4">
+      {/* Back + subject banner */}
+      <div className="flex items-center gap-3">
+        <Button variant="outline" size="sm" onClick={onBack} className="bg-white/80 text-slate-900">
+          ← All subjects
+        </Button>
+        <div
+          className="flex-1 rounded-xl px-4 py-2 flex items-center gap-3"
+          style={{
+            background: `linear-gradient(135deg, ${subject.bgFrom}, ${subject.bgTo})`,
+            border: `2px solid ${subject.color}`,
+            color: "#1a1a1a",
+          }}
+        >
+          <div className="text-2xl" aria-hidden>{subject.emoji}</div>
+          <div className="font-display text-xl leading-tight">{subject.label}</div>
+          <div className="ml-auto text-[12px] font-semibold">⭐ {totalLeveled} stars</div>
         </div>
-      </Card>
+      </div>
 
       {skills.isLoading && <div className="text-muted-foreground text-sm">Loading…</div>}
       {!skills.isLoading && (skills.data?.length ?? 0) === 0 && (
@@ -108,27 +186,34 @@ export default function MyLevels() {
           const lvl = s.progress?.level ?? 0;
           const meta = LEVEL_NAMES[lvl] || LEVEL_NAMES[0];
           return (
-            <Card key={s.id} className="classroom-card p-4 space-y-2">
+            <Card
+              key={s.id}
+              className="p-4 space-y-2"
+              style={{
+                background: `linear-gradient(180deg, ${subject.bgFrom}cc, ${subject.bgTo}66)`,
+                border: `2px solid ${subject.color}`,
+                color: "#1a1a1a",
+              }}
+            >
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <div className="text-[11px] uppercase tracking-wider text-muted-foreground">{s.strand}</div>
-                  <div className="font-display text-base leading-tight mt-0.5">{s.title}</div>
+                  <div className="text-[11px] uppercase tracking-wider opacity-70">{s.strand}</div>
+                  <div className="font-display text-base leading-tight mt-0.5 text-slate-900">{s.title}</div>
                   {s.kidFriendly && (
-                    <p className="text-[13px] text-neutral-300 mt-1 leading-snug">{s.kidFriendly}</p>
+                    <p className="text-[13px] mt-1 leading-snug text-slate-800">{s.kidFriendly}</p>
                   )}
                 </div>
                 <div className="text-2xl shrink-0" aria-hidden>{meta.emoji}</div>
               </div>
 
-              {/* Level pips */}
               <div className="flex items-center gap-1 mt-1">
                 {[1, 2, 3, 4, 5].map((n) => (
                   <div
                     key={n}
                     className="h-2.5 rounded-full flex-1 transition-all"
                     style={{
-                      background: n <= lvl ? meta.color : "rgba(255,255,255,0.08)",
-                      boxShadow: n <= lvl ? `0 0 8px ${meta.color}55` : "none",
+                      background: n <= lvl ? meta.color : "rgba(0,0,0,0.12)",
+                      boxShadow: n <= lvl ? `0 0 8px ${meta.color}88` : "none",
                     }}
                     aria-label={`Level ${n} ${n <= lvl ? "filled" : "empty"}`}
                   />
@@ -137,48 +222,44 @@ export default function MyLevels() {
               <div className="flex items-center justify-between text-[12px]">
                 <span className="font-semibold" style={{ color: meta.color }}>{meta.label}</span>
                 {s.progress?.lastPracticedAt && (
-                  <span className="text-muted-foreground">
+                  <span className="opacity-70">
                     Last tried: {new Date(s.progress.lastPracticedAt).toLocaleDateString()}
                   </span>
                 )}
               </div>
 
-              {/* Multi-modal hooks (optional) */}
               {(s.storyHook || s.visualHook || s.handsOnHook) && (
                 <details className="mt-1">
-                  <summary className="text-[12px] text-amber-400 cursor-pointer select-none">
+                  <summary className="text-[12px] font-semibold cursor-pointer select-none" style={{ color: subject.color }}>
                     Show me a way to get this →
                   </summary>
-                  <div className="mt-2 space-y-1.5 text-[13px] text-neutral-200">
+                  <div className="mt-2 space-y-1.5 text-[13px] text-slate-800">
                     {s.storyHook && (<div><span className="font-semibold">📖 Story:</span> {s.storyHook}</div>)}
                     {s.visualHook && (<div><span className="font-semibold">🎨 Picture:</span> {s.visualHook}</div>)}
                     {s.handsOnHook && (<div><span className="font-semibold">🛠 Try it:</span> {s.handsOnHook}</div>)}
-                    {s.khanUrl && (<a href={s.khanUrl} target="_blank" rel="noreferrer" className="text-amber-400 underline">▶ Watch on Khan Academy</a>)}
+                    {s.khanUrl && (<a href={s.khanUrl} target="_blank" rel="noreferrer" className="underline" style={{ color: subject.color }}>▶ Watch on Khan Academy</a>)}
                     {s.khanUrl && s.ixlUrl && " · "}
-                    {s.ixlUrl && (<a href={s.ixlUrl} target="_blank" rel="noreferrer" className="text-amber-400 underline">✏ Practice on IXL</a>)}
+                    {s.ixlUrl && (<a href={s.ixlUrl} target="_blank" rel="noreferrer" className="underline" style={{ color: subject.color }}>✏ Practice on IXL</a>)}
                   </div>
                 </details>
               )}
 
-              {/* Practice buttons (no scoring, no wrong) */}
               <div className="flex flex-wrap gap-1.5 pt-1.5">
                 <Button
                   size="sm"
                   variant="outline"
-                  className="bg-transparent text-xs h-7"
+                  className="bg-white/80 text-slate-900 text-xs h-7"
                   disabled={practice.isPending}
                   onClick={() => practice.mutate({ skillLadderId: s.id, mode: "practice", selfRating: 2 })}
-                  title="I tried it but it was hard"
                 >
                   🟡 I tried it
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
-                  className="bg-transparent text-xs h-7"
+                  className="bg-white/80 text-slate-900 text-xs h-7"
                   disabled={practice.isPending}
                   onClick={() => practice.mutate({ skillLadderId: s.id, mode: "practice", selfRating: 3 })}
-                  title="I'm getting the hang of it"
                 >
                   🌿 I'm getting it
                 </Button>
@@ -188,7 +269,6 @@ export default function MyLevels() {
                   style={{ background: meta.color, color: "#1a1a1a" }}
                   disabled={practice.isPending}
                   onClick={() => practice.mutate({ skillLadderId: s.id, mode: "practice", selfRating: 5 })}
-                  title="I really got this!"
                 >
                   🌟 I got it!
                 </Button>
@@ -196,10 +276,6 @@ export default function MyLevels() {
             </Card>
           );
         })}
-      </div>
-
-      <div className="text-center text-xs text-muted-foreground italic pt-3">
-        Reagan, every time you tap a button here you're telling Kiwi how it feels — never wrong, never graded.
       </div>
     </div>
   );
