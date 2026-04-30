@@ -26,6 +26,8 @@ export type TodayPrintableItem = {
 export type TodaySchoolWorkHandle = {
   openById: (id: number) => boolean;
   getItems: () => TodayPrintableItem[];
+  /** Open a synthetic popup with a curated fallback activity (real worksheet/page) */
+  openFallback: (item: Omit<TodayPrintableItem, "id" | "status"> & { id?: number; status?: string; isFallback?: boolean }) => void;
 };
 
 const BUCKETS: { key: Bucket; label: string; emoji: string; color: string; bg: string }[] = [
@@ -81,6 +83,23 @@ const TodaySchoolWork = forwardRef<TodaySchoolWorkHandle, { onItemsChanged?: (it
         return false;
       },
       getItems: () => allItems,
+      openFallback: (item) => {
+        setOpen({
+          id: item.id ?? -1,
+          title: item.title,
+          description: item.description ?? null,
+          source: item.source,
+          sourceUrl: item.sourceUrl ?? null,
+          thumbKey: item.thumbKey ?? null,
+          pdfKey: item.pdfKey ?? null,
+          estMinutes: item.estMinutes ?? null,
+          coinReward: item.coinReward ?? 0,
+          status: item.status ?? "pending",
+          subjectSlug: item.subjectSlug ?? null,
+          bucket: item.bucket,
+        });
+        setPhotoDataUrl(null);
+      },
     }), [today.dataUpdatedAt]);
 
     if (today.isLoading) {
@@ -193,16 +212,28 @@ const TodaySchoolWork = forwardRef<TodaySchoolWorkHandle, { onItemsChanged?: (it
               </DialogHeader>
               <div className="space-y-3 text-sm">
                 {open.description && <div>{open.description}</div>}
-                {open.sourceUrl && (
-                  <a href={open.sourceUrl} target="_blank" rel="noreferrer" className="inline-block px-3 py-2 bg-sky-600 text-white rounded-lg font-semibold">
-                    Open the page →
-                  </a>
-                )}
-                {open.pdfKey && (
-                  <a href={thumbUrl(open.pdfKey)!} target="_blank" rel="noreferrer" className="inline-block ml-2 px-3 py-2 bg-emerald-600 text-white rounded-lg font-semibold">
-                    Open the PDF →
-                  </a>
-                )}
+              {open.sourceUrl ? (
+                <a
+                  href={open.sourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-amber-400 hover:bg-amber-300 text-amber-950 rounded-xl font-extrabold text-base shadow-md"
+                >
+                  📄 Open the worksheet →
+                </a>
+              ) : (
+                <div className="text-xs italic opacity-70">No link yet — ask Mom to add one.</div>
+              )}
+              {open.pdfKey && (
+                <a
+                  href={thumbUrl(open.pdfKey)!}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-sm shadow"
+                >
+                  📑 Open the printable PDF →
+                </a>
+              )}
                 <div className="border-t pt-3">
                   <div className="font-semibold text-xs mb-1">All done? Snap a photo (optional):</div>
                   <input type="file" accept="image/*" capture="environment" onChange={handlePhoto} className="text-xs" />
@@ -211,9 +242,9 @@ const TodaySchoolWork = forwardRef<TodaySchoolWorkHandle, { onItemsChanged?: (it
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setOpen(null)}>Close</Button>
-                <Button disabled={grading || open.status === "done"} onClick={submitDone}>
-                  {open.status === "done" ? "Already done ✓" : grading ? (photoDataUrl ? "Auto-grading…" : "Saving…") : photoDataUrl ? "Submit photo & earn 🪙" : "Mark done & earn 🪙"}
-                </Button>
+              <Button disabled={grading || open.status === "done" || open.id < 0} onClick={submitDone}>
+                {open.id < 0 ? "Pick a printable to track 🪙" : open.status === "done" ? "Already done ✓" : grading ? (photoDataUrl ? "Auto-grading…" : "Saving…") : photoDataUrl ? "Submit photo & earn 🪙" : "Mark done & earn 🪙"}
+              </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>

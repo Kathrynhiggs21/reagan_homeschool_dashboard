@@ -1463,3 +1463,12 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] If a block has a linked printable, Open → popup opens directly (reuse Today's School Work popup)
 - [x] If no linked printable, Open → smooth-scroll to Today's School Work card and briefly highlight
 - [x] TS clean + vitest green (161/161)
+
+
+## Apr 30 — Open Block must always show a real activity
+- [x] Audit current Open behavior (no match / broken url / missing pdf)
+- [x] Add per-subject curated fallback (Khan Academy 5th-grade Math, ReadWorks, Storyline Online, Mystery Science, Smithsonian SS, Art for Kids Hub, Chrome Music Lab, Cornell Lab birds, GoNoodle, Wonderopolis) so Open NEVER lands empty
+- [x] If no printable picked yet, popup opens with the curated fallback for that block's subject + "Mom will pick the exact worksheet by 7 AM" note
+- [x] Big primary button "📄 Open the worksheet →" + secondary "📑 Open the printable PDF →"
+- [x] Test (162/162), checkpoint, sync to Drive
+- [ ] (followup) Server: backfill missing sourceUrl from fallbacks during morning brief intake

@@ -24,6 +24,7 @@ import BrainBreakTvBox from "@/components/BrainBreakTvBox";
 import MascotGreeting from "@/components/MascotGreeting";
 import TodaySchoolWork, { type TodaySchoolWorkHandle, type TodayPrintableItem } from "@/components/TodaySchoolWork";
 import { detectSubjectSlug, findBestPrintableForSubject } from "@/lib/matchPrintable";
+import { fallbackActivityFor } from "@/lib/subjectFallbackActivity";
 import { useRef } from "react";
 
 // Neutral classroom mood language + classroom-y icons
@@ -96,15 +97,19 @@ export default function Today() {
     const items = todaySchoolWorkRef.current?.getItems() ?? printableItems;
     const match = findBestPrintableForSubject(items, slug);
     if (match && todaySchoolWorkRef.current?.openById(match.id)) return;
-    // Fallback: scroll + highlight the Today's School Work card
-    const el = document.getElementById("today-school-work");
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-      el.classList.add("ring-4", "ring-amber-300", "ring-offset-2");
-      setTimeout(() => el.classList.remove("ring-4", "ring-amber-300", "ring-offset-2"), 1600);
-    }
-    if (match?.id) setFlashTile(match.id);
-    toast.message(slug ? `No ${slug.toUpperCase()} printable picked yet — scroll to School Work.` : "Scroll to Today's School Work to pick one.");
+    // No real printable picked yet — open a curated fallback so Reagan ALWAYS
+    // sees a real worksheet/page when she taps Open.
+    const fb = fallbackActivityFor(slug, block.title);
+    todaySchoolWorkRef.current?.openFallback({
+      title: fb.title,
+      description: fb.description + " \u00b7 Mom will pick the exact worksheet by 7 AM.",
+      source: fb.source,
+      sourceUrl: fb.sourceUrl,
+      pdfKey: fb.pdfUrl,
+      estMinutes: fb.estMinutes,
+      coinReward: fb.coinReward,
+      subjectSlug: slug,
+    });
   }
 
   const [struggleDialog, setStruggleDialog] = useState<{ open: boolean; blockId?: number; subjectSlug?: string | null }>({ open: false });
