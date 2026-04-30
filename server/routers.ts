@@ -1083,15 +1083,31 @@ export const appRouter = router({
       fileUrl: z.string().optional(),
       title: z.string().optional(),
       subjectSlug: z.string().optional(),
-    })).mutation(({ input }) => db.createAssignmentSubmission({
-      blockId: input.blockId,
-      subjectSlug: input.subjectSlug,
-      title: input.title,
-      submissionType: input.mode === "typed" ? "text" : input.mode === "photo" ? "photo" : "file",
-      contentText: input.answersText,
-      fileKey: input.fileKey,
-      fileUrl: input.fileUrl,
-    } as any)),
+      // Kid-facing difficulty rating asked after every turn-in.
+      kidDifficulty: z.enum(["easy","just_right","tricky","really_hard"]).optional(),
+      // Reading-bucket assignments use a one-tap checkmark; no photo or auto-grade needed.
+      readingCheckmark: z.boolean().optional(),
+    })).mutation(({ input }) => {
+      // Encode kidDifficulty + readingCheckmark into adultNotes as a structured
+      // tag prefix so we don't need a schema migration tonight. Analytics + the
+      // Adult Library can parse `[difficulty=...;reading_checkmark=1]`.
+      const tags: string[] = [];
+      if (input.kidDifficulty) tags.push(`difficulty=${input.kidDifficulty}`);
+      if (input.readingCheckmark) tags.push("reading_checkmark=1");
+      const adultNotes = tags.length ? `[${tags.join(";")}]` : undefined;
+      return db.createAssignmentSubmission({
+        blockId: input.blockId,
+        subjectSlug: input.subjectSlug,
+        title: input.title,
+        submissionType: input.readingCheckmark
+          ? "text"
+          : input.mode === "typed" ? "text" : input.mode === "photo" ? "photo" : "file",
+        contentText: input.readingCheckmark ? "✓ Done reading" : input.answersText,
+        fileKey: input.fileKey,
+        fileUrl: input.fileUrl,
+        adultNotes,
+      } as any);
+    }),
     upload: publicProcedure.input(z.object({ dataUrl: z.string(), fileName: z.string() })).mutation(async ({ input }) => {
       // Parse data URL
       const m = /^data:([^;]+);base64,(.+)$/.exec(input.dataUrl);

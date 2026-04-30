@@ -43,6 +43,7 @@ import ProudWall from "./pages/ProudWall";
 import Placement from "./pages/Placement";
 import UploadOrSync from "./pages/UploadOrSync";
 import DailyAgendas from "./pages/DailyAgendas";
+import Schedule from "./pages/Schedule";
 import { trpc } from "@/lib/trpc";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
@@ -67,7 +68,12 @@ function Router() {
         <Route path="/welcome" component={Onboarding} />
         <Route path="/" component={Today} />
         <Route path="/today" component={Today} />
-        <Route path="/week" component={Week} />
+        {/* Schedule is the new Reagan-facing page (Day/Week/Month + IH days off + GCal overlay).
+            Keep /week as a redirect so old links / nav state still work. */}
+        <Route path="/schedule" component={Schedule} />
+        <Route path="/week">
+          <Redirect to="/schedule" />
+        </Route>
         <Route path="/adventures" component={Adventures} />
         <Route path="/journal" component={Journal} />
         <Route path="/bookshelf" component={Bookshelf} />
@@ -123,7 +129,10 @@ function Router() {
         <Route path="/agendas">
           <AdultGate><DailyAgendas /></AdultGate>
         </Route>
-        <Route path="/rewards" component={Rewards} />
+        {/* Rewards moved to the adult section (parent picks/awards prizes). */}
+        <Route path="/rewards">
+          <AdultGate><Rewards /></AdultGate>
+        </Route>
         {/* Legacy direct links still work and land on the Rewards tabs */}
         {/* /stickers retired — Stickers UI removed from Reagan's view per user request. */}
         <Route path="/stickers">

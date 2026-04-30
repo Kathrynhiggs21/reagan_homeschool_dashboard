@@ -1492,3 +1492,141 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] PDF fallback: render with the in-app annotation runner (Apple-Pencil-friendly)
 - [ ] Set up Gmail forwarding rule reagan.higgs33@ihsd.us → spear.cpt@gmail.com (auto-forward all from @ihsd.us / IH Classroom / IH teachers)
 - [ ] Confirm forwarding via verification link, then label forwarded items in spear.cpt@gmail.com as "IH-Reagan" so the daily sync can grab them with one query
+
+
+## Apr 30 — PowerSchool integration
+- [ ] Open PowerSchool guardian portal in browser + take user takeover for sign-in
+- [ ] Pull class list / assignments / grades / attendance for Reagan
+- [ ] Create /api/scheduled/powerschool-import endpoint that ingests rows into the Library (From: PowerSchool, IH Classroom: Yes)
+- [ ] Schedule daily PowerSchool refresh (after 6am Library auto-sync)
+- [ ] Test, checkpoint, sync to Drive
+
+
+## Apr 30 — Simplification + Polish batch (from screenshots)
+
+### Cleanup (Phase 1)
+- [ ] Whiteboard: delete every "Test note / Hello Reagan (test)" + "Tomorrow only" stickies; keep only the welcome note
+- [ ] Analytics: delete every "Recent Submissions" Block #60001 dummy row + the dummy "tutor" rows (155+)
+- [ ] Notification log / dummy notifications: clear
+- [ ] Remove unnecessary console / audit logging; keep only meaningful error logs
+
+### Reagan-side simplification (Phase 2)
+- [ ] Remove **Rewards** from Reagan's sidebar (move entirely to adult side)
+- [ ] Remove **Knowledge / AI Assistant** page from Reagan's view (keep adult-side only)
+- [ ] Combine Whiteboard into Notebook (no separate Whiteboard page in Reagan view)
+- [ ] Notebook: paper template picker (lined / blank / graph / handwriting / dotted)
+- [ ] Notebook: enlarge writing area significantly so it feels roomy
+- [ ] Add small Kiwi AI helper inside Notebook only (not its own nav item)
+- [ ] Remove duplicate "tank" cards on Today
+
+### Today + visual readability (Phase 3)
+- [ ] Fix gray boxes on Today → high-contrast text (Today's Coverage, Mood, Resume)
+- [ ] Fix theme picker text color so all themes are readable (white-on-white bug)
+- [ ] Remove "tank box" duplicates
+- [ ] Add **Activity Options** panel underneath This Week with max 10 ideas, weighted by Reagan's likes + weather + timing + season
+- [ ] "+ Add an activity" (adult adds; Reagan picks)
+- [ ] Add countdown to summer break in lower-left of sidebar
+
+### Adult-only Rewards + Kiwi Coin counter (Phase 4)
+- [ ] Large 3D glossy Kiwi Coin counter at top of adult area (piggy-bank/kiwi vibe)
+- [ ] Adult approves/gives prizes; Reagan no longer sees the prize ladder
+- [ ] Image-tile prize cards (image + title only, no long text list)
+- [ ] Update IEP source to current 2026 active version (verify there isn't a newer doc to import)
+
+### Analytics rebuild (Phase 5)
+- [ ] Replace long lists with visual charts (radar per subject, sparkline trend, mood ring)
+- [ ] Add **Curriculum Coverage 1–100% per subject** for 5th grade as visual progress arcs
+
+### Adult Settings audit (Phase 6)
+- [ ] Cut any Settings card that isn't essential
+- [ ] Combine duplicates (Helper / Adult mode toggles into one card)
+- [ ] Adult Settings should fit on one short scroll
+
+### Visual polish (Phase 7)
+- [ ] 3D glossy/glass pop-out boxes throughout
+- [ ] Replace prize text list with image-tile cards
+- [ ] Cute extras: summer countdown, Kiwi animations preserved
+
+### Delivery (Phase 8)
+- [ ] Test (target ≥ 166/166 vitest)
+- [ ] Save checkpoint
+- [ ] Sync updated files to Drive
+- [ ] Deliver summary to user
+
+## Latest batch (Apr 30 evening) — finish ASAP
+
+- [ ] Run cleanupDummyData.test.ts to wipe seed/dummy rows
+- [ ] Strip noisy console.log / audit logging from server
+- [ ] Reagan nav: remove Rewards entry (adult-only)
+- [ ] Reagan nav: remove Knowledge / AI Assistant page
+- [ ] Notebook: paper template picker (lined / blank / graph / handwriting / dotted)
+- [ ] Notebook: enlarge writing area + small Kiwi AI helper inside
+- [ ] Today: fix gray-box readability + theme picker white-on-white bug
+- [ ] Today: remove duplicate "tank" cards
+- [ ] Adult: large 3D glossy Kiwi Coin counter at top of adult area
+- [ ] Adult: image-tile prize cards (image + title only)
+- [ ] Analytics rebuild as visual charts (radar / sparklines / mood ring)
+- [ ] Analytics: Curriculum Coverage 0-100% per 5th-grade subject as arcs
+- [ ] Adult Settings audit: combine duplicates, one short scroll
+- [ ] Visual: 3D glossy/glass pop-out boxes throughout
+- [ ] Visual: Summer countdown bottom-left of sidebar (cute kiwi mascot)
+- [ ] Visual: Kiwi Tea Party decorative scene (more kiwi-bird fun)
+- [ ] Weather widget: glassy realistic-material, upper-left
+- [ ] Schedule page: replace "This Week" nav entry with "Schedule"
+- [ ] Schedule page: Day / Week / Month toggle
+- [ ] Schedule page: overlay Reagan's Google Calendar events
+- [ ] Schedule page: overlay IH school DAYS OFF + end-of-year date only (no full schedule)
+- [ ] Schedule page: click any day -> agenda modal with that day's blocks + events
+- [ ] Print button on every printable tile (clean print stylesheet)
+- [ ] Print button on every finished/turned-in work card
+- [ ] Drive auto-save: finished work -> Reagan/Reagan School Master Folder/Reagan School Hub (Dashboard)/Finished Work
+- [ ] Drive auto-save: yet-to-do printables -> .../To-Do Work
+- [ ] Run vitest (target >= 166/166)
+- [ ] Save checkpoint, sync to Drive, deliver summary
+
+## Latest batch additions (Apr 30 night) — visual upgrades
+
+- [ ] My Levels: each card shows related file/work image as thumbnail (left side, full-width row) so Reagan visually remembers the skill
+- [ ] Color the white/empty "just starting" template cards with soft pastel theme tints (no plain whites)
+- [ ] Customizable background picker: choose color OR upload image for any white-background page area (persisted per user)
+
+## Latest batch additions (Apr 30 night, round 2) — Turn-in flow
+
+- [ ] Difficulty rating prompt after every turn-in (Easy / Just right / Tricky / Really hard) → stored on submission row → Analytics + Adult Library
+- [ ] Photo OR scan turn-in with print option (Take photo + Print finished work button) → also queued to Drive
+- [ ] Reading-bucket assignments use simple ✓ Done reading checkmark (no photo/grade), still award coins + ask difficulty
+
+## Latest batch additions (Apr 30 night, round 3) — Kiwi voices
+
+- [ ] Several Kiwi voice presets (Sweet Kiwi / Sunny Friend / Wise Owl / Soft Whisper / Robot Buddy) — picker in Settings + quick toggle in Kiwi bubble
+- [ ] "Make a sound" row inside Kiwi: chirp / peep / giggle / ta-da / whistle / sleepy yawn buttons
+
+## Latest batch additions (Apr 30 night, round 4) — Flock & playful decor
+
+- [ ] Cuddling ducklings sprite in cozy corner (Today / Bookshelf / Notebook)
+- [ ] Mallard + Black Swedish breeds (2 Black Swedish trail behind a Mallard lead)
+- [ ] Egg-hatch animation (speckled egg wiggles, cracks, duckling waddles into formation)
+- [ ] Flock grows over time with streaks / coins / days used
+- [ ] Mama Duck waddles in occasionally, gently scoops a duckling, walks off, returns
+- [ ] Little kiddie pool / pond in the corner (matches Reagan's real pool)
+- [ ] Weather-aware: rain → drops + leaf umbrella, sunny → sparkles, cloudy → mist
+- [ ] Duck footprints in mud after rain, fade in across the bottom
+- [ ] Easter eggs: peeking kiwi/duck silhouettes, droppable feathers Reagan can tap to collect, worm wiggles after rain
+- [ ] All decorative animations stay off the work areas (no UI block)
+
+## Apr 30 night — round 4 flock + decor (consolidated)
+
+- [ ] Cuddling ducklings sprite in cozy corner
+- [ ] Mallard + Black Swedish breeds (2 Black Swedish trail behind a Mallard lead)
+- [ ] Egg-hatch animation
+- [ ] Flock grows over time with streaks / coins
+- [ ] Mama Duck waddles in occasionally to scoop a duckling
+- [ ] Pool/pond corner
+- [ ] Weather-aware (rain droplets + leaf umbrella)
+- [ ] Duck mud footprints after rain
+- [ ] Easter eggs: peeking silhouettes, droppable feathers, worm wiggles
+
+## Apr 30 night final additions
+
+- [ ] Bug: phantom Chrome notification sound on page load when mic blocked (gate SpeechRecognition + audio elements behind explicit consent)
+- [ ] Final audit doc at end: shipped/deferred + every integration status + errors + pending manual steps

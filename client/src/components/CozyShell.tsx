@@ -4,6 +4,7 @@ import { useKiwi } from "@/contexts/KiwiContext";
 import { useAdultLock } from "@/contexts/AdultLockContext";
 import { Button } from "@/components/ui/button";
 import { Lock, Unlock } from "lucide-react";
+import WeatherWidget from "./WeatherWidget";
 
 /**
  * Sidebar navigation.
@@ -15,12 +16,15 @@ import { Lock, Unlock } from "lucide-react";
 
 type NavItem = { to: string; emoji: string; label: string; dot?: string };
 
+// Reagan's sidebar — kept tight: Today, Schedule (was "This Week"), Levels,
+// Proud Wall, Bookshelf, Notebook, Apps, About Me.
+// Rewards/Prizes removed (now adult-only). Knowledge / AI Assistant removed.
+// Whiteboard merged into Notebook.
 const KID_NAV: NavItem[] = [
   { to: "/today",     emoji: "📋", label: "Today",        dot: "#ff9b3d" },
-  { to: "/week",      emoji: "🗓️", label: "This Week",   dot: "#3b82f6" },
+  { to: "/schedule",  emoji: "🗓️", label: "Schedule",     dot: "#3b82f6" },
   { to: "/levels",    emoji: "📈", label: "My Levels",    dot: "#22c55e" },
   { to: "/proud",     emoji: "🌟", label: "Proud Wall",   dot: "#ec4899" },
-  { to: "/rewards",   emoji: "⭐", label: "Rewards",       dot: "#f59e0b" },
   { to: "/bookshelf", emoji: "📚", label: "Bookshelf",    dot: "#ef4444" },
   { to: "/notes",     emoji: "📝", label: "Notebook",     dot: "#a855f7" },
   { to: "/apps",      emoji: "🎒", label: "Apps & Tools", dot: "#eab308" },
@@ -32,14 +36,16 @@ const MORE_NAV: NavItem[] = [
   { to: "/adventures", emoji: "🧭", label: "Adventures" },
 ];
 
-// Adult section simplified: only the 5 things the parent actually uses.
-// Full admin pages still reachable via direct URL but hidden from sidebar.
+// Adult section. Rewards/Prizes manager moved here from Reagan's nav.
+// Knowledge / AI Assistant remains adult-only and reachable from here.
+// Parent Notes (Whiteboard) lives here too — Reagan's Notebook is separate.
 const ADULT_NAV: NavItem[] = [
   { to: "/library",    emoji: "📚", label: "Assignments Library" },
   { to: "/upload",     emoji: "⬆️", label: "Upload or Sync" },
   { to: "/agendas",    emoji: "🗓️", label: "Daily Agendas" },
   { to: "/tutor",      emoji: "🤝", label: "Tutor Handoff" },
   { to: "/analytics",  emoji: "📊", label: "Analytics" },
+  { to: "/rewards",    emoji: "⭐", label: "Rewards / Prizes" },
   { to: "/whiteboard", emoji: "📌", label: "Parent Notes" },
   { to: "/knowledge",  emoji: "🧠", label: "AI Assistant" },
   { to: "/settings",   emoji: "⚙️", label: "Settings" },
@@ -176,7 +182,12 @@ export default function CozyShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <main className="flex-1 min-w-0">
+      <main className="flex-1 min-w-0 relative">
+        {/* Glassy weather pill, upper-left of the main scroll area. Decorative
+            but also broadcasts the current condition to other components. */}
+        <div className="absolute top-3 left-4 z-30 no-print">
+          <WeatherWidget />
+        </div>
         <div className="max-w-6xl mx-auto px-6 py-6">{children}</div>
       </main>
     </div>

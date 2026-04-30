@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import PrintButton from "@/components/PrintButton";
 
 const SUBJECT_FILTERS = [
   { value: "all",     label: "All" },
@@ -164,6 +165,15 @@ export default function Printables() {
                 <Button size="sm" variant="outline" className="bg-transparent h-7 text-xs" onClick={() => launch(s)}>
                   {q && s.searchUrl ? "Search" : "Open"}
                 </Button>
+                {/* Print: open the printable URL in a new tab and auto-fire print dialog. */}
+                <PrintButton
+                  size="sm"
+                  variant="outline"
+                  label="Print"
+                  className="h-7 text-xs bg-transparent"
+                  url={q && s.searchUrl ? s.searchUrl.replace("{q}", encodeURIComponent(q)) : s.url}
+                  title="Open this source and print it"
+                />
                 <Button size="sm" variant="outline" className="bg-transparent h-7 text-xs" onClick={() => addToToday(s)}>
                   + Today
                 </Button>
@@ -186,12 +196,15 @@ export default function Printables() {
                   <a href={f.url} target="_blank" rel="noreferrer" className="underline">{f.title}</a>
                   {f.subjectSlug && <span className="ml-2 text-[10px] uppercase tracking-wider text-muted-foreground">{f.subjectSlug}</span>}
                 </div>
-                <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive" onClick={async () => {
-                  await removeFav.mutateAsync({ id: f.id });
-                  utils.printables.listFavorites.invalidate();
-                }}>
-                  ×
-                </Button>
+                <div className="flex items-center gap-2">
+                  <PrintButton size="sm" variant="outline" label="Print" className="h-7 text-xs bg-transparent" url={f.url} />
+                  <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive" onClick={async () => {
+                    await removeFav.mutateAsync({ id: f.id });
+                    utils.printables.listFavorites.invalidate();
+                  }}>
+                    ×
+                  </Button>
+                </div>
               </Card>
             ))}
           </div>

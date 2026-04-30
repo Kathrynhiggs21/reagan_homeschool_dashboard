@@ -38,50 +38,107 @@ export default function KiwiCompanion() {
   // Kiwi now speaks with a parakeet voice (chirp + higher pitch/rate).
   function speak(text: string) { speakLikeBird(text); }
 
-  // Wake word listener (lightweight, browser SpeechRecognition)
-  // Gated behind `kiwiMicConsent` localStorage flag so that Chrome's
-  // "site is using microphone" indicator + sound does NOT fire on every
-  // page load. Mom explicitly turns mic access ON in Settings.
+  // Wake-word listener (browser SpeechRecognition).
+  //
+  // Three layers of guards to avoid the phantom Chrome "site is using mic"
+  // status sound that fires on page load even when the user has the mic
+  // blocked at the browser level:
+  //
+  //   1) Hard opt-in via localStorage `kiwiMicConsent === "1"`.
+  //   2) Live check of navigator.permissions.query({ name: "microphone" }) —
+  //      if the browser-level permission is `denied`, we never call .start().
+  //   3) On `onerror` of "not-allowed" / "service-not-allowed" / "audio-capture",
+  //      we do NOT auto-restart — we shut down for the rest of the session.
+  //      Auto-restart only fires on benign `no-speech` / natural ends and only
+  //      when permission stays `granted`.
   const recognitionRef = useRef<any>(null);
   useEffect(() => {
     if (!enabled || mode !== "wake" || adultPresent || open) return;
-    try {
-      if (typeof window === "undefined" || window.localStorage?.getItem("kiwiMicConsent") !== "1") {
-        return;
-      }
-    } catch {
-      return;
-    }
+    if (typeof window === "undefined") return;
+    let consent = false;
+    try { consent = window.localStorage?.getItem("kiwiMicConsent") === "1"; } catch { /* no storage */ }
+    if (!consent) return;
+
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) return;
-    const r = new SR();
-    r.continuous = true;
-    r.interimResults = true;
-    r.lang = "en-US";
-    r.onresult = (e: any) => {
-      const last = e.results[e.results.length - 1];
-      const text = (last[0]?.transcript || "").toLowerCase();
-      const name = companionName.toLowerCase();
-      // Accept "hi kiwi", "hey kiwi", "kiwi", and custom companion-name variants.
-      if (
-        text.includes(`hi ${name}`) ||
-        text.includes(`hey ${name}`) ||
-        text.includes(`ok ${name}`) ||
-        text.includes(name) ||
-        text.includes("hi kiwi") ||
-        text.includes("hey kiwi") ||
-        text.includes("kiwi")
-      ) {
-        setOpen(true);
-      }
+
+    let cancelled = false;
+    let permanentlyOff = false; // flipped true on a permission/audio failure; blocks all restarts
+    let r: any = null;
+
+    const safeStart = () => {
+      if (cancelled || permanentlyOff || !r) return;
+      try { r.start(); } catch { /* already running or recently stopped */ }
     };
-    r.onerror = () => { /* swallow mic errors; browser will end the session */ };
-    r.onend = () => {
-      // Auto-restart so the wake-word keeps listening across browser pauses.
-      try { r.start(); } catch { /* already started */ }
+
+    const buildRecognizer = () => {
+      r = new SR();
+      r.continuous = true;
+      r.interimResults = true;
+      r.lang = "en-US";
+      r.onresult = (e: any) => {
+        const last = e.results[e.results.length - 1];
+        const text = (last[0]?.transcript || "").toLowerCase();
+        const name = (companionName || "kiwi").toLowerCase();
+        if (
+          text.includes(`hi ${name}`) ||
+          text.includes(`hey ${name}`) ||
+          text.includes(`ok ${name}`) ||
+          text.includes(name) ||
+          text.includes("hi kiwi") ||
+          text.includes("hey kiwi") ||
+          text.includes("kiwi")
+        ) {
+          setOpen(true);
+        }
+      };
+      r.onerror = (e: any) => {
+        const k = (e?.error || "").toString();
+        // Permission-related errors → hard stop. This is what was causing the
+        // phantom Chrome notification sound on every page load when mic was blocked.
+        if (
+          k === "not-allowed" ||
+          k === "service-not-allowed" ||
+          k === "audio-capture" ||
+          k === "permission-denied"
+        ) {
+          permanentlyOff = true;
+          try { r.stop(); } catch {}
+          // Also flip consent off locally so we don't try again next page load.
+          try { window.localStorage?.removeItem("kiwiMicConsent"); } catch {}
+        }
+      };
+      r.onend = () => {
+        if (cancelled || permanentlyOff) return;
+        // Throttle restarts so we don't spin in a tight loop if Chrome keeps
+        // ending the session.
+        window.setTimeout(safeStart, 600);
+      };
+      recognitionRef.current = r;
     };
-    try { r.start(); recognitionRef.current = r; } catch {}
-    return () => { try { r.stop(); } catch {} };
+
+    const tryStartWithPermissionCheck = async () => {
+      try {
+        const nav: any = navigator;
+        if (nav?.permissions?.query) {
+          const status = await nav.permissions.query({ name: "microphone" as PermissionName });
+          if (status.state === "denied") {
+            // Browser-level mic block. Do nothing — do NOT call .start().
+            return;
+          }
+        }
+      } catch { /* permissions API not supported — fall through and try */ }
+      if (cancelled) return;
+      buildRecognizer();
+      safeStart();
+    };
+
+    tryStartWithPermissionCheck();
+
+    return () => {
+      cancelled = true;
+      try { r?.stop(); } catch {}
+    };
   }, [enabled, mode, adultPresent, open, companionName, setOpen]);
 
   function send() {

@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { trpc } from "@/lib/trpc";
+import PrintButton from "@/components/PrintButton";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import TrajectoryCard from "@/components/TrajectoryCard";
@@ -312,9 +313,12 @@ export default function Analytics() {
                     )}
                   </div>
                   {s.fileUrl && (
-                    <a href={s.fileUrl} target="_blank" rel="noreferrer" className="text-xs text-primary underline shrink-0">
-                      Open
-                    </a>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <a href={s.fileUrl} target="_blank" rel="noreferrer" className="text-xs text-primary underline">
+                        Open
+                      </a>
+                      <PrintButton size="sm" variant="outline" label="Print" className="h-6 text-[11px] bg-transparent" url={s.fileUrl} />
+                    </div>
                   )}
                 </div>
               );

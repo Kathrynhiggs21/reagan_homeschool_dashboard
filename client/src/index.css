@@ -398,6 +398,34 @@
   }
 }
 
+/* ---- Weather widget (glassy upper-left) ---- */
+.weather-widget {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(10px) saturate(150%);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  color: #2a2014;
+  font-family: var(--font-display, system-ui), system-ui, sans-serif;
+  user-select: none;
+}
+html[data-rtheme="chalkboard"] .weather-widget,
+html[data-rtheme="starry"] .weather-widget {
+  background: rgba(20, 28, 40, 0.55);
+  color: #f1ecdf;
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.weather-emoji { font-size: 1.4rem; line-height: 1; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15)); }
+.weather-text  { display: flex; align-items: baseline; gap: 0.4rem; }
+.weather-temp  { font-weight: 700; font-size: 1rem; }
+.weather-label { font-size: 0.78rem; opacity: 0.75; }
+
 /* ---- Print packet ---- */
 @media print {
   @page { margin: 0.5in; size: letter; }
@@ -438,6 +466,12 @@
   .badge, [data-slot="badge"] { border: 1px solid #999 !important; background: white !important; color: #333 !important; }
   .schedule-row { background: white !important; color: #1a1a1a !important; border: 1px solid #bbb !important; }
   .time-chip { background: #eee !important; color: #222 !important; border: 1px solid #bbb !important; }
+  /* Show the finished work / printable subject of a Print button when used */
+  [data-print-target] { display: block !important; }
+  /* When the page is printing a single finished work item, hide everything else */
+  body.printing-finished-only > *:not(.print-finished-root),
+  body.printing-finished-only .no-print { display: none !important; }
+  body.printing-finished-only .print-finished-root { display: block !important; }
 }
 .print-only { display: none; }
 
