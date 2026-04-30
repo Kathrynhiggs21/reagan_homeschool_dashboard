@@ -1435,3 +1435,8 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Adult Rewards Manager — manual create + one-click preset library (image+title+cost+description), Reagan view shows image tiles with popup
 - [ ] Reagan app tiles auto-launch under Reagan.higgs33@ihsd.us (use authuser= prefill)
 - [ ] Google Classroom pull under spear.cpt@gmail.com — daily sync of assignments into dashboard
+- [ ] Reagan Profile Model: tracks finished/abandoned, format preference (drawing/write-in/cut-paste/outdoor/online), Hard/Getting it/Got it per skill, subject affinity, real pacing per block, mood signals
+- [ ] Use Profile Model to drive both daily printables AND online activity suggestions (best for Reagan, not loyal to any single source)
+- [ ] IHES Google Classroom = reference-only side panel (today + week glance), never the daily plan driver
+- [ ] Daily Printables = SCHOOL-DAY work, NOT homework. Frame as "today's school work" everywhere; finish before end of school day.
+- [ ] Three buckets in UI + email: Have-to-do | Optional | Extras (if she wants)
