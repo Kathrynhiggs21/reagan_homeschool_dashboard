@@ -513,4 +513,86 @@ export function registerScheduledSync(app: Express) {
       return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
     }
   });
+
+  /* ====================== ADULT ASSIGNMENTS LIBRARY IMPORT ======================
+   *
+   * Daily 6 AM scheduled task pulls from Reagan's IH Gmail (forwarded to
+   * spear.cpt@gmail.com), Google Drive, and Google Classroom, then POSTs the
+   * classified items here. We upsert by (title, dateReceived, fromSource) so
+   * re-runs are safe.
+   *
+   * Body shape (each item):
+   *   {
+   *     title: string,
+   *     subjectSlug?: "math"|"ela"|"reading"|"writing"|"science"|"ss"|"art"|"music"|"other",
+   *     type: "worksheet"|"video"|"slideshow"|"lesson_plan"|"quiz"|"answer_key"|"project"|"app_activity"|"reading"|"other",
+   *     topic?: string,
+   *     fromSource: string,         // e.g. "IXL", "IH (printout)", "Khan Academy", "IH Email"
+   *     ihClassroom?: boolean,
+   *     dateReceived?: "YYYY-MM-DD",
+   *     dateFor?: "YYYY-MM-DD",
+   *     recommendedUse?: 1|2|3|4|5,
+   *     sourceUrl?: string,         // page / app / website
+   *     fileLink?: string,          // editable Drive copy / direct download
+   *     notes?: string
+   *   }
+   */
+  app.post("/api/scheduled/library-import", async (req: Request, res: Response) => {
+    let role: string | null = null;
+    try {
+      const u = await sdk.authenticateRequest(req);
+      role = u?.role ?? null;
+    } catch {
+      role = null;
+    }
+    if (!role || (role !== "user" && role !== "admin")) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
+    try {
+      const { items } = req.body ?? {};
+      if (!Array.isArray(items)) {
+        return res.status(400).json({ ok: false, error: "Expected { items: [...] }" });
+      }
+      let added = 0;
+      let skipped = 0;
+      for (const raw of items) {
+        if (!raw || typeof raw.title !== "string" || typeof raw.type !== "string") {
+          skipped++;
+          continue;
+        }
+        // Idempotency: skip if a same-title same-source same-day row exists
+        const existing = await db.findExistingLibraryRow({
+          title: raw.title,
+          fromSource: raw.fromSource ?? "scheduled",
+          dateReceived: raw.dateReceived ?? null,
+        });
+        if (existing) {
+          skipped++;
+          continue;
+        }
+        await db.addAssignmentLibrary({
+          title: raw.title,
+          subjectSlug: raw.subjectSlug ?? null,
+          type: raw.type,
+          topic: raw.topic ?? null,
+          tags: Array.isArray(raw.tags) ? raw.tags : null,
+          fromSource: raw.fromSource ?? "scheduled",
+          ihClassroom: !!raw.ihClassroom,
+          dateReceived: raw.dateReceived ?? null,
+          dateFor: raw.dateFor ?? null,
+          recommendedUse: typeof raw.recommendedUse === "number" ? raw.recommendedUse : 3,
+          sourceUrl: raw.sourceUrl ?? null,
+          fileLink: raw.fileLink ?? null,
+          bundleId: null,
+          bundleStep: null,
+          notes: raw.notes ?? null,
+          blockId: null,
+        } as any);
+        added++;
+      }
+      return res.json({ ok: true, added, skipped });
+    } catch (e: any) {
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
 }

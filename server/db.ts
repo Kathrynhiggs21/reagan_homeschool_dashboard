@@ -4261,3 +4261,21 @@ export async function getBundleWithItems(bundleId: number) {
   const items = await d.select().from(assignmentsLibrary).where(eq(assignmentsLibrary.bundleId, bundleId)).orderBy(asc(assignmentsLibrary.bundleStep));
   return { bundle: bRows[0] as AssignmentBundleRow, items: items as AssignmentLibraryRow[] };
 }
+
+// Idempotency helper for the daily auto-sync: returns the first row with the
+// same (title, fromSource, dateReceived) so re-runs don't duplicate the
+// Library. dateReceived may be null in which case we match on title+source only.
+export async function findExistingLibraryRow(args: {
+  title: string;
+  fromSource: string;
+  dateReceived: string | null;
+}) {
+  const d = getDb();
+  const where: any[] = [
+    eq(assignmentsLibrary.title, args.title),
+    eq(assignmentsLibrary.fromSource, args.fromSource),
+  ];
+  if (args.dateReceived) where.push(eq(assignmentsLibrary.dateReceived, args.dateReceived));
+  const rows = await d.select().from(assignmentsLibrary).where(and(...where)).limit(1);
+  return (rows[0] ?? null) as AssignmentLibraryRow | null;
+}
