@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Stickers from "./Stickers";
 import Prizes from "./Prizes";
+import PrizeLadder from "@/components/PrizeLadder";
 
 /**
  * Rewards — tabbed page combining Sticker Book + Prize Shop.
@@ -46,6 +47,8 @@ export default function Rewards() {
           </button>
         </div>
       </header>
+
+      <PrizeLadder />
 
       {tab === "stickers" ? <Stickers /> : <Prizes />}
     </div>

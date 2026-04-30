@@ -264,6 +264,13 @@ export const appRouter = router({
         }
         return r;
       }),
+    move: protectedProcedure.input(z.object({
+      id: z.number(), direction: z.enum(["up", "down"]),
+    })).mutation(async ({ input, ctx }) => {
+      const r = await db.moveBlock(input.id, input.direction);
+      await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: input.id, action: "update", summary: `move-${input.direction}` });
+      return r;
+    }),
     delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
       const r = await db.deleteBlock(input.id);
       await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: input.id, action: "delete" });

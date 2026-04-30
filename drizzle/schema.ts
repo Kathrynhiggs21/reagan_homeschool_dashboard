@@ -159,6 +159,7 @@ export const books = mysqlTable("books", {
   currentPage: int("currentPage").default(1).notNull(),
   totalPages: int("totalPages"),
   notes: text("notes"),
+  coverUrl: varchar("coverUrl", { length: 500 }),
 });
 
 /* -------------------------------------------------------------------------- */

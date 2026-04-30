@@ -19,6 +19,7 @@ type Book = {
   subjectSlug?: string | null;
   currentPage?: number | null;
   totalPages?: number | null;
+  coverUrl?: string | null;
 };
 
 // Legal launch links for Tuck Everlasting (no pirated PDFs — each store page for the book).
@@ -131,7 +132,16 @@ export default function Bookshelf() {
           return (
             <Card key={b.id} className="classroom-card p-5" style={tintCardStyle(subj)}>
               <div className="flex gap-4">
-                <span className="text-5xl shrink-0">{isTuck ? "🌳" : (tint.emoji || "📖")}</span>
+                {b.coverUrl ? (
+                  <img
+                    src={b.coverUrl}
+                    alt={`${b.title} cover`}
+                    className="shrink-0 w-14 h-20 sm:w-16 sm:h-24 rounded-md object-cover border border-white/20 shadow-sm bg-white/60"
+                    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }}
+                  />
+                ) : (
+                  <span className="text-5xl shrink-0">{isTuck ? "🌳" : (tint.emoji || "📖")}</span>
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="font-display font-semibold text-lg leading-tight" style={tintInkStyle(subj)}>{b.title}</div>
                   <div className="text-xs mt-0.5 opacity-80" style={tintInkStyle(subj)}>

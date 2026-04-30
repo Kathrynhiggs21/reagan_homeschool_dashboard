@@ -162,6 +162,25 @@ export async function getBlock(id: number) {
   return rows[0] || null;
 }
 
+export async function moveBlock(id: number, direction: "up" | "down") {
+  const db = getDb();
+  const self = await getBlock(id);
+  if (!self) return { ok: false, reason: "block not found" };
+  const planBlocks = await db.select().from(scheduleBlocks)
+    .where(eq(scheduleBlocks.planId, (self as any).planId))
+    .orderBy(scheduleBlocks.sortOrder);
+  const idx = planBlocks.findIndex((b: any) => b.id === id);
+  const neighborIdx = direction === "up" ? idx - 1 : idx + 1;
+  if (idx < 0 || neighborIdx < 0 || neighborIdx >= planBlocks.length) {
+    return { ok: false, reason: "at edge" };
+  }
+  const me: any = planBlocks[idx];
+  const neighbor: any = planBlocks[neighborIdx];
+  await db.update(scheduleBlocks).set({ sortOrder: neighbor.sortOrder }).where(eq(scheduleBlocks.id, me.id));
+  await db.update(scheduleBlocks).set({ sortOrder: me.sortOrder }).where(eq(scheduleBlocks.id, neighbor.id));
+  return { ok: true };
+}
+
 /* ============================== ADVENTURES ================================ */
 export async function listAdventures() {
   return getDb().select().from(adventures).orderBy(desc(adventures.isFavorite), adventures.title);

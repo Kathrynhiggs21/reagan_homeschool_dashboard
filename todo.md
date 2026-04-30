@@ -1326,9 +1326,12 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] Settings: "Practice-link mode" card with two switches, copy explains trade-offs
 - [x] Persist both switches in localStorage (reagan.practicePrefs.v1)
 - [x] 8 vitests in server/practiceLinks.test.ts cover explicit/derived URLs, IH SSO wrapping, Khan Kids toggle, stacked prefs
-- [ ] Bookshelf: real cover slot for the 3 known books (Spectrum Science 5, 180 Days of Language 5, Tuck Everlasting)
+- [x] Bookshelf: books.coverUrl column added via migration 0035; Open-Library covers seeded for Spectrum Science 5, 180 Days of Language 5, Tuck Everlasting; Bookshelf now renders cover image (fallback to emoji if URL fails)
 - [ ] Weekly digest: scheduled endpoint emails Mom + tutor Sunday with coverage %, mood trend, IEP progress
 - [ ] Settings: weekly-digest recipient editor
 - [ ] Schedule blocks: keyboard up/down reorder handle (drag already present)
 - [ ] Rewards: stickers → prize ladder visualization with milestone markers
 - [ ] Settings: edit the prize ladder milestones
+
+- [x] Reorder schedule blocks (adult-only): up/down arrow buttons on each block swap sortOrder with the neighbor; new blocks.move tRPC + db.moveBlock helper + vitest
+- [x] Sticker → prize ladder viz: new PrizeLadder component on /rewards showing coin balance marker + per-prize progress bars + Ready!/coins-to-go labels

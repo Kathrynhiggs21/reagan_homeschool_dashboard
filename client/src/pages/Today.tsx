@@ -75,6 +75,7 @@ export default function Today() {
   const struggleM = trpc.struggles.log.useMutation({ onSuccess: () => toast.success("Logged.") });
   const moodM = trpc.mood.log.useMutation({ onSuccess: () => toast.success("Got it.") });
   const completeM = trpc.blocks.complete.useMutation();
+  const moveBlockM = trpc.blocks.move.useMutation();
   const specialDay = trpc.specialDays.today.useQuery();
   const encouragement = trpc.encouragement.list.useQuery({ unreadOnly: false });
   const joke = trpc.kiwi.joke.useQuery();
@@ -363,6 +364,32 @@ export default function Today() {
                           title="Adult-only: log a moment Reagan found hard"
                         >
                           Note a struggle
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs text-neutral-700 hover:bg-white"
+                          onClick={() => moveBlockM.mutate(
+                            { id: b.id, direction: "up" },
+                            { onSuccess: () => { utils.plans.today.invalidate(); } },
+                          )}
+                          disabled={i === 0 || moveBlockM.isPending}
+                          title="Move this block up in the day"
+                        >
+                          ↑ Earlier
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="h-7 px-2 text-xs text-neutral-700 hover:bg-white"
+                          onClick={() => moveBlockM.mutate(
+                            { id: b.id, direction: "down" },
+                            { onSuccess: () => { utils.plans.today.invalidate(); } },
+                          )}
+                          disabled={i === blocks.length - 1 || moveBlockM.isPending}
+                          title="Move this block down in the day"
+                        >
+                          ↓ Later
                         </Button>
                       </>
                     )}
