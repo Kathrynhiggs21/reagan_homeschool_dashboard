@@ -2,8 +2,9 @@ import { z } from "zod";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { adminProcedure, publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import * as db from "./db";
+import { encryptPassword, decryptPassword } from "./passwordLocker";
 import { invokeLLM } from "./_core/llm";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { notifyOwner } from "./_core/notification";
@@ -329,6 +330,54 @@ export const appRouter = router({
       description: z.string().optional(), accountInfo: z.string().optional(), sortOrder: z.number().optional(),
     })).mutation(({ input }) => db.updateAppLink(input.id, input)),
     delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteAppLink(input.id)),
+  }),
+
+  /* =================== APP ACCOUNTS (encrypted password locker, adult-only) =================== */
+  appAccounts: router({
+    list: protectedProcedure.query(async () => {
+      try { await db.seedAppAccountsIfEmpty(); } catch {}
+      const rows = await db.listAppAccounts({ withSecrets: true });
+      return rows.map((r: any) => ({
+        ...r,
+        passwordEncrypted: undefined,
+        passwordIv: undefined,
+        hasPassword: !!(r.passwordEncrypted && r.passwordIv),
+      }));
+    }),
+    upsertStatus: adminProcedure.input(z.object({
+      id: z.number(),
+      status: z.enum(["not_started","pending_email_verify","pending_family_link","active","needs_reset","closed"]).optional(),
+      signInEmail: z.string().email().nullable().optional(),
+      signInUsername: z.string().max(200).nullable().optional(),
+      notes: z.string().max(2000).nullable().optional(),
+    })).mutation(async ({ input }) => {
+      const { id, ...patch } = input;
+      const set: any = { ...patch };
+      if (input.status === "active") set.lastVerifiedAt = new Date();
+      await db.updateAppAccount(id, set);
+      return { ok: true };
+    }),
+    setPassword: adminProcedure.input(z.object({
+      id: z.number(),
+      password: z.string().min(1).max(500),
+    })).mutation(async ({ input }) => {
+      const { ciphertext, iv } = encryptPassword(input.password);
+      await db.updateAppAccount(input.id, {
+        passwordEncrypted: ciphertext as any,
+        passwordIv: iv as any,
+      });
+      return { ok: true };
+    }),
+    revealPassword: adminProcedure.input(z.object({ id: z.number() })).query(async ({ input }) => {
+      const row = await db.getAppAccount(input.id);
+      if (!row || !row.passwordEncrypted || !row.passwordIv) return { password: null as string | null };
+      try { return { password: decryptPassword(row.passwordEncrypted, row.passwordIv) }; }
+      catch { return { password: null as string | null }; }
+    }),
+    clearPassword: adminProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
+      await db.updateAppAccount(input.id, { passwordEncrypted: null as any, passwordIv: null as any });
+      return { ok: true };
+    }),
   }),
 
   /* =================== BOOKS =================== */

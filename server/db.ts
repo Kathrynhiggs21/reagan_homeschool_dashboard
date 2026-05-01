@@ -15,6 +15,7 @@ import {
   takeNotes, curriculumAdjustments, blockGrades, needsWorkItems,
   printableSources, printableFavorites, academicRecords, auditLog, iepGoals, iepAccommodations, assessmentScreenings,
   stickers, goodWorkNotes, coinLedger, prizes, prizeRedemptions, certificates,
+  appAccounts,
 } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -213,6 +214,72 @@ export async function listAppLinks() {
 export async function insertAppLink(a: typeof appLinks.$inferInsert) {
   await getDb().insert(appLinks).values(a);
 }
+
+/* ============================== APP ACCOUNTS ============================== */
+/**
+ * Return all app account rows ordered by sort, but never expose the encrypted
+ * password / iv to non-admin callers. The router decides who's allowed.
+ */
+export async function listAppAccounts(opts: { withSecrets?: boolean } = {}) {
+  const rows = await getDb().select().from(appAccounts).orderBy(appAccounts.sortOrder, appAccounts.appName);
+  if (opts.withSecrets) return rows;
+  return rows.map((r) => ({
+    ...r,
+    passwordEncrypted: null,
+    passwordIv: null,
+  }));
+}
+
+export async function getAppAccount(id: number) {
+  const rows = await getDb().select().from(appAccounts).where(eq(appAccounts.id, id)).limit(1);
+  return rows[0] || null;
+}
+
+export async function getAppAccountByKey(key: string) {
+  const rows = await getDb().select().from(appAccounts).where(eq(appAccounts.appKey, key)).limit(1);
+  return rows[0] || null;
+}
+
+export async function insertAppAccount(a: typeof appAccounts.$inferInsert) {
+  await getDb().insert(appAccounts).values(a);
+}
+
+export async function updateAppAccount(id: number, patch: Partial<typeof appAccounts.$inferInsert>) {
+  await getDb().update(appAccounts).set(patch).where(eq(appAccounts.id, id));
+}
+
+export async function deleteAppAccount(id: number) {
+  await getDb().delete(appAccounts).where(eq(appAccounts.id, id));
+}
+
+/**
+ * Idempotently insert the seed apps if no rows exist yet. Safe to call on
+ * every list. Uses the canonical app keys we'll reference in the UI.
+ */
+export async function seedAppAccountsIfEmpty() {
+  const existing = await getDb().select().from(appAccounts).limit(1);
+  if (existing.length > 0) return;
+  const seed: Array<typeof appAccounts.$inferInsert> = [
+    { appKey: "ixl", appName: "IXL Learning", appUrl: "https://www.ixl.com", signupUrl: "https://www.ixl.com/membership/family/select", emoji: "📊", category: "learning", isPaid: true, hasFamilyTier: true, sortOrder: 1, notes: "Math + ELA. Family plan ~ $19/mo. Excellent diagnostic + skill plans." },
+    { appKey: "khan", appName: "Khan Academy", appUrl: "https://www.khanacademy.org", signupUrl: "https://www.khanacademy.org/signup", emoji: "🎓", category: "learning", isPaid: false, hasFamilyTier: true, sortOrder: 2, notes: "Free. Use Khan Kids for younger; main site for 5th grade." },
+    { appKey: "khan_kids", appName: "Khan Academy Kids", appUrl: "https://learn.khanacademy.org/khan-academy-kids/", signupUrl: "https://learn.khanacademy.org/khan-academy-kids/", emoji: "🌳", category: "learning", isPaid: false, hasFamilyTier: true, sortOrder: 3 },
+    { appKey: "brainpop", appName: "BrainPOP", appUrl: "https://www.brainpop.com", signupUrl: "https://www.brainpop.com/account/family/?ref=for-home", emoji: "🧠", category: "learning", isPaid: true, hasFamilyTier: true, sortOrder: 4, notes: "Family subscription supports homeschool. ~$15/mo." },
+    { appKey: "edpuzzle", appName: "Edpuzzle", appUrl: "https://edpuzzle.com", signupUrl: "https://edpuzzle.com/join", emoji: "🎬", category: "learning", isPaid: false, hasFamilyTier: false, sortOrder: 5, notes: "Pair videos with quick checks. Free tier OK." },
+    { appKey: "vocabulary", appName: "Vocabulary.com", appUrl: "https://www.vocabulary.com", signupUrl: "https://www.vocabulary.com/account/register/", emoji: "📖", category: "learning", isPaid: false, hasFamilyTier: false, sortOrder: 6 },
+    { appKey: "prodigy", appName: "Prodigy Math", appUrl: "https://www.prodigygame.com", signupUrl: "https://www.prodigygame.com/main-en/parent-account/", emoji: "🐉", category: "learning", isPaid: false, hasFamilyTier: true, sortOrder: 7 },
+    { appKey: "mystery_science", appName: "Mystery Science", appUrl: "https://mysteryscience.com", signupUrl: "https://mysteryscience.com/registrations/new", emoji: "🔬", category: "learning", isPaid: false, hasFamilyTier: false, sortOrder: 8 },
+    { appKey: "storyline_online", appName: "Storyline Online", appUrl: "https://storylineonline.net", signupUrl: null, emoji: "📚", category: "reading", isPaid: false, hasFamilyTier: false, sortOrder: 9, notes: "No login needed." },
+    { appKey: "outschool", appName: "Outschool", appUrl: "https://outschool.com", signupUrl: "https://outschool.com/users/sign_up", emoji: "🏫", category: "learning", isPaid: true, hasFamilyTier: true, sortOrder: 10, notes: "Per-class pricing. Great for special-interest deep dives." },
+    { appKey: "adobe_express", appName: "Adobe Express for Education", appUrl: "https://express.adobe.com", signupUrl: "https://express.adobe.com/students", emoji: "🎨", category: "creativity", isPaid: false, hasFamilyTier: false, sortOrder: 11 },
+    { appKey: "code_org", appName: "Code.org", appUrl: "https://code.org", signupUrl: "https://studio.code.org/users/sign_up", emoji: "💻", category: "learning", isPaid: false, hasFamilyTier: false, sortOrder: 12 },
+    { appKey: "inaturalist", appName: "iNaturalist", appUrl: "https://www.inaturalist.org", signupUrl: "https://www.inaturalist.org/signup", emoji: "🦋", category: "nature", isPaid: false, hasFamilyTier: false, sortOrder: 13 },
+    { appKey: "merlin", appName: "Merlin Bird ID", appUrl: "https://merlin.allaboutbirds.org", signupUrl: null, emoji: "🐦", category: "nature", isPaid: false, hasFamilyTier: false, sortOrder: 14, notes: "Mobile app, no signup needed." },
+  ];
+  for (const row of seed) {
+    try { await getDb().insert(appAccounts).values(row); } catch { /* ignore dup */ }
+  }
+}
+
 
 /* ============================== BOOKS ===================================== */
 export async function listBooks() {

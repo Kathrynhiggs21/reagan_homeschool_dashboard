@@ -1563,3 +1563,38 @@ export const assignmentBundles = mysqlTable("assignment_bundles", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
+
+
+/* -------------------------------------------------------------------------- */
+/*  APP ACCOUNTS — track Reagan's signups across learning apps               */
+/*  Encrypted password locker for adult-area only.                            */
+/* -------------------------------------------------------------------------- */
+export const appAccounts = mysqlTable("app_accounts", {
+  id: int("id").autoincrement().primaryKey(),
+  appKey: varchar("app_key", { length: 64 }).notNull().unique(),     // e.g. ixl, khan, brainpop
+  appName: varchar("app_name", { length: 120 }).notNull(),
+  appUrl: varchar("app_url", { length: 500 }).notNull(),
+  signupUrl: varchar("signup_url", { length: 500 }),
+  emoji: varchar("emoji", { length: 8 }).default("🌐").notNull(),
+  category: varchar("category", { length: 32 }).default("learning").notNull(),
+  status: mysqlEnum("status", [
+    "not_started",
+    "pending_email_verify",
+    "pending_family_link",
+    "active",
+    "needs_reset",
+    "closed",
+  ]).default("not_started").notNull(),
+  signInEmail: varchar("sign_in_email", { length: 320 }),             // typically reaganhiggs910@gmail.com
+  signInUsername: varchar("sign_in_username", { length: 200 }),       // some apps use a custom username
+  passwordEncrypted: text("password_encrypted"),                      // AES-encrypted password (server-only)
+  passwordIv: varchar("password_iv", { length: 64 }),                 // IV for AES encryption
+  notes: text("notes"),
+  hasFamilyTier: boolean("has_family_tier").default(false).notNull(),
+  isPaid: boolean("is_paid").default(false).notNull(),
+  monthlyCost: int("monthly_cost"),                                   // cents
+  sortOrder: int("sort_order").default(0).notNull(),
+  lastVerifiedAt: timestamp("last_verified_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
