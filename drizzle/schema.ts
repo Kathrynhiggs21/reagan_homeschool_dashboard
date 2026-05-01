@@ -734,6 +734,17 @@ export const academicRecords = mysqlTable("academicRecords", {
   completedAt: timestamp("completedAt"),
   payload: text("payload"),
   metadata: json("metadata").$type<Record<string, any>>(),
+  // Phase: per-year academic timeline.
+  // grade        — "K", "1", "2", "3", "4", "5", ...
+  // schoolYear   — "2023-24" / "2024-25" / "2025-26"
+  // term         — "Q1" | "Q2" | "Q3" | "Q4" | "S1" | "S2" | "YR"
+  // teacher      — display name ("Mr. Froehlich")
+  // courseName   — course/section label as it appeared in source ("Math 5", "ELA 5 Period 3")
+  grade: varchar("grade", { length: 4 }),
+  schoolYear: varchar("schoolYear", { length: 9 }),
+  term: varchar("term", { length: 4 }),
+  teacher: varchar("teacher", { length: 80 }),
+  courseName: varchar("courseName", { length: 120 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 export type AcademicRecord = typeof academicRecords.$inferSelect;

@@ -1153,6 +1153,10 @@ export const appRouter = router({
     list: publicProcedure.input(z.object({
       source: z.enum(["paste","manus_share","gmail","classroom","powerschool_ih","powerschool_madeira","ixl","drive","manual"]).optional(),
       subjectSlug: z.string().optional(),
+      schoolYear: z.string().optional(),
+      term: z.string().optional(),
+      grade: z.string().optional(),
+      teacher: z.string().optional(),
       limit: z.number().optional(),
     }).optional()).query(({ input }) => db.listAcademicRecords(input)),
     create: publicProcedure.input(z.object({
@@ -1166,6 +1170,12 @@ export const appRouter = router({
       dueAt: z.string().optional(),
       payload: z.string().optional(),
       metadata: z.any().optional(),
+      // Phase: per-year academic timeline.
+      grade: z.string().optional(),
+      schoolYear: z.string().optional(),
+      term: z.enum(["Q1","Q2","Q3","Q4","S1","S2","YR"]).optional(),
+      teacher: z.string().optional(),
+      courseName: z.string().optional(),
     })).mutation(({ input }) => db.createAcademicRecord({
       ...input,
       dueAt: input.dueAt ? new Date(input.dueAt) : undefined,
@@ -1175,6 +1185,14 @@ export const appRouter = router({
       text: z.string().min(3),
     })).mutation(({ input }) => db.extractAcademicFromPaste(input.source, input.text)),
     delete: publicProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteAcademicRecord(input.id)),
+    /** Per-subject rolling academic average filtered by schoolYear / term / grade / teacher. */
+    rollingAverage: publicProcedure.input(z.object({
+      subjectSlug: z.string().optional(),
+      schoolYear: z.string().optional(),
+      term: z.string().optional(),
+      grade: z.string().optional(),
+      teacher: z.string().optional(),
+    })).query(({ input }) => db.academicRollingAverage(input)),
   }),
 
   /* =================== ASSIGNMENT SUBMISSIONS + AUTO-GRADING =================== */

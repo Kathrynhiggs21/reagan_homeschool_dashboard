@@ -288,6 +288,13 @@
       "when": 1777611227218,
       "tag": "0040_red_white_tiger",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "5",
+      "when": 1777616705073,
+      "tag": "0041_orange_cargill",
+      "breakpoints": true
     }
   ]
 }

@@ -938,6 +938,22 @@ export async function rollingGradeForSubject(subjectSlug: string): Promise<{ sco
   return { score: avg, letter: scoreToLetter(avg), count: rows.length };
 }
 
+/**
+ * Per-subject rolling average computed from academicRecords (PowerSchool /
+ * Classroom / report-card imports). Honors the schoolYear / term filter so
+ * the Academics page can show "Math 2024-25 Q1" or "5th grade YR" rolls.
+ * Only kind === 'grade' rows with a numeric scorePercent are included.
+ */
+export async function academicRollingAverage(filter: {
+  subjectSlug?: string; schoolYear?: string; term?: string; grade?: string; teacher?: string;
+}): Promise<{ score: number | null; letter: string | null; count: number }> {
+  const rows = (await listAcademicRecords({ ...filter, limit: 500 })) as any[];
+  const numeric = rows.filter(r => r.kind === "grade" && typeof r.scorePercent === "number" && Number.isFinite(r.scorePercent));
+  if (numeric.length === 0) return { score: null, letter: null, count: 0 };
+  const avg = Math.round(numeric.reduce((a, r) => a + Number(r.scorePercent), 0) / numeric.length);
+  return { score: avg, letter: scoreToLetter(avg), count: numeric.length };
+}
+
 /* ============================== NEEDS WORK ================================ */
 export async function listNeedsWork() {
   const db = getDb();
@@ -1255,12 +1271,20 @@ export type AcademicSource =
   "paste" | "manus_share" | "gmail" | "classroom" | "powerschool_ih" | "powerschool_madeira" | "ixl" | "drive" | "manual";
 export type AcademicKind = "assignment" | "grade" | "mastery" | "note" | "attendance";
 
-export async function listAcademicRecords(filter?: { source?: AcademicSource; subjectSlug?: string; limit?: number }) {
+export async function listAcademicRecords(filter?: {
+  source?: AcademicSource; subjectSlug?: string;
+  schoolYear?: string; term?: string; grade?: string; teacher?: string;
+  limit?: number;
+}) {
   const db = getDb();
   const limit = filter?.limit ?? 200;
   let rows = await db.select().from(academicRecords).orderBy(desc(academicRecords.createdAt)).limit(limit);
   if (filter?.source) rows = rows.filter((r) => r.source === filter.source);
   if (filter?.subjectSlug) rows = rows.filter((r) => r.subjectSlug === filter.subjectSlug);
+  if (filter?.schoolYear) rows = rows.filter((r: any) => r.schoolYear === filter.schoolYear);
+  if (filter?.term) rows = rows.filter((r: any) => r.term === filter.term);
+  if (filter?.grade) rows = rows.filter((r: any) => r.grade === filter.grade);
+  if (filter?.teacher) rows = rows.filter((r: any) => r.teacher === filter.teacher);
   return rows;
 }
 
@@ -1269,6 +1293,8 @@ export async function createAcademicRecord(input: {
   summary?: string; scoreText?: string; scorePercent?: number;
   assignedAt?: Date; dueAt?: Date; completedAt?: Date;
   payload?: string; metadata?: Record<string, any>;
+  // Phase: per-year academic timeline.
+  grade?: string; schoolYear?: string; term?: string; teacher?: string; courseName?: string;
 }) {
   const db = getDb();
   const result: any = await db.insert(academicRecords).values(input as any);
