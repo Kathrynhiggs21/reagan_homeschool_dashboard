@@ -199,6 +199,7 @@ export default function Settings() {
           </div>
           <Switch checked={ctx.adultPresent} onCheckedChange={ctx.setAdultPresent} />
         </div>
+        <RobloxToggle />
         <div className="flex items-center justify-between">
           <div>
             <div className="text-sm font-medium">Voice mode</div>
@@ -487,5 +488,35 @@ function AppointmentsCard() {
         )}
       </div>
     </Card>
+  );
+}
+
+
+/**
+ * RobloxToggle — adult-controlled allow/hide for the Roblox launcher tile.
+ * Stored under the public-safe pref key `roblox.allowed` ("1" / "0").
+ */
+function RobloxToggle() {
+  const utils = trpc.useUtils();
+  const q = trpc.prefs.getPublic.useQuery({ key: "roblox.allowed" });
+  const set = trpc.prefs.set.useMutation({
+    onSuccess: () => {
+      utils.prefs.getPublic.invalidate({ key: "roblox.allowed" });
+    },
+  });
+  const allowed = q.data === "1";
+  return (
+    <div className="flex items-center justify-between">
+      <div>
+        <div className="text-sm font-medium">Roblox break tile</div>
+        <div className="text-xs text-muted-foreground">
+          Show a Roblox launcher on Apps &amp; Tools. Off by default — flip on for break days.
+        </div>
+      </div>
+      <Switch
+        checked={allowed}
+        onCheckedChange={(b) => set.mutate({ key: "roblox.allowed", value: b ? "1" : "0" })}
+      />
+    </div>
   );
 }

@@ -1682,3 +1682,16 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] todayFilter.test.ts passing (7/7)
 - [x] WeatherWidget repositioned from absolute overlay to inline top-right (no overlap with theme strip)
 - [x] PowerSchool live-login test marked .skip (IH closed Apr 2026)
+
+
+## May 1 batch — overnight Phases 4 → 10 complete
+
+- [x] Phase 4: TopicLabel component on schedule blocks, TurnInDialog, printable popups (server/topicLabel.test.ts)
+- [x] Phase 5: submissions.create auto-bumps curriculumTopics + skillLadder via bumpFromSubmission (server/bumpFromSubmission.test.ts)
+- [x] Phase 6: Curriculum page now shows per-subject progress arcs + recent turn-ins (server/curriculumRecent.test.ts)
+- [x] Phase 7: Saturday + Sunday plans seed soft "weekend" template (Slow morning / Pick-your-path adventure / Family read-aloud / Choice play / One little win) — server/weekendPlan.test.ts
+- [x] Phase 8: Subject-tinted pastel cards on My Levels (already implemented; verified)
+- [x] Phase 9: Kiwi "Read to me" button on TurnInDialog + grey instruction box on compose step (server/birdVoiceContract.test.ts)
+- [x] Phase 10: Roblox launcher tile on Apps & Tools, gated on adult-controlled Settings toggle (server/robloxPref.test.ts)
+
+Tests at end of batch: 211 passed | 1 skipped.

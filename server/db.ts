@@ -71,12 +71,14 @@ export async function ensurePlanForDate(dateStr: string, dayType: any = "full") 
   const existing = await getPlanByDate(dateStr);
   if (existing) return existing;
   const db = getDb();
-  // Wednesday = therapy day (lighter)
+  // Wednesday = therapy day (lighter); Saturday/Sunday = weekend (soft, optional)
   const dow = new Date(dateStr + "T00:00:00").getDay();
-  const finalDayType = dow === 3 ? "half" : dayType;
+  const isWeekend = dow === 0 || dow === 6;
+  const finalDayType = isWeekend ? "half" : dow === 3 ? "half" : dayType;
   await db.insert(dailyPlans).values({ date: dateStr as any, dayType: finalDayType });
   const plan = await getPlanByDate(dateStr);
-  if (plan) await autoBuildBlocksForPlan(plan.id, dow === 3 ? "therapy" : dayType, dow);
+  const buildKind = isWeekend ? "weekend" : dow === 3 ? "therapy" : dayType;
+  if (plan) await autoBuildBlocksForPlan(plan.id, buildKind, dow);
   return plan;
 }
 
@@ -86,7 +88,15 @@ async function autoBuildBlocksForPlan(planId: number, dayType: string, dow: numb
   const findSlug = (slug: string) => subjs.find(s => s.slug === slug);
   const isTherapy = dayType === "therapy";
 
-  const template: Array<{ title: string; description: string; slug?: string; type: string; minutes: number }> = isTherapy ? [
+  const isWeekend = dayType === "weekend";
+  const template: Array<{ title: string; description: string; slug?: string; type: string; minutes: number }> = isWeekend ? [
+    // Weekend = soft, optional, no "school" pressure. Just connection + curiosity.
+    { title: "Slow morning", description: "Sleep in. Hang with parakeets + ducks. No alarm.", slug: "animal-care", type: "morning_warmup", minutes: 45 },
+    { title: "Pick-your-path adventure", description: "Creek, garden, art, baking, Lego \u2014 your call. Outdoors counts double.", slug: "science", type: "adventure", minutes: 60 },
+    { title: "Family read-aloud", description: "Cuddle up for one chapter together. Optional.", slug: "ela", type: "read_aloud", minutes: 25 },
+    { title: "Choice play", description: "Roblox, drawing, makeup, music \u2014 reset and recharge.", slug: "choice", type: "choice", minutes: 45 },
+    { title: "One little win", description: "Pick ONE tiny thing to log: a bird seen, a meal helped with, a kindness done.", slug: undefined, type: "catch_up", minutes: 10 },
+  ] : isTherapy ? [
     { title: "Soft start", description: "Time with the parakeets and ducklings. Just be.", slug: "animal-care", type: "morning_warmup", minutes: 30 },
     { title: "Easy math warm-up", description: "A few duckling-themed practice problems. No pressure.", slug: "math", type: "math", minutes: 25 },
     { title: "Choice block", description: "What you want today. Art, makeup, drawing, anything.", slug: "choice", type: "choice", minutes: 30 },

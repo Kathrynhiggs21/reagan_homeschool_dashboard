@@ -29,7 +29,8 @@ import DrawCanvas, { type DrawCanvasHandle, type PFStroke } from "@/components/D
 import PrintButton from "@/components/PrintButton";
 import TopicLabel from "@/components/TopicLabel";
 import { toast } from "sonner";
-import { CheckCircle2, BookOpen, Camera, Pencil, Type } from "lucide-react";
+import { CheckCircle2, BookOpen, Camera, Pencil, Type, Volume2 } from "lucide-react";
+import { speakLikeBird } from "@/lib/birdVoice";
 
 export interface TurnInDialogProps {
   open: boolean;
@@ -202,12 +203,37 @@ export default function TurnInDialog({ open, onOpenChange, block, worksheetUrl }
             {step === "difficulty" && "How hard was that for you?"}
             {step === "done" && "Nice work, Reagan! 🌟"}
           </DialogTitle>
-          {block?.subjectSlug && (
-            <div className="mt-1">
+          <div className="mt-1 flex items-center gap-2">
+            {block?.subjectSlug && (
               <TopicLabel subjectSlug={block.subjectSlug} size="xs" />
-            </div>
-          )}
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 px-2 bg-transparent text-[12px]"
+              onClick={() => speakLikeBird(
+                step === "difficulty"
+                  ? "How hard was that for you?"
+                  : step === "done"
+                  ? "Nice work, Reagan!"
+                  : block?.title
+                  ? `Time to turn in ${block.title}. You can read it, draw, take a photo, or type. Pick whatever feels good.`
+                  : "Time to turn in your work. You can read it, draw, take a photo, or type."
+              )}
+              aria-label="Read this dialog out loud"
+              title="Have Kiwi read this to you"
+            >
+              <Volume2 className="w-3.5 h-3.5 mr-1" /> Read to me
+            </Button>
+          </div>
         </DialogHeader>
+
+        {step === "compose" && (
+          <div className="rounded-lg bg-neutral-100 dark:bg-neutral-800/60 border border-neutral-200 dark:border-white/10 px-3 py-2 text-[13px] leading-snug text-neutral-800 dark:text-neutral-100">
+            <span className="font-semibold">How this works:</span>{" "}
+            Pick the way that feels good — read it, draw, take a photo, or type. Then tap how hard it felt. There's no wrong answer here.
+          </div>
+        )}
 
         {/* ---------- STEP 1: compose ---------- */}
         {step === "compose" && (

@@ -1849,6 +1849,7 @@ export const appRouter = router({
           "student.googleEmail",        // Reagan's school Google account email
           "student.googleAuthUser",     // 0/1/2 picker hint for Chrome multi-account
           "classroom.studentDomain",    // e.g. indianhill.k12.oh.us
+          "roblox.allowed",             // adult toggle: "1" shows the Roblox launcher tile, "0" hides it
         ]);
         // absence:YYYY-MM-DD flags are non-sensitive and Reagan's UI needs to read them
         const isAbsenceFlag = /^absence:\d{4}-\d{2}-\d{2}$/.test(input.key);

@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAdultLock } from "@/contexts/AdultLockContext";
 import { toast } from "sonner";
+import RobloxTile from "@/components/RobloxTile";
 
 type App = { id: number; name: string; url: string; category: string | null; emoji?: string | null; description?: string | null; accountInfo?: string | null };
 
@@ -111,6 +112,8 @@ export default function Apps() {
           <Button size="sm" onClick={() => setAdding(true)}>+ Add app</Button>
         )}
       </header>
+
+      <RobloxTile />
 
       {apps.isLoading && <div className="text-sm text-muted-foreground">Loading…</div>}
 
