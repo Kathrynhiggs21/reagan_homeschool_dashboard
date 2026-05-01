@@ -1313,6 +1313,52 @@ export async function deleteAcademicRecord(id: number) {
 }
 
 /**
+ * Builds the dedupe key for an academic record. Two rows that share this key
+ * are considered the same logical record (same year, course, term, and title).
+ * Year+Course+Term+Title is a strong-enough fingerprint for grade imports.
+ */
+export function academicRecordKey(r: {
+  schoolYear?: string | null; courseName?: string | null;
+  term?: string | null; title: string; subjectSlug?: string | null;
+}): string {
+  return [
+    (r.schoolYear || "").trim().toLowerCase(),
+    (r.courseName || r.subjectSlug || "").trim().toLowerCase(),
+    (r.term || "").trim().toLowerCase(),
+    (r.title || "").trim().toLowerCase(),
+  ].join("|");
+}
+
+/**
+ * Bulk-insert academic records, skipping any whose dedupe key already exists.
+ * Used by the CSV/PDF uploader so re-running an import is safe.
+ */
+export async function bulkUpsertAcademicRecords(
+  rows: Array<Parameters<typeof createAcademicRecord>[0]>,
+): Promise<{ inserted: number; skipped: number; insertedIds: number[] }> {
+  if (rows.length === 0) return { inserted: 0, skipped: 0, insertedIds: [] };
+  const db = getDb();
+  // Pull existing rows in the candidate years (cheap filter), then build a key set.
+  const years = Array.from(new Set(rows.map((r) => r.schoolYear).filter(Boolean) as string[]));
+  const existing = years.length
+    ? await db.select().from(academicRecords).where(inArray(academicRecords.schoolYear, years))
+    : await db.select().from(academicRecords);
+  const seen = new Set<string>(existing.map((r: any) => academicRecordKey(r)));
+  let inserted = 0;
+  let skipped = 0;
+  const insertedIds: number[] = [];
+  for (const r of rows) {
+    const key = academicRecordKey(r);
+    if (seen.has(key)) { skipped++; continue; }
+    const row = await createAcademicRecord(r);
+    if ((row as any)?.id) insertedIds.push((row as any).id);
+    seen.add(key);
+    inserted++;
+  }
+  return { inserted, skipped, insertedIds };
+}
+
+/**
  * Uses the LLM to pull an assignment/grade/mastery summary out of free-form
  * pasted content (a Classroom invite, a PowerSchool screenshot caption, a
  * Gmail forward, an IXL skill URL, a Drive link paragraph, etc).

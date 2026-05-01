@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { parseAcademicsCsv, type ParsedAcademicRow } from "@/lib/parseAcademicsCsv";
 
 const SOURCES = [
   { v: "paste", label: "Manual paste" },
@@ -44,7 +45,27 @@ export default function Academics() {
   const createM = trpc.academics.create.useMutation();
   const extractM = trpc.academics.extract.useMutation();
   const deleteM = trpc.academics.delete.useMutation();
+  const bulkM = trpc.academics.bulkUpsert.useMutation();
   const utils = trpc.useUtils();
+
+  // CSV uploader state
+  const [csvText, setCsvText] = useState("");
+  const [csvPreview, setCsvPreview] = useState<ParsedAcademicRow[] | null>(null);
+
+  function previewCsv() {
+    const rows = parseAcademicsCsv(csvText);
+    if (rows.length === 0) { toast.error("No rows found. Need a header row + at least one data row."); return; }
+    setCsvPreview(rows);
+  }
+
+  async function importCsv() {
+    if (!csvPreview || csvPreview.length === 0) return;
+    const r = await bulkM.mutateAsync({ records: csvPreview as any });
+    toast.success(`Imported ${r.inserted} new \u00b7 ${r.skipped} skipped (duplicates)`);
+    await utils.academics.list.invalidate();
+    setCsvText("");
+    setCsvPreview(null);
+  }
 
   const [raw, setRaw] = useState("");
   const [source, setSource] = useState<string>("paste");
@@ -169,6 +190,36 @@ export default function Academics() {
           <p className="text-xs">Until then, just paste below — the LLM will extract structured fields automatically.</p>
         </div>
       </details>
+
+      <Card className="classroom-card p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="font-semibold">CSV import</h2>
+            <p className="text-xs text-muted-foreground">Paste a PowerSchool / Canvas / Classroom gradebook export. Re-running is safe — dupes are skipped.</p>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" className="bg-transparent" onClick={previewCsv} disabled={!csvText.trim()}>Preview</Button>
+            <Button size="sm" onClick={importCsv} disabled={!csvPreview || bulkM.isPending}>
+              {bulkM.isPending ? "Importing…" : csvPreview ? `Import ${csvPreview.length}` : "Import"}
+            </Button>
+          </div>
+        </div>
+        <Textarea value={csvText} onChange={(e) => { setCsvText(e.target.value); setCsvPreview(null); }} rows={4}
+          placeholder={"title,course,term,year,letter,percent,notes\nQuiz 3,Math 4,Q2,2024-25,A,93,She did great"} />
+        {csvPreview && (
+          <div className="text-xs bg-white/40 rounded-md border p-2 space-y-1">
+            <div className="font-medium">Preview ({csvPreview.length} rows):</div>
+            {csvPreview.slice(0, 5).map((r, i) => (
+              <div key={i} className="truncate">
+                <span className="font-mono text-[11px] text-muted-foreground">{r.schoolYear || "?"} · {r.term || "?"} · {r.courseName || r.subjectSlug || "?"}</span>
+                <span className="ml-2">{r.title}</span>
+                {r.scoreText && <span className="ml-2"> [{r.scoreText}{typeof r.scorePercent === "number" ? ` · ${r.scorePercent}%` : ""}]</span>}
+              </div>
+            ))}
+            {csvPreview.length > 5 && <div className="text-muted-foreground">… and {csvPreview.length - 5} more</div>}
+          </div>
+        )}
+      </Card>
 
       <Card className="classroom-card p-4 space-y-3">
         <div className="flex gap-2 items-center">

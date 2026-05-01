@@ -1185,6 +1185,32 @@ export const appRouter = router({
       text: z.string().min(3),
     })).mutation(({ input }) => db.extractAcademicFromPaste(input.source, input.text)),
     delete: publicProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteAcademicRecord(input.id)),
+    /**
+     * Bulk-upsert academic records, skipping any that match an existing
+     * (schoolYear+course+term+title) fingerprint. Used by the CSV/PDF uploader
+     * so re-running an import is safe and idempotent.
+     */
+    bulkUpsert: publicProcedure.input(z.object({
+      records: z.array(z.object({
+        source: z.enum(["paste","manus_share","gmail","classroom","powerschool_ih","powerschool_madeira","ixl","drive","manual"]),
+        kind: z.enum(["assignment","grade","mastery","note","attendance"]),
+        subjectSlug: z.string().optional(),
+        title: z.string(),
+        summary: z.string().optional(),
+        scoreText: z.string().optional(),
+        scorePercent: z.number().optional(),
+        dueAt: z.string().optional(),
+        payload: z.string().optional(),
+        grade: z.string().optional(),
+        schoolYear: z.string().optional(),
+        term: z.string().optional(),
+        teacher: z.string().optional(),
+        courseName: z.string().optional(),
+      })),
+    })).mutation(({ input }) => db.bulkUpsertAcademicRecords(input.records.map((r) => ({
+      ...r,
+      dueAt: r.dueAt ? new Date(r.dueAt) : undefined,
+    })) as any)),
     /** Per-subject rolling academic average filtered by schoolYear / term / grade / teacher. */
     rollingAverage: publicProcedure.input(z.object({
       subjectSlug: z.string().optional(),

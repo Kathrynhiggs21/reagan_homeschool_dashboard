@@ -696,12 +696,12 @@
 - [ ] Smoke-test tints on Today/Week/Curriculum/Adventures/Bookshelf
 
 ## 📚 Historical grade import (Round 4b-ii — blocked on user export)
-- [ ] Extend `academicRecords` schema: grade (K/1/2/3/4/5), schoolYear (e.g., 2023-24), term (Q1/Q2/S1/YR), teacher, courseName
-- [ ] Per-subject rolling GPA helper reads schoolYear filter
-- [ ] Academic Record UI: timeline grouped by schoolYear → course → term → assignment
-- [ ] CSV uploader (PowerSchool / Canvas) — file upload, extract via LLM
+- [x] Extend academicRecords schema: grade, schoolYear, term, teacher, courseName (migration 0041 applied)
+- [x] Per-subject rolling GPA helper reads schoolYear filter (academicRollingAverage)
+- [x] Academic Record UI: Year+Term filters + Flat/Timeline toggle + grouped Year→Course→Term
+- [x] CSV importer on Academics page — paste any PowerSchool/Canvas/Classroom CSV, preview, then bulk-import (parseAcademicsCsv handles header synonyms + quoted commas)
 - [ ] PDF/screenshot uploader — vision OCR → structured rows
-- [ ] Bulk-insert pipeline with dedupe (by schoolYear+course+term+title hash)
+- [x] Bulk-insert pipeline with dedupe (academics.bulkUpsert + academicRecordKey: schoolYear|course|term|title, case+whitespace insensitive)
 - [ ] ⚠ User action needed: provide PowerSchool export CSV or PDF report cards for past years
 
 
