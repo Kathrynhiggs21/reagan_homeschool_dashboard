@@ -18,6 +18,7 @@ import KiwiIntroStrip from "@/components/KiwiIntroStrip";
 import SkillBuilderTile from "@/components/SkillBuilderTile";
 import PlacementInviteCard from "@/components/PlacementInviteCard";
 import CurriculumChip from "@/components/CurriculumChip";
+import TopicLabel from "@/components/TopicLabel";
 import GameBreakCard from "@/components/GameBreakCard";
 import HomeAnalyticsStrip from "@/components/HomeAnalyticsStrip";
 import BrainBreakTvBox from "@/components/BrainBreakTvBox";
@@ -423,6 +424,9 @@ export default function Today() {
                     <span className="text-xl" aria-hidden="true">{tint.emoji}</span>
                     <div className="font-display font-bold leading-tight" style={{ ...rainbowInkStyle(i), fontSize: "clamp(1.05rem, 2.1vw, 1.35rem)" }}>{b.title}</div>
                     <CurriculumChip match={`${b.title || ""} ${b.description || ""}`} />
+                  </div>
+                  <div className="mt-1">
+                    <TopicLabel subjectSlug={b.subjectSlug} topicName={b.curriculumTopicName ?? null} size="xs" />
                   </div>
                   {b.description && (
                     <p className="mt-1 chalk-white/90" style={{ fontSize: "0.95rem", opacity: 0.82, lineHeight: 1.35 }}>{b.description}</p>

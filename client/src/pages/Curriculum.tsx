@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import SubjectColorKey from "@/components/SubjectColorKey";
 import CurriculumTopicsTree from "@/components/CurriculumTopicsTree";
+import CurriculumProgressArcs from "@/components/CurriculumProgressArcs";
 import { subjectTint, tintCardStyle, tintInkStyle } from "@/lib/subjectColors";
 
 export default function Curriculum() {
@@ -40,6 +41,8 @@ export default function Curriculum() {
       </header>
 
       <SubjectColorKey variant="schedule" />
+
+      <CurriculumProgressArcs />
 
       <CurriculumTopicsTree />
 

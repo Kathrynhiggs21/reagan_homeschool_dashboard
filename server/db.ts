@@ -3696,6 +3696,91 @@ export async function curriculumProgress() {
   }));
 }
 
+/* -------------------------------------------------------------------------- *
+ * bumpFromSubmission                                                          *
+ *                                                                            *
+ * Called from submissions.create. Given the submitted block's subjectSlug    *
+ * and title, we:                                                              *
+ *   (a) flip the best-matching curriculumTopics row from notStarted ->        *
+ *       inProgress (or leave 'done' rows alone). Best match = first row in   *
+ *       the slug's subject whose code/title appears in the block title.       *
+ *   (b) record one practice round on the lowest-level active skill in that  *
+ *       subject, with selfRating derived from kid difficulty:                *
+ *         really_hard -> 1, tricky -> 2, just_right -> 4, easy -> 5.         *
+ *                                                                            *
+ * Failures are swallowed: this should never break a turn-in.                *
+ * -------------------------------------------------------------------------- */
+export async function bumpFromSubmission(opts: {
+  subjectSlug?: string | null;
+  blockTitle?: string | null;
+  kidDifficulty?: "easy" | "just_right" | "tricky" | "really_hard" | null;
+}): Promise<{ topicId: number | null; skillLadderId: number | null; leveledUp: boolean }> {
+  const slug = (opts.subjectSlug || "").toLowerCase();
+  const title = (opts.blockTitle || "").toLowerCase();
+
+  // Map kid-friendly subject slug -> the curriculumTopics.subject TitleCase.
+  const SUBJ_MAP: Record<string, string> = {
+    math: "Math", ela: "ELA", reading: "ELA", writing: "ELA",
+    science: "Science", ss: "Social", social_studies: "Social",
+    art: "Specials", music: "Specials", pe: "Specials",
+  };
+  const subjectName = SUBJ_MAP[slug];
+
+  let topicId: number | null = null;
+  if (subjectName && title) {
+    try {
+      const db = getDb();
+      const [rowsRaw]: any = await db.execute(sql`
+        SELECT id, code, title, status FROM curriculumTopics
+        WHERE subject = ${subjectName} AND status != 'done'
+        ORDER BY ord ASC
+      `);
+      const rows: any[] = rowsRaw as any[];
+      const hit = rows.find((r) => {
+        const c = String(r.code || "").toLowerCase();
+        const t = String(r.title || "").toLowerCase();
+        if (c && title.includes(c)) return true;
+        if (t && t.length > 6 && title.includes(t.slice(0, Math.min(t.length, 24)))) return true;
+        return false;
+      });
+      if (hit) {
+        await db.execute(sql`
+          UPDATE curriculumTopics SET status = 'inProgress' WHERE id = ${hit.id} AND status = 'notStarted'
+        `);
+        topicId = hit.id;
+      }
+    } catch { /* best-effort */ }
+  }
+
+  // (b) practice on the active skill ladder for this subject
+  let skillLadderId: number | null = null;
+  let leveledUp = false;
+  if (slug) {
+    try {
+      const all: any[] = await listSkillsWithProgress(slug);
+      // pick lowest-level active skill, mirroring nextSkillForToday
+      const notMastered = all.filter((s) => (s?.progress?.level ?? 0) < 4);
+      const target = notMastered[0] || all[0];
+      if (target) {
+        skillLadderId = target.id;
+        const ratingMap: Record<string, 1 | 2 | 3 | 4 | 5> = {
+          really_hard: 1, tricky: 2, just_right: 4, easy: 5,
+        };
+        const selfRating = opts.kidDifficulty ? ratingMap[opts.kidDifficulty] ?? 3 : 3;
+        const r = await recordSkillPractice({
+          skillLadderId: target.id,
+          mode: "practice",
+          selfRating,
+          parentNote: "From turn-in",
+        });
+        leveledUp = !!r.leveledUp;
+      }
+    } catch { /* best-effort */ }
+  }
+
+  return { topicId, skillLadderId, leveledUp };
+}
+
 /**
  * Auto-tick topics whose titles or codes substring-match assignment titles
  * already in PowerSchool or IH assignments. Uses an extremely permissive

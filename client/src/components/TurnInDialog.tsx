@@ -27,6 +27,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import DrawCanvas, { type DrawCanvasHandle, type PFStroke } from "@/components/DrawCanvas";
 import PrintButton from "@/components/PrintButton";
+import TopicLabel from "@/components/TopicLabel";
 import { toast } from "sonner";
 import { CheckCircle2, BookOpen, Camera, Pencil, Type } from "lucide-react";
 
@@ -201,6 +202,11 @@ export default function TurnInDialog({ open, onOpenChange, block, worksheetUrl }
             {step === "difficulty" && "How hard was that for you?"}
             {step === "done" && "Nice work, Reagan! 🌟"}
           </DialogTitle>
+          {block?.subjectSlug && (
+            <div className="mt-1">
+              <TopicLabel subjectSlug={block.subjectSlug} size="xs" />
+            </div>
+          )}
         </DialogHeader>
 
         {/* ---------- STEP 1: compose ---------- */}

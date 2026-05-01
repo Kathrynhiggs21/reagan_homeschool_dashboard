@@ -1136,7 +1136,7 @@ export const appRouter = router({
       kidDifficulty: z.enum(["easy","just_right","tricky","really_hard"]).optional(),
       // Reading-bucket assignments use a one-tap checkmark; no photo or auto-grade needed.
       readingCheckmark: z.boolean().optional(),
-    })).mutation(({ input }) => {
+    })).mutation(async ({ input }) => {
       // Encode kidDifficulty + readingCheckmark into adultNotes as a structured
       // tag prefix so we don't need a schema migration tonight. Analytics + the
       // Adult Library can parse `[difficulty=...;reading_checkmark=1]`.
@@ -1144,7 +1144,7 @@ export const appRouter = router({
       if (input.kidDifficulty) tags.push(`difficulty=${input.kidDifficulty}`);
       if (input.readingCheckmark) tags.push("reading_checkmark=1");
       const adultNotes = tags.length ? `[${tags.join(";")}]` : undefined;
-      return db.createAssignmentSubmission({
+      const row = await db.createAssignmentSubmission({
         blockId: input.blockId,
         subjectSlug: input.subjectSlug,
         title: input.title,
@@ -1159,6 +1159,15 @@ export const appRouter = router({
         kidDifficulty: input.kidDifficulty,
         readingOnly: !!input.readingCheckmark,
       } as any);
+      // Phase 5: every turn-in nudges the curriculum tree + skill ladder.
+      try {
+        await db.bumpFromSubmission({
+          subjectSlug: input.subjectSlug ?? null,
+          blockTitle: input.title ?? null,
+          kidDifficulty: input.kidDifficulty ?? null,
+        });
+      } catch { /* best-effort */ }
+      return row;
     }),
     upload: publicProcedure.input(z.object({ dataUrl: z.string(), fileName: z.string() })).mutation(async ({ input }) => {
       // Parse data URL
@@ -1794,6 +1803,20 @@ export const appRouter = router({
       .input(z.object({ id: z.number(), notes: z.string().max(2000) }))
       .mutation(({ input }) => db.setCurriculumNote(input.id, input.notes)),
     autoCompleteFromHistory: protectedProcedure.mutation(() => db.autoCompleteFromHistory()),
+    /** Recent submissions, ungrouped, latest first — powers "Recent items" panel. */
+    recent: protectedProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(50).default(15) }).optional())
+      .query(async ({ input }) => {
+        const subs = await db.listAssignmentSubmissions(input?.limit ?? 15);
+        return (subs as any[]).map((s) => ({
+          id: s.id,
+          subjectSlug: s.subjectSlug,
+          title: s.title || "(untitled)",
+          createdAt: s.createdAt,
+          kidDifficulty: s.kidDifficulty,
+          readingOnly: !!s.readingOnly,
+        }));
+      }),
   }),
   today: router({
     coverage: protectedProcedure.query(() => db.todayCoverage()),

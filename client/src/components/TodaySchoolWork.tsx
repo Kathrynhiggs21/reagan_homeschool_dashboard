@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { popConfettiFromElement } from "@/lib/confetti";
+import TopicLabel from "@/components/TopicLabel";
 
 type Bucket = "have_to_do" | "optional" | "extra";
 
@@ -279,6 +280,11 @@ const TodaySchoolWork = forwardRef<TodaySchoolWorkHandle, { onItemsChanged?: (it
                 <DialogDescription>
                   {open.source}{open.estMinutes ? ` · ${open.estMinutes} min` : ""}{open.coinReward ? ` · ${open.coinReward} Kiwi Coins 🪙` : ""}
                 </DialogDescription>
+                {open.subjectSlug && (
+                  <div className="mt-1">
+                    <TopicLabel subjectSlug={open.subjectSlug} size="xs" />
+                  </div>
+                )}
               </DialogHeader>
 
               {!started && open.id >= 0 && open.status !== "done" && (
