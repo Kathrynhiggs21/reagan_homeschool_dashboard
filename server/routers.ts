@@ -126,6 +126,7 @@ const adminRouter = router({
           "DELETE FROM journalEntries WHERE content LIKE '%unit test%'",
           "DELETE FROM takeNotes WHERE title LIKE 'Test Note%'",
           "DELETE FROM adventures WHERE title LIKE 'Test Adventure%'",
+          "DELETE FROM whiteboardNotes WHERE title='Test note' OR (title IS NULL AND body='Tomorrow only')",
         ];
         const results: any[] = [];
         for (const s of statements) {

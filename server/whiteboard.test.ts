@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
 import * as db from "./db";
+import { getDb } from "./db";
+import { whiteboardNotes } from "../drizzle/schema";
+import { eq } from "drizzle-orm";
+
+async function hardDeleteWhiteboardNote(id: number) {
+  await getDb().delete(whiteboardNotes).where(eq(whiteboardNotes.id, id));
+}
 
 /**
  * Whiteboard + Tag system tests.
@@ -40,6 +47,8 @@ describe("Adult Whiteboard", () => {
     await db.updateWhiteboardNote(id, { archived: true });
     const active = await db.listWhiteboardNotes({ includeArchived: false });
     expect(active.find((n: any) => n.id === id)).toBeUndefined();
+    // hard cleanup so the row doesn't accumulate across runs
+    await hardDeleteWhiteboardNote(id);
   });
 
   it("respects showOnDate date-scoping", async () => {
@@ -56,8 +65,8 @@ describe("Adult Whiteboard", () => {
     expect(listedToday.find((n: any) => n.id === id)).toBeUndefined();
     const listedTomorrow = await db.listWhiteboardNotes({ forDate: tomorrow });
     expect(listedTomorrow.find((n: any) => n.id === id)).toBeTruthy();
-    // cleanup
-    await db.updateWhiteboardNote(id, { archived: true });
+    // cleanup (hard delete so it doesn't accumulate across runs)
+    await hardDeleteWhiteboardNote(id);
   });
 });
 
