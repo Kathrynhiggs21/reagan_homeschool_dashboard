@@ -2,13 +2,12 @@ import { trpc } from "@/lib/trpc";
 import { Card } from "@/components/ui/card";
 
 /**
- * Sticker Book — Reagan's collected stickers + Feathers balance.
+ * Sticker Book — Reagan's collected stickers + Kiwi Coins balance.
  *
  * Redesign (Apr 30): drop the ombre gradient hero for a real sticker-book
  * look — tan paper with a scalloped-page header, striped spine on the left,
- * and two chunky pill counters. Prize currency renamed from "coins" to
- * "Feathers" 🪶 (matching Kiwi). Backend field names (coinCost, coins) are
- * unchanged to keep data stable.
+ * and two chunky pill counters. Prize currency labeled as "Kiwi Coins" 🪙
+ * (matching Kiwi). Backend field names (coinCost, coins) are unchanged.
  */
 
 // Inline SVG "stickers" — each slug renders a colorful doodle.
@@ -125,17 +124,17 @@ export default function Stickers() {
                   boxShadow: "0 2px 0 rgba(0,0,0,0.08)",
                   color: "#0b4a38",
                 }}
-                title="Feathers — Kiwi's reward currency"
+                title="Kiwi Coins — Kiwi's reward currency"
               >
                 <span aria-hidden>🪶</span>
                 <span className="tabular-nums">{balance}</span>
-                <span className="opacity-70 font-semibold">Feathers</span>
+                <span className="opacity-70 font-semibold">Kiwi Coins</span>
               </div>
               <div
                 className="rounded-full px-3 py-1.5 text-[11px] font-semibold"
                 style={{ background: "#fffdf7aa", color: "#4a3600", border: "2px solid #e7d6a6" }}
               >
-                {earned} Feathers earned all-time
+                {earned} Kiwi Coins earned all-time
               </div>
             </div>
           </div>
