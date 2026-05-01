@@ -34,7 +34,13 @@ function fmt(d: string | Date | null | undefined): string {
 }
 
 export default function Academics() {
-  const list = trpc.academics.list.useQuery({});
+  const [yearFilter, setYearFilter] = useState<string>("all");
+  const [termFilter, setTermFilter] = useState<string>("all");
+  const [view, setView] = useState<"flat" | "timeline">("flat");
+  const list = trpc.academics.list.useQuery({
+    schoolYear: yearFilter === "all" ? undefined : yearFilter,
+    term: termFilter === "all" ? undefined : termFilter,
+  });
   const createM = trpc.academics.create.useMutation();
   const extractM = trpc.academics.extract.useMutation();
   const deleteM = trpc.academics.delete.useMutation();
@@ -52,9 +58,32 @@ export default function Academics() {
     return rows.filter((r) => {
       if (sourceFilter !== "all" && r.source !== sourceFilter) return false;
       if (!qq) return true;
-      return [r.title, r.summary, r.subjectSlug, r.scoreText].filter(Boolean).some((v: string) => v.toLowerCase().includes(qq));
+      return [r.title, r.summary, r.subjectSlug, r.scoreText, r.teacher, r.courseName].filter(Boolean).some((v: string) => v.toLowerCase().includes(qq));
     });
   }, [rows, q, sourceFilter]);
+
+  /** All distinct schoolYear values present in DB rows (use unfiltered list). */
+  const years = useMemo(() => {
+    const s = new Set<string>();
+    for (const r of rows) if (r.schoolYear) s.add(r.schoolYear);
+    return Array.from(s).sort().reverse();
+  }, [rows]);
+
+  /** Group filtered rows by schoolYear → courseName → term. */
+  const grouped = useMemo(() => {
+    const out: Record<string, Record<string, Record<string, any[]>>> = {};
+    for (const r of filtered) {
+      const yr = r.schoolYear || "Unfiled";
+      const course = r.courseName || (r.subjectSlug ? `(${r.subjectSlug})` : "(unsorted)");
+      const term = r.term || "—";
+      out[yr] ??= {};
+      out[yr][course] ??= {};
+      out[yr][course][term] ??= [];
+      out[yr][course][term].push(r);
+    }
+    return out;
+  }, [filtered]);
+  const groupedYears = Object.keys(grouped).sort().reverse();
 
   async function extract() {
     if (!raw.trim()) { toast.error("Paste something first."); return; }
@@ -69,6 +98,11 @@ export default function Academics() {
       scorePercent: typeof d?.scorePercent === "number" ? d.scorePercent : undefined,
       dueAt: d?.dueAt ? new Date(d.dueAt as any).toISOString().slice(0, 10) : "",
       payload: raw,
+      grade: "",
+      schoolYear: "",
+      term: "",
+      teacher: "",
+      courseName: "",
     });
     toast.success("Draft ready. Review and save.");
   }
@@ -85,6 +119,11 @@ export default function Academics() {
       scorePercent: draft.scorePercent,
       dueAt: draft.dueAt || undefined,
       payload: draft.payload,
+      grade: draft.grade || undefined,
+      schoolYear: draft.schoolYear || undefined,
+      term: draft.term || undefined,
+      teacher: draft.teacher || undefined,
+      courseName: draft.courseName || undefined,
     } as any);
     utils.academics.list.invalidate();
     setDraft(null); setRaw("");
@@ -169,6 +208,16 @@ export default function Academics() {
               <Input placeholder="Due date (YYYY-MM-DD)" value={draft.dueAt || ""} onChange={(e) => setDraft({ ...draft, dueAt: e.target.value })} />
               <Input placeholder="Score text (e.g. 18/20, A-)" value={draft.scoreText || ""} onChange={(e) => setDraft({ ...draft, scoreText: e.target.value })} />
               <Input placeholder="Score %" type="number" value={draft.scorePercent ?? ""} onChange={(e) => setDraft({ ...draft, scorePercent: e.target.value === "" ? undefined : Number(e.target.value) })} />
+              <Input placeholder="Grade (K, 1, 2, 3, 4, 5)" value={draft.grade || ""} onChange={(e) => setDraft({ ...draft, grade: e.target.value })} />
+              <Input placeholder="School year (e.g. 2025-26)" value={draft.schoolYear || ""} onChange={(e) => setDraft({ ...draft, schoolYear: e.target.value })} />
+              <Select value={draft.term || ""} onValueChange={(v) => setDraft({ ...draft, term: v })}>
+                <SelectTrigger><SelectValue placeholder="Term (Q1…YR)" /></SelectTrigger>
+                <SelectContent>
+                  {["Q1","Q2","Q3","Q4","S1","S2","YR"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <Input placeholder="Teacher" value={draft.teacher || ""} onChange={(e) => setDraft({ ...draft, teacher: e.target.value })} />
+              <Input placeholder="Course name (e.g. Math 5)" value={draft.courseName || ""} onChange={(e) => setDraft({ ...draft, courseName: e.target.value })} />
             </div>
             <Textarea rows={3} value={draft.summary || ""} placeholder="Summary" onChange={(e) => setDraft({ ...draft, summary: e.target.value })} />
             <div className="flex gap-2">
@@ -188,11 +237,29 @@ export default function Academics() {
               {SOURCES.map((s) => <SelectItem key={s.v} value={s.v}>{s.label}</SelectItem>)}
             </SelectContent>
           </Select>
+          <Select value={yearFilter} onValueChange={setYearFilter}>
+            <SelectTrigger className="w-36"><SelectValue placeholder="All years" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All years</SelectItem>
+              {years.map((y) => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={termFilter} onValueChange={setTermFilter}>
+            <SelectTrigger className="w-32"><SelectValue placeholder="All terms" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All terms</SelectItem>
+              {["Q1","Q2","Q3","Q4","S1","S2","YR"].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <div className="flex gap-1">
+            <Button variant={view === "flat" ? "default" : "outline"} className={view === "flat" ? "" : "bg-transparent"} size="sm" onClick={() => setView("flat")}>Flat</Button>
+            <Button variant={view === "timeline" ? "default" : "outline"} className={view === "timeline" ? "" : "bg-transparent"} size="sm" onClick={() => setView("timeline")}>Timeline</Button>
+          </div>
           <div className="text-xs text-muted-foreground">{filtered.length} / {rows.length}</div>
         </div>
         {filtered.length === 0 ? (
           <div className="text-sm text-muted-foreground italic p-3">No records yet. Paste something above to start a record.</div>
-        ) : (
+        ) : view === "flat" ? (
           <div className="space-y-2">
             {filtered.map((r) => (
               <Card key={r.id} className="p-3 bg-white/40">
@@ -202,9 +269,12 @@ export default function Academics() {
                       <Badge variant="secondary" className="text-[10px]">{r.source}</Badge>
                       <Badge variant="outline" className="text-[10px]">{r.kind}</Badge>
                       {r.subjectSlug && <Badge variant="outline" className="text-[10px] capitalize">{r.subjectSlug}</Badge>}
+                      {r.schoolYear && <Badge variant="outline" className="text-[10px]">{r.schoolYear}{r.term ? ` · ${r.term}` : ""}</Badge>}
+                      {r.teacher && <Badge variant="outline" className="text-[10px]">{r.teacher}</Badge>}
                       <span className="text-[11px] text-muted-foreground">{fmt(r.createdAt)}</span>
                     </div>
                     <div className="font-semibold mt-1">{r.title}</div>
+                    {r.courseName && <div className="text-xs text-muted-foreground">{r.courseName}</div>}
                     {r.summary && <div className="text-sm text-muted-foreground">{r.summary}</div>}
                     {(r.scoreText || r.scorePercent != null) && (
                       <div className="text-sm mt-1">Score: <strong>{r.scoreText ?? `${r.scorePercent}%`}</strong></div>
@@ -212,6 +282,40 @@ export default function Academics() {
                     {r.dueAt && <div className="text-xs text-muted-foreground">Due: {fmt(r.dueAt)}</div>}
                   </div>
                   <Button size="sm" variant="ghost" className="text-destructive" onClick={() => del(r.id)}>Remove</Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {groupedYears.map((yr) => (
+              <Card key={yr} className="p-3 bg-white/40">
+                <div className="font-semibold text-base">{yr}</div>
+                <div className="space-y-3 mt-2">
+                  {Object.keys(grouped[yr]).sort().map((course) => (
+                    <div key={course}>
+                      <div className="text-sm font-medium opacity-80">{course}</div>
+                      <div className="space-y-2 mt-1">
+                        {Object.keys(grouped[yr][course]).sort().map((term) => (
+                          <div key={term} className="pl-3 border-l border-neutral-300 dark:border-neutral-700">
+                            <div className="text-xs uppercase tracking-wide text-muted-foreground">{term}</div>
+                            <div className="space-y-1 mt-1">
+                              {grouped[yr][course][term].map((r: any) => (
+                                <div key={r.id} className="flex items-center gap-2 text-sm">
+                                  <Badge variant="outline" className="text-[10px]">{r.kind}</Badge>
+                                  <span className="flex-1 truncate">{r.title}</span>
+                                  {(r.scoreText || r.scorePercent != null) && (
+                                    <span className="font-medium">{r.scoreText ?? `${r.scorePercent}%`}</span>
+                                  )}
+                                  <Button size="sm" variant="ghost" className="text-destructive h-7 px-2 text-xs" onClick={() => del(r.id)}>×</Button>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </Card>
             ))}
