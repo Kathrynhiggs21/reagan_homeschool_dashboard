@@ -8,6 +8,8 @@ import ParentFlagsBanner from "@/components/ParentFlagsBanner";
 import CurrentLevelsFromIep from "@/components/CurrentLevelsFromIep";
 import PowerSchoolGradesCard from "@/components/PowerSchoolGradesCard";
 import AdultCoinCounter from "@/components/AdultCoinCounter";
+import SubjectRadar from "@/components/SubjectRadar";
+import SubjectSparklines from "@/components/SubjectSparklines";
 
 function MoodArcChart({ moods }: { moods: any[] }) {
   // Map zone to numeric score (green=2, yellow=1, red=0); render the last 14 entries chronologically
@@ -128,6 +130,12 @@ export default function Analytics() {
 
       {/* Adaptation engine v2 — surfaces stacked-struggle alerts (parent only) */}
       <ParentFlagsBanner />
+
+      {/* Subject radar — 30-day rolling per-subject performance at a glance */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <SubjectRadar />
+        <SubjectSparklines />
+      </div>
 
       {/* Catch-up trajectory: Reagan's path back to grade level + IEP exit indicators */}
       <TrajectoryCard />
