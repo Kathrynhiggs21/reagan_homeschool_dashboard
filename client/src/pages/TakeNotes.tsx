@@ -162,9 +162,10 @@ export default function TakeNotes() {
 
   return (
     <div className="space-y-4">
-      <header className="chalkboard">
+      <header className="chalkboard relative">
         <div className="font-chalk-hand text-xl chalk-yellow">Your Notebook</div>
         <h1 className="font-display text-3xl md:text-4xl mt-1 chalk-white">Take Notes</h1>
+        <NotebookKiwiHelper />
         <p className="text-sm text-muted-foreground mt-1">
           Jot ideas, doodle thoughts, and come back anytime. Organize by subject — type or draw with Apple Pencil.
         </p>
@@ -313,6 +314,75 @@ export default function TakeNotes() {
           </div>
         </Card>
       </div>
+    </div>
+  );
+}
+
+
+/**
+ * NotebookKiwiHelper — small Notebook-only Kiwi popover.
+ *
+ * Why scope to Notebook: a global Kiwi nav item has been deliberately avoided
+ * because Reagan's Today page already has the big "Ask Kiwi" button. Keeping
+ * a smaller helper inline in Notebook lets her ask quick questions without
+ * leaving her writing/drawing flow.
+ */
+function NotebookKiwiHelper() {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const [reply, setReply] = useState<string | null>(null);
+  const chatM = trpc.kiwi.chat.useMutation();
+
+  async function ask() {
+    if (!q.trim()) return;
+    try {
+      const r = await chatM.mutateAsync({ userMessage: q, adultPresent: false });
+      setReply(r.reply);
+    } catch (err: any) {
+      setReply("(Kiwi got tangled. Try again in a moment.)");
+    }
+  }
+
+  return (
+    <div className="absolute top-2 right-2">
+      {!open ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="rounded-full px-3 py-1.5 text-xs font-semibold border border-amber-300 bg-amber-100 text-amber-900 hover:bg-amber-200 shadow-sm"
+          aria-label="Open small Kiwi helper"
+          title="Quick question for Kiwi"
+        >
+          🦜 Ask Kiwi
+        </button>
+      ) : (
+        <div className="w-72 rounded-xl bg-white text-slate-900 border border-amber-300 shadow-lg p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="text-xs font-semibold text-amber-900">🦜 Quick question</div>
+            <button
+              type="button"
+              onClick={() => { setOpen(false); setReply(null); setQ(""); }}
+              className="text-xs text-slate-500 hover:text-slate-800"
+              aria-label="Close Kiwi helper"
+            >
+              ✕
+            </button>
+          </div>
+          <Textarea rows={2} value={q} onChange={(e) => setQ(e.target.value)}
+            placeholder="What does 'denominator' mean?"
+            className="text-sm bg-amber-50 border-amber-200" />
+          <div className="flex gap-2 justify-end">
+            <Button size="sm" onClick={ask} disabled={chatM.isPending || !q.trim()}>
+              {chatM.isPending ? "Asking…" : "Ask"}
+            </Button>
+          </div>
+          {reply && (
+            <div className="text-xs bg-amber-50 border border-amber-200 rounded-md p-2 max-h-40 overflow-y-auto whitespace-pre-wrap">
+              {reply}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

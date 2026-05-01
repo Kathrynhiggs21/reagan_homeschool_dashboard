@@ -4,6 +4,7 @@ import { useKiwi } from "@/contexts/KiwiContext";
 import { useAdultLock } from "@/contexts/AdultLockContext";
 import { Button } from "@/components/ui/button";
 import { Lock, Unlock } from "lucide-react";
+import { daysUntilSummerBreak } from "@/lib/summerCountdown";
 import WeatherWidget from "./WeatherWidget";
 
 /**
@@ -65,6 +66,7 @@ export default function CozyShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen flex">
       <aside className="w-60 shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col h-screen sticky top-0 no-print">
+        {/* Sidebar countdown is mounted just above the Kiwi card via the SummerCountdown component below */}
         {/* Compact chalkboard nameplate with Reagan's photo */}
         <div className="px-3 pt-3 pb-2 border-b border-sidebar-border">
           <div className="chalkboard !p-3 !rounded-lg">
@@ -162,6 +164,7 @@ export default function CozyShell({ children }: { children: ReactNode }) {
           <div className="text-xs p-2 rounded-md bg-sidebar-accent">
             <div className="font-semibold truncate">{companionName || "Helper"}</div>
             <div className="text-muted-foreground text-[10px]">Tap the button on any page to talk.</div>
+            <SummerCountdown />
           </div>
           {unlocked ? (
             <Button
@@ -191,6 +194,32 @@ export default function CozyShell({ children }: { children: ReactNode }) {
         </div>
         <div className="max-w-6xl mx-auto px-6 pb-6">{children}</div>
       </main>
+    </div>
+  );
+}
+
+
+/**
+ * SummerCountdown — tiny pill that shows days until summer break.
+ * Default summer-break date: June 5 of the current school year (last day
+ * of school for Indian Hill ES is typically the first week of June).
+ * If the date has passed, the countdown shows "Summer is here!"
+ * for one week, then auto-flips to next June.
+ */
+function SummerCountdown() {
+  const days = daysUntilSummerBreak(new Date());
+
+  if (days < -7) return null; // hide after a week into break
+  if (days <= 0) {
+    return (
+      <div className="mt-2 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
+        🌞 Summer is here!
+      </div>
+    );
+  }
+  return (
+    <div className="mt-2 text-[10px] text-muted-foreground">
+      <span className="font-semibold">🌞 {days}</span> day{days === 1 ? "" : "s"} til summer break
     </div>
   );
 }

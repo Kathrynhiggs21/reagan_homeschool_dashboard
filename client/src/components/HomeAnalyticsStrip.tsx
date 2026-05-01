@@ -23,8 +23,8 @@ export default function HomeAnalyticsStrip() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 my-3">
       <Link href="/analytics">
-        <div className="rounded-2xl bg-white/80 border border-amber-200 p-3 cursor-pointer hover:bg-white transition">
-          <div className="text-[11px] uppercase tracking-wide text-slate-500">Today's coverage</div>
+        <div className="rounded-2xl bg-white border border-amber-300 p-3 cursor-pointer hover:bg-amber-50 transition shadow-sm">
+          <div className="text-[11px] uppercase tracking-wide font-semibold text-slate-700">Today's coverage</div>
           <div className="flex items-baseline gap-2 mt-0.5">
             <div className="text-2xl font-bold text-slate-800">{pctToday}%</div>
             <div className="text-xs text-slate-500">{doneToday}/{totalToday || 0} blocks</div>
@@ -45,8 +45,8 @@ export default function HomeAnalyticsStrip() {
       </Link>
 
       <Link href="/timeline">
-        <div className="rounded-2xl bg-white/80 border border-amber-200 p-3 cursor-pointer hover:bg-white transition">
-          <div className="text-[11px] uppercase tracking-wide text-slate-500">3-day mood</div>
+        <div className="rounded-2xl bg-white border border-amber-300 p-3 cursor-pointer hover:bg-amber-50 transition shadow-sm">
+          <div className="text-[11px] uppercase tracking-wide font-semibold text-slate-700">3-day mood</div>
           <div className="flex items-center gap-2 mt-1">
             {moodDays.slice().reverse().map((d) => {
               const color = d.zone === "green" ? "#22c55e" : d.zone === "yellow" ? "#eab308" : d.zone === "red" ? "#ef4444" : "#cbd5e1";
