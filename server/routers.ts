@@ -330,6 +330,60 @@ export const appRouter = router({
       description: z.string().optional(), accountInfo: z.string().optional(), sortOrder: z.number().optional(),
     })).mutation(({ input }) => db.updateAppLink(input.id, input)),
     delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteAppLink(input.id)),
+    /**
+     * openEngagement — fire-and-forget engagement signal when Reagan taps an
+     * app tile. We map the tile's category to a subject slug and hand a tiny
+     * skill bump (selfRating=2 — "tried it") to the *first incomplete* skill
+     * for that subject. Never punishing, just compounding curiosity.
+     */
+    openEngagement: publicProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
+      try {
+        const links = await db.listAppLinks();
+        const link = (links as any[]).find((l) => l.id === input.id);
+        if (!link) return { ok: false as const, reason: "not_found" };
+        const CAT_TO_SUBJECT: Record<string, string | null> = {
+          learning: "math",      // Khan/IXL/BrainPOP — default toward math
+          reading: "ela",
+          creativity: "ela",     // Adobe Express, etc.
+          nature: "science",     // Merlin, iNaturalist
+          school: null,          // Google Classroom — already tracked elsewhere
+          google: null,
+          video: null,
+        };
+        // Special-case overrides by name where category is too generic
+        const NAME_HINTS: Array<{ rx: RegExp; subject: string }> = [
+          { rx: /math|ixl|prodigy/i, subject: "math" },
+          // history / social-studies BEFORE ela so words like "story" don't
+          // hijack a clearly history-flavored title (e.g., "Mystery History").
+          { rx: /history|geo|social/i, subject: "ss" },
+          { rx: /\bscience\b|mystery science|merlin|inatural/i, subject: "science" },
+          { rx: /vocab|read|story|epic/i, subject: "ela" },
+        ];
+        let subjectSlug = CAT_TO_SUBJECT[link.category] ?? null;
+        for (const h of NAME_HINTS) {
+          if (h.rx.test(`${link.name} ${link.description ?? ""}`)) { subjectSlug = h.subject; break; }
+        }
+        if (!subjectSlug) return { ok: true as const, bumped: false };
+        // Find the lowest-level / next-up skill in that subject
+        const skills = await db.listSkillsWithProgress(subjectSlug);
+        const next = (skills as any[])
+          .filter((s: any) => (s.progress?.level ?? 0) < 5)
+          .sort((a: any, b: any) => (a.progress?.level ?? 0) - (b.progress?.level ?? 0)
+            || (a.ladderOrder ?? 0) - (b.ladderOrder ?? 0))[0];
+        if (!next) return { ok: true as const, bumped: false };
+        await db.recordSkillPractice({
+          skillLadderId: next.id,
+          mode: "practice",
+          selfRating: 2 as any, // tiny bump
+          parentNote: `auto: opened ${link.name}`,
+        });
+        return { ok: true as const, bumped: true, subjectSlug, skillLadderId: next.id };
+      } catch (e: any) {
+        // Fire-and-forget: never throw to the client. Log only.
+        console.warn("[appLinks.openEngagement] swallowed:", e?.message || e);
+        return { ok: false as const, reason: "error" };
+      }
+    }),
   }),
 
   /* =================== APP ACCOUNTS (encrypted password locker, adult-only) =================== */

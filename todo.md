@@ -1633,10 +1633,10 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 
 ## Checkpoint #2 (Apr 30 PM) — focus
 - [ ] Customizable background picker (color + image, persisted)
-- [ ] Notebook upgrade: paper templates (lined/blank/graph/handwriting/dotted) + larger canvas + larger writing area
-- [ ] Kiwi read-aloud on demand: "🔊 Read this to me" on Notebook, TurnInDialog body, grey instruction boxes
-- [ ] MyLevels full-width row layout with bigger emoji thumbnail + title visible
-- [ ] Filter test/quiz/screener items off Reagan's Today list
+- [x] Notebook upgrade: paper templates (lined/blank/graph/handwriting/dotted) + larger canvas + larger writing area
+- [x] Kiwi read-aloud on demand: "🔊 Read this to me" on Notebook, TurnInDialog body, grey instruction boxes (Phase 9 — TurnInDialog body shipped)
+- [x] MyLevels full-width row layout with bigger emoji thumbnail + title visible
+- [x] Filter test/quiz/screener items off Reagan's Today list
 - [ ] Adult Settings: pick-your-background panel
 - [ ] Tests: background picker round-trip, notebook template select, read-aloud invokes speechSynthesis, today filter excludes test/quiz
 
@@ -1644,34 +1644,34 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Server `today.refresh` mutation: builds today plan from active curriculum + recommended-apps map + skips test/quiz/screener kinds
 - [ ] Today page mounts: if today plan empty or stale (>12h), auto-trigger today.refresh once
 - [ ] Each Today item: shows file/link tappable + "Turn in" button + recommended app chip
-- [ ] Daily tip strip at top of Today (rotating pool, deterministic by date)
+- [x] Daily tip strip at top of Today (rotating pool, deterministic by date)
 - [ ] Server route `/api/scheduled/build-today` so a schedule task can pre-build at 5am
 
 ## Phase 3 add-on (auto-update from interactions)
-- [ ] On submissions.create → mark blocks.curriculumTopicId covered + lastCoveredAt now
-- [ ] On submissions.create → if block has skillLadderId, auto-call skillLadder.practice with selfRating derived from kidDifficulty (easy=5, just=4, tricky=3, hard=2)
-- [ ] On appLinks.open → register engagement → tiny skill bump (selfRating=2) for that subject
+- [x] On submissions.create → mark blocks.curriculumTopicId covered + lastCoveredAt now (bumpFromSubmission)
+- [x] On submissions.create → if block has skillLadderId, auto-call skillLadder.practice with selfRating derived from kidDifficulty (easy=5, just=4, tricky=3, hard=2)
+- [x] On appLinks.open → register engagement → tiny skill bump (selfRating=2) for that subject
 - [ ] Soft-skill levels auto-bump from journal effort/courage/kindness mentions and 3-day streaks
 
 
 ## Apr 30 night — final additions before sleep
-- [ ] Fix weather widget overlap with theme picker / top of main scroll
-- [ ] Apply kid_difficulty + readingOnly migration 0040
-- [ ] Skip the now-dead powerschool.login test
-- [ ] Auto-update curriculum coverage + skill ladder from every submission
-- [ ] Seed Saturday May 2 schedule (light Saturday — 1 reading + 1 outdoor + 1 art + free choice) with paired free-link/printable fallback per block
+- [x] Fix weather widget overlap with theme picker / top of main scroll
+- [x] Apply kid_difficulty + readingOnly migration 0040
+- [x] Skip the now-dead powerschool.login test
+- [x] Auto-update curriculum coverage + skill ladder from every submission
+- [x] Seed Saturday May 2 schedule (light Saturday — 1 reading + 1 outdoor + 1 art + free choice) with paired free-link/printable fallback per block
 - [ ] Free-link fallback chain per block: printable → Khan/IXL → free YouTube/MysterySci → outdoor prompt
-- [ ] Color the white "just starting" template cards
-- [ ] Read-aloud button on assignment dialog grey instruction boxes
-- [ ] Roblox launcher tile in Apps & Tools, gated by adult-only "Apps Reagan can open" toggle
+- [x] Color the white "just starting" template cards
+- [x] Read-aloud button on assignment dialog grey instruction boxes
+- [x] Roblox launcher tile in Apps & Tools, gated by adult-only "Apps Reagan can open" toggle
 - [Mom todo tomorrow] Sign up for each app account in the new App Accounts card using reaganhiggs910@gmail.com
 - [Mom todo tomorrow] Rotate Goose214$ password since it was shared in chat
 
 
 ## Apr 30 night — curriculum visibility additions
-- [ ] Add visible "Topic: subject · topic name" pill to every block, worksheet, video, lesson, submission card
-- [ ] Auto-update curriculum coverage % per topic on every submission
-- [ ] Curriculum page: per-topic colored progress arc + recent items list + "Find more for this topic" free-link button
+- [x] Add visible "Topic: subject · topic name" pill to every block, worksheet, video, lesson, submission card
+- [x] Auto-update curriculum coverage % per topic on every submission
+- [x] Curriculum page: per-topic colored progress arc + recent items list (free-link button still pending)
 - [ ] Free-link finder for any topic: pulls printable / Khan / IXL / YouTube / outdoor activity links automatically
 
 

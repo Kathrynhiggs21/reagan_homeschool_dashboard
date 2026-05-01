@@ -27,6 +27,9 @@ import TodaySchoolWork, { type TodaySchoolWorkHandle, type TodayPrintableItem } 
 import { detectSubjectSlug, findBestPrintableForSubject } from "@/lib/matchPrintable";
 import { fallbackActivityFor } from "@/lib/subjectFallbackActivity";
 import { useRef } from "react";
+import { dailyTipForDate, localDateKey } from "@/lib/dailyTips";
+import { speakLikeBird } from "@/lib/birdVoice";
+import { Volume2 } from "lucide-react";
 
 // Neutral classroom mood language + classroom-y icons
 const ZONES = [
@@ -266,6 +269,31 @@ export default function Today() {
           </Button>
         </div>
       </header>
+      {/* Daily tip strip — deterministic by date so it stays stable all day */}
+      {(() => {
+        const tip = dailyTipForDate(localDateKey());
+        return (
+          <div
+            className="flex items-center gap-2 rounded-xl border px-3 py-2 text-[13px] leading-snug"
+            style={{
+              background: "rgba(255,238,170,0.10)",
+              borderColor: "rgba(255,238,170,0.35)",
+              color: "#fff4d6",
+            }}
+          >
+            <span aria-hidden className="text-base">💡</span>
+            <span className="flex-1">{tip}</span>
+            <button
+              onClick={() => speakLikeBird(tip)}
+              className="shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] hover:bg-white/10"
+              aria-label="Read today's tip out loud"
+              title="Read this to me"
+            >
+              <Volume2 className="w-3 h-3" /> Read
+            </button>
+          </div>
+        );
+      })()}
 
       {isAbsentToday && (
         <Card className="p-4 rounded-2xl border-2 border-rose-300 bg-gradient-to-br from-rose-50 to-rose-100">

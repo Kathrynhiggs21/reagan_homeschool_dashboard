@@ -32,6 +32,9 @@ describe("Reagan handoff cleanup punchlist invariants", () => {
     const offenders = all.filter((s) => {
       // Ignore in-flight vitest fixtures (feedback.test.ts inserts → deletes a test skill row)
       if (/^__vitest/.test(s.title) || /^__vitest/.test(s.code) || /^__vitest/.test(s.strand)) return false;
+      // Ignore the adapt.test.ts fixture row (TEST.ADAPT.* / TEST_ADAPT) which is
+      // seeded + torn down by adapt.test.ts itself; running in parallel races us.
+      if (/^TEST\.ADAPT/.test(s.code) || /^TEST_ADAPT$/.test(s.strand) || /^TEST ADAPT/.test(s.title)) return false;
       return /test/i.test(s.title) || /TEST/.test(s.code) || /TEST/.test(s.strand);
     });
     expect(offenders, `Offending skill rows: ${JSON.stringify(offenders)}`).toEqual([]);

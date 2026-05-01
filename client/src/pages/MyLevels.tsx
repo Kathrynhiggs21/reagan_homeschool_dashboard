@@ -81,7 +81,7 @@ function SubjectGrid({ onPick }: { onPick: (slug: string) => void }) {
   };
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="flex flex-col gap-4">
       {SUBJECTS.map((s) => {
         const sum = summaryFor(s.slug);
         const totalSkills = sum?.skills ?? 0;
@@ -90,21 +90,22 @@ function SubjectGrid({ onPick }: { onPick: (slug: string) => void }) {
           <button
             key={s.slug}
             onClick={() => onPick(s.slug)}
-            className="text-left rounded-2xl p-5 transition-transform hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-4 focus:ring-amber-300"
+            className="w-full text-left rounded-3xl p-5 md:p-6 transition-transform hover:-translate-y-0.5 active:translate-y-0 focus:outline-none focus:ring-4 focus:ring-amber-300"
             style={{
-              background: `linear-gradient(160deg, ${s.bgFrom} 0%, ${s.bgTo} 100%)`,
+              background: `linear-gradient(110deg, ${s.bgFrom} 0%, ${s.bgTo} 100%)`,
               border: `3px solid ${s.color}`,
-              boxShadow: `0 6px 24px -10px ${s.color}77, inset 0 0 0 2px rgba(255,255,255,0.5)`,
+              boxShadow: `0 8px 28px -12px ${s.color}88, inset 0 0 0 2px rgba(255,255,255,0.5)`,
               color: "#1a1a1a",
             }}
             aria-label={`Open ${s.label} skills`}
           >
-            <div className="flex items-center gap-3">
-              <div className="text-5xl drop-shadow-sm" aria-hidden>{s.emoji}</div>
+            <div className="flex items-center gap-5">
+              <div className="text-6xl md:text-7xl drop-shadow-sm shrink-0" aria-hidden>{s.emoji}</div>
               <div className="flex-1 min-w-0">
-                <div className="font-display text-2xl leading-tight">{s.label}</div>
-                <div className="text-[13px] opacity-80">{s.blurb}</div>
+                <div className="font-display text-3xl md:text-4xl leading-tight">{s.label}</div>
+                <div className="text-[14px] opacity-80 mt-0.5">{s.blurb}</div>
               </div>
+              <div className="hidden sm:block text-2xl opacity-60 shrink-0">→</div>
             </div>
             <div className="mt-3 flex items-center gap-2 text-[12px]">
               <span
