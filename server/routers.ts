@@ -2070,6 +2070,7 @@ export const appRouter = router({
         ihClassroomOnly: z.boolean().optional(),
         dateFor: z.string().nullable().optional(),
         bundleId: z.number().nullable().optional(),
+        blockId: z.number().nullable().optional(),
         limit: z.number().min(1).max(500).default(100),
         offset: z.number().min(0).default(0),
         orderBy: z.enum(["recent", "dateFor", "recommendedUse", "title"]).default("recent"),

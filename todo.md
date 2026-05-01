@@ -1736,3 +1736,12 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Tag each appLink with `signInMethod` (`google_sso` | `email_password` | `class_code`) and which Google account it links to
 - [ ] Build Apps Hub credential vault (adult-gated reveal, subscription + renewal date)
 - [ ] Decide clipboard-copy vs reveal-only default (waiting on user)
+
+
+## 2026-05-01 Open-button fix + AI generator must produce openable blocks
+- [ ] Investigate scheduleBlocks columns + Open-button code path on Today
+- [ ] Backfill today's 4 blocks with linkUrl / pdfKey / videoUrl so Open works
+- [ ] Insert today's worksheet (Manus-built FULL + original watermarked) into daily_printables
+- [ ] Update AI generator to populate linkUrl/pdfKey/videoUrl on every block (not just markdown in description)
+- [ ] Vitest spec: every AI-generated block has at least one openable resource
+- [ ] Today's "Pick a printable to track" must surface today's printables, not "No link yet"

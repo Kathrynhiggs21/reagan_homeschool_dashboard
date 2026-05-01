@@ -111,17 +111,22 @@ export default function Today() {
     offset: 0,
   });
 
-  async function openPrintableForBlock(block: { title?: string | null; blockType?: string | null; subjectSlug?: string | null }) {
+  async function openPrintableForBlock(block: { id?: number; title?: string | null; blockType?: string | null; subjectSlug?: string | null }) {
     const slug = detectSubjectSlug(block);
     // 1. Today's printables (Morning Brief)
     const items = todaySchoolWorkRef.current?.getItems() ?? printableItems;
     const match = findBestPrintableForSubject(items, slug);
     if (match && todaySchoolWorkRef.current?.openById(match.id)) return;
-    // 2. Adult Library, today's date, this subject — prefer the highest ★
-    const libRows = (libraryToday.data ?? []).filter(
-      (r) => !slug || r.subjectSlug === slug,
-    );
-    const lib = libRows.sort((a, b) => (b.recommendedUse ?? 0) - (a.recommendedUse ?? 0))[0];
+    // 2a. Adult Library — prefer rows pinned to this exact block first
+    const allLibRows = libraryToday.data ?? [];
+    const blockPinned = block.id != null
+      ? allLibRows.filter((r) => (r as any).blockId === block.id)
+      : [];
+    const subjectRows = blockPinned.length > 0
+      ? blockPinned
+      : allLibRows.filter((r) => !slug || r.subjectSlug === slug);
+    // 2b. Highest ★ wins
+    const lib = subjectRows.sort((a, b) => (b.recommendedUse ?? 0) - (a.recommendedUse ?? 0))[0];
     if (lib) {
       todaySchoolWorkRef.current?.openFallback({
         title: lib.title,

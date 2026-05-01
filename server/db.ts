@@ -4472,6 +4472,7 @@ export type AssignmentLibraryFilters = {
   ihClassroomOnly?: boolean;
   dateFor?: string | null;             // YYYY-MM-DD
   bundleId?: number | null;
+  blockId?: number | null;            // pinned to a specific schedule block
   limit?: number;
   offset?: number;
   orderBy?: "recent" | "dateFor" | "recommendedUse" | "title";
@@ -4487,6 +4488,7 @@ export async function listAssignmentsLibrary(filters: AssignmentLibraryFilters =
   if (filters.ihClassroomOnly) where.push(eq(assignmentsLibrary.ihClassroom, true));
   if (filters.dateFor) where.push(eq(assignmentsLibrary.dateFor, filters.dateFor));
   if (filters.bundleId != null) where.push(eq(assignmentsLibrary.bundleId, filters.bundleId));
+  if (filters.blockId != null) where.push(eq(assignmentsLibrary.blockId, filters.blockId));
   if (filters.q) {
     const like = `%${filters.q.replace(/%/g, "")}%`;
     where.push(sql`(${assignmentsLibrary.title} LIKE ${like} OR ${assignmentsLibrary.topic} LIKE ${like} OR ${assignmentsLibrary.notes} LIKE ${like})`);
