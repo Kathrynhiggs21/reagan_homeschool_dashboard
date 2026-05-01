@@ -1703,3 +1703,4 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] Curriculum free-link finder: per-topic Khan / IXL / ReadWorks / Smithsonian / Outdoor / Education.com printable suggestions + "✨ More" inline pop-out on every curriculum row
 - [x] Today schedule-block: inline file thumbnail strip (no extra click) + matchPrintable scoring bugfix
 - [x] Parallel-test race fix on bumpFromSubmission (pin fixture ladderOrder=0 + unique skill code per pid)
+- [x] Schedule page parity: TopicLabel on both block renders (Day list + Agenda dialog)

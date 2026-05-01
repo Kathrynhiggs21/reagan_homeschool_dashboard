@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Calendar, ChevronLeft, ChevronRight, MapPin, Sun, ExternalLink } from "lucide-react";
+import TopicLabel from "@/components/TopicLabel";
 
 /**
  * Reagan-facing Schedule page.
@@ -217,12 +218,15 @@ function DayView({
       ) : (
         <ul className="space-y-2">
           {blocks.map((b: any) => (
-            <li key={b.id} className="flex items-center gap-3 p-2 rounded-lg bg-white/70 dark:bg-amber-950/30 border border-amber-200">
-              <Badge className="capitalize">{b.subjectSlug || b.kind || "block"}</Badge>
-              <div className="font-medium">{b.title}</div>
-              <div className="ml-auto text-xs text-muted-foreground">
-                {b.status === "complete" ? "✓ done" : "to do"}
+            <li key={b.id} className="flex flex-col gap-1 p-2 rounded-lg bg-white/70 dark:bg-amber-950/30 border border-amber-200">
+              <div className="flex items-center gap-3">
+                <Badge className="capitalize">{b.subjectSlug || b.kind || "block"}</Badge>
+                <div className="font-medium">{b.title}</div>
+                <div className="ml-auto text-xs text-muted-foreground">
+                  {b.status === "complete" ? "✓ done" : "to do"}
+                </div>
               </div>
+              <TopicLabel subjectSlug={b.subjectSlug} topicName={b.curriculumTopicName ?? null} size="xs" />
             </li>
           ))}
         </ul>
@@ -338,10 +342,13 @@ function AgendaDialog({ open, dateStr, offInfo, onClose }: {
         ) : (
           <ul className="space-y-2">
             {blocks.map((b: any) => (
-              <li key={b.id} className="flex items-center gap-3 p-2 rounded-lg bg-amber-50 border border-amber-200">
-                <Badge className="capitalize">{b.subjectSlug || b.kind || "block"}</Badge>
-                <div className="font-medium">{b.title}</div>
-                <div className="ml-auto text-xs text-muted-foreground">{b.status === "complete" ? "✓ done" : "to do"}</div>
+              <li key={b.id} className="flex flex-col gap-1 p-2 rounded-lg bg-amber-50 border border-amber-200">
+                <div className="flex items-center gap-3">
+                  <Badge className="capitalize">{b.subjectSlug || b.kind || "block"}</Badge>
+                  <div className="font-medium">{b.title}</div>
+                  <div className="ml-auto text-xs text-muted-foreground">{b.status === "complete" ? "✓ done" : "to do"}</div>
+                </div>
+                <TopicLabel subjectSlug={b.subjectSlug} topicName={b.curriculumTopicName ?? null} size="xs" />
               </li>
             ))}
           </ul>

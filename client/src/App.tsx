@@ -44,6 +44,7 @@ import ProudWall from "./pages/ProudWall";
 import Placement from "./pages/Placement";
 import UploadOrSync from "./pages/UploadOrSync";
 import DailyAgendas from "./pages/DailyAgendas";
+import DailyPacket from "./pages/DailyPacket";
 import Schedule from "./pages/Schedule";
 import { trpc } from "@/lib/trpc";
 import { useEffect } from "react";
@@ -129,6 +130,9 @@ function Router() {
         </Route>
         <Route path="/agendas">
           <AdultGate><DailyAgendas /></AdultGate>
+        </Route>
+        <Route path="/packet">
+          <AdultGate><DailyPacket /></AdultGate>
         </Route>
         {/* Rewards moved to the adult section (parent picks/awards prizes). */}
         <Route path="/rewards">

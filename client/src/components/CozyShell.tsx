@@ -43,6 +43,7 @@ const ADULT_NAV: NavItem[] = [
   { to: "/library",    emoji: "📚", label: "Assignments Library" },
   { to: "/upload",     emoji: "⬆️", label: "Upload or Sync" },
   { to: "/agendas",    emoji: "🗓️", label: "Daily Agendas" },
+  { to: "/packet",     emoji: "📄", label: "Daily Packet" },
   { to: "/tutor",      emoji: "🤝", label: "Tutor Handoff" },
   { to: "/analytics",  emoji: "📊", label: "Analytics" },
   { to: "/rewards",    emoji: "⭐", label: "Rewards / Prizes" },
