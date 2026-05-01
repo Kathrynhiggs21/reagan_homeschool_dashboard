@@ -17,21 +17,26 @@ const TEST_STRAND = "__vitest-bump-strand";
 describe("bumpFromSubmission (Phase 5)", () => {
   let testSkillId: number | null = null;
   let testTopicId: number | null = null;
+  let uniq = "";
 
   beforeAll(async () => {
     await db.ensureCurriculumSeeded();
     const drizzle = (db as any).getDb?.() ?? null;
     // Seed a math skill we know is at level 0 so practice will increment it
-    const inserted: any = await drizzle.insert(skillLadder).values({
+    // Use a unique code per worker so parallel test files can't collide,
+    // and pin ladderOrder=0 so bumpFromSubmission's "lowest active" pick
+    // deterministically lands on us instead of any other parallel fixture.
+    uniq = `VITEST-BUMP-${process.pid}-${Date.now()}`;
+    await drizzle.insert(skillLadder).values({
       subjectSlug: "math",
       strand: TEST_STRAND,
-      skillCode: "VITEST-BUMP-1",
+      skillCode: uniq,
       title: TEST_TITLE,
       kidFriendly: "Vitest skill",
-      ladderOrder: 9999,
+      ladderOrder: 0,
       active: true,
     });
-    const [latest] = await drizzle.select().from(skillLadder).where(eq(skillLadder.title, TEST_TITLE)).limit(1);
+    const [latest] = await drizzle.select().from(skillLadder).where(eq(skillLadder.skillCode, uniq)).limit(1);
     testSkillId = latest?.id ?? null;
     // Insert a synthetic curriculumTopics row we can match by code substring
     await drizzle.execute(sql`
@@ -70,9 +75,11 @@ describe("bumpFromSubmission (Phase 5)", () => {
       kidDifficulty: "easy",
     });
     expect(r.skillLadderId).toBeTruthy();
-    // The skill we bumped should have evidence > 0 now
+    // It should be OUR fixture skill (pinned at ladderOrder=0).
+    expect(r.skillLadderId).toBe(testSkillId);
+    // Read evidence on our specific skill id (no risk of parallel cleanup).
     const drizzle = (db as any).getDb?.() ?? null;
-    const [progress] = await drizzle.select().from(skillProgress).where(eq(skillProgress.skillLadderId, r.skillLadderId!));
+    const [progress] = await drizzle.select().from(skillProgress).where(eq(skillProgress.skillLadderId, testSkillId!));
     expect(progress).toBeTruthy();
     expect(progress.evidenceCount).toBeGreaterThanOrEqual(1);
   });

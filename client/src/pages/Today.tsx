@@ -24,7 +24,7 @@ import HomeAnalyticsStrip from "@/components/HomeAnalyticsStrip";
 import BrainBreakTvBox from "@/components/BrainBreakTvBox";
 import MascotGreeting from "@/components/MascotGreeting";
 import TodaySchoolWork, { type TodaySchoolWorkHandle, type TodayPrintableItem } from "@/components/TodaySchoolWork";
-import { detectSubjectSlug, findBestPrintableForSubject } from "@/lib/matchPrintable";
+import { detectSubjectSlug, findBestPrintableForSubject, findAllPrintablesForSubject } from "@/lib/matchPrintable";
 import { fallbackActivityFor } from "@/lib/subjectFallbackActivity";
 import { useRef } from "react";
 import { dailyTipForDate, localDateKey } from "@/lib/dailyTips";
@@ -434,6 +434,28 @@ export default function Today() {
                   <div className="mt-1">
                     <TopicLabel subjectSlug={b.subjectSlug} topicName={b.curriculumTopicName ?? null} size="xs" />
                   </div>
+                  {(() => {
+                    const slug2 = detectSubjectSlug(b);
+                    const matches = findAllPrintablesForSubject(printableItems, slug2, 3);
+                    if (matches.length === 0) return null;
+                    return (
+                      <div className="mt-1.5 flex gap-1.5 flex-wrap" aria-label="Files attached to this block">
+                        {matches.map((m) => (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => todaySchoolWorkRef.current?.openById(m.id)}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white/10 border border-white/25 hover:bg-white/20 text-[11px] chalk-white max-w-[260px] truncate"
+                            title={m.title}
+                          >
+                            <span aria-hidden="true">{m.pdfKey ? "📄" : m.thumbKey ? "🖼️" : "✏️"}</span>
+                            <span className="truncate">{m.title}</span>
+                            {m.status === "done" && <span className="ml-1 text-emerald-300">✓</span>}
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })()}
                   {b.description && (
                     <p className="mt-1 chalk-white/90" style={{ fontSize: "0.95rem", opacity: 0.82, lineHeight: 1.35 }}>{b.description}</p>
                   )}

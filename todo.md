@@ -687,11 +687,11 @@
 
 
 ## 🎨 5-subject taxonomy + vibrant palette (Round 4b-i)
-- [ ] Collapse to 5 subjects: Math / Science / Social Studies / ELA / Specials (+ Other fallback)
-- [ ] Pick vibrant palette: Math orange, Science green, SocStudies purple, ELA coral, Specials teal, Other gold
-- [ ] Update `subjectColors.ts` palette + accent border 8px, stronger background tint
-- [ ] Update Subject Color Key to exactly 5+1 entries
-- [ ] DB remap: merge History/Geography → social; Reading/Writing/Spelling/Grammar → ela; Music/Art/PE/Health → specials
+- [x] Collapse to 5 subjects: Math / Science / Social Studies / ELA / Specials (+ Other fallback) — done in subjectColors.ts
+- [x] Pick vibrant palette: Math orange, Science green, SocStudies purple, ELA coral, Specials sky-blue, Other gold
+- [x] Update `subjectColors.ts` palette + saturated accent border + chalk-wash tint
+- [x] Update Subject Color Key to exactly 5+1 entries (COLOR_KEY_SUBJECTS)
+- [x] Subject alias merge: History/Geography→social; Reading/Writing/Spelling/Grammar→ela; Music/Art/PE/Health→specials (subjectColors aliases)
 - [ ] Remap blocks, skills, skillsMastery, adventures, weeklyTopics to new 5-subject slugs
 - [ ] Smoke-test tints on Today/Week/Curriculum/Adventures/Bookshelf
 
@@ -1637,8 +1637,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] Kiwi read-aloud on demand: "🔊 Read this to me" on Notebook, TurnInDialog body, grey instruction boxes (Phase 9 — TurnInDialog body shipped)
 - [x] MyLevels full-width row layout with bigger emoji thumbnail + title visible
 - [x] Filter test/quiz/screener items off Reagan's Today list
-- [ ] Adult Settings: pick-your-background panel
-- [ ] Tests: background picker round-trip, notebook template select, read-aloud invokes speechSynthesis, today filter excludes test/quiz
+-- [x] Adult Settings: theme picker mounted (server-persisted ui.theme + existing BackgroundPicker) picker round-trip, notebook template select, read-aloud invokes speechSynthesis, today filter excludes test/quiz
 
 ## Phase 3 (NEW priority — daily auto-build)
 - [ ] Server `today.refresh` mutation: builds today plan from active curriculum + recommended-apps map + skips test/quiz/screener kinds
@@ -1702,3 +1701,5 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] "🔄 Fresh start" button next to daily-tip strip on Today
 - [x] Soft-skill auto-bump from journal `tried/kind/brave/helped/drew/wondered…` mentions + 3-day-streak growth ProudMoment
 - [x] Curriculum free-link finder: per-topic Khan / IXL / ReadWorks / Smithsonian / Outdoor / Education.com printable suggestions + "✨ More" inline pop-out on every curriculum row
+- [x] Today schedule-block: inline file thumbnail strip (no extra click) + matchPrintable scoring bugfix
+- [x] Parallel-test race fix on bumpFromSubmission (pin fixture ladderOrder=0 + unique skill code per pid)

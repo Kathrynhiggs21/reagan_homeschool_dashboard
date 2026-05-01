@@ -38,21 +38,63 @@ export function findBestPrintableForSubject(
   const scored = items
     .map(it => {
       const slug = (it.subjectSlug ?? "").toLowerCase();
-      let score = 0;
-      if (slug && groups.includes(slug)) score += 100;
+      let subjectScore = 0;
+      if (slug && groups.includes(slug)) subjectScore += 100;
       // Fallback: sniff the title/description
       const hay = `${it.title ?? ""} ${it.description ?? ""}`.toLowerCase();
-      if (subjectSlug === "math" && /math|fraction|decimal|geometry|algebra|number/.test(hay)) score += 20;
-      if ((subjectSlug === "ela" || subjectSlug === "reading") && /read|story|passage|vocab|grammar|writing|spell/.test(hay)) score += 20;
-      if (subjectSlug === "science" && /science|nature|bird|plant|animal|experiment/.test(hay)) score += 20;
-      if (subjectSlug === "ss" && /history|geography|map|state|civic|explorer/.test(hay)) score += 20;
-      // prefer Have-to-do > Optional > Extras, and not-yet-done
-      score += (3 - (bucketRank[it.bucket ?? "extra"] ?? 2)) * 5;
-      if (it.status === "done") score -= 50;
+      if (subjectSlug === "math" && /math|fraction|decimal|geometry|algebra|number/.test(hay)) subjectScore += 20;
+      if ((subjectSlug === "ela" || subjectSlug === "reading") && /read|story|passage|vocab|grammar|writing|spell/.test(hay)) subjectScore += 20;
+      if (subjectSlug === "science" && /science|nature|bird|plant|animal|experiment/.test(hay)) subjectScore += 20;
+      if (subjectSlug === "ss" && /history|geography|map|state|civic|explorer/.test(hay)) subjectScore += 20;
+      // Bucket bonus and done-penalty only apply when there's some subject signal,
+      // so unrelated items don't ride along on bucket priority alone.
+      let score = subjectScore;
+      if (subjectScore > 0) {
+        score += (3 - (bucketRank[it.bucket ?? "extra"] ?? 2)) * 5;
+        if (it.status === "done") score -= 50;
+      }
       return { it, score };
     })
     .filter(x => x.score > 0)
     .sort((a, b) => b.score - a.score);
 
   return scored[0]?.it ?? null;
+}
+
+/** Return all matching printables for a subject, ranked best-first (used to surface a thumbnail strip on schedule blocks). */
+export function findAllPrintablesForSubject(
+  items: TodayPrintableItem[],
+  subjectSlug: string | null,
+  limit = 3,
+): TodayPrintableItem[] {
+  if (!subjectSlug || items.length === 0) return [];
+  const bucketRank: Record<string, number> = { have_to_do: 0, optional: 1, extra: 2 };
+  const equiv: Record<string, string[]> = {
+    math: ["math"],
+    ela: ["ela", "reading", "writing"],
+    reading: ["reading", "ela"],
+    science: ["science"],
+    ss: ["ss", "social_studies", "history"],
+  };
+  const groups = equiv[subjectSlug] ?? [subjectSlug];
+  const scored = items
+    .map(it => {
+      const slug = (it.subjectSlug ?? "").toLowerCase();
+      let subjectScore = 0;
+      if (slug && groups.includes(slug)) subjectScore += 100;
+      const hay = `${it.title ?? ""} ${it.description ?? ""}`.toLowerCase();
+      if (subjectSlug === "math" && /math|fraction|decimal|geometry|algebra|number/.test(hay)) subjectScore += 20;
+      if ((subjectSlug === "ela" || subjectSlug === "reading") && /read|story|passage|vocab|grammar|writing|spell/.test(hay)) subjectScore += 20;
+      if (subjectSlug === "science" && /science|nature|bird|plant|animal|experiment/.test(hay)) subjectScore += 20;
+      if (subjectSlug === "ss" && /history|geography|map|state|civic|explorer/.test(hay)) subjectScore += 20;
+      let score = subjectScore;
+      if (subjectScore > 0) {
+        score += (3 - (bucketRank[it.bucket ?? "extra"] ?? 2)) * 5;
+        if (it.status === "done") score -= 50;
+      }
+      return { it, score };
+    })
+    .filter(x => x.score > 0)
+    .sort((a, b) => b.score - a.score);
+  return scored.slice(0, limit).map(s => s.it);
 }
