@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card";
 import BackgroundPicker from "@/components/BackgroundPicker";
+import ThemePickerStrip from "@/components/ThemePickerStrip";
 import AppAccountsCard from "@/components/AppAccountsCard";
 import CalendarSyncCard from "@/components/CalendarSyncCard";
 import AvatarUploader from "@/components/AvatarUploader";
@@ -156,6 +157,16 @@ export default function Settings() {
             {updateProfile.isPending ? "Saving…" : "Save My Setup"}
           </Button>
         </div>
+      </Card>
+
+      {/* =========================== APPEARANCE =========================== */}
+      <Card className="classroom-card p-5 space-y-3">
+        <div className="font-display font-semibold text-lg">Reagan's background</div>
+        <p className="text-xs text-muted-foreground">
+          Pick the visual theme Reagan sees. Saved across devices — also editable from the
+          theme picker on Today.
+        </p>
+        <ThemePickerStrip />
       </Card>
 
       {/* ============================ COMPANION ============================ */}

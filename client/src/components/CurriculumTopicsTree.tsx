@@ -82,6 +82,70 @@ function PracticeLinks({ t, small = false }: { t: Topic; small?: boolean }) {
 const SUBJECTS = ["Math", "ELA", "Science", "Social", "Specials"] as const;
 type Subject = (typeof SUBJECTS)[number];
 
+/** Map curriculum subject names ("math" / "ELA" / "Science" / "Social Studies") to subject slug. */
+function subjectSlugFromName(subject: string): string {
+  const s = (subject || "").toLowerCase();
+  if (s.includes("math")) return "math";
+  if (s.includes("ela") || s.includes("english") || s.includes("language")) return "ela";
+  if (s.includes("read")) return "reading";
+  if (s.includes("social") || s.includes("history") || s.includes("geo")) return "ss";
+  if (s.includes("sci")) return "science";
+  if (s.includes("art")) return "art";
+  if (s.includes("phys") || s.includes("pe")) return "pe";
+  return s || "math";
+}
+
+/** Inline pop-out for free, no-login external resources for a topic. */
+function MoreLinksButton(props: { subjectSlug: string; topicName: string; small?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const q = trpc.curriculum.freeLinks.useQuery(
+    { subjectSlug: props.subjectSlug, topicName: props.topicName, gradeBand: "5" },
+    { enabled: open },
+  );
+  const sz = props.small ? "text-[9px] px-1.5 py-0.5" : "text-[10px] px-2 py-0.5";
+  return (
+    <span className="relative inline-block">
+      <button
+        type="button"
+        className={`rounded-full border ${sz} border-amber-400 text-amber-700 hover:bg-amber-50`}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen((v) => !v); }}
+        title="Find more for this topic (Khan / IXL / printable / outdoor)"
+      >
+        ✨ More
+      </button>
+      {open && (
+        <div className="absolute z-30 mt-1 right-0 min-w-[280px] max-w-[340px] rounded-md border bg-popover text-popover-foreground shadow-lg p-2 space-y-1">
+          <div className="text-[10px] font-semibold opacity-70 px-1">Free, no-login resources</div>
+          {q.isLoading && <div className="text-[11px] opacity-70 px-1">Loading…</div>}
+          {!q.isLoading && (q.data as any[] | undefined)?.length === 0 && (
+            <div className="text-[11px] opacity-70 px-1">No suggestions yet.</div>
+          )}
+          {((q.data as any[]) ?? []).map((l: any) => (
+            <a
+              key={l.url}
+              href={l.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 rounded px-2 py-1 text-[11px] hover:bg-accent"
+            >
+              <span aria-hidden>{l.emoji}</span>
+              <span className="flex-1 truncate">{l.label}</span>
+              <span className="text-[9px] opacity-60">{l.source}</span>
+            </a>
+          ))}
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="text-[10px] opacity-60 hover:opacity-100 px-1 mt-1"
+          >
+            close
+          </button>
+        </div>
+      )}
+    </span>
+  );
+}
+
 const subjectEmoji: Record<Subject, string> = {
   Math: "➗",
   ELA: "📖",
@@ -232,6 +296,7 @@ export default function CurriculumTopicsTree() {
                           {t.title}
                         </span>
                         <PracticeLinks t={t} />
+                        <MoreLinksButton subjectSlug={subjectSlugFromName(t.subject)} topicName={t.title} />
                       </div>
                       {kids.length > 0 && (
                         <ul className="mt-1 ml-2 space-y-0.5">
@@ -256,6 +321,7 @@ export default function CurriculumTopicsTree() {
                                 {k.title}
                               </span>
                               <PracticeLinks t={k} small />
+                              <MoreLinksButton subjectSlug={subjectSlugFromName(k.subject)} topicName={k.title} small />
                             </li>
                           ))}
                         </ul>

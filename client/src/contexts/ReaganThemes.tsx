@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { trpc } from "@/lib/trpc";
 
 export type ThemeId = "starry" | "cream" | "chalkboard" | "notebook";
 
@@ -21,6 +22,22 @@ export function ReaganThemeProvider({ children }: { children: ReactNode }) {
     return saved && THEMES[saved] ? saved : "starry";
   });
 
+  // Hydrate from server pref (works across devices). Local storage stays as a fast fallback.
+  const serverPref = trpc.prefs.getPublic.useQuery({ key: "ui.theme" });
+  const hydratedRef = useRef(false);
+  useEffect(() => {
+    if (hydratedRef.current) return;
+    const v = serverPref.data as string | null | undefined;
+    if (v && (THEMES as any)[v]) {
+      setThemeIdState(v as ThemeId);
+      hydratedRef.current = true;
+    } else if (serverPref.isFetched) {
+      hydratedRef.current = true;
+    }
+  }, [serverPref.data, serverPref.isFetched]);
+
+  const writePref = trpc.prefs.set.useMutation();
+
   useEffect(() => {
     if (typeof document === "undefined") return;
     document.documentElement.setAttribute("data-rtheme", themeId);
@@ -30,6 +47,8 @@ export function ReaganThemeProvider({ children }: { children: ReactNode }) {
   const setThemeId = (t: ThemeId) => {
     if (!THEMES[t]) return;
     setThemeIdState(t);
+    // Best-effort server persistence (no-op if not signed in).
+    try { writePref.mutate({ key: "ui.theme", value: t }); } catch { /* ok */ }
   };
 
   return <ThemeCtx.Provider value={{ themeId, setThemeId }}>{children}</ThemeCtx.Provider>;

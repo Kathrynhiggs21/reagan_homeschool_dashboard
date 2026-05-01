@@ -8,6 +8,7 @@ import { encryptPassword, decryptPassword } from "./passwordLocker";
 import { invokeLLM } from "./_core/llm";
 import { transcribeAudio } from "./_core/voiceTranscription";
 import { notifyOwner } from "./_core/notification";
+import { findFreeLinks } from "./freeLinkFinder";
 import { storagePut } from "./storage";
 
 const Zone = z.enum(["green", "yellow", "red"]);
@@ -1862,6 +1863,10 @@ export const appRouter = router({
       .input(z.object({ id: z.number(), notes: z.string().max(2000) }))
       .mutation(({ input }) => db.setCurriculumNote(input.id, input.notes)),
     autoCompleteFromHistory: protectedProcedure.mutation(() => db.autoCompleteFromHistory()),
+    /** Find free, no-login external resources for a topic (Khan/IXL/ReadWorks/etc.). */
+    freeLinks: publicProcedure
+      .input(z.object({ subjectSlug: z.string().min(1).max(32), topicName: z.string().min(1).max(200), gradeBand: z.string().optional() }))
+      .query(({ input }) => findFreeLinks(input)),
     /** Recent submissions, ungrouped, latest first — powers "Recent items" panel. */
     recent: protectedProcedure
       .input(z.object({ limit: z.number().int().min(1).max(50).default(15) }).optional())
@@ -1917,6 +1922,7 @@ export const appRouter = router({
           "student.googleAuthUser",     // 0/1/2 picker hint for Chrome multi-account
           "classroom.studentDomain",    // e.g. indianhill.k12.oh.us
           "roblox.allowed",             // adult toggle: "1" shows the Roblox launcher tile, "0" hides it
+          "ui.theme",                   // Reagan's chosen visual theme — server-persisted across devices
         ]);
         // absence:YYYY-MM-DD flags are non-sensitive and Reagan's UI needs to read them
         const isAbsenceFlag = /^absence:\d{4}-\d{2}-\d{2}$/.test(input.key);

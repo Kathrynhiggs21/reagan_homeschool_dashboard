@@ -1701,3 +1701,4 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] Server `today.refresh` mutation: rebuilds today's plan from the active template, preserves completed/in_progress/needs_help blocks
 - [x] "🔄 Fresh start" button next to daily-tip strip on Today
 - [x] Soft-skill auto-bump from journal `tried/kind/brave/helped/drew/wondered…` mentions + 3-day-streak growth ProudMoment
+- [x] Curriculum free-link finder: per-topic Khan / IXL / ReadWorks / Smithsonian / Outdoor / Education.com printable suggestions + "✨ More" inline pop-out on every curriculum row
