@@ -7,7 +7,6 @@ import AvatarUploader from "@/components/AvatarUploader";
 import ConfidencePrinciplesCard from "@/components/ConfidencePrinciplesCard";
 import GamesManager from "@/components/GamesManager";
 import TutorsManager from "@/components/TutorsManager";
-import { RewardsManager } from "@/components/RewardsManager";
 import { PowerSchoolImporterCard } from "@/components/PowerSchoolImporterCard";
 import CareTeamManager from "@/components/CareTeamManager";
 import PracticePrefsCard from "@/components/PracticePrefsCard";
@@ -97,20 +96,12 @@ export default function Settings() {
         <p className="text-sm text-muted-foreground mt-2">Only visible with the adult passcode.</p>
       </header>
 
-      {/* Reference panel: Indian Hill Google Classroom (read-only, never drives Reagan's day) */}
-      <ClassroomReferencePanel />
+      {/* ============================ QUICK-JUMP NAV ============================ */}
+      <SettingsJumpNav />
 
-      {/* Adult Rewards Manager: manual create + preset library + edit existing prizes */}
-      <RewardsManagerCard />
-
-      {/* ============================ CONFIDENCE PRINCIPLES ============================ */}
+      {/* ============================ PROFILE & SETUP ============================ */}
+      <h2 id="sec-profile" className="font-display text-xl chalk-white mt-4">Profile &amp; setup</h2>
       <ConfidencePrinciplesCard />
-
-      {/* ============================ BACKGROUND PICKER ============================ */}
-      <BackgroundPicker />
-
-      {/* ============================ APP ACCOUNTS LOCKER ============================ */}
-      <AppAccountsCard />
 
       {/* ============================ MY SETUP ============================ */}
       <Card className="classroom-card p-5 space-y-4">
@@ -160,16 +151,22 @@ export default function Settings() {
       </Card>
 
       {/* =========================== APPEARANCE =========================== */}
-      <Card className="classroom-card p-5 space-y-3">
-        <div className="font-display font-semibold text-lg">Reagan's background</div>
+      <h2 id="sec-appearance" className="font-display text-xl chalk-white mt-4">Appearance</h2>
+      <Card className="classroom-card p-5 space-y-4">
+        <div className="font-display font-semibold text-lg">Theme</div>
         <p className="text-xs text-muted-foreground">
           Pick the visual theme Reagan sees. Saved across devices — also editable from the
           theme picker on Today.
         </p>
         <ThemePickerStrip />
+        <div className="pt-3 border-t border-white/10">
+          <div className="font-display font-semibold mb-2">Background</div>
+          <BackgroundPicker />
+        </div>
       </Card>
 
       {/* ============================ COMPANION ============================ */}
+      <h2 id="sec-companion" className="font-display text-xl chalk-white mt-4">Companion &amp; helper</h2>
       <Card className="classroom-card p-5 space-y-4">
         <div className="font-display font-semibold text-lg">Helper / Companion</div>
         <div>
@@ -251,6 +248,7 @@ export default function Settings() {
       </Card>
 
       {/* ============================ ADULT LOCK ============================ */}
+      <h2 id="sec-lock" className="font-display text-xl chalk-white mt-4">Adult lock</h2>
       <Card className="classroom-card p-5 space-y-3">
         <div className="font-display font-semibold text-lg">Adult Lock</div>
         <p className="text-sm text-neutral-600">
@@ -271,36 +269,57 @@ export default function Settings() {
         </div>
       </Card>
 
-      {/* ============================ CALENDAR SYNC ============================ */}
+      {/* ============================ NOTIFICATIONS ============================ */}
+      <h2 id="sec-notifications" className="font-display text-xl chalk-white mt-4">Notifications &amp; calendar</h2>
       <CalendarSyncCard />
-
-      {/* ============================ RECIPIENTS ============================ */}
       <RecipientsCard />
-
-      {/* ============================ APPOINTMENTS ============================ */}
       <AppointmentsCard />
 
-      {/* ============================ GAMES & BREAKS ============================ */}
+      {/* ============================ TOOLS ============================ */}
+      <h2 id="sec-tools" className="font-display text-xl chalk-white mt-4">Tools &amp; integrations</h2>
+      <ClassroomReferencePanel />
+      <RewardsManagerCard />
+      <AppAccountsCard />
       <PracticePrefsCard />
       <AdaptiveAndMilestonesCard />
       <CareTeamManager />
-      <RewardsManager />
       <PowerSchoolImporterCard />
-
       <GamesManager />
-
-      {/* ============================ TUTORS ============================ */}
       <TutorsManager />
-
-      {/* ============================ AUTOMATION EXPLAINER ============================ */}
-      <AutomationExplainerCard />
-
-      {/* ============================ AUDIT LOG ============================ */}
-      <AuditCard />
-
-      {/* ============================ ABSENT TODAY ============================ */}
       <AbsentTodayCard />
+
+      {/* ============================ AUDIT ============================ */}
+      <h2 id="sec-audit" className="font-display text-xl chalk-white mt-4">Logs &amp; how it runs</h2>
+      <AutomationExplainerCard />
+      <AuditCard />
     </div>
+  );
+}
+
+function SettingsJumpNav() {
+  const items: { id: string; label: string }[] = [
+    { id: "sec-profile", label: "Profile" },
+    { id: "sec-appearance", label: "Appearance" },
+    { id: "sec-companion", label: "Companion" },
+    { id: "sec-lock", label: "Adult lock" },
+    { id: "sec-notifications", label: "Notifications" },
+    { id: "sec-tools", label: "Tools" },
+    { id: "sec-audit", label: "Logs" },
+  ];
+  return (
+    <Card className="classroom-card p-3">
+      <div className="flex flex-wrap gap-2">
+        {items.map((it) => (
+          <a
+            key={it.id}
+            href={`#${it.id}`}
+            className="text-xs px-3 py-1.5 rounded-full border border-white/15 bg-background/30 hover:bg-accent/15 transition"
+          >
+            {it.label}
+          </a>
+        ))}
+      </div>
+    </Card>
   );
 }
 
