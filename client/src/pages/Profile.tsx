@@ -120,6 +120,11 @@ export default function Profile() {
       {/* School history */}
       {schoolHistory.length > 0 && (
         <Section title="My school history" emoji="🎒">
+          <div className="mb-2 text-xs rounded-md border border-amber-300/40 bg-amber-100/30 dark:bg-amber-200/10 text-amber-900 dark:text-amber-100 px-3 py-2">
+            <strong>Indian Hill account closed April 2026.</strong> Reagan is now full-time homeschool.
+            Historical records below stay for reference. Going forward she signs into learning apps with
+            <code className="mx-1">reaganhiggs910@gmail.com</code> (Family Link, parent <code>spear.cpt@gmail.com</code>).
+          </div>
           <ol className="text-sm space-y-2">
             {schoolHistory.map((s, i) => (
               <li key={`${s.school}-${i}`} className="p-2 rounded-md border border-white/20 bg-white/10 text-foreground">
@@ -127,6 +132,10 @@ export default function Profile() {
                 <div className="text-xs opacity-80">{s.district} · {s.years}{s.transferDate ? ` · transferred ${s.transferDate}` : ""}</div>
               </li>
             ))}
+            <li className="p-2 rounded-md border border-emerald-300/40 bg-emerald-100/30 dark:bg-emerald-200/10 text-foreground">
+              <div className="font-semibold">Homeschool · Higgs family</div>
+              <div className="text-xs opacity-80">Cincinnati, OH · 5th grade · April 2026 – present</div>
+            </li>
           </ol>
         </Section>
       )}
