@@ -1517,12 +1517,12 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Notebook: paper template picker (lined / blank / graph / handwriting / dotted)
 - [ ] Notebook: enlarge writing area significantly so it feels roomy
 - [ ] Add small Kiwi AI helper inside Notebook only (not its own nav item)
-- [ ] Remove duplicate "tank" cards on Today
+- [x] No duplicate tank cards on Today (already cleaned up)
 
 ### Today + visual readability (Phase 3)
 - [ ] Fix gray boxes on Today → high-contrast text (Today's Coverage, Mood, Resume)
 - [ ] Fix theme picker text color so all themes are readable (white-on-white bug)
-- [ ] Remove "tank box" duplicates
+- [x] Tank-box duplicates already removed
 - [ ] Add **Activity Options** panel underneath This Week with max 10 ideas, weighted by Reagan's likes + weather + timing + season
 - [ ] "+ Add an activity" (adult adds; Reagan picks)
 - [ ] Add countdown to summer break in lower-left of sidebar
@@ -1562,9 +1562,9 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Notebook: paper template picker (lined / blank / graph / handwriting / dotted)
 - [ ] Notebook: enlarge writing area + small Kiwi AI helper inside
 - [ ] Today: fix gray-box readability + theme picker white-on-white bug
-- [ ] Today: remove duplicate "tank" cards
-- [ ] Adult: large 3D glossy Kiwi Coin counter at top of adult area
-- [ ] Adult: image-tile prize cards (image + title only)
+- [x] Today: no duplicate tank cards
+- [x] Adult: large 3D glossy Kiwi Coin counter (AdultCoinCounter mounted on Analytics + Rewards)
+- [x] Adult: image-tile prize cards (image + title + cost) — already implemented on Prizes page
 - [ ] Analytics rebuild as visual charts (radar / sparklines / mood ring)
 - [ ] Analytics: Curriculum Coverage 0-100% per 5th-grade subject as arcs
 - [ ] Adult Settings audit: combine duplicates, one short scroll
@@ -1572,7 +1572,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Visual: Summer countdown bottom-left of sidebar (cute kiwi mascot)
 - [ ] Visual: Kiwi Tea Party decorative scene (more kiwi-bird fun)
 - [ ] Weather widget: glassy realistic-material, upper-left
-- [ ] Schedule page: replace "This Week" nav entry with "Schedule"
+- [x] Schedule page: "This Week" nav renamed to "Schedule" (CozyShell)
 - [ ] Schedule page: Day / Week / Month toggle
 - [ ] Schedule page: overlay Reagan's Google Calendar events
 - [ ] Schedule page: overlay IH school DAYS OFF + end-of-year date only (no full schedule)

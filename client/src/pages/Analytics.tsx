@@ -7,6 +7,7 @@ import TrajectoryCard from "@/components/TrajectoryCard";
 import ParentFlagsBanner from "@/components/ParentFlagsBanner";
 import CurrentLevelsFromIep from "@/components/CurrentLevelsFromIep";
 import PowerSchoolGradesCard from "@/components/PowerSchoolGradesCard";
+import AdultCoinCounter from "@/components/AdultCoinCounter";
 
 function MoodArcChart({ moods }: { moods: any[] }) {
   // Map zone to numeric score (green=2, yellow=1, red=0); render the last 14 entries chronologically
@@ -117,9 +118,12 @@ export default function Analytics() {
 
   return (
     <div className="space-y-6">
-      <header>
-        <h1 className="text-3xl font-display font-semibold">Analytics 📊</h1>
-        <p className="text-muted-foreground text-sm mt-1">For adults — Reagan's growth, patterns, and where she needs support. Never shown to her.</p>
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-display font-semibold">Analytics 📊</h1>
+          <p className="text-muted-foreground text-sm mt-1">For adults — Reagan's growth, patterns, and where she needs support. Never shown to her.</p>
+        </div>
+        <AdultCoinCounter />
       </header>
 
       {/* Adaptation engine v2 — surfaces stacked-struggle alerts (parent only) */}

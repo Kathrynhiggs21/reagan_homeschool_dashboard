@@ -1,5 +1,6 @@
 import Prizes from "./Prizes";
 import PrizeLadder from "@/components/PrizeLadder";
+import AdultCoinCounter from "@/components/AdultCoinCounter";
 
 /**
  * Rewards — Reagan side. Stickers UI removed per user request; Kiwi Coins
@@ -28,16 +29,7 @@ export default function Rewards() {
             Rewards
           </h1>
         </div>
-        <div
-          className="text-xs px-3 py-1 rounded-full"
-          style={{
-            background: "rgba(127,227,196,0.18)",
-            color: "#7fe3c4",
-            border: "1px solid rgba(127,227,196,0.35)",
-          }}
-        >
-          🪙 Kiwi Coins → Prizes
-        </div>
+        <AdultCoinCounter label="Reagan's Kiwi Coins" />
       </header>
 
       <PrizeLadder />
