@@ -10,6 +10,7 @@ import { transcribeAudio } from "./_core/voiceTranscription";
 import { notifyOwner } from "./_core/notification";
 import { findFreeLinks } from "./freeLinkFinder";
 import { storagePut } from "./storage";
+import { generateScheduleDraft, type AIBlockDraft } from "./_lib/aiScheduleGenerator";
 
 const Zone = z.enum(["green", "yellow", "red"]);
 const Intensity = z.enum(["green", "yellow", "red"]);
@@ -221,6 +222,79 @@ export const appRouter = router({
     update: protectedProcedure.input(z.object({
       id: z.number(), dayType: DayType.optional(), status: PlanStatus.optional(), notes: z.string().optional(),
     })).mutation(({ input }) => db.updatePlan(input.id, { dayType: input.dayType, status: input.status, notes: input.notes })),
+
+    /* ----- AI Schedule Generator (Kiwi drafts a day's blocks) ----- */
+    aiGenerate: protectedProcedure.input(z.object({
+      date: z.string(),
+      dayLength: z.enum(["full", "half", "off"]).optional(),
+      adultPrompt: z.string().max(2000).optional(),
+    })).mutation(async ({ input }) => {
+      const profile: any = await db.getProfile().catch(() => null);
+      const subjects = (await db.listSubjects()).map((s: any) => ({ slug: s.slug, name: s.name }));
+      const dt = new Date(input.date + "T12:00:00");
+      const dayLabel = dt.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+      const draft = await generateScheduleDraft({
+        dateStr: input.date,
+        dayLabel,
+        studentName: profile?.studentName || "Reagan",
+        gradeLevel: profile?.gradeLevel || "5th grade",
+        interests: profile?.interests || [],
+        whatWorks: profile?.whatWorks || [],
+        whatHarms: profile?.whatHarms || [],
+        adultPrompt: input.adultPrompt || null,
+        dayLength: input.dayLength || "full",
+        subjects,
+      });
+      return draft;
+    }),
+
+    aiCommit: protectedProcedure.input(z.object({
+      date: z.string(),
+      dayLength: z.enum(["full", "half", "off"]).optional(),
+      summary: z.string().optional(),
+      replaceExisting: z.boolean().default(true),
+      blocks: z.array(z.object({
+        blockType: z.enum(["morning_warmup","math","adventure","read_aloud","choice","catch_up","appointment","custom"]),
+        title: z.string().min(1).max(200),
+        description: z.string().max(4000).optional(),
+        durationMin: z.number().min(1).max(180),
+        startTime: z.string().regex(/^\d{1,2}:\d{2}$/).optional(),
+        subjectSlug: z.string().nullable().optional(),
+      })).min(1).max(20),
+    })).mutation(async ({ input, ctx }) => {
+      const plan = await db.ensurePlanForDate(input.date, input.dayLength || "full");
+      if (!plan) throw new Error("could not ensure plan");
+      const subjects = await db.listSubjects();
+      const slugToId = new Map<string, number>(subjects.map((s: any) => [s.slug, s.id as number]));
+      if (input.replaceExisting) {
+        const existing = await db.listBlocksForPlan(plan.id);
+        for (const b of existing) {
+          try { await db.deleteBlock((b as any).id); } catch (e) { console.warn("[aiCommit] delete block failed", e); }
+        }
+      }
+      let sortOrder = 0;
+      const created: number[] = [];
+      for (const b of input.blocks) {
+        const subjectId = b.subjectSlug ? (slugToId.get(b.subjectSlug) ?? null) : null;
+        const id = await db.createBlock({
+          planId: plan.id,
+          blockType: b.blockType as any,
+          subjectId,
+          title: b.title,
+          description: b.description || null,
+          durationMin: b.durationMin,
+          startTime: b.startTime || null,
+          sortOrder: sortOrder++,
+          status: "not_started" as any,
+        } as any);
+        if (id) created.push(id as number);
+      }
+      if (input.summary) {
+        try { await db.updatePlan(plan.id, { notes: input.summary.slice(0, 500) } as any); } catch {}
+      }
+      await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: created[0] ?? plan.id, action: "create", summary: `AI-generated ${input.blocks.length} blocks for ${input.date}` });
+      return { planId: plan.id, blockCount: created.length };
+    }),
   }),
 
   /* =================== BLOCKS =================== */

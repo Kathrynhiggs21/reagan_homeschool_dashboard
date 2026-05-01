@@ -22,6 +22,7 @@ import CurriculumChip from "@/components/CurriculumChip";
 import TopicLabel from "@/components/TopicLabel";
 import GameBreakCard from "@/components/GameBreakCard";
 import HomeAnalyticsStrip from "@/components/HomeAnalyticsStrip";
+import AIScheduleGeneratorCard from "@/components/AIScheduleGeneratorCard";
 import BrainBreakTvBox from "@/components/BrainBreakTvBox";
 import MascotGreeting from "@/components/MascotGreeting";
 import TodaySchoolWork, { type TodaySchoolWorkHandle, type TodayPrintableItem } from "@/components/TodaySchoolWork";
@@ -320,6 +321,11 @@ export default function Today() {
           </div>
           <HomeAnalyticsStrip />
         </Card>
+      )}
+
+      {/* AI Schedule Generator — adult-gated */}
+      {unlocked && (
+        <AIScheduleGeneratorCard defaultDate={new Date().toISOString().slice(0, 10)} />
       )}
 
       {/* Check-in strip — adult-only, since mood tracking is parent-facing, not kid-facing. */}
