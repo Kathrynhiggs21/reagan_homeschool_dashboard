@@ -15,6 +15,7 @@ import { subjectTint, tintCardStyle, tintInkStyle, tintPillStyle, rainbowCardSty
 import { celebrateKiwi } from "@/components/KiwiPerch";
 import ThemePickerStrip from "@/components/ThemePickerStrip";
 import KiwiIntroStrip from "@/components/KiwiIntroStrip";
+import ConfidencePrinciplesStrip from "@/components/ConfidencePrinciplesStrip";
 import SkillBuilderTile from "@/components/SkillBuilderTile";
 import PlacementInviteCard from "@/components/PlacementInviteCard";
 import CurriculumChip from "@/components/CurriculumChip";
@@ -271,6 +272,9 @@ export default function Today() {
       </header>
       {/* Daily tip strip + Fresh-start button — deterministic by date so the tip stays stable all day */}
       <DailyTipAndFreshStart />
+
+      {/* Kid-readable Confidence Principles — feel safe / understand / grow / you ARE smart */}
+      <ConfidencePrinciplesStrip />
 
       {/* Component lives below the JSX */}
       {isAbsentToday && (
