@@ -1651,7 +1651,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] On submissions.create → mark blocks.curriculumTopicId covered + lastCoveredAt now (bumpFromSubmission)
 - [x] On submissions.create → if block has skillLadderId, auto-call skillLadder.practice with selfRating derived from kidDifficulty (easy=5, just=4, tricky=3, hard=2)
 - [x] On appLinks.open → register engagement → tiny skill bump (selfRating=2) for that subject
-- [ ] Soft-skill levels auto-bump from journal effort/courage/kindness mentions and 3-day streaks
+- [x] Soft-skill levels auto-bump from journal effort/courage/kindness mentions and 3-day streaks (creates auto ProudMoments + growth bonus)
 
 
 ## Apr 30 night — final additions before sleep
@@ -1695,3 +1695,9 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] Phase 10: Roblox launcher tile on Apps & Tools, gated on adult-controlled Settings toggle (server/robloxPref.test.ts)
 
 Tests at end of batch: 211 passed | 1 skipped.
+
+
+## May 1 batch — phase 2 (server today.refresh)
+- [x] Server `today.refresh` mutation: rebuilds today's plan from the active template, preserves completed/in_progress/needs_help blocks
+- [x] "🔄 Fresh start" button next to daily-tip strip on Today
+- [x] Soft-skill auto-bump from journal `tried/kind/brave/helped/drew/wondered…` mentions + 3-day-streak growth ProudMoment

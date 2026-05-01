@@ -1,7 +1,7 @@
 import { ENV } from "./_core/env";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
-import { eq, desc, and, gte, lte, sql, isNotNull, isNull, asc } from "drizzle-orm";
+import { eq, desc, and, gte, lte, sql, isNotNull, isNull, asc, inArray } from "drizzle-orm";
 import {
   users, type InsertUser,
   subjects, dailyPlans, scheduleBlocks, bookAssignments, adventures,
@@ -16,6 +16,7 @@ import {
   printableSources, printableFavorites, academicRecords, auditLog, iepGoals, iepAccommodations, assessmentScreenings,
   stickers, goodWorkNotes, coinLedger, prizes, prizeRedemptions, certificates,
   appAccounts,
+  proudMoments,
 } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -129,6 +130,80 @@ async function autoBuildBlocksForPlan(planId: number, dayType: string, dow: numb
       status: "not_started" as any,
     });
   }
+}
+
+/**
+ * refreshTodayPlan — rebuild today's plan blocks from the active template,
+ * but ONLY remove blocks still in "not_started" so completed/in-progress
+ * work isn't lost. Test/quiz/screener kinds are filtered out per the school
+ * exit (Reagan no longer at Indian Hill since Apr 2026).
+ */
+export async function refreshTodayPlan(opts: { dateStr?: string } = {}) {
+  const db = getDb();
+  const dateStr = opts.dateStr || new Date().toISOString().slice(0, 10);
+  const plan = await ensurePlanForDate(dateStr);
+  if (!plan) return { ok: false as const, reason: "no_plan" };
+  // Delete only not_started blocks — preserve completed/in_progress/needs_help work.
+  await db.delete(scheduleBlocks).where(
+    and(
+      eq(scheduleBlocks.planId, plan.id),
+      eq(scheduleBlocks.status as any, "not_started" as any),
+    ) as any,
+  );
+  // Rebuild fresh blocks from the template; the template already excludes
+  // test/quiz/screener kinds (we never seed them).
+  const dow = new Date(dateStr + "T00:00:00").getDay();
+  const isWeekend = dow === 0 || dow === 6;
+  const buildKind = isWeekend ? "weekend" : dow === 3 ? "therapy" : "full";
+  // Only insert blocks whose title isn't already present (preserve any kept ones).
+  const existing = await db.select().from(scheduleBlocks).where(eq(scheduleBlocks.planId, plan.id));
+  const existingTitles = new Set((existing as any[]).map((b) => (b.title || "").toLowerCase()));
+  // Re-run autoBuild but filter against existing.
+  const subjs = await db.select().from(subjects);
+  const findSlug = (slug: string) => (subjs as any[]).find((s) => s.slug === slug);
+  const template = isWeekend ? [
+    { title: "Slow morning", description: "Sleep in. Hang with parakeets + ducks. No alarm.", slug: "animal-care", type: "morning_warmup", minutes: 45 },
+    { title: "Pick-your-path adventure", description: "Creek, garden, art, baking, Lego \u2014 your call. Outdoors counts double.", slug: "science", type: "adventure", minutes: 60 },
+    { title: "Family read-aloud", description: "Cuddle up for one chapter together. Optional.", slug: "ela", type: "read_aloud", minutes: 25 },
+    { title: "Choice play", description: "Roblox, drawing, makeup, music \u2014 reset and recharge.", slug: "choice", type: "choice", minutes: 45 },
+    { title: "One little win", description: "Pick ONE tiny thing to log: a bird seen, a meal helped with, a kindness done.", slug: undefined as any, type: "catch_up", minutes: 10 },
+  ] : dow === 3 ? [
+    { title: "Soft start", description: "Time with the parakeets and ducklings. Just be.", slug: "animal-care", type: "morning_warmup", minutes: 30 },
+    { title: "Easy math warm-up", description: "A few duckling-themed practice problems. No pressure.", slug: "math", type: "math", minutes: 25 },
+    { title: "Choice block", description: "What you want today. Art, makeup, drawing, anything.", slug: "choice", type: "choice", minutes: 30 },
+    { title: "Therapy with Ali", description: "Wednesday session with Ali Hill. Mom will let you know.", slug: undefined as any, type: "appointment", minutes: 90 },
+    { title: "Lunch + reset", description: "Cozy lunch back home.", slug: undefined as any, type: "custom", minutes: 30 },
+    { title: "Read-aloud", description: "Tuck Everlasting, snug-in time.", slug: "ela", type: "read_aloud", minutes: 25 },
+    { title: "Adventure of the day", description: "Pick something gentle from the Adventure library.", slug: "science", type: "adventure", minutes: 35 },
+  ] : [
+    { title: "Soft start", description: "Time with the parakeets and ducklings. Just be.", slug: "animal-care", type: "morning_warmup", minutes: 25 },
+    { title: "Math warm-up", description: "A few problems to wake up your math brain. You've got this.", slug: "math", type: "math", minutes: 30 },
+    { title: "Choice block", description: "What you want today. Art, makeup, drawing, anything.", slug: "choice", type: "choice", minutes: 30 },
+    { title: "Brain break", description: "Move, stretch, snack, sit-spot. Your call.", slug: undefined as any, type: "custom", minutes: 15 },
+    { title: "Reading + writing", description: "Read a chapter, journal one thing. Voice-to-text totally fine.", slug: "ela", type: "read_aloud", minutes: 30 },
+    { title: "Lunch", description: "Eat something good.", slug: undefined as any, type: "custom", minutes: 30 },
+    { title: "Science adventure", description: "Animals, creek, weather, plants \u2014 pick your path.", slug: "science", type: "adventure", minutes: 35 },
+    { title: "Cozy wrap-up", description: "What did today teach you? Anything to log? Or just done.", slug: undefined as any, type: "catch_up", minutes: 15 },
+  ];
+  // Reorder existing kept blocks to top, then append fresh ones.
+  let added = 0;
+  let order = (existing as any[]).length;
+  for (const t of template) {
+    if (existingTitles.has(t.title.toLowerCase())) continue;
+    const sub = t.slug ? findSlug(t.slug) : null;
+    await db.insert(scheduleBlocks).values({
+      planId: plan.id,
+      sortOrder: order++,
+      blockType: t.type as any,
+      title: t.title,
+      description: t.description,
+      subjectId: sub?.id || null,
+      durationMin: t.minutes,
+      status: "not_started" as any,
+    });
+    added += 1;
+  }
+  return { ok: true as const, planId: plan.id, dayKind: buildKind, added, kept: (existing as any[]).length };
 }
 
 export async function updatePlan(planId: number, patch: Partial<typeof dailyPlans.$inferInsert>) {
@@ -668,6 +743,76 @@ export async function createJournalEntry(patch: { date: string; title?: string; 
 export async function deleteJournalEntry(id: number) {
   const db = getDb();
   await db.delete(journalEntries).where(eq(journalEntries.id, id));
+}
+
+/**
+ * bumpFromJournal — scan a journal body for soft-skill mentions and auto-create
+ * matching ProudMoments. Idempotent-ish: we won't double-bump for the same
+ * journal entry within a single call. Plus 3-day-streak bonus: if Reagan
+ * journals on 3 consecutive days that include a category keyword, we add a
+ * "3-day streak" growth ProudMoment too.
+ */
+export async function bumpFromJournal(opts: { date: string; body: string }) {
+  const db = getDb();
+  const body = (opts.body || "").toLowerCase();
+  const HITS: Array<{ category: "effort" | "kindness" | "bravery" | "persistence" | "creativity" | "wonder"; rx: RegExp; emoji: string; titleVerb: string }> = [
+    { category: "effort",      rx: /\b(tried|tried hard|kept going|focused|stuck with it|worked on)\b/i, emoji: "\ud83d\udcaa", titleVerb: "effort" },
+    { category: "kindness",    rx: /\b(helped|kind|shared|comforted|hugged|nice to)\b/i,                  emoji: "\ud83d\udc9b", titleVerb: "kindness" },
+    { category: "bravery",     rx: /\b(brave|scared but|tried anyway|new thing|first time)\b/i,           emoji: "\ud83e\udd81", titleVerb: "bravery" },
+    { category: "persistence", rx: /\b(again|kept trying|didn'?t give up|practiced|finished it)\b/i,      emoji: "\ud83d\udd01", titleVerb: "persistence" },
+    { category: "creativity",  rx: /\b(made|drew|wrote|built|created|invented|imagined)\b/i,              emoji: "\ud83c\udfa8", titleVerb: "creativity" },
+    { category: "wonder",      rx: /\b(wondered|noticed|discovered|saw a|why does|how come)\b/i,          emoji: "\u2728",       titleVerb: "wonder" },
+  ];
+  const matched = HITS.filter(h => h.rx.test(body));
+  const created: Array<{ category: string; title: string }> = [];
+  for (const m of matched) {
+    const title = `Caught a moment of ${m.titleVerb} \u2014 ${opts.date}`;
+    await db.insert(proudMoments).values({
+      source: "auto" as any,
+      category: m.category as any,
+      title,
+      body: opts.body.slice(0, 240),
+      emoji: m.emoji,
+      skillLadderId: null,
+      blockId: null,
+    } as any);
+    created.push({ category: m.category, title });
+  }
+
+  // 3-day-streak bonus: only if at least one category hit today, AND the prior
+  // two consecutive calendar days also contain a journal entry with a hit.
+  let streakBonus: { category: string; title: string } | null = null;
+  if (matched.length > 0) {
+    try {
+      const today = new Date(opts.date + "T00:00:00Z");
+      const yest = new Date(today.getTime() - 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const dayBefore = new Date(today.getTime() - 48 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      const recent = await db.select().from(journalEntries).where(inArray(journalEntries.date as any, [yest, dayBefore] as any));
+      // MySQL date columns come back as Date instances, normalize to YYYY-MM-DD
+      const norm = (d: any): string => {
+        if (!d) return "";
+        if (typeof d === "string") return d.slice(0, 10);
+        try { return new Date(d).toISOString().slice(0, 10); } catch { return String(d).slice(0, 10); }
+      };
+      const RX = /\b(tried|kind|brave|kept|made|wonder|helped|shared|drew|focused)\b/i;
+      const haveYest = (recent as any[]).some((r) => norm(r.date) === yest && RX.test(r.body || ""));
+      const haveDayBefore = (recent as any[]).some((r) => norm(r.date) === dayBefore && RX.test(r.body || ""));
+      if (haveYest && haveDayBefore) {
+        const title = `3-day streak of soft-skill wins \ud83c\udf08`;
+        await db.insert(proudMoments).values({
+          source: "auto" as any,
+          category: "growth" as any,
+          title,
+          body: "You showed up three days in a row \u2014 Kiwi noticed.",
+          emoji: "\ud83c\udf08",
+          skillLadderId: null,
+          blockId: null,
+        } as any);
+        streakBonus = { category: "growth", title };
+      }
+    } catch { /* best-effort */ }
+  }
+  return { created, streakBonus };
 }
 
 /* ============================== HELP LIST ================================= */
@@ -1799,7 +1944,7 @@ export async function seedReaganBooksIfEmpty() {
 /*  SKILL LADDER (Catch-Up Engine) + PROUD MOMENTS (Confidence Engine)        */
 /*  Imported lazily here to avoid editing the long schema-import block above. */
 /* ========================================================================== */
-import { skillLadder, skillProgress, proudMoments } from "../drizzle/schema";
+import { skillLadder, skillProgress } from "../drizzle/schema";
 
 export async function listSkillLadder(opts: { subjectSlug?: string; activeOnly?: boolean } = {}) {
   const db = getDb();
@@ -1989,7 +2134,6 @@ export async function archiveProudMoment(id: number) {
 /*  DIAGNOSTIC PLACEMENT (Phase 3)                                            */
 /* ========================================================================== */
 import { placementTasks, placementResponses } from "../drizzle/schema";
-import { inArray } from "drizzle-orm";
 
 /**
  * Returns all placement tasks (optionally for one subject) joined with their

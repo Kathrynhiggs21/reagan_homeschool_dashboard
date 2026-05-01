@@ -269,32 +269,10 @@ export default function Today() {
           </Button>
         </div>
       </header>
-      {/* Daily tip strip — deterministic by date so it stays stable all day */}
-      {(() => {
-        const tip = dailyTipForDate(localDateKey());
-        return (
-          <div
-            className="flex items-center gap-2 rounded-xl border px-3 py-2 text-[13px] leading-snug"
-            style={{
-              background: "rgba(255,238,170,0.10)",
-              borderColor: "rgba(255,238,170,0.35)",
-              color: "#fff4d6",
-            }}
-          >
-            <span aria-hidden className="text-base">💡</span>
-            <span className="flex-1">{tip}</span>
-            <button
-              onClick={() => speakLikeBird(tip)}
-              className="shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] hover:bg-white/10"
-              aria-label="Read today's tip out loud"
-              title="Read this to me"
-            >
-              <Volume2 className="w-3 h-3" /> Read
-            </button>
-          </div>
-        );
-      })()}
+      {/* Daily tip strip + Fresh-start button — deterministic by date so the tip stays stable all day */}
+      <DailyTipAndFreshStart />
 
+      {/* Component lives below the JSX */}
       {isAbsentToday && (
         <Card className="p-4 rounded-2xl border-2 border-rose-300 bg-gradient-to-br from-rose-50 to-rose-100">
           <div className="flex items-start gap-3">
@@ -922,6 +900,58 @@ function CoinStickerStrip() {
         <span>{coinCount}</span>
         <span className="opacity-70 font-normal text-xs">coins · prize shop</span>
       </a>
+    </div>
+  );
+}
+
+
+/* ============ Daily tip + Fresh-start button (top of Today) ============ */
+function DailyTipAndFreshStart() {
+  const tip = dailyTipForDate(localDateKey());
+  const utils = trpc.useUtils();
+  const refresh = trpc.today.refresh.useMutation({
+    onSuccess: () => {
+      try { (utils as any).schedule?.invalidate?.(); } catch { /* ok */ }
+      try { (utils as any).today?.coverage?.invalidate?.(); } catch { /* ok */ }
+      try { utils.invalidate(); } catch { /* ok */ }
+    },
+  });
+  return (
+    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+      <div
+        className="flex items-center gap-2 rounded-xl border px-3 py-2 text-[13px] leading-snug flex-1"
+        style={{
+          background: "rgba(255,238,170,0.10)",
+          borderColor: "rgba(255,238,170,0.35)",
+          color: "#fff4d6",
+        }}
+      >
+        <span aria-hidden className="text-base">💡</span>
+        <span className="flex-1">{tip}</span>
+        <button
+          onClick={() => speakLikeBird(tip)}
+          className="shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] hover:bg-white/10"
+          aria-label="Read today's tip out loud"
+          title="Read this to me"
+        >
+          <Volume2 className="w-3 h-3" /> Read
+        </button>
+      </div>
+      <button
+        type="button"
+        disabled={refresh.isPending}
+        onClick={() => refresh.mutate({})}
+        className="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-semibold border hover:bg-white/10 disabled:opacity-60"
+        style={{
+          background: "rgba(127,227,196,0.12)",
+          borderColor: "rgba(127,227,196,0.45)",
+          color: "#bff5e0",
+        }}
+        title="Rebuild today's plan — keeps your finished and started work"
+      >
+        <span aria-hidden>🔄</span>
+        {refresh.isPending ? "Refreshing…" : "Fresh start"}
+      </button>
     </div>
   );
 }

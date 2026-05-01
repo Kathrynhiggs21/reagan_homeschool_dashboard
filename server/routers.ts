@@ -1047,7 +1047,12 @@ export const appRouter = router({
       title: z.string().optional(),
       body: z.string(),
       mood: z.string().optional(),
-    })).mutation(({ input }) => db.createJournalEntry(input)),
+    })).mutation(async ({ input }) => {
+      const row = await db.createJournalEntry(input);
+      // Soft-skill auto-bump: best-effort, never throw.
+      try { await db.bumpFromJournal({ date: input.date, body: input.body }); } catch (e) { console.warn("[journal.bump] swallowed:", (e as any)?.message); }
+      return row;
+    }),
     delete: publicProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteJournalEntry(input.id)),
   }),
 
@@ -1878,6 +1883,14 @@ export const appRouter = router({
     moodStrip: protectedProcedure
       .input(z.object({ days: z.number().min(1).max(14).optional() }).optional())
       .query(({ input }) => db.recentMoodStrip(input?.days ?? 3)),
+    /**
+     * refresh — rebuild today's plan blocks from the active template,
+     * preserving completed/in-progress work. Available to Reagan (public)
+     * because she sometimes wants a clean slate after a rough start.
+     */
+    refresh: publicProcedure
+      .input(z.object({ date: z.string().optional() }).optional())
+      .mutation(({ input }) => db.refreshTodayPlan({ dateStr: input?.date })),
   }),
   reagan: router({
     /** Read-only Reagan Profile Model snapshot for printables/online picker. */
