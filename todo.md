@@ -1704,3 +1704,35 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] Today schedule-block: inline file thumbnail strip (no extra click) + matchPrintable scoring bugfix
 - [x] Parallel-test race fix on bumpFromSubmission (pin fixture ladderOrder=0 + unique skill code per pid)
 - [x] Schedule page parity: TopicLabel on both block renders (Day list + Agenda dialog)
+
+
+## 2026-05-01 Today's afternoon plan (urgent — happening today)
+- [ ] Upload Planet-collage-720-x-1024.jpg into webdev storage and reference from today's plan
+- [ ] Upload weight-on-planets.PDF into webdev storage and reference from today's plan
+- [ ] Pick a kid-safe < 5 min "plants/planets in our solar system" video, embed link in today's first block
+- [ ] Replace today's plan with afternoon-only schedule (~2 hrs):
+  - Block 1: 5-min planets video kickoff
+  - Block 2: Science hands-on — "Planets of the solar system to scale" (the collage activity, 8 circles + Saturn ring, cut + color)
+  - Block 3: Science worksheet — Weight on Planets PDF
+  - Block 4: Math — circle/360° → angles → triangles (types + angle sum 180°)
+  - Tipsy-Top math nudge: short circle+triangle resource link
+- [ ] Update Today UI to surface the attachments inline on each block (image + PDF view buttons)
+- [ ] Note in plan: "Half day — afternoon only, ~2 hours"
+
+## 2026-05-01 Scope reduction (school account + classroom deactivated)
+- [ ] Remove PowerSchool integration entirely (server, components, tests)
+- [ ] Remove Google Classroom integration entirely (sync, UI, tests)
+- [ ] Update Apps Hub: keep app launchers (IXL, Khan, Prodigy, BrainPOP, Edpuzzle, Vocab.com, Blooket, Wayground, Seesaw, Canva, Code.org, Book Creator, Merlin, iNaturalist) but remove Google Classroom + IHSD Gmail entries
+
+## 2026-05-01 New: Apps login + subscription vault
+- [ ] Add `appCredentials` table (appLinkId, login, password, subscriptionStatus, renewalDate, notes)
+- [ ] Adult-gated "Manage logins" page in Settings to view/edit credentials
+- [ ] Show subscription status pill on each app card on Apps Hub
+- [ ] (Open Q from me) clipboard auto-copy vs reveal-only — defaulting to reveal-only behind adult unlock
+
+
+## 2026-05-01 Reagan's identity update
+- [ ] Replace `reagan.higgs33@ihsd.us` references in DB seed + UI with `reaganhiggs910@gmail.com`
+- [ ] Tag each appLink with `signInMethod` (`google_sso` | `email_password` | `class_code`) and which Google account it links to
+- [ ] Build Apps Hub credential vault (adult-gated reveal, subscription + renewal date)
+- [ ] Decide clipboard-copy vs reveal-only default (waiting on user)
