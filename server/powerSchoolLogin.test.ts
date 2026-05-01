@@ -27,7 +27,10 @@ function extractInput(html: string, name: string): string | null {
   return html.match(re)?.[1] ?? html.match(alt)?.[1] ?? null;
 }
 
-describe("PowerSchool guardian credentials", () => {
+// IH PowerSchool guardian account was closed April 2026 when Reagan transitioned
+// to full-time homeschool. The live POST is no longer reachable / authenticated,
+// so we skip the live-login test instead of letting it fail every CI run.
+describe.skip("PowerSchool guardian credentials (archived — IH closed Apr 2026)", () => {
   it(
     "logs in successfully with the stored secrets",
     async () => {

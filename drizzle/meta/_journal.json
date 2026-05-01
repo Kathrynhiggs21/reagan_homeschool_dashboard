@@ -281,6 +281,13 @@
       "when": 1777609976134,
       "tag": "0039_skinny_lady_bullseye",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "5",
+      "when": 1777611227218,
+      "tag": "0040_red_white_tiger",
+      "breakpoints": true
     }
   ]
 }

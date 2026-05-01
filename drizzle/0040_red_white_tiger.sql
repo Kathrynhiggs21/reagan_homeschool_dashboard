@@ -1,0 +1,2 @@
+ALTER TABLE `assignmentSubmissions` ADD `kidDifficulty` enum('easy','just_right','tricky','really_hard');--> statement-breakpoint
+ALTER TABLE `assignmentSubmissions` ADD `readingOnly` boolean DEFAULT false NOT NULL;

@@ -183,12 +183,12 @@ export default function CozyShell({ children }: { children: ReactNode }) {
       </aside>
 
       <main className="flex-1 min-w-0 relative">
-        {/* Glassy weather pill, upper-left of the main scroll area. Decorative
-            but also broadcasts the current condition to other components. */}
-        <div className="absolute top-3 left-4 z-30 no-print">
+        {/* Glassy weather pill — inline top-right of the scroll area so it
+            never overlaps the theme picker or page headings. */}
+        <div className="max-w-6xl mx-auto px-6 pt-4 pb-1 flex justify-end no-print">
           <WeatherWidget />
         </div>
-        <div className="max-w-6xl mx-auto px-6 py-6">{children}</div>
+        <div className="max-w-6xl mx-auto px-6 pb-6">{children}</div>
       </main>
     </div>
   );

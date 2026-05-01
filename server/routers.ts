@@ -1155,6 +1155,9 @@ export const appRouter = router({
         fileKey: input.fileKey,
         fileUrl: input.fileUrl,
         adultNotes,
+        // Migration 0040 — first-class columns for these two fields.
+        kidDifficulty: input.kidDifficulty,
+        readingOnly: !!input.readingCheckmark,
       } as any);
     }),
     upload: publicProcedure.input(z.object({ dataUrl: z.string(), fileName: z.string() })).mutation(async ({ input }) => {

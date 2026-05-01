@@ -537,6 +537,13 @@ export const assignmentSubmissions = mysqlTable("assignmentSubmissions", {
   rubricPick: mysqlEnum("rubricPick", ["not_yet", "getting_there", "got_it", "mastered"]),
   rubricScore: int("rubricScore"), // full 0-100 precision, only shown when slider is expanded
   adultNotes: text("adultNotes"),
+  /**
+   * How hard Reagan said it felt. Self-rating captured in TurnInDialog.
+   * easy | just_right | tricky | really_hard
+   */
+  kidDifficulty: mysqlEnum("kidDifficulty", ["easy", "just_right", "tricky", "really_hard"]),
+  /** True when the assignment was a reading bucket marked done with one tap (no photo). */
+  readingOnly: boolean("readingOnly").default(false).notNull(),
   reviewedAt: timestamp("reviewedAt"),
   reviewedByUserId: int("reviewedByUserId"),
   submittedAt: timestamp("submittedAt").defaultNow().notNull(),

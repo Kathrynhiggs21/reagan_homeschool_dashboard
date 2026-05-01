@@ -162,7 +162,15 @@ export default function Today() {
   const saveGoodWorkM = trpc.prefs.set.useMutation();
 
   const today_str = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
-  const blocks = today.data?.blocks ?? [];
+  // Hide test/quiz/screener/placement-style blocks from Reagan's Today list per parent request.
+  // We use a permissive title-pattern filter so it works whatever blockType was assigned upstream.
+  // Adults can still see/manage these from the Schedule page (we only filter Reagan's primary view).
+  const TEST_PATTERNS = /\b(test|quiz|screener|screening|placement|assessment|benchmark)\b/i;
+  const allBlocks = today.data?.blocks ?? [];
+  const blocks = unlocked
+    ? allBlocks
+    : allBlocks.filter((b: any) => !TEST_PATTERNS.test(`${b.title ?? ""} ${b.description ?? ""}`));
+  const hiddenTestCount = allBlocks.length - blocks.length;
   const planId = today.data?.plan?.id;
   const done = blocks.filter((b: any) => b.status === "complete").length;
   const total = blocks.length;
@@ -360,9 +368,19 @@ export default function Today() {
       <section>
         <div className="flex items-baseline justify-between mb-3">
           <h2 className="font-display text-xl font-semibold chalk-white">Today's Schedule</h2>
-          {total > 0 && (
-            <span className="text-xs text-muted-foreground">{done} / {total} done</span>
-          )}
+          <div className="flex items-center gap-2">
+            {hiddenTestCount > 0 && unlocked === false && (
+              <span
+                className="text-[10px] uppercase tracking-wide rounded-full px-2 py-0.5 bg-amber-200/40 text-amber-100 border border-amber-300/40"
+                title={`${hiddenTestCount} item(s) hidden from Reagan because they're tests/quizzes/screeners. Unlock adult area to view.`}
+              >
+                {hiddenTestCount} hidden
+              </span>
+            )}
+            {total > 0 && (
+              <span className="text-xs text-muted-foreground">{done} / {total} done</span>
+            )}
+          </div>
         </div>
         {today.isLoading && <div className="text-muted-foreground text-sm">Loading...</div>}
         {!today.isLoading && blocks.length === 0 && (
