@@ -1745,3 +1745,53 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Update AI generator to populate linkUrl/pdfKey/videoUrl on every block (not just markdown in description)
 - [ ] Vitest spec: every AI-generated block has at least one openable resource
 - [ ] Today's "Pick a printable to track" must surface today's printables, not "No link yet"
+
+
+## 2026-05-01 Google account routing
+- [ ] Add `preferredGoogleAccount` enum column to app_accounts (reagan | dad | none)
+- [ ] Default mapping: Khan/BrainPOP/Edpuzzle/Seesaw/Code.org/Book Creator/iNaturalist/Merlin/Vocab.com/Canva → reagan; IXL parent / Prodigy parent / Family Link → dad
+- [ ] Show per-app Google badge in AppAccountsCard ("Sign in with Google as Reagan" / "as Dad")
+- [ ] Append `?authuser=<email>` Chrome multi-account hint to launcher Open URL when preferredGoogleAccount is set
+- [ ] Vitest: schema migration, default mapping seed, badge render
+- [ ] Document the realistic flow (one-time Chrome multi-account setup) in onboarding card
+- [x] Mount AppAccountsCard on Apps page (adult-gated)
+- [x] Migrate stored sign-in emails to reaganhiggs910@gmail.com
+
+
+## 2026-05-01 PRIORITY: Three Real-Mission Deliverables (visual polish PAUSED)
+
+### Mission A — Curriculum + Adult Update Stream
+- [ ] Audit existing Curriculum.tsx page — does it show subjects → units → topics → lessons with done/in-progress/todo states?
+- [ ] Curriculum coverage tracker: % of 5th-grade Ohio standards completed per subject
+- [ ] "What's been done / what's left / what's next" view per subject
+- [ ] Build AdultUpdateStream component — live feed of: blocks completed, mood logs, struggles, books-progressed, app drills finished, kiwi-coins earned, photos uploaded
+- [ ] Stream visible on a new "Adult Dashboard" / "For Adults" page (or existing Tutor Handoff)
+- [ ] Backend: `adultStream.feed({ since, limit })` aggregates from scheduleBlocks + emotional_struggles + book_progress + app_engagement + photos
+- [ ] Real-time refresh every 30s (or websockets if cheap)
+- [ ] Per-event row: timestamp, kid-friendly label, subject icon, status, link to source
+- [ ] Filter chips: today / this week / by subject / by adult-actor
+- [ ] Notify (in-app + email) all adult viewers on key events: red-zone mood, 3 reds same topic, milestone
+
+### Mission B — Automated Daily Lesson Generator
+- [ ] Schedule a nightly cron (6pm America/New_York) that calls /api/scheduled/generate-tomorrow
+- [ ] Endpoint: `scheduledTask.generateTomorrow` — uses LLM to plan a complete day for Reagan based on her curriculum gaps + interests + IEP accommodations + tomorrow's calendar (no school / therapy / appointment)
+- [ ] Each generated block MUST include: title, subject, est minutes, an openable VIDEO URL, a lesson explainer, an assignment with success criteria, an optional printable PDF, a recommended app drill (with deep link)
+- [ ] Auto-resolve videos via search (YouTube safe-search or Khan/BrainPOP catalog) — DO NOT fabricate URLs
+- [ ] Auto-fetch printables (Super Teacher / K12reader / education.com) OR generate Manus PDF if behind paywall
+- [ ] Auto-suggest matching app drill (IXL skill code, Khan unit URL, Prodigy assignment, BrainPOP topic)
+- [ ] Insert as scheduleBlocks + assignments_library rows pinned via blockId
+- [ ] "Generated overnight by Kiwi" banner on Today page
+- [ ] Adult can preview tomorrow's plan from 6pm onward and tweak/regenerate
+- [ ] If generator fails (LLM, network), fallback to last-week's template with a notification email
+
+### Mission C — Kiwi Always-On Listening
+- [ ] Wake word "Hey Kiwi" / "Kiwi" detection (Web Speech API + simple keyword spotter)
+- [ ] After wake word: full speech-to-text via existing transcribeAudio helper
+- [ ] Ambient interpretation mode: when adult-toggled ON, Kiwi periodically transcribes 10-second windows during work blocks (no playback) and:
+  - flags signs of frustration ("I can't" / "this is dumb" / sighs / silence > 60s) → suggests a break or simpler version
+  - notes when she explains a concept correctly → auto-marks "she gets this" evidence
+  - logs into emotional_struggles or skill_evidence as appropriate
+- [ ] All audio processed in-browser; only transcripts (text) ever sent server-side
+- [ ] Adult-only toggle in Settings + clear privacy notice + per-block opt-in indicator
+- [ ] Kid-visible "🎧 Kiwi is listening" indicator while active
+- [ ] Vitest coverage for wake-word detector + ambient flagging logic

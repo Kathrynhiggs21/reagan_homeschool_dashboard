@@ -78,6 +78,7 @@ export function AppAccountsCard() {
             onUsernameChange={(username) => upsertStatus.mutate({ id: r.id, signInUsername: username || null })}
             onSavePassword={(password) => setPassword.mutate({ id: r.id, password })}
             onClearPassword={() => clearPassword.mutate({ id: r.id })}
+            onPreferredGoogleChange={(g) => upsertStatus.mutate({ id: r.id, preferredGoogleAccount: g })}
           />
         ))}
       </div>
@@ -92,6 +93,7 @@ function AppAccountRow({
   onUsernameChange,
   onSavePassword,
   onClearPassword,
+  onPreferredGoogleChange,
 }: {
   row: any;
   onStatusChange: (s: AccountStatus) => void;
@@ -99,6 +101,7 @@ function AppAccountRow({
   onUsernameChange: (u: string) => void;
   onSavePassword: (p: string) => void;
   onClearPassword: () => void;
+  onPreferredGoogleChange?: (g: "reagan" | "dad" | "none") => void;
 }) {
   const [expanded, setExpanded] = useState(false);
   const [pw, setPw] = useState("");
@@ -133,6 +136,16 @@ function AppAccountRow({
             {row.hasFamilyTier ? " · family tier available" : ""}
           </span>
         </span>
+        {row.preferredGoogleAccount === "reagan" && (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 text-blue-800" title="Sign in with Google as Reagan">
+            G · Reagan
+          </span>
+        )}
+        {row.preferredGoogleAccount === "dad" && (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-100 text-purple-800" title="Sign in with Google as Dad">
+            G · Dad
+          </span>
+        )}
         <span
           className="text-xs px-2 py-1 rounded-full"
           style={{ background: meta.color + "22", color: meta.color }}
@@ -169,6 +182,19 @@ function AppAccountRow({
               }}
               className="px-2 py-1 rounded border border-[var(--cozy-line)] bg-[var(--cozy-bg)] text-sm"
             />
+          </label>
+
+          <label className="text-xs flex flex-col gap-1 sm:col-span-2">
+            <span className="opacity-70">Sign in with Google as…</span>
+            <select
+              value={row.preferredGoogleAccount || "none"}
+              onChange={(e) => onPreferredGoogleChange?.(e.target.value as any)}
+              className="px-2 py-1 rounded border border-[var(--cozy-line)] bg-[var(--cozy-bg)] text-sm"
+            >
+              <option value="none">No Google sign-in (use email/password below)</option>
+              <option value="reagan">Reagan · reaganhiggs910@gmail.com</option>
+              <option value="dad">Dad · spear.cpt@gmail.com</option>
+            </select>
           </label>
 
           <label className="text-xs flex flex-col gap-1 sm:col-span-2">

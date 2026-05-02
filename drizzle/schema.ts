@@ -1608,6 +1608,7 @@ export const appAccounts = mysqlTable("app_accounts", {
   passwordEncrypted: text("password_encrypted"),                      // AES-encrypted password (server-only)
   passwordIv: varchar("password_iv", { length: 64 }),                 // IV for AES encryption
   notes: text("notes"),
+  preferredGoogleAccount: mysqlEnum("preferred_google_account", ["reagan", "dad", "none"]).default("none").notNull(),
   hasFamilyTier: boolean("has_family_tier").default(false).notNull(),
   isPaid: boolean("is_paid").default(false).notNull(),
   monthlyCost: int("monthly_cost"),                                   // cents

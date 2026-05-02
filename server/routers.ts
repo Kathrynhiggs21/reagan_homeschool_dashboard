@@ -480,6 +480,7 @@ export const appRouter = router({
       signInEmail: z.string().email().nullable().optional(),
       signInUsername: z.string().max(200).nullable().optional(),
       notes: z.string().max(2000).nullable().optional(),
+      preferredGoogleAccount: z.enum(["reagan", "dad", "none"]).optional(),
     })).mutation(async ({ input }) => {
       const { id, ...patch } = input;
       const set: any = { ...patch };

@@ -1,0 +1,1 @@
+ALTER TABLE `app_accounts` ADD `preferred_google_account` enum('reagan','dad','none') DEFAULT 'none' NOT NULL;

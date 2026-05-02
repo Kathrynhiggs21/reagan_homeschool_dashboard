@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAdultLock } from "@/contexts/AdultLockContext";
 import { toast } from "sonner";
 import RobloxTile from "@/components/RobloxTile";
+import AppAccountsCard from "@/components/AppAccountsCard";
 
 type App = { id: number; name: string; url: string; category: string | null; emoji?: string | null; description?: string | null; accountInfo?: string | null };
 
@@ -179,6 +180,16 @@ export default function Apps() {
           <p className="font-display">No apps yet.</p>
           <p className="text-sm text-muted-foreground mt-1">Adults can add apps with the + Add app button.</p>
         </Card>
+      )}
+
+      {unlocked && (
+        <section className="mt-8">
+          <div className="flex items-baseline justify-between mb-3">
+            <h2 className="font-display text-xl font-semibold chalk-white">🔐 Adult: app sign-ins</h2>
+            <span className="text-xs text-muted-foreground">Encrypted password locker • reveal/copy on tap</span>
+          </div>
+          <AppAccountsCard />
+        </section>
       )}
 
       {adding && <AppForm open={adding} onOpenChange={setAdding} />}
