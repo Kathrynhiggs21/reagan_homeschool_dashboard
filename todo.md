@@ -1,5 +1,9 @@
 # Reagan's Homeschool Dashboard — TODO
 
+## Recently Shipped
+- [x] Weekend rule (May 2 2026): no auto-generated school blocks on Sat/Sun unless adult opts in. ensurePlanForDate, refreshTodayPlan, plans.aiGenerate, plans.aiCommit all weekend-aware. Plan dayType="off", blocks list empty by default. allowWeekend flag override on AI procedures. 5 new vitest cases (weekendPlan.test.ts + aiGenerateWeekend.test.ts).
+- [x] Removed dead Google Classroom canonical-app assertion (school @ihsd.us account dead).
+
 ## Foundation
 - [x] Apply Cozy Classroom theme (pencil yellow / apple red / chalkboard green / notebook blue / eraser pink on warm cream) in `client/src/index.css`
 - [x] Add Quicksand + Fredoka fonts via Google Fonts in `client/index.html`
@@ -1795,3 +1799,147 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Adult-only toggle in Settings + clear privacy notice + per-block opt-in indicator
 - [ ] Kid-visible "🎧 Kiwi is listening" indicator while active
 - [ ] Vitest coverage for wake-word detector + ambient flagging logic
+
+
+## 2026-05-02 Architecture Reset — Single Source of Truth = Dashboard DB
+
+### Phase 1: Dead-account scrub
+- [ ] Replace `student.googleEmail` default `reagan.higgs33@ihsd.us` → `reaganhiggs910@gmail.com` in server/db.ts:4179
+- [ ] Replace `classroom.studentDomain` `ihsd.us` → `gmail.com` in server/db.ts:4180
+- [ ] Remove `/@ihsd\.us$/i` allowlist regex in server/db.ts:2799 (replace with new tutor allowlist)
+- [ ] Remove "PowerSchool — Indian Hill" entry from seed.mjs:215
+- [ ] Strip @ihsd.us copy in client/src/pages/Schedule.tsx:375, Settings.tsx:347, UploadOrSync.tsx:134/268, googleAuthLink.ts:45, DrivePushQueueCard.tsx:8
+- [ ] Hide `ihAssignments` UI surfaces (table can stay for now — read-only legacy)
+- [ ] Update DB rows: `UPDATE app_settings SET value='reaganhiggs910@gmail.com' WHERE key='student.googleEmail'`
+- [ ] Update DB rows: any app_accounts.signInEmail still ihsd.us → reaganhiggs910@gmail.com
+- [ ] Vitest: snapshot grep ensures no production code mentions ihsd.us / Reagan.higgs33
+
+### Phase 2: Tutor multi-account
+- [ ] Add `tutorRole` enum to user.role: admin | user | tutor | viewer
+- [ ] Tutor permissions: can mark blocks done, log mood, write tutor notes, view curriculum coverage; cannot edit settings or view billing/secrets
+- [ ] Add `tutors` rows for Madison, Sophie, Keith with weekly slot pattern
+- [ ] Tutor invite flow (admin invites by email → magic link → first sign-in creates user)
+- [ ] Each tutor sees their own "Today's plan with Reagan" handoff page
+
+### Phase 3: Curriculum hub
+- [ ] Subjects → strands → standards → topics → lessons hierarchy (5th-grade Ohio)
+- [ ] Per-topic: status (not_started | in_progress | done | mastered), evidence count, last_touched_at, who_marked_it
+- [ ] Curriculum.tsx visualizes coverage % with click-to-edit
+- [ ] AI generator + completed blocks auto-update topic status
+
+### Phase 4: Adult Update Stream
+- [ ] adultStream.feed({ since, limit, kind?, actor? }) tRPC procedure
+- [ ] Aggregates: scheduleBlocks completions, mood logs, struggles, tutor notes, photos, app drills, kiwi coins, milestone events
+- [ ] /adults page renders chronological list with filter chips
+- [ ] Auto-refresh every 30s
+
+### Phase 5: Daily Lesson Generator (nightly)
+- [ ] Cron 6pm ET → /api/scheduled/generate-tomorrow
+- [ ] LLM plans full day from curriculum gaps + interests + IEP + tomorrow's calendar
+- [ ] Each block: video URL + lesson + assignment + printable + app drill
+- [ ] Insert as scheduleBlocks + assignments_library rows pinned via blockId
+- [ ] Fallback to last-week template on failure with email alert
+
+### Phase 6: Sync layer (Gmail + Drive pull/push)
+- [ ] Daily 7am pull: spear.cpt@gmail.com Gmail → ingest curriculum/tutor/parent emails
+- [ ] Daily 7am pull: Drive Reagan folder → mirror new files into assignments_library
+- [ ] Daily 11pm push: dashboard photo submissions + completed printables → Drive Reagan/{date} archive folder
+- [ ] OAuth via existing google-classroom MCP / gws CLI
+
+### Phase 7: Kiwi always-on listening
+- [ ] Wake word "Hey Kiwi" detection (Web Speech API + keyword spotter)
+- [ ] Ambient mode: 10s windows transcribed locally, frustration/comprehension flags
+- [ ] All audio stays in-browser; only transcripts sent server-side
+- [ ] Adult-only toggle in Settings + privacy notice + per-block opt-in indicator
+
+### Pending data from user
+- [ ] Tutor email addresses for Madison / Sophie / Keith
+- [ ] Confirm Mom's email = marcy.spear@gmail.com
+- [ ] Confirm Indian Hill last day of school (default 2026-06-04 from seed)
+
+
+## 2026-05-02 Architecture Reset — Roles + Single Source of Truth
+
+### Roles + emails (locked in)
+- **Parent** = Dad — `spear.cpt@gmail.com` — admin / dashboard owner
+- **Student** = Reagan — `reaganhiggs910@gmail.com`
+- **Grandma** = Marcy — `marcy.spear@gmail.com` — read-only viewer
+- **Tutor** Madison — TBD — Mon + Wed 10–3
+- **Tutor** Sophie — TBD — Tue + Fri 10–3
+- **Tutor** Keith — TBD — Thu 11–2
+
+### Phase 1: dead-account scrub + role rename
+- [ ] Replace `student.googleEmail` default `reagan.higgs33@ihsd.us` → `reaganhiggs910@gmail.com` (server/db.ts)
+- [ ] Replace `classroom.studentDomain` `ihsd.us` → `gmail.com`
+- [ ] Remove `/@ihsd\.us$/i` allowlist regex (server/db.ts)
+- [ ] Strip "PowerSchool — Indian Hill" from seed.mjs
+- [ ] Remove @ihsd.us copy from Schedule.tsx, Settings.tsx, UploadOrSync.tsx, googleAuthLink.ts, DrivePushQueueCard.tsx
+- [ ] Hide ihAssignments UI (table stays read-only legacy)
+- [ ] DB: UPDATE app_settings SET value='reaganhiggs910@gmail.com' WHERE key='student.googleEmail'
+- [ ] DB: UPDATE app_settings SET value='spear.cpt@gmail.com' WHERE key='parent.googleEmail' (insert if missing)
+- [ ] DB: UPDATE app_settings SET value='marcy.spear@gmail.com' WHERE key='grandma.googleEmail' (insert if missing)
+- [ ] Rename UI labels Adult/Helper/Owner → Parent / Grandma / Tutor / Student
+- [ ] Vitest grep guard: production code must not mention ihsd.us / Reagan.higgs33
+
+### Phase 2: multi-account roles
+- [ ] Extend user.role enum: admin | parent | grandma | tutor | student | viewer
+- [ ] Permissions matrix: parent=full, grandma=read+react, tutor=write blocks/notes/grades on assigned days only, student=own day, viewer=read
+- [ ] Invite flow: parent emails invite → magic link → first sign-in creates user with assigned role
+- [ ] Tutor assigned-days enforcement (Madison Mon+Wed, Sophie Tue+Fri, Keith Thu)
+
+### Phase 3: tutor + grandma profiles
+- [ ] Insert tutors rows for Madison/Sophie/Keith with weekly slots
+- [ ] Insert grandma viewer profile for Marcy
+- [ ] Assigned-day automatic block ownership (Tuesday's blocks = Sophie's tutor handoff page)
+
+### Phase 4: Curriculum hub
+- [ ] Subjects → strands → standards → topics → lessons (5th-grade Ohio)
+- [ ] Per-topic status + evidence + last_touched_at + who_marked_it
+- [ ] Curriculum.tsx coverage % visualization
+- [ ] AI generator + completed blocks auto-update topic status
+
+### Phase 5: Family Update Stream
+- [ ] adultStream.feed tRPC procedure aggregating block completions, mood, struggles, tutor notes, photos, app drills, coins, milestones
+- [ ] /family or /updates page with chronological feed and filter chips
+- [ ] Auto-refresh every 30s, plus daily digest email Sun 6pm
+
+### Phase 6: Daily Lesson Generator (nightly)
+- [ ] Cron 6pm ET → /api/scheduled/generate-tomorrow
+- [ ] LLM plans full day from curriculum gaps + interests + IEP + tomorrow's calendar + which tutor will be there
+- [ ] Each block: video URL + lesson + assignment + printable + app drill + tutor-led-or-independent flag
+- [ ] Insert as scheduleBlocks + assignments_library rows pinned via blockId
+- [ ] Failure fallback to last-week template + email Parent
+
+### Phase 7: Sync layer
+- [ ] Daily 7am pull from Parent's Gmail (spear.cpt@gmail.com): curriculum/tutor/parent emails
+- [ ] Daily 7am pull from Drive: Reagan folder mirror into assignments_library
+- [ ] Daily 11pm push: photo submissions + completed printables → Drive Reagan/{date} archive folder
+
+### Phase 8: Kiwi always-on listening
+- [ ] Wake word "Hey Kiwi" detection (Web Speech API + keyword spotter)
+- [ ] Ambient mode 10s windows with frustration/comprehension flags
+- [ ] All audio in-browser; only transcripts sent server-side
+- [ ] Adult-only toggle in Settings + privacy notice + per-block opt-in indicator
+
+### Pending data from Parent
+- [ ] Tutor email addresses (Madison / Sophie / Keith)
+- [ ] Confirm Grandma's email = marcy.spear@gmail.com (locked)
+- [ ] Confirm Reagan's last day of school (default 2026-06-04 from seed)
+
+
+## 2026-05-02 Role + Daily-Assessment updates
+- [ ] Grandma Marcy role = `editor` (not viewer): can edit blocks, mark done, upload photos, add notes; cannot change billing/secrets
+- [ ] User.role enum extended: admin | parent | editor | tutor | student | viewer
+- [ ] Permissions matrix: parent=full, editor=write+upload+notes (no billing), tutor=write blocks/notes on assigned days, student=own day, viewer=read-only
+- [ ] Daily Assessment one-tap launcher card on Today: opens every app needed for today's blocks with `?authuser=reaganhiggs910@gmail.com` URL hint, copies non-Google passwords to clipboard, marks blocks in_progress on launch
+- [ ] First-time consent disclaimer: kid/parent must click Allow once per app, then one-click forever
+- [ ] Vitest: Daily Assessment launcher resolves correct app set from today's blocks + adds correct authuser hint
+
+
+## 2026-05-02 Per-app identity + Tutor permissions
+- [ ] Per-app card supports BOTH Student (reaganhiggs910@gmail.com) and Parent (spear.cpt@gmail.com) sign-in buttons; default = Student
+- [ ] Daily Assessment launcher: identity-picker default Student, one-tap Parent override
+- [ ] Tutor role permissions = Editor tier: edit schedule, add/remove assignments, mark done, upload photos, leave notes (no billing/secrets/users)
+- [ ] Editor (Grandma Marcy) = same permissions as Tutor
+- [ ] Permissions matrix doc in /docs/roles.md
+- [ ] Vitest: tutor procedures pass authorization check; tutor cannot mutate billing/secrets endpoints

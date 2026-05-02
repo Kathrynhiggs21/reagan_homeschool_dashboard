@@ -68,19 +68,44 @@ export async function getPlanByDate(dateStr: string) {
   return rows[0] || null;
 }
 
-export async function ensurePlanForDate(dateStr: string, dayType: any = "full") {
+/**
+ * ensurePlanForDate
+ *
+ * Weekend rule (per user, May 2026): Saturday and Sunday have NO auto-generated
+ * school blocks or assignments. The plan row exists (so the UI can render "no
+ * school today, free day"), but its block list stays empty unless a parent /
+ * editor / tutor explicitly adds something — manually, via the schedule UI, or
+ * via the AI generator with `allowWeekend: true`.
+ *
+ * Wednesday = therapy day (lighter auto-build).
+ * Weekday non-Wednesday = full template.
+ */
+export async function ensurePlanForDate(
+  dateStr: string,
+  dayType: any = "full",
+  opts: { allowWeekendAutoBuild?: boolean } = {},
+) {
   const existing = await getPlanByDate(dateStr);
   if (existing) return existing;
   const db = getDb();
-  // Wednesday = therapy day (lighter); Saturday/Sunday = weekend (soft, optional)
   const dow = new Date(dateStr + "T00:00:00").getDay();
   const isWeekend = dow === 0 || dow === 6;
-  const finalDayType = isWeekend ? "half" : dow === 3 ? "half" : dayType;
+  // Weekend = "off" by default. Adults can still manually add blocks afterward.
+  const finalDayType = isWeekend ? "off" : dow === 3 ? "half" : dayType;
   await db.insert(dailyPlans).values({ date: dateStr as any, dayType: finalDayType });
   const plan = await getPlanByDate(dateStr);
+  if (!plan) return plan;
+  // Skip auto-build for weekends unless caller explicitly opted in.
+  if (isWeekend && !opts.allowWeekendAutoBuild) return plan;
   const buildKind = isWeekend ? "weekend" : dow === 3 ? "therapy" : dayType;
-  if (plan) await autoBuildBlocksForPlan(plan.id, buildKind, dow);
+  await autoBuildBlocksForPlan(plan.id, buildKind, dow);
   return plan;
+}
+
+/** Pure helper — true when YYYY-MM-DD falls on Sat/Sun. Exported for tests. */
+export function isWeekendDate(dateStr: string): boolean {
+  const dow = new Date(dateStr + "T00:00:00").getDay();
+  return dow === 0 || dow === 6;
 }
 
 async function autoBuildBlocksForPlan(planId: number, dayType: string, dow: number) {
@@ -138,11 +163,19 @@ async function autoBuildBlocksForPlan(planId: number, dayType: string, dow: numb
  * work isn't lost. Test/quiz/screener kinds are filtered out per the school
  * exit (Reagan no longer at Indian Hill since Apr 2026).
  */
-export async function refreshTodayPlan(opts: { dateStr?: string } = {}) {
+export async function refreshTodayPlan(opts: { dateStr?: string; allowWeekend?: boolean } = {}) {
   const db = getDb();
   const dateStr = opts.dateStr || new Date().toISOString().slice(0, 10);
   const plan = await ensurePlanForDate(dateStr);
   if (!plan) return { ok: false as const, reason: "no_plan" };
+  const dow = new Date(dateStr + "T00:00:00").getDay();
+  const isWeekend = dow === 0 || dow === 6;
+  // Weekend rule: never auto-rebuild Sat/Sun unless caller explicitly opts in.
+  // Adults can still add blocks manually; we leave any existing blocks alone.
+  if (isWeekend && !opts.allowWeekend) {
+    const kept = await db.select().from(scheduleBlocks).where(eq(scheduleBlocks.planId, plan.id));
+    return { ok: true as const, planId: plan.id, dayKind: "weekend" as const, added: 0, kept: (kept as any[]).length, skipped: "weekend" as const };
+  }
   // Delete only not_started blocks — preserve completed/in_progress/needs_help work.
   await db.delete(scheduleBlocks).where(
     and(
@@ -152,8 +185,6 @@ export async function refreshTodayPlan(opts: { dateStr?: string } = {}) {
   );
   // Rebuild fresh blocks from the template; the template already excludes
   // test/quiz/screener kinds (we never seed them).
-  const dow = new Date(dateStr + "T00:00:00").getDay();
-  const isWeekend = dow === 0 || dow === 6;
   const buildKind = isWeekend ? "weekend" : dow === 3 ? "therapy" : "full";
   // Only insert blocks whose title isn't already present (preserve any kept ones).
   const existing = await db.select().from(scheduleBlocks).where(eq(scheduleBlocks.planId, plan.id));
@@ -2796,7 +2827,7 @@ const TUTOR_EMAIL_HINTS = [
   /mama bear/i,
 ];
 const IH_EMAIL_HINTS = [
-  /@ihsd\.us$/i,
+  // (legacy IH school @ihsd.us allowlist removed 2026-05-02 — account deactivated)
   /froehlich/i,
   /wells/i,
   /5th grade/i,
@@ -4176,8 +4207,10 @@ const APP_SETTING_DEFAULTS: Record<string, string> = {
   // Reagan's Indian Hill student Google account — used to prefill
   // /u/<email>/ on Google-domain links so Chrome doesn't re-prompt
   // for an account every time.
-  "student.googleEmail": "reagan.higgs33@ihsd.us",
-  "classroom.studentDomain": "ihsd.us",
+  "student.googleEmail": "reaganhiggs910@gmail.com",
+  "parent.googleEmail": "spear.cpt@gmail.com",
+  "grandma.googleEmail": "marcy.spear@gmail.com",
+  "classroom.studentDomain": "gmail.com",
 };
 
 async function _seedAppSettingDefaultIfMissing(key: string): Promise<string | null> {

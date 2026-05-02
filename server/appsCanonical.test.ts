@@ -18,7 +18,7 @@ const CANONICAL_NAMES = [
   "BrainPOP",
   "Edpuzzle",
   "Vocabulary.com",
-  "Google Classroom",
+  // Google Classroom removed — school @ihsd.us account dead (Apr 2026 exit)
   "Google Docs",
   "Google Drive",
   "Gmail",
@@ -35,7 +35,7 @@ const CANONICAL_NAMES = [
 ];
 
 describe("Apps & Tools — canonical 'actually-used' set", () => {
-  it("all 20 canonical apps are present in appLinks", async () => {
+  it("all canonical apps are present in appLinks", async () => {
     const db = getDb();
     const all = await db.select().from(appLinks);
     const names = new Set((all as any[]).map((a) => (a.name || "").toLowerCase()));

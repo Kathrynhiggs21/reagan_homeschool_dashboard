@@ -228,7 +228,16 @@ export const appRouter = router({
       date: z.string(),
       dayLength: z.enum(["full", "half", "off"]).optional(),
       adultPrompt: z.string().max(2000).optional(),
+      allowWeekend: z.boolean().optional(),
     })).mutation(async ({ input }) => {
+      // Weekend rule: refuse to draft a weekend day unless adult explicitly opts in.
+      if (db.isWeekendDate(input.date) && !input.allowWeekend) {
+        return {
+          summary: "Weekend — no auto-generated school today.",
+          blocks: [],
+          weekendBlocked: true as const,
+        } as any;
+      }
       const profile: any = await db.getProfile().catch(() => null);
       const subjects = (await db.listSubjects()).map((s: any) => ({ slug: s.slug, name: s.name }));
       const dt = new Date(input.date + "T12:00:00");
@@ -253,6 +262,7 @@ export const appRouter = router({
       dayLength: z.enum(["full", "half", "off"]).optional(),
       summary: z.string().optional(),
       replaceExisting: z.boolean().default(true),
+      allowWeekend: z.boolean().optional(),
       blocks: z.array(z.object({
         blockType: z.enum(["morning_warmup","math","adventure","read_aloud","choice","catch_up","appointment","custom"]),
         title: z.string().min(1).max(200),
@@ -262,7 +272,9 @@ export const appRouter = router({
         subjectSlug: z.string().nullable().optional(),
       })).min(1).max(20),
     })).mutation(async ({ input, ctx }) => {
-      const plan = await db.ensurePlanForDate(input.date, input.dayLength || "full");
+      // Manual commit IS the explicit adult action, so we always allow weekend
+      // block creation here — the empty plan row gets blocks added directly.
+      const plan = await db.ensurePlanForDate(input.date, input.dayLength || "full", { allowWeekendAutoBuild: false });
       if (!plan) throw new Error("could not ensure plan");
       const subjects = await db.listSubjects();
       const slugToId = new Map<string, number>(subjects.map((s: any) => [s.slug, s.id as number]));

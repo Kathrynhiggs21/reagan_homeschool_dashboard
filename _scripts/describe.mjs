@@ -1,0 +1,10 @@
+import mysql from "mysql2/promise";
+const c = await mysql.createConnection({ uri: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false }, connectTimeout: 8000 });
+const [a] = await c.query("DESCRIBE appSettings");
+console.log("appSettings:", a.map(r => r.Field));
+const [b] = await c.query("DESCRIBE appLinks");
+console.log("appLinks:", b.map(r => r.Field));
+const [s] = await c.query("SELECT * FROM appSettings WHERE `key` LIKE '%email%' OR `key` LIKE '%role%' OR `key` LIKE '%domain%' LIMIT 20");
+console.log("relevant settings:", s);
+await c.end();
+process.exit(0);

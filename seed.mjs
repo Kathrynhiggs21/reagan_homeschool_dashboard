@@ -212,11 +212,10 @@ const apps = [
   { name: "IXL", url: "https://www.ixl.com/signin", category: "school", emoji: "🧠", sortOrder: 1 },
   { name: "Khan Academy", url: "https://www.khanacademy.org", category: "school", emoji: "📚", sortOrder: 2 },
   { name: "Prodigy Math", url: "https://play.prodigygame.com", category: "school", emoji: "🔢", sortOrder: 3 },
-  { name: "PowerSchool — Indian Hill", url: "https://powerschool.ihsd.us/public/", category: "school", emoji: "🏫", sortOrder: 4 },
-  { name: "PowerSchool — Madeira", url: "https://madeiracityschools.powerschool.com/public/", category: "school", emoji: "🏫", sortOrder: 5 },
+  // PowerSchool removed 2026-05-02 — Reagan's IH school account is deactivated
 
   // ===== Google Workspace =====
-  { name: "Google Classroom", url: "https://classroom.google.com", category: "google", emoji: "📘", sortOrder: 10 },
+  // Google Classroom removed 2026-05-02 — IH school Workspace account deactivated; in-dashboard Classroom replaces it
   { name: "Google Docs", url: "https://docs.google.com", category: "google", emoji: "📝", sortOrder: 11 },
   { name: "Google Slides", url: "https://slides.google.com", category: "google", emoji: "🎞️", sortOrder: 12 },
   { name: "Google Drive", url: "https://drive.google.com", category: "google", emoji: "📁", sortOrder: 13 },

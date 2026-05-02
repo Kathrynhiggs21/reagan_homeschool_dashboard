@@ -42,7 +42,7 @@ function isGoogleHost(host: string): boolean {
 
 /**
  * Rewrite `href` so that it opens under `email` if possible.
- * `email` is the student's google account (e.g. Reagan.higgs33@ihsd.us).
+ * `email` is the student's google account (e.g. reaganhiggs910@gmail.com).
  */
 export function withGoogleAuthUser(href: string, email: string | null | undefined): string {
   if (!email) return href;
