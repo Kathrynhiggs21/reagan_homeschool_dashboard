@@ -87,7 +87,14 @@ export default function Apps() {
   // Fire-and-forget engagement signal when Reagan launches an app.
   const openEng = trpc.appLinks.openEngagement.useMutation();
   const studentGoogleEmail = trpc.prefs.getPublic.useQuery({ key: "student.googleEmail" });
+  const parentGoogleEmail = trpc.prefs.getPublic.useQuery({ key: "parent.googleEmail" });
   const reaganEmail = (studentGoogleEmail.data as string | null) ?? null;
+  const dadEmail = (parentGoogleEmail.data as string | null) ?? null;
+  // True for any URL whose host is on Google. Used to decide whether to show
+  // the dual-identity "Open as Dad" overlay (per-app dual identity feature).
+  function isGoogleUrl(u: string): boolean {
+    try { return /(?:^|\.)google\.com$/i.test(new URL(u).host); } catch { return false; }
+  }
   const list = (apps.data ?? []) as App[];
   const del = trpc.appLinks.delete.useMutation({ onSuccess: () => utils.appLinks.list.invalidate() });
   const [adding, setAdding] = useState(false);
@@ -167,6 +174,20 @@ export default function Apps() {
                         aria-label="Delete"
                       >🗑</button>
                     </div>
+                  )}
+                  {/* Dual-identity launcher: only on Google apps, only when adult-unlocked + dad email known */}
+                  {unlocked && dadEmail && isGoogleUrl(a.url) && (
+                    <a
+                      href={withGoogleAuthUser(a.url, dadEmail)}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(e) => { e.stopPropagation(); try { openEng.mutate({ id: a.id }); } catch {} }}
+                      className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded-md bg-purple-600 text-white text-[10px] font-semibold opacity-0 group-hover:opacity-100 transition-opacity"
+                      title={`Open as Dad (${dadEmail})`}
+                      aria-label={`Open ${a.name} as Dad`}
+                    >
+                      Open as Dad
+                    </a>
                   )}
                 </div>
               ))}

@@ -18,6 +18,7 @@ import QuickAddFab from "./components/QuickAddFab";
 import Today from "./pages/Today";
 import Week from "./pages/Week";
 import Curriculum from "./pages/Curriculum";
+import FamilyFeed from "./pages/FamilyFeed";
 import Adventures from "./pages/Adventures";
 import Journal from "./pages/Journal";
 import Bookshelf from "./pages/Bookshelf";
@@ -81,6 +82,7 @@ function Router() {
         <Route path="/bookshelf" component={Bookshelf} />
         <Route path="/apps" component={Apps} />
         <Route path="/timeline" component={Timeline} />
+        <Route path="/family" component={FamilyFeed} />
         <Route path="/profile" component={Profile} />
         {/* Adult-only pages: each wrapped in AdultGate so they prompt for the 3918 passcode */}
         <Route path="/curriculum">

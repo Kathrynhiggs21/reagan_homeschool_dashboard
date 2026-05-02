@@ -11,6 +11,7 @@ import { notifyOwner } from "./_core/notification";
 import { findFreeLinks } from "./freeLinkFinder";
 import { storagePut } from "./storage";
 import { generateScheduleDraft, type AIBlockDraft } from "./_lib/aiScheduleGenerator";
+import { describeUser, roleForEmail, capabilitiesFor, type HomeRole } from "./_lib/permissions";
 
 const Zone = z.enum(["green", "yellow", "red"]);
 const Intensity = z.enum(["green", "yellow", "red"]);
@@ -1829,6 +1830,31 @@ export const appRouter = router({
       .mutation(({ input }) => db.dismissAutomationItem(input.itemId, input.parentNote)),
     flagItem: protectedProcedure.input(z.object({ itemId: z.number(), parentNote: z.string().optional() }))
       .mutation(({ input }) => db.flagAutomationItem(input.itemId, input.parentNote)),
+  }),
+
+  /* =================== FAMILY UPDATE STREAM (Phase 4) =================== */
+  familyFeed: router({
+    /** Most-recent N events. Public so anyone with the link (e.g. a tutor on a phone) can read. */
+    list: publicProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(100).default(30) }).optional())
+      .query(({ input }) => db.listFamilyFeed(input?.limit ?? 30)),
+  }),
+
+  /* =================== HOME TEAM PERMISSIONS =================== */
+  permissions: router({
+    /** Returns role + capabilities for the currently signed-in user. */
+    me: publicProcedure.query(({ ctx }) => {
+      const email = (ctx as any)?.user?.email || null;
+      return describeUser(email);
+    }),
+    /** Lookup role by arbitrary email (adult-tools view). */
+    forEmail: publicProcedure.input(z.object({ email: z.string().email().nullable() }))
+      .query(({ input }) => describeUser(input.email)),
+    /** Static matrix — used by the Settings page to render the permissions card. */
+    matrix: publicProcedure.query(() => {
+      const roles: HomeRole[] = ["parent", "editor", "tutor", "student", "viewer"];
+      return roles.map((r) => ({ role: r, ...capabilitiesFor(r) }));
+    }),
   }),
 
   tutors: router({

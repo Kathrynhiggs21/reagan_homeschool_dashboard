@@ -4692,3 +4692,79 @@ export async function findExistingLibraryRow(args: {
   const rows = await d.select().from(assignmentsLibrary).where(and(...where)).limit(1);
   return (rows[0] ?? null) as AssignmentLibraryRow | null;
 }
+
+
+/* ============================================================================
+ * FAMILY UPDATE STREAM (Phase 4)
+ * --------------------------------------------------------------------------
+ * Unified, read-only feed combining the four event types every adult in the
+ * home team cares about:
+ *   - block_complete  : Reagan finished a schedule block
+ *   - submission      : she turned in work (photo / text / file / audio)
+ *   - good_work_note  : an adult left an encouragement / lyric
+ *   - coin_earn       : she earned coins (sticker, bonus, gold star)
+ *
+ * Returns the most-recent N events sorted desc by createdAt. Cheap, no joins
+ * across schemas \u2014 each subquery hits one table and we merge in JS.
+ * ============================================================================
+ */
+export type FamilyFeedItem = {
+  id: string;
+  kind: "block_complete" | "submission" | "good_work_note" | "coin_earn";
+  at: Date;
+  title: string;
+  detail?: string | null;
+  authorName?: string | null;
+  refId: number;
+};
+
+export async function listFamilyFeed(limit: number = 30): Promise<FamilyFeedItem[]> {
+  const dbi = getDb();
+  const cap = Math.min(Math.max(1, limit), 100);
+
+  const blocks: any[] = await dbi.select({
+    id: scheduleBlocks.id, title: scheduleBlocks.title, at: scheduleBlocks.completedAt,
+  }).from(scheduleBlocks).where(eq(scheduleBlocks.status, "complete")).orderBy(desc(scheduleBlocks.completedAt)).limit(cap);
+
+  const subs: any[] = await dbi.select({
+    id: assignmentSubmissions.id, title: assignmentSubmissions.title,
+    subj: assignmentSubmissions.subjectSlug, at: assignmentSubmissions.submittedAt,
+    diff: assignmentSubmissions.kidDifficulty,
+  }).from(assignmentSubmissions).orderBy(desc(assignmentSubmissions.submittedAt)).limit(cap);
+
+  const notes: any[] = await dbi.select({
+    id: goodWorkNotes.id, lyric: goodWorkNotes.lyric, author: goodWorkNotes.authorName,
+    at: goodWorkNotes.createdAt,
+  }).from(goodWorkNotes).orderBy(desc(goodWorkNotes.createdAt)).limit(cap);
+
+  const coins: any[] = await dbi.select({
+    id: coinLedger.id, delta: coinLedger.delta, kind: coinLedger.kind,
+    reason: coinLedger.reasonNote, at: coinLedger.createdAt,
+  }).from(coinLedger).orderBy(desc(coinLedger.createdAt)).limit(cap);
+
+  const out: FamilyFeedItem[] = [];
+  for (const b of blocks) if (b.at) out.push({
+    id: `block-${b.id}`, kind: "block_complete", at: b.at,
+    title: `Reagan finished: ${b.title}`, refId: b.id,
+  });
+  for (const s of subs) if (s.at) out.push({
+    id: `sub-${s.id}`, kind: "submission", at: s.at,
+    title: `Turned in: ${s.title || "(untitled)"}`,
+    detail: [s.subj, s.diff && `felt ${String(s.diff).replace(/_/g, " ")}`].filter(Boolean).join(" \u00b7 "),
+    refId: s.id,
+  });
+  for (const n of notes) if (n.at) out.push({
+    id: `note-${n.id}`, kind: "good_work_note", at: n.at,
+    title: n.lyric.length > 120 ? n.lyric.slice(0, 117) + "\u2026" : n.lyric,
+    authorName: n.author || null, refId: n.id,
+  });
+  for (const c of coins) if (c.at && c.delta > 0) out.push({
+    id: `coin-${c.id}`, kind: "coin_earn", at: c.at,
+    title: `+${c.delta} coin${c.delta === 1 ? "" : "s"}`,
+    detail: c.reason || String(c.kind).replace(/_/g, " "),
+    refId: c.id,
+  });
+
+  out.sort((a, b) => b.at.getTime() - a.at.getTime());
+  return out.slice(0, cap);
+}

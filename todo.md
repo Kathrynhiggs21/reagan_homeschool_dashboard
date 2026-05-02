@@ -1943,3 +1943,12 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Editor (Grandma Marcy) = same permissions as Tutor
 - [ ] Permissions matrix doc in /docs/roles.md
 - [ ] Vitest: tutor procedures pass authorization check; tutor cannot mutate billing/secrets endpoints
+
+
+## In Flight (May 2 2026)
+- [ ] Per-app dual identity: Student (reaganhiggs910@gmail.com) + Parent (spear.cpt@gmail.com) Google sign-in buttons on every app card
+- [ ] Tutor profile rows: Madison, Sophie, Keith (placeholder emails until user provides) + Grandma Marcy editor row
+- [ ] Role-based permission matrix: parent / editor / tutor / student / viewer
+- [ ] Curriculum hub keyed on Indian Hill 5th grade (subject → unit → topic, done/in-progress/todo, % complete)
+- [ ] Family Update Stream: live feed visible to Parent / Grandma / Tutors
+- [ ] Automated nightly Daily Lesson Generator (skips weekends, targets curriculum gaps)

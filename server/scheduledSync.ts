@@ -595,4 +595,103 @@ export function registerScheduledSync(app: Express) {
       return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
     }
   });
+
+  /* ============================================================================
+   * NIGHTLY DAILY LESSON GENERATOR (Phase 5)
+   * --------------------------------------------------------------------------
+   * POST /api/scheduled/nightly-lesson-gen
+   *
+   * Picked up by the platform scheduler at 21:00 every night. Computes the
+   * NEXT school day (Mon–Fri; Sat/Sun roll forward to Monday), drafts a fresh
+   * plan via the existing AI generator, and commits the blocks. If the next
+   * school day already has any blocks (parent/tutor pre-staged something) we
+   * skip to avoid clobbering manual edits.
+   *
+   * Body: { force?: boolean }   force=true bypasses the "already has blocks" guard.
+   * Returns: { ok, dateStr, dayLabel, status: "created"|"skipped_existing"|"weekend", blocksAdded }
+   * =========================================================================== */
+  app.post("/api/scheduled/nightly-lesson-gen", async (req: Request, res: Response) => {
+    let role: string | null = null;
+    try {
+      const u = await sdk.authenticateRequest(req);
+      role = u?.role ?? null;
+    } catch { role = null; }
+    if (!role || (role !== "user" && role !== "admin")) {
+      return res.status(401).json({ ok: false, error: "Unauthorized \u2014 scheduled-task cookie required." });
+    }
+
+    try {
+      const force = !!req.body?.force;
+      // Compute the next *school* day (skip Sat/Sun).
+      const now = new Date();
+      let target = new Date(now.getTime() + 24 * 60 * 60 * 1000); // tomorrow
+      // Roll forward over Sat (6) and Sun (0).
+      while (target.getDay() === 0 || target.getDay() === 6) {
+        target = new Date(target.getTime() + 24 * 60 * 60 * 1000);
+      }
+      const dateStr = target.toISOString().slice(0, 10);
+      const dayLabel = target.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+
+      // Ensure plan exists (weekday → default "full"; helper handles Wednesday=half).
+      const plan = await db.ensurePlanForDate(dateStr, "full");
+      if (!plan) return res.status(500).json({ ok: false, error: "could not ensure plan" });
+
+      // Don't blow away pre-staged blocks unless forced.
+      const existing = await db.listBlocksForPlan(plan.id);
+      if (!force && (existing as any[]).length > 0) {
+        return res.json({ ok: true, dateStr, dayLabel, status: "skipped_existing", blocksAdded: 0, existing: (existing as any[]).length });
+      }
+
+      // Draft a fresh plan with the same generator the UI uses.
+      const profile: any = await db.getProfile().catch(() => null);
+      const subjects = (await db.listSubjects()).map((s: any) => ({ slug: s.slug, name: s.name }));
+      const { generateScheduleDraft } = await import("./_lib/aiScheduleGenerator");
+      const draft = await generateScheduleDraft({
+        dateStr,
+        dayLabel,
+        studentName: profile?.studentName || "Reagan",
+        gradeLevel: profile?.gradeLevel || "5th grade",
+        interests: profile?.interests || [],
+        whatWorks: profile?.whatWorks || [],
+        whatHarms: profile?.whatHarms || [],
+        adultPrompt: "Nightly auto-draft. Bias toward curriculum gaps (notStarted/inProgress topics). Keep blocks short and varied.",
+        dayLength: "full",
+        subjects,
+      });
+
+      if (!draft.blocks || draft.blocks.length === 0) {
+        return res.json({ ok: true, dateStr, dayLabel, status: "empty_draft", blocksAdded: 0, summary: draft.summary, warnings: draft.warnings });
+      }
+
+      // Persist blocks. Wipe any not_started leftovers first when forced.
+      if (force) {
+        for (const b of existing as any[]) {
+          try { await db.deleteBlock(b.id); } catch (e) { console.warn("[nightly-lesson-gen] delete block failed", e); }
+        }
+      }
+      const slugToId = new Map<string, number>(subjects.map((s: any) => [s.slug, s.id as number]));
+      let sortOrder = 0; let added = 0;
+      for (const b of draft.blocks) {
+        const subjectId = b.subjectSlug ? (slugToId.get(b.subjectSlug) ?? null) : null;
+        try {
+          await db.createBlock({
+            planId: plan.id,
+            blockType: b.blockType as any,
+            subjectId,
+            title: b.title,
+            description: b.description || null,
+            durationMin: b.durationMin,
+            startTime: b.startTime || null,
+            sortOrder: sortOrder++,
+            status: "not_started" as any,
+          } as any);
+          added++;
+        } catch (e) { console.warn("[nightly-lesson-gen] createBlock failed", e); }
+      }
+
+      return res.json({ ok: true, dateStr, dayLabel, status: "created", blocksAdded: added, summary: draft.summary, warnings: draft.warnings });
+    } catch (e: any) {
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
 }
