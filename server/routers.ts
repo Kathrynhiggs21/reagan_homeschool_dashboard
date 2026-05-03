@@ -1840,6 +1840,42 @@ export const appRouter = router({
       .query(({ input }) => db.listFamilyFeed(input?.limit ?? 30)),
   }),
 
+  /* =================== ADULT STREAM ALIAS =================== */
+  // Backward-compat alias: backlog calls it "adultStream.feed"; same data as
+  // familyFeed.list. Both routes intentionally hit the same db helper.
+  adultStream: router({
+    feed: publicProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(100).default(30) }).optional())
+      .query(({ input }) => db.listFamilyFeed(input?.limit ?? 30)),
+  }),
+
+  /* =================== ACTIVITY OPTIONS (Phase 4) =================== */
+  activityOptions: router({
+    suggest: publicProcedure
+      .input(z.object({
+        tempF: z.number().nullable().optional(),
+        weather: z.string().nullable().optional(),
+      }).optional())
+      .query(async ({ input }) => {
+        const profile: any = await db.getProfile().catch(() => null);
+        const interests: string[] = profile?.interests || [];
+        const sensoryLoves: string[] = profile?.sensoryLoves || [];
+        const favoriteShows: string[] = profile?.favoriteShows || [];
+        const merged = Array.from(new Set([
+          ...interests,
+          ...sensoryLoves,
+          ...favoriteShows,
+        ].map((s) => String(s || "").toLowerCase()).filter(Boolean)));
+        const { pickActivityOptions } = await import("./_lib/activityOptions");
+        return pickActivityOptions({
+          interests: merged,
+          tempF: input?.tempF ?? null,
+          weather: input?.weather ?? null,
+          now: new Date(),
+        });
+      }),
+  }),
+
   /* =================== HOME TEAM PERMISSIONS =================== */
   permissions: router({
     /** Returns role + capabilities for the currently signed-in user. */

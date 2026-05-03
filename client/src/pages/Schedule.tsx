@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Calendar, ChevronLeft, ChevronRight, MapPin, Sun, ExternalLink } from "lucide-react";
 import TopicLabel from "@/components/TopicLabel";
+import ActivityOptionsPanel from "@/components/ActivityOptionsPanel";
 
 /**
  * Reagan-facing Schedule page.
@@ -155,12 +156,15 @@ export default function Schedule() {
         />
       )}
       {view === "week" && (
-        <WeekView
-          cursor={cursor}
-          today={today}
-          offByDate={offByDate}
-          onOpenAgenda={(d) => setAgendaOpen(ymd(d))}
-        />
+        <>
+          <WeekView
+            cursor={cursor}
+            today={today}
+            offByDate={offByDate}
+            onOpenAgenda={(d) => setAgendaOpen(ymd(d))}
+          />
+          <ActivityOptionsPanel />
+        </>
       )}
       {view === "month" && (
         <MonthView

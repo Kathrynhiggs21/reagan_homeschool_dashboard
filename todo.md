@@ -1,6 +1,7 @@
 # Reagan's Homeschool Dashboard — TODO
 
 ## Recently Shipped
+- [x] Phase 4 batch (May 3 2026): Removed dead "At Indian Hill this week" banner from Today + SkillBuilderTile pill (school account dead). Activity Options panel under This Week (max 10 weighted ideas — interests + weather + season + time-of-day, pure server picker). adultStream.feed alias added on tRPC router (delegates to db.listFamilyFeed). Daily-shuffle weekday seed verified shipping via subjectColors.RAINBOW. 14 new vitest cases. Suite: 335 pass / 1 skipped.
 - [x] Weekend rule (May 2 2026): no auto-generated school blocks on Sat/Sun unless adult opts in. ensurePlanForDate, refreshTodayPlan, plans.aiGenerate, plans.aiCommit all weekend-aware. Plan dayType="off", blocks list empty by default. allowWeekend flag override on AI procedures. 5 new vitest cases (weekendPlan.test.ts + aiGenerateWeekend.test.ts).
 - [x] Removed dead Google Classroom canonical-app assertion (school @ihsd.us account dead).
 

@@ -19,6 +19,11 @@ const SUBJECT_META: Record<string, { label: string; emoji: string; color: string
 };
 
 export default function IHThisWeekStrip() {
+  // Disabled May 2026: Reagan's @ihsd.us school account is dead, so the
+  // "At Indian Hill this week" banner pulls stale data and adds clutter.
+  // We keep the component for backwards-compatible imports but render nothing.
+  return null;
+  // eslint-disable-next-line no-unreachable
   const q = trpc.weeklyTopics.thisWeek.useQuery(undefined, { refetchOnWindowFocus: false });
   const [open, setOpen] = useState(false);
 
