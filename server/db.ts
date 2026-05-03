@@ -267,7 +267,45 @@ export async function createBlock(b: typeof scheduleBlocks.$inferInsert) {
 }
 
 export async function updateBlock(id: number, patch: Partial<typeof scheduleBlocks.$inferInsert>) {
-  await getDb().update(scheduleBlocks).set(patch).where(eq(scheduleBlocks.id, id));
+  const db = getDb();
+  await db.update(scheduleBlocks).set(patch).where(eq(scheduleBlocks.id, id));
+  // Cascade completion -> linked curriculum topic.
+  // When a block is marked complete *and* anchored to a curriculumTopicId,
+  // flip that topic's status to 'done' (only if it was notStarted/inProgress).
+  if (patch.status === "complete") {
+    try {
+      const rows = await db.select().from(scheduleBlocks).where(eq(scheduleBlocks.id, id)).limit(1);
+      const blk: any = rows[0];
+      const topicId = blk?.curriculumTopicId;
+      if (topicId) {
+        await db.execute(sql`
+          UPDATE curriculumTopics
+             SET status = 'done', completed_at = ${new Date()}
+           WHERE id = ${topicId} AND status <> 'done'
+        `);
+      }
+    } catch {
+      // Non-fatal: cascade is best-effort, original block update already succeeded.
+    }
+  }
+  // When a block is set to in_progress, mark the topic as inProgress (if still
+  // notStarted) so the curriculum view shows live activity.
+  if (patch.status === "in_progress") {
+    try {
+      const rows = await db.select().from(scheduleBlocks).where(eq(scheduleBlocks.id, id)).limit(1);
+      const blk: any = rows[0];
+      const topicId = blk?.curriculumTopicId;
+      if (topicId) {
+        await db.execute(sql`
+          UPDATE curriculumTopics
+             SET status = 'inProgress'
+           WHERE id = ${topicId} AND status = 'notStarted'
+        `);
+      }
+    } catch {
+      // Non-fatal.
+    }
+  }
 }
 
 export async function deleteBlock(id: number) {
@@ -4098,6 +4136,35 @@ export async function autoCompleteFromHistory(): Promise<{ checked: number; byQu
   return { checked: q1Count + hits, byQuarter: q1Count };
 }
 
+/**
+ * One-shot backfill: marks Q1+Q2+Q3 topics as done since Reagan finished
+ * everything up to the final quarter at Indian Hill before the home
+ * transition. Q4 is left for adults to mark off this spring.
+ *
+ * Idempotent. Only flips notStarted -> done; preserves any existing
+ * inProgress / done values so manual edits aren't clobbered.
+ */
+export async function backfillCurriculumProgress(): Promise<{ q1: number; q2: number; q3: number; total: number }> {
+  const db = getDb();
+  const QUARTER_DATES: Record<"Q1" | "Q2" | "Q3", Date> = {
+    Q1: new Date("2025-10-15T00:00:00Z"),
+    Q2: new Date("2025-12-15T00:00:00Z"),
+    Q3: new Date("2026-03-15T00:00:00Z"),
+  };
+  const counts: Record<"Q1" | "Q2" | "Q3", number> = { Q1: 0, Q2: 0, Q3: 0 };
+  for (const q of ["Q1", "Q2", "Q3"] as const) {
+    const date = QUARTER_DATES[q];
+    const r: any = await db.execute(sql`
+      UPDATE curriculumTopics
+         SET status = 'done', completed_at = ${date}
+       WHERE quarter = ${q} AND status = 'notStarted'
+    `);
+    counts[q] = r?.affectedRows ?? r?.[0]?.affectedRows ?? 0;
+  }
+  const total = counts.Q1 + counts.Q2 + counts.Q3;
+  return { q1: counts.Q1, q2: counts.Q2, q3: counts.Q3, total };
+}
+
 
 // ------------------------------------------------------------------
 // Today coverage + resume pointer (Apr 29 late build)
@@ -4767,4 +4834,100 @@ export async function listFamilyFeed(limit: number = 30): Promise<FamilyFeedItem
 
   out.sort((a, b) => b.at.getTime() - a.at.getTime());
   return out.slice(0, cap);
+}
+
+
+// ------------------------------------------------------------------
+// Curriculum resource roll-up (May 3 2026)
+// ------------------------------------------------------------------
+import { curriculumResources } from "../drizzle/schema";
+
+/**
+ * List all manually-added resources for a topic (worksheets, videos, lessons,
+ * readings, printables, generic links). Newest first.
+ */
+export async function listTopicResources(topicId: number) {
+  const db = getDb();
+  return db
+    .select()
+    .from(curriculumResources)
+    .where(eq(curriculumResources.topicId, topicId))
+    .orderBy(desc(curriculumResources.createdAt));
+}
+
+/**
+ * List all schedule blocks anchored to a topic (any status). Surfaces every
+ * "daily assignment" the topic has been used in.
+ */
+export async function listTopicBlocks(topicId: number) {
+  const db = getDb();
+  return db
+    .select({
+      id: scheduleBlocks.id,
+      planId: scheduleBlocks.planId,
+      title: scheduleBlocks.title,
+      blockType: scheduleBlocks.blockType,
+      durationMin: scheduleBlocks.durationMin,
+      status: scheduleBlocks.status,
+      completedAt: scheduleBlocks.completedAt,
+    })
+    .from(scheduleBlocks)
+    .where(eq(scheduleBlocks.curriculumTopicId, topicId))
+    .orderBy(desc(scheduleBlocks.id))
+    .limit(50);
+}
+
+/** Add a resource attached to a topic. Idempotent on (topicId, kind, url). */
+export async function addTopicResource(input: {
+  topicId: number;
+  kind: "worksheet" | "video" | "lesson" | "reading" | "printable" | "link";
+  title: string;
+  url?: string | null;
+  source?: string | null;
+  notes?: string | null;
+  addedByUserId?: number | null;
+}) {
+  const db = getDb();
+  // De-dupe: if same (topicId, kind, url) already exists, return existing.
+  if (input.url) {
+    const existing = await db
+      .select()
+      .from(curriculumResources)
+      .where(
+        and(
+          eq(curriculumResources.topicId, input.topicId),
+          eq(curriculumResources.kind, input.kind),
+          eq(curriculumResources.url, input.url),
+        ),
+      )
+      .limit(1);
+    if (existing.length) return (existing[0] as any).id;
+  }
+  const result: any = await db.insert(curriculumResources).values({
+    topicId: input.topicId,
+    kind: input.kind,
+    title: input.title.slice(0, 400),
+    url: input.url ?? null,
+    source: input.source ?? null,
+    notes: input.notes ?? null,
+    addedByUserId: input.addedByUserId ?? null,
+  } as any);
+  return (result as any)[0]?.insertId;
+}
+
+/** Delete a resource by id. */
+export async function removeTopicResource(id: number) {
+  await getDb().delete(curriculumResources).where(eq(curriculumResources.id, id));
+}
+
+/**
+ * Combined roll-up: returns { resources, blocks } for a topic. Used by the
+ * Adult Curriculum drawer to show every artifact tied to that topic.
+ */
+export async function getTopicRollup(topicId: number) {
+  const [resources, blocks] = await Promise.all([
+    listTopicResources(topicId),
+    listTopicBlocks(topicId),
+  ]);
+  return { resources, blocks };
 }

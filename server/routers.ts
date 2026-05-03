@@ -271,7 +271,9 @@ export const appRouter = router({
         durationMin: z.number().min(1).max(180),
         startTime: z.string().regex(/^\d{1,2}:\d{2}$/).optional(),
         subjectSlug: z.string().nullable().optional(),
+        curriculumTopicId: z.number().int().positive().nullable().optional(),
       })).min(1).max(20),
+      seedTopicId: z.number().int().positive().nullable().optional(),
     })).mutation(async ({ input, ctx }) => {
       // Manual commit IS the explicit adult action, so we always allow weekend
       // block creation here — the empty plan row gets blocks added directly.
@@ -289,6 +291,8 @@ export const appRouter = router({
       const created: number[] = [];
       for (const b of input.blocks) {
         const subjectId = b.subjectSlug ? (slugToId.get(b.subjectSlug) ?? null) : null;
+        // Per-block topicId wins over the shared seedTopicId.
+        const topicId = b.curriculumTopicId ?? input.seedTopicId ?? null;
         const id = await db.createBlock({
           planId: plan.id,
           blockType: b.blockType as any,
@@ -299,6 +303,7 @@ export const appRouter = router({
           startTime: b.startTime || null,
           sortOrder: sortOrder++,
           status: "not_started" as any,
+          curriculumTopicId: topicId,
         } as any);
         if (id) created.push(id as number);
       }
@@ -2057,6 +2062,32 @@ export const appRouter = router({
       .input(z.object({ id: z.number(), notes: z.string().max(2000) }))
       .mutation(({ input }) => db.setCurriculumNote(input.id, input.notes)),
     autoCompleteFromHistory: protectedProcedure.mutation(() => db.autoCompleteFromHistory()),
+    /** One-shot: mark Q1+Q2+Q3 topics as done (only flips notStarted -> done). */
+    backfillProgress: protectedProcedure.mutation(() => db.backfillCurriculumProgress()),
+    /** Roll-up of every artifact attached to a topic: resources + blocks. */
+    rollup: protectedProcedure
+      .input(z.object({ topicId: z.number().int().positive() }))
+      .query(({ input }) => db.getTopicRollup(input.topicId)),
+    /** Add a manual resource (worksheet/video/lesson/reading/printable/link) to a topic. */
+    addResource: protectedProcedure
+      .input(z.object({
+        topicId: z.number().int().positive(),
+        kind: z.enum(["worksheet", "video", "lesson", "reading", "printable", "link"]),
+        title: z.string().min(1).max(400),
+        url: z.string().max(1024).optional().nullable(),
+        source: z.string().max(64).optional().nullable(),
+        notes: z.string().max(2000).optional().nullable(),
+      }))
+      .mutation(({ input, ctx }) => {
+        const rawId = (ctx as any).user?.id;
+        const num = typeof rawId === "number" ? rawId : Number(rawId);
+        const addedByUserId = Number.isFinite(num) ? num : null;
+        return db.addTopicResource({ ...input, addedByUserId });
+      }),
+    /** Remove a manually-added resource by id. */
+    removeResource: protectedProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(({ input }) => db.removeTopicResource(input.id)),
     /** Find free, no-login external resources for a topic (Khan/IXL/ReadWorks/etc.). */
     freeLinks: publicProcedure
       .input(z.object({ subjectSlug: z.string().min(1).max(32), topicName: z.string().min(1).max(200), gradeBand: z.string().optional() }))

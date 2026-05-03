@@ -7,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { usePracticePrefs } from "@/hooks/usePracticePrefs";
+import TopicDrawer from "@/components/TopicDrawer";
 
 // Inlined prefs-aware version of shared/practiceLinks.ts — kept in this file
 // because the client tsconfig paths don't alias the shared/ dir yet.
@@ -162,6 +163,7 @@ export default function CurriculumTopicsTree() {
   const autoComp = trpc.curriculum.autoCompleteFromHistory.useMutation();
   const toggle = trpc.curriculum.toggle.useMutation();
   const utils = trpc.useUtils();
+  const [drawerTopic, setDrawerTopic] = useState<Topic | null>(null);
 
   const rows = (list.data as any[]) ?? [];
   const byId = useMemo(() => {
@@ -288,13 +290,16 @@ export default function CurriculumTopicsTree() {
                             {t.quarter}
                           </Badge>
                         )}
-                        <span
-                          className={`text-sm ${
+                        <button
+                          type="button"
+                          onClick={() => setDrawerTopic(t)}
+                          className={`text-sm text-left hover:underline ${
                             t.status === "done" ? "line-through text-muted-foreground" : "font-medium"
                           }`}
+                          title="Open topic resources & plan an assignment"
                         >
                           {t.title}
-                        </span>
+                        </button>
                         <PracticeLinks t={t} />
                         <MoreLinksButton subjectSlug={subjectSlugFromName(t.subject)} topicName={t.title} />
                       </div>
@@ -315,11 +320,15 @@ export default function CurriculumTopicsTree() {
                                   {k.standardRef}
                                 </span>
                               )}
-                              <span
-                                className={k.status === "done" ? "line-through text-muted-foreground" : ""}
+                              <button
+                                type="button"
+                                onClick={() => setDrawerTopic(k)}
+                                className={`text-left hover:underline ${
+                                  k.status === "done" ? "line-through text-muted-foreground" : ""
+                                }`}
                               >
                                 {k.title}
-                              </span>
+                              </button>
                               <PracticeLinks t={k} small />
                               <MoreLinksButton subjectSlug={subjectSlugFromName(k.subject)} topicName={k.title} small />
                             </li>
@@ -332,6 +341,15 @@ export default function CurriculumTopicsTree() {
               );
             })}
         </div>
+      )}
+      {drawerTopic && (
+        <TopicDrawer
+          topicId={drawerTopic.id}
+          topicTitle={drawerTopic.title}
+          topicCode={drawerTopic.code}
+          open={!!drawerTopic}
+          onClose={() => setDrawerTopic(null)}
+        />
       )}
     </Card>
   );

@@ -1,0 +1,1 @@
+ALTER TABLE `scheduleBlocks` ADD `curriculumTopicId` int;

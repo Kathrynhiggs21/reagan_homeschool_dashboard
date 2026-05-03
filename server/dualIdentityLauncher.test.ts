@@ -24,8 +24,11 @@ describe("Apps page \u2014 per-app dual identity", () => {
     expect(src).toMatch(/unlocked && dadEmail && isGoogleUrl\(a\.url\)/);
   });
 
-  it("uses withGoogleAuthUser for both identities", () => {
-    expect(src).toContain("withGoogleAuthUser(a.url, reaganEmail)");
-    expect(src).toContain("withGoogleAuthUser(a.url, dadEmail)");
+  it("uses withGoogleSsoHint for both identities (Phase 8 upgrade)", () => {
+    // withGoogleSsoHint falls through to withGoogleAuthUser for google.com
+    // hosts and additionally wraps third-party Google-SSO apps via the
+    // AccountChooser intermediary so the right account is pre-picked.
+    expect(src).toContain("withGoogleSsoHint(a.url, reaganEmail)");
+    expect(src).toContain("withGoogleSsoHint(a.url, dadEmail)");
   });
 });

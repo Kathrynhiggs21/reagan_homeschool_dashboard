@@ -95,6 +95,8 @@ export const scheduleBlocks = mysqlTable("scheduleBlocks", {
   ihAssignmentId: int("ihAssignmentId"),
   adventureId: int("adventureId"),
   appointmentId: int("appointmentId"),
+  /** Curriculum topic this block is anchored to (Math 7-4, ELA M3-L1, etc.). */
+  curriculumTopicId: int("curriculumTopicId"),
 });
 
 /* -------------------------------------------------------------------------- */
@@ -1459,6 +1461,25 @@ export const curriculumTopics = mysqlTable("curriculumTopics", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+/* -------------------------------------------------------------------------- */
+/*  CURRICULUM RESOURCES — worksheet / video / lesson / reading / printable    */
+/*  attached to a single curriculum topic. Adults can browse these in the      */
+/*  topic drawer on the Adult Curriculum page.                                  */
+/* -------------------------------------------------------------------------- */
+export const curriculumResources = mysqlTable("curriculumResources", {
+  id: int("id").autoincrement().primaryKey(),
+  topicId: int("topic_id").notNull(),
+  kind: varchar("kind", { length: 32 }).notNull(), // worksheet | video | lesson | reading | printable | link
+  title: varchar("title", { length: 400 }).notNull(),
+  url: varchar("url", { length: 1024 }),           // null for in-app printables / file uploads
+  source: varchar("source", { length: 64 }),       // "khan" | "ixl" | "readworks" | "k5" | "upload" | ...
+  notes: text("notes"),
+  addedByUserId: int("added_by_user_id"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type CurriculumResource = typeof curriculumResources.$inferSelect;
+export type InsertCurriculumResource = typeof curriculumResources.$inferInsert;
 
 /* -------------------------------------------------------------------------- */
 /*  GOOGLE CLASSROOM (REFERENCE-ONLY)                                         */

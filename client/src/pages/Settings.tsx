@@ -344,7 +344,7 @@ function AutomationExplainerCard() {
           icon="⏰"
           title="Daily 6:30 AM — Gmail + Drive sync"
           lines={[
-            "Pulls new emails from anything @ihsd.us and from Reagan's tutors.",
+            "Pulls new emails from Reagan's tutors and any home-team adult.",
             "Pulls any new files from your Reagan / Reagan-IHES Drive folders.",
             "Auto-classifies each one and routes to the right tab. You only see exceptions.",
           ]}

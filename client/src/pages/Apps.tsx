@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
-import { withGoogleAuthUser } from "@/lib/googleAuthLink";
+import { withGoogleAuthUser, withGoogleSsoHint } from "@/lib/googleAuthLink";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -142,7 +142,7 @@ export default function Apps() {
               {items.map((a) => (
                 <div key={a.id} className="group relative">
                   <a
-                    href={withGoogleAuthUser(a.url, reaganEmail)}
+                    href={withGoogleSsoHint(a.url, reaganEmail)}
                     target="_blank"
                     rel="noreferrer"
                     aria-label={a.name}
@@ -178,7 +178,7 @@ export default function Apps() {
                   {/* Dual-identity launcher: only on Google apps, only when adult-unlocked + dad email known */}
                   {unlocked && dadEmail && isGoogleUrl(a.url) && (
                     <a
-                      href={withGoogleAuthUser(a.url, dadEmail)}
+                      href={withGoogleSsoHint(a.url, dadEmail)}
                       target="_blank"
                       rel="noreferrer"
                       onClick={(e) => { e.stopPropagation(); try { openEng.mutate({ id: a.id }); } catch {} }}

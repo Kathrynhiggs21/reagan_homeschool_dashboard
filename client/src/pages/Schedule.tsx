@@ -375,8 +375,7 @@ function GoogleCalendarOverlayStub() {
         <div className="flex-1 text-sm">
           <div className="font-display font-semibold">Google Calendar overlay</div>
           <div>
-            We&apos;ll show Reagan&apos;s Google Calendar events on top of this schedule once you connect her IH Google account
-            (<code className="text-xs">reagan.higgs33@ihsd.us</code>). Adult only — Mom can authorize from <a href="/settings" className="underline font-semibold">Settings</a>.
+            We&apos;ll show Reagan&apos;s Google Calendar events on top of this schedule once you connect her personal Google account. Adult only — Mom can authorize from <a href="/settings" className="underline font-semibold">Settings</a>.
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -17,6 +17,30 @@ export default function AIScheduleGeneratorCard({ defaultDate }: { defaultDate: 
   const [adultPrompt, setAdultPrompt] = useState<string>("");
   const [draft, setDraft] = useState<{ summary: string; warnings: string[]; blocks: any[] } | null>(null);
   const [open, setOpen] = useState(false);
+  const [seedTopicId, setSeedTopicId] = useState<number | null>(null);
+
+  // Listen for cross-component requests (e.g. TopicDrawer's "Plan a daily
+  // assignment" button) to seed the generator with a specific curriculum topic.
+  useEffect(() => {
+    function onSeed(e: Event) {
+      const detail: any = (e as CustomEvent).detail;
+      if (!detail) return;
+      const code = detail.code ? `${detail.code} ` : "";
+      const title = detail.title ? `${detail.title}` : "";
+      const focus = `Seed this topic into today's plan: ${code}${title}. Build 2-3 short, hands-on or screen-light blocks (e.g. a video, a worksheet, and an outdoor or whiteboard practice).`;
+      setAdultPrompt(focus);
+      if (detail.topicId && typeof detail.topicId === "number") setSeedTopicId(detail.topicId);
+      // Auto-trigger draft.
+      const targetDate = detail.date || date || defaultDate;
+      if (targetDate) {
+        setDate(targetDate);
+        generate.mutate({ date: targetDate, dayLength, adultPrompt: focus, allowWeekend: true });
+      }
+    }
+    window.addEventListener("kiwi:seed-topic", onSeed as any);
+    return () => window.removeEventListener("kiwi:seed-topic", onSeed as any);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const generate = trpc.plans.aiGenerate.useMutation({
     onSuccess: (d) => { setDraft(d as any); setOpen(true); },
@@ -143,6 +167,7 @@ export default function AIScheduleGeneratorCard({ defaultDate }: { defaultDate: 
                 summary: draft.summary,
                 replaceExisting: true,
                 blocks: draft.blocks,
+                seedTopicId: seedTopicId ?? undefined,
               })}
             >
               {commit.isPending ? "Saving…" : `Replace ${date} with these blocks`}

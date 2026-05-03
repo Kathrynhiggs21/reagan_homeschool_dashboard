@@ -131,7 +131,7 @@ export default function UploadOrSync() {
               <Badge variant="secondary" className="bg-green-500/20 text-green-300 border-green-500/30">runs daily</Badge>
             </div>
             <p className="text-sm text-muted-foreground">
-              Every morning, Manus pulls new emails from Indian Hill (anything <code>@ihsd.us</code>) and your tutors,
+              Every morning, Manus pulls new emails from your tutors and home-team adults,
               plus new files from your Reagan Drive folder. Each one is auto-classified into the right place.
               <br />Need it sooner? Tap <b>Sync now</b>.
             </p>
@@ -265,7 +265,7 @@ export default function UploadOrSync() {
               <Mail className="w-4 h-4" /> <b className="text-foreground">Gmail</b>
             </div>
             <ul className="text-xs space-y-1 ml-6 list-disc text-muted-foreground">
-              <li>Anything from <code>@ihsd.us</code> (Indian Hill teachers + admin)</li>
+              <li>Anything from her tutors or home-team adults</li>
               <li>Tutor emails (Marisa Conger / @congertutoring.com)</li>
               <li>Subject contains "homework", "tutor session", or "weekly update"</li>
             </ul>
