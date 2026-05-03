@@ -6,7 +6,9 @@ import { Card } from "@/components/ui/card";
 import { Send, Mic, X, Volume2, VolumeX, MessageCircle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import KiwiSprite from "./KiwiSprite";
+import FlockSprite, { type FlockMember } from "./FlockSprite";
 import { speakLikeBird } from "@/lib/birdVoice";
+import { speakAs, getActiveCompanionId, type CompanionId } from "@/lib/companionVoices";
 
 export default function KiwiCompanion() {
   const { open, setOpen, enabled, mode, voiceMode, adultPresent, companionName, companionAvatar, setCompanionName } = useKiwi();
@@ -14,6 +16,17 @@ export default function KiwiCompanion() {
   const [muted, setMuted] = useState(false);
   const [lastInteractionAt, setLastInteractionAt] = useState<number>(Date.now());
   const [proactivePrompted, setProactivePrompted] = useState(false);
+  // Track which flock companion is the "voice" right now. The CompanionBelt
+  // dispatches "kiwi:active-companion-changed" so we re-render here.
+  const [activeCompanion, setActiveCompanion] = useState<CompanionId>(() => getActiveCompanionId());
+  useEffect(() => {
+    function onChange(e: Event) {
+      const id = (e as CustomEvent).detail?.id as CompanionId | undefined;
+      if (id) setActiveCompanion(id);
+    }
+    window.addEventListener("kiwi:active-companion-changed", onChange as EventListener);
+    return () => window.removeEventListener("kiwi:active-companion-changed", onChange as EventListener);
+  }, []);
   const messages = trpc.kiwi.history.useQuery({ limit: 20 });
   const sendMsg = trpc.kiwi.chat.useMutation({
     onSuccess: (data: any) => {
@@ -35,8 +48,12 @@ export default function KiwiCompanion() {
   void lastInteractionAt; void proactivePrompted;
   // setLastInteractionAt and setProactivePrompted are still set by sendMsg's onSuccess above.
 
-  // Kiwi now speaks with a parakeet voice (chirp + higher pitch/rate).
-  function speak(text: string) { speakLikeBird(text); }
+  // Speaks with the active companion's voice config. Kiwi uses speakLikeBird
+  // (chirp + bright/female voice) for back-compat; the others use speakAs.
+  function speak(text: string) {
+    if (activeCompanion === "kiwi") speakLikeBird(text);
+    else speakAs(activeCompanion, text);
+  }
 
   // Wake-word listener (browser SpeechRecognition).
   //
@@ -170,7 +187,13 @@ export default function KiwiCompanion() {
         <Card data-kiwi-companion className="fixed bottom-6 right-6 z-40 w-[380px] max-w-[calc(100vw-2rem)] h-[560px] max-h-[80vh] flex flex-col shadow-2xl border-2 border-primary/20 no-print">
           <div className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10"><KiwiSprite pose={adultPresent ? "sleep" : "idle"} size={40} /></div>
+              <div className="w-10 h-10">
+                {activeCompanion === "kiwi" ? (
+                  <KiwiSprite pose={adultPresent ? "sleep" : "idle"} size={40} />
+                ) : (
+                  <FlockSprite member={activeCompanion as FlockMember} size={40} />
+                )}
+              </div>
               <div>
                 <div className="font-display font-semibold text-base leading-tight">{companionName}</div>
                 <div className="text-[10px] text-muted-foreground">{adultPresent ? "Resting — adult is here" : "Here for you 💛"}</div>
