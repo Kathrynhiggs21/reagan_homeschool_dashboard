@@ -18,40 +18,34 @@ import CompanionBelt from "./CompanionBelt";
 
 type NavItem = { to: string; emoji: string; label: string; dot?: string };
 
-// Reagan's sidebar — kept tight: Today, Schedule (was "This Week"), Levels,
-// Proud Wall, Bookshelf, Notebook, Apps, About Me.
-// Rewards/Prizes removed (now adult-only). Knowledge / AI Assistant removed.
-// Whiteboard merged into Notebook.
+// Reagan's sidebar — final 6 entries (locked May 4 2026):
+// Today, Schedule, Kiwi Coins (was Levels/Proud Wall/Rewards), Bookshelf, Notebook, Apps & Tools.
+// Adventures is a popup launched from Today, Journal merged into Notebook,
+// Whiteboard lives inside Notebook, About Me / Profile pulled (no kid-side
+// profile view needed), Proud Wall + My Levels deleted entirely.
 const KID_NAV: NavItem[] = [
   { to: "/today",     emoji: "📋", label: "Today",        dot: "#ff9b3d" },
   { to: "/schedule",  emoji: "🗓️", label: "Schedule",     dot: "#3b82f6" },
-  { to: "/levels",    emoji: "📈", label: "My Levels",    dot: "#22c55e" },
-  { to: "/proud",     emoji: "🌟", label: "Proud Wall",   dot: "#ec4899" },
+  { to: "/coins",     emoji: "🪙", label: "Kiwi Coins",   dot: "#eab308" },
   { to: "/bookshelf", emoji: "📚", label: "Bookshelf",    dot: "#ef4444" },
   { to: "/notes",     emoji: "📝", label: "Notebook",     dot: "#a855f7" },
-  { to: "/apps",      emoji: "🎒", label: "Apps & Tools", dot: "#eab308" },
-  { to: "/profile",   emoji: "🪪", label: "About Me",     dot: "#ec4899" },
+  { to: "/apps",      emoji: "🎒", label: "Apps & Tools", dot: "#22c55e" },
 ];
 
-const MORE_NAV: NavItem[] = [
-  { to: "/journal",    emoji: "📓", label: "Journal" },
-  { to: "/adventures", emoji: "🧭", label: "Adventures" },
-];
+// MORE_NAV is now empty — Adventures is a Today popup, Journal is folded
+// into Notebook. Kept the constant so existing render code stays stable.
+const MORE_NAV: NavItem[] = [];
 
-// Adult section. Rewards/Prizes manager moved here from Reagan's nav.
-// Knowledge / AI Assistant remains adult-only and reachable from here.
-// Parent Notes (Whiteboard) lives here too — Reagan's Notebook is separate.
+// Adult section — locked to 4 entries (May 4 2026):
+// Curriculum Hub, Daily Schedule, Agenda Editor (with AI bar pinned on top),
+// Settings (5-tab slim version: People, Prizes, Requests, Calendar,
+// Notifications). Everything else (Tutor Handoff, Family, Upload-Sync,
+// Daily Agendas, Daily Packet, Parent Notes, separate Analytics, separate
+// AI Assistant, separate Rewards) is consolidated or deleted.
 const ADULT_NAV: NavItem[] = [
-  { to: "/library",    emoji: "📚", label: "Assignments Library" },
-  { to: "/upload",     emoji: "⬆️", label: "Upload or Sync" },
-  { to: "/agendas",    emoji: "🗓️", label: "Daily Agendas" },
-  { to: "/packet",     emoji: "📄", label: "Daily Packet" },
-  { to: "/tutor",      emoji: "🤝", label: "Tutor Handoff" },
-  { to: "/family",     emoji: "💛", label: "Family Update" },
-  { to: "/analytics",  emoji: "📊", label: "Analytics" },
-  { to: "/rewards",    emoji: "⭐", label: "Rewards / Prizes" },
-  { to: "/whiteboard", emoji: "📌", label: "Parent Notes" },
-  { to: "/knowledge",  emoji: "🧠", label: "AI Assistant" },
+  { to: "/curriculum", emoji: "📘", label: "Curriculum Hub" },
+  { to: "/agendas",    emoji: "🗓️", label: "Daily Schedule" },
+  { to: "/library",    emoji: "✨", label: "Agenda Editor" },
   { to: "/settings",   emoji: "⚙️", label: "Settings" },
 ];
 

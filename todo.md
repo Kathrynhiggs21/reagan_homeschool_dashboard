@@ -2202,3 +2202,56 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Phase 5: AI scheduler reads `ownedResourcePages` and never re-assigns a page with status=done; advances to next todo page in numeric order
 - [ ] Phase 5: nightly agenda PDF labels each book line with the next assigned page span and (optionally) "skipping pp. X-Y already done" footnote
 - [ ] Phase 5: adult AI bar shortcut "Reagan did pages 12, 14, 19, 22 of Spectrum" -> bulk-marks those pages done in one mutation
+
+
+## Phase 7 — Universal AI assignment-finder (in progress)
+- [x] server/_lib/assignmentFinder.ts — Library + Sonar web/YouTube + Gemini image describe
+- [x] server/routers.ts — adultAi.findAssignments + addFinderResultToDate procedures
+- [ ] vitest server/assignmentFinder.test.ts — locks contract (kid blocked, kidSafe forced for tutors, topic resolved)
+- [ ] Adult-side UI panel: search input + image-upload button + result list with one-click "Drop on …" date picker
+
+## Phase 8 — Kid sidebar cull (final list — keep Apps & Tools, per user)
+- [ ] Delete kid-sidebar entry: Proud Wall (whole nav row + page route)
+- [ ] Delete kid-sidebar entry: My Levels (rename concept to "My Skills" + delete leveling)
+- [ ] Keep kid-sidebar entries: Today, Schedule, My Skills, Bookshelf, Notebook, Apps & Tools
+- [ ] Delete adult-side pages: Tutor Handoff, Family Stream, Upload-Sync, Daily Agendas page, Daily Packet, Parent Notes
+- [ ] Delete the orphan routes from App.tsx so navigation never lands on a 404
+- [ ] Delete the corresponding page files under client/src/pages/
+- [ ] Delete the proudWall server router + db helpers (or stub them as no-ops if they're imported elsewhere)
+- [ ] Verify dev server boots clean after deletions
+
+
+## FINAL LAYOUT (locked May 4 2026)
+
+### Kid sidebar (Reagan) — exactly 6
+- [ ] Today
+- [ ] Schedule
+- [ ] Kiwi Coins (replaces My Levels)
+- [ ] Bookshelf
+- [ ] Notebook (Journal merged in)
+- [ ] Apps & Tools
+
+### Adult app — exactly 4 pages
+- [ ] Curriculum Hub
+- [ ] Daily Schedule (editable; tutors limited to their day; iCal overlay)
+- [ ] Agenda Editor (universal AI search bar pinned at top with image upload)
+- [ ] Settings (tabs: Reagan's Profile · Prize Shop · Requests Inbox · Recipients & Notifications · Whiteboard · iCal URL · School Calendar · Recurring Appointments · Tutors · Theme)
+
+### Delete entirely
+- [ ] Proud Wall
+- [ ] My Levels (concept replaced by Kiwi Coins)
+- [ ] Tutor Handoff page (replaced by adult AI bar)
+- [ ] Family Stream / Family Feed
+- [ ] Upload-Sync
+- [ ] Daily Agendas page (separate)
+- [ ] Daily Packet page
+- [ ] Parent Notes page
+- [ ] Adventures page (becomes a popup launched from Today)
+- [ ] Journal page (merged into Notebook)
+- [ ] Any "Scribbles" branding string
+
+### Design constraint (anyone-can-use-cold)
+- [ ] Plain language only — no jargon, no acronyms, no internal terms ("agenda block", "curriculum topic id", etc.)
+- [ ] Big tap targets (min 44x44, prefer 56+)
+- [ ] One obvious next action per screen
+- [ ] Empty states explain what to do next in one sentence

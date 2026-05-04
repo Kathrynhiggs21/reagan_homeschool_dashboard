@@ -12,41 +12,18 @@ import AssignmentsLibrary from "./pages/AssignmentsLibrary";
 import CozyShell from "./components/CozyShell";
 import KiwiCompanion from "./components/KiwiCompanion";
 import KiwiPerch from "./components/KiwiPerch";
-import ReviewLibrary from "./pages/ReviewLibrary";
 import ResourceDock from "./components/ResourceDock";
 import QuickAddFab from "./components/QuickAddFab";
 import Today from "./pages/Today";
-import Week from "./pages/Week";
 import Curriculum from "./pages/Curriculum";
-import FamilyFeed from "./pages/FamilyFeed";
-import Adventures from "./pages/Adventures";
-import Journal from "./pages/Journal";
 import Bookshelf from "./pages/Bookshelf";
 import Apps from "./pages/Apps";
-import Timeline from "./pages/Timeline";
-import Profile from "./pages/Profile";
-import Analytics from "./pages/Analytics";
-import TutorHandoff from "./pages/TutorHandoff";
-import TutorBriefing from "./pages/TutorBriefing";
-import Knowledge from "./pages/Knowledge";
 import Settings from "@/pages/Settings";
 import Onboarding from "./pages/Onboarding";
-import NeedsWork from "./pages/NeedsWork";
-import Printables from "./pages/Printables";
 import TakeNotes from "./pages/TakeNotes";
-import Prizes from "./pages/Prizes";
-import Rewards from "./pages/Rewards";
-import Academics from "./pages/Academics";
-import ReportCard from "./pages/ReportCard";
-import Whiteboard from "./pages/Whiteboard";
-import Scratch from "./pages/Scratch";
-import MyLevels from "./pages/MyLevels";
-import ProudWall from "./pages/ProudWall";
-import Placement from "./pages/Placement";
-import UploadOrSync from "./pages/UploadOrSync";
 import DailyAgendas from "./pages/DailyAgendas";
-import DailyPacket from "./pages/DailyPacket";
 import Schedule from "./pages/Schedule";
+import KiwiCoins from "./pages/KiwiCoins";
 import { trpc } from "@/lib/trpc";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
@@ -68,86 +45,57 @@ function Router() {
     <CozyShell>
       <OnboardingGuard />
       <Switch>
+        {/* === KID ROUTES (always reachable) === */}
         <Route path="/welcome" component={Onboarding} />
         <Route path="/" component={Today} />
         <Route path="/today" component={Today} />
-        {/* Schedule is the new Reagan-facing page (Day/Week/Month + IH days off + GCal overlay).
-            Keep /week as a redirect so old links / nav state still work. */}
         <Route path="/schedule" component={Schedule} />
-        <Route path="/week">
-          <Redirect to="/schedule" />
-        </Route>
-        <Route path="/adventures" component={Adventures} />
-        <Route path="/journal" component={Journal} />
+        <Route path="/coins" component={KiwiCoins} />
         <Route path="/bookshelf" component={Bookshelf} />
+        <Route path="/notes" component={TakeNotes} />
         <Route path="/apps" component={Apps} />
-        <Route path="/timeline" component={Timeline} />
-        <Route path="/family" component={FamilyFeed} />
-        <Route path="/profile" component={Profile} />
-        {/* Adult-only pages: each wrapped in AdultGate so they prompt for the 3918 passcode */}
+
+        {/* === ADULT ROUTES (4 total, all gated) === */}
         <Route path="/curriculum">
           <AdultGate><Curriculum /></AdultGate>
-        </Route>
-        <Route path="/analytics">
-          <AdultGate><Analytics /></AdultGate>
-        </Route>
-        <Route path="/tutor">
-          <AdultGate><TutorHandoff /></AdultGate>
-        </Route>
-        <Route path="/tutor/:id">
-          <AdultGate><TutorBriefing /></AdultGate>
-        </Route>
-        <Route path="/knowledge">
-          <AdultGate><Knowledge /></AdultGate>
-        </Route>
-        <Route path="/settings">
-          <AdultGate><Settings /></AdultGate>
-        </Route>
-        <Route path="/needs-work">
-          <AdultGate><NeedsWork /></AdultGate>
-        </Route>
-        <Route path="/printables">
-          <AdultGate><Printables /></AdultGate>
-        </Route>
-        <Route path="/academics">
-          <AdultGate><Academics /></AdultGate>
-        </Route>
-        <Route path="/report-card">
-          <AdultGate><ReportCard /></AdultGate>
-        </Route>
-        <Route path="/whiteboard">
-          <AdultGate><Whiteboard /></AdultGate>
-        </Route>
-        <Route path="/review-library">
-          <AdultGate><ReviewLibrary /></AdultGate>
-        </Route>
-        <Route path="/levels" component={MyLevels} />
-        <Route path="/proud" component={ProudWall} />
-        <Route path="/placement" component={Placement} />
-        <Route path="/upload">
-          <AdultGate><UploadOrSync /></AdultGate>
-        </Route>
-        <Route path="/library">
-          <AdultGate><AssignmentsLibrary /></AdultGate>
         </Route>
         <Route path="/agendas">
           <AdultGate><DailyAgendas /></AdultGate>
         </Route>
-        <Route path="/packet">
-          <AdultGate><DailyPacket /></AdultGate>
+        <Route path="/library">
+          <AdultGate><AssignmentsLibrary /></AdultGate>
         </Route>
-        {/* Rewards moved to the adult section (parent picks/awards prizes). */}
-        <Route path="/rewards">
-          <AdultGate><Rewards /></AdultGate>
+        <Route path="/settings">
+          <AdultGate><Settings /></AdultGate>
         </Route>
-        {/* Legacy direct links still work and land on the Rewards tabs */}
-        {/* /stickers retired — Stickers UI removed from Reagan's view per user request. */}
-        <Route path="/stickers">
-          <Redirect to="/rewards" />
-        </Route>
-        <Route path="/prizes" component={Prizes} />
-        <Route path="/notes" component={TakeNotes} />
-        <Route path="/scratch" component={Scratch} />
+
+        {/* === LEGACY REDIRECTS (deleted pages → closest live page) === */}
+        <Route path="/week"><Redirect to="/schedule" /></Route>
+        <Route path="/levels"><Redirect to="/coins" /></Route>
+        <Route path="/proud"><Redirect to="/coins" /></Route>
+        <Route path="/rewards"><Redirect to="/coins" /></Route>
+        <Route path="/prizes"><Redirect to="/coins" /></Route>
+        <Route path="/stickers"><Redirect to="/coins" /></Route>
+        <Route path="/journal"><Redirect to="/notes" /></Route>
+        <Route path="/adventures"><Redirect to="/today" /></Route>
+        <Route path="/profile"><Redirect to="/settings" /></Route>
+        <Route path="/timeline"><Redirect to="/schedule" /></Route>
+        <Route path="/family"><Redirect to="/today" /></Route>
+        <Route path="/analytics"><Redirect to="/curriculum" /></Route>
+        <Route path="/tutor"><Redirect to="/agendas" /></Route>
+        <Route path="/tutor/:id"><Redirect to="/agendas" /></Route>
+        <Route path="/knowledge"><Redirect to="/library" /></Route>
+        <Route path="/needs-work"><Redirect to="/curriculum" /></Route>
+        <Route path="/printables"><Redirect to="/library" /></Route>
+        <Route path="/academics"><Redirect to="/curriculum" /></Route>
+        <Route path="/report-card"><Redirect to="/curriculum" /></Route>
+        <Route path="/whiteboard"><Redirect to="/notes" /></Route>
+        <Route path="/review-library"><Redirect to="/library" /></Route>
+        <Route path="/placement"><Redirect to="/curriculum" /></Route>
+        <Route path="/upload"><Redirect to="/library" /></Route>
+        <Route path="/packet"><Redirect to="/agendas" /></Route>
+        <Route path="/scratch"><Redirect to="/notes" /></Route>
+
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>

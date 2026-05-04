@@ -1363,6 +1363,71 @@ export const appRouter = router({
       } as any);
       return { ok: true, blockId };
     }),
+
+    /**
+     * findAssignments — universal kid-safe-aware search across the internal
+     * Library AND the live web (Perplexity Sonar). Adults get unfiltered
+     * results; tutors are forced kid-safe; the kid role is rejected.
+     */
+    findAssignments: protectedProcedure.input(z.object({
+      query: z.string().max(400).default(""),
+      subjectSlug: z.string().nullable().optional(),
+      imageUrl: z.string().url().nullable().optional(),
+      kidSafe: z.boolean().optional(),
+      includeWeb: z.boolean().optional(),
+      includeLibrary: z.boolean().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const role = (ctx.user as any)?.role;
+      if (role !== "admin" && role !== "tutor") throw new Error("This search is only available to admins and tutors.");
+      const kidSafe = input.kidSafe ?? (role !== "admin");
+      const finder = await import("./_lib/assignmentFinder");
+      const results = await finder.findAssignments({
+        query: input.query,
+        subjectSlug: input.subjectSlug ?? null,
+        imageUrl: input.imageUrl ?? null,
+        kidSafe,
+        includeWeb: input.includeWeb,
+        includeLibrary: input.includeLibrary,
+      });
+      return { results, kidSafe, count: results.length };
+    }),
+
+    /**
+     * Drop a finder result onto a date. Library items get pinned via
+     * `assignments_library.dateFor`; web/youtube results become a new
+     * scheduleBlock with the resolved curriculum topic id.
+     */
+    addFinderResultToDate: protectedProcedure.input(z.object({
+      dateStr: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      title: z.string().min(1).max(300),
+      url: z.string().nullable().optional(),
+      type: z.string().default("other"),
+      subjectSlug: z.string().nullable().optional(),
+      curriculumTopicCode: z.string().nullable().optional(),
+      curriculumTopicId: z.number().int().positive().nullable().optional(),
+      estimatedMinutes: z.number().int().positive().max(180).nullable().optional(),
+      source: z.enum(["library", "sonar_web", "sonar_youtube"]).default("sonar_web"),
+      internalId: z.number().int().positive().nullable().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const role = (ctx.user as any)?.role;
+      if (role !== "admin" && role !== "tutor") throw new Error("forbidden");
+      let topicId: number | null = input.curriculumTopicId ?? null;
+      if (!topicId && input.curriculumTopicCode) {
+        topicId = await resolveTopicId(input.curriculumTopicCode);
+      }
+      if (!topicId) throw new Error("This result is missing a curriculum topic. Please tag it before scheduling.");
+      const plan = await db.ensurePlanForDate(input.dateStr, { source: "manual" });
+      const blockId = await db.createBlock({
+        planId: plan.id,
+        title: input.title,
+        subjectSlug: input.subjectSlug ?? "other",
+        curriculumTopicId: topicId,
+        durationMin: input.estimatedMinutes || 20,
+        status: "not_started",
+        notes: `[added via finder by ${ctx.user?.name || role}] source=${input.source}${input.url ? ` url=${input.url}` : ""}`,
+      } as any);
+      return { ok: true, blockId };
+    }),
   }),
 
   /* =================== HELP LIST (What I'd like help with) =================== */
