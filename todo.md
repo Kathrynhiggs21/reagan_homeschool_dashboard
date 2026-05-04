@@ -2273,3 +2273,15 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Coin payout on completion, capped per day, gated to outside school hours
 - [ ] Link from Today page + sidebar
 - [ ] Vitests for library + payout-window logic
+
+
+## Turn-ins reset + AI auto-grade + searchable archive (May 4 2026)
+- [ ] Wipe existing turnIns rows (clean slate per Mom)
+- [ ] Curriculum page: replace Recent turn-ins block with compact scroll table
+- [ ] Show only the latest 5 turn-ins in the table
+- [ ] Search box above table that searches ALL turn-ins (not just 5)
+- [ ] tRPC `turnIns.searchAll` that scans the whole archive (title, subject, date, AI grade)
+- [ ] Auto AI-grade every new turn-in (best-effort, falls back gracefully)
+- [ ] Back-fill AI grades for any past ungraded turn-ins
+- [ ] Mirror every turn-in (file + grade summary) to Drive Hub → Finished Work
+- [ ] Vitests for searchAll + grader fallback

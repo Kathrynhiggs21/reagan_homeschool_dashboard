@@ -238,8 +238,13 @@ export default function Today() {
                 {today_str}
               </div>
               <h1
-                className="font-display mt-2 leading-none flex flex-wrap items-baseline gap-x-3 gap-y-1"
-                style={{ fontSize: "clamp(2.5rem, 6vw, 4.75rem)", letterSpacing: "-0.01em" }}
+                className="font-display mt-2 leading-none flex items-baseline gap-x-3 whitespace-nowrap"
+                style={{
+                  // Auto-shrinks the greeting so it always fits on a single line
+                  // even on narrow viewports. Uses clamp on the viewport width.
+                  fontSize: "clamp(1.5rem, 5.2vw, 4.5rem)",
+                  letterSpacing: "-0.01em",
+                }}
               >
                 {(() => {
                   const first = (profile.data?.studentName || "Reagan").split(" ")[0];
