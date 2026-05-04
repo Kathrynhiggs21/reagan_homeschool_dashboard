@@ -13,6 +13,7 @@ import RewardsManagerCard from "@/components/RewardsManagerCard";
 import TutorsManager from "@/components/TutorsManager";
 import CalendarSyncCard from "@/components/CalendarSyncCard";
 import AppointmentsCardLite from "@/components/AppointmentsCardLite";
+import SettingsAIHelperCard from "@/components/SettingsAIHelperCard";
 
 /**
  * Settings — slim version (locked May 4 2026).
@@ -33,6 +34,8 @@ export default function Settings() {
           Everything that controls how the dashboard runs.
         </p>
       </header>
+
+      <SettingsAIHelperCard />
 
       <Tabs defaultValue="people" className="w-full">
         <TabsList className="grid grid-cols-5 w-full">

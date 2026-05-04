@@ -3485,7 +3485,85 @@ export const appRouter = router({
       .input(z.object({ prefix: z.string().optional() }).optional())
       .query(({ input }) => db.listAppSettings(input?.prefix)),
   }),
-  // ── Adult Assignments Library ─────────────────────────────────────────
+  // ── Settings AI Helper ──────────────────────────────────
+  /**
+   * settingsAI — "Just tell the AI what to change" for the adult Settings page.
+   * preview() returns a structured plan; commit() applies it via the same prefs/
+   * tutor mutations the page already uses, with a full audit log entry.
+   */
+  settingsAI: router({
+    snapshot: protectedProcedure.query(async () => {
+      const tutors = (await db.listTutors(false)) as any[];
+      const prefRows = await db.listAppSettings();
+      const prefs: Record<string, string | null> = {};
+      for (const k of ["ui.theme", "kiwi.voice", "kiwi.silent", "kiwi.cartoonVoice", "kiwi.wakeWord", "quietHours.start", "quietHours.end", "roblox.allowed", "notifications.evening8pm"]) {
+        prefs[k] = (prefRows as any[]).find(r => r.key === k)?.value ?? null;
+      }
+      return {
+        reagan: { name: "Reagan", gradeLevel: "5th grade" },
+        tutors: tutors.map(t => ({ id: t.id, name: t.name, role: t.role, subjects: t.subjects, active: !!t.active })),
+        prefs,
+        voicePresets: ["Leda", "Aoede", "Sadachbia", "Kore", "Puck"],
+        themes: ["starry", "cream", "chalkboard", "notebook"],
+      };
+    }),
+    preview: protectedProcedure.input(z.object({
+      instruction: z.string().min(2).max(2000),
+    })).mutation(async ({ input }) => {
+      const { generateSettingsAIPlan } = await import("./_lib/settingsAI");
+      const tutors = (await db.listTutors(false)) as any[];
+      const prefRows = await db.listAppSettings();
+      const prefs: Record<string, string | null> = {};
+      for (const k of ["ui.theme", "kiwi.voice", "kiwi.silent", "kiwi.cartoonVoice", "kiwi.wakeWord", "quietHours.start", "quietHours.end", "roblox.allowed", "notifications.evening8pm"]) {
+        prefs[k] = (prefRows as any[]).find(r => r.key === k)?.value ?? null;
+      }
+      const plan = await generateSettingsAIPlan({
+        reagan: { name: "Reagan", gradeLevel: "5th grade" },
+        tutors: tutors.map(t => ({ id: t.id, name: t.name, role: t.role, subjects: t.subjects, active: !!t.active })),
+        prefs,
+        voicePresets: ["Leda", "Aoede", "Sadachbia", "Kore", "Puck"],
+        themes: ["starry", "cream", "chalkboard", "notebook"],
+      }, input.instruction);
+      return plan;
+    }),
+    commit: protectedProcedure.input(z.object({
+      summary: z.string(),
+      ops: z.array(z.any()),
+    })).mutation(async ({ input, ctx }) => {
+      const out = { setPrefs: 0, upsertedTutors: 0, asks: 0, notes: [] as string[] };
+      for (const op of input.ops as any[]) {
+        if (op.kind === "prefs.set") {
+          await db.setAppSetting(op.key, op.value ?? null);
+          out.setPrefs++;
+        } else if (op.kind === "tutor.upsert") {
+          await db.upsertTutor({
+            id: op.id,
+            name: op.name,
+            role: op.role,
+            subjects: op.subjects,
+            active: typeof op.active === "boolean" ? op.active : undefined,
+            notes: op.notes,
+          });
+          out.upsertedTutors++;
+        } else if (op.kind === "reagan.note") {
+          out.notes.push(op.text);
+        } else if (op.kind === "ask") {
+          out.asks++;
+        }
+      }
+      await db.logAudit({
+        actorOpenId: ctx.user?.openId,
+        actorName: ctx.user?.name,
+        entityType: "app",
+        entityId: 0,
+        action: "update",
+        summary: `Settings AI: ${input.summary} (${out.setPrefs} pref, ${out.upsertedTutors} tutor)`,
+      });
+      return out;
+    }),
+  }),
+
+  // ── Adult Assignments Library ───────────────────────────────────
   library: router({
     list: protectedProcedure
       .input(z.object({
