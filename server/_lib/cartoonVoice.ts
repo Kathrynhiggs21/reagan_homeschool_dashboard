@@ -30,13 +30,14 @@ export interface CartoonVoiceConfig {
 
 export const CARTOON_VOICES: Record<CartoonVoiceId, CartoonVoiceConfig> = {
   kiwi: {
-    // May 2026 tune: cuter Kiwi. Switched from Kore to Leda (younger,
-    // softer, sweeter Gemini prebuilt) and rewrote the style hint so the
-    // model lands on a tiny-bird-with-a-smile read instead of a bright
-    // adult cadence.
+    // May 2026 retune — Mom feedback: previous Kiwi (Leda + tiny-plush hint)
+    // was too high and chipmunk-y. Goal: a warm REAL-kid voice with a soft
+    // cartoon edge, like a friendly 7-year-old buddy. We keep Leda (it's the
+    // most natural-sounding young Gemini prebuilt) and change the style hint
+    // so the model lands lower in pitch and steadier in cadence.
     voiceName: "Leda",
     style:
-      "Tiny green parakeet voice. Very small, sweet, and high-pitched, like a five-year-old's plush toy come to life. Gentle, smiley, a little giggly, never loud or bossy. Speak slightly slower than normal so each word feels cuddly.",
+      "Voice: a warm, friendly real-kid voice, like a 7-year-old best friend. NOT squeaky or high-pitched. NOT a baby or chipmunk. Sounds like a real human kid speaking calmly with a small cartoon-bird sparkle. Pitch is slightly above neutral, never strained. Cadence is steady and clear, like talking to a friend at lunch. A tiny giggle once in a while is okay; no exaggerated cuteness. Always kind and gentle.",
   },
   blue: {
     voiceName: "Aoede",

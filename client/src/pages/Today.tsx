@@ -306,6 +306,10 @@ export default function Today() {
           </div>
         </div>
       </header>
+      {/* Tutor of the day strip — "With Reagan today: <Name> · <arrival>–<departure>".
+          Mom-only days quietly say "Mom-only day today" so Reagan still gets a clear cue. */}
+      <TutorOfDayStrip />
+
       {/* Daily tip strip + Fresh-start button — deterministic by date so the tip stays stable all day */}
       <DailyTipAndFreshStart />
 
@@ -1020,5 +1024,57 @@ function DailyTipAndFreshStart() {
         {refresh.isPending ? "Refreshing…" : "Fresh start"}
       </button>
     </div>
+  );
+}
+
+
+/**
+ * TutorOfDayStrip
+ * ----------------
+ * Small chalkboard-style chip just under the hero that tells Reagan (and any
+ * adult glancing at her screen) who she's working with today and when they'll
+ * be here. Pulls from `tutors.tutorOfDay` (public, server-resolved).
+ *
+ * Three states:
+ *   - tutor scheduled  → "👋 With Reagan today: Ms. Sara · 9:00 AM–11:30 AM"
+ *   - Mom-only day     → "🏠 Mom-only day today"
+ *   - loading / error  → renders nothing (no skeleton noise on the hero)
+ */
+function TutorOfDayStrip() {
+  const today = new Date().toISOString().slice(0, 10);
+  // typed loosely so we don't break if the procedure isn't deployed yet
+  const q = (trpc as any).tutors?.tutorOfDay?.useQuery?.({ dateStr: today }) ?? {
+    data: null,
+    isLoading: false,
+    isError: false,
+  };
+  if (q.isLoading || q.isError) return null;
+  const t = (q.data as any) || null;
+
+  if (!t) {
+    return (
+      <Card className="classroom-card p-3 flex items-center gap-3">
+        <span className="text-xl" aria-hidden>🏠</span>
+        <div className="text-sm">
+          <span className="font-display font-semibold">Mom-only day today.</span>{" "}
+          <span className="text-muted-foreground">No tutor scheduled.</span>
+        </div>
+      </Card>
+    );
+  }
+
+  const window =
+    t.arrival && t.departure ? `${t.arrival}–${t.departure}` : t.arrival || t.departure || "";
+
+  return (
+    <Card className="classroom-card p-3 flex items-center gap-3">
+      <span className="text-xl" aria-hidden>👋</span>
+      <div className="text-sm flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        <span className="text-muted-foreground">With Reagan today:</span>
+        <span className="font-display font-semibold">{t.name}</span>
+        {t.role ? <span className="text-muted-foreground">· {t.role}</span> : null}
+        {window ? <span className="text-muted-foreground">· {window}</span> : null}
+      </div>
+    </Card>
   );
 }

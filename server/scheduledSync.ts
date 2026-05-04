@@ -898,4 +898,77 @@ ${tutorLine}
       return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
     }
   });
+
+  /* ====================== CONTINUOUS DRIVE SNAPSHOT ====================== */
+  /**
+   * GET /api/scheduled/drive-snapshot
+   *
+   * Mom asked May 2026: "auto-sync everything with Google Drive continuously."
+   * This endpoint exports a *live* JSON+CSV snapshot of every dashboard section
+   * the cron worker can mirror into Drive Hub > Snapshots/{date}/{HHMM}.
+   *
+   * Returns one payload with:
+   *   - assignments  (open + done in the last 14 days)
+   *   - finishedWork (submissions in the last 14 days)
+   *   - schedule     (today + next 6 days of plans + blocks)
+   *   - coins        (current balance + last 30 ledger entries)
+   *   - analytics    (skills mastery snapshot + struggle patterns)
+   *   - journal      (last 14 days of entries)
+   *
+   * The cron worker is responsible for writing these files into Drive (it has
+   * gws/rclone). We keep the read-only data assembly here in the server because
+   * the DB lives here.
+   */
+  app.get("/api/scheduled/drive-snapshot", async (req: Request, res: Response) => {
+    let role: string | null = null;
+    try {
+      const u = await sdk.authenticateRequest(req);
+      role = u?.role ?? null;
+    } catch {
+      role = null;
+    }
+    if (!role || (role !== "user" && role !== "admin")) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const fourteenAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+      // Each call defensively swallows errors so a partial snapshot still ships.
+      const [
+        assignments,
+        finishedWork,
+        scheduleNext7,
+        coinBalance,
+        coinLedger,
+        skills,
+        struggles,
+        journal,
+      ] = await Promise.all([
+        (db as any).listOpenAssignments?.(50).catch(() => null) ?? null,
+        (db as any).listRecentSubmissions?.(50).catch(() => null) ?? null,
+        (db as any).listPlansBetween?.(today, new Date(Date.now() + 6 * 86400000).toISOString().slice(0,10)).catch(() => null) ?? null,
+        (db as any).getCoinBalance?.().catch(() => null) ?? null,
+        (db as any).listRecentCoinLedger?.(30).catch(() => null) ?? null,
+        (db as any).listSkillsMastery?.().catch(() => null) ?? null,
+        (db as any).listEmotionalStruggles?.({ since: fourteenAgo }).catch(() => null) ?? null,
+        (db as any).listJournalEntries?.({ since: fourteenAgo }).catch(() => null) ?? null,
+      ]);
+
+      return res.json({
+        ok: true,
+        generatedAt: new Date().toISOString(),
+        snapshot: {
+          assignments,
+          finishedWork,
+          scheduleNext7,
+          coins: { balance: coinBalance, ledger: coinLedger },
+          analytics: { skills, struggles },
+          journal,
+        },
+      });
+    } catch (e: any) {
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
 }

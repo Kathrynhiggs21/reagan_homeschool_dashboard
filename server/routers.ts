@@ -2504,6 +2504,25 @@ export const appRouter = router({
       .query(({ input }) => db.priorityForTutor(input.tutorId, input.limit)),
     sessionSkills: publicProcedure.input(z.object({ sessionId: z.number() }))
       .query(({ input }) => db.tutorSessionSkillsFor(input.sessionId)),
+    /**
+     * tutorOfDay — public lookup so the kid Today page (and printed packet)
+     * can show "Today: <Tutor Name> · <arrival>–<departure>" without any
+     * guessing. Returns null when no tutor is scheduled (Mom-only day).
+     */
+    tutorOfDay: publicProcedure
+      .input(z.object({ dateStr: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() }).optional())
+      .query(async ({ input }) => {
+        const dateStr = input?.dateStr ?? new Date().toISOString().slice(0, 10);
+        const t = await resolveTutorOfDay(dateStr).catch(() => null);
+        if (!t) return null;
+        return {
+          name: t.name,
+          role: t.role ?? null,
+          arrival: t.arrival ?? null,
+          departure: t.departure ?? null,
+          label: tutorOfDayLabel(t),
+        };
+      }),
     resetRoster: protectedProcedure.mutation(() => db.resetTutorRoster()),
     recordSession: protectedProcedure.input(z.object({
       tutorId: z.number(),

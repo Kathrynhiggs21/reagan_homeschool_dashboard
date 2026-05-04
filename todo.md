@@ -2285,3 +2285,10 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Back-fill AI grades for any past ungraded turn-ins
 - [ ] Mirror every turn-in (file + grade summary) to Drive Hub → Finished Work
 - [ ] Vitests for searchAll + grader fallback
+
+
+## Reagan Intro Tour from Kiwi (in progress)
+- [ ] Build IntroTour component (8-step Kiwi-narrated walkthrough of the site)
+- [ ] Auto-show first time on Today, "Replay tour" button in sidebar / Apps
+- [ ] Persist `tourSeen` in localStorage + a "Restart tour" entry in Settings → People
+- [ ] Cover topics: Today blocks, Coins, Practice, Apps, Adventures, Notebook, Print, Ask Kiwi (how to ask AI)

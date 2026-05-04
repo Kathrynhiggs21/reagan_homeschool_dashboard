@@ -257,9 +257,50 @@ export async function listBlocksForPlan(planId: number) {
     .orderBy(scheduleBlocks.sortOrder);
   const subs = await db.select().from(subjects);
   const byId = Object.fromEntries(subs.map(s => [s.id, s]));
-  return rows.map(r => {
+
+  // Join book assignments → page refs per block. We do one query for the whole
+  // plan rather than N queries (one per block) so this stays O(1) network calls
+  // even on the rare jam-packed days. The kid Today view + printable packet
+  // both read `block.pageRefs` to render a one-liner like
+  //   "📖 Tuck Everlasting · pg 24–28".
+  const blockIds = rows.map((r) => r.id);
+  type PageRef = { bookId: number; bookTitle: string | null; fromPage: number; toPage: number; notes: string | null };
+  const pageRefsByBlock = new Map<number, PageRef[]>();
+  if (blockIds.length > 0) {
+    try {
+      const ba = await db.select().from(bookAssignments).where(inArray(bookAssignments.blockId, blockIds));
+      const bookIds = Array.from(new Set(ba.map((a) => a.bookId)));
+      const bookRows = bookIds.length > 0
+        ? await db.select().from(books).where(inArray(books.id, bookIds))
+        : [];
+      const titleById = new Map<number, string>();
+      for (const b of bookRows) titleById.set(b.id, b.title);
+      for (const a of ba) {
+        const arr = pageRefsByBlock.get(a.blockId) ?? [];
+        arr.push({
+          bookId: a.bookId,
+          bookTitle: titleById.get(a.bookId) ?? null,
+          fromPage: a.fromPage,
+          toPage: a.toPage,
+          notes: a.notes ?? null,
+        });
+        pageRefsByBlock.set(a.blockId, arr);
+      }
+    } catch {
+      // Non-fatal: if the join fails we still return blocks (just no page refs).
+    }
+  }
+
+  return rows.map((r) => {
     const sub = r.subjectId ? byId[r.subjectId] : null;
-    return { ...r, subjectSlug: sub?.slug || null, subjectName: sub?.name || null, emoji: sub?.emoji || null, estimatedMinutes: r.durationMin };
+    return {
+      ...r,
+      subjectSlug: sub?.slug || null,
+      subjectName: sub?.name || null,
+      emoji: sub?.emoji || null,
+      estimatedMinutes: r.durationMin,
+      pageRefs: pageRefsByBlock.get(r.id) ?? [],
+    };
   });
 }
 

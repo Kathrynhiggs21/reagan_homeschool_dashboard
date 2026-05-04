@@ -31,22 +31,24 @@ export interface CompanionVoiceConfig {
 
 export const COMPANION_VOICES: Record<CompanionId, CompanionVoiceConfig> = {
   kiwi: {
-    // Cuter Kiwi (May 2026 tune): higher pitch, gentler pace, smaller-sounding,
-    // and prefer kid/young/sweet voices first so the OS fallback also reads cute.
-    rate: 0.98,
-    pitch: 1.95,
-    volume: 0.85,
+    // May 2026 retune — "warm real-kid voice with a cartoon edge".
+    // Mom feedback: previous Kiwi was too high/squeaky. Goal is a 7-ish-year-old
+    // friend voice, slightly above neutral but not chipmunked. These values are
+    // ONLY used by the dev tooling now; the user-facing voice is the Gemini
+    // cartoon WAV (server-side) — see speakAs() below for the cartoon-only path.
+    rate: 1.0,
+    pitch: 1.45,
+    volume: 0.95,
     preferred: [
-      /child|kid|junior|young/i,
       /jenny/i,
       /aria/i,
       /samantha/i,
+      /child|kid|junior|young/i,
       /google us english/i,
       /karen/i,
-      /zira/i,
       /female/i,
     ],
-    blurb: "Tiny & sweet",
+    blurb: "Warm real-kid",
   },
   blue: {
     rate: 1.0,
@@ -103,23 +105,16 @@ function isSilenced(): boolean {
   }
 }
 
-/** Local fallback: speak via the browser's built-in speechSynthesis. */
-function speakLocal(id: CompanionId | string | undefined | null, text: string) {
-  if (typeof window === "undefined") return;
-  if (!("speechSynthesis" in window)) return;
-  const cfg = getCompanionConfig(id);
-  const u = new SpeechSynthesisUtterance(text);
-  u.rate = cfg.rate;
-  u.pitch = cfg.pitch;
-  u.volume = cfg.volume;
-  const v = pickVoiceForCompanion(id, speechSynthesis.getVoices());
-  if (v) u.voice = v;
-  try {
-    speechSynthesis.cancel();
-    speechSynthesis.speak(u);
-  } catch {
-    // ignore
-  }
+/**
+ * Cartoon-only voice path — NO speechSynthesis fallback.
+ *
+ * Mom asked May 2026: "no computer/robot fallback voice." If the cartoon WAV
+ * fails to load (offline, server error, browser quirk), we go silent rather
+ * than ever switching to the OS speechSynthesis robot voice. This function is
+ * intentionally kept as a no-op so any earlier callers still compile.
+ */
+function speakLocal(_id: CompanionId | string | undefined | null, _text: string) {
+  // Intentionally silent. See header comment.
 }
 
 /** Module-level singleton so we can stop the previous cartoon clip. */
@@ -138,7 +133,9 @@ export function speakAs(id: CompanionId | string | undefined | null, text: strin
   if (isSilenced()) return;
   let useCartoon = false;
   try { useCartoon = window.localStorage?.getItem("kiwiCartoonVoice") === "1"; } catch { /* no-op */ }
-  if (!useCartoon) { speakLocal(id, text); return; }
+  // Cartoon-only path: if Mom hasn't enabled cartoon voice yet, stay silent
+  // (no robot fallback). She can flip it on in Settings → People → Cartoon voice.
+  if (!useCartoon) return;
   // tRPC fetch via plain fetch so we don't have to weave a hook in here.
   const trimmed = String(text || "").slice(0, 800);
   if (!trimmed) return;
