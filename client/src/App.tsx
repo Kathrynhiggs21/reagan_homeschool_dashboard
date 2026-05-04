@@ -25,6 +25,7 @@ import TakeNotes from "./pages/TakeNotes";
 import DailyAgendas from "./pages/DailyAgendas";
 import Schedule from "./pages/Schedule";
 import KiwiCoins from "./pages/KiwiCoins";
+import PracticeForCoins from "./pages/PracticeForCoins";
 import DailyPacket from "./pages/DailyPacket";
 import { trpc } from "@/lib/trpc";
 import { useEffect } from "react";
@@ -53,6 +54,7 @@ function Router() {
         <Route path="/today" component={Today} />
         <Route path="/schedule" component={Schedule} />
         <Route path="/coins" component={KiwiCoins} />
+        <Route path="/practice" component={PracticeForCoins} />
         <Route path="/bookshelf" component={Bookshelf} />
         <Route path="/notes" component={TakeNotes} />
         <Route path="/apps" component={Apps} />

@@ -287,6 +287,17 @@ export default function Today() {
             >
               🖨️ Print today
             </Button>
+            {/* Practice for Coins — extra credit hub. Reagan can do short Khan/IXL/BrainPOP
+                drills outside school hours and earn capped Kiwi Coins. */}
+            <Button
+              onClick={() => { window.location.href = "/practice"; }}
+              size="lg"
+              variant="outline"
+              className="rounded-full bg-card font-display text-base px-5 py-6"
+              title="Earn extra Kiwi Coins by doing fun practice drills outside school hours"
+            >
+              🪙 Practice for Coins
+            </Button>
           </div>
         </div>
       </header>

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -15,6 +16,13 @@ import { describeUser, roleForEmail, capabilitiesFor, type HomeRole } from "./_l
 import { loadTopicHintsForPrompt, resolveTopicId, resolveTopicIds } from "./_lib/topicCatalog";
 import { resolveTutorOfDay, tutorOfDayLabel } from "./_lib/tutorOfDay";
 import { loadOwnedBooksForAgenda } from "./_lib/ownedBooksHints";
+import {
+  groupBySubject as practiceGroupBySubject,
+  findDrill as findPracticeDrill,
+  computePayout as computePracticePayout,
+  isOutsideSchoolHours as isOutsidePracticeWindow,
+  PRACTICE_DAILY_COIN_CAP,
+} from "./_lib/practiceLibrary";
 
 const Zone = z.enum(["green", "yellow", "red"]);
 const Intensity = z.enum(["green", "yellow", "red"]);
@@ -956,6 +964,72 @@ export const appRouter = router({
    *      talkativeness scores, rawSummary}
    *   3) writes ONLY the structured summary into listeningSummaries
    * Reagan's UI never reads this table; only adultUnlocked Mom views can. */
+  /* ============== PRACTICE FOR COINS ==============
+   * Curated extra-credit drill library. Reagan can complete short Khan / IXL /
+   * BrainPOP / etc. drills outside school hours and earn capped Kiwi Coins.
+   * Pure data + thin DB writes — no LLM, no scheduled job. */
+  practice: router({
+    library: publicProcedure.query(() => ({
+      groups: practiceGroupBySubject(),
+      dailyCap: PRACTICE_DAILY_COIN_CAP,
+      outsideSchoolHoursNow: isOutsidePracticeWindow(new Date()),
+    })),
+    todayProgress: publicProcedure.query(async ({ ctx }) => {
+      const userId = (ctx.user as any)?.id ?? null;
+      const ledger = await db.recentCoinLedger(userId, 100);
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const earnedToday = (ledger as any[])
+        .filter((r) => typeof r.reasonNote === "string" && r.reasonNote.startsWith("Practice:") && new Date(r.createdAt) >= startOfDay)
+        .reduce((sum, r) => sum + Math.max(0, r.delta || 0), 0);
+      return {
+        earnedToday,
+        cap: PRACTICE_DAILY_COIN_CAP,
+        remaining: Math.max(0, PRACTICE_DAILY_COIN_CAP - earnedToday),
+        outsideSchoolHoursNow: isOutsidePracticeWindow(new Date()),
+      };
+    }),
+    complete: publicProcedure
+      .input(z.object({ slug: z.string().min(1).max(80) }))
+      .mutation(async ({ input, ctx }) => {
+        const drill = findPracticeDrill(input.slug);
+        if (!drill) throw new TRPCError({ code: "NOT_FOUND", message: "Drill not in library" });
+        const userId = (ctx.user as any)?.id ?? null;
+        const ledger = await db.recentCoinLedger(userId, 100);
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+        const earnedToday = (ledger as any[])
+          .filter((r) => typeof r.reasonNote === "string" && r.reasonNote.startsWith("Practice:") && new Date(r.createdAt) >= startOfDay)
+          .reduce((sum, r) => sum + Math.max(0, r.delta || 0), 0);
+        const payout = computePracticePayout(drill, earnedToday, new Date());
+        if (payout.coins <= 0) {
+          return {
+            ok: false as const,
+            coinsAwarded: 0,
+            reason: payout.reason || "No coins this time.",
+            cap: PRACTICE_DAILY_COIN_CAP,
+            earnedToday,
+          };
+        }
+        await db.awardSticker({
+          userId,
+          // 'adult_bonus' is the only freeform reason in the sticker enum; the
+          // drill slug + title go into shortLyric so the ledger row is
+          // queryable as a Practice-for-Coins payout.
+          reason: "adult_bonus",
+          coins: payout.coins,
+          shortLyric: `Practice: ${drill.title} (${drill.slug})`,
+          addedByUserId: userId,
+        });
+        return {
+          ok: true as const,
+          coinsAwarded: payout.coins,
+          capped: payout.capped,
+          cap: PRACTICE_DAILY_COIN_CAP,
+          earnedToday: earnedToday + payout.coins,
+        };
+      }),
+  }),
   listening: router({
     /** Kid-side: post a new 5–10 min audio chunk. Public so the kid session
      *  (no admin role) can call it; the server discards anything outside the

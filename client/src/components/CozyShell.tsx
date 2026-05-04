@@ -27,6 +27,7 @@ const KID_NAV: NavItem[] = [
   { to: "/today",     emoji: "📋", label: "Today",        dot: "#ff9b3d" },
   { to: "/schedule",  emoji: "🗓️", label: "Schedule",     dot: "#3b82f6" },
   { to: "/coins",     emoji: "🪙", label: "Kiwi Coins",   dot: "#eab308" },
+  { to: "/practice",  emoji: "✨", label: "Practice",     dot: "#facc15" },
   { to: "/bookshelf", emoji: "📚", label: "Bookshelf",    dot: "#ef4444" },
   { to: "/notes",     emoji: "📝", label: "Notebook",     dot: "#a855f7" },
   { to: "/apps",      emoji: "🎒", label: "Apps & Tools", dot: "#22c55e" },

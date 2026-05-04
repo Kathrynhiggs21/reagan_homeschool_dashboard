@@ -2265,3 +2265,11 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Big tap targets (min 44x44, prefer 56+)
 - [ ] One obvious next action per screen
 - [ ] Empty states explain what to do next in one sentence
+
+
+## Practice for Coins (extra-credit hub) — May 4 2026
+- [ ] Curated drill library (math/ela/science/social-studies/spelling) with auto-open links
+- [ ] /practice route with subject → topic → drill flow
+- [ ] Coin payout on completion, capped per day, gated to outside school hours
+- [ ] Link from Today page + sidebar
+- [ ] Vitests for library + payout-window logic
