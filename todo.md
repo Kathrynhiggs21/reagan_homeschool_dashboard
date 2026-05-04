@@ -2371,3 +2371,9 @@ Tests at end of batch: 211 passed | 1 skipped.
 ## 2026-05-04 user request — extra add (locked v3)
 - [ ] Add a "Color the Planets" mini-block to today (with Solar System printable link)
 - [ ] Add a "Flashlight + Globe: day/night, axial tilt, seasons" hands-on block (NASA Space Place + PBS LearningMedia link)
+
+
+## 2026-05-04 user request — append v2 (DONE)
+- [x] Append "Lunch with Mom" block (10:45, 30m) → 690008
+- [x] Append "Spectrum Math Grade 5 — pg 146–148" (11:15, 30m, tagged Math 8-4) → 690009
+- [x] Library entry for Spectrum pgs → 90005
