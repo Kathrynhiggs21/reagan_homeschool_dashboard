@@ -31,11 +31,22 @@ export interface CompanionVoiceConfig {
 
 export const COMPANION_VOICES: Record<CompanionId, CompanionVoiceConfig> = {
   kiwi: {
-    rate: 1.05,
-    pitch: 1.6,
-    volume: 0.9,
-    preferred: [/samantha/i, /aria/i, /jenny/i, /google us english/i, /karen/i, /zira/i, /female/i],
-    blurb: "Bright & cheery",
+    // Cuter Kiwi (May 2026 tune): higher pitch, gentler pace, smaller-sounding,
+    // and prefer kid/young/sweet voices first so the OS fallback also reads cute.
+    rate: 0.98,
+    pitch: 1.95,
+    volume: 0.85,
+    preferred: [
+      /child|kid|junior|young/i,
+      /jenny/i,
+      /aria/i,
+      /samantha/i,
+      /google us english/i,
+      /karen/i,
+      /zira/i,
+      /female/i,
+    ],
+    blurb: "Tiny & sweet",
   },
   blue: {
     rate: 1.0,

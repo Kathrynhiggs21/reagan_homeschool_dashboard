@@ -30,8 +30,13 @@ export interface CartoonVoiceConfig {
 
 export const CARTOON_VOICES: Record<CartoonVoiceId, CartoonVoiceConfig> = {
   kiwi: {
-    voiceName: "Kore",
-    style: "Bright, quick, slightly squeaky like a tiny green parakeet. Friendly, encouraging, never bossy.",
+    // May 2026 tune: cuter Kiwi. Switched from Kore to Leda (younger,
+    // softer, sweeter Gemini prebuilt) and rewrote the style hint so the
+    // model lands on a tiny-bird-with-a-smile read instead of a bright
+    // adult cadence.
+    voiceName: "Leda",
+    style:
+      "Tiny green parakeet voice. Very small, sweet, and high-pitched, like a five-year-old's plush toy come to life. Gentle, smiley, a little giggly, never loud or bossy. Speak slightly slower than normal so each word feels cuddly.",
   },
   blue: {
     voiceName: "Aoede",
