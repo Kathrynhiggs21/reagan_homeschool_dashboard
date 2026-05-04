@@ -3,7 +3,7 @@ import { useKiwi } from "@/contexts/KiwiContext";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Send, Mic, X, Volume2, VolumeX, MessageCircle } from "lucide-react";
+import { Send, Mic, MicOff, X, Volume2, VolumeX, MessageCircle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import KiwiSprite from "./KiwiSprite";
 import FlockSprite, { type FlockMember } from "./FlockSprite";
@@ -19,14 +19,34 @@ export default function KiwiCompanion() {
   // Track which flock companion is the "voice" right now. The CompanionBelt
   // dispatches "kiwi:active-companion-changed" so we re-render here.
   const [activeCompanion, setActiveCompanion] = useState<CompanionId>(() => getActiveCompanionId());
+  // Wake-word state mirrors localStorage so Reagan can flip it from inside
+  // the chat popup without diving into adult Settings.
+  const [wakeWordOn, setWakeWordOn] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try { return window.localStorage?.getItem("kiwiMicConsent") === "1"; } catch { return false; }
+  });
   useEffect(() => {
     function onChange(e: Event) {
       const id = (e as CustomEvent).detail?.id as CompanionId | undefined;
       if (id) setActiveCompanion(id);
     }
+    function onWakeChange(e: Event) {
+      const on = !!(e as CustomEvent).detail?.on;
+      setWakeWordOn(on);
+    }
     window.addEventListener("kiwi:active-companion-changed", onChange as EventListener);
-    return () => window.removeEventListener("kiwi:active-companion-changed", onChange as EventListener);
+    window.addEventListener("kiwi:wake-word-changed", onWakeChange as EventListener);
+    return () => {
+      window.removeEventListener("kiwi:active-companion-changed", onChange as EventListener);
+      window.removeEventListener("kiwi:wake-word-changed", onWakeChange as EventListener);
+    };
   }, []);
+  function toggleWakeWord() {
+    const next = !wakeWordOn;
+    setWakeWordOn(next);
+    try { window.localStorage?.setItem("kiwiMicConsent", next ? "1" : "0"); } catch { /* ignore */ }
+    try { window.dispatchEvent(new CustomEvent("kiwi:wake-word-changed", { detail: { on: next } })); } catch { /* ignore */ }
+  }
   const messages = trpc.kiwi.history.useQuery({ limit: 20 });
   const sendMsg = trpc.kiwi.chat.useMutation({
     onSuccess: (data: any) => {
@@ -222,6 +242,15 @@ export default function KiwiCompanion() {
               </div>
             </div>
             <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleWakeWord}
+                title={wakeWordOn ? "Wake word ON — say ‘Hi Kiwi’ to call me" : "Wake word OFF — tap me to talk"}
+                className={wakeWordOn ? "text-emerald-500" : "text-muted-foreground"}
+              >
+                {wakeWordOn ? <Mic className="w-4 h-4"/> : <MicOff className="w-4 h-4"/>}
+              </Button>
               <Button variant="ghost" size="icon" onClick={() => setMuted(m => !m)} title={muted ? "Unmute" : "Mute voice"}>
                 {muted ? <VolumeX className="w-4 h-4"/> : <Volume2 className="w-4 h-4"/>}
               </Button>

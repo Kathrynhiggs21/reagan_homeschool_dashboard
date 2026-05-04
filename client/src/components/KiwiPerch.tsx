@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import KiwiSprite, { type KiwiPose } from "./KiwiSprite";
+import FlockSprite, { type FlockMember, getFlockMeta } from "./FlockSprite";
 import { useKiwi } from "@/contexts/KiwiContext";
 // Kiwi is silent by default. We deliberately do NOT import chirp() here so the
 // perch never makes sound on its own. Voice/chirp only fires through KiwiCompanion
@@ -88,6 +89,9 @@ export default function KiwiPerch() {
   const [bubbleText, setBubbleText] = useState<string | null>(null);
   const [popBurst, setPopBurst] = useState<number>(0);
   const [tilt, setTilt] = useState(0); // degrees
+  // Flock cameo: occasionally, Blue / Daffy / Honk fly in for ~6s and hover
+  // near Kiwi, then fade away. Silent, visual-only.
+  const [cameo, setCameo] = useState<FlockMember | null>(null);
   const lastInteractRef = useRef(Date.now());
   const bubbleTimeoutRef = useRef<number | null>(null);
   const dragOffsetRef = useRef<{ dx: number; dy: number } | null>(null);
@@ -230,6 +234,31 @@ export default function KiwiPerch() {
     else if (pose === "sleep") setPose("idle");
   }, [adultPresent]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Flock cameo every 60-150s. A friend pops in next to Kiwi for ~6s, then
+  // gently floats away. Silent visual sugar to make Kiwi feel less lonely.
+  useEffect(() => {
+    if (!enabled || adultPresent) return;
+    let timer: number | undefined;
+    const friends: FlockMember[] = ["blue", "daffy", "honk"];
+    const schedule = () => {
+      const delay = 60_000 + Math.random() * 90_000;
+      timer = window.setTimeout(() => {
+        if (!dragging && !flying) {
+          const pick = friends[Math.floor(Math.random() * friends.length)];
+          setCameo(pick);
+          // Auto-clear cameo after ~6s
+          window.setTimeout(() => setCameo(null), 6_200);
+          // Tiny pose nudge so Kiwi reacts to her friend
+          setPose("chirp");
+          window.setTimeout(() => setPose("idle"), 700);
+        }
+        schedule();
+      }, delay);
+    };
+    schedule();
+    return () => { if (timer) window.clearTimeout(timer); };
+  }, [enabled, adultPresent, dragging, flying]);
+
   // (Removed: timed friendly-bubble. Kiwi's bubble now only opens on tap or wake word.)
 
   // React to user activity — flap briefly when mouse/touch moves
@@ -357,6 +386,24 @@ export default function KiwiPerch() {
 
         {popBurst > 0 && <PopBurst key={popBurst} size={size} />}
 
+        {cameo && (
+          <div
+            aria-hidden
+            className="absolute pointer-events-none"
+            style={{
+              left: -Math.round(size * 0.55),
+              top: -Math.round(size * 0.15),
+              width: Math.round(size * 0.65),
+              height: Math.round(size * 0.65),
+              animation: "kiwiCameo 6.2s ease-in-out forwards",
+              filter: `drop-shadow(0 6px 10px ${getFlockMeta(cameo).accent}55)`,
+            }}
+            title={`${getFlockMeta(cameo).name} stopped by!`}
+          >
+            <FlockSprite member={cameo} size={Math.round(size * 0.65)} />
+          </div>
+        )}
+
         <div
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
@@ -395,6 +442,12 @@ export default function KiwiPerch() {
         @keyframes kiwiPop {
           0% { transform: translate(0,0) scale(0.6); opacity: 0.9; }
           100% { transform: translate(var(--kx), var(--ky)) scale(1.1); opacity: 0; }
+        }
+        @keyframes kiwiCameo {
+          0%   { transform: translate(20px, 10px) scale(0.4); opacity: 0; }
+          15%  { transform: translate(0, 0) scale(1); opacity: 1; }
+          70%  { transform: translate(-6px, -2px) scale(1); opacity: 1; }
+          100% { transform: translate(-32px, -28px) scale(0.55); opacity: 0; }
         }
       `}</style>
     </div>

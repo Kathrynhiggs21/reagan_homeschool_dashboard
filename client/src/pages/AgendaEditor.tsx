@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { parseTime12h, formatTime12h } from "@/lib/time12h";
 
 type Snapshot = {
   id: number;
@@ -78,7 +79,7 @@ function BlockLine({ b, kind }: { b: Snapshot; kind: string }) {
   return (
     <div className={`rounded border-l-4 px-3 py-2 text-sm ${colorFor(kind)}`}>
       <div className="flex items-baseline gap-2">
-        <span className="font-mono text-xs opacity-70">{b.startTime ?? "--:--"}</span>
+        <span className="font-mono text-xs opacity-70">{formatTime12h(b.startTime)}</span>
         <span className="font-medium">{b.title}</span>
       </div>
       <div className="mt-1 flex flex-wrap gap-2 text-xs opacity-80">
@@ -147,6 +148,21 @@ export default function AgendaEditor() {
     },
     onError: (e) => toast.error("Add block failed: " + e.message),
   });
+  const blockReorderM = trpc.blocks.reorder.useMutation({
+    onSuccess: () => utils.agendaEditor.snapshot.invalidate({ date }),
+    onError: (e) => toast.error("Reorder failed: " + e.message),
+  });
+  const shiftDayM = trpc.blocks.shiftDay.useMutation({
+    onSuccess: (data: any) => {
+      toast.success(`Shifted ${data.shifted} block${data.shifted === 1 ? "" : "s"}` + (data.skipped ? ` (skipped ${data.skipped})` : ""));
+      utils.agendaEditor.snapshot.invalidate({ date });
+    },
+    onError: (e) => toast.error("Shift failed: " + e.message),
+  });
+
+  // HTML5 drag-and-drop state for the manual grid
+  const [draggingId, setDraggingId] = useState<number | null>(null);
+  const [dragOverId, setDragOverId] = useState<number | null>(null);
 
   const onSend = () => {
     const trimmed = instruction.trim();
@@ -336,7 +352,14 @@ export default function AgendaEditor() {
           <span className="ml-2 text-xs opacity-60">(prefer the AI box above for everyday changes)</span>
         </summary>
         <div className="border-t border-border/60 p-4 space-y-3">
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-2 text-xs">
+              <span className="opacity-70">Shift whole day:</span>
+              <Button size="sm" variant="outline" onClick={() => shiftDayM.mutate({ date, minutes: -15 })} disabled={shiftDayM.isPending}>− 15 min</Button>
+              <Button size="sm" variant="outline" onClick={() => shiftDayM.mutate({ date, minutes: -5 })} disabled={shiftDayM.isPending}>− 5</Button>
+              <Button size="sm" variant="outline" onClick={() => shiftDayM.mutate({ date, minutes: 5 })} disabled={shiftDayM.isPending}>+ 5</Button>
+              <Button size="sm" variant="outline" onClick={() => shiftDayM.mutate({ date, minutes: 15 })} disabled={shiftDayM.isPending}>+ 15 min</Button>
+            </div>
             <Button
               size="sm"
               onClick={() => blockCreateM.mutate({ date, title: "New block", blockType: "custom" as any, durationMin: 30 })}
@@ -351,14 +374,16 @@ export default function AgendaEditor() {
             <div className="opacity-60 text-sm italic">No blocks yet for {date}.</div>
           ) : (
             <div className="space-y-2">
-              <div className="grid grid-cols-12 gap-2 text-xs opacity-60 px-1">
-                <div className="col-span-1">Time</div>
-                <div className="col-span-1">Min</div>
-                <div className="col-span-3">Title</div>
-                <div className="col-span-2">Type</div>
-                <div className="col-span-2">Subject</div>
-                <div className="col-span-2">Topic</div>
-                <div className="col-span-1 text-right">·</div>
+              <div className="text-[11px] opacity-60 px-1">Drag the ☰ handle to reorder. Times use 12-hr (“9:00 AM”, “1:30 PM”).</div>
+              <div className="grid gap-2 text-xs opacity-60 px-1" style={{ gridTemplateColumns: "24px 90px 56px 1fr 130px 130px 130px 70px" }}>
+                <div></div>
+                <div>Time</div>
+                <div>Min</div>
+                <div>Title</div>
+                <div>Type</div>
+                <div>Subject</div>
+                <div>Topic</div>
+                <div className="text-right">·</div>
               </div>
               {liveBlocks.map((b) => (
                 <ManualBlockRow
@@ -366,6 +391,25 @@ export default function AgendaEditor() {
                   block={b}
                   subjects={subjects}
                   topicCatalog={topicCatalog}
+                  isDragging={draggingId === b.id}
+                  isDragOver={dragOverId === b.id && draggingId !== b.id}
+                  onDragStart={() => setDraggingId(b.id)}
+                  onDragEnter={() => setDragOverId(b.id)}
+                  onDragEnd={() => {
+                    if (draggingId != null && dragOverId != null && draggingId !== dragOverId) {
+                      const ids = liveBlocks.map(x => x.id);
+                      const from = ids.indexOf(draggingId);
+                      const to = ids.indexOf(dragOverId);
+                      if (from >= 0 && to >= 0) {
+                        const next = ids.slice();
+                        const [moved] = next.splice(from, 1);
+                        next.splice(to, 0, moved);
+                        blockReorderM.mutate({ date, orderedIds: next });
+                      }
+                    }
+                    setDraggingId(null);
+                    setDragOverId(null);
+                  }}
                   onPatch={(patch) => blockUpdateM.mutate({ id: b.id, ...patch })}
                   onDelete={() => blockDeleteM.mutate({ id: b.id })}
                 />
@@ -380,19 +424,25 @@ export default function AgendaEditor() {
 
 function ManualBlockRow({
   block, subjects, topicCatalog, onPatch, onDelete,
+  isDragging, isDragOver, onDragStart, onDragEnter, onDragEnd,
 }: {
   block: Snapshot;
   subjects: Array<{ slug: string; name: string }>;
   topicCatalog: Array<{ code: string; title: string; subjectSlug: string }>;
+  isDragging: boolean;
+  isDragOver: boolean;
+  onDragStart: () => void;
+  onDragEnter: () => void;
+  onDragEnd: () => void;
   onPatch: (patch: any) => void;
   onDelete: () => void;
 }) {
   const [title, setTitle] = useState(block.title);
-  const [startTime, setStartTime] = useState(block.startTime ?? "");
+  const [startTime, setStartTime] = useState(formatTime12h(block.startTime));
   const [durationMin, setDurationMin] = useState<number>(block.durationMin);
 
   useEffect(() => { setTitle(block.title); }, [block.title]);
-  useEffect(() => { setStartTime(block.startTime ?? ""); }, [block.startTime]);
+  useEffect(() => { setStartTime(formatTime12h(block.startTime)); }, [block.startTime]);
   useEffect(() => { setDurationMin(block.durationMin); }, [block.durationMin]);
 
   // Filter topics by chosen subject
@@ -401,21 +451,49 @@ function ManualBlockRow({
   ).slice(0, 200);
 
   return (
-    <div className="grid grid-cols-12 gap-2 items-center rounded border border-border/60 px-1 py-1">
+    <div
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = "move";
+        // Required for Firefox to actually start a drag
+        try { e.dataTransfer.setData("text/plain", String(block.id)); } catch { /* noop */ }
+        onDragStart();
+      }}
+      onDragEnter={onDragEnter}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => { e.preventDefault(); onDragEnd(); }}
+      onDragEnd={onDragEnd}
+      className={
+        "grid gap-2 items-center rounded border px-1 py-1 transition " +
+        (isDragging ? "opacity-50 border-primary" : isDragOver ? "border-primary bg-primary/5" : "border-border/60")
+      }
+      style={{ gridTemplateColumns: "24px 90px 56px 1fr 130px 130px 130px 70px" }}
+    >
+      <span
+        className="cursor-grab select-none text-base opacity-50 hover:opacity-100"
+        title="Drag to reorder"
+        aria-label="Drag to reorder"
+      >☰</span>
       <Input
-        className="col-span-1 h-8 text-xs"
+        className="h-8 text-xs"
         value={startTime}
-        placeholder="HH:MM"
+        placeholder="9:00 AM"
         onChange={(e) => setStartTime(e.target.value)}
         onBlur={() => {
-          const v = startTime.trim();
-          if (v && !/^\d{1,2}:\d{2}$/.test(v)) { toast.error("Use HH:MM"); return; }
-          if ((v || null) !== (block.startTime || null)) onPatch({ startTime: v || null });
+          const trimmed = startTime.trim();
+          if (!trimmed) {
+            if (block.startTime != null) onPatch({ startTime: null });
+            return;
+          }
+          const canon = parseTime12h(trimmed);
+          if (!canon) { toast.error("Try “9:00 AM” or “1:30 PM”"); setStartTime(formatTime12h(block.startTime)); return; }
+          if (canon !== (block.startTime || null)) onPatch({ startTime: canon });
+          setStartTime(formatTime12h(canon));
         }}
       />
       <Input
         type="number"
-        className="col-span-1 h-8 text-xs"
+        className="h-8 text-xs"
         value={durationMin}
         min={5}
         max={180}
@@ -427,26 +505,26 @@ function ManualBlockRow({
         }}
       />
       <Input
-        className="col-span-3 h-8 text-xs"
+        className="h-8 text-xs"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         onBlur={() => { if (title !== block.title) onPatch({ title }); }}
       />
       <Select value={block.blockType} onValueChange={(v) => onPatch({ blockType: v })}>
-        <SelectTrigger className="col-span-2 h-8 text-xs"><SelectValue /></SelectTrigger>
+        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
         <SelectContent>
           {BLOCK_TYPES.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
         </SelectContent>
       </Select>
       <Select value={block.subjectSlug ?? "__none"} onValueChange={(v) => onPatch({ subjectSlug: v === "__none" ? null : v })}>
-        <SelectTrigger className="col-span-2 h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
         <SelectContent>
           <SelectItem value="__none">— none —</SelectItem>
           {subjects.map((s) => <SelectItem key={s.slug} value={s.slug}>{s.name}</SelectItem>)}
         </SelectContent>
       </Select>
       <Select value={block.curriculumTopicCode ?? "__none"} onValueChange={(v) => onPatch({ curriculumTopicCode: v === "__none" ? null : v })}>
-        <SelectTrigger className="col-span-2 h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
+        <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="—" /></SelectTrigger>
         <SelectContent>
           <SelectItem value="__none">— none —</SelectItem>
           {eligibleTopics.map((t) => (
@@ -457,7 +535,7 @@ function ManualBlockRow({
       <Button
         variant="ghost"
         size="sm"
-        className="col-span-1 h-8 text-xs text-red-500 hover:text-red-700 justify-end"
+        className="h-8 text-xs text-red-500 hover:text-red-700 justify-end"
         onClick={() => {
           if (confirm(`Delete "${block.title}"?`)) onDelete();
         }}

@@ -2,28 +2,31 @@ import { useEffect, useState } from "react";
 import { Switch } from "@/components/ui/switch";
 
 /**
- * Two hard-gate toggles for Kiwi audio + microphone.
+ * Three hard-gate toggles for Kiwi audio + microphone wake word + voice mode.
  *
- * These are stored in localStorage and read directly by
- * client/src/lib/birdVoice.ts (silence gate) and
- * client/src/components/KiwiCompanion.tsx (mic consent) so they take effect
- * everywhere instantly, without needing a React context.
+ * Stored in localStorage and read directly by:
+ *   - client/src/lib/birdVoice.ts          (silence + cartoon-voice gates)
+ *   - client/src/lib/companionVoices.ts    (silence + cartoon-voice gates)
+ *   - client/src/components/KiwiCompanion.tsx (mic consent / wake word)
  *
- *  - `kiwiSilent`:     "1" = no chirp + no TTS.    Defaults to "0" (audible).
- *  - `kiwiMicConsent`: "1" = allow mic wake-word.  Defaults to "0" (off).
+ * Keys (all default to the most natural, parent-friendly setting):
+ *  - `kiwiSilent`        : "1" = mute everything.       Default "0" (audible).
+ *  - `kiwiCartoonVoice`  : "1" = neural Gemini voice.   Default ON when missing.
+ *  - `kiwiMicConsent`    : "1" = allow mic wake word.   Default "0" (off).
  *
- * Sound defaults ON (May 4 fix — silent-default was hiding Kiwi's voice).
- * Microphone consent stays OFF so Chrome never requests mic on page load.
+ * Wake-word stays opt-in so Chrome never asks for mic on page load unless
+ * the adult flips it on.
  */
 export default function KiwiSoundAndMicToggles() {
   const [silent, setSilent] = useState<boolean>(false);
+  const [cartoonVoice, setCartoonVoice] = useState<boolean>(true);
   const [micConsent, setMicConsent] = useState<boolean>(false);
 
   useEffect(() => {
     try {
-      const s = localStorage.getItem("kiwiSilent");
-      // Default to AUDIBLE when the key is missing.
-      setSilent(s === "1");
+      setSilent(localStorage.getItem("kiwiSilent") === "1");
+      const raw = localStorage.getItem("kiwiCartoonVoice");
+      setCartoonVoice(raw === null ? true : raw === "1");
       setMicConsent(localStorage.getItem("kiwiMicConsent") === "1");
     } catch {
       /* ignore */
@@ -32,16 +35,19 @@ export default function KiwiSoundAndMicToggles() {
 
   function toggleSilent(v: boolean) {
     setSilent(v);
-    try {
-      localStorage.setItem("kiwiSilent", v ? "1" : "0");
-    } catch { /* ignore */ }
+    try { localStorage.setItem("kiwiSilent", v ? "1" : "0"); } catch { /* ignore */ }
+  }
+
+  function toggleCartoon(v: boolean) {
+    setCartoonVoice(v);
+    try { localStorage.setItem("kiwiCartoonVoice", v ? "1" : "0"); } catch { /* ignore */ }
   }
 
   function toggleMic(v: boolean) {
     setMicConsent(v);
-    try {
-      localStorage.setItem("kiwiMicConsent", v ? "1" : "0");
-    } catch { /* ignore */ }
+    try { localStorage.setItem("kiwiMicConsent", v ? "1" : "0"); } catch { /* ignore */ }
+    // Notify any open KiwiCompanion instance to re-evaluate immediately.
+    try { window.dispatchEvent(new CustomEvent("kiwi:wake-word-changed", { detail: { on: v } })); } catch { /* ignore */ }
   }
 
   return (
@@ -58,11 +64,23 @@ export default function KiwiSoundAndMicToggles() {
 
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="text-sm font-medium">Microphone access (for wake word)</div>
+          <div className="text-sm font-medium">Natural cartoon voice (Gemini neural TTS)</div>
+          <div className="text-xs text-muted-foreground">
+            On by default — Kiwi speaks with a warm, real-kid neural voice. Turn off to use the
+            built-in browser voice instead (faster, but more robotic).
+          </div>
+        </div>
+        <Switch checked={cartoonVoice} onCheckedChange={toggleCartoon} />
+      </div>
+
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-sm font-medium">Wake word — &ldquo;Hi Kiwi&rdquo;</div>
           <div className="text-xs text-muted-foreground">
             When off, the site will <strong>not</strong> start the mic on page load —
-            no Chrome "site is using microphone" indicator and no system
-            notification sound. Turn this on only if you want wake-word to work.
+            no Chrome &ldquo;site is using microphone&rdquo; indicator and no system
+            notification sound. Turn this on only if you want Reagan to be able to say
+            &ldquo;Hi Kiwi&rdquo; to open the chat hands-free.
           </div>
         </div>
         <Switch checked={micConsent} onCheckedChange={toggleMic} />

@@ -518,6 +518,39 @@ export const appRouter = router({
       await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: input.id, action: "delete" });
       return r;
     }),
+
+    /**
+     * Shift the entire day's start times by N minutes. Negative numbers shift
+     * earlier, positive shift later. Blocks without a startTime are skipped.
+     * Blocks that would cross midnight in either direction are skipped (no
+     * day-rollover surprises).
+     */
+    shiftDay: protectedProcedure.input(z.object({
+      date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      minutes: z.number().int().min(-12 * 60).max(12 * 60),
+    })).mutation(async ({ input, ctx }) => {
+      const plan = await db.getPlanByDate(input.date);
+      if (!plan) throw new Error("no plan for date");
+      const live: any[] = await db.listBlocksForPlan(plan.id);
+      let shifted = 0, skipped = 0;
+      for (const b of live) {
+        if (!b.startTime) { skipped++; continue; }
+        const m = String(b.startTime).match(/^(\d{1,2}):(\d{2})$/);
+        if (!m) { skipped++; continue; }
+        const total = parseInt(m[1], 10) * 60 + parseInt(m[2], 10) + input.minutes;
+        if (total < 0 || total >= 24 * 60) { skipped++; continue; }
+        const hh = Math.floor(total / 60).toString().padStart(2, "0");
+        const mm = (total % 60).toString().padStart(2, "0");
+        await db.updateBlock(b.id, { startTime: `${hh}:${mm}` } as any);
+        shifted++;
+      }
+      await db.logAudit({
+        actorOpenId: ctx.user?.openId, actorName: ctx.user?.name,
+        entityType: "block", entityId: plan.id, action: "update",
+        summary: `shift day ${input.minutes >= 0 ? "+" : ""}${input.minutes}m (✓${shifted}/✗${skipped})`,
+      });
+      return { shifted, skipped };
+    }),
   }),
 
   /* =================== AUDIT =================== */
