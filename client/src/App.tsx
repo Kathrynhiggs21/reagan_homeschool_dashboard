@@ -12,6 +12,7 @@ import AssignmentsLibrary from "./pages/AssignmentsLibrary";
 import CozyShell from "./components/CozyShell";
 import KiwiCompanion from "./components/KiwiCompanion";
 import KiwiPerch from "./components/KiwiPerch";
+import KiwiQuietListener from "./components/KiwiQuietListener";
 import ResourceDock from "./components/ResourceDock";
 import QuickAddFab from "./components/QuickAddFab";
 import Today from "./pages/Today";
@@ -102,6 +103,7 @@ function Router() {
       <KiwiPerch />
       <ResourceDock />
       <KiwiCompanion />
+      <KiwiQuietListener />
       <QuickAddFab />
     </CozyShell>
   );

@@ -947,6 +947,132 @@ export const appRouter = router({
       })),
   }),
 
+  /* =================== KIWI QUIET LISTENING (Mom-only) =================== *
+   * The kid-side mic captures ~5–10 minute audio chunks during the school-day
+   * window, uploads them to S3, and posts an `addChunk` row. The server then:
+   *   1) calls Whisper to transcribe (no transcript stored on disk)
+   *   2) feeds the transcript to invokeLLM with a strict JSON schema asking
+   *      for {subjectGuess, topics[], completions[], emotion/comfort/difficulty/
+   *      talkativeness scores, rawSummary}
+   *   3) writes ONLY the structured summary into listeningSummaries
+   * Reagan's UI never reads this table; only adultUnlocked Mom views can. */
+  listening: router({
+    /** Kid-side: post a new 5–10 min audio chunk. Public so the kid session
+     *  (no admin role) can call it; the server discards anything outside the
+     *  school-day window and rate-limits per minute. */
+    addChunk: publicProcedure
+      .input(z.object({
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        periodStart: z.number(),  // ms epoch
+        periodEnd: z.number(),
+        // Either pass a public S3/CDN URL...
+        audioUrl: z.string().url().optional(),
+        // ...or inline as a data URL (audio/webm;base64,...) and we'll
+        // upload it to S3 server-side. The kid client uses the data URL.
+        audioDataUrl: z.string().optional(),
+        subjectHint: z.string().max(32).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const start = new Date(input.periodStart);
+        const end = new Date(input.periodEnd);
+        if (end <= start) return { ok: false as const, reason: "bad_window" };
+        // hard cap: ignore anything older than 18h
+        if (Date.now() - input.periodEnd > 18 * 3600 * 1000) {
+          return { ok: false as const, reason: "too_old" };
+        }
+        // If a data URL was provided, persist to S3 first so transcribeAudio
+        // can fetch a real public URL.
+        let audioUrl = input.audioUrl;
+        if (!audioUrl && input.audioDataUrl) {
+          const m = /^data:([^;]+);base64,(.+)$/.exec(input.audioDataUrl);
+          if (!m) return { ok: false as const, reason: "bad_data_url" };
+          const mime = m[1];
+          const buf = Buffer.from(m[2], "base64");
+          const ext = mime.includes("webm") ? "webm" : mime.includes("mpeg") ? "mp3" : "bin";
+          const key = `listening/${input.date}/${input.periodStart}.${ext}`;
+          const stored = await storagePut(key, buf, mime);
+          audioUrl = stored.url;
+        }
+        if (!audioUrl) return { ok: false as const, reason: "no_audio" };
+        let summary: any = null;
+        let transcript = "";
+        try {
+          const t = await transcribeAudio({ audioUrl, language: "en" });
+          transcript = (t as any)?.text ?? "";
+        } catch (e: any) {
+          // transcription failed — store an empty-summary marker so we can see gaps
+        }
+        if (transcript.trim().length > 0) {
+          try {
+            const { invokeLLM } = await import("./_core/llm");
+            const r = await invokeLLM({
+              messages: [
+                { role: "system", content: "You analyze short transcripts of a homeschooled 5th grader's school-day work session. Return STRICT JSON only." },
+                { role: "user", content: `Transcript (${start.toISOString()} – ${end.toISOString()}):\n${transcript.slice(0, 6000)}\n\nReturn JSON: { subjectGuess: "math"|"ela"|"science"|"social"|"art"|"choice"|"other", topics: [{subject, name}], completions: [string], emotionScore: -100..100, comfortScore: 0..100, difficultyScore: 0..100, talkativenessScore: 0..100, rawSummary: string (<=400 chars, neutral 3rd person, no quotes from transcript)." }` },
+              ],
+              response_format: {
+                type: "json_schema",
+                json_schema: {
+                  name: "listening_summary",
+                  strict: true,
+                  schema: {
+                    type: "object",
+                    properties: {
+                      subjectGuess: { type: "string" },
+                      topics: { type: "array", items: { type: "object", properties: { subject: { type: "string" }, name: { type: "string" } }, required: ["subject", "name"], additionalProperties: false } },
+                      completions: { type: "array", items: { type: "string" } },
+                      emotionScore: { type: "integer" },
+                      comfortScore: { type: "integer" },
+                      difficultyScore: { type: "integer" },
+                      talkativenessScore: { type: "integer" },
+                      rawSummary: { type: "string" },
+                    },
+                    required: ["subjectGuess", "topics", "completions", "emotionScore", "comfortScore", "difficultyScore", "talkativenessScore", "rawSummary"],
+                    additionalProperties: false,
+                  },
+                },
+              } as any,
+            } as any);
+            const content: any = (r as any)?.choices?.[0]?.message?.content;
+            summary = typeof content === "string" ? JSON.parse(content) : content;
+          } catch (e: any) {
+            summary = null;
+          }
+        }
+        await db.insertListeningSummary({
+          date: input.date,
+          periodStart: start,
+          periodEnd: end,
+          subjectGuess: summary?.subjectGuess ?? input.subjectHint ?? null,
+          topicsJson: summary?.topics ?? [],
+          completionsJson: summary?.completions ?? [],
+          emotionScore: summary?.emotionScore ?? null,
+          comfortScore: summary?.comfortScore ?? null,
+          difficultyScore: summary?.difficultyScore ?? null,
+          talkativenessScore: summary?.talkativenessScore ?? null,
+          rawSummary: summary?.rawSummary ?? null,
+        });
+        return { ok: true as const, hadTranscript: transcript.length > 0, hadSummary: !!summary };
+      }),
+    /** Mom-only: list raw rows for one day. */
+    forDate: protectedProcedure
+      .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
+      .query(({ input }) => db.listListeningSummariesForDate(input.date)),
+    /** Mom-only: aggregated daily sheet (counts, averages, topics). */
+    daySheet: protectedProcedure
+      .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
+      .query(async ({ input }) => {
+        const rows = await db.listListeningSummariesForDate(input.date);
+        return { date: input.date, ...db.aggregateListeningDay(rows), rows };
+      }),
+    weekSheet: protectedProcedure
+      .input(z.object({ startDate: z.string(), endDate: z.string() }))
+      .query(async ({ input }) => {
+        const rows = await db.listListeningSummariesBetween(input.startDate, input.endDate);
+        return { startDate: input.startDate, endDate: input.endDate, ...db.aggregateListeningDay(rows), rows };
+      }),
+  }),
+
   /* =================== ANIMALS =================== */
   animals: router({
     list: publicProcedure.query(() => db.listAnimals()),

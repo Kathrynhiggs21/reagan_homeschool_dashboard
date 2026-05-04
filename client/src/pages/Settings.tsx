@@ -47,6 +47,7 @@ export default function Settings() {
           <ReaganBasicsCard />
           <TutorsManager />
           <AdultPasscodeCard />
+          <KiwiListeningCard />
         </TabsContent>
 
         <TabsContent value="prizes">
@@ -434,6 +435,92 @@ function IcalFeedsCard() {
               </li>
             ))}
           </ul>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+
+/* ============================================================================
+ * KiwiListeningCard — Mom-only consent + chunk length for Phase 13 quiet
+ * listening. The toggle persists to localStorage; KiwiQuietListener checks
+ * `kiwiListenConsent === "1"` before calling getUserMedia, so by default
+ * nothing ever asks Reagan for mic permission. Mom can also peek at today's
+ * Mom-only daily sheet so she knows the pipeline is producing data without
+ * exposing transcripts to Reagan.
+ * ========================================================================== */
+function KiwiListeningCard() {
+  const initial = (() => {
+    try { return localStorage.getItem("kiwiListenConsent") === "1"; } catch { return false; }
+  })();
+  const initialChunk = (() => {
+    try { return parseInt(localStorage.getItem("kiwiListenChunkSec") || "", 10) || 600; } catch { return 600; }
+  })();
+  const [enabled, setEnabledState] = useState<boolean>(initial);
+  const [chunkSec, setChunkSecState] = useState<number>(initialChunk);
+  function setEnabled(b: boolean) {
+    setEnabledState(b);
+    try { localStorage.setItem("kiwiListenConsent", b ? "1" : "0"); } catch {}
+    if (b) toast.success("Quiet-listening on. Reagan won't see anything; only the Mom-only daily sheet collects data.");
+    else toast.message("Quiet-listening off. The mic is now idle.");
+  }
+  function setChunkSec(n: number) {
+    setChunkSecState(n);
+    try { localStorage.setItem("kiwiListenChunkSec", String(n)); } catch {}
+  }
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const sheet = trpc.listening.daySheet.useQuery({ date: todayStr }, { enabled });
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Kiwi quiet listening (Mom-only)</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 text-sm">
+        <p className="text-muted-foreground">
+          When on, Kiwi captures short audio chunks during the school-day
+          window (Mon–Fri, 8:30 AM – 3:00 PM) and the server keeps only a
+          structured summary — never the raw transcript. Reagan's dashboard
+          never shows any of it.
+        </p>
+        <div className="flex items-center justify-between rounded-md border p-3">
+          <div>
+            <div className="font-medium">Allow quiet listening</div>
+            <div className="text-xs text-muted-foreground">First time enabling it, Reagan's browser will prompt for the mic once.</div>
+          </div>
+          <Switch checked={enabled} onCheckedChange={setEnabled} aria-label="Allow quiet listening" />
+        </div>
+        <div className="flex items-center justify-between rounded-md border p-3">
+          <div>
+            <div className="font-medium">Chunk length</div>
+            <div className="text-xs text-muted-foreground">How often a summary is written. Longer = fewer LLM calls.</div>
+          </div>
+          <select
+            className="border rounded px-2 py-1 bg-background"
+            value={chunkSec}
+            onChange={(e) => setChunkSec(parseInt(e.target.value, 10))}
+          >
+            <option value={300}>5 minutes</option>
+            <option value={600}>10 minutes</option>
+            <option value={900}>15 minutes</option>
+          </select>
+        </div>
+        {enabled && (
+          <div className="rounded-md border p-3 space-y-1">
+            <div className="font-medium">Today's Mom-only sheet</div>
+            {sheet.isLoading ? (
+              <div className="text-xs text-muted-foreground">Loading…</div>
+            ) : sheet.data ? (
+              <div className="text-xs text-muted-foreground">
+                {sheet.data.samples} samples · {sheet.data.minutesOnTask} min on task ·
+                avg comfort {sheet.data.avgComfort ?? "—"} ·
+                avg difficulty {sheet.data.avgDifficulty ?? "—"} ·
+                top subject {Object.keys(sheet.data.subjectCounts || {})[0] ?? "—"}
+              </div>
+            ) : (
+              <div className="text-xs text-muted-foreground">No data yet today.</div>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>

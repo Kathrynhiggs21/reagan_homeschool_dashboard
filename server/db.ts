@@ -19,6 +19,7 @@ import {
   proudMoments,
   studentRequests, adultAiMessages,
   bookPagesDone,
+  listeningSummaries,
 } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -5259,4 +5260,94 @@ export async function listIcalEventsBetween(opts: { startDate: string; endDate: 
     )
     .orderBy(asc(icalEvents.startsAt));
   return rows;
+}
+
+
+/* ============================================================
+ * Kiwi quiet-listening summaries — Phase 13
+ * Mom-only analytics; never shown to Reagan.
+ * ============================================================ */
+export async function insertListeningSummary(s: {
+  date: string;
+  periodStart: Date;
+  periodEnd: Date;
+  subjectGuess?: string | null;
+  topicsJson?: any;
+  completionsJson?: any;
+  emotionScore?: number | null;
+  comfortScore?: number | null;
+  difficultyScore?: number | null;
+  talkativenessScore?: number | null;
+  rawSummary?: string | null;
+}) {
+  const db = getDb();
+  await (db as any).insert(listeningSummaries).values(s);
+}
+
+export async function listListeningSummariesForDate(date: string) {
+  const db = getDb();
+  const rows = await (db as any)
+    .select()
+    .from(listeningSummaries)
+    .where(eq(listeningSummaries.date, date))
+    .orderBy(asc(listeningSummaries.periodStart));
+  return rows;
+}
+
+export async function listListeningSummariesBetween(startDate: string, endDate: string) {
+  const db = getDb();
+  const rows = await (db as any)
+    .select()
+    .from(listeningSummaries)
+    .where(and(
+      gte(listeningSummaries.date, startDate),
+      lte(listeningSummaries.date, endDate),
+    ))
+    .orderBy(asc(listeningSummaries.date), asc(listeningSummaries.periodStart));
+  return rows;
+}
+
+/** Aggregate the day's listening rows into a Mom-only daily sheet shape. */
+export function aggregateListeningDay(rows: any[]) {
+  const total = rows.length;
+  const avg = (key: string) => {
+    const vals = rows.map((r) => r[key]).filter((v) => typeof v === "number");
+    if (vals.length === 0) return null;
+    return Math.round(vals.reduce((a: number, b: number) => a + b, 0) / vals.length);
+  };
+  const minutesOnTask = rows.reduce((acc: number, r: any) => {
+    const a = new Date(r.periodStart).getTime();
+    const b = new Date(r.periodEnd).getTime();
+    if (Number.isFinite(a) && Number.isFinite(b) && b > a) acc += (b - a) / 60000;
+    return acc;
+  }, 0);
+  const subjectCounts: Record<string, number> = {};
+  for (const r of rows) {
+    const s = (r.subjectGuess || "unknown").toLowerCase();
+    subjectCounts[s] = (subjectCounts[s] || 0) + 1;
+  }
+  const topicMap = new Map<string, { subject: string; topic: string; count: number }>();
+  for (const r of rows) {
+    const list: any[] = Array.isArray(r.topicsJson) ? r.topicsJson : [];
+    for (const t of list) {
+      const subj = (t.subject || r.subjectGuess || "unknown").toString().toLowerCase();
+      const name = (t.name || t.topic || "").toString();
+      if (!name) continue;
+      const key = `${subj}::${name}`;
+      const cur = topicMap.get(key) ?? { subject: subj, topic: name, count: 0 };
+      cur.count += 1;
+      topicMap.set(key, cur);
+    }
+  }
+  const topics = Array.from(topicMap.values()).sort((a, b) => b.count - a.count);
+  return {
+    samples: total,
+    minutesOnTask: Math.round(minutesOnTask),
+    avgEmotion: avg("emotionScore"),
+    avgComfort: avg("comfortScore"),
+    avgDifficulty: avg("difficultyScore"),
+    avgTalkativeness: avg("talkativenessScore"),
+    subjectCounts,
+    topics,
+  };
 }
