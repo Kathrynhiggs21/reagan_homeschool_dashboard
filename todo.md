@@ -2377,3 +2377,17 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] Append "Lunch with Mom" block (10:45, 30m) → 690008
 - [x] Append "Spectrum Math Grade 5 — pg 146–148" (11:15, 30m, tagged Math 8-4) → 690009
 - [x] Library entry for Spectrum pgs → 90005
+
+
+## 2026-05-04 user request — append v3 (DONE — placed AFTER Spectrum Math, since Spectrum was already finished)
+- [x] Insert "🧭 Build a Compass + Degrees" → 690011 (12:30, 30m)
+- [x] Insert "🎬 Planets Recap" → 690012 (13:00, 15m)
+- [x] Library entries 90006 + 90007
+
+
+## 2026-05-04 user request — append v4 (DONE)
+- [x] Mark Spectrum Math (690009) complete
+- [x] Insert "👵 Grandma's Lesson — recap (45m)" → 690010, marked complete
+- [x] Insert "🧭 Build a Compass + Degrees" → 690011
+- [x] Insert "🎬 Planets Recap — rewatch" → 690012
+- [x] Library entries 90006 + 90007
