@@ -49,6 +49,16 @@ const ADULT_NAV: NavItem[] = [
   { to: "/settings",   emoji: "⚙️", label: "Settings" },
 ];
 
+/**
+ * Public link to the Reagan School Hub root in Mom's Google Drive.
+ * Everything the dashboard syncs (assignments, finished work, daily schedule,
+ * worksheets, coins, analytics, journal, report cards, tutor handoffs, adult
+ * notes) lives under this folder. Surfaced in the adult sidebar so it's one
+ * tap away from anywhere in the app.
+ */
+export const DRIVE_HUB_URL =
+  "https://drive.google.com/drive/folders/1r3bJacPLJN7VHI8y72rcx1-GRxspqo1r";
+
 export default function CozyShell({ children }: { children: ReactNode }) {
   const [loc] = useLocation();
   const { companionName, photoUrl } = useKiwi() as unknown as {
@@ -159,6 +169,18 @@ export default function CozyShell({ children }: { children: ReactNode }) {
                   <span>{n.label}</span>
                 </Link>
               ))}
+              {/* External: open the Drive Hub in a new tab */}
+              <a
+                href={DRIVE_HUB_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 px-3 py-1.5 rounded-md text-[13px] transition-all text-sidebar-foreground hover:bg-sidebar-accent"
+                title="Opens Reagan's Drive folder in a new tab"
+              >
+                <span className="text-2xl w-7 text-center">📁</span>
+                <span className="flex-1">Drive Hub</span>
+                <span className="text-xs opacity-60">↗</span>
+              </a>
             </>
           )}
         </nav>
