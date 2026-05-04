@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 /**
  * Locks the post-cull sidebar layout (May 4 2026).
  *
- * Kid sidebar must be exactly: Today, Schedule, Kiwi Coins, Bookshelf, Notebook, Apps & Tools.
+ * Kid sidebar must be exactly: Today, Schedule, Kiwi Coins, Practice, Bookshelf, Notebook, Apps & Tools.
  * Adult sidebar must be exactly: Curriculum Hub, Daily Schedule, Agenda Editor, Settings.
  * Deleted concepts (Proud Wall, My Levels, Tutor Handoff, Family Stream/Update,
  * Upload-Sync, Daily Packet, Parent Notes, separate Analytics page, separate
@@ -35,7 +35,7 @@ function extractArrayLiteral(name: string): string {
 const kidBlock = extractArrayLiteral("KID_NAV");
 const adultBlock = extractArrayLiteral("ADULT_NAV");
 
-const KID_REQUIRED = ["Today", "Schedule", "Kiwi Coins", "Bookshelf", "Notebook", "Apps & Tools"];
+const KID_REQUIRED = ["Today", "Schedule", "Kiwi Coins", "Practice", "Bookshelf", "Notebook", "Apps & Tools"];
 const ADULT_REQUIRED = ["Curriculum Hub", "Daily Schedule", "Agenda Editor", "Settings"];
 
 const KID_FORBIDDEN = ["Proud Wall", "My Levels", "About Me", "Adventures", "Journal", "Rewards"];
@@ -53,7 +53,7 @@ const ADULT_FORBIDDEN = [
 ];
 
 describe("sidebar contract", () => {
-  it("kid sidebar has exactly the 6 required labels", () => {
+  it("kid sidebar has exactly the 7 required labels", () => {
     for (const label of KID_REQUIRED) {
       expect(kidBlock).toContain(`"${label}"`);
     }
@@ -77,9 +77,9 @@ describe("sidebar contract", () => {
     }
   });
 
-  it("kid sidebar has exactly six entries (no creep)", () => {
+  it("kid sidebar has exactly seven entries (no creep)", () => {
     const matches = kidBlock.match(/label:\s*"[^"]+"/g) ?? [];
-    expect(matches.length).toBe(6);
+    expect(matches.length).toBe(7);
   });
 
   it("adult sidebar has exactly four entries (no creep)", () => {

@@ -2315,3 +2315,21 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Run /api/scheduled/drive-push/pending and /api/scheduled/drive-snapshot now to flush
 - [ ] Verify all 11 Hub subfolders show new files
 - [ ] Vitest covering enqueue triggers
+
+
+## Manus-style AI Agenda Editor (Mom asked May 4)
+- [ ] Server: `agendaEditor.applyInstruction` tRPC procedure — accepts `{ planId, instruction }`, returns structured edit-plan + diff preview (no DB write)
+- [ ] Server: `agendaEditor.commit` mutation — applies the edit-plan transactionally + writes a snapshot for undo
+- [ ] Server: `agendaEditor.undo` mutation — restores most recent snapshot
+- [ ] Server: full manual block CRUD (`blocks.update` for start/duration/order/type/topicSlug/tutor/location)
+- [ ] LLM tool spec: vague vibes / targeted shifts / surgical edits / bulk reschedule / add+remove blocks
+- [ ] UI: chat-style editor on AgendaEditor page with diff preview, Apply, Undo
+- [ ] UI: full block grid (drag to reorder, edit time/duration inline, change type/topic/tutor)
+- [ ] Vitests for instruction parser + commit/undo
+
+## Phase 15 — Manus-style AI Agenda Editor (DONE 2026-05-04)
+- [x] server/_lib/agendaEditor.ts (NL EditPlan generator + validator + in-memory applier)
+- [x] tRPC agendaEditor router: snapshot / preview / commit / undo
+- [x] /agenda-editor page: chat input, preview chips, side-by-side diff, Apply + Undo, manual block grid (time/min/title/type/subject/topic/delete)
+- [x] Adult sidebar entry "Agenda Editor" → /agenda-editor
+- [x] 9 vitests for validateEditPlan + applyEditPlanInMemory; full suite 449/450 green (1 skipped)

@@ -46,7 +46,7 @@ const MORE_NAV: NavItem[] = [];
 const ADULT_NAV: NavItem[] = [
   { to: "/curriculum", emoji: "📘", label: "Curriculum Hub" },
   { to: "/agendas",    emoji: "🗓️", label: "Daily Schedule" },
-  { to: "/library",    emoji: "✨", label: "Agenda Editor" },
+  { to: "/agenda-editor", emoji: "✏️", label: "Agenda Editor" },
   { to: "/settings",   emoji: "⚙️", label: "Settings" },
 ];
 

@@ -27,6 +27,7 @@ import Schedule from "./pages/Schedule";
 import KiwiCoins from "./pages/KiwiCoins";
 import PracticeForCoins from "./pages/PracticeForCoins";
 import DailyPacket from "./pages/DailyPacket";
+import AgendaEditor from "./pages/AgendaEditor";
 import { trpc } from "@/lib/trpc";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
@@ -71,6 +72,9 @@ function Router() {
         </Route>
         <Route path="/settings">
           <AdultGate><Settings /></AdultGate>
+        </Route>
+        <Route path="/agenda-editor">
+          <AdultGate><AgendaEditor /></AdultGate>
         </Route>
 
         {/* === LEGACY REDIRECTS (deleted pages → closest live page) === */}

@@ -17,6 +17,15 @@ import { loadTopicHintsForPrompt, resolveTopicId, resolveTopicIds } from "./_lib
 import { resolveTutorOfDay, tutorOfDayLabel } from "./_lib/tutorOfDay";
 import { loadOwnedBooksForAgenda } from "./_lib/ownedBooksHints";
 import {
+  generateAgendaEditPlan,
+  validateEditPlan,
+  applyEditPlanInMemory,
+  type AgendaEditPlan,
+  type AgendaEditOp,
+  type AgendaBlockSnapshot,
+  type AgendaPlanContext,
+} from "./_lib/agendaEditor";
+import {
   groupBySubject as practiceGroupBySubject,
   findDrill as findPracticeDrill,
   computePayout as computePracticePayout,
@@ -370,13 +379,41 @@ export const appRouter = router({
       return r;
     }),
     update: protectedProcedure.input(z.object({
-      id: z.number(), title: z.string().optional(), description: z.string().optional(),
-      status: BlockStatus.optional(), grade: z.string().optional(), notes: z.string().optional(),
-      durationMin: z.number().optional(), sortOrder: z.number().optional(),
+      id: z.number(),
+      title: z.string().optional(),
+      description: z.string().optional(),
+      status: BlockStatus.optional(),
+      grade: z.string().optional(),
+      notes: z.string().optional(),
+      durationMin: z.number().min(1).max(240).optional(),
+      sortOrder: z.number().optional(),
+      // Manus-style full manual control
+      startTime: z.string().regex(/^\d{1,2}:\d{2}$/).nullable().optional(),
+      blockType: BlockType.optional(),
+      subjectSlug: z.string().nullable().optional(),
+      curriculumTopicId: z.number().int().positive().nullable().optional(),
+      curriculumTopicCode: z.string().min(1).max(30).nullable().optional(),
     })).mutation(async ({ input, ctx }) => {
       const patch: any = { ...input };
       delete patch.id;
+      delete patch.subjectSlug;
+      delete patch.curriculumTopicCode;
       if (input.status === "complete") patch.completedAt = new Date(), patch.completedByUserId = ctx.user?.id;
+      // Resolve subjectSlug → subjectId
+      if (input.subjectSlug !== undefined) {
+        if (input.subjectSlug === null) patch.subjectId = null;
+        else {
+          const subjects = await db.listSubjects();
+          const s = (subjects as any[]).find(x => x.slug === input.subjectSlug);
+          if (s) patch.subjectId = s.id;
+        }
+      }
+      // Resolve curriculumTopicCode → curriculumTopicId
+      if (input.curriculumTopicCode && input.curriculumTopicId == null) {
+        const codeMap = await resolveTopicIds([input.curriculumTopicCode]).catch(() => new Map<string, number>());
+        const tid = codeMap.get(String(input.curriculumTopicCode).trim().toUpperCase());
+        if (tid) patch.curriculumTopicId = tid;
+      }
       const r = await db.updateBlock(input.id, patch);
       await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: input.id, action: input.status === "complete" ? "complete" : "update", summary: input.title || (input.status ?? "edit") });
       return r;
@@ -418,6 +455,287 @@ export const appRouter = router({
   /* =================== AUDIT =================== */
   audit: router({
     list: protectedProcedure.input(z.object({ limit: z.number().default(100) }).optional()).query(({ input }) => db.listAudit(input?.limit ?? 100)),
+  }),
+
+  /* =================== AGENDA EDITOR (Manus-style) =================== */
+  agendaEditor: router({
+    /**
+     * Build the AgendaPlanContext for a date — used by both the LLM call and
+     * the manual block-grid view. Returns the current snapshot plus the
+     * subject + topic catalogs the editor lets the adult choose from.
+     */
+    snapshot: protectedProcedure.input(z.object({ date: z.string() })).query(async ({ input }) => {
+      const plan = await db.getPlanByDate(input.date);
+      const blocks = plan ? await db.listBlocksForPlan(plan.id) : [];
+      const profile: any = await db.getProfile().catch(() => null);
+      const subjects = (await db.listSubjects()).map((s: any) => ({ slug: s.slug, name: s.name }));
+      const topicCatalog = await loadTopicHintsForPrompt().catch(() => []);
+      const tod = await resolveTutorOfDay(input.date).catch(() => null);
+      const dt = new Date(input.date + "T12:00:00");
+      const dayLabel = dt.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+      const snapshot: AgendaBlockSnapshot[] = (blocks as any[]).map((b: any) => ({
+        id: b.id,
+        title: b.title,
+        description: b.description ?? null,
+        blockType: b.blockType,
+        startTime: b.startTime ?? null,
+        durationMin: b.durationMin,
+        sortOrder: b.sortOrder,
+        status: b.status,
+        subjectSlug: b.subjectSlug ?? null,
+        curriculumTopicCode: b.curriculumTopicCode ?? null,
+      }));
+      const ctx: AgendaPlanContext = {
+        planId: plan?.id ?? -1,
+        date: input.date,
+        dayLabel,
+        studentName: profile?.studentName || "Reagan",
+        gradeLevel: profile?.gradeLevel || "5th grade",
+        tutorOfDayLabel: tutorOfDayLabel(tod),
+        blocks: snapshot,
+        subjects,
+        topicCatalog: topicCatalog.map(t => ({ code: t.code, title: t.title, subjectSlug: t.subjectSlug })),
+      };
+      return ctx;
+    }),
+
+    /**
+     * Preview an instruction. Calls the LLM, validates the plan, applies it
+     * in memory and returns before/after snapshots so the UI can render a
+     * side-by-side diff with no DB writes.
+     */
+    preview: protectedProcedure.input(z.object({
+      date: z.string(),
+      instruction: z.string().min(1).max(2000),
+    })).mutation(async ({ input }) => {
+      const plan = await db.getPlanByDate(input.date);
+      const blocks = plan ? await db.listBlocksForPlan(plan.id) : [];
+      const profile: any = await db.getProfile().catch(() => null);
+      const subjects = (await db.listSubjects()).map((s: any) => ({ slug: s.slug, name: s.name }));
+      const topicCatalog = await loadTopicHintsForPrompt().catch(() => []);
+      const tod = await resolveTutorOfDay(input.date).catch(() => null);
+      const dt = new Date(input.date + "T12:00:00");
+      const dayLabel = dt.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+      const snapshot: AgendaBlockSnapshot[] = (blocks as any[]).map((b: any) => ({
+        id: b.id,
+        title: b.title,
+        description: b.description ?? null,
+        blockType: b.blockType,
+        startTime: b.startTime ?? null,
+        durationMin: b.durationMin,
+        sortOrder: b.sortOrder,
+        status: b.status,
+        subjectSlug: b.subjectSlug ?? null,
+        curriculumTopicCode: b.curriculumTopicCode ?? null,
+      }));
+      const ctx: AgendaPlanContext = {
+        planId: plan?.id ?? -1,
+        date: input.date,
+        dayLabel,
+        studentName: profile?.studentName || "Reagan",
+        gradeLevel: profile?.gradeLevel || "5th grade",
+        tutorOfDayLabel: tutorOfDayLabel(tod),
+        blocks: snapshot,
+        subjects,
+        topicCatalog: topicCatalog.map(t => ({ code: t.code, title: t.title, subjectSlug: t.subjectSlug })),
+      };
+      const editPlan = await generateAgendaEditPlan(ctx, input.instruction);
+      const after = applyEditPlanInMemory(ctx, editPlan);
+      return { plan: editPlan, before: snapshot, after };
+    }),
+
+    /**
+     * Commit an edit plan. Adult must have already previewed. We snapshot the
+     * current blocks BEFORE applying so the client can pass the snapshot to
+     * `undo` for a deterministic restore.
+     */
+    commit: protectedProcedure.input(z.object({
+      date: z.string(),
+      ops: z.array(z.any()).max(60),
+      summary: z.string().max(400).optional(),
+    })).mutation(async ({ input, ctx }) => {
+      // Re-build context from live DB so we never trust a stale client.
+      const plan = await db.ensurePlanForDate(input.date, "full", { allowWeekendAutoBuild: false });
+      if (!plan) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "could not ensure plan" });
+      const live = await db.listBlocksForPlan(plan.id);
+      const subjects = (await db.listSubjects()).map((s: any) => ({ slug: s.slug, name: s.name }));
+      const subjectIdBySlug = new Map<string, number>((await db.listSubjects()).map((s: any) => [s.slug, s.id as number]));
+      const topicCatalog = await loadTopicHintsForPrompt().catch(() => []);
+      const snapshot: AgendaBlockSnapshot[] = (live as any[]).map((b: any) => ({
+        id: b.id,
+        title: b.title,
+        description: b.description ?? null,
+        blockType: b.blockType,
+        startTime: b.startTime ?? null,
+        durationMin: b.durationMin,
+        sortOrder: b.sortOrder,
+        status: b.status,
+        subjectSlug: b.subjectSlug ?? null,
+        curriculumTopicCode: b.curriculumTopicCode ?? null,
+      }));
+      const planCtx: AgendaPlanContext = {
+        planId: plan.id,
+        date: input.date,
+        dayLabel: input.date,
+        studentName: "Reagan",
+        gradeLevel: "5th grade",
+        tutorOfDayLabel: null,
+        blocks: snapshot,
+        subjects,
+        topicCatalog: topicCatalog.map(t => ({ code: t.code, title: t.title, subjectSlug: t.subjectSlug })),
+      };
+      const validated = validateEditPlan({
+        summary: input.summary || "manual commit",
+        intent: "mixed",
+        ops: input.ops as AgendaEditOp[],
+        warnings: [],
+      }, planCtx);
+
+      // Apply ops to DB. We resolve subjectSlug → subjectId and
+      // curriculumTopicCode → curriculumTopicId at write time.
+      const codeMap = await resolveTopicIds(
+        validated.ops.flatMap((op: AgendaEditOp) =>
+          op.kind === "update" || op.kind === "insert" ? [(op as any).curriculumTopicCode || null] : []
+        )
+      ).catch(() => new Map<string, number>());
+
+      const liveById = new Map<number, any>((live as any[]).map(b => [b.id, b]));
+      let inserted = 0, updated = 0, deleted = 0, reordered = 0, shifted = 0;
+
+      for (const op of validated.ops) {
+        switch (op.kind) {
+          case "update": {
+            const patch: any = {};
+            if (op.title !== undefined) patch.title = op.title;
+            if (op.description !== undefined) patch.description = op.description;
+            if (op.blockType !== undefined) patch.blockType = op.blockType;
+            if (op.startTime !== undefined) patch.startTime = op.startTime;
+            if (op.durationMin !== undefined) patch.durationMin = op.durationMin;
+            if (op.subjectSlug !== undefined) {
+              patch.subjectId = op.subjectSlug ? (subjectIdBySlug.get(op.subjectSlug) ?? null) : null;
+            }
+            if (op.curriculumTopicCode !== undefined) {
+              const code = (op.curriculumTopicCode || "").trim().toUpperCase();
+              patch.curriculumTopicId = code ? (codeMap.get(code) ?? null) : null;
+            }
+            await db.updateBlock(op.id, patch);
+            updated++;
+            break;
+          }
+          case "delete":
+            await db.deleteBlock(op.id);
+            deleted++;
+            break;
+          case "insert": {
+            const subjectId = op.subjectSlug ? (subjectIdBySlug.get(op.subjectSlug) ?? null) : null;
+            const code = (op.curriculumTopicCode || "").trim().toUpperCase();
+            const topicId = code ? (codeMap.get(code) ?? null) : null;
+            const maxSort = Math.max(0, ...(live as any[]).map(b => b.sortOrder || 0)) + inserted + 1;
+            await db.createBlock({
+              planId: plan.id,
+              blockType: op.blockType as any,
+              subjectId,
+              title: op.title,
+              description: op.description || null,
+              durationMin: op.durationMin,
+              startTime: op.startTime || null,
+              sortOrder: maxSort,
+              status: "not_started" as any,
+              curriculumTopicId: topicId,
+            } as any);
+            inserted++;
+            break;
+          }
+          case "reorder": {
+            let i = 0;
+            for (const id of op.orderedIds) {
+              await db.updateBlock(id, { sortOrder: i++ } as any);
+            }
+            reordered++;
+            break;
+          }
+          case "shiftAll": {
+            for (const b of live as any[]) {
+              if (!b.startTime) continue;
+              const m = String(b.startTime).match(/^(\d{1,2}):(\d{2})$/);
+              if (!m) continue;
+              const total = parseInt(m[1], 10) * 60 + parseInt(m[2], 10) + op.minutes;
+              if (total < 0 || total >= 24 * 60) continue;
+              const hh = Math.floor(total / 60).toString().padStart(2, "0");
+              const mm = (total % 60).toString().padStart(2, "0");
+              await db.updateBlock(b.id, { startTime: `${hh}:${mm}` } as any);
+            }
+            shifted++;
+            break;
+          }
+        }
+      }
+
+      await db.logAudit({
+        actorOpenId: ctx.user?.openId,
+        actorName: ctx.user?.name,
+        entityType: "block",
+        entityId: plan.id,
+        action: "update",
+        summary: `Agenda editor: ${input.summary || "applied edit plan"} [\u2713${updated}upd \u2713${inserted}ins \u2713${deleted}del \u2713${reordered}ord \u2713${shifted}shift]`,
+      });
+      return { planId: plan.id, snapshot, updated, inserted, deleted, reordered, shifted, warnings: validated.warnings };
+    }),
+
+    /**
+     * Undo: replace ALL blocks for a date with the given snapshot. Deterministic.
+     */
+    undo: protectedProcedure.input(z.object({
+      date: z.string(),
+      snapshot: z.array(z.object({
+        id: z.number(),
+        title: z.string(),
+        description: z.string().nullable(),
+        blockType: z.string(),
+        startTime: z.string().nullable(),
+        durationMin: z.number(),
+        sortOrder: z.number(),
+        status: z.string(),
+        subjectSlug: z.string().nullable(),
+        curriculumTopicCode: z.string().nullable(),
+      })),
+    })).mutation(async ({ input, ctx }) => {
+      const plan = await db.ensurePlanForDate(input.date, "full", { allowWeekendAutoBuild: false });
+      if (!plan) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "plan missing" });
+      const subjectIdBySlug = new Map<string, number>((await db.listSubjects()).map((s: any) => [s.slug, s.id as number]));
+      const codeMap = await resolveTopicIds(input.snapshot.map(s => s.curriculumTopicCode)).catch(() => new Map<string, number>());
+      const existing = await db.listBlocksForPlan(plan.id);
+      for (const b of existing as any[]) {
+        try { await db.deleteBlock(b.id); } catch {}
+      }
+      let i = 0;
+      for (const s of input.snapshot) {
+        const subjectId = s.subjectSlug ? (subjectIdBySlug.get(s.subjectSlug) ?? null) : null;
+        const code = (s.curriculumTopicCode || "").trim().toUpperCase();
+        const topicId = code ? (codeMap.get(code) ?? null) : null;
+        await db.createBlock({
+          planId: plan.id,
+          blockType: s.blockType as any,
+          subjectId,
+          title: s.title,
+          description: s.description,
+          durationMin: s.durationMin,
+          startTime: s.startTime,
+          sortOrder: i++,
+          status: s.status as any,
+          curriculumTopicId: topicId,
+        } as any);
+      }
+      await db.logAudit({
+        actorOpenId: ctx.user?.openId,
+        actorName: ctx.user?.name,
+        entityType: "block",
+        entityId: plan.id,
+        action: "update",
+        summary: `Agenda editor: undo (restored ${input.snapshot.length} blocks)`,
+      });
+      return { planId: plan.id, restored: input.snapshot.length };
+    }),
   }),
 
   /* =================== ADVENTURES =================== */

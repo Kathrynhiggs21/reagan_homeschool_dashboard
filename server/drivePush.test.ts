@@ -71,33 +71,37 @@ describe("Drive push queue", () => {
 
   it("pickDriveFolderForRouted maps routes to the right folder", () => {
     const item: any = { kind: "file", fileUrl: "u", fileName: "x.png", mimeType: "image/png" };
+    // Label "Today (turn-in)" → falls through label rules → routedTo=submission → finished_work
     expect(
       db.pickDriveFolderForRouted(
         { kind: "file", routedTo: "submission", recordId: 1, routedToLabel: "Today (turn-in)", routedToHref: "/today", message: "" },
         item,
       ),
-    ).toBe("reagan_assignments");
+    ).toBe("finished_work");
 
+    // "Curriculum library" matches the special-case lowercase rule → printables
     expect(
       db.pickDriveFolderForRouted(
         { kind: "file", routedTo: "timelineEvent", recordId: 2, routedToLabel: "Curriculum library", routedToHref: "/whiteboard", message: "" },
         item,
       ),
-    ).toBe("reagan_ihes");
+    ).toBe("printables");
 
+    // Label includes "tutor" → tutor bucket
     expect(
       db.pickDriveFolderForRouted(
         { kind: "file", routedTo: "tutorSession", recordId: 3, routedToLabel: "Tutor Handoff", routedToHref: "/tutor", message: "" },
         item,
       ),
-    ).toBe("reagan_tutor");
+    ).toBe("tutor");
 
+    // Label includes "parent note" → adult_notes
     expect(
       db.pickDriveFolderForRouted(
         { kind: "file", routedTo: "timelineEvent", recordId: 4, routedToLabel: "Parent Notes", routedToHref: "/whiteboard", message: "" },
         item,
       ),
-    ).toBe("reagan");
+    ).toBe("adult_notes");
 
     // Non-file items don't push to Drive
     expect(

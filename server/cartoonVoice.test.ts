@@ -17,7 +17,7 @@ describe("Phase 14 — cartoonVoice", () => {
   it("buildGeminiTtsBody embeds style + uses prebuilt voice", () => {
     const body: any = buildGeminiTtsBody("kiwi", "Hi Reagan, ready for math?");
     const text = body.contents[0].parts[0].text;
-    expect(text).toContain("parakeet");
+    expect(text).toContain("real-kid");
     expect(text).toContain("Hi Reagan");
     expect(body.generationConfig.responseModalities).toEqual(["AUDIO"]);
     expect(body.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName)
