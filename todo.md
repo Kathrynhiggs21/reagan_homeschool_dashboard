@@ -2128,3 +2128,42 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Every tutor-AI change writes back to the same `dailyAgendas` row, bumps `version`, sets `lastChangeAt`, and the resend-window cron picks it up if before school start
 - [ ] Audit log entry on every tutor-AI change (who/when/what was changed) so adults can review
 - [ ] Vitest: `tutorCopilot.test.ts` exercises swap + soften + postpone and asserts the agenda row + audit entry update
+
+
+## EXPANDED SCOPE (cont.) — Universal AI Assignment-Finder
+- [ ] One unified AI search box (Library page header + AI panel + Today "+" button) accepting text query AND image upload
+- [ ] Image-upload path: vision LLM extracts subject + topic guess + grade-fit + free-text caption (e.g. "looks like a 5th-grade fraction-multiplication worksheet, ~15 min")
+- [ ] Text-query path: same LLM normalizes user intent + age band + minutes
+- [ ] Multi-source aggregator (server-side): internal Library, connected apps catalog (IXL, Khan, Prodigy, BrainPOP, Edpuzzle, Vocab.com, Blooket, Wayground, Seesaw, Canva, Code.org, Book Creator, Merlin, iNaturalist, Khan Academy Kids, Google Classroom), YouTube (kid-safe filter), curated open web (PBS Kids, Nat Geo Kids, NASA Kids, Common Sense, etc.)
+- [ ] Each result row carries: title, source, thumbnail (cached), estimated time, AI-suggested curriculum topic code (5.OA.1, etc.), confidence
+- [ ] Hard rule: result must auto-resolve a topicId before "Add to schedule" enables; if AI is uncertain, show topic picker for adult to confirm
+- [ ] Buttons per result: "Add to today", "Add to [date]", "Add to Library", "Show me more like this", "Open"
+- [ ] Kiwi voice/chat path: "Find me a frog video for science" → same pipeline, returns 3 picks for Kiwi to read aloud + drop on selection
+- [ ] Reagan view: kid-safe filter forced on, no preview of unfiltered results, only age-appropriate sources
+- [ ] Adult view: full source list, can disable kid-safe filter
+- [ ] Server: `assignmentFinder.search` (text/image input), `assignmentFinder.addToSchedule` (topicId required), `assignmentFinder.addToLibrary`
+- [ ] Vitest: `assignmentFinder.test.ts` covers text query, image upload, kid-safe filtering, missing-topic rejection
+
+
+## EXPANDED SCOPE (cont.) — Role-gated Kiwi (Reagan REQUESTS only, never edits live)
+- [ ] Server-side role guard on EVERY schedule mutation: `editSchedule`, `addBlock`, `swapBlock`, `softenBlock`, `postponeBlock`, `removeBlock`, `markComplete-for-credit`, `aiCommit`, `assignmentFinder.addToSchedule` — all require `role in (admin, tutor)`
+- [ ] If Reagan (`role=user`) calls any of the above through Kiwi/UI, the server transparently rewrites it into a `studentRequests` row with: requestType, targetDate, targetBlockId, payload (the proposed change in plain language + structured diff), createdAt, status="pending"
+- [ ] Kiwi confirms to Reagan: "I sent your idea to Mom — you'll see her answer here when she replies" (no live change)
+- [ ] Adult inbox: badge in sidebar + Today page banner "Reagan has 1 new request" → one-tap Approve / Decline / Edit-then-Approve
+- [ ] Approve = applies the change atomically + bumps agenda version + triggers resend if before school start
+- [ ] Decline = stores reason (Kiwi can soften it for Reagan: "Mom said let's try this tomorrow instead 🌷")
+- [ ] Notifications: pending request → in-app + email digest to Mom (don't spam — bundle if multiple in 30 min)
+- [ ] Reagan-side Kiwi can still toggle her own personal settings live (homepage extras, audio, Kiwi activity level, hide a video she dislikes) — these are NOT schedule changes
+- [ ] Reagan-side Kiwi can mark "I worked on this" as a self-report flag on a block (status stays 'in_progress' until adult marks complete-for-credit)
+- [ ] Vitest: `roleGate.test.ts` — Reagan calling editSchedule returns a request row, NOT a schedule mutation; admin/tutor calling same path mutates directly
+
+
+## EXPANDED SCOPE (cont.) — Persona + role split (Kiwi vs adult AI)
+- [ ] Reagan-only Kiwi: bird character, cartoon voice, animations, wake-word/click activation, kid-safe filter forced, request-only schedule changes, "I worked on this" self-report flag
+- [ ] Adults: plain text-only AI search-bar assistant labeled "AI" (not Kiwi), no voice/TTS, no mic, no character art, no animations, persistent in adult-area top bar
+- [ ] Adult AI bar capabilities: universal search (text + image upload), edit live schedule (swap/soften/postpone/add blocks), approve Reagan's pending requests, run topic-tagged adds, no kid-safe filter
+- [ ] Hide Kiwi entirely from adult routes; hide AI bar entirely from kid routes
+- [ ] Server `aiAssistant.chat` already exists — branch persona by `ctx.user.role`: kid persona vs admin/tutor persona, different system prompt, different tool allowlist
+- [ ] Move all schedule-mutation tools out of Kiwi's allowlist; keep only "submitRequest" + "togglePersonalSetting" + "openLink" + "kidSafeSearch"
+- [ ] Adult AI tool allowlist: scheduleEdit, swapBlock, softenBlock, postponeBlock, addBlock, approveRequest, declineRequest, assignmentFinder.search, assignmentFinder.addToSchedule, openLink, libraryAdd
+- [ ] Vitest: `personaSplit.test.ts` — kid role gets request-only tools; admin/tutor gets full edit tools; image-upload search rejects without role admin/tutor

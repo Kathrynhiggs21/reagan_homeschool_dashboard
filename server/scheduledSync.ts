@@ -646,6 +646,12 @@ export function registerScheduledSync(app: Express) {
       const profile: any = await db.getProfile().catch(() => null);
       const subjects = (await db.listSubjects()).map((s: any) => ({ slug: s.slug, name: s.name }));
       const { generateScheduleDraft } = await import("./_lib/aiScheduleGenerator");
+      const { loadTopicHintsForPrompt, resolveTopicIds } = await import("./_lib/topicCatalog");
+      const { resolveTutorOfDay } = await import("./_lib/tutorOfDay");
+      const [topicCatalog, tutorOfDay] = await Promise.all([
+        loadTopicHintsForPrompt().catch(() => []),
+        resolveTutorOfDay(dateStr).catch(() => null),
+      ]);
       const draft = await generateScheduleDraft({
         dateStr,
         dayLabel,
@@ -657,6 +663,8 @@ export function registerScheduledSync(app: Express) {
         adultPrompt: "Nightly auto-draft. Bias toward curriculum gaps (notStarted/inProgress topics). Keep blocks short and varied.",
         dayLength: "full",
         subjects,
+        topicCatalog,
+        tutorOfDay,
       });
 
       if (!draft.blocks || draft.blocks.length === 0) {
@@ -670,9 +678,12 @@ export function registerScheduledSync(app: Express) {
         }
       }
       const slugToId = new Map<string, number>(subjects.map((s: any) => [s.slug, s.id as number]));
+      const codeMap = await resolveTopicIds(draft.blocks.map((b: any) => b.curriculumTopicCode || null)).catch(() => new Map<string, number>());
       let sortOrder = 0; let added = 0;
       for (const b of draft.blocks) {
         const subjectId = b.subjectSlug ? (slugToId.get(b.subjectSlug) ?? null) : null;
+        const codeKey = (b as any).curriculumTopicCode ? String((b as any).curriculumTopicCode).trim().toUpperCase() : "";
+        const topicId = codeKey ? (codeMap.get(codeKey) ?? null) : null;
         try {
           await db.createBlock({
             planId: plan.id,
@@ -684,6 +695,7 @@ export function registerScheduledSync(app: Express) {
             startTime: b.startTime || null,
             sortOrder: sortOrder++,
             status: "not_started" as any,
+            curriculumTopicId: topicId,
           } as any);
           added++;
         } catch (e) { console.warn("[nightly-lesson-gen] createBlock failed", e); }

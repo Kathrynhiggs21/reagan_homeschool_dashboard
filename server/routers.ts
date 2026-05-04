@@ -12,6 +12,8 @@ import { findFreeLinks } from "./freeLinkFinder";
 import { storagePut } from "./storage";
 import { generateScheduleDraft, type AIBlockDraft } from "./_lib/aiScheduleGenerator";
 import { describeUser, roleForEmail, capabilitiesFor, type HomeRole } from "./_lib/permissions";
+import { loadTopicHintsForPrompt, resolveTopicId, resolveTopicIds } from "./_lib/topicCatalog";
+import { resolveTutorOfDay, tutorOfDayLabel } from "./_lib/tutorOfDay";
 
 const Zone = z.enum(["green", "yellow", "red"]);
 const Intensity = z.enum(["green", "yellow", "red"]);
@@ -243,6 +245,10 @@ export const appRouter = router({
       const subjects = (await db.listSubjects()).map((s: any) => ({ slug: s.slug, name: s.name }));
       const dt = new Date(input.date + "T12:00:00");
       const dayLabel = dt.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+      const [topicCatalog, tutorOfDay] = await Promise.all([
+        loadTopicHintsForPrompt().catch(() => []),
+        resolveTutorOfDay(input.date).catch(() => null),
+      ]);
       const draft = await generateScheduleDraft({
         dateStr: input.date,
         dayLabel,
@@ -254,8 +260,10 @@ export const appRouter = router({
         adultPrompt: input.adultPrompt || null,
         dayLength: input.dayLength || "full",
         subjects,
+        topicCatalog,
+        tutorOfDay,
       });
-      return draft;
+      return { ...draft, tutorOfDay, tutorLabel: tutorOfDayLabel(tutorOfDay) };
     }),
 
     aiCommit: protectedProcedure.input(z.object({
@@ -272,6 +280,7 @@ export const appRouter = router({
         startTime: z.string().regex(/^\d{1,2}:\d{2}$/).optional(),
         subjectSlug: z.string().nullable().optional(),
         curriculumTopicId: z.number().int().positive().nullable().optional(),
+        curriculumTopicCode: z.string().min(1).max(30).nullable().optional(),
       })).min(1).max(20),
       seedTopicId: z.number().int().positive().nullable().optional(),
     })).mutation(async ({ input, ctx }) => {
@@ -289,10 +298,17 @@ export const appRouter = router({
       }
       let sortOrder = 0;
       const created: number[] = [];
+      // Resolve topic codes → ids for any block that came in without an explicit id.
+      const codeMap = await resolveTopicIds(input.blocks.map((b: any) => (b as any).curriculumTopicCode || null)).catch(() => new Map<string, number>());
       for (const b of input.blocks) {
         const subjectId = b.subjectSlug ? (slugToId.get(b.subjectSlug) ?? null) : null;
-        // Per-block topicId wins over the shared seedTopicId.
-        const topicId = b.curriculumTopicId ?? input.seedTopicId ?? null;
+        // Per-block topicId wins over the shared seedTopicId; if missing, look it up by code.
+        const codeKey = (b as any).curriculumTopicCode ? String((b as any).curriculumTopicCode).trim().toUpperCase() : "";
+        const topicId =
+          b.curriculumTopicId
+          ?? (codeKey ? (codeMap.get(codeKey) ?? null) : null)
+          ?? input.seedTopicId
+          ?? null;
         const id = await db.createBlock({
           planId: plan.id,
           blockType: b.blockType as any,
@@ -2094,6 +2110,10 @@ export const appRouter = router({
             try {
               const dt = new Date(ymdStr + "T12:00:00");
               const dayLabel = dt.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+              const [topicCatalog, tutorOfDay] = await Promise.all([
+                loadTopicHintsForPrompt().catch(() => []),
+                resolveTutorOfDay(ymdStr).catch(() => null),
+              ]);
               const draft = await generateScheduleDraft({
                 dateStr: ymdStr, dayLabel,
                 studentName: profile?.studentName || "Reagan",
@@ -2104,6 +2124,8 @@ export const appRouter = router({
                 adultPrompt: input?.adultPrompt || null,
                 dayLength: "full",
                 subjects,
+                topicCatalog,
+                tutorOfDay,
               });
               if (draft.blocks.length > 0) {
                 const plan = await db.ensurePlanForDate(ymdStr, "full", { allowWeekendAutoBuild: false });
@@ -2115,8 +2137,12 @@ export const appRouter = router({
                   const existing = await db.listBlocksForPlan(plan.id);
                   for (const b of existing) { try { await db.deleteBlock((b as any).id); } catch {} }
                   let sortOrder = 0;
+                  // Resolve topic codes → ids in one batch for this day's blocks.
+                  const dayCodeMap = await resolveTopicIds(draft.blocks.map((b: any) => b.curriculumTopicCode || null)).catch(() => new Map<string, number>());
                   for (const b of draft.blocks) {
                     const subjectId = b.subjectSlug ? (idMap.get(b.subjectSlug) ?? null) : null;
+                    const codeKey = (b as any).curriculumTopicCode ? String((b as any).curriculumTopicCode).trim().toUpperCase() : "";
+                    const topicId = (b as any).curriculumTopicId ?? (codeKey ? (dayCodeMap.get(codeKey) ?? null) : null);
                     await db.createBlock({
                       planId: plan.id,
                       blockType: b.blockType as any,
@@ -2127,6 +2153,7 @@ export const appRouter = router({
                       startTime: b.startTime || null,
                       sortOrder: sortOrder++,
                       status: "not_started" as any,
+                      curriculumTopicId: topicId,
                     } as any);
                   }
                   await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: plan.id, action: "create", summary: `syncFutureDays committed ${draft.blocks.length} blocks for ${ymdStr}` });

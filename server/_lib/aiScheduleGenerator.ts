@@ -33,6 +33,17 @@ export type AIBlockDraft = {
   durationMin: number;
   startTime?: string;        // HH:MM 24h, optional
   subjectSlug?: string | null;
+  /** Curriculum standard code (e.g. "5.OA.1", "RL.5.2"). REQUIRED for every academic block. */
+  curriculumTopicCode?: string | null;
+  /** Resolved at commit time from curriculumTopicCode against the live curriculumTopics table. */
+  curriculumTopicId?: number | null;
+};
+
+export type AICurriculumTopicHint = {
+  code: string;          // "5.OA.1"
+  title: string;         // "Order of operations with parentheses"
+  subjectSlug: string;   // "math"
+  status: string;        // "notStarted" | "inProgress" | "done"
 };
 
 export type AIGenerateInput = {
@@ -47,6 +58,10 @@ export type AIGenerateInput = {
   adultPrompt?: string | null; // free text from parent
   dayLength?: "full" | "half" | "off"; // hint for total minutes
   subjects: AISubject[];      // valid slugs the LLM may use
+  /** Live, not-yet-done topics from curriculumTopics — the ONLY codes the LLM may use. */
+  topicCatalog?: AICurriculumTopicHint[];
+  /** Tutor + therapist windows for the day, surfaced in the prompt so blocks respect them. */
+  tutorOfDay?: { name: string; arrival: string; departure: string; role?: string | null } | null;
 };
 
 export type AIGenerateResult = {
@@ -57,10 +72,21 @@ export type AIGenerateResult = {
 
 /* ----------------------- pure helpers (unit-tested) ----------------------- */
 
+/** Block types that MUST resolve to a curriculum topic code. */
+const ACADEMIC_BLOCK_TYPES = new Set<AllowedBlockType>([
+  "morning_warmup",
+  "math",
+  "read_aloud",
+  "choice",
+  "catch_up",
+  "custom",
+]);
+
 /** Clamp + sanitize the LLM's raw block array. Drops invalid rows, never throws. */
 export function sanitizeBlocks(
   raw: any,
   validSlugs: Set<string>,
+  validTopicCodes?: Set<string>,
 ): { blocks: AIBlockDraft[]; warnings: string[] } {
   const warnings: string[] = [];
   if (!Array.isArray(raw)) return { blocks: [], warnings: ["LLM returned non-array"] };
@@ -86,7 +112,17 @@ export function sanitizeBlocks(
       warnings.push(`unknown subject slug "${subjectSlug}" — left blank`);
       subjectSlug = null;
     }
-    out.push({ blockType, title, description, durationMin, startTime, subjectSlug });
+    let curriculumTopicCode: string | null = typeof r.curriculumTopicCode === "string"
+      ? r.curriculumTopicCode.trim().toUpperCase().slice(0, 30)
+      : null;
+    if (curriculumTopicCode && validTopicCodes && validTopicCodes.size > 0 && !validTopicCodes.has(curriculumTopicCode)) {
+      warnings.push(`block "${title}" — topicCode "${curriculumTopicCode}" not in catalog; cleared so commit step can prompt for one`);
+      curriculumTopicCode = null;
+    }
+    if (ACADEMIC_BLOCK_TYPES.has(blockType) && !curriculumTopicCode) {
+      warnings.push(`block "${title}" — academic block missing curriculumTopicCode; will need adult tag before scheduling`);
+    }
+    out.push({ blockType, title, description, durationMin, startTime, subjectSlug, curriculumTopicCode });
   }
   return { blocks: out, warnings };
 }
@@ -102,8 +138,18 @@ export function buildPromptMessages(input: AIGenerateInput) {
     "around 180–240 minutes total";
 
   const knowledge = loadKnowledgeBundle();
+  const topicCatalog = (input.topicCatalog || []).slice(0, 80);
+  const topicCatalogText = topicCatalog.length
+    ? topicCatalog
+        .map(t => `  ${t.code} [${t.subjectSlug}] (${t.status}) — ${t.title}`)
+        .join("\n")
+    : "(catalog empty — fall back to known Common Core / Ohio 5 codes like 5.OA.1, 5.NF.3, RL.5.2, RI.5.4, W.5.2)";
+  const tutorLine = input.tutorOfDay
+    ? `Tutor today: ${input.tutorOfDay.name}${input.tutorOfDay.role ? ` (${input.tutorOfDay.role})` : ""}, here ${input.tutorOfDay.arrival}–${input.tutorOfDay.departure}. Schedule academic blocks inside that window when possible.`
+    : `No tutor scheduled today — Mom-only day. Keep blocks gentle and self-directed.`;
+
   const sys = [
-    `You are Kiwi, a homeschool day-planning assistant for ${input.studentName}, a ${input.gradeLevel || "5th-grade"} student.`,
+    `You are the homeschool day-planning engine for ${input.studentName}, a ${input.gradeLevel || "5th-grade"} student.`,
     `You design short, kid-friendly schedule blocks. Always respect what works and avoid what harms.`,
     ``,
     `What works for her: ${(input.whatWorks || []).join("; ") || "(unspecified)"}`,
@@ -111,7 +157,13 @@ export function buildPromptMessages(input: AIGenerateInput) {
     `Interests: ${(input.interests || []).join(", ") || "(unspecified)"}`,
     input.recentMoodNotes?.length ? `Recent mood notes: ${input.recentMoodNotes.join(" | ")}` : "",
     ``,
+    tutorLine,
+    ``,
     knowledge.promptBlock,
+    ``,
+    `===== ACTIVE CURRICULUM TOPIC CATALOG (use ONLY these codes) =====`,
+    topicCatalogText,
+    `===== END CATALOG =====`,
     ``,
     `RULES:`,
     `- Output JSON only, matching the schema you'll be given.`,
@@ -121,6 +173,9 @@ export function buildPromptMessages(input: AIGenerateInput) {
     `- Always include a soft warm-up first and a low-stakes wrap-up last.`,
     `- Keep titles ≤ 60 chars and friendly (one emoji is fine).`,
     `- Description = a parent-readable plan with the activity, materials, and 1–2 talk-about-it questions.`,
+    `- EVERY academic block (math, read_aloud, choice, catch_up, custom, morning_warmup) MUST include a curriculumTopicCode chosen from the catalog above.`,
+    `- Pure adventures and appointments may set curriculumTopicCode to null.`,
+    `- Prefer topics whose status is "notStarted" or "inProgress". Only revisit "done" topics if the day is review-focused.`,
   ].filter(Boolean).join("\n");
 
   const user = [
@@ -163,8 +218,9 @@ export async function generateScheduleDraft(input: AIGenerateInput): Promise<AIG
                   durationMin: { type: "integer" },
                   startTime: { type: "string" },
                   subjectSlug: { type: ["string", "null"] },
+                  curriculumTopicCode: { type: ["string", "null"], description: "Required for academic blocks; e.g. '5.OA.1', 'RL.5.2'." },
                 },
-                required: ["blockType", "title", "description", "durationMin", "startTime", "subjectSlug"],
+                required: ["blockType", "title", "description", "durationMin", "startTime", "subjectSlug", "curriculumTopicCode"],
                 additionalProperties: false,
               },
             },
@@ -179,7 +235,8 @@ export async function generateScheduleDraft(input: AIGenerateInput): Promise<AIG
   const raw = (resp as any)?.choices?.[0]?.message?.content ?? "{}";
   let parsed: any = {};
   try { parsed = typeof raw === "string" ? JSON.parse(raw) : raw; } catch { parsed = {}; }
-  const { blocks, warnings } = sanitizeBlocks(parsed?.blocks, validSlugs);
+  const validTopicCodes = new Set((input.topicCatalog || []).map(t => t.code.toUpperCase()));
+  const { blocks, warnings } = sanitizeBlocks(parsed?.blocks, validSlugs, validTopicCodes);
   return {
     blocks,
     summary: typeof parsed?.summary === "string" ? parsed.summary.slice(0, 600) : "",
