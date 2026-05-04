@@ -1953,3 +1953,178 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Curriculum hub keyed on Indian Hill 5th grade (subject → unit → topic, done/in-progress/todo, % complete)
 - [ ] Family Update Stream: live feed visible to Parent / Grandma / Tutors
 - [ ] Automated nightly Daily Lesson Generator (skips weekends, targets curriculum gaps)
+
+
+## SIMPLIFICATION PASS — Checkpoint #34+ (2026-05-03 user instructions)
+
+### Phase 1 — Curriculum + AI daily assignments + daily-update sync (CORE — DO FIRST)
+- [ ] Curriculum becomes primary adult landing (after unlock, '/curriculum' = first adult page)
+- [ ] Curriculum: pin "Today's AI-built assignments" strip at top per day
+- [ ] Schedule edit/reorder/done → fire curriculum.noteCoverage(topicId, date, notes) + autoCompleteFromHistory
+- [ ] Schedule: "Sync future days" button — re-runs aiGenerate for next 5 school days using current coverage
+- [ ] Nightly lesson generator: factor in actually-covered topics, skip done/in-progress
+- [ ] AI plan adapts as Reagan completes more (struggle notes → easier next day; mastery → next topic)
+
+### Phase 2 — Cut deprecated pages + drop leveling
+- [ ] Delete TutorHandoff* pages + nav + routes
+- [ ] Delete FamilyFeed.tsx + /family route + adult sidebar entry
+- [ ] Delete UploadOrSync.tsx + nav + route
+- [ ] Delete DailyAgendas.tsx + nav + route
+- [ ] Delete DailyPacket.tsx + nav + route
+- [ ] Delete standalone Whiteboard.tsx + Parent Notes nav (move into Settings sub-panel)
+- [ ] Delete ProudWall.tsx + /proud route + nav (no Proud Wall anywhere)
+- [ ] Delete Adventures.tsx page + /adventures route + sidebar entry (Kiwi handles adventure ideas conversationally)
+- [ ] Remove all level-up notifications, badges, XP from Today/Analytics/Apps
+- [ ] Strip levelUp event emitters from server (keep coin events)
+
+### Phase 3 — Journal merge + My Skills rename
+- [ ] Merge Journal page into Notebook (free-write + "what I'd like help with")
+- [ ] Delete Journal.tsx + /journal route + Journal nav
+- [ ] Rename "My Levels" → "My Skills"; remove level numbers (just % or done count)
+
+### Phase 4 — Slim rewards + AI Assistant (full helper) + Analytics + Send-Request + de-Scribbles
+- [ ] Rewards/Prizes ladder: keep ~10 rungs max, delete rest from seed
+- [ ] AI Assistant: remove "Paste an email/doc" extraction box + "Auto-Sync Sources" stub
+- [ ] Kiwi panel: full Reagan-helper (homework explain / encouragement / adventure ideas on request)
+- [ ] Kiwi panel: "Send a request to my adults" button — emails Mom (spear.cpt@gmail.com) + Dad (blakehiggs@hotmail.com) + Grandma Marcy (marcy.spear@gmail.com) via notifyOwner / SMTP
+- [ ] Analytics: drop IEP catch-up trajectory + PowerSchool import; keep radar+sparklines+grades
+- [ ] grep "Scribbles"/"scribbles" in client+server, replace with neutral wording
+
+### Phase 5 — iCal overlay + Whiteboard in Settings + de-Scribbles
+- [ ] Settings: "Reagan's Google Calendar (iCal URL)" field, key calendar.icalUrl
+- [ ] Schedule: server-side iCal fetch+parse + toggleable overlay layer
+- [ ] Settings: Whiteboard sub-panel (move existing editor inline)
+- [ ] Settings: trim to Profile / Appearance / Companion / Lock / Whiteboard / Calendar / Logs
+- [ ] grep "Scribbles"/"scribbles" in client+server, replace with neutral wording
+
+### Phase 6 — Assignments Library AI search
+- [ ] AI search box (subject + topic + format) → ~10 suggested resources
+- [ ] Each suggestion has "Add to a day" (date picker → drops as block)
+- [ ] Adults can delete added blocks from this same UI
+
+### Phase 7 — Realistic cartoon-style VOICES (clarified by user)
+- [ ] Upgrade Kiwi/Blue/Daffy/Honk voices from robotic browser TTS to realistic cartoon-character voices (server-side TTS w/ per-companion pitch+rate+timbre)
+- [ ] AI Assistant: full Reagan-helper (homework, explain, encourage) — already present, audit and ensure full capability
+- [ ] Kiwi fun extras audit: random fly-around, perch animations, popping in occasionally — keep all, ensure activation only via wake-word/click (no auto-open, no mic prompt)
+
+
+### Phase 3 addendum (Adventures + Request button)
+- [ ] Convert Adventures from a page into a Reagan-facing popup/dialog (button on Today: "Find an Adventure" → modal listing same data)
+- [ ] Delete /adventures route + Adventures nav entry
+- [ ] Add a "Make a request" button visible on Reagan's pages (Today header) → opens dialog with text area + Kiwi-help-me-write button
+- [ ] On submit: server sends email to PARENT_EMAILS (Mom + Dad) via notifyOwner / mail helper; persist requests row for adult review
+- [ ] Adults see incoming requests inline in Settings or Curriculum top strip (small badge if unread)
+
+
+## EXPANDED SCOPE (2026-05-03 follow-ups) — Kiwi powers + nightly agenda pipeline + uploaded knowledge
+
+### Phase 1 — Knowledge ingestion (server/_knowledge/)
+- [x] Q4 standards copied to server/_knowledge/q4_standards.txt
+- [x] HS course catalog copied to server/_knowledge/hs_catalog.txt (forward-planning only, low priority context)
+- [x] Scope/sequence copied to server/_knowledge/scope_sequence.md
+- [x] IEP snapshot copied to server/_knowledge/iep_snapshot.md
+- [x] Assignment tracker copied to server/_knowledge/assignment_tracker.csv
+- [ ] Add knowledgeBundle helper that loads all _knowledge files at boot and exposes summarized text into generateScheduleDraft
+- [ ] aiScheduleGenerator system prompt: include Q4 standards + IEP focus + scope/sequence currently-not-mastered topics + recent listening summaries + recent struggles
+- [ ] Seed any missing curriculum_topics rows from Q4 standards (5.OA.1-3, 5.G.1-4, RL/RF/RI/W/SL/L 5.x) — idempotent
+
+### Phase 2 — Curriculum hub + AI agenda + sync
+- [ ] Curriculum.tsx: pin "Tomorrow's draft agenda" strip at top with regenerate + commit buttons
+- [ ] curriculum.syncFutureDays mutation: re-runs aiGenerate for next 5 SCHOOL days (skip weekend + IH off days), commits each
+- [ ] Schedule.tsx: "Sync future 5 school days" button (adult only)
+- [ ] Schedule.tsx: when an adult marks a block done / edits / reorders → automatic call to curriculum.autoCompleteFromHistory after a 1s debounce
+
+### Phase 3 — Nightly 8 PM agenda email pipeline
+- [ ] db: add table dailyAgendas (date PK, generatedAt, lastEmailedAt, lastChangeAt, pdfStorageKey, version int)
+- [ ] new server/agendaPdf.ts: builds a printable PDF (schedule + estimated minutes + worksheet attachments list + lesson links + IEP notes) using pdfkit / fpdf2 equivalent in node (pdfkit)
+- [ ] new server/scheduledAgendaEmail.ts cron-style entry: at 20:00 EST every weeknight, build agenda for next school day, save PDF to storage, email to marcy.spear@gmail.com + spear.cpt@gmail.com with PDF + worksheet PDFs attached
+- [ ] Resend logic: any change to that day's plan between 20:00 and start-of-school triggers a re-build + resend with subject "[UPDATED]"
+- [ ] Save copy to Google Drive Homeschool Hub (rclone manus_google_drive remote → /Homeschool Hub/Daily Agendas/YYYY-MM-DD.pdf)
+- [ ] Use existing scheduled-task pattern via /api/scheduled/nightlyAgenda endpoint + schedule entry (cron 0 0 20 * * 1-5)
+
+### Phase 4 — Cuts + leveling drop (same as before)
+- [ ] Delete TutorHandoff/TutorBriefing pages + nav + routes
+- [ ] Delete FamilyFeed.tsx + /family + adult sidebar entry
+- [ ] Delete UploadOrSync.tsx + nav + route
+- [ ] Delete DailyAgendas.tsx + nav + route (replaced by email pipeline)
+- [ ] Delete DailyPacket.tsx + nav + route (replaced by email pipeline)
+- [ ] Delete standalone Whiteboard.tsx (move into Settings sub-panel)
+- [ ] Delete ProudWall.tsx + /proud + nav
+- [ ] Strip level-up notifications + badges + XP from Today/Analytics/Apps
+- [ ] Strip levelUp event emitters from server (keep coin events)
+
+### Phase 5 — Adventures popup, Notebook merge, request button, My Skills rename
+- [ ] Convert Adventures from page → AdventuresDialog popup (keep all data)
+- [ ] Delete /adventures route + Adventures nav entry; add "Find an adventure" button on Today
+- [ ] Merge Journal.tsx contents into Notebook (TakeNotes.tsx) as a "Free Write" tab
+- [ ] Delete Journal.tsx + /journal route + Journal nav
+- [ ] Rename "My Levels" → "My Skills" in nav + page heading; remove level numbers (show % only)
+- [ ] Add "Make a request" floating button visible on Reagan's pages
+- [ ] requests table (id, fromUserId, kind enum, body, createdAt, resolvedAt, resolvedNote)
+- [ ] requests.create mutation → notifyOwner + email Mom + Dad
+- [ ] Kiwi-help-me-write button inside the request dialog (calls invokeLLM to phrase her thought politely)
+
+### Phase 6 — Slim Rewards + Kiwi-Helper + de-Scribbles
+- [ ] Prizes seed: trim to 10 rungs total (cover 25/50/100/200/350/500/750/1000/1500/2500 coins)
+- [ ] AIChat (Knowledge.tsx) becomes "Kiwi Helper" — full Reagan helper (homework, explain, encourage, look up safe links/videos)
+- [ ] Kiwi-Helper kid-safe content filter: server-side classifier blocks unsafe queries before answering
+- [ ] Kiwi can: open YouTube link, open kid-safe Google search, open approved app links, change theme/companion/audio settings via prefs.set
+- [ ] Whitelist tools the Kiwi-Helper can call (settings.set, theme.change, companion.activity, audio.toggle, openLink, openYouTube)
+- [ ] grep "Scribbles"/"scribbles" across client+server, replace with neutral wording
+
+### Phase 7 — iCal + Whiteboard in Settings + Library AI search
+- [ ] Settings: "Reagan's Google Calendar (iCal URL)" field, key calendar.icalUrl
+- [ ] Server: ical.fetch route — fetches + parses iCal, returns events for date range
+- [ ] Schedule: toggleable "Mom's calendar" overlay layer
+- [ ] Settings: Whiteboard sub-panel (move existing Whiteboard editor inline)
+- [ ] Settings: trim sub-panels to Profile / Appearance / Companion / Lock / Whiteboard / Calendar / Notifications / Logs
+- [ ] AssignmentsLibrary: AI search box (subject + topic + format) → returns ~10 suggestions with "Add to a day"
+
+### Phase 8 — Quiet listening + Mom-only analytics sheet
+- [ ] new client component KiwiEars: opens mic at app boot during school window (configurable, defaults Mon-Fri 8am-3pm), no toast
+- [ ] Continuous SpeechRecognition (or MediaRecorder → Whisper /api/transcribe) buffer in 60s chunks
+- [ ] Wake-word detector ("kiwi" / "hey kiwi") on the buffer — only then activates Kiwi response, otherwise silent
+- [ ] Buffer transcripts pushed to server every 5 min: server/listeningSummary.ts → invokeLLM summarizer extracts {topics, completions, emotionEstimate, comfort, talkativeness, difficulty}
+- [ ] listeningSummaries table (date, periodStart, periodEnd, subjectGuess, topicsJson, emotionScore, comfortScore, difficultyScore, talkativenessScore, rawSummary)
+- [ ] Time-on-task tracker: combines mic-active + interaction signals into per-subject minutes per day
+- [ ] Reagan Analytics: shows BASIC view only (existing radar + sparklines)
+- [ ] Mom Analytics export: nightly job pushes detailed CSV/Sheet to /Homeschool Hub/Detailed Analytics/YYYY-MM-DD.csv (Drive, Mom-only access)
+
+### Phase 9 — Realistic cartoon voices
+- [ ] Server-side TTS: try Google Gemini TTS (already have GEMINI_API_KEY) or fall back to OpenAI-compatible TTS via Forge
+- [ ] Per-companion voice profile (Kiwi: bright kid voice; Blue: deeper friend; Daffy: silly; Honk: gentle)
+- [ ] Replace all client-side speechSynthesis usage with server-side audio URLs
+- [ ] Audit Kiwi extras: random fly-around, perch animations, occasional pop-in — confirm wake-word-only response, no auto-open, no mic prompt visible
+
+### Phase 10 — Tests + checkpoint + deploy
+- [ ] vitest: knowledgeBundle loads + injects into prompt
+- [ ] vitest: requests.create persists + emails owner
+- [ ] vitest: dailyAgendas table CRUD + resend logic on change
+- [ ] vitest: listening summary insert + Mom analytics export
+- [ ] vitest: prizes ladder count = 10
+- [ ] webdev_check_status pass
+- [ ] webdev_save_checkpoint with full description
+
+
+## EXPANDED SCOPE (cont.) — Curriculum-topic tagging is mandatory on EVERY agenda item
+- [ ] Every agenda item (assignment, worksheet, lesson, video, game, read-aloud, even adventure) MUST resolve to an existing `curriculumTopics` row before insertion
+- [ ] Each row carries: `subjectSlug`, `curriculumTopicId`, `topicCode` (e.g. `5.OA.1`), `topicTitle`, optional subtopic/strand
+- [ ] AI generator: hard-reject any candidate item that cannot be matched to a topic (force a retry with stricter prompt instead of falling back to "freeform")
+- [ ] Backfill helper: scan existing `scheduleBlocks` and `assignmentsLibrary` rows missing `curriculumTopicId` and try to match by code/title; flag the unmatched ones for adult review
+- [ ] Worksheet/lesson PDF filenames stamped with topic code: `5.OA.1__order-of-ops__worksheet.pdf`
+- [ ] Printable agenda PDF prints "Math · 5.OA.1 · Order of Operations" under each task
+- [ ] Topic-coverage rollup auto-credits the matched topic when the block is marked complete (already partially in `updateBlock` cascade — extend to library + printables too)
+- [ ] Q4 standards from `5thGrade-4thQuarterStandards.docx` are imported into `curriculumTopics` if not already present (idempotent seeder)
+- [ ] Q4 ELA standards (RL/RF/RI/W/SL/L 5.x) imported as their own topics
+- [ ] Vitest guard: `agendaTagging.test.ts` asserts no agenda item without a curriculumTopicId can land in scheduleBlocks via the AI generator
+
+
+## EXPANDED SCOPE (cont.) — Tutor-of-the-day on every agenda + tutor AI co-pilot
+- [ ] `dailyAgendas` row resolves the tutor scheduled for that date from the existing `tutors` + recurring tutor schedule (weekly + ad-hoc) and stamps: tutor name, arrival time, departure time, role (e.g. "Tutor", "Therapy with Ali Hill, LISW", "Mom day")
+- [ ] Printable PDF + email body lead with: "Tutor today: Marcy Spear · 9:00 AM – 12:00 PM" (or "No tutor today — Mom only")
+- [ ] If multiple sessions in a day (e.g. tutor AM + therapy PM), list each with its time window
+- [ ] When the tutor logs in via OAuth (`role=tutor`), Today/Schedule pages get a "Tutor co-pilot" panel with Kiwi/AI chat scoped to today's agenda
+- [ ] Tutor co-pilot can: swap an assignment for another from the Library or curriculum (within same topic), soften a block (lower minutes / change activity), postpone to tomorrow, add a quick review block, or log a struggle — all via natural-language commands processed server-side
+- [ ] Every tutor-AI change writes back to the same `dailyAgendas` row, bumps `version`, sets `lastChangeAt`, and the resend-window cron picks it up if before school start
+- [ ] Audit log entry on every tutor-AI change (who/when/what was changed) so adults can review
+- [ ] Vitest: `tutorCopilot.test.ts` exercises swap + soften + postpone and asserts the agenda row + audit entry update

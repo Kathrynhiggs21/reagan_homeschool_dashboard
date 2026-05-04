@@ -1,0 +1,40 @@
+Math Standards:
+5.OA.1: Use parentheses in numerical expressions, and evaluate expressions with this symbol.
+5.OA.2: Write simple expressions that record calculations with numbers, and interpret numerical expressions without evaluating them.
+5.OA.3: Generate two numerical patterns using two given rules. Identify apparent relationships between corresponding terms.
+5.G.1: Use a pair of perpendicular number lines, called axes, to define a coordinate system, with the intersection of the lines (the origin) arranged to coincide with the 0 on each line and a given point in the plane located by using an ordered pair of numbers, called its coordinates.
+5.G.2: Represent real-world and mathematical problems by graphing points in the first quadrant of the coordinate plane, and interpret coordinate values of points in the context of the situation
+5.G.3: Identify and describe commonalities and differences between types of triangles based on angle measures
+5.G.4: Identify and describe commonalities and differences between types of quadrilaterals.
+ELA Standards:		
+Reading Literature, Reading Informational Text, Reading Foundational Skills
+1.RL.5.1  Quote accurately from a text when explaining what the text says explicitly and when drawing inferences from the text	
+1.RF.5.4  Read with sufficient accuracy and fluency to support comprehension
+1.RL.5.2  Analyze literary text development		
+1.RL.5.2a Determine a theme of a story, drama, or poem from details in the text, including how characters in a story or drama respond to challenges or how the speaker in a poem reflects upon a topic
+1.RL.5.2b Summarize the text, incorporating a theme determined from details in the text		
+1.RL.5.3  Compare and contrast two or more characters, settings, or events in a story or drama, drawing on specific details in the text (eg, how characters interact)		
+2.RL.5.4  Determine the meaning of words and phrases as they are used in a text, including figurative language such as metaphors, similes, and idioms		
+1.RL.5.6  Describe how a narrator’s or speaker’s point of view and perspective influence how events are described		
+Writing, Speaking/Listening, Language
+2.W.5.3  Write narratives to develop real or imagined experiences or events using effective technique, descriptive details, and clear event sequences	
+3.SL.5.5  Include multimedia components (eg, graphics, sound) and visual displays in presentations when appropriate to enhance the development of main ideas or themes	1.L.5.4a Use context (eg, cause/effect relationships and comparisons in text) as a clue to the meaning of a word or phrase
+2.W.5.3a Orient the reader by establishing a situation and introducing a narrator and/or characters; organize an event sequence that unfolds naturally	
+3.SL.5.6  Adapt speech to a variety of contexts and tasks, using formal English when appropriate to task and situation	
+3.L.5.3b Compare and contrast the varieties of English (eg, dialects, registers) used in stories, dramas, or poems
+3.W.5.3b Use narrative techniques, such as dialogue, description, and pacing, to develop experiences and events or show the responses of characters to situations		
+1.L.5.2e Spell grade-appropriate words correctly, consulting references as needed
+3.W.5.3c Use a variety of transitional words, phrases, and clauses to manage the sequence of events		
+2.L.5.4b Use common, grade-appropriate Greek and Latin affixes and roots as clues to the meaning of a word (eg, photograph, photosynthesis)
+2.W.5.3d Use concrete words and phrases and sensory details to convey experiences and events precisely		
+1.L.5.5a Interpret figurative language, including similes and metaphors, in context
+2.W.5.3e Provide a conclusion that follows from the narrated experiences or events		2.L.5.5b Recognize and explain the meaning of common idioms, adages, and proverbs
+Science Standards:
+Nature of Science → Grades 3–5 → Scientific Inquiry, Practice and Applications
+“Observe and ask questions about the world that can be answered through scientific investigations.”
+“Design and conduct scientific investigations using appropriate safety techniques.”
+“Use appropriate mathematics, tools and techniques to gather data and information.”
+“Develop and communicate descriptions, models, explanations and predictions.”
+“Think critically and ask questions about the observations and explanations of others.”
+“Communicate scientific procedures and explanations.”
+“Apply knowledge of science content to real-world challenges.” 

@@ -10,6 +10,7 @@
  * persistence happens in server/routers.ts so this stays easy to test.
  */
 import { invokeLLM } from "../_core/llm";
+import { loadKnowledgeBundle } from "./knowledgeBundle";
 
 export const ALLOWED_BLOCK_TYPES = [
   "morning_warmup",
@@ -100,6 +101,7 @@ export function buildPromptMessages(input: AIGenerateInput) {
     input.dayLength === "half" ? "around 90–150 minutes total" :
     "around 180–240 minutes total";
 
+  const knowledge = loadKnowledgeBundle();
   const sys = [
     `You are Kiwi, a homeschool day-planning assistant for ${input.studentName}, a ${input.gradeLevel || "5th-grade"} student.`,
     `You design short, kid-friendly schedule blocks. Always respect what works and avoid what harms.`,
@@ -108,6 +110,8 @@ export function buildPromptMessages(input: AIGenerateInput) {
     `What harms her: ${(input.whatHarms || []).join("; ") || "(unspecified)"}`,
     `Interests: ${(input.interests || []).join(", ") || "(unspecified)"}`,
     input.recentMoodNotes?.length ? `Recent mood notes: ${input.recentMoodNotes.join(" | ")}` : "",
+    ``,
+    knowledge.promptBlock,
     ``,
     `RULES:`,
     `- Output JSON only, matching the schema you'll be given.`,

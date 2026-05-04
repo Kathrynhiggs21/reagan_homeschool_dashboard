@@ -17,6 +17,7 @@ export default function Curriculum() {
   const subjectGrades = trpc.submissions.subjectGrades.useQuery();
   const decideM = trpc.adjustments.decide.useMutation();
   const rebuildM = trpc.adjustments.rebuild.useMutation();
+  const syncFutureDays = trpc.curriculum.syncFutureDays.useMutation();
   const utils = trpc.useUtils();
 
   const proposed = ((adjustments.data as any[]) ?? []).filter((a) => a.status === "proposed");
@@ -39,6 +40,46 @@ export default function Curriculum() {
         <h1 className="text-3xl font-display font-semibold">Curriculum</h1>
         <p className="text-muted-foreground text-sm mt-1">Subjects, skills, and the books we're working through.</p>
       </header>
+
+      {/* AI agenda sync strip — pinned at top so adults can refresh the next 5 school days from one place */}
+      <Card className="cozy-card p-4 border-2 border-amber-300/40 bg-amber-50/50">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <h2 className="font-display font-semibold text-base">Tomorrow & the week ahead</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Re-draft the next 5 school days using everything Reagan has learned so far + the Q4 standards + her IEP. Skips weekends and Indian Hill off-days automatically.
+            </p>
+            {syncFutureDays.data ? (
+              <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
+                {(syncFutureDays.data as any).results?.map((r: any) => (
+                  <span key={r.date} className={
+                    r.status === "committed" ? "px-2 py-0.5 rounded bg-emerald-100 text-emerald-800" :
+                    r.status === "skipped_weekend" ? "px-2 py-0.5 rounded bg-slate-100 text-slate-600" :
+                    r.status === "skipped_off" ? "px-2 py-0.5 rounded bg-blue-100 text-blue-700" :
+                    "px-2 py-0.5 rounded bg-rose-100 text-rose-700"
+                  }>
+                    {r.date.slice(5)} {r.status === "committed" ? `✓ ${r.blockCount}` : r.status.replace("skipped_","— ")}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          <Button
+            size="sm"
+            disabled={syncFutureDays.isPending}
+            onClick={async () => {
+              try {
+                const r: any = await syncFutureDays.mutateAsync({ days: 5 });
+                toast.success(`Synced ${r.committed} school day${r.committed === 1 ? "" : "s"}.`);
+              } catch (e: any) {
+                toast.error(e?.message || "Sync failed");
+              }
+            }}
+          >
+            {syncFutureDays.isPending ? "Syncing…" : "Sync next 5 school days"}
+          </Button>
+        </div>
+      </Card>
 
       <SubjectColorKey variant="schedule" />
 

@@ -2062,6 +2062,88 @@ export const appRouter = router({
       .input(z.object({ id: z.number(), notes: z.string().max(2000) }))
       .mutation(({ input }) => db.setCurriculumNote(input.id, input.notes)),
     autoCompleteFromHistory: protectedProcedure.mutation(() => db.autoCompleteFromHistory()),
+    /**
+     * Adult-only: regenerate + commit AI agendas for the next N school days
+     * (default 5). Skips weekends and any IH off-days that already exist in
+     * the schoolCalendar table. Returns a per-day summary so the Curriculum
+     * page can show "✓ Mon, ✓ Tue, skipped Wed (off), ✓ Thu, ✓ Fri".
+     */
+    syncFutureDays: protectedProcedure
+      .input(z.object({
+        startDate: z.string().optional(),
+        days: z.number().int().min(1).max(10).default(5),
+        adultPrompt: z.string().max(2000).optional(),
+      }).optional())
+      .mutation(async ({ input, ctx }) => {
+        const start = input?.startDate ? new Date(input.startDate + "T00:00:00") : new Date();
+        start.setHours(0, 0, 0, 0);
+        const want = input?.days ?? 5;
+        const profile: any = await db.getProfile().catch(() => null);
+        const subjects = (await db.listSubjects()).map((s: any) => ({ slug: s.slug, name: s.name }));
+        const results: Array<{ date: string; status: "committed" | "skipped_weekend" | "skipped_off" | "error"; blockCount?: number; reason?: string }> = [];
+        let cursor = new Date(start);
+        let committed = 0;
+        // walk forward day by day; only count school days toward `want`
+        for (let safety = 0; safety < 30 && committed < want; safety++) {
+          const ymdStr = `${cursor.getFullYear()}-${String(cursor.getMonth()+1).padStart(2,"0")}-${String(cursor.getDate()).padStart(2,"0")}`;
+          if (db.isWeekendDate(ymdStr)) {
+            results.push({ date: ymdStr, status: "skipped_weekend" });
+          } else if (await db.isSchoolOff(ymdStr).catch(() => false)) {
+            results.push({ date: ymdStr, status: "skipped_off" });
+          } else {
+            try {
+              const dt = new Date(ymdStr + "T12:00:00");
+              const dayLabel = dt.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+              const draft = await generateScheduleDraft({
+                dateStr: ymdStr, dayLabel,
+                studentName: profile?.studentName || "Reagan",
+                gradeLevel: profile?.gradeLevel || "5th grade",
+                interests: profile?.interests || [],
+                whatWorks: profile?.whatWorks || [],
+                whatHarms: profile?.whatHarms || [],
+                adultPrompt: input?.adultPrompt || null,
+                dayLength: "full",
+                subjects,
+              });
+              if (draft.blocks.length > 0) {
+                const plan = await db.ensurePlanForDate(ymdStr, "full", { allowWeekendAutoBuild: false });
+                if (plan) {
+                  // Real subject ids: refetch raw rows for the id map.
+                  const fullSubjects = await db.listSubjects();
+                  const idMap = new Map<string, number>(fullSubjects.map((s: any) => [s.slug, s.id as number]));
+                  // wipe existing AI-replaceable blocks for the day (keep manually-edited ones is overkill for v1)
+                  const existing = await db.listBlocksForPlan(plan.id);
+                  for (const b of existing) { try { await db.deleteBlock((b as any).id); } catch {} }
+                  let sortOrder = 0;
+                  for (const b of draft.blocks) {
+                    const subjectId = b.subjectSlug ? (idMap.get(b.subjectSlug) ?? null) : null;
+                    await db.createBlock({
+                      planId: plan.id,
+                      blockType: b.blockType as any,
+                      subjectId,
+                      title: b.title,
+                      description: b.description || null,
+                      durationMin: b.durationMin,
+                      startTime: b.startTime || null,
+                      sortOrder: sortOrder++,
+                      status: "not_started" as any,
+                    } as any);
+                  }
+                  await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: plan.id, action: "create", summary: `syncFutureDays committed ${draft.blocks.length} blocks for ${ymdStr}` });
+                }
+                results.push({ date: ymdStr, status: "committed", blockCount: draft.blocks.length });
+                committed++;
+              } else {
+                results.push({ date: ymdStr, status: "error", reason: "draft returned 0 blocks" });
+              }
+            } catch (e: any) {
+              results.push({ date: ymdStr, status: "error", reason: String(e?.message || e).slice(0, 200) });
+            }
+          }
+          cursor.setDate(cursor.getDate() + 1);
+        }
+        return { committed, results };
+      }),
     /** One-shot: mark Q1+Q2+Q3 topics as done (only flips notStarted -> done). */
     backfillProgress: protectedProcedure.mutation(() => db.backfillCurriculumProgress()),
     /** Roll-up of every artifact attached to a topic: resources + blocks. */

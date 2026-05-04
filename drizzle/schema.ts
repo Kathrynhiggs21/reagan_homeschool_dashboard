@@ -1638,3 +1638,76 @@ export const appAccounts = mysqlTable("app_accounts", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
+
+
+/* ============================================================
+ * Nightly agenda PDF email pipeline (Phase 3)
+ * ----------------------------------------------------------------
+ * One row per school day. The 8 PM cron writes the row, builds a
+ * PDF (schedule + estimated minutes + attached worksheet/lesson
+ * PDFs), uploads to S3, then emails Marcy + spear.cpt + saves a
+ * copy in Mom's Drive Homeschool Hub. If anything about that day's
+ * plan changes between 8 PM and the school start time the next
+ * morning, the row's `lastChangeAt` advances and a resend job
+ * picks it up and resends with subject "[UPDATED]".
+ * ============================================================ */
+export const dailyAgendas = mysqlTable("dailyAgendas", {
+  id: int("id").autoincrement().primaryKey(),
+  date: varchar("date", { length: 10 }).notNull().unique(), // YYYY-MM-DD
+  generatedAt: timestamp("generatedAt").defaultNow().notNull(),
+  lastEmailedAt: timestamp("lastEmailedAt"),
+  lastChangeAt: timestamp("lastChangeAt").defaultNow().notNull(),
+  pdfStorageKey: varchar("pdfStorageKey", { length: 512 }),
+  pdfUrl: varchar("pdfUrl", { length: 512 }),
+  driveFileId: varchar("driveFileId", { length: 128 }),
+  version: int("version").default(1).notNull(),
+  notes: text("notes"),
+});
+export type DailyAgenda = typeof dailyAgendas.$inferSelect;
+
+/* ============================================================
+ * Kiwi quiet-listening pipeline (Phase 8)
+ * ----------------------------------------------------------------
+ * One row per ~5-minute audio buffer the client sends to the
+ * server during the school-day window. The server-side summarizer
+ * extracts {topics, completions, emotion, comfort, difficulty,
+ * talkativeness} so Mom's detailed analytics stay rich without
+ * exposing raw transcripts in the UI. Reagan's UI never reads
+ * this table — only Mom's daily Drive export does.
+ * ============================================================ */
+export const listeningSummaries = mysqlTable("listeningSummaries", {
+  id: int("id").autoincrement().primaryKey(),
+  date: varchar("date", { length: 10 }).notNull(), // YYYY-MM-DD
+  periodStart: timestamp("periodStart").notNull(),
+  periodEnd: timestamp("periodEnd").notNull(),
+  subjectGuess: varchar("subjectGuess", { length: 32 }),
+  topicsJson: json("topicsJson"),
+  completionsJson: json("completionsJson"),
+  emotionScore: int("emotionScore"),         // -100..100
+  comfortScore: int("comfortScore"),          // 0..100
+  difficultyScore: int("difficultyScore"),    // 0..100
+  talkativenessScore: int("talkativenessScore"), // 0..100
+  rawSummary: text("rawSummary"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ListeningSummary = typeof listeningSummaries.$inferSelect;
+
+/* ============================================================
+ * Reagan's "Make a request" button (Phase 5)
+ * ----------------------------------------------------------------
+ * One row per request she sends to the adults (assignment idea,
+ * adventure idea, schedule change, snack request, etc.). The
+ * server emails Mom + Dad and posts a notifyOwner alert. Adults
+ * resolve from the Adult Inbox.
+ * ============================================================ */
+export const studentRequests = mysqlTable("studentRequests", {
+  id: int("id").autoincrement().primaryKey(),
+  fromUserId: int("fromUserId"),
+  kind: mysqlEnum("kind", ["assignment", "adventure", "schedule", "snack", "supplies", "help", "other"]).notNull().default("other"),
+  body: text("body").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  resolvedAt: timestamp("resolvedAt"),
+  resolvedNote: text("resolvedNote"),
+  resolvedByUserId: int("resolvedByUserId"),
+});
+export type StudentRequest = typeof studentRequests.$inferSelect;
