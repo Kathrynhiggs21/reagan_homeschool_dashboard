@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import SubjectColorKey from "@/components/SubjectColorKey";
 import CurriculumTopicsTree from "@/components/CurriculumTopicsTree";
 import CurriculumProgressArcs from "@/components/CurriculumProgressArcs";
+import OwnedBookCard from "@/components/OwnedBookCard";
 import { subjectTint, tintCardStyle, tintInkStyle } from "@/lib/subjectColors";
 
 export default function Curriculum() {
@@ -166,24 +167,13 @@ export default function Curriculum() {
       </section>
 
       <section>
-        <h2 className="font-display font-semibold mb-3">Books in Progress</h2>
+        <div className="flex items-baseline justify-between mb-3">
+          <h2 className="font-display font-semibold">Reagan's Books</h2>
+          <span className="text-xs text-muted-foreground">Click status to update · use “Mark pages already done” to skip what tutors already covered</span>
+        </div>
         <div className="grid sm:grid-cols-2 gap-3">
-          {books.data?.map((b: any) => (
-            <Card key={b.id} className="cozy-card p-4" style={tintCardStyle(b.subjectSlug || "reading")}>
-              <div className="flex gap-3">
-                <span className="text-3xl">📖</span>
-                <div className="flex-1">
-                  <div className="font-display font-semibold" style={tintInkStyle(b.subjectSlug || "reading")}>{b.title}</div>
-                  <div className="text-xs opacity-80" style={tintInkStyle(b.subjectSlug || "reading")}>{b.author} · {subjectTint(b.subjectSlug || "reading").label}</div>
-                  {b.totalPages && (
-                    <div className="mt-2">
-                      <div className="text-xs text-muted-foreground">Page {b.currentPage || 0} of {b.totalPages}</div>
-                      <Progress value={((b.currentPage || 0) / b.totalPages) * 100} className="h-1.5 mt-1" />
-                    </div>
-                  )}
-                </div>
-              </div>
-            </Card>
+          {((books.data as any[]) ?? []).map((b: any) => (
+            <OwnedBookCard key={b.id} book={b} />
           ))}
         </div>
       </section>

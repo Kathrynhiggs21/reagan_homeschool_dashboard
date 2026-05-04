@@ -14,6 +14,7 @@ import { generateScheduleDraft, type AIBlockDraft } from "./_lib/aiScheduleGener
 import { describeUser, roleForEmail, capabilitiesFor, type HomeRole } from "./_lib/permissions";
 import { loadTopicHintsForPrompt, resolveTopicId, resolveTopicIds } from "./_lib/topicCatalog";
 import { resolveTutorOfDay, tutorOfDayLabel } from "./_lib/tutorOfDay";
+import { loadOwnedBooksForAgenda } from "./_lib/ownedBooksHints";
 
 const Zone = z.enum(["green", "yellow", "red"]);
 const Intensity = z.enum(["green", "yellow", "red"]);
@@ -245,9 +246,10 @@ export const appRouter = router({
       const subjects = (await db.listSubjects()).map((s: any) => ({ slug: s.slug, name: s.name }));
       const dt = new Date(input.date + "T12:00:00");
       const dayLabel = dt.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
-      const [topicCatalog, tutorOfDay] = await Promise.all([
+      const [topicCatalog, tutorOfDay, ownedBooks] = await Promise.all([
         loadTopicHintsForPrompt().catch(() => []),
         resolveTutorOfDay(input.date).catch(() => null),
+        loadOwnedBooksForAgenda().catch(() => []),
       ]);
       const draft = await generateScheduleDraft({
         dateStr: input.date,
@@ -262,6 +264,7 @@ export const appRouter = router({
         subjects,
         topicCatalog,
         tutorOfDay,
+        ownedBooks,
       });
       return { ...draft, tutorOfDay, tutorLabel: tutorOfDayLabel(tutorOfDay) };
     }),
@@ -550,16 +553,38 @@ export const appRouter = router({
     list: publicProcedure.query(() => db.listBooks()),
     create: protectedProcedure.input(z.object({
       title: z.string(), author: z.string().optional(),
-      type: z.enum(["workbook","novel","reference","audiobook"]).default("workbook"),
+      type: z.enum(["workbook","novel","reference","audiobook","chapter_book"]).default("workbook"),
       subjectSlug: z.string().optional(), currentPage: z.number().default(1), totalPages: z.number().optional(),
       notes: z.string().optional(),
     })).mutation(({ input }) => db.insertBook(input as any)),
     advancePage: protectedProcedure.input(z.object({ id: z.number(), currentPage: z.number() }))
       .mutation(({ input }) => db.updateBookPage(input.id, input.currentPage)),
+    advanceChapter: protectedProcedure.input(z.object({ id: z.number(), currentChapter: z.number() }))
+      .mutation(({ input }) => db.updateBookChapter(input.id, input.currentChapter)),
+    setStatus: protectedProcedure.input(z.object({
+      id: z.number(),
+      status: z.enum(["not_started","in_progress","in_progress_unstructured","done","shelved"]),
+    })).mutation(({ input }) => db.setBookStatus(input.id, input.status)),
+    listPagesDone: publicProcedure.input(z.object({ bookId: z.number() })).query(({ input }) => db.listBookPagesDone(input.bookId)),
+    /** Reconciliation tool: tutor ticks every page Reagan has already done. */
+    markPagesDone: protectedProcedure.input(z.object({
+      bookId: z.number(),
+      pageNumbers: z.array(z.number().int().positive()).min(1).max(500),
+      source: z.enum(["tutor_recon","agenda_complete","manual"]).default("tutor_recon"),
+      note: z.string().optional(),
+    })).mutation(({ input, ctx }) => db.markBookPagesDone(input.bookId, input.pageNumbers, {
+      source: input.source,
+      completedBy: ctx.user?.name || ctx.user?.openId || "adult",
+      note: input.note,
+    })),
+    unmarkPage: protectedProcedure.input(z.object({ bookId: z.number(), pageNumber: z.number() }))
+      .mutation(({ input }) => db.unmarkBookPage(input.bookId, input.pageNumber)),
+    nextPageSpan: publicProcedure.input(z.object({ bookId: z.number(), span: z.number().optional() }))
+      .query(({ input }) => db.nextPageSpanForBook(input.bookId, input.span)),
     update: protectedProcedure.input(z.object({
       id: z.number(),
       title: z.string().optional(), author: z.string().optional(),
-      type: z.enum(["workbook","novel","reference","audiobook"]).optional(),
+      type: z.enum(["workbook","novel","reference","audiobook","chapter_book"]).optional(),
       subjectSlug: z.string().optional(), currentPage: z.number().optional(), totalPages: z.number().optional(), notes: z.string().optional(),
     })).mutation(({ input }) => db.updateBook(input.id, input)),
     delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteBook(input.id)),
@@ -2190,9 +2215,10 @@ export const appRouter = router({
             try {
               const dt = new Date(ymdStr + "T12:00:00");
               const dayLabel = dt.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
-              const [topicCatalog, tutorOfDay] = await Promise.all([
+              const [topicCatalog, tutorOfDay, ownedBooks] = await Promise.all([
                 loadTopicHintsForPrompt().catch(() => []),
                 resolveTutorOfDay(ymdStr).catch(() => null),
+                loadOwnedBooksForAgenda().catch(() => []),
               ]);
               const draft = await generateScheduleDraft({
                 dateStr: ymdStr, dayLabel,
@@ -2206,6 +2232,7 @@ export const appRouter = router({
                 subjects,
                 topicCatalog,
                 tutorOfDay,
+                ownedBooks,
               });
               if (draft.blocks.length > 0) {
                 const plan = await db.ensurePlanForDate(ymdStr, "full", { allowWeekendAutoBuild: false });

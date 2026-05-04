@@ -330,6 +330,13 @@
       "when": 1777858273138,
       "tag": "0046_next_vermin",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "5",
+      "when": 1777858974476,
+      "tag": "0047_nice_kid_colt",
+      "breakpoints": true
     }
   ]
 }

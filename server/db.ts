@@ -18,6 +18,7 @@ import {
   appAccounts,
   proudMoments,
   studentRequests, adultAiMessages,
+  bookPagesDone,
 } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -486,6 +487,70 @@ export async function seedStarterBooksIfEmpty() {
 }
 export async function updateBookPage(id: number, currentPage: number) {
   await getDb().update(books).set({ currentPage }).where(eq(books.id, id));
+}
+export async function updateBookChapter(id: number, currentChapter: number) {
+  await getDb().update(books).set({ currentChapter } as any).where(eq(books.id, id));
+}
+export async function setBookStatus(id: number, status: "not_started" | "in_progress" | "in_progress_unstructured" | "done" | "shelved") {
+  await getDb().update(books).set({ status } as any).where(eq(books.id, id));
+}
+
+/* ============================== BOOK PAGES DONE =========================== *
+ * Sparse storage of pages already completed (for scattered/unstructured
+ * progress reconciliation — used by the AI scheduler to avoid re-assigning
+ * pages a tutor already marked off).
+ * ========================================================================== */
+export async function listBookPagesDone(bookId: number) {
+  return getDb().select().from(bookPagesDone).where(eq(bookPagesDone.bookId, bookId)).orderBy(asc(bookPagesDone.pageNumber));
+}
+export async function markBookPagesDone(bookId: number, pageNumbers: number[], opts: { source?: "tutor_recon" | "agenda_complete" | "manual"; completedBy?: string; note?: string } = {}) {
+  if (!pageNumbers.length) return { added: 0 };
+  const rows = pageNumbers.map((p) => ({
+    bookId,
+    pageNumber: p,
+    status: "done" as const,
+    source: (opts.source || "manual") as any,
+    completedBy: opts.completedBy ?? null,
+    note: opts.note ?? null,
+  }));
+  // INSERT IGNORE semantics via ON DUPLICATE KEY UPDATE that no-ops
+  await getDb().insert(bookPagesDone).values(rows).onDuplicateKeyUpdate({ set: { status: sql`status` } });
+  return { added: rows.length };
+}
+export async function unmarkBookPage(bookId: number, pageNumber: number) {
+  await getDb().delete(bookPagesDone).where(and(eq(bookPagesDone.bookId, bookId), eq(bookPagesDone.pageNumber, pageNumber)));
+}
+
+/**
+ * Compute the next page span the AI scheduler should assign for a workbook,
+ * skipping any pages already in `bookPagesDone`. Returns null when the book
+ * is finished. Used by the agenda generator + the adult AI bar.
+ */
+export async function nextPageSpanForBook(bookId: number, span?: number): Promise<{ from: number; to: number } | null> {
+  const book: any = await getBook(bookId);
+  if (!book) return null;
+  const total = book.totalPages || null;
+  const want = Math.max(1, span || book.defaultDailyPageSpan || 2);
+  const done = (await listBookPagesDone(bookId)).map((r: any) => Number(r.pageNumber));
+  const doneSet = new Set(done);
+  let cur = Math.max(1, Number(book.currentPage || 1));
+  // Walk forward to the first not-done page
+  while (doneSet.has(cur)) cur++;
+  if (total && cur > total) return null;
+  let from = cur;
+  let to = cur;
+  let added = 1;
+  while (added < want) {
+    const next = to + 1;
+    if (total && next > total) break;
+    if (doneSet.has(next)) {
+      // skip the done one but don't extend the span across the gap
+      break;
+    }
+    to = next;
+    added++;
+  }
+  return { from, to };
 }
 
 /* ============================== MOOD ====================================== */

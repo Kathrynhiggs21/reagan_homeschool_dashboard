@@ -62,6 +62,22 @@ export type AIGenerateInput = {
   topicCatalog?: AICurriculumTopicHint[];
   /** Tutor + therapist windows for the day, surfaced in the prompt so blocks respect them. */
   tutorOfDay?: { name: string; arrival: string; departure: string; role?: string | null } | null;
+  /** Reagan's owned printed books — the AI should reference these by page/chapter rather than inventing. */
+  ownedBooks?: AIOwnedBookHint[];
+};
+
+export type AIOwnedBookHint = {
+  title: string;
+  type: "workbook" | "novel" | "reference" | "audiobook" | "chapter_book";
+  subjectSlug?: string | null;
+  status: "not_started" | "in_progress" | "in_progress_unstructured" | "done" | "shelved";
+  /** Suggested page span the scheduler should use today (already skips known-done pages). */
+  suggestedPageSpan?: { from: number; to: number } | null;
+  currentChapter?: number | null;
+  totalChapters?: number | null;
+  totalPages?: number | null;
+  topicCodes?: string[];
+  notes?: string | null;
 };
 
 export type AIGenerateResult = {
@@ -148,6 +164,18 @@ export function buildPromptMessages(input: AIGenerateInput) {
     ? `Tutor today: ${input.tutorOfDay.name}${input.tutorOfDay.role ? ` (${input.tutorOfDay.role})` : ""}, here ${input.tutorOfDay.arrival}–${input.tutorOfDay.departure}. Schedule academic blocks inside that window when possible.`
     : `No tutor scheduled today — Mom-only day. Keep blocks gentle and self-directed.`;
 
+  const ownedBooks = (input.ownedBooks || []).filter(b => b.status !== "shelved" && b.status !== "done");
+  const ownedBooksText = ownedBooks.length
+    ? ownedBooks.map((b) => {
+        const span = b.suggestedPageSpan ? `pages ${b.suggestedPageSpan.from}–${b.suggestedPageSpan.to}` : null;
+        const chap = b.currentChapter != null ? `Chapter ${b.currentChapter + 1}` : null;
+        const next = b.type === "novel" || b.type === "chapter_book" ? chap : span;
+        const tail = b.notes ? ` (${b.notes.slice(0, 120)})` : "";
+        const codes = b.topicCodes?.length ? ` topics:${b.topicCodes.slice(0, 5).join(",")}` : "";
+        return `  • "${b.title}" [${b.type}, ${b.subjectSlug || "?"}, ${b.status}]${codes} — next: ${next || "start"}${tail}`;
+      }).join("\n")
+    : "(no owned-books context provided)";
+
   const sys = [
     `You are the homeschool day-planning engine for ${input.studentName}, a ${input.gradeLevel || "5th-grade"} student.`,
     `You design short, kid-friendly schedule blocks. Always respect what works and avoid what harms.`,
@@ -164,6 +192,17 @@ export function buildPromptMessages(input: AIGenerateInput) {
     `===== ACTIVE CURRICULUM TOPIC CATALOG (use ONLY these codes) =====`,
     topicCatalogText,
     `===== END CATALOG =====`,
+    ``,
+    `===== REAGAN'S OWNED PRINTED BOOKS (prefer these for matching subjects) =====`,
+    ownedBooksText,
+    `===== END OWNED BOOKS =====`,
+    ``,
+    `OWNED-BOOK RULES:`,
+    `- When you assign reading or workbook practice for ELA, math, or science, FIRST check the owned-books list above and use one of those titles instead of inventing a book.`,
+    `- For workbooks (Spectrum Science, 180 Days of Language) write the description as: "Complete pg. X–Y of <Book Title>." using the suggested page span exactly as given (do not pick different pages).`,
+    `- For novels / chapter books (Tuck Everlasting, Michael's World) write: "Read Chapter N of <Book Title>."`,
+    `- If a book is marked in_progress_unstructured, still use the suggested page span — the system already skipped pages tutors have ticked off.`,
+    `- Only invent a fresh source (web link, video, app) when no owned book matches the topic.`,
     ``,
     `RULES:`,
     `- Output JSON only, matching the schema you'll be given.`,

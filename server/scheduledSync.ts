@@ -648,9 +648,11 @@ export function registerScheduledSync(app: Express) {
       const { generateScheduleDraft } = await import("./_lib/aiScheduleGenerator");
       const { loadTopicHintsForPrompt, resolveTopicIds } = await import("./_lib/topicCatalog");
       const { resolveTutorOfDay } = await import("./_lib/tutorOfDay");
-      const [topicCatalog, tutorOfDay] = await Promise.all([
+      const { loadOwnedBooksForAgenda } = await import("./_lib/ownedBooksHints");
+      const [topicCatalog, tutorOfDay, ownedBooks] = await Promise.all([
         loadTopicHintsForPrompt().catch(() => []),
         resolveTutorOfDay(dateStr).catch(() => null),
+        loadOwnedBooksForAgenda().catch(() => []),
       ]);
       const draft = await generateScheduleDraft({
         dateStr,
@@ -665,6 +667,7 @@ export function registerScheduledSync(app: Express) {
         subjects,
         topicCatalog,
         tutorOfDay,
+        ownedBooks,
       });
 
       if (!draft.blocks || draft.blocks.length === 0) {

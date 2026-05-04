@@ -7,6 +7,7 @@ import {
   mysqlTable,
   text,
   timestamp,
+  uniqueIndex,
   varchar,
 } from "drizzle-orm/mysql-core";
 
@@ -156,13 +157,35 @@ export const books = mysqlTable("books", {
   id: int("id").autoincrement().primaryKey(),
   title: varchar("title", { length: 200 }).notNull(),
   author: varchar("author", { length: 200 }),
-  type: mysqlEnum("type", ["workbook", "novel", "reference", "audiobook"]).default("workbook").notNull(),
+  type: mysqlEnum("type", ["workbook", "novel", "reference", "audiobook", "chapter_book"]).default("workbook").notNull(),
   subjectSlug: varchar("subjectSlug", { length: 32 }),
   currentPage: int("currentPage").default(1).notNull(),
+  currentChapter: int("currentChapter"),
   totalPages: int("totalPages"),
+  totalChapters: int("totalChapters"),
+  defaultDailyPageSpan: int("defaultDailyPageSpan").default(2).notNull(),
+  status: mysqlEnum("status", ["not_started", "in_progress", "in_progress_unstructured", "done", "shelved"]).default("not_started").notNull(),
+  topicCodes: json("topicCodes"),
   notes: text("notes"),
   coverUrl: varchar("coverUrl", { length: 500 }),
 });
+
+/* -------------------------------------------------------------------------- */
+/*  BOOK PAGES DONE (sparse: only stores known-completed pages so the AI      */
+/*  scheduler can skip them when generating book reading assignments)          */
+/* -------------------------------------------------------------------------- */
+export const bookPagesDone = mysqlTable("bookPagesDone", {
+  id: int("id").autoincrement().primaryKey(),
+  bookId: int("bookId").notNull(),
+  pageNumber: int("pageNumber").notNull(),
+  status: mysqlEnum("status", ["done", "skipped"]).default("done").notNull(),
+  source: mysqlEnum("source", ["tutor_recon", "agenda_complete", "manual"]).default("manual").notNull(),
+  completedAt: timestamp("completedAt").defaultNow().notNull(),
+  completedBy: varchar("completedBy", { length: 100 }),
+  note: varchar("note", { length: 200 }),
+}, (t) => ({
+  bookPageUnique: uniqueIndex("bookPagesDone_book_page_unique").on(t.bookId, t.pageNumber),
+}));
 
 /* -------------------------------------------------------------------------- */
 /*  MOOD LOGS (Green / Yellow / Red zone)                                     */
