@@ -44,9 +44,16 @@ export interface TurnInDialogProps {
   };
   /** Optional image URL to use as the drawable background (e.g., worksheet page). */
   worksheetUrl?: string;
+  /**
+   * Pre-selected compose mode when the dialog opens. Mom asked May 2026 so the
+   * "Draw on it" button on every block on Today / DailyPacket can jump Reagan
+   * straight into the Apple-Pencil pad without an extra tap.
+   * If omitted we keep the smart auto-detect (reading-shaped → reading; else → draw).
+   */
+  initialMode?: Mode;
 }
 
-type Mode = "reading" | "draw" | "photo" | "typed";
+export type Mode = "reading" | "draw" | "photo" | "typed";
 type Difficulty = "easy" | "just_right" | "tricky" | "really_hard";
 type Step = "compose" | "difficulty" | "done";
 
@@ -57,7 +64,7 @@ const DIFFICULTY_OPTIONS: { value: Difficulty; emoji: string; label: string; ton
   { value: "really_hard", emoji: "😣", label: "Really hard", tone: "bg-rose-50 hover:bg-rose-100 border-rose-300 text-rose-900" },
 ];
 
-export default function TurnInDialog({ open, onOpenChange, block, worksheetUrl }: TurnInDialogProps) {
+export default function TurnInDialog({ open, onOpenChange, block, worksheetUrl, initialMode }: TurnInDialogProps) {
   const utils = trpc.useUtils();
   const createSub = trpc.submissions.create.useMutation();
   const autoGrade = trpc.submissions.autoGrade.useMutation();
@@ -71,7 +78,7 @@ export default function TurnInDialog({ open, onOpenChange, block, worksheetUrl }
     block?.subjectSlug === "read_aloud";
 
   const [step, setStep] = useState<Step>("compose");
-  const [mode, setMode] = useState<Mode>(looksLikeReading ? "reading" : "draw");
+  const [mode, setMode] = useState<Mode>(initialMode ?? (looksLikeReading ? "reading" : "draw"));
   const [typedAnswers, setTypedAnswers] = useState("");
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -85,12 +92,12 @@ export default function TurnInDialog({ open, onOpenChange, block, worksheetUrl }
   useEffect(() => {
     if (!open) return;
     setStep("compose");
-    setMode(looksLikeReading ? "reading" : "draw");
+    setMode(initialMode ?? (looksLikeReading ? "reading" : "draw"));
     setTypedAnswers("");
     setPhotoDataUrl(null);
     setDifficulty(null);
     setLastSubmission(null);
-  }, [open, block?.id, looksLikeReading]);
+  }, [open, block?.id, looksLikeReading, initialMode]);
 
   function onPhotoPicked(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];

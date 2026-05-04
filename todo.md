@@ -2303,3 +2303,15 @@ Tests at end of batch: 211 passed | 1 skipped.
 ## Audit fix #3 (block detail drawer) + #6 (pencil-draw quick button)
 - [ ] BlockDetailDrawer links to: matched worksheet, packet PDF, kid videos, "draw on it" Apple-Pencil mode
 - [ ] One-tap "✏️ Draw on this worksheet" button on every Today block that has a printable
+
+
+## Live Drive Hub mirror (Mom requested May 4 2026)
+- [ ] Audit drivePushQueue: which targets currently auto-enqueue?
+- [ ] Seed Hub now: tomorrow's daily schedule PDF + agenda
+- [ ] Seed Hub now: every active assignment + finished submission
+- [ ] Seed Hub now: latest report cards + journal entries + tutor handoffs + adult notes
+- [ ] Seed Hub now: today's coin ledger snapshot
+- [ ] Wire dashboard write paths (assignments.create, submissions.create, plans.regenerate, journal.add, reports.publish, coins.grant) to enqueue Drive push
+- [ ] Run /api/scheduled/drive-push/pending and /api/scheduled/drive-snapshot now to flush
+- [ ] Verify all 11 Hub subfolders show new files
+- [ ] Vitest covering enqueue triggers

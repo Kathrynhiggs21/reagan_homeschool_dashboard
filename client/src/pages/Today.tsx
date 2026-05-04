@@ -177,7 +177,7 @@ export default function Today() {
   const [blockEditor, setBlockEditor] = useState<{ open: boolean; block?: ExistingBlock }>({ open: false });
   const [gradeDialog, setGradeDialog] = useState<{ open: boolean; block?: { id: number; title?: string; subjectSlug?: string | null } }>({ open: false });
   const [keyDialog, setKeyDialog] = useState<{ open: boolean; blockId?: number; title?: string }>({ open: false });
-  const [turnIn, setTurnIn] = useState<{ open: boolean; block?: { id: number; title?: string; subjectSlug?: string | null } }>({ open: false });
+  const [turnIn, setTurnIn] = useState<{ open: boolean; block?: { id: number; title?: string; subjectSlug?: string | null }; initialMode?: "reading" | "draw" | "photo" | "typed" }>({ open: false });
   const [goodWorkDialog, setGoodWorkDialog] = useState<{ open: boolean; blockId?: number; title?: string }>({ open: false });
   const [goodWorkText, setGoodWorkText] = useState("");
   const saveGoodWorkM = trpc.prefs.set.useMutation();
@@ -579,6 +579,15 @@ export default function Today() {
                       size="sm"
                       variant="outline"
                       className="bg-white/10 border-white/25 chalk-white hover:bg-white/20 h-8 px-3 text-xs"
+                      onClick={() => setTurnIn({ open: true, block: { id: b.id, title: b.title, subjectSlug: b.subjectSlug }, initialMode: "draw" })}
+                      title="Draw your answers right on the worksheet with the Apple Pencil"
+                    >
+                      ✏️ Draw on it
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="bg-white/10 border-white/25 chalk-white hover:bg-white/20 h-8 px-3 text-xs"
                       onClick={() => setTurnIn({ open: true, block: { id: b.id, title: b.title, subjectSlug: b.subjectSlug } })}
                     >
                       📝 Turn in
@@ -868,6 +877,7 @@ export default function Today() {
       <TurnInDialog
         open={turnIn.open}
         block={turnIn.block}
+        initialMode={turnIn.initialMode}
         onOpenChange={(v) => setTurnIn((s) => ({ ...s, open: v }))}
       />
 

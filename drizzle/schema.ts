@@ -1360,7 +1360,33 @@ export const drivePushQueue = mysqlTable("drive_push_queue", {
   mimeType: varchar("mime_type", { length: 100 }),
   // Which Drive folder the scheduled task should mirror this file into.
   // The agent prompt knows the folder mapping (root of "Reagan" Drive folder + subfolders).
-  targetFolder: mysqlEnum("target_folder", ["reagan", "reagan_ihes", "reagan_tutor", "reagan_artwork", "reagan_assignments"]).default("reagan").notNull(),
+  // Mom asked May 4 2026 — widened to all 11 Hub subfolders so every kind of
+  // dashboard write can mirror into Drive (no more "queued but rejected by enum").
+  targetFolder: mysqlEnum("target_folder", [
+    "reagan",
+    "reagan_ihes",
+    "reagan_tutor",
+    "reagan_artwork",
+    "reagan_assignments",
+    "finished_work",
+    "daily_schedule",
+    "worksheets",
+    "printables",
+    "report_cards",
+    "journal",
+    "analytics",
+    "adult_notes",
+    "kiwi_coins",
+    // Mom asked May 4 2026 ("and tutor etc app folders") — every dashboard
+    // section that produces files now has its own Hub subfolder.
+    "tutor",
+    "apps_tools",
+    "bookshelf",
+    "adventures",
+    "practice",
+    "notebook",
+    "curriculum_checklist",
+  ]).default("reagan").notNull(),
   status: mysqlEnum("status", ["pending", "pushed", "skipped", "failed"]).default("pending").notNull(),
   driveFileId: varchar("drive_file_id", { length: 200 }),
   errorMessage: text("error_message"),

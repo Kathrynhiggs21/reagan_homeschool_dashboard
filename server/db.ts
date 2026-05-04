@@ -3636,20 +3636,98 @@ export async function markDigestEmailed(id: number, status: "sent" | "failed" = 
  * ========================================================================== */
 import { drivePushQueue, type DrivePushQueueRow } from "../drizzle/schema";
 
-export type DrivePushTarget = "reagan" | "reagan_ihes" | "reagan_tutor" | "reagan_artwork" | "reagan_assignments";
+/**
+ * Mom asked May 4 2026 — every Hub subfolder should auto-mirror as the site updates.
+ * The 11 canonical buckets in Drive: Reagan School Hub (Dashboard) /
+ *   Assignments | Finished Work | Daily Schedule | Worksheets (Daily Packets)
+ *   Printables | Tutor Handoffs | Report Cards | Journal
+ *   Analytics (Mom-only) | Adult Notes (Mom-only) | Kiwi Coins
+ *
+ * The legacy 5-target enum is preserved so older callers keep working; the cron
+ * worker maps each value to the matching subfolder name when it pushes the file.
+ */
+export type DrivePushTarget =
+  | "reagan"               // catch-all (top-level Hub root)
+  | "reagan_ihes"          // Printables / curriculum library (legacy alias)
+  | "reagan_tutor"         // Tutor Handoffs
+  | "reagan_artwork"       // Finished Work artwork
+  | "reagan_assignments"   // Assignments + worksheets to do
+  | "finished_work"        // Submissions, photos of completed work
+  | "daily_schedule"       // Generated agendas + plan PDFs
+  | "worksheets"           // Printable Daily Packets
+  | "printables"           // Master worksheet library
+  | "report_cards"         // Weekly + term summaries
+  | "journal"              // Reagan's notebook entries
+  | "analytics"            // Mom-only analytics CSV/JSON
+  | "adult_notes"          // Mom + tutor private notes
+  | "kiwi_coins"           // Coin ledger snapshot
+  | "tutor"                // Active tutor sessions, schedules, summaries
+  | "apps_tools"           // Snapshots / exports of apps & tools usage
+  | "bookshelf"            // Bookshelf reading log + uploads
+  | "adventures"           // Adventures library entries + photos
+  | "practice"             // Practice for Coins history
+  | "notebook"             // Reagan notebook attachments
+  | "curriculum_checklist";// Auto-rebuilt weekly curriculum checklist
 
 /** Decide which Drive folder a file belongs in based on the classifier's RoutedResult. */
 export function pickDriveFolderForRouted(routed: RoutedResult, item: ClassifiedItem): DrivePushTarget {
   if (item.kind !== "file") return "reagan"; // links/text/email don't push
-  // Curriculum docs live in the IHES subfolder
-  if (routed.routedToLabel === "Curriculum library") return "reagan_ihes";
-  // Submitted homework photos / worksheets
-  if (routed.routedTo === "submission") return "reagan_assignments";
+  const label = (routed.routedToLabel || "").toLowerCase();
+  // Specific labels first (we want strong routing for the new 11-folder world)
+  if (label.includes("finished")) return "finished_work";
+  if (label.includes("report card") || label.includes("summary")) return "report_cards";
+  if (label.includes("journal") || label.includes("notebook")) return "journal";
+  if (label.includes("adult note") || label.includes("parent note")) return "adult_notes";
+  if (label.includes("daily packet") || label.includes("worksheet")) return "worksheets";
+  if (label.includes("printable")) return "printables";
+  if (label.includes("agenda") || label.includes("schedule")) return "daily_schedule";
+  if (label.includes("analytic")) return "analytics";
+  // Practice for Coins must win over the broader "coin" check below.
+  if (label.includes("practice")) return "practice";
+  if (label.includes("coin")) return "kiwi_coins";
+  if (label.includes("tutor")) return "tutor";
+  if (label.includes("app") && label.includes("tool")) return "apps_tools";
+  if (label.includes("bookshelf")) return "bookshelf";
+  if (label.includes("adventure")) return "adventures";
+  if (label.includes("checklist")) return "curriculum_checklist";
+  // Curriculum docs live in the printables (was IHES) bucket
+  if (label === "curriculum library") return "printables";
+  // Submitted homework photos / worksheets → finished work
+  if (routed.routedTo === "submission") return "finished_work";
   // Tutor-provided files
   if (routed.routedTo === "tutorSession") return "reagan_tutor";
-  // Anything else parent uploaded → top-level Reagan
+  // Anything else parent uploaded → top-level Hub
   return "reagan";
 }
+
+/**
+ * Map each DrivePushTarget to the Hub subfolder name the cron worker should
+ * write into. Keep these strings in sync with the actual Drive folders or
+ * the worker will silently create new top-level folders.
+ */
+export const DRIVE_FOLDER_NAMES: Record<DrivePushTarget, string> = {
+  reagan: "",
+  reagan_ihes: "Printables",
+  reagan_tutor: "Tutor Handoffs",
+  reagan_artwork: "Finished Work",
+  reagan_assignments: "Assignments",
+  finished_work: "Finished Work",
+  daily_schedule: "Daily Schedule",
+  worksheets: "Worksheets (Daily Packets)",
+  printables: "Printables",
+  report_cards: "Report Cards",
+  journal: "Journal",
+  analytics: "Analytics",
+  adult_notes: "Adult Notes",
+  kiwi_coins: "Kiwi Coins",
+  tutor: "Tutor",
+  apps_tools: "Apps & Tools",
+  bookshelf: "Bookshelf",
+  adventures: "Adventures",
+  practice: "Practice for Coins",
+  notebook: "Notebook",
+  curriculum_checklist: "Curriculum Checklist (Weekly)",
+};
 
 export async function enqueueDrivePush(args: {
   fileKey: string;

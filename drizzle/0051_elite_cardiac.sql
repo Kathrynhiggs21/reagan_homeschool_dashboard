@@ -1,0 +1,1 @@
+ALTER TABLE `drive_push_queue` MODIFY COLUMN `target_folder` enum('reagan','reagan_ihes','reagan_tutor','reagan_artwork','reagan_assignments','finished_work','daily_schedule','worksheets','printables','report_cards','journal','analytics','adult_notes','kiwi_coins') NOT NULL DEFAULT 'reagan';
