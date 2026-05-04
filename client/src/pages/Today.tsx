@@ -267,13 +267,27 @@ export default function Today() {
               </h1>
             </div>
           </div>
-          <Button
-            onClick={() => setOpen(true)}
-            size="lg"
-            className="rounded-full bg-accent text-accent-foreground hover:bg-accent/90 font-display text-base px-5 py-6 shadow-[0_6px_0_rgba(0,0,0,0.35),0_0_18px_rgba(255,216,106,0.25)]"
-          >
-            Ask {companionName}
-          </Button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              onClick={() => setOpen(true)}
+              size="lg"
+              className="rounded-full bg-accent text-accent-foreground hover:bg-accent/90 font-display text-base px-5 py-6 shadow-[0_6px_0_rgba(0,0,0,0.35),0_0_18px_rgba(255,216,106,0.25)]"
+            >
+              Ask {companionName}
+            </Button>
+            {/* Print today — opens the adult-gated DailyPacket page (full schedule + every
+                worksheet for the day) and any modern browser will let Mom hit Cmd/Ctrl+P
+                from there. We keep this lightweight so the homepage stays uncluttered. */}
+            <Button
+              onClick={() => { window.location.href = "/packet"; }}
+              size="lg"
+              variant="outline"
+              className="rounded-full bg-card font-display text-base px-5 py-6"
+              title="Open the printable Daily Packet (schedule + worksheets)"
+            >
+              🖨️ Print today
+            </Button>
+          </div>
         </div>
       </header>
       {/* Daily tip strip + Fresh-start button — deterministic by date so the tip stays stable all day */}

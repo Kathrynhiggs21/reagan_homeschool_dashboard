@@ -25,6 +25,7 @@ import TakeNotes from "./pages/TakeNotes";
 import DailyAgendas from "./pages/DailyAgendas";
 import Schedule from "./pages/Schedule";
 import KiwiCoins from "./pages/KiwiCoins";
+import DailyPacket from "./pages/DailyPacket";
 import { trpc } from "@/lib/trpc";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
@@ -94,7 +95,7 @@ function Router() {
         <Route path="/review-library"><Redirect to="/library" /></Route>
         <Route path="/placement"><Redirect to="/curriculum" /></Route>
         <Route path="/upload"><Redirect to="/library" /></Route>
-        <Route path="/packet"><Redirect to="/agendas" /></Route>
+        <Route path="/packet"><AdultGate><DailyPacket /></AdultGate></Route>
         <Route path="/scratch"><Redirect to="/notes" /></Route>
 
         <Route path="/404" component={NotFound} />
