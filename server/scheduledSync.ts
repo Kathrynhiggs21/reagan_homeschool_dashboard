@@ -850,4 +850,52 @@ ${tutorLine}
       return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
     }
   });
+
+  /**
+   * iCal overlay refresh — pull every enabled feed, parse, replace cached events.
+   * Called by the nightly scheduled task and by the Schedule UI's manual refresh.
+   *
+   * GET /api/scheduled/ical-refresh
+   *   → { ok, results: [{ feedId, label, status, count?, error? }] }
+   */
+  app.get("/api/scheduled/ical-refresh", async (req: Request, res: Response) => {
+    let role: string | null = null;
+    try { const u = await sdk.authenticateRequest(req); role = u?.role ?? null; } catch { role = null; }
+    if (!role || (role !== "user" && role !== "admin")) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
+    try {
+      const { parseIcs, eventForDateString } = await import("./_lib/icsParser");
+      const feeds = await db.listIcalFeeds();
+      const enabled = (feeds as any[]).filter((f) => f.enabled);
+      const results: Array<{ feedId: number; label: string; status: string; count?: number; error?: string }> = [];
+      for (const feed of enabled) {
+        try {
+          const r = await fetch(feed.url, { headers: { Accept: "text/calendar" } });
+          if (!r.ok) throw new Error(`Feed responded ${r.status}`);
+          const text = await r.text();
+          const events = parseIcs(text);
+          await db.replaceIcalEventsForFeed(feed.id, events.map((e) => ({
+            uid: e.uid,
+            summary: e.summary,
+            location: e.location,
+            description: e.description,
+            startsAt: e.startsAt,
+            endsAt: e.endsAt,
+            allDay: e.allDay,
+            forDate: eventForDateString(e),
+            rawSnippet: e.rawSnippet,
+          })));
+          await db.recordIcalSyncResult({ feedId: feed.id, status: "ok", eventsCached: events.length });
+          results.push({ feedId: feed.id, label: feed.label, status: "ok", count: events.length });
+        } catch (e: any) {
+          await db.recordIcalSyncResult({ feedId: feed.id, status: "failed", error: e?.message ?? String(e) });
+          results.push({ feedId: feed.id, label: feed.label, status: "failed", error: e?.message ?? String(e) });
+        }
+      }
+      return res.json({ ok: true, results });
+    } catch (e: any) {
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
 }

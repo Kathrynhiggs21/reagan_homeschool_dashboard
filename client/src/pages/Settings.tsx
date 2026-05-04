@@ -58,6 +58,7 @@ export default function Settings() {
         </TabsContent>
 
         <TabsContent value="calendar" className="space-y-4">
+          <IcalFeedsCard />
           <CalendarSyncCard />
           <AppointmentsCardLite />
         </TabsContent>
@@ -335,6 +336,105 @@ function NotificationsCard() {
             </Button>
           </div>
         </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+
+/* --------------------------------- iCal feed manager ---------------------- */
+
+function IcalFeedsCard() {
+  const utils = trpc.useUtils();
+  const feedsQ = trpc.icalFeeds.list.useQuery();
+  const add = trpc.icalFeeds.add.useMutation({
+    onSuccess: () => { utils.icalFeeds.list.invalidate(); toast.success("Calendar added"); },
+    onError: (e) => toast.error(e.message),
+  });
+  const update = trpc.icalFeeds.update.useMutation({
+    onSuccess: () => utils.icalFeeds.list.invalidate(),
+    onError: (e) => toast.error(e.message),
+  });
+  const del = trpc.icalFeeds.delete.useMutation({
+    onSuccess: () => { utils.icalFeeds.list.invalidate(); toast.success("Removed"); },
+    onError: (e) => toast.error(e.message),
+  });
+  const refresh = trpc.icalFeeds.refresh.useMutation({
+    onSuccess: (r) => { utils.icalFeeds.list.invalidate(); utils.icalFeeds.eventsBetween.invalidate(); toast.success(`Pulled ${r.count} events`); },
+    onError: (e) => toast.error(e.message),
+  });
+  const [label, setLabel] = useState("");
+  const [url, setUrl] = useState("");
+  const [color, setColor] = useState("#0a66c2");
+  const feeds: any[] = feedsQ.data || [];
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Calendar subscriptions (iCal)</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="text-sm text-muted-foreground">
+          Paste a public iCal URL (Indian Hill, soccer, scouts, family) and the events
+          will show up next to school blocks on Reagan&apos;s Schedule. Read-only mirror;
+          refreshed nightly + on demand.
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr_auto_auto] gap-2 items-end">
+          <div>
+            <Label className="text-xs">Label</Label>
+            <Input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="Soccer" />
+          </div>
+          <div>
+            <Label className="text-xs">.ics URL</Label>
+            <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://..." />
+          </div>
+          <div>
+            <Label className="text-xs">Color</Label>
+            <Input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="w-16 p-1 h-9" />
+          </div>
+          <Button
+            disabled={!label.trim() || !url.trim() || add.isPending}
+            onClick={() => {
+              add.mutate({ label: label.trim(), url: url.trim(), color }, {
+                onSuccess: () => { setLabel(""); setUrl(""); setColor("#0a66c2"); },
+              });
+            }}
+          >
+            Add
+          </Button>
+        </div>
+
+        {feeds.length === 0 ? (
+          <div className="text-sm text-muted-foreground italic">No calendars yet.</div>
+        ) : (
+          <ul className="space-y-2">
+            {feeds.map((f) => (
+              <li key={f.id} className="flex items-center gap-2 p-2 rounded-lg border bg-muted/30">
+                <span className="inline-block w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: f.color || "#0a66c2" }} />
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium truncate">{f.label}</div>
+                  <div className="text-xs text-muted-foreground truncate">{f.url}</div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {f.lastSyncStatus === "ok"
+                      ? `${f.eventsCached} events · last synced ${f.lastSyncedAt ? new Date(f.lastSyncedAt).toLocaleString() : ""}`
+                      : f.lastSyncStatus === "failed"
+                        ? <span className="text-red-600">Sync failed: {f.lastSyncError}</span>
+                        : "Not synced yet"}
+                  </div>
+                </div>
+                <Switch
+                  checked={!!f.enabled}
+                  onCheckedChange={(v) => update.mutate({ id: f.id, patch: { enabled: v } })}
+                />
+                <Button size="sm" variant="outline" disabled={refresh.isPending} onClick={() => refresh.mutate({ id: f.id })}>
+                  Refresh
+                </Button>
+                <Button size="sm" variant="ghost" className="text-red-600" onClick={() => { if (confirm("Remove this calendar?")) del.mutate({ id: f.id }); }}>
+                  Remove
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
       </CardContent>
     </Card>
   );

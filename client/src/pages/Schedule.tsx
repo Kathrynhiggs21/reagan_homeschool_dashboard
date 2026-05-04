@@ -235,7 +235,48 @@ function DayView({
           ))}
         </ul>
       )}
+      <DayIcalEvents dateStr={dateStr} />
     </Card>
+  );
+}
+
+// --- iCal overlay block on the Day view ------------------------------------
+
+function DayIcalEvents({ dateStr }: { dateStr: string }) {
+  const eventsQ = trpc.icalFeeds.eventsBetween.useQuery({ startDate: dateStr, endDate: dateStr });
+  const feedsQ = trpc.icalFeeds.list.useQuery();
+  const colorByFeed = useMemo(() => {
+    const m: Record<number, string> = {};
+    for (const f of (feedsQ.data || []) as any[]) m[f.id] = f.color || "#0a66c2";
+    return m;
+  }, [feedsQ.data]);
+  const events: any[] = eventsQ.data || [];
+  if (events.length === 0) return null;
+  const fmtTime = (d: any, allDay: boolean) => {
+    if (allDay) return "All day";
+    try {
+      return new Date(d).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    } catch { return ""; }
+  };
+  return (
+    <div className="mt-4 pt-3 border-t border-amber-200/60">
+      <div className="text-xs font-display font-semibold text-amber-800 mb-2">Also on this day</div>
+      <ul className="space-y-1.5">
+        {events.map((e: any) => (
+          <li key={e.id} className="flex items-center gap-2 text-sm">
+            <span
+              className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+              style={{ backgroundColor: colorByFeed[e.feedId] || "#0a66c2" }}
+            />
+            <span className="font-medium text-amber-900 dark:text-amber-100">{e.summary}</span>
+            <span className="text-xs text-muted-foreground ml-auto">
+              {fmtTime(e.startsAt, !!e.allDay)}
+              {e.location ? <span className="ml-2 inline-flex items-center gap-1"><MapPin className="w-3 h-3" />{e.location}</span> : null}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
@@ -365,18 +406,42 @@ function AgendaDialog({ open, dateStr, offInfo, onClose }: {
   );
 }
 
-// --- Google Calendar overlay (stub for future OAuth wiring) ----------------
+// --- iCal subscriptions footer ---------------------------------------------
 
 function GoogleCalendarOverlayStub() {
+  const feedsQ = trpc.icalFeeds.list.useQuery();
+  const feeds: any[] = feedsQ.data || [];
+  if (feeds.length === 0) {
+    return (
+      <Card className="p-4 bg-blue-50 border border-blue-200 text-blue-900 dark:bg-blue-950/30 dark:text-blue-100">
+        <div className="flex items-start gap-3">
+          <ExternalLink className="w-4 h-4 mt-1" />
+          <div className="flex-1 text-sm">
+            <div className="font-display font-semibold">No calendars connected yet</div>
+            <div>
+              Add a public iCal feed (Indian Hill, soccer, family) so events show up here next to school. Adult only — Mom can paste an iCal URL from <a href="/calendars" className="underline font-semibold">Settings &rarr; Calendars</a>.
+            </div>
+          </div>
+        </div>
+      </Card>
+    );
+  }
   return (
     <Card className="p-4 bg-blue-50 border border-blue-200 text-blue-900 dark:bg-blue-950/30 dark:text-blue-100">
       <div className="flex items-start gap-3">
         <ExternalLink className="w-4 h-4 mt-1" />
         <div className="flex-1 text-sm">
-          <div className="font-display font-semibold">Google Calendar overlay</div>
-          <div>
-            We&apos;ll show Reagan&apos;s Google Calendar events on top of this schedule once you connect her personal Google account. Adult only — Mom can authorize from <a href="/settings" className="underline font-semibold">Settings</a>.
-          </div>
+          <div className="font-display font-semibold mb-1">Calendars overlaid here</div>
+          <ul className="flex flex-wrap gap-2">
+            {feeds.map((f) => (
+              <li key={f.id} className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/70 border border-blue-200 text-xs">
+                <span className="inline-block w-2 h-2 rounded-full" style={{ backgroundColor: f.color || "#0a66c2" }} />
+                <span className="font-medium">{f.label}</span>
+                {!f.enabled ? <span className="text-blue-700 italic">(off)</span> : null}
+              </li>
+            ))}
+          </ul>
+          <div className="mt-2 text-xs text-blue-800/80">Manage in <a href="/calendars" className="underline">Settings &rarr; Calendars</a>.</div>
         </div>
       </div>
     </Card>

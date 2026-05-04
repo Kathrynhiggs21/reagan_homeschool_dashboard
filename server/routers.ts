@@ -859,6 +859,94 @@ export const appRouter = router({
     })).mutation(({ input }) => db.insertSchoolCalendar(input as any)),
   }),
 
+  /* =================== ICAL OVERLAY =================== *
+   * Subscribed-calendar overlays for the Schedule page (Indian Hill, soccer,
+   * family). Mom adds public .ics URLs from Settings; Reagan sees the events
+   * inline alongside school blocks. Read-only mirror, refreshed nightly. */
+  icalFeeds: router({
+    list: publicProcedure.query(() => db.listIcalFeeds()),
+    eventsBetween: publicProcedure
+      .input(z.object({
+        startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      }))
+      .query(({ input }) => db.listIcalEventsBetween(input)),
+    add: protectedProcedure
+      .input(z.object({
+        label: z.string().min(1).max(120),
+        url: z.string().url(),
+        color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+      }))
+      .mutation(({ input }) => db.insertIcalFeed(input)),
+    update: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        patch: z.object({
+          label: z.string().min(1).max(120).optional(),
+          url: z.string().url().optional(),
+          color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+          enabled: z.boolean().optional(),
+        }),
+      }))
+      .mutation(({ input }) => db.updateIcalFeed(input.id, input.patch)),
+    delete: protectedProcedure.input(z.object({ id: z.number() }))
+      .mutation(({ input }) => db.deleteIcalFeed(input.id)),
+    /** Force a refetch of one feed right now (adults only). */
+    refresh: protectedProcedure.input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        const feed = await db.getIcalFeed(input.id);
+        if (!feed) throw new Error("Feed not found");
+        const { parseIcs, eventForDateString } = await import("./_lib/icsParser");
+        try {
+          const r = await fetch(feed.url, { headers: { Accept: "text/calendar" } });
+          if (!r.ok) throw new Error(`Feed responded ${r.status}`);
+          const text = await r.text();
+          const events = parseIcs(text);
+          await db.replaceIcalEventsForFeed(input.id, events.map((e) => ({
+            uid: e.uid,
+            summary: e.summary,
+            location: e.location,
+            description: e.description,
+            startsAt: e.startsAt,
+            endsAt: e.endsAt,
+            allDay: e.allDay,
+            forDate: eventForDateString(e),
+            rawSnippet: e.rawSnippet,
+          })));
+          await db.recordIcalSyncResult({ feedId: input.id, status: "ok", eventsCached: events.length });
+          return { ok: true, count: events.length };
+        } catch (e: any) {
+          await db.recordIcalSyncResult({ feedId: input.id, status: "failed", error: e?.message ?? String(e) });
+          throw e;
+        }
+      }),
+  }),
+
+  /* =================== STUDENT REQUESTS =================== *
+   * Reagan → adults: assignment ideas, adventure requests, schedule changes,
+   * snacks, supplies, help. Kid-side talks to Kiwi which inserts here; adult
+   * Settings inbox lists + resolves. */
+  studentRequests: router({
+    listPending: protectedProcedure.query(() => db.listStudentRequests({ status: "pending", limit: 50 })),
+    listResolved: protectedProcedure.query(() => db.listStudentRequests({ status: "resolved", limit: 50 })),
+    create: publicProcedure
+      .input(z.object({
+        kind: z.enum(["assignment", "adventure", "schedule", "snack", "supplies", "help", "other"]).default("other"),
+        body: z.string().min(2).max(1000),
+      }))
+      .mutation(({ input, ctx }) => db.insertStudentRequest({
+        kind: input.kind,
+        body: input.body,
+        fromUserId: ctx.user?.id ?? null,
+      } as any)),
+    decide: protectedProcedure
+      .input(z.object({ id: z.number(), note: z.string().max(500).optional() }))
+      .mutation(({ input, ctx }) => db.resolveStudentRequest(input.id, {
+        resolvedByUserId: ctx.user?.id,
+        note: input.note,
+      })),
+  }),
+
   /* =================== ANIMALS =================== */
   animals: router({
     list: publicProcedure.query(() => db.listAnimals()),

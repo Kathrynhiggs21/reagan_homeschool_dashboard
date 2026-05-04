@@ -5160,3 +5160,103 @@ export async function listBookAssignmentsForBlock(blockId: number) {
     toPage: r.toPage,
   }));
 }
+
+
+/* ============================== ICAL FEEDS + EVENTS ======================== *
+ * Subscribed-calendar overlay for the Schedule page (Indian Hill calendar,
+ * sports, soccer, family). Pulled nightly + on-demand. Read-only mirror.
+ * ========================================================================== */
+import { icalFeeds, icalEvents } from "../drizzle/schema";
+
+export async function listIcalFeeds() {
+  return getDb().select().from(icalFeeds).orderBy(asc(icalFeeds.id));
+}
+
+export async function getIcalFeed(id: number) {
+  const rows = await getDb().select().from(icalFeeds).where(eq(icalFeeds.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function insertIcalFeed(row: { label: string; url: string; color?: string; enabled?: boolean }) {
+  const r = await getDb().insert(icalFeeds).values({
+    label: row.label,
+    url: row.url,
+    color: row.color ?? "#0a66c2",
+    enabled: row.enabled ?? true,
+  } as any);
+  return Number((r as any)?.[0]?.insertId ?? (r as any)?.insertId ?? 0);
+}
+
+export async function updateIcalFeed(id: number, patch: { label?: string; url?: string; color?: string; enabled?: boolean }) {
+  await getDb().update(icalFeeds).set(patch as any).where(eq(icalFeeds.id, id));
+}
+
+export async function deleteIcalFeed(id: number) {
+  await getDb().delete(icalFeeds).where(eq(icalFeeds.id, id));
+  await getDb().delete(icalEvents).where(eq(icalEvents.feedId, id));
+}
+
+export async function recordIcalSyncResult(args: {
+  feedId: number;
+  status: "ok" | "failed";
+  error?: string | null;
+  eventsCached?: number;
+}) {
+  await getDb().update(icalFeeds).set({
+    lastSyncedAt: new Date(),
+    lastSyncStatus: args.status,
+    lastSyncError: args.error ?? null,
+    ...(typeof args.eventsCached === "number" ? { eventsCached: args.eventsCached } : {}),
+  } as any).where(eq(icalFeeds.id, args.feedId));
+}
+
+/** Replace ALL cached events for a feed with the freshly parsed list. */
+export async function replaceIcalEventsForFeed(
+  feedId: number,
+  events: Array<{
+    uid: string;
+    summary: string;
+    location: string | null;
+    description: string | null;
+    startsAt: Date;
+    endsAt: Date | null;
+    allDay: boolean;
+    forDate: string;
+    rawSnippet: string | null;
+  }>,
+) {
+  const dbi = getDb();
+  await dbi.delete(icalEvents).where(eq(icalEvents.feedId, feedId));
+  if (events.length === 0) return;
+  // Chunk inserts to avoid hitting MySQL packet size limits.
+  const CHUNK = 200;
+  for (let i = 0; i < events.length; i += CHUNK) {
+    const slice = events.slice(i, i + CHUNK).map((e) => ({
+      feedId,
+      uid: e.uid.slice(0, 200),
+      summary: e.summary.slice(0, 240),
+      location: e.location?.slice(0, 200) ?? null,
+      description: e.description ?? null,
+      startsAt: e.startsAt,
+      endsAt: e.endsAt,
+      allDay: e.allDay,
+      forDate: e.forDate,
+      rawSnippet: e.rawSnippet ?? null,
+    }));
+    await dbi.insert(icalEvents).values(slice as any);
+  }
+}
+
+export async function listIcalEventsBetween(opts: { startDate: string; endDate: string }) {
+  const rows = await getDb()
+    .select()
+    .from(icalEvents)
+    .where(
+      and(
+        gte(icalEvents.forDate as any, opts.startDate as any),
+        lte(icalEvents.forDate as any, opts.endDate as any),
+      ) as any,
+    )
+    .orderBy(asc(icalEvents.startsAt));
+  return rows;
+}

@@ -351,6 +351,13 @@
       "when": 1777861798187,
       "tag": "0049_colorful_blue_shield",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "5",
+      "when": 1777862354061,
+      "tag": "0050_warm_rafael_vega",
+      "breakpoints": true
     }
   ]
 }

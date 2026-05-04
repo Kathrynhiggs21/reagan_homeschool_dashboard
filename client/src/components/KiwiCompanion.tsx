@@ -158,9 +158,31 @@ export default function KiwiCompanion() {
     };
   }, [enabled, mode, adultPresent, open, companionName, setOpen]);
 
+  // Kid-driven "Make a Request" — Reagan picks a kind (assignment, adventure,
+  // schedule change, snack, supplies, help) and Kiwi turns the rest of her
+  // sentence into a structured studentRequests row that surfaces in Mom's
+  // Settings inbox.
+  const createRequest = trpc.studentRequests.create.useMutation();
   function send() {
     if (!input.trim()) return;
     sendMsg.mutate({ userMessage: input.trim(), adultPresent });
+    setInput("");
+  }
+  function makeRequest(kind: "assignment" | "adventure" | "schedule" | "snack" | "supplies" | "help") {
+    const body = input.trim();
+    if (!body) {
+      setInput(
+        kind === "assignment" ? "Can I do this assignment instead: "
+          : kind === "adventure" ? "I'd like to try this adventure: "
+          : kind === "schedule" ? "Can we change my schedule by: "
+          : kind === "snack" ? "I'd love this snack: "
+          : kind === "supplies" ? "I need these supplies: "
+          : "I need help with: "
+      );
+      return;
+    }
+    createRequest.mutate({ kind, body });
+    sendMsg.mutate({ userMessage: `Make-a-Request (${kind}): ${body}`, adultPresent });
     setInput("");
   }
 
@@ -230,6 +252,28 @@ export default function KiwiCompanion() {
             {sendMsg.isPending && <div className="text-xs text-muted-foreground italic">{companionName} is thinking...</div>}
           </div>
 
+          {!adultPresent && (
+            <div className="px-3 pt-2 pb-1 flex flex-wrap gap-1.5 border-t bg-amber-50/40 dark:bg-amber-950/20">
+              <span className="text-[10px] uppercase tracking-wide text-muted-foreground self-center mr-1">Ask Mom for:</span>
+              {([
+                ["assignment", "📝 Assignment"],
+                ["adventure", "🏕️ Adventure"],
+                ["schedule", "⏰ Schedule change"],
+                ["snack", "🍪 Snack"],
+                ["supplies", "✏️ Supplies"],
+                ["help", "🆘 Help"],
+              ] as const).map(([kind, label]) => (
+                <button
+                  key={kind}
+                  type="button"
+                  onClick={() => makeRequest(kind as any)}
+                  className="text-[11px] px-2 py-1 rounded-full border border-amber-300 bg-white hover:bg-amber-100 text-amber-900 transition"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="p-3 border-t flex gap-2 items-end">
             <Textarea
               value={input}

@@ -1794,3 +1794,41 @@ export const nightlyAgendaEmails = mysqlTable("nightlyAgendaEmails", {
 });
 export type NightlyAgendaEmail = typeof nightlyAgendaEmails.$inferSelect;
 
+
+
+/* ============================== ICAL FEEDS + EVENTS =========================
+ * Subscribed-calendar overlays for the Schedule page. Mom can paste any public
+ * .ics URL (Indian Hill, sports, soccer, family) and we pull events nightly so
+ * Reagan can see "Soccer 5 PM" on her Schedule alongside school blocks.
+ *
+ * No two-way sync — pure read mirror. Events older than 90 days are pruned.
+ * ============================================================================ */
+export const icalFeeds = mysqlTable("icalFeeds", {
+  id: int("id").autoincrement().primaryKey(),
+  label: varchar("label", { length: 120 }).notNull(),
+  url: text("url").notNull(),
+  color: varchar("color", { length: 16 }).default("#0a66c2").notNull(),
+  enabled: boolean("enabled").default(true).notNull(),
+  lastSyncedAt: timestamp("lastSyncedAt"),
+  lastSyncStatus: mysqlEnum("lastSyncStatus", ["never", "ok", "failed"]).default("never").notNull(),
+  lastSyncError: text("lastSyncError"),
+  eventsCached: int("eventsCached").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type IcalFeed = typeof icalFeeds.$inferSelect;
+
+export const icalEvents = mysqlTable("icalEvents", {
+  id: int("id").autoincrement().primaryKey(),
+  feedId: int("feedId").notNull(),
+  uid: varchar("uid", { length: 200 }).notNull(),
+  summary: varchar("summary", { length: 240 }).notNull(),
+  location: varchar("location", { length: 200 }),
+  description: text("description"),
+  startsAt: timestamp("startsAt").notNull(),
+  endsAt: timestamp("endsAt"),
+  allDay: boolean("allDay").default(false).notNull(),
+  forDate: varchar("forDate", { length: 10 }).notNull(), // YYYY-MM-DD (local, fast filter)
+  rawSnippet: text("rawSnippet"),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+export type IcalEvent = typeof icalEvents.$inferSelect;
