@@ -2454,3 +2454,23 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] Extra micro-actions on KiwiPerch (peck, stretch, head-tilt added)
 - [x] Occasional flock visit pop-ins (Blue / Daffy / Honk) via cameo system
 - [ ] Tap → small "fly across" animation (still TODO)
+
+
+## 2026-05-04 batch (pending)
+- [x] H. Save Reagan's "Fake Blood Spider" story as today's Writing turn-in (original spelling preserved + cleaned-up version + photo) — done. Block #720001, submissions #870001 (original) + #870002 (clean).
+- [x] H. Award +10 Kiwi Coins for the story — done.
+- [ ] D. Attach real YouTube link (https://youtu.be/fajsyiKRfxI) to today's planet video block
+- [ ] E. Universal pattern — auto-render YouTube/Vimeo URLs in any block description as a clickable link/embed
+- [ ] A. Remove "Indian Hill agenda mirror" block from Daily Agendas page
+- [ ] B. Remove "in Indian Hill pacing order" phrase from Curriculum subtitle
+- [ ] C. Fix Curriculum page dark-theme contrast (rings, turn-ins, topics rows, chips, badges, status legend)
+- [ ] F. Add Delete action to tutors list in adult area
+- [ ] G. Add Delete capability to other adult-area people lists
+- [ ] I. Drive root https://drive.google.com/drive/folders/1r3bJacPLJN7VHI8y72rcx1-GRxspqo1r. Top-level folders mirror the dashboard sidebar: Curriculum, Daily Schedule, Worksheets (Daily Packets), Printables, Assignments (To Do + Finished + Extra Work, by subject + file type), Finished Work, Tutor Handoffs, Report Cards, Journal, Notes — Reagan, Adult Notes, Kiwi Coins, Kiwi Conversation Analytics, Analytics, Apps & Integrations, Tutors, Behavioral Notes, Snapshots, Archive (legacy), README.md. No numeric prefixes on folder names. Curriculum folder splits by subject → topic. Files prefixed `DD-MM-YYYY — Title.ext` (per user request).
+- [ ] I. Ensure all categories archive to Drive: daily printables, turn-ins, assignments, grading, curriculum-covered logs, behavioral notes, Kiwi analytics, school analytics
+- [ ] J. Behind-the-scenes records dashboard for adult — RICH set of cards: school coverage, skill mastery (per topic + standard), curriculum coverage map, grading + rubric distribution, behavioral / emotional struggle heatmap, mood trend, Kiwi conversation analytics (volume, sentiment, top topics, wake-word activations), apps & integrations usage, tutor sessions, Kiwi Coins economy, print + Drive activity, IEP progress (RIPE/RIMP), daily snapshot index, **attendance/absenteeism (daily, monthly, YTD %, Ohio 900-hr running total)**, **letter+number grades per subject + quarter + cumulative**, **standardized assessments trend (Acadience/MAZE/MAP/decoding/writing)**, **IEP service minutes**, **instruction hours by adult/tutor/subject**, **field-trip/adventure logs**, **health log**, **end-of-year portfolio bundler**. Every card has "Export to Drive" → CSV in Analytics/ with `DD-MM-YYYY — metric.csv` filename.
+- [x] K. One-tap "Move to tomorrow" action on every block in adult editors (Today inline chip + BlockEditor footer + AgendaEditor inline button) — done. Backed by adultAi.postponeBlock + vitest spec server/postponeBlock.test.ts.
+- [ ] L. Show tutor's name + day's availability inline on the Daily Agendas page (per-day strip above the blocks)
+- [ ] L. Render tutoring hours as a shaded "tutor here" band on the Daily Agenda timeline (so blocks visually anchor against the tutor's actual presence)
+- [ ] M. Save the recurring tutor schedule into the database. Week A: Mon Madison 10-3, Tue Sophie 10-3, Wed Madison 10-3, Thu Keith 11-2, Fri Sophie 10-3. Week B: Mon/Tue/Wed Sophie 10-3, Thu Keith 11-2, Fri Sophie 10-3.
+- [ ] M. Log today's tutor absence: 4 May 2026 — Madison sick (excused)

@@ -59,6 +59,9 @@ export default function BlockEditor({ open, onOpenChange, planId, block, onSaved
   const createM = trpc.blocks.create.useMutation();
   const updateM = trpc.blocks.update.useMutation();
   const deleteM = trpc.blocks.delete.useMutation();
+  // Move to tomorrow uses the existing adultAi.postponeBlock mutation, which
+  // re-parents the block to tomorrow's plan and stamps an audit note.
+  const postponeM = (trpc as any).adultAi?.postponeBlock?.useMutation?.();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -111,6 +114,27 @@ export default function BlockEditor({ open, onOpenChange, planId, block, onSaved
       onSaved?.();
     } catch (e: any) {
       toast.error(e?.message || "Save failed.");
+    }
+  }
+
+  async function moveToTomorrow() {
+    if (!block?.id) return;
+    if (!postponeM) { toast.error("Move-to-tomorrow not available."); return; }
+    const today = new Date();
+    const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+    const yyyy = tomorrow.getFullYear();
+    const mm = String(tomorrow.getMonth() + 1).padStart(2, "0");
+    const dd = String(tomorrow.getDate()).padStart(2, "0");
+    const toDate = `${yyyy}-${mm}-${dd}`;
+    try {
+      await postponeM.mutateAsync({ blockId: block.id, toDate });
+      toast.success(`Moved to ${mm}/${dd}.`);
+      utils.plans.today.invalidate();
+      utils.plans.byDate.invalidate();
+      onOpenChange(false);
+      onSaved?.();
+    } catch (e: any) {
+      toast.error(e?.message || "Move failed.");
     }
   }
 
@@ -174,9 +198,19 @@ export default function BlockEditor({ open, onOpenChange, planId, block, onSaved
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 flex-wrap">
           {isEdit && (
             <Button variant="destructive" onClick={del}>Delete</Button>
+          )}
+          {isEdit && postponeM && (
+            <Button
+              variant="outline"
+              onClick={moveToTomorrow}
+              disabled={postponeM.isPending}
+              title="Re-parent this block to tomorrow's plan"
+            >
+              → Move to tomorrow
+            </Button>
           )}
           <div className="flex-1" />
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>

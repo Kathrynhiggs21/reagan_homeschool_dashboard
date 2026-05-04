@@ -148,6 +148,11 @@ export default function AgendaEditor() {
     },
     onError: (e) => toast.error("Add block failed: " + e.message),
   });
+  // Adult quick-action: postpone a single block to tomorrow without opening a modal.
+  const postponeBlockM = (trpc as any).adultAi?.postponeBlock?.useMutation?.({
+    onSuccess: () => { utils.agendaEditor.snapshot.invalidate({ date }); utils.plans.byDate.invalidate(); utils.plans.today.invalidate(); toast.success("Moved to tomorrow."); },
+    onError: (e: any) => toast.error(e?.message || "Move failed."),
+  });
   const blockReorderM = trpc.blocks.reorder.useMutation({
     onSuccess: () => utils.agendaEditor.snapshot.invalidate({ date }),
     onError: (e) => toast.error("Reorder failed: " + e.message),
@@ -430,7 +435,7 @@ export default function AgendaEditor() {
           ) : (
             <div className="space-y-2">
               <div className="text-[11px] opacity-60 px-1">Drag the ☰ handle to reorder. Times use 12-hr (“9:00 AM”, “1:30 PM”).</div>
-              <div className="grid gap-2 text-xs opacity-60 px-1" style={{ gridTemplateColumns: "24px 90px 56px 1fr 130px 130px 130px 70px" }}>
+              <div className="grid gap-2 text-xs opacity-60 px-1" style={{ gridTemplateColumns: "24px 90px 56px 1fr 130px 130px 130px 130px" }}>
                 <div></div>
                 <div>Time</div>
                 <div>Min</div>
@@ -467,6 +472,14 @@ export default function AgendaEditor() {
                   }}
                   onPatch={(patch) => blockUpdateM.mutate({ id: b.id, ...patch })}
                   onDelete={() => blockDeleteM.mutate({ id: b.id })}
+                  onMoveToTomorrow={postponeBlockM ? () => {
+                    const t = new Date(date + "T00:00:00");
+                    const tom = new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1);
+                    const yyyy = tom.getFullYear();
+                    const mm = String(tom.getMonth() + 1).padStart(2, "0");
+                    const dd = String(tom.getDate()).padStart(2, "0");
+                    postponeBlockM.mutate({ blockId: b.id, toDate: `${yyyy}-${mm}-${dd}` });
+                  } : undefined}
                 />
               ))}
             </div>
@@ -478,7 +491,7 @@ export default function AgendaEditor() {
 }
 
 function ManualBlockRow({
-  block, subjects, topicCatalog, onPatch, onDelete,
+  block, subjects, topicCatalog, onPatch, onDelete, onMoveToTomorrow,
   isDragging, isDragOver, onDragStart, onDragEnter, onDragEnd,
 }: {
   block: Snapshot;
@@ -491,6 +504,7 @@ function ManualBlockRow({
   onDragEnd: () => void;
   onPatch: (patch: any) => void;
   onDelete: () => void;
+  onMoveToTomorrow?: () => void;
 }) {
   const [title, setTitle] = useState(block.title);
   const [startTime, setStartTime] = useState(formatTime12h(block.startTime));
@@ -522,7 +536,7 @@ function ManualBlockRow({
         "grid gap-2 items-center rounded border px-1 py-1 transition " +
         (isDragging ? "opacity-50 border-primary" : isDragOver ? "border-primary bg-primary/5" : "border-border/60")
       }
-      style={{ gridTemplateColumns: "24px 90px 56px 1fr 130px 130px 130px 70px" }}
+      style={{ gridTemplateColumns: "24px 90px 56px 1fr 130px 130px 130px 130px" }}
     >
       <span
         className="cursor-grab select-none text-base opacity-50 hover:opacity-100"
@@ -587,16 +601,29 @@ function ManualBlockRow({
           ))}
         </SelectContent>
       </Select>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-8 text-xs text-red-500 hover:text-red-700 justify-end"
-        onClick={() => {
-          if (confirm(`Delete "${block.title}"?`)) onDelete();
-        }}
-      >
-        Delete
-      </Button>
+      <div className="flex items-center justify-end gap-1">
+        {onMoveToTomorrow && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 text-xs whitespace-nowrap"
+            title="Re-parent this block to tomorrow's plan"
+            onClick={onMoveToTomorrow}
+          >
+            → Tom.
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 text-xs text-red-500 hover:text-red-700"
+          onClick={() => {
+            if (confirm(`Delete "${block.title}"?`)) onDelete();
+          }}
+        >
+          Del
+        </Button>
+      </div>
     </div>
   );
 }

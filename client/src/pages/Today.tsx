@@ -98,6 +98,9 @@ export default function Today() {
   const moodM = trpc.mood.log.useMutation({ onSuccess: () => toast.success("Got it.") });
   const completeM = trpc.blocks.complete.useMutation();
   const moveBlockM = trpc.blocks.move.useMutation();
+  // adultAi.postponeBlock = move-to-any-date; we use it for the inline
+  // "→ Tomorrow" quick-action so Mom can defer a block without opening the editor.
+  const postponeBlockM = (trpc as any).adultAi?.postponeBlock?.useMutation?.();
   const specialDay = trpc.specialDays.today.useQuery();
   const absentToday = trpc.prefs.getPublic.useQuery({ key: `absence:${new Date().toISOString().slice(0,10)}` });
   const isAbsentToday = absentToday.data === "1";
@@ -673,6 +676,35 @@ export default function Today() {
                         >
                           ↓ Later
                         </Button>
+                        {postponeBlockM && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 px-2 text-xs text-neutral-700 hover:bg-white"
+                            onClick={() => {
+                              const t = new Date();
+                              const tom = new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1);
+                              const yyyy = tom.getFullYear();
+                              const mm = String(tom.getMonth() + 1).padStart(2, "0");
+                              const dd = String(tom.getDate()).padStart(2, "0");
+                              postponeBlockM.mutate(
+                                { blockId: b.id, toDate: `${yyyy}-${mm}-${dd}` },
+                                {
+                                  onSuccess: () => {
+                                    toast.success(`Moved to ${mm}/${dd}.`);
+                                    utils.plans.today.invalidate();
+                                    utils.plans.byDate.invalidate();
+                                  },
+                                  onError: (e: any) => toast.error(e?.message || "Move failed."),
+                                },
+                              );
+                            }}
+                            disabled={postponeBlockM.isPending}
+                            title="Re-parent this block to tomorrow's plan"
+                          >
+                            → Tomorrow
+                          </Button>
+                        )}
                       </>
                     )}
                   </div>
