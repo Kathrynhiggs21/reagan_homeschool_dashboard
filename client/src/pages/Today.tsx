@@ -15,6 +15,7 @@ import { subjectTint, tintCardStyle, tintInkStyle, tintPillStyle, rainbowCardSty
 import { celebrateKiwi } from "@/components/KiwiPerch";
 import ThemePickerStrip from "@/components/ThemePickerStrip";
 import KiwiIntroStrip from "@/components/KiwiIntroStrip";
+import IntroTour from "@/components/IntroTour";
 import ConfidencePrinciplesStrip from "@/components/ConfidencePrinciplesStrip";
 import SkillBuilderTile from "@/components/SkillBuilderTile";
 import PlacementInviteCard from "@/components/PlacementInviteCard";
@@ -81,6 +82,15 @@ function blockTimeLabel(i: number): string {
 
 export default function Today() {
   const { companionAvatar, companionName, setOpen } = useKiwi();
+  // Kiwi-led intro tour — auto-shows once for new visitors. Mom-requested
+  // May 2026; the "🐤 Tour" button below the hero re-opens it any time.
+  const [tourOpen, setTourOpen] = useState<boolean>(() => {
+    try {
+      return window.localStorage?.getItem("kiwiTourSeen") !== "1";
+    } catch {
+      return false;
+    }
+  });
   const { unlocked } = useAdultLock();
   const profile = trpc.profile.get.useQuery();
   const today = trpc.plans.today.useQuery();
@@ -302,6 +312,21 @@ export default function Today() {
               title="Earn extra Kiwi Coins by doing fun practice drills outside school hours"
             >
               🪙 Practice for Coins
+            </Button>
+            {/* Replay tour — Mom-requested May 2026. Auto-shows once for new
+                visitors via IntroTour's localStorage gate; this button is the
+                always-available re-open. */}
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => {
+                try { window.localStorage?.removeItem("kiwiTourSeen"); } catch {}
+                setTourOpen(true);
+              }}
+              className="bg-white/80 hover:bg-white"
+              title="Watch Kiwi's intro tour again"
+            >
+              🐤 Tour
             </Button>
           </div>
         </div>
@@ -883,6 +908,8 @@ export default function Today() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {/* Kiwi-led intro tour overlay (auto-shows once; "🐤 Tour" replays it). */}
+      <IntroTour open={tourOpen} onClose={() => setTourOpen(false)} />
     </div>
   );
 }
