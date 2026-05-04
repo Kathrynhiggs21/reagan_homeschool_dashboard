@@ -189,7 +189,7 @@ export default function AgendaEditor() {
       <header className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-3xl font-semibold">Agenda Editor</h1>
-          <p className="text-sm opacity-70">Tell the AI anything — vague vibes, targeted shifts, surgical swaps. Or edit each block manually below.</p>
+          <p className="text-sm opacity-70">Just tell the AI what you want — rearrange, swap topics, change tutors, push the day, anything. It edits the agenda for you.</p>
         </div>
         <div className="flex items-center gap-2">
           <label className="text-sm opacity-70">Date</label>
@@ -197,26 +197,41 @@ export default function AgendaEditor() {
         </div>
       </header>
 
-      {/* CHAT INSTRUCTION */}
-      <Card>
+      {/* CHAT INSTRUCTION — the primary surface */}
+      <Card className="border-primary/40">
         <CardHeader>
-          <CardTitle className="text-lg">Tell the AI what to change</CardTitle>
+          <CardTitle className="text-xl flex items-center gap-2">
+            <span aria-hidden>✨</span>
+            Tell the AI what to change
+          </CardTitle>
+          <p className="text-sm opacity-70 mt-1">Plain English. Press Enter or click Send. You’ll see a preview before anything changes.</p>
         </CardHeader>
         <CardContent className="space-y-3">
           <Textarea
             value={instruction}
             onChange={(e) => setInstruction(e.target.value)}
-            placeholder='e.g. "make it shorter and fun", "more math today", "swap 10:30 to a nature walk", "start at 9, end by 1, 25-min blocks"'
-            rows={3}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                onSend();
+              }
+            }}
+            placeholder='"shorter and fun" • "more math today" • "swap 10:30 to a nature walk" • "start at 9, 25-min blocks" • "Mom can’t tutor today, push to tomorrow" • "add a 20-min read aloud after lunch"'
+            rows={4}
+            className="text-base"
           />
           <div className="flex flex-wrap gap-2 text-xs">
             {[
               "Make it shorter and fun",
               "More math today",
-              "Add a 30-min adventure after lunch",
+              "Add a 20-min read aloud after lunch",
               "Start at 9 AM, 25-min blocks",
               "Move math to the morning",
               "Drop the catch-up block",
+              "Tutor not here — push everything to tomorrow",
+              "Swap science topic to weather",
+              "Add a brain break before lunch",
+              "Make every block 20 min",
             ].map((sample) => (
               <button
                 key={sample}
@@ -228,15 +243,18 @@ export default function AgendaEditor() {
               </button>
             ))}
           </div>
-          <div className="flex justify-end gap-2">
-            {savedSnapshot && (
-              <Button variant="outline" onClick={onUndo} disabled={undoM.isPending}>
-                ↶ Undo last apply
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="text-xs opacity-60">Tip: ⌘/Ctrl + Enter to send.</div>
+            <div className="flex gap-2">
+              {savedSnapshot && (
+                <Button variant="outline" onClick={onUndo} disabled={undoM.isPending}>
+                  ↶ Undo last apply
+                </Button>
+              )}
+              <Button size="lg" onClick={onSend} disabled={previewM.isPending || !instruction.trim()}>
+                {previewM.isPending ? "Thinking…" : "Send →"}
               </Button>
-            )}
-            <Button onClick={onSend} disabled={previewM.isPending || !instruction.trim()}>
-              {previewM.isPending ? "Thinking…" : "Preview →"}
-            </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -291,14 +309,34 @@ export default function AgendaEditor() {
         </Card>
       )}
 
-      {/* MANUAL BLOCK GRID */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div>
-              <CardTitle className="text-lg">Manual block editor</CardTitle>
-              <p className="text-sm opacity-70">Edit any field on any block. Saves on blur.</p>
+      {/* TODAY'S BLOCKS — read-only quick view so the adult sees what they're editing */}
+      {!editPlan && liveBlocks.length > 0 && (
+        <Card>
+          <CardHeader className="py-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <span aria-hidden>🗓️</span>
+              Current schedule for {date}
+              <span className="text-xs font-normal opacity-60">({liveBlocks.length} blocks)</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="space-y-1">
+              {liveBlocks.map(b => (
+                <BlockLine key={b.id} b={b} kind="same" />
+              ))}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* MANUAL BLOCK EDITOR — demoted to collapsible "Advanced" footer */}
+      <details className="rounded-lg border border-border/60 bg-card/30">
+        <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium opacity-80 hover:opacity-100">
+          ⚙️ Advanced — manual block editor
+          <span className="ml-2 text-xs opacity-60">(prefer the AI box above for everyday changes)</span>
+        </summary>
+        <div className="border-t border-border/60 p-4 space-y-3">
+          <div className="flex items-center justify-end">
             <Button
               size="sm"
               onClick={() => blockCreateM.mutate({ date, title: "New block", blockType: "custom" as any, durationMin: 30 })}
@@ -307,8 +345,6 @@ export default function AgendaEditor() {
               {blockCreateM.isPending ? "Adding…" : "+ Add block"}
             </Button>
           </div>
-        </CardHeader>
-        <CardContent>
           {snapQ.isLoading ? (
             <div className="opacity-60 text-sm">Loading…</div>
           ) : liveBlocks.length === 0 ? (
@@ -336,8 +372,8 @@ export default function AgendaEditor() {
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </details>
     </div>
   );
 }

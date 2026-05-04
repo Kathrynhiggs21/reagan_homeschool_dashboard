@@ -2405,3 +2405,12 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] Added blocks.createForDate tRPC mutation (auto-ensures plan, appends at end)
 - [x] Added "+ Add block" button in AgendaEditor manual grid card header
 - [x] Vitest covering blocks.createForDate (3 tests, passing)
+
+
+## 2026-05-04 — Agenda Editor AI-first redesign (DONE)
+- [x] Widened system prompt to handle tutor swaps, push-to-tomorrow, topic swaps, vibe edits, brain breaks, uniform durations
+- [x] Big central chat box with ⌘/Ctrl+Enter to send, larger placeholder examples
+- [x] Manual grid demoted into collapsible "⚙️ Advanced" footer
+- [x] Read-only quick view of current schedule when no preview is active
+- [x] 10 sample chips (tutor not here, swap topic, every block 20 min, etc.)
+- [x] 5 new vitests covering tutor, push, topic swap, uniform duration, brain break

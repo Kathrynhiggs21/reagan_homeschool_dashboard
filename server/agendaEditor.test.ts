@@ -161,3 +161,87 @@ describe("applyEditPlanInMemory", () => {
     expect(after[2].title).toBe("Adventure");
   });
 });
+
+
+describe("AI-first instruction patterns (validator/applier)", () => {
+  it("tutor-not-here: ops=[] is left as a safe no-op (warnings carry the message)", () => {
+    // This is what the LLM should emit per the system prompt for unsalvageable
+    // tutor unavailability. The validator must accept ops=[] and the applier
+    // must keep the day untouched.
+    const c = ctx([block(1), block(2), block(3)]);
+    const plan: AgendaEditPlan = {
+      summary: "Tutor unavailable — recommend pushing the day.",
+      intent: "bulk",
+      ops: [],
+      warnings: ["Tutor unavailable — use 'Push day to tomorrow' in the schedule view."],
+    };
+    const validated = validateEditPlan(plan, c);
+    expect(validated.ops).toEqual([]);
+    expect(validated.warnings.some(w => w.toLowerCase().includes("tutor"))).toBe(true);
+    const after = applyEditPlanInMemory(c, validated);
+    expect(after.map(b => b.id)).toEqual([1, 2, 3]);
+  });
+
+  it("push-to-tomorrow: bulk ops=[] leaves blocks intact (cross-day move handled elsewhere)", () => {
+    const c = ctx([block(1), block(2)]);
+    const plan: AgendaEditPlan = {
+      summary: "Cross-day move requested.",
+      intent: "bulk",
+      ops: [],
+      warnings: ["Use the schedule's reschedule action to move the day."],
+    };
+    const after = applyEditPlanInMemory(c, validateEditPlan(plan, c));
+    expect(after.map(b => b.id)).toEqual([1, 2]);
+  });
+
+  it("topic swap: single update op changes curriculumTopicCode without touching siblings", () => {
+    const c = ctx([
+      block(1, { curriculumTopicCode: "M.1", title: "Place value warm-up" }),
+      block(2, { curriculumTopicCode: "M.1" }),
+    ]);
+    const plan: AgendaEditPlan = {
+      summary: "Swap topic on block 1",
+      intent: "surgical",
+      ops: [{ kind: "update", id: 1, curriculumTopicCode: "ELA.2", subjectSlug: "ela", title: "Theme study" }],
+      warnings: [],
+    };
+    const validated = validateEditPlan(plan, c);
+    expect((validated.ops[0] as any).curriculumTopicCode).toBe("ELA.2");
+    const after = applyEditPlanInMemory(c, validated);
+    expect(after[0].curriculumTopicCode).toBe("ELA.2");
+    expect(after[0].subjectSlug).toBe("ela");
+    expect(after[0].title).toBe("Theme study");
+    expect(after[1].curriculumTopicCode).toBe("M.1"); // sibling untouched
+  });
+
+  it("uniform durations: per-block updates each set to 20 minutes", () => {
+    const c = ctx([block(1, { durationMin: 30 }), block(2, { durationMin: 45 }), block(3, { durationMin: 15 })]);
+    const plan: AgendaEditPlan = {
+      summary: "Every block 20 min",
+      intent: "bulk",
+      ops: [
+        { kind: "update", id: 1, durationMin: 20 },
+        { kind: "update", id: 2, durationMin: 20 },
+        { kind: "update", id: 3, durationMin: 20 },
+      ],
+      warnings: [],
+    };
+    const after = applyEditPlanInMemory(c, validateEditPlan(plan, c));
+    expect(after.map(b => b.durationMin)).toEqual([20, 20, 20]);
+  });
+
+  it("brain-break add: insert before lunch via afterBlockId on the prior block", () => {
+    const c = ctx([
+      block(1, { title: "Math", startTime: "09:00" }),
+      block(2, { title: "Lunch", startTime: "12:00", blockType: "appointment" }),
+    ]);
+    const plan: AgendaEditPlan = {
+      summary: "Brain break before lunch",
+      intent: "add",
+      ops: [{ kind: "insert", title: "Brain break", blockType: "choice", durationMin: 10, afterBlockId: 1 }],
+      warnings: [],
+    };
+    const after = applyEditPlanInMemory(c, validateEditPlan(plan, c));
+    expect(after.map(b => b.title)).toEqual(["Math", "Brain break", "Lunch"]);
+  });
+});
