@@ -146,6 +146,21 @@ const adminRouter = router({
       } finally { await p.end(); }
     }),
 });
+
+/* Block-edit gate for the tutor co-pilot tools.
+   Admin: always allowed.
+   Tutor: allowed only when a tutor is scheduled for the block's plan date. */
+async function assertAdultOrTutorOfBlock(ctx: any, blockId: number) {
+  const role = ctx?.user?.role;
+  if (role !== "admin" && role !== "tutor") throw new Error("forbidden");
+  if (role === "admin") return;
+  const blk: any = await db.getBlock(blockId);
+  if (!blk) throw new Error("Block not found");
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const tod = await resolveTutorOfDay(dateStr).catch(() => null);
+  if (!tod) throw new Error("No tutor scheduled for that day; only an admin may edit.");
+}
+
 export const appRouter = router({
   system: systemRouter,
   admin: adminRouter,
@@ -1269,6 +1284,84 @@ export const appRouter = router({
       const replyText: string = typeof raw === "string" ? raw : (raw as any[]).map((c: any) => c.text || "").join("");
       try { await db.insertAdultAiMessage({ role: "assistant", content: replyText }); } catch {}
       return { reply: replyText, dateStr, tutorOfDay, pendingRequestCount: pendingRequests.length };
+    }),
+
+    /* ---- Tutor / admin block-edit tools (callable from chat UI) ---- */
+    swapBlock: protectedProcedure.input(z.object({
+      blockId: z.number(),
+      newTitle: z.string().min(1).max(200),
+      newDurationMin: z.number().int().min(5).max(180).optional(),
+      newCurriculumTopicCode: z.string().optional(),
+      reason: z.string().max(500).optional(),
+    })).mutation(async ({ input, ctx }) => {
+      await assertAdultOrTutorOfBlock(ctx, input.blockId);
+      const reasonNote = input.reason ? `\n[swap by ${ctx.user?.name || "adult"}: ${input.reason}]` : `\n[swap by ${ctx.user?.name || "adult"}]`;
+      const patch: any = { title: input.newTitle, notes: reasonNote };
+      if (input.newDurationMin) patch.durationMin = input.newDurationMin;
+      if (input.newCurriculumTopicCode) {
+        const newId = await resolveTopicId(input.newCurriculumTopicCode);
+        if (newId) patch.curriculumTopicId = newId;
+      }
+      await db.updateBlock(input.blockId, patch);
+      try { await db.insertAdultAiMessage({ role: "assistant", content: `[swap] block #${input.blockId} → “${input.newTitle}”${input.reason ? " — " + input.reason : ""}`, actorOpenId: ctx.user?.openId, actorName: ctx.user?.name }); } catch {}
+      return { ok: true };
+    }),
+    softenBlock: protectedProcedure.input(z.object({
+      blockId: z.number(),
+      reduceMinutesBy: z.number().int().min(5).max(60).default(10),
+      noteSuffix: z.string().max(200).optional(),
+    })).mutation(async ({ input, ctx }) => {
+      await assertAdultOrTutorOfBlock(ctx, input.blockId);
+      const blk: any = await db.getBlock(input.blockId);
+      if (!blk) throw new Error("Block not found");
+      const newDuration = Math.max(5, (blk.durationMin || 30) - input.reduceMinutesBy);
+      const note = input.noteSuffix ? `${blk.title} — lighter version (${input.noteSuffix})` : `${blk.title} — lighter version`;
+      const auditNote = `\n[softened by ${ctx.user?.name || "adult"}: -${input.reduceMinutesBy}min]`;
+      await db.updateBlock(input.blockId, { title: note, durationMin: newDuration, notes: ((blk.notes || "") + auditNote).trim() });
+      return { ok: true, newDuration };
+    }),
+    postponeBlock: protectedProcedure.input(z.object({
+      blockId: z.number(),
+      toDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    })).mutation(async ({ input, ctx }) => {
+      await assertAdultOrTutorOfBlock(ctx, input.blockId);
+      const blk: any = await db.getBlock(input.blockId);
+      if (!blk) throw new Error("Block not found");
+      const targetPlan = await db.ensurePlanForDate(input.toDate, { source: "manual" });
+      const auditNote = `\n[postponed to ${input.toDate} by ${ctx.user?.name || "adult"}]`;
+      await db.updateBlock(input.blockId, { planId: targetPlan.id, status: "not_started", notes: ((blk.notes || "") + auditNote).trim() });
+      return { ok: true, movedTo: input.toDate };
+    }),
+    addBlock: protectedProcedure.input(z.object({
+      dateStr: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      title: z.string().min(1).max(200),
+      subjectSlug: z.string().min(1),
+      curriculumTopicCode: z.string().min(1),
+      durationMin: z.number().int().min(5).max(180).default(20),
+      startTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const role = (ctx.user as any)?.role;
+      if (role !== "admin" && role !== "tutor") throw new Error("forbidden");
+      if (role === "tutor") {
+        const today = new Date().toISOString().slice(0, 10);
+        if (input.dateStr !== today) throw new Error("Tutors can only add blocks for today's date.");
+        const tod = await resolveTutorOfDay(input.dateStr);
+        if (!tod) throw new Error("No tutor scheduled today; only an admin may add blocks.");
+      }
+      const newTopicId = await resolveTopicId(input.curriculumTopicCode);
+      if (!newTopicId) throw new Error(`Unknown curriculum topic code: ${input.curriculumTopicCode}`);
+      const plan = await db.ensurePlanForDate(input.dateStr, { source: "manual" });
+      const blockId = await db.createBlock({
+        planId: plan.id,
+        title: input.title,
+        subjectSlug: input.subjectSlug,
+        curriculumTopicId: newTopicId,
+        durationMin: input.durationMin,
+        startTime: input.startTime || null,
+        status: "not_started",
+        notes: `[added by ${ctx.user?.name || role} via adult AI]`,
+      } as any);
+      return { ok: true, blockId };
     }),
   }),
 
