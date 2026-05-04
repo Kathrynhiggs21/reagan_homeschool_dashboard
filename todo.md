@@ -2391,3 +2391,10 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] Insert "🧭 Build a Compass + Degrees" → 690011
 - [x] Insert "🎬 Planets Recap — rewatch" → 690012
 - [x] Library entries 90006 + 90007
+
+
+## 2026-05-05 (TOMORROW) plan — angles & degrees (DONE — v3 with flashcards + pg 148)
+- [x] 9 blocks: warm-up → flashcards study → pg148 review → pizza-wheel spinner → protractor worksheet → lunch → Spectrum 149–151 → video recap → reflection
+- [x] 8-shape printable flashcards generated (circle→nonagon, both sides) at /manus-storage/shape_flashcards_081b30a9.pdf
+- [x] Reagan's pg 148 photo uploaded at /manus-storage/spectrum_g5_pg148_pretest_ch8_49d81c6d.jpg
+- [x] Library entries 90008–90012 pinned to 2026-05-05
