@@ -104,6 +104,18 @@ export default function DailyPacket() {
                           size="xs"
                         />
                       </div>
+                      {Array.isArray(b.pageRefs) && b.pageRefs.length > 0 && (
+                        <ul className="mt-2 text-sm space-y-0.5">
+                          {b.pageRefs.map((pr: any, idx: number) => (
+                            <li key={`${pr.bookId}-${idx}`} className="flex items-center gap-1">
+                              <span aria-hidden="true">📖</span>
+                              <span className="font-semibold">{pr.bookTitle || "Reading"}</span>
+                              <span className="opacity-80">· pg {pr.fromPage}{pr.toPage && pr.toPage !== pr.fromPage ? `–${pr.toPage}` : ""}</span>
+                              {pr.notes ? <span className="opacity-70"> — {pr.notes}</span> : null}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                       {b.description && (
                         <p className="text-sm mt-2 leading-snug">{b.description}</p>
                       )}

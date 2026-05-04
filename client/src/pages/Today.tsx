@@ -508,6 +508,27 @@ export default function Today() {
                   <div className="mt-1">
                     <TopicLabel subjectSlug={b.subjectSlug} topicName={b.curriculumTopicName ?? null} size="xs" />
                   </div>
+                  {/* Page references — Mom asked May 2026 to surface
+                      "📖 Tuck Everlasting · pg 24–28" on every block. The
+                      backend now joins bookAssignments into listBlocksForPlan,
+                      so b.pageRefs is an array of { bookTitle, fromPage, toPage, notes }. */}
+                  {Array.isArray(b.pageRefs) && b.pageRefs.length > 0 && (
+                    <div className="mt-1 flex flex-wrap gap-1.5" aria-label="Reading pages for this block">
+                      {b.pageRefs.map((pr: any, idx: number) => (
+                        <span
+                          key={`${pr.bookId}-${idx}`}
+                          className="inline-flex items-center gap-1 rounded-md bg-amber-300/15 border border-amber-300/35 px-2 py-0.5 text-[11px] font-semibold text-amber-50"
+                          title={pr.notes || undefined}
+                        >
+                          <span aria-hidden="true">📖</span>
+                          <span className="truncate max-w-[220px]">
+                            {pr.bookTitle || "Reading"}
+                          </span>
+                          <span className="opacity-90">· pg {pr.fromPage}{pr.toPage && pr.toPage !== pr.fromPage ? `–${pr.toPage}` : ""}</span>
+                        </span>
+                      ))}
+                    </div>
+                  )}
                   {(() => {
                     const slug2 = detectSubjectSlug(b);
                     const matches = findAllPrintablesForSubject(printableItems, slug2, 3);

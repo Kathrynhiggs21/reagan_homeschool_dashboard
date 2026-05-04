@@ -1264,6 +1264,37 @@ export async function updateAssignmentSubmission(id: number, patch: Partial<type
   await db.update(assignmentSubmissions).set(patch).where(eq(assignmentSubmissions.id, id));
 }
 
+/**
+ * Search every turn-in by free text across title, contentText, subjectSlug,
+ * adultNotes. Mom asked May 2026: the curriculum page recents-table is
+ * deliberately tiny (5 rows), but the search box above it must hit the
+ * full archive — not just the loaded page. Case-insensitive substring.
+ */
+export async function searchAssignmentSubmissions(q: string, limit = 25) {
+  const db = getDb();
+  const needle = q.trim().toLowerCase();
+  if (!needle) return [];
+  const rows = await db.select().from(assignmentSubmissions).orderBy(desc(assignmentSubmissions.submittedAt)).limit(500);
+  const matches = (rows as any[]).filter((r) => {
+    const hay = [r.title, r.contentText, r.subjectSlug, r.adultNotes, r.autoFeedback]
+      .map((v) => (v ? String(v).toLowerCase() : ""))
+      .join(" \u0001 ");
+    return hay.includes(needle);
+  });
+  return matches.slice(0, limit);
+}
+
+/**
+ * List ungraded turn-ins (no autoScore yet). Used by the "Grade everything
+ * I can" back-fill button so we don't repeatedly hit the LLM for already-
+ * graded rows.
+ */
+export async function listUngradedSubmissions(limit = 100) {
+  const db = getDb();
+  const rows = await db.select().from(assignmentSubmissions).orderBy(desc(assignmentSubmissions.submittedAt)).limit(500);
+  return (rows as any[]).filter((r) => r.autoScore == null && !r.readingOnly).slice(0, limit);
+}
+
 
 /* ========================================================================== */
 /*  Phase 5: grade -> skillsMastery + per-subject rolling grade               */

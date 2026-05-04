@@ -95,13 +95,31 @@ export function registerCalendarFeed(app: Express) {
         }
       } catch {}
 
-      // === Today's schedule blocks (one-time entries, Reagan regenerates each day) ===
+      // === Schedule blocks for the next 14 days (Mom asked May 2026 so the
+      // Google Calendar subscription actually shows tomorrow + the rest of the
+      // week, not just today). We pull every plan that already exists in the
+      // window. We do NOT auto-create plans here — ensurePlanForDate runs from
+      // the kid view / nightly agenda; the iCal feed is read-only.) ===
       try {
-        const todayPlan = await (db as any).getOrCreateTodayPlan?.();
-        if (todayPlan?.id) {
-          const blocks: any[] = await db.listBlocksForPlan(todayPlan.id);
-          const today = new Date();
-          const y = today.getFullYear(), m = today.getMonth(), day = today.getDate();
+        const today = new Date();
+        for (let offset = 0; offset < 14; offset++) {
+          const target = new Date(today.getFullYear(), today.getMonth(), today.getDate() + offset);
+          const dateStr =
+            target.getFullYear().toString() + "-" +
+            pad(target.getMonth() + 1) + "-" +
+            pad(target.getDate());
+          let plan: any = null;
+          try {
+            plan = await (db as any).getPlanByDate?.(dateStr);
+          } catch {}
+          if (offset === 0 && !plan) {
+            // Fall back to today's auto-generated plan so weekday users always see something.
+            try { plan = await (db as any).getOrCreateTodayPlan?.(); } catch {}
+          }
+          if (!plan?.id) continue;
+          let blocks: any[] = [];
+          try { blocks = await db.listBlocksForPlan(plan.id); } catch { blocks = []; }
+          if (!blocks.length) continue;
           let defaultStartMin = 9 * 60; // 9:00 AM default
           for (const b of blocks) {
             let hh = Math.floor(defaultStartMin / 60), mm = defaultStartMin % 60;
@@ -109,15 +127,19 @@ export function registerCalendarFeed(app: Express) {
               const [h2, m2] = String(b.startTime).split(":").map((x: string) => parseInt(x, 10));
               if (Number.isFinite(h2)) { hh = h2; mm = m2 || 0; }
             }
-            const start = new Date(y, m, day, hh, mm, 0);
+            const start = new Date(target.getFullYear(), target.getMonth(), target.getDate(), hh, mm, 0);
             const end = new Date(start.getTime() + ((b.minutes || 30) * 60 * 1000));
+            const descParts: string[] = [];
+            if (b.description) descParts.push(b.description);
+            if (b.pageRefs) descParts.push(`Pages: ${b.pageRefs}`);
+            if (b.curriculumTopicCode) descParts.push(`Topic: ${b.curriculumTopicCode}`);
             lines.push("BEGIN:VEVENT");
-            lines.push(`UID:block-${b.id}@reagans-classroom`);
+            lines.push(`UID:block-${plan.id}-${b.id}@reagans-classroom`);
             lines.push(`DTSTAMP:${toIcsDateLocal(new Date())}Z`);
             lines.push(`DTSTART:${toIcsDateLocal(start)}`);
             lines.push(`DTEND:${toIcsDateLocal(end)}`);
-            lines.push(`SUMMARY:${escText(b.title || b.slug || "Block")}`);
-            if (b.description) lines.push(`DESCRIPTION:${escText(b.description)}`);
+            lines.push(`SUMMARY:${escText((b.subjectEmoji ? b.subjectEmoji + " " : "") + (b.title || b.slug || "Block"))}`);
+            if (descParts.length) lines.push(`DESCRIPTION:${escText(descParts.join("\n"))}`);
             if (b.slug) lines.push(`CATEGORIES:${escText(b.slug)}`);
             lines.push("END:VEVENT");
             defaultStartMin += (b.minutes || 30) + 5;

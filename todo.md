@@ -2292,3 +2292,14 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Auto-show first time on Today, "Replay tour" button in sidebar / Apps
 - [ ] Persist `tourSeen` in localStorage + a "Restart tour" entry in Settings → People
 - [ ] Cover topics: Today blocks, Coins, Practice, Apps, Adventures, Notebook, Print, Ask Kiwi (how to ask AI)
+
+
+## /api/calendar.ics public feed (May 2026)
+- [ ] Express route `/api/calendar.ics` returns valid VCALENDAR feed of upcoming days' blocks
+- [ ] Includes title, description, time, subject, page refs
+- [ ] Surface feed URL inside Settings → Calendar so Mom can copy it
+- [ ] Verify Google Calendar can pull from `https://reaganschool.manus.space/api/calendar.ics`
+
+## Audit fix #3 (block detail drawer) + #6 (pencil-draw quick button)
+- [ ] BlockDetailDrawer links to: matched worksheet, packet PDF, kid videos, "draw on it" Apple-Pencil mode
+- [ ] One-tap "✏️ Draw on this worksheet" button on every Today block that has a printable

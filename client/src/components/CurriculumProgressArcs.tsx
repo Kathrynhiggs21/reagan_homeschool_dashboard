@@ -1,5 +1,9 @@
+import { useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import { subjectMeta } from "@/components/TopicLabel";
 
 /**
@@ -88,34 +92,140 @@ export default function CurriculumProgressArcs() {
         </div>
       )}
 
-      <div className="border-t pt-3">
-        <div className="font-semibold text-sm mb-2">Recent turn-ins</div>
-        {recent.isLoading ? (
-          <div className="text-xs text-muted-foreground">Loading…</div>
-        ) : recentRows.length === 0 ? (
-          <div className="text-xs text-muted-foreground italic">No turn-ins yet.</div>
+      <RecentTurnInsTable />
+    </Card>
+  );
+}
+
+/**
+ * RecentTurnInsTable
+ *
+ * Mom asked May 2026 to:
+ *   - reset the existing recents stream and start clean,
+ *   - keep the visible list tiny (5 rows in a scrollable mini-table),
+ *   - have a search bar above it that searches EVERY turn-in (not just
+ *     the visible 5),
+ *   - AI-grade every turn-in to the best of its ability.
+ *
+ * Continuous Drive sync mirrors the same data into Reagan School Hub /
+ * Finished Work, so this table doesn't need a separate Drive button.
+ */
+function RecentTurnInsTable() {
+  const utils = trpc.useUtils();
+  const recent = trpc.submissions.recent.useQuery({ limit: 5 });
+  const [q, setQ] = useState("");
+  const search = trpc.submissions.searchAll.useQuery(
+    { q, limit: 25 },
+    { enabled: q.trim().length >= 2 },
+  );
+  const ungradedQ = trpc.submissions.listUngraded.useQuery({ limit: 50 });
+  const archive = trpc.submissions.archiveAllRecents.useMutation({
+    onSuccess: (r) => {
+      toast.success(`Archived ${r.archived} turn-ins. Search still finds them.`);
+      utils.submissions.recent.invalidate();
+      utils.submissions.searchAll.invalidate();
+    },
+  });
+  const gradeAll = trpc.submissions.gradeAllUngraded.useMutation({
+    onSuccess: (r) => {
+      toast.success(`AI graded ${r.graded} of ${r.total} (skipped ${r.skipped}, failed ${r.failed}).`);
+      utils.submissions.recent.invalidate();
+      utils.submissions.listUngraded.invalidate();
+    },
+    onError: (e) => toast.error(`Grader hiccup: ${e.message}`),
+  });
+
+  const showRows: any[] = useMemo(() => {
+    if (q.trim().length >= 2) return (search.data as any[]) ?? [];
+    // Hide archived rows from the recents-only view.
+    return ((recent.data as any[]) ?? []).filter((r) => !String(r.adultNotes || "").includes("archived=1"));
+  }, [q, recent.data, search.data]);
+
+  const ungradedCount = ((ungradedQ.data as any[]) ?? []).length;
+
+  return (
+    <div className="border-t pt-3 space-y-2">
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="font-semibold text-sm">Recent turn-ins</div>
+        <span className="text-[10px] text-muted-foreground">(showing 5; search hits all)</span>
+        <div className="ml-auto flex items-center gap-1">
+          {ungradedCount > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 px-2 text-xs"
+              onClick={() => gradeAll.mutate({ max: 20 })}
+              disabled={gradeAll.isPending}
+            >
+              🤖 AI grade {ungradedCount}
+            </Button>
+          )}
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+            onClick={() => {
+              if (window.confirm("Archive every recent turn-in? They stay searchable forever; the visible list resets.")) {
+                archive.mutate();
+              }
+            }}
+            disabled={archive.isPending}
+          >
+            Reset
+          </Button>
+        </div>
+      </div>
+
+      <Input
+        type="search"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder="Search every turn-in (title, answers, subject, notes)…"
+        className="h-8 text-xs"
+        aria-label="Search every turn-in"
+      />
+
+      <div className="rounded-md border bg-white/60 dark:bg-white/5 max-h-[220px] overflow-y-auto">
+        {(recent.isLoading || (q.trim().length >= 2 && search.isLoading)) ? (
+          <div className="p-2 text-xs text-muted-foreground">Loading…</div>
+        ) : showRows.length === 0 ? (
+          <div className="p-3 text-xs text-muted-foreground italic">
+            {q.trim().length >= 2 ? "No turn-ins match that search." : "No turn-ins yet."}
+          </div>
         ) : (
-          <ul className="space-y-1.5 text-xs">
-            {recentRows.map((r) => {
-              const meta = subjectMeta(r.subjectSlug);
-              const when = r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "";
-              return (
-                <li key={r.id} className="flex items-center gap-2 py-0.5">
-                  <span className="inline-block w-2 h-2 rounded-full" style={{ background: meta.color }} aria-hidden />
-                  <span style={{ color: meta.color }} className="font-semibold">{meta.label}</span>
-                  <span className="opacity-50">·</span>
-                  <span className="flex-1 truncate">{r.title}</span>
-                  {r.readingOnly && <span className="text-[10px] px-1 py-0.5 rounded bg-blue-100 text-blue-800">📖 read</span>}
-                  {r.kidDifficulty && (
-                    <span className="text-[10px] px-1 py-0.5 rounded bg-amber-100 text-amber-800">{r.kidDifficulty.replace("_"," ")}</span>
-                  )}
-                  <span className="opacity-60 tabular-nums">{when}</span>
-                </li>
-              );
-            })}
-          </ul>
+          <table className="w-full text-xs">
+            <thead className="sticky top-0 bg-background/95 backdrop-blur">
+              <tr className="text-left text-[10px] uppercase text-muted-foreground">
+                <th className="px-2 py-1">Subject</th>
+                <th className="px-2 py-1">Title</th>
+                <th className="px-2 py-1">Grade</th>
+                <th className="px-2 py-1 tabular-nums">When</th>
+              </tr>
+            </thead>
+            <tbody>
+              {showRows.map((r) => {
+                const meta = subjectMeta(r.subjectSlug || "");
+                const when = r.submittedAt ? new Date(r.submittedAt).toLocaleDateString() : (r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "");
+                const score = r.autoScore != null ? `${r.autoLetter || ""} ${r.autoScore}` : (r.readingOnly ? "✓ read" : "—");
+                return (
+                  <tr key={r.id} className="border-t hover:bg-muted/40">
+                    <td className="px-2 py-1 whitespace-nowrap">
+                      <span className="inline-block w-2 h-2 rounded-full mr-1 align-middle" style={{ background: meta.color }} aria-hidden />
+                      <span style={{ color: meta.color }} className="font-semibold">{meta.label}</span>
+                    </td>
+                    <td className="px-2 py-1 max-w-[260px] truncate">{r.title || "(untitled)"}</td>
+                    <td className="px-2 py-1 whitespace-nowrap tabular-nums">{score}</td>
+                    <td className="px-2 py-1 whitespace-nowrap tabular-nums opacity-70">{when}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         )}
       </div>
-    </Card>
+      <p className="text-[10px] text-muted-foreground">
+        Continuous Drive sync mirrors every turn-in into <span className="font-mono">Reagan School Hub / Finished Work</span> automatically.
+      </p>
+    </div>
   );
 }

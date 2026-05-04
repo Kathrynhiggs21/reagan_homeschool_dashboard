@@ -2038,6 +2038,84 @@ export const appRouter = router({
       return { autoScore: pct, letter, feedback };
     }),
     subjectGrades: publicProcedure.query(() => db.subjectRollingGrades()),
+    /**
+     * Recent turn-ins (compact). Default limit is 5 because the Curriculum
+     * page now shows them in a tight scroll-table; the search bar uses
+     * `searchAll` to query the full archive.
+     */
+    recent: publicProcedure
+      .input(z.object({ limit: z.number().min(1).max(50).default(5) }).optional())
+      .query(({ input }) => db.listAssignmentSubmissions(input?.limit ?? 5)),
+    /** Free-text search across every turn-in (title / answers / notes / feedback). */
+    searchAll: publicProcedure
+      .input(z.object({ q: z.string(), limit: z.number().min(1).max(50).default(25) }))
+      .query(({ input }) => db.searchAssignmentSubmissions(input.q, input.limit)),
+    /** List ungraded turn-ins; used by the back-fill grader. */
+    listUngraded: publicProcedure
+      .input(z.object({ limit: z.number().min(1).max(200).default(50) }).optional())
+      .query(({ input }) => db.listUngradedSubmissions(input?.limit ?? 50)),
+    /**
+     * Best-effort "grade everything I can" back-fill. Iterates ungraded
+     * submissions and calls autoGrade for each one that has an answer key.
+     * Stops at `max` to bound LLM cost. Reports per-row outcomes.
+     */
+    gradeAllUngraded: protectedProcedure
+      .input(z.object({ max: z.number().min(1).max(50).default(20) }).optional())
+      .mutation(async ({ input }) => {
+        const max = input?.max ?? 20;
+        const ungraded = (await db.listUngradedSubmissions(max)) as any[];
+        let graded = 0; let skipped = 0; let failed = 0;
+        const results: Array<{ id: number; status: string; reason?: string }> = [];
+        for (const sub of ungraded) {
+          try {
+            const key = await db.getAnswerKeyForBlock(sub.blockId);
+            if (!key) { skipped++; results.push({ id: sub.id, status: "skipped", reason: "no answer key" }); continue; }
+            // Re-use the same path as autoGrade.
+            // We avoid an HTTP round-trip by calling the helpers directly.
+            // Minimal text path — image grading is best left to the per-row
+            // "Grade now" button to avoid blasting the LLM in a single request.
+            if (sub.submissionType === "text" && sub.contentText) {
+              const lines = String(sub.contentText).split(/\r?\n/).map((l: string) => l.trim()).filter(Boolean);
+              const questions = (key.questions as any[]) || [];
+              const total = (key.totalPoints as number) || 100;
+              const perQ = questions.length ? Math.floor(total / questions.length) : 0;
+              let score = 0;
+              for (let i = 0; i < questions.length; i++) {
+                const q = questions[i]; const ans = lines[i] || "";
+                if (!ans) continue;
+                if (q.kind === "mc" && q.correct && ans.trim().toLowerCase() === String(q.correct).trim().toLowerCase()) score += perQ;
+                else if (q.kind === "text" && q.correct && ans.trim().toLowerCase() === String(q.correct).trim().toLowerCase()) score += perQ;
+              }
+              const pct = Math.max(0, Math.min(100, Math.round((score / total) * 100)));
+              const letter = pct >= 90 ? "A" : pct >= 80 ? "B" : pct >= 70 ? "C" : pct >= 60 ? "D" : "F";
+              await db.recordAutoGrade({ submissionId: sub.id, autoScore: pct, autoLetter: letter, autoFeedback: "Back-filled by Mom's bulk grade.", answers: {} as any });
+              graded++; results.push({ id: sub.id, status: "graded" });
+            } else {
+              skipped++; results.push({ id: sub.id, status: "skipped", reason: "non-text needs per-row grader" });
+            }
+          } catch (e: any) {
+            failed++; results.push({ id: sub.id, status: "failed", reason: e?.message || "unknown" });
+          }
+        }
+        return { graded, skipped, failed, total: ungraded.length, results };
+      }),
+    /**
+     * Soft-reset the "Recent turn-ins" view: marks every existing submission
+     * with adultNotes containing `[archived=1]` so the UI's recents query
+     * filters them out. Mom can still find them via searchAll.
+     */
+    archiveAllRecents: protectedProcedure.mutation(async () => {
+      const recents = await db.listAssignmentSubmissions(1000);
+      let archived = 0;
+      for (const r of recents as any[]) {
+        const notes = String(r.adultNotes || "");
+        if (notes.includes("archived=1")) continue;
+        const next = notes ? `${notes} [archived=1]` : `[archived=1]`;
+        await db.updateAssignmentSubmission(r.id, { adultNotes: next } as any);
+        archived++;
+      }
+      return { archived };
+    }),
   }),
 
   /* =================== IEP (Goals + Accommodations) =================== */
