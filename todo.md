@@ -2333,3 +2333,41 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] /agenda-editor page: chat input, preview chips, side-by-side diff, Apply + Undo, manual block grid (time/min/title/type/subject/topic/delete)
 - [x] Adult sidebar entry "Agenda Editor" → /agenda-editor
 - [x] 9 vitests for validateEditPlan + applyEditPlanInMemory; full suite 449/450 green (1 skipped)
+
+
+## 2026-05-04 user request — Today = single video lesson
+- [ ] Wipe today's existing scheduleBlocks for May 4 2026
+- [ ] Insert a video-lesson block built around https://youtu.be/fajsyiKRfxI
+- [ ] Tie the block to the saved Plants topic (curriculumTopics)
+- [ ] Tie the block to the saved Angle Signatures topic (curriculumTopics)
+- [ ] Verify on Today + Daily Schedule + Agenda Editor pages
+
+## 2026-05-04 user request — refined (option B)
+- [ ] Locate currently-saved video resource(s) on site that should be replaced by https://youtu.be/fajsyiKRfxI
+- [ ] Update those curriculumResources rows to point at fajsyiKRfxI (Earth's Movements: Rotation & Translation)
+- [ ] Locate or create the saved "Angle Signatures" math topic
+- [ ] Wipe today's 8 scheduleBlocks (planId 360001)
+- [ ] Insert one Video Lesson block for today tied to Plants (Sci 2-1) + Angle Signatures
+- [ ] Verify on Today + Daily Schedule + Agenda Editor
+
+## 2026-05-04 user request — refined v2 (math arc)
+- [ ] Locate or create math topic for "Circles & 360° (vocabulary, parts of a circle)"
+- [ ] Locate or create math topic for "Triangle interior angles sum = 180°"
+- [ ] Update the currently-saved video resource URL to https://youtu.be/fajsyiKRfxI
+- [ ] Wipe today's 8 scheduleBlocks (planId 360001)
+- [ ] Insert today's blocks: (1) Video Lesson watch fajsyiKRfxI ~15 min, (2) Math: 360° circles & circle parts ~25 min, (3) Math: triangles & 180° angle sum ~25 min, (4) Plants tie-in (Sci 2-1) ~20 min
+- [ ] Verify on Today + Daily Schedule + Agenda Editor
+
+## 2026-05-04 user request — FINAL scope (DONE)
+- [x] Find existing "Planets" assignment row → 60004 Weight on Planets
+- [x] Find existing topics → Sci 1-1 Sun/Earth/Moon, Math 8-4 Angles
+- [x] Pin video https://youtu.be/fajsyiKRfxI to today's library
+- [x] Wipe today's 8 scheduleBlocks (planId 360001)
+- [x] Insert today's 7-block lesson plan (warm-up, video, walk-around-the-sun, degrees mini-lesson, body-compass outdoor, color the planets, reflection)
+- [x] Add 4 library entries for today (video, walk-around-sun, body-compass, NASA coloring sheet)
+- [x] Pin saved Planets assignment to today
+- [x] Verify (UI inspection pending — need user refresh)
+
+## 2026-05-04 user request — extra add (locked v3)
+- [ ] Add a "Color the Planets" mini-block to today (with Solar System printable link)
+- [ ] Add a "Flashlight + Globe: day/night, axial tilt, seasons" hands-on block (NASA Space Place + PBS LearningMedia link)
