@@ -2424,33 +2424,33 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Vitest: blocks.reorder + blocks.update startTime
 
 
-## 2026-05-04 — 12-hour AM/PM time + drag-drop in Agenda Editor
-- [ ] Time helper: parse "9:00 AM"/"1:30 PM"/"9am"/"13:00" → "HH:MM"; format "HH:MM" → "9:00 AM"
-- [ ] Use 12-hr in Advanced grid input (placeholder "9:00 AM"), in BlockLine display, and in the Current schedule view
-- [ ] Drag handle + HTML5 dnd on Advanced rows
-- [ ] blocks.reorder mutation (orderedIds) on server + zod schema
-- [ ] Vitest: parseTime12h + blocks.reorder
+## 2026-05-04 — 12-hour AM/PM time + drag-drop in Agenda Editor (DONE)
+- [x] Time helper parseTime12h + formatTime12h
+- [x] 12-hr in Advanced grid + Current schedule + diff preview
+- [x] Drag handle + HTML5 dnd on Advanced rows
+- [x] blocks.reorder + blocks.shiftDay mutations
+- [x] 6 vitests; full suite 467 passed
 
 
 ## 2026-05-04 — five new adult asks
-- [ ] Kiwi voice error — diagnose from browser console + fix
-- [ ] Whole-day start-time shifter on Agenda Editor (one input, cascades)
+- [x] Kiwi voice error — routed to neural Gemini TTS (Leda); audible by default
+- [x] Whole-day start-time shifter on Agenda Editor (±5/±15 buttons)
 - [ ] AI agenda chat: file/image upload (assignment, worksheet) and "create custom worksheet" op
 - [ ] Settings page AI assistant (chat that toggles theme, quiet hours, tutor swap, …)
-- [ ] (in-flight) finish drag-and-drop in Advanced + 12-hour AM/PM time switch
+- [x] Drag-and-drop reorder in Advanced + 12-hr AM/PM time everywhere
 
 
-## 2026-05-04 — Kiwi voice neural TTS (sounds robotic)
-- [ ] Add server `kiwi.tts` endpoint using Gemini TTS or OpenAI TTS (Anthropic SDK in env)
-- [ ] Cache audio per text-hash in storage (avoid re-synthesizing same line)
-- [ ] Pick a natural tween-girl voice (gemini "Zephyr" / openai "shimmer" / "nova")
-- [ ] Wire client speakLikeBird to fetch + play audio (fallback to browser TTS if 5xx)
-- [ ] Vitest for tts route
+## 2026-05-04 — Kiwi voice neural TTS (DONE)
+- [x] Routed Kiwi through existing Gemini TTS (kiwi.voice mutation, Leda voice)
+- [x] Cached audio handled by existing cartoonVoice pipeline
+- [x] speakLikeBird now fetches + plays the Gemini WAV; browser TTS only as fallback
+- [x] Default-on (no more silent kiwiSilent default)
+- [x] Existing voice tests stay green (20 cases)
 
 
-## 2026-05-04 — Wake-word + livelier Kiwi
-- [ ] Rename Settings toggle to "Wake word ('Hi Kiwi')" with clear hint
-- [ ] Same toggle visible inside Reagan's Kiwi chat popup header
-- [ ] More micro-actions on KiwiPerch (peck, stretch, head-tilt)
-- [ ] Occasional flock visit pop-ins (Blue / Daffy / Honk)
-- [ ] Tap → small "fly across" animation
+## 2026-05-04 — Wake-word + livelier Kiwi (DONE except fly-across)
+- [x] Renamed Settings toggle to "Wake word ('Hi Kiwi')" with hint
+- [x] Same toggle visible inside Reagan's Kiwi chat popup header (small ear icon)
+- [x] Extra micro-actions on KiwiPerch (peck, stretch, head-tilt added)
+- [x] Occasional flock visit pop-ins (Blue / Daffy / Honk) via cameo system
+- [ ] Tap → small "fly across" animation (still TODO)

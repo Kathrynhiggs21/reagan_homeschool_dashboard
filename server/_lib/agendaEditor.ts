@@ -94,8 +94,26 @@ The adult talks to you like a friend, not a form. They will say things like:
   - "Mom can't tutor, swap with Grandma"                    (tutor swap)
   - "drop the catch-up block"        (remove)
   - "add a 30-min adventure after lunch"   (add)
+  - "here's a worksheet she just got — work it into today"  (uploaded image/PDF)
+  - "make a 1-page worksheet on multiplying fractions"   (asks you to create one)
 
-You receive (1) the current day's blocks as JSON and (2) the adult instruction.
+The adult may attach a file (image or PDF). When attached, treat it as either:
+  (a) an existing worksheet/assignment they want scheduled → emit one insert op
+      with title="Work the attached worksheet: <subject/topic>",
+      blockType="math"|"adventure"|... matching the worksheet, durationMin=20–40.
+      Put a 1-sentence description that names the worksheet contents.
+  (b) a reference image (e.g. a photo of a textbook page she's on) → use it to
+      infer the right subject/topic and adapt the existing block instead of
+      adding one. Add a warning citing the page if obvious ("Looks like
+      Spectrum Math pg 148").
+
+When the adult asks you to *create* a worksheet, emit one insert op with
+blockType="custom", title="Custom worksheet: <topic>", durationMin=20–30,
+and put the worksheet body (3–6 questions) into description as plain text.
+Do NOT generate file URLs.
+
+You receive (1) the current day's blocks as JSON, (2) the adult instruction,
+and optionally (3) an attached file.
 You return ONLY a JSON object matching this exact schema:
 
 {
@@ -347,10 +365,15 @@ export function applyEditPlanInMemory(
 
 /**
  * Ask the LLM for an edit plan. Caller is expected to validate + preview.
+ *
+ * @param attachment optional image/pdf the adult attached (S3 URL + mime type).
+ *                   When present it is added to the user message as multimodal
+ *                   content so the LLM can read the worksheet/page directly.
  */
 export async function generateAgendaEditPlan(
   ctx: AgendaPlanContext,
   instruction: string,
+  attachment?: { url: string; mimeType: string },
 ): Promise<AgendaEditPlan> {
   const userMsg = [
     `Date: ${ctx.dayLabel} (${ctx.date})`,
@@ -366,10 +389,19 @@ export async function generateAgendaEditPlan(
     `Adult instruction: ${instruction}`,
   ].join("\n");
 
+  const userContent: any = attachment
+    ? [
+        { type: "text", text: userMsg },
+        attachment.mimeType.startsWith("image/")
+          ? { type: "image_url", image_url: { url: attachment.url, detail: "high" } }
+          : { type: "file_url", file_url: { url: attachment.url, mime_type: attachment.mimeType } },
+      ]
+    : userMsg;
+
   const resp = await invokeLLM({
     messages: [
       { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: userMsg },
+      { role: "user", content: userContent },
     ],
     response_format: {
       type: "json_schema",

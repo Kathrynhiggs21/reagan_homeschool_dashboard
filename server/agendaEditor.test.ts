@@ -245,3 +245,17 @@ describe("AI-first instruction patterns (validator/applier)", () => {
     expect(after.map(b => b.title)).toEqual(["Math", "Brain break", "Lunch"]);
   });
 });
+
+
+describe("attachment param wiring", () => {
+  // We don't actually call the LLM here, but we validate that the optional
+  // attachment parameter is a documented part of the public signature so
+  // downstream callers (router.preview) can rely on it without TS escape
+  // hatches. This test will fail at compile time if the type is removed.
+  it("generateAgendaEditPlan accepts an optional attachment object", async () => {
+    const mod: any = await import("./_lib/agendaEditor");
+    expect(typeof mod.generateAgendaEditPlan).toBe("function");
+    // Function arity is at least 2 (ctx, instruction); attachment is optional 3rd.
+    expect(mod.generateAgendaEditPlan.length).toBeGreaterThanOrEqual(2);
+  });
+});

@@ -608,6 +608,10 @@ export const appRouter = router({
     preview: protectedProcedure.input(z.object({
       date: z.string(),
       instruction: z.string().min(1).max(2000),
+      // Optional file the adult attached. Either a public S3 URL
+      // (returned by agendaEditor.uploadAttachment) or a /manus-storage path.
+      attachmentUrl: z.string().url().or(z.string().startsWith("/manus-storage/")).optional(),
+      attachmentMimeType: z.string().regex(/^[\w.+-]+\/[\w.+-]+$/).optional(),
     })).mutation(async ({ input }) => {
       const plan = await db.getPlanByDate(input.date);
       const blocks = plan ? await db.listBlocksForPlan(plan.id) : [];
@@ -640,7 +644,10 @@ export const appRouter = router({
         subjects,
         topicCatalog: topicCatalog.map(t => ({ code: t.code, title: t.title, subjectSlug: t.subjectSlug })),
       };
-      const editPlan = await generateAgendaEditPlan(ctx, input.instruction);
+      const attachment = input.attachmentUrl && input.attachmentMimeType
+        ? { url: input.attachmentUrl, mimeType: input.attachmentMimeType }
+        : undefined;
+      const editPlan = await generateAgendaEditPlan(ctx, input.instruction, attachment);
       const after = applyEditPlanInMemory(ctx, editPlan);
       return { plan: editPlan, before: snapshot, after };
     }),
@@ -836,6 +843,32 @@ export const appRouter = router({
         summary: `Agenda editor: undo (restored ${input.snapshot.length} blocks)`,
       });
       return { planId: plan.id, restored: input.snapshot.length };
+    }),
+
+    /**
+     * Upload an image or PDF the adult attached to the chat box. Stored under
+     * agenda-attachments/<date>-<rand>-<filename> and returned as the public
+     * /manus-storage URL plus mime type. The client then passes both into
+     * `agendaEditor.preview` as attachmentUrl + attachmentMimeType.
+     */
+    uploadAttachment: protectedProcedure.input(z.object({
+      dataUrl: z.string().min(20),
+      fileName: z.string().min(1).max(200),
+    })).mutation(async ({ input }) => {
+      const m = /^data:([^;]+);base64,(.+)$/.exec(input.dataUrl);
+      if (!m) throw new TRPCError({ code: "BAD_REQUEST", message: "Expected a data URL." });
+      const mime = m[1];
+      if (!/^(image\/(png|jpe?g|gif|webp|heic)|application\/pdf)$/i.test(mime)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: `Unsupported mime ${mime}` });
+      }
+      const buf = Buffer.from(m[2], "base64");
+      if (buf.length > 8 * 1024 * 1024) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "File too large (max 8 MB)." });
+      }
+      const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-60);
+      const key = `agenda-attachments/${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${safeName}`;
+      const stored = await storagePut(key, buf, mime);
+      return { ...stored, mimeType: mime, sizeBytes: buf.length };
     }),
   }),
 

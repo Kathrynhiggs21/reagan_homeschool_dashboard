@@ -164,10 +164,36 @@ export default function AgendaEditor() {
   const [draggingId, setDraggingId] = useState<number | null>(null);
   const [dragOverId, setDragOverId] = useState<number | null>(null);
 
+  // Optional file the adult attached to the chat (worksheet, page photo, PDF).
+  const [attachment, setAttachment] = useState<{ url: string; mimeType: string; fileName: string } | null>(null);
+  const uploadM = trpc.agendaEditor.uploadAttachment.useMutation({
+    onError: (e) => toast.error("Upload failed: " + e.message),
+  });
+
+  const onPickFile = async (file: File) => {
+    if (file.size > 8 * 1024 * 1024) {
+      toast.error("File too large (max 8 MB).");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = String(reader.result || "");
+      const stored = await uploadM.mutateAsync({ dataUrl, fileName: file.name });
+      setAttachment({ url: (stored as any).url, mimeType: (stored as any).mimeType, fileName: file.name });
+      toast.success("Attached: " + file.name);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const onSend = () => {
     const trimmed = instruction.trim();
-    if (!trimmed) return;
-    previewM.mutate({ date, instruction: trimmed });
+    if (!trimmed && !attachment) return;
+    previewM.mutate({
+      date,
+      instruction: trimmed || "Read the attached file and work it into today's plan.",
+      attachmentUrl: attachment?.url,
+      attachmentMimeType: attachment?.mimeType,
+    });
   };
 
   const onApply = () => {
@@ -259,15 +285,44 @@ export default function AgendaEditor() {
               </button>
             ))}
           </div>
+          {attachment && (
+            <div className="flex items-center gap-2 rounded-md border border-border bg-accent/30 px-3 py-2 text-sm">
+              <span aria-hidden>{attachment.mimeType.startsWith("image/") ? "🖼️" : "📄"}</span>
+              <span className="truncate flex-1">{attachment.fileName}</span>
+              <span className="opacity-60 text-xs">{attachment.mimeType}</span>
+              <button
+                type="button"
+                onClick={() => setAttachment(null)}
+                className="text-xs underline opacity-70 hover:opacity-100"
+              >
+                Remove
+              </button>
+            </div>
+          )}
           <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="text-xs opacity-60">Tip: ⌘/Ctrl + Enter to send.</div>
+            <div className="flex items-center gap-3">
+              <label className="cursor-pointer text-sm rounded-full border border-border px-3 py-1 hover:bg-accent">
+                {uploadM.isPending ? "Uploading…" : "📎 Attach worksheet / page"}
+                <input
+                  type="file"
+                  accept="image/*,application/pdf"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) onPickFile(f);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+              <div className="text-xs opacity-60">Tip: ⌘/Ctrl + Enter to send.</div>
+            </div>
             <div className="flex gap-2">
               {savedSnapshot && (
                 <Button variant="outline" onClick={onUndo} disabled={undoM.isPending}>
                   ↶ Undo last apply
                 </Button>
               )}
-              <Button size="lg" onClick={onSend} disabled={previewM.isPending || !instruction.trim()}>
+              <Button size="lg" onClick={onSend} disabled={previewM.isPending || (!instruction.trim() && !attachment)}>
                 {previewM.isPending ? "Thinking…" : "Send →"}
               </Button>
             </div>
