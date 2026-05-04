@@ -135,7 +135,16 @@ export function sanitizeBlocks(
       warnings.push(`block "${title}" — topicCode "${curriculumTopicCode}" not in catalog; cleared so commit step can prompt for one`);
       curriculumTopicCode = null;
     }
-    if (ACADEMIC_BLOCK_TYPES.has(blockType) && !curriculumTopicCode) {
+    // Advisory only — never blocks the schedule. Skip emission when no
+    // catalog was supplied (offline use, unit tests, ad-hoc calls), so the
+    // warning is reserved for real LLM output that should have grounded a
+    // code from the live curriculum catalog.
+    if (
+      ACADEMIC_BLOCK_TYPES.has(blockType) &&
+      !curriculumTopicCode &&
+      validTopicCodes &&
+      validTopicCodes.size > 0
+    ) {
       warnings.push(`block "${title}" — academic block missing curriculumTopicCode; will need adult tag before scheduling`);
     }
     out.push({ blockType, title, description, durationMin, startTime, subjectSlug, curriculumTopicCode });

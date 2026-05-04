@@ -44,10 +44,17 @@ describe("curriculum.backfillProgress", () => {
 
   it("preserves manually-marked inProgress rows (does not flip them to done)", async () => {
     const db = getDb();
-    // Pick a Q3 topic (or any) and force it to inProgress, then re-run.
-    const sample = await db.select().from(curriculumTopics).limit(1);
-    if (!sample.length) return;
-    const id = (sample[0] as any).id;
+    // Pick a Q4 topic so we don't fight the Q1–Q3 backfill which is allowed
+    // to flip notStarted rows. Q4 is left for adults to manage manually,
+    // so backfillProgress must NEVER touch any Q4 row's status.
+    const q4Sample = await db
+      .select()
+      .from(curriculumTopics)
+      .where(eq(curriculumTopics.quarter, "Q4" as any))
+      .limit(1);
+    if (!q4Sample.length) return; // catalog has no Q4 row — nothing to assert
+    const id = (q4Sample[0] as any).id;
+    const originalStatus = (q4Sample[0] as any).status;
     await db.execute(sql`UPDATE curriculumTopics SET status = 'inProgress' WHERE id = ${id}`);
 
     await callerOwner.curriculum.backfillProgress();
@@ -55,7 +62,7 @@ describe("curriculum.backfillProgress", () => {
     const after = await db.select().from(curriculumTopics).where(eq(curriculumTopics.id, id));
     expect((after[0] as any).status).toBe("inProgress");
 
-    // Restore to done so we don't leave dirty state.
-    await db.execute(sql`UPDATE curriculumTopics SET status = 'done' WHERE id = ${id}`);
+    // Restore so we leave the row exactly as we found it.
+    await db.execute(sql`UPDATE curriculumTopics SET status = ${originalStatus} WHERE id = ${id}`);
   });
 });
