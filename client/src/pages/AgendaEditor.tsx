@@ -140,6 +140,13 @@ export default function AgendaEditor() {
   const blockDeleteM = trpc.blocks.delete.useMutation({
     onSuccess: () => utils.agendaEditor.snapshot.invalidate({ date }),
   });
+  const blockCreateM = trpc.blocks.createForDate.useMutation({
+    onSuccess: () => {
+      toast.success("Block added — edit it inline below.");
+      utils.agendaEditor.snapshot.invalidate({ date });
+    },
+    onError: (e) => toast.error("Add block failed: " + e.message),
+  });
 
   const onSend = () => {
     const trimmed = instruction.trim();
@@ -287,8 +294,19 @@ export default function AgendaEditor() {
       {/* MANUAL BLOCK GRID */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Manual block editor</CardTitle>
-          <p className="text-sm opacity-70">Edit any field on any block. Saves on blur.</p>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <CardTitle className="text-lg">Manual block editor</CardTitle>
+              <p className="text-sm opacity-70">Edit any field on any block. Saves on blur.</p>
+            </div>
+            <Button
+              size="sm"
+              onClick={() => blockCreateM.mutate({ date, title: "New block", blockType: "custom" as any, durationMin: 30 })}
+              disabled={blockCreateM.isPending}
+            >
+              {blockCreateM.isPending ? "Adding…" : "+ Add block"}
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {snapQ.isLoading ? (

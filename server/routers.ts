@@ -378,6 +378,44 @@ export const appRouter = router({
       await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: (r as any)?.id, action: "create", summary: input.title });
       return r;
     }),
+    /**
+     * Convenience for the Agenda Editor's manual "+ Add block" button.
+     * Takes a date, ensures (or creates) a plan for it, then appends a new
+     * block at the end of that day.
+     */
+    createForDate: protectedProcedure.input(z.object({
+      date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      title: z.string().default("New block"),
+      blockType: BlockType.default("custom" as any),
+      durationMin: z.number().int().min(5).max(180).default(30),
+      startTime: z.string().regex(/^\d{1,2}:\d{2}$/).optional(),
+      subjectSlug: z.string().nullable().optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const plan = await db.ensurePlanForDate(input.date, "full", { allowWeekendAutoBuild: false } as any);
+      if (!plan) throw new Error("could not ensure plan for date");
+      const live = await db.listBlocksForPlan(plan.id);
+      const maxSort = Math.max(0, ...(live as any[]).map(b => b.sortOrder || 0)) + 1;
+      let subjectId: number | null = null;
+      if (input.subjectSlug) {
+        const subjects = await db.listSubjects();
+        const s = (subjects as any[]).find(x => x.slug === input.subjectSlug);
+        subjectId = s?.id ?? null;
+      }
+      const id = await db.createBlock({
+        planId: plan.id,
+        blockType: input.blockType as any,
+        subjectId,
+        title: input.title,
+        description: null,
+        durationMin: input.durationMin,
+        startTime: input.startTime || null,
+        sortOrder: maxSort,
+        status: "not_started" as any,
+        curriculumTopicId: null,
+      } as any);
+      await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: (id as any), action: "create", summary: `Manual + Add: ${input.title}` });
+      return { id, planId: plan.id };
+    }),
     update: protectedProcedure.input(z.object({
       id: z.number(),
       title: z.string().optional(),

@@ -2398,3 +2398,10 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] 8-shape printable flashcards generated (circle→nonagon, both sides) at /manus-storage/shape_flashcards_081b30a9.pdf
 - [x] Reagan's pg 148 photo uploaded at /manus-storage/spectrum_g5_pg148_pretest_ch8_49d81c6d.jpg
 - [x] Library entries 90008–90012 pinned to 2026-05-05
+
+
+## 2026-05-04 BUG — Agenda Editor cannot save NEW blocks (FIXED)
+- [x] Root cause: page had no "+ Add block" button on the manual grid; only chat-driven inserts worked
+- [x] Added blocks.createForDate tRPC mutation (auto-ensures plan, appends at end)
+- [x] Added "+ Add block" button in AgendaEditor manual grid card header
+- [x] Vitest covering blocks.createForDate (3 tests, passing)
