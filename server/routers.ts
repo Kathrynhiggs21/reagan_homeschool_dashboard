@@ -2216,6 +2216,49 @@ export const appRouter = router({
     })).mutation(({ input }) => db.recordTutorSession(input)),
   }),
 
+  /* =================== TUTOR DAY NOTES (per-day free-form) =================== */
+  tutorDayNotes: router({
+    listForDate: publicProcedure
+      .input(z.object({ dateStr: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
+      .query(({ input }) => db.listTutorDayNotes(input.dateStr)),
+    listRecent: publicProcedure
+      .input(z.object({ limit: z.number().min(1).max(50).default(10) }).optional())
+      .query(({ input }) => db.listRecentTutorDayNotes(input?.limit ?? 10)),
+    add: protectedProcedure
+      .input(
+        z.object({
+          dateStr: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          tutorName: z.string().min(1).max(80),
+          topicsCovered: z.string().max(2000).optional().nullable(),
+          comfort: z.enum(["calm", "okay", "stretched", "overwhelmed"]).optional().nullable(),
+          notes: z.string().min(1).max(8000),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user || (ctx.user.role !== "admin" && ctx.user.role !== "tutor")) {
+          throw new Error("Only adults can add day notes.");
+        }
+        await db.insertTutorDayNote({
+          dateStr: input.dateStr,
+          tutorName: input.tutorName,
+          authorOpenId: (ctx.user as any).openId ?? null,
+          topicsCovered: input.topicsCovered ?? null,
+          comfort: input.comfort ?? null,
+          notes: input.notes,
+        });
+        return { ok: true };
+      }),
+    remove: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user || ctx.user.role !== "admin") {
+          throw new Error("Only admins can delete notes.");
+        }
+        await db.deleteTutorDayNote(input.id);
+        return { ok: true };
+      }),
+  }),
+
   // ─────────────────────────────────────────────────────────────────────
   // Weekly Digest — auto-emailed Sunday 7 PM to spear.cpt@gmail.com
   // ─────────────────────────────────────────────────────────────────────

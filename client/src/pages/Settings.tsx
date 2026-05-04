@@ -1,552 +1,341 @@
-import { Card } from "@/components/ui/card";
-import BackgroundPicker from "@/components/BackgroundPicker";
-import ThemePickerStrip from "@/components/ThemePickerStrip";
-import AppAccountsCard from "@/components/AppAccountsCard";
-import CalendarSyncCard from "@/components/CalendarSyncCard";
-import AvatarUploader from "@/components/AvatarUploader";
-import ConfidencePrinciplesCard from "@/components/ConfidencePrinciplesCard";
-import GamesManager from "@/components/GamesManager";
-import TutorsManager from "@/components/TutorsManager";
-import { PowerSchoolImporterCard } from "@/components/PowerSchoolImporterCard";
-import CareTeamManager from "@/components/CareTeamManager";
-import PracticePrefsCard from "@/components/PracticePrefsCard";
-import { AdaptiveAndMilestonesCard } from "@/components/AdaptiveAndMilestonesCard";
-import KiwiSoundAndMicToggles from "@/components/KiwiSoundAndMicToggles";
+import { useEffect, useState } from "react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { useKiwi } from "@/contexts/KiwiContext";
-import { useAdultLock } from "@/contexts/AdultLockContext";
+import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
-import { ClassroomReferencePanel } from "@/components/ClassroomReferencePanel";
-import RewardsManagerCard from "@/components/RewardsManagerCard";
-import AbsentTodayCard from "@/components/AbsentTodayCard";
-import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { useLocation } from "wouter";
+import { useAdultLock } from "@/contexts/AdultLockContext";
+import RewardsManagerCard from "@/components/RewardsManagerCard";
+import TutorsManager from "@/components/TutorsManager";
+import CalendarSyncCard from "@/components/CalendarSyncCard";
+import AppointmentsCardLite from "@/components/AppointmentsCardLite";
 
 /**
- * Settings — adult-only. AdultGate has already validated the passcode.
+ * Settings — slim version (locked May 4 2026).
  *
- * Sections:
- *   1. My Setup     — name/grade/photo/interests (profile editor, relaunch onboarding)
- *   2. Companion    — helper name, avatar, voice + listening mode
- *   3. Adult Lock   — change passcode (default 3918)
- *   4. Recipients   — notification contacts
+ * Five tabs, one short card per concern, no duplication, anyone can use cold:
+ *   People        — Reagan basics + tutor list (name + day + time)
+ *   Prizes        — the ~10 prize tiles + add prize
+ *   Requests      — Reagan's pending requests, approve/decline
+ *   Calendar      — Mom's iCal URL + recurring appointments + IH calendar toggle
+ *   Notifications — recipient emails + 8 PM agenda toggle
  */
 export default function Settings() {
-  const ctx = useKiwi();
-  const { currentPasscode, setPasscode } = useAdultLock();
-  const [, navigate] = useLocation();
+  return (
+    <div className="container max-w-4xl py-6 space-y-4">
+      <header>
+        <h1 className="font-display text-3xl">Settings</h1>
+        <p className="text-sm text-muted-foreground">
+          Everything that controls how the dashboard runs.
+        </p>
+      </header>
 
+      <Tabs defaultValue="people" className="w-full">
+        <TabsList className="grid grid-cols-5 w-full">
+          <TabsTrigger value="people">People</TabsTrigger>
+          <TabsTrigger value="prizes">Prizes</TabsTrigger>
+          <TabsTrigger value="requests">Requests</TabsTrigger>
+          <TabsTrigger value="calendar">Calendar</TabsTrigger>
+          <TabsTrigger value="notifications">Email</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="people" className="space-y-4">
+          <ReaganBasicsCard />
+          <TutorsManager />
+          <AdultPasscodeCard />
+        </TabsContent>
+
+        <TabsContent value="prizes">
+          <RewardsManagerCard />
+        </TabsContent>
+
+        <TabsContent value="requests">
+          <RequestsInboxCard />
+        </TabsContent>
+
+        <TabsContent value="calendar" className="space-y-4">
+          <CalendarSyncCard />
+          <AppointmentsCardLite />
+        </TabsContent>
+
+        <TabsContent value="notifications">
+          <NotificationsCard />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+/* --------------------------------- Cards --------------------------------- */
+
+function ReaganBasicsCard() {
   const profile = trpc.profile.get.useQuery();
-  const updateProfile = trpc.profile.update.useMutation({
+  const utils = trpc.useUtils();
+  const update = trpc.profile.update.useMutation({
     onSuccess: () => {
       toast.success("Saved.");
       utils.profile.get.invalidate();
     },
   });
-  const utils = trpc.useUtils();
 
-  const [studentName, setStudentName] = useState("");
-  const [gradeLevel, setGradeLevel] = useState("");
-  const [photoUrl, setPhotoUrl] = useState("");
-  const [interestsText, setInterestsText] = useState("");
-  const [name, setName] = useState(ctx.companionName);
-  const [newPass, setNewPass] = useState("");
+  const [name, setName] = useState("Reagan");
+  const [grade, setGrade] = useState("5th Grade");
+  const [iep, setIep] = useState("");
 
-  // Sync profile → local form on first load
   useEffect(() => {
     if (!profile.data) return;
-    setStudentName(profile.data.studentName || "Reagan");
-    setGradeLevel(profile.data.gradeLevel || "5th Grade");
-    setPhotoUrl((profile.data as any).photoUrl || "");
-    setInterestsText((profile.data.interests || []).join(", "));
+    setName(profile.data.studentName || "Reagan");
+    setGrade(profile.data.gradeLevel || "5th Grade");
+    setIep(((profile.data as any).iepNote || "") as string);
   }, [profile.data]);
 
-  const recipients = trpc.recipients.list.useQuery();
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Reagan</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid sm:grid-cols-2 gap-3">
+          <div>
+            <Label>Name</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} />
+          </div>
+          <div>
+            <Label>Grade</Label>
+            <Input value={grade} onChange={(e) => setGrade(e.target.value)} />
+          </div>
+        </div>
+        <div>
+          <Label>IEP note (one line)</Label>
+          <Input
+            value={iep}
+            onChange={(e) => setIep(e.target.value)}
+            placeholder="e.g. Math goals, 504 accommodations…"
+          />
+        </div>
+        <Button
+          onClick={() =>
+            update.mutate({
+              studentName: name,
+              gradeLevel: grade,
+              iepNote: iep,
+            } as any)
+          }
+        >
+          Save
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
 
-  function saveMySetup() {
-    const interests = interestsText
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    updateProfile.mutate({
-      studentName,
-      gradeLevel,
-      interests,
-    } as any);
-  }
+function AdultPasscodeCard() {
+  const { setPasscode } = useAdultLock();
+  const [next, setNext] = useState("");
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Adult passcode</CardTitle>
+      </CardHeader>
+      <CardContent className="flex gap-2 items-end">
+        <div className="flex-1">
+          <Label>Change passcode (default 3918)</Label>
+          <Input
+            type="password"
+            value={next}
+            onChange={(e) => setNext(e.target.value)}
+            placeholder="New passcode"
+          />
+        </div>
+        <Button
+          onClick={() => {
+            if (next.trim().length < 4) {
+              toast.error("At least 4 digits.");
+              return;
+            }
+            setPasscode(next.trim());
+            setNext("");
+            toast.success("Passcode updated.");
+          }}
+        >
+          Update
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
 
-  function savePasscode() {
-    if (newPass.trim().length < 4) {
-      toast.error("Passcode must be at least 4 digits.");
-      return;
-    }
-    setPasscode(newPass.trim());
-    setNewPass("");
-    toast.success("Passcode updated.");
-  }
+function RequestsInboxCard() {
+  // The studentRequests router may not be wired yet; render gracefully.
+  const list = (trpc as any).studentRequests?.listPending?.useQuery
+    ? (trpc as any).studentRequests.listPending.useQuery()
+    : { data: [], isLoading: false };
+  const utils = trpc.useUtils();
+  const decide = (trpc as any).studentRequests?.decide?.useMutation
+    ? (trpc as any).studentRequests.decide.useMutation({
+        onSuccess: () => {
+          toast.success("Done.");
+          (utils as any).studentRequests?.listPending?.invalidate?.();
+        },
+      })
+    : { mutate: (_: any) => toast.info("Requests inbox coming online.") };
+
+  const items: Array<{ id: number; kind: string; payload: string; createdAt: number }> = list.data ?? [];
 
   return (
-    <div className="space-y-6">
-      <header>
-        <div className="font-chalk-hand text-lg leading-none chalk-yellow">Adult-only</div>
-        <h1 className="font-display text-3xl md:text-4xl mt-1 chalk-white">Settings</h1>
-        <p className="text-sm text-muted-foreground mt-2">Only visible with the adult passcode.</p>
-      </header>
-
-      {/* ============================ QUICK-JUMP NAV ============================ */}
-      <SettingsJumpNav />
-
-      {/* ============================ PROFILE & SETUP ============================ */}
-      <h2 id="sec-profile" className="font-display text-xl chalk-white mt-4">Profile &amp; setup</h2>
-      <ConfidencePrinciplesCard />
-
-      {/* ============================ MY SETUP ============================ */}
-      <Card className="classroom-card p-5 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="font-display font-semibold text-lg">My Setup</div>
-          <Button size="sm" variant="outline" className="bg-transparent" onClick={() => navigate("/welcome")}>
-            Re-run first-day setup
-          </Button>
-        </div>
-
-        <div className="grid md:grid-cols-2 gap-4">
-          <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Student name</label>
-            <Input value={studentName} onChange={(e) => setStudentName(e.target.value)} className="mt-1" />
+    <Card>
+      <CardHeader>
+        <CardTitle>Reagan's requests</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {list.isLoading ? (
+          <div className="text-muted-foreground text-sm py-6 text-center">Loading…</div>
+        ) : items.length === 0 ? (
+          <div className="text-muted-foreground text-sm py-6 text-center">
+            No requests right now.
           </div>
-          <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-neutral-500">Grade level</label>
-            <Input value={gradeLevel} onChange={(e) => setGradeLevel(e.target.value)} className="mt-1" />
+        ) : (
+          <div className="space-y-2">
+            {items.map((r) => (
+              <div key={r.id} className="border rounded-lg p-3 flex items-start gap-3">
+                <div className="flex-1 min-w-0">
+                  <Badge variant="outline" className="mb-1 capitalize">
+                    {r.kind.replace(/_/g, " ")}
+                  </Badge>
+                  <div className="text-sm">{r.payload}</div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <Button
+                    size="sm"
+                    onClick={() => (decide as any).mutate({ id: r.id, decision: "approved" })}
+                  >
+                    Yes
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => (decide as any).mutate({ id: r.id, decision: "declined" })}
+                  >
+                    No
+                  </Button>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
-        <div>
-          <label className="text-xs font-semibold uppercase tracking-wider text-neutral-500 mb-2 block">Reagan's photo</label>
-          <AvatarUploader />
-          <p className="text-[11px] text-muted-foreground mt-2">
-            Photo is private and only shows on this dashboard. Replaces the "R" placeholder in the corner card.
-          </p>
-        </div>
+function NotificationsCard() {
+  const recipients = (trpc as any).recipients?.list?.useQuery?.() ?? { data: [] };
+  const utils = trpc.useUtils();
+  const add = (trpc as any).recipients?.add?.useMutation?.({
+    onSuccess: () => (utils as any).recipients?.list?.invalidate?.(),
+  });
+  const remove = (trpc as any).recipients?.remove?.useMutation?.({
+    onSuccess: () => (utils as any).recipients?.list?.invalidate?.(),
+  });
 
-        <div>
-          <label className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
-            Interests (comma-separated)
-          </label>
-          <Input
-            value={interestsText}
-            onChange={(e) => setInterestsText(e.target.value)}
-            placeholder="animals, art, astronomy"
-            className="mt-1"
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+
+  // Settings kv toggle for nightly email
+  const sendNightlyKey = "notifications.sendNightlyAgenda";
+  const sendNightly = (trpc as any).appSettings?.get?.useQuery?.({ key: sendNightlyKey }) ?? {
+    data: { value: "true" },
+  };
+  const setSetting = (trpc as any).appSettings?.set?.useMutation?.({
+    onSuccess: () =>
+      (utils as any).appSettings?.get?.invalidate?.({ key: sendNightlyKey }),
+  });
+  const nightlyOn = (sendNightly.data?.value ?? "true") !== "false";
+
+  const list: Array<{ id: number; name: string | null; email: string }> = recipients.data ?? [];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Email & agenda</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between border rounded-lg p-3">
+          <div>
+            <div className="font-medium text-sm">Send nightly agenda email at 8 PM</div>
+            <div className="text-xs text-muted-foreground">
+              PDF agenda for the next school day. Resends if the plan changes before school starts.
+            </div>
+          </div>
+          <Switch
+            checked={nightlyOn}
+            onCheckedChange={(v) =>
+              (setSetting as any)?.mutate?.({ key: sendNightlyKey, value: v ? "true" : "false" })
+            }
           />
         </div>
 
-        <div className="flex justify-end">
-          <Button onClick={saveMySetup} disabled={updateProfile.isPending}>
-            {updateProfile.isPending ? "Saving…" : "Save My Setup"}
-          </Button>
-        </div>
-      </Card>
-
-      {/* =========================== APPEARANCE =========================== */}
-      <h2 id="sec-appearance" className="font-display text-xl chalk-white mt-4">Appearance</h2>
-      <Card className="classroom-card p-5 space-y-4">
-        <div className="font-display font-semibold text-lg">Theme</div>
-        <p className="text-xs text-muted-foreground">
-          Pick the visual theme Reagan sees. Saved across devices — also editable from the
-          theme picker on Today.
-        </p>
-        <ThemePickerStrip />
-        <div className="pt-3 border-t border-white/10">
-          <div className="font-display font-semibold mb-2">Background</div>
-          <BackgroundPicker />
-        </div>
-      </Card>
-
-      {/* ============================ COMPANION ============================ */}
-      <h2 id="sec-companion" className="font-display text-xl chalk-white mt-4">Companion &amp; helper</h2>
-      <Card className="classroom-card p-5 space-y-4">
-        <div className="font-display font-semibold text-lg">Helper / Companion</div>
         <div>
-          <label className="text-sm font-medium">Helper name</label>
-          <div className="flex gap-2 mt-1">
-            <Input value={name} onChange={(e) => setName(e.target.value)} />
+          <Label>Recipients</Label>
+          <div className="space-y-1 mt-1">
+            {list.length === 0 ? (
+              <div className="text-xs text-muted-foreground">No one yet.</div>
+            ) : (
+              list.map((r) => (
+                <div
+                  key={r.id}
+                  className="flex items-center justify-between border rounded-lg px-3 py-2"
+                >
+                  <div className="text-sm">
+                    {r.name ? (
+                      <span className="font-medium mr-2">{r.name}</span>
+                    ) : null}
+                    <span className="text-muted-foreground">{r.email}</span>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => (remove as any)?.mutate?.({ id: r.id })}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="flex gap-2 mt-2">
+            <Input
+              placeholder="Name (optional)"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-40"
+            />
+            <Input
+              placeholder="email@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
             <Button
               onClick={() => {
-                ctx.setCompanionName(name);
-                toast.success(`Now I'm ${name}!`);
+                if (!email.includes("@")) {
+                  toast.error("Add a real email.");
+                  return;
+                }
+                (add as any)?.mutate?.({ name: name || null, email });
+                setEmail("");
+                setName("");
               }}
             >
-              Save
+              Add
             </Button>
           </div>
         </div>
-        <div>
-          <label className="text-sm font-medium">Avatar</label>
-          <div className="flex gap-2 mt-1 flex-wrap">
-            {["⭐", "🌱", "✨", "🦊", "🌞", "🌈", "🍎", "📚", "🎨"].map((e) => (
-              <button
-                key={e}
-                onClick={() => ctx.setCompanionAvatar(e)}
-                className={`text-2xl p-2 rounded-xl border transition ${
-                  ctx.companionAvatar === e ? "bg-accent/20 border-accent" : "bg-white"
-                }`}
-              >
-                {e}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-sm font-medium">Adult present mode</div>
-            <div className="text-xs text-muted-foreground">Pauses helper when an adult is beside Reagan</div>
-          </div>
-          <Switch checked={ctx.adultPresent} onCheckedChange={ctx.setAdultPresent} />
-        </div>
-        <RobloxToggle />
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-sm font-medium">Voice mode</div>
-            <div className="text-xs text-muted-foreground">Helper reads messages aloud</div>
-          </div>
-          <Switch
-            checked={ctx.voiceMode === "voice"}
-            onCheckedChange={(b) => ctx.setVoiceMode(b ? "voice" : "text")}
-          />
-        </div>
-        <div>
-          <div className="text-sm font-medium mb-1">Listening mode</div>
-          <div className="text-xs text-muted-foreground mb-2">
-            <strong>Wake word</strong> listens for “Kiwi” or “Hi Kiwi” and opens the chat.
-            Requires the <em>Microphone access</em> toggle below to be on.
-          </div>
-          <div className="flex gap-2 flex-wrap">
-            {[
-              ["wake", "Wake word"],
-              ["tap", "Tap to talk"],
-              ["always", "Always on"],
-              ["off", "Off"],
-            ].map(([m, label]) => (
-              <button
-                key={m}
-                onClick={() => ctx.setMode(m as any)}
-                className={`text-xs px-3 py-1.5 rounded-full border ${
-                  ctx.mode === m ? "bg-primary text-primary-foreground" : "bg-white"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <KiwiSoundAndMicToggles />
-      </Card>
-
-      {/* ============================ ADULT LOCK ============================ */}
-      <h2 id="sec-lock" className="font-display text-xl chalk-white mt-4">Adult lock</h2>
-      <Card className="classroom-card p-5 space-y-3">
-        <div className="font-display font-semibold text-lg">Adult Lock</div>
-        <p className="text-sm text-neutral-600">
-          The passcode unlocks the adult-only areas (Curriculum, Tutor Handoff, Analytics, Knowledge, Settings)
-          plus all edit controls. Default is <code className="px-1 rounded bg-neutral-100">3918</code>.
-        </p>
-        <div className="text-xs text-neutral-500">
-          Current passcode: <code className="px-1 rounded bg-neutral-100">{currentPasscode}</code>
-        </div>
-        <div className="flex gap-2">
-          <Input
-            value={newPass}
-            onChange={(e) => setNewPass(e.target.value)}
-            placeholder="New passcode (min 4)"
-            type="password"
-          />
-          <Button onClick={savePasscode}>Update</Button>
-        </div>
-      </Card>
-
-      {/* ============================ NOTIFICATIONS ============================ */}
-      <h2 id="sec-notifications" className="font-display text-xl chalk-white mt-4">Notifications &amp; calendar</h2>
-      <CalendarSyncCard />
-      <RecipientsCard />
-      <AppointmentsCard />
-
-      {/* ============================ TOOLS ============================ */}
-      <h2 id="sec-tools" className="font-display text-xl chalk-white mt-4">Tools &amp; integrations</h2>
-      <ClassroomReferencePanel />
-      <RewardsManagerCard />
-      <AppAccountsCard />
-      <PracticePrefsCard />
-      <AdaptiveAndMilestonesCard />
-      <CareTeamManager />
-      <PowerSchoolImporterCard />
-      <GamesManager />
-      <TutorsManager />
-      <AbsentTodayCard />
-
-      {/* ============================ AUDIT ============================ */}
-      <h2 id="sec-audit" className="font-display text-xl chalk-white mt-4">Logs &amp; how it runs</h2>
-      <AutomationExplainerCard />
-      <AuditCard />
-    </div>
-  );
-}
-
-function SettingsJumpNav() {
-  const items: { id: string; label: string }[] = [
-    { id: "sec-profile", label: "Profile" },
-    { id: "sec-appearance", label: "Appearance" },
-    { id: "sec-companion", label: "Companion" },
-    { id: "sec-lock", label: "Adult lock" },
-    { id: "sec-notifications", label: "Notifications" },
-    { id: "sec-tools", label: "Tools" },
-    { id: "sec-audit", label: "Logs" },
-  ];
-  return (
-    <Card className="classroom-card p-3">
-      <div className="flex flex-wrap gap-2">
-        {items.map((it) => (
-          <a
-            key={it.id}
-            href={`#${it.id}`}
-            className="text-xs px-3 py-1.5 rounded-full border border-white/15 bg-background/30 hover:bg-accent/15 transition"
-          >
-            {it.label}
-          </a>
-        ))}
-      </div>
+      </CardContent>
     </Card>
-  );
-}
-
-function AutomationExplainerCard() {
-  const Item = ({ icon, title, lines }: { icon: string; title: string; lines: string[] }) => (
-    <div className="rounded-lg border border-white/10 bg-background/30 p-4 space-y-1">
-      <div className="flex items-center gap-2 font-display font-semibold">
-        <span className="text-2xl" aria-hidden>{icon}</span>
-        <span>{title}</span>
-      </div>
-      {lines.map((l, i) => <p key={i} className="text-xs text-muted-foreground">{l}</p>)}
-    </div>
-  );
-  return (
-    <Card className="classroom-card p-5">
-      <h2 className="font-display text-xl mb-1">What runs by itself</h2>
-      <p className="text-xs text-muted-foreground mb-4">
-        Plain English explainer of the auto-jobs that keep this dashboard alive without you having to remember anything.
-      </p>
-      <div className="grid md:grid-cols-2 gap-3">
-        <Item
-          icon="⏰"
-          title="Daily 6:30 AM — Gmail + Drive sync"
-          lines={[
-            "Pulls new emails from Reagan's tutors and any home-team adult.",
-            "Pulls any new files from your Reagan / Reagan-IHES Drive folders.",
-            "Auto-classifies each one and routes to the right tab. You only see exceptions.",
-          ]}
-        />
-        <Item
-          icon="📨"
-          title="Sundays 7 PM — Weekly digest"
-          lines={[
-            "Builds her week-in-review (level-ups, tutor sessions, mood arc, what helped).",
-            "Emails it to spear.cpt@gmail.com.",
-            "Marked sent/failed on the Upload page so you can see it landed.",
-          ]}
-        />
-        <Item
-          icon="🧠"
-          title="After every practice — Adaptation engine"
-          lines={[
-            "Watches her self-rating + chips after each Skill Builder block.",
-            "If 2+ Hard in a row → rotates teaching mode and blocks the next level-up so it doesn't get harder.",
-            "3 Hards on the same skill → raises a parent flag for you on Analytics.",
-          ]}
-        />
-        <Item
-          icon="🎮"
-          title="During practice — Mood + game break"
-          lines={[
-            "2+ Hard in 30 minutes triggers a gentle break suggestion (with her chosen game/activity).",
-            "2+ Got it! with no Hard triggers an earned-reward suggestion.",
-            "You can edit the games/activities list above in Games & Breaks.",
-          ]}
-        />
-      </div>
-    </Card>
-  );
-}
-
-function AuditCard() {
-  const list = trpc.audit.list.useQuery({ limit: 50 });
-  const fmt = (d: any) => new Date(d).toLocaleString();
-  return (
-    <Card className="classroom-card p-5">
-      <h2 className="font-display text-xl mb-3">Audit log</h2>
-      <p className="text-xs text-muted-foreground mb-3">Last 50 adult edits. Helpful for spotting accidental changes.</p>
-      <div className="space-y-1 max-h-80 overflow-auto">
-        {(list.data ?? []).map((row: any) => (
-          <div key={row.id} className="text-xs flex items-start justify-between gap-2 p-2 rounded bg-neutral-50 border border-neutral-200">
-            <div>
-              <span className="font-mono text-[10px] uppercase text-neutral-500 mr-2">{row.action}</span>
-              <span className="font-medium">{row.entityType}</span>
-              {row.entityId ? <span className="text-neutral-500"> #{row.entityId}</span> : null}
-              {row.summary ? <span className="text-neutral-700"> — {row.summary}</span> : null}
-              {row.actorName ? <div className="text-[10px] text-neutral-500">by {row.actorName}</div> : null}
-            </div>
-            <div className="text-[10px] text-neutral-500 shrink-0">{fmt(row.createdAt)}</div>
-          </div>
-        ))}
-        {(list.data ?? []).length === 0 && <div className="text-sm text-neutral-500">No edits recorded yet.</div>}
-      </div>
-    </Card>
-  );
-}
-
-function RecipientsCard() {
-  const list = trpc.recipients.list.useQuery();
-  const addM = trpc.recipients.add.useMutation();
-  const updateM = trpc.recipients.update.useMutation();
-  const delM = trpc.recipients.delete.useMutation();
-  const utils = trpc.useUtils();
-  const [form, setForm] = useState({ email: "", displayName: "", role: "parent" as "parent"|"grandparent"|"tutor"|"other" });
-  async function add() {
-    if (!form.email) return;
-    await addM.mutateAsync({ email: form.email, displayName: form.displayName || undefined, role: form.role });
-    setForm({ email: "", displayName: "", role: "parent" });
-    utils.recipients.list.invalidate();
-  }
-  async function rename(r: any) {
-    const name = prompt("Display name:", r.displayName || "");
-    if (name === null) return;
-    await updateM.mutateAsync({ id: r.id, displayName: name });
-    utils.recipients.list.invalidate();
-  }
-  async function remove(r: any) {
-    if (!confirm(`Remove ${r.email}?`)) return;
-    await delM.mutateAsync({ id: r.id });
-    utils.recipients.list.invalidate();
-  }
-  return (
-    <Card className="classroom-card p-5">
-      <div className="font-display font-semibold text-lg mb-3">Notification Recipients</div>
-      <div className="flex flex-wrap gap-2 mb-4">
-        <input className="text-sm border border-border rounded px-2 py-1 bg-white text-neutral-900" placeholder="email" value={form.email} onChange={(e)=>setForm({...form, email:e.target.value})}/>
-        <input className="text-sm border border-border rounded px-2 py-1 bg-white text-neutral-900" placeholder="display name" value={form.displayName} onChange={(e)=>setForm({...form, displayName:e.target.value})}/>
-        <select className="text-sm border border-border rounded px-2 py-1 bg-white text-neutral-900" value={form.role} onChange={(e)=>setForm({...form, role: e.target.value as any})}>
-          <option value="parent">parent</option>
-          <option value="grandparent">grandparent</option>
-          <option value="tutor">tutor</option>
-          <option value="other">other</option>
-        </select>
-        <button className="text-sm rounded px-3 py-1 bg-primary text-primary-foreground" onClick={add}>+ Add</button>
-      </div>
-      <div className="space-y-2">
-        {(list.data ?? []).map((r: any) => (
-          <div key={r.id} className="text-sm flex items-center justify-between p-3 rounded-lg bg-neutral-50 border border-neutral-200">
-            <div>
-              <div className="font-medium">{r.displayName || r.email}</div>
-              <div className="text-xs text-neutral-500">{r.email} · {r.role}</div>
-            </div>
-            <div className="flex gap-2">
-              <button className="text-xs underline" onClick={() => rename(r)}>rename</button>
-              <button className="text-xs text-destructive underline" onClick={() => remove(r)}>remove</button>
-            </div>
-          </div>
-        ))}
-        {(list.data ?? []).length === 0 && (
-          <div className="text-sm text-neutral-500">No recipients yet.</div>
-        )}
-      </div>
-    </Card>
-  );
-}
-
-function AppointmentsCard() {
-  const list = trpc.appointments.list.useQuery();
-  const addM = trpc.appointments.add.useMutation();
-  const updateM = trpc.appointments.update.useMutation();
-  const delM = trpc.appointments.delete.useMutation();
-  const utils = trpc.useUtils();
-  const [form, setForm] = useState({ title: "", contactName: "", durationMin: 60, recurrenceRule: "", notes: "" });
-  async function add() {
-    if (!form.title) return;
-    await addM.mutateAsync({ title: form.title, contactName: form.contactName || undefined, durationMin: form.durationMin, recurrenceRule: form.recurrenceRule || undefined, notes: form.notes || undefined });
-    setForm({ title: "", contactName: "", durationMin: 60, recurrenceRule: "", notes: "" });
-    utils.appointments.list.invalidate();
-  }
-  async function rename(a: any) {
-    const title = prompt("Title:", a.title);
-    if (title === null) return;
-    await updateM.mutateAsync({ id: a.id, title });
-    utils.appointments.list.invalidate();
-  }
-  async function remove(a: any) {
-    if (!confirm(`Delete "${a.title}"?`)) return;
-    await delM.mutateAsync({ id: a.id });
-    utils.appointments.list.invalidate();
-  }
-  return (
-    <Card className="classroom-card p-5">
-      <div className="font-display font-semibold text-lg mb-3">Appointments</div>
-      <div className="flex flex-wrap gap-2 mb-4">
-        <input className="text-sm border border-border rounded px-2 py-1 bg-white text-neutral-900" placeholder="title (e.g. OT, therapy)" value={form.title} onChange={(e)=>setForm({...form, title:e.target.value})}/>
-        <input className="text-sm border border-border rounded px-2 py-1 bg-white text-neutral-900" placeholder="contact name" value={form.contactName} onChange={(e)=>setForm({...form, contactName:e.target.value})}/>
-        <input className="text-sm border border-border rounded px-2 py-1 bg-white text-neutral-900 w-20" type="number" placeholder="minutes" value={form.durationMin} onChange={(e)=>setForm({...form, durationMin:Number(e.target.value)||60})}/>
-        <input className="text-sm border border-border rounded px-2 py-1 bg-white text-neutral-900" placeholder="recurrence (e.g. weekly Tue 3pm)" value={form.recurrenceRule} onChange={(e)=>setForm({...form, recurrenceRule:e.target.value})}/>
-        <button className="text-sm rounded px-3 py-1 bg-primary text-primary-foreground" onClick={add}>+ Add</button>
-      </div>
-      <div className="space-y-2">
-        {(list.data ?? []).map((a: any) => (
-          <div key={a.id} className="text-sm flex items-center justify-between p-3 rounded-lg bg-neutral-50 border border-neutral-200">
-            <div>
-              <div className="font-medium">{a.title}{a.contactName ? ` — ${a.contactName}` : ""}</div>
-              <div className="text-xs text-neutral-500">{a.durationMin} min{a.recurrenceRule ? ` · ${a.recurrenceRule}` : ""}</div>
-            </div>
-            <div className="flex gap-2">
-              <button className="text-xs underline" onClick={() => rename(a)}>rename</button>
-              <button className="text-xs text-destructive underline" onClick={() => remove(a)}>remove</button>
-            </div>
-          </div>
-        ))}
-        {(list.data ?? []).length === 0 && (
-          <div className="text-sm text-neutral-500">No recurring appointments yet.</div>
-        )}
-      </div>
-    </Card>
-  );
-}
-
-
-/**
- * RobloxToggle — adult-controlled allow/hide for the Roblox launcher tile.
- * Stored under the public-safe pref key `roblox.allowed` ("1" / "0").
- */
-function RobloxToggle() {
-  const utils = trpc.useUtils();
-  const q = trpc.prefs.getPublic.useQuery({ key: "roblox.allowed" });
-  const set = trpc.prefs.set.useMutation({
-    onSuccess: () => {
-      utils.prefs.getPublic.invalidate({ key: "roblox.allowed" });
-    },
-  });
-  const allowed = q.data === "1";
-  return (
-    <div className="flex items-center justify-between">
-      <div>
-        <div className="text-sm font-medium">Roblox break tile</div>
-        <div className="text-xs text-muted-foreground">
-          Show a Roblox launcher on Apps &amp; Tools. Off by default — flip on for break days.
-        </div>
-      </div>
-      <Switch
-        checked={allowed}
-        onCheckedChange={(b) => set.mutate({ key: "roblox.allowed", value: b ? "1" : "0" })}
-      />
-    </div>
   );
 }

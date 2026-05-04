@@ -1753,3 +1753,21 @@ export const adultAiMessages = mysqlTable("adultAiMessages", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 export type AdultAiMessage = typeof adultAiMessages.$inferSelect;
+
+
+/* ============================== TUTOR DAY NOTES ===========================
+ * Free-form per-day notes a tutor jots on their assigned day, stamped with
+ * tutor name + date. Read by the AI agenda generator when planning future
+ * days so prior context flows forward (e.g. "softened long-division on Wed
+ * because she was overwhelmed").
+ * ========================================================================== */
+export const tutorDayNotes = mysqlTable("tutorDayNotes", {
+  id: int("id").autoincrement().primaryKey(),
+  dateStr: varchar("dateStr", { length: 10 }).notNull(), // YYYY-MM-DD
+  tutorName: varchar("tutorName", { length: 80 }).notNull(),
+  authorOpenId: varchar("authorOpenId", { length: 64 }),
+  topicsCovered: text("topicsCovered"), // free-form list
+  comfort: mysqlEnum("comfort", ["calm", "okay", "stretched", "overwhelmed"]),
+  notes: text("notes").notNull(), // the actual write-up
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});

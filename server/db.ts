@@ -5034,3 +5034,42 @@ export async function insertAdultAiMessage(m: typeof adultAiMessages.$inferInser
 export async function clearAdultAiHistory() {
   await getDb().delete(adultAiMessages);
 }
+
+
+/* ============================== TUTOR DAY NOTES =========================== *
+ * Free-form per-day note a tutor writes after their day with Reagan; flows
+ * back into the AI agenda generator's recent-context window so the next plan
+ * adapts (e.g. "softened long-division on Wed because she was overwhelmed").
+ * ========================================================================== */
+import { tutorDayNotes } from "../drizzle/schema";
+
+export async function listTutorDayNotes(dateStr: string) {
+  return getDb()
+    .select()
+    .from(tutorDayNotes)
+    .where(eq(tutorDayNotes.dateStr, dateStr))
+    .orderBy(desc(tutorDayNotes.createdAt));
+}
+
+export async function listRecentTutorDayNotes(limit = 10) {
+  return getDb()
+    .select()
+    .from(tutorDayNotes)
+    .orderBy(desc(tutorDayNotes.createdAt))
+    .limit(Math.max(1, Math.min(limit, 50)));
+}
+
+export async function insertTutorDayNote(data: {
+  dateStr: string;
+  tutorName: string;
+  authorOpenId?: string | null;
+  topicsCovered?: string | null;
+  comfort?: "calm" | "okay" | "stretched" | "overwhelmed" | null;
+  notes: string;
+}) {
+  await getDb().insert(tutorDayNotes).values(data as any);
+}
+
+export async function deleteTutorDayNote(id: number) {
+  await getDb().delete(tutorDayNotes).where(eq(tutorDayNotes.id, id));
+}

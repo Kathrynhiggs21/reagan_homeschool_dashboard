@@ -19,7 +19,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-
+import AISearchBar from "@/components/AISearchBar";
 const TYPES = [
   "worksheet",
   "video",
@@ -160,16 +160,18 @@ export default function AssignmentsLibrary() {
       {/* Header */}
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="font-display text-3xl chalk-white">Assignments Library</h1>
+          <h1 className="font-display text-3xl chalk-white">Agenda Editor</h1>
           <p className="text-sm text-muted-foreground">
-            Every worksheet, video, lesson, and activity — IH-assigned or otherwise — in one searchable place.
-            Items here populate the daily schedule blocks and the photo turn-in flow.
+            Find anything for the schedule — from the Library, the apps Reagan uses, or the kid-safe web — and drop it on a day.
           </p>
         </div>
         <Button onClick={() => setAddOpen(true)} className="bg-amber-500 hover:bg-amber-400 text-amber-950">
           + Add to Library
         </Button>
       </div>
+
+      {/* AI search bar pinned at top */}
+      <AISearchBar />
 
       {/* Filter bar */}
       <Card>
