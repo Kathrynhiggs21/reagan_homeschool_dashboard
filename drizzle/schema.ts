@@ -1771,3 +1771,26 @@ export const tutorDayNotes = mysqlTable("tutorDayNotes", {
   notes: text("notes").notNull(), // the actual write-up
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
+
+/* ============================== NIGHTLY AGENDA EMAILS ===========================
+ * Track every nightly 8 PM agenda email sent to Mom/Dad. We snapshot a hash of
+ * the agenda body so the cron can resend ONLY if the agenda changed between
+ * 8 PM and school start the next morning. The Drive push is also recorded so
+ * we know whether the Homeschool Hub has the latest copy.
+ * ============================================================================== */
+export const nightlyAgendaEmails = mysqlTable("nightlyAgendaEmails", {
+  id: int("id").autoincrement().primaryKey(),
+  forDate: varchar("forDate", { length: 10 }).notNull(), // YYYY-MM-DD (the day the agenda is FOR)
+  sentAt: timestamp("sentAt").defaultNow().notNull(),
+  recipients: text("recipients").notNull(), // comma-separated emails
+  agendaHash: varchar("agendaHash", { length: 64 }).notNull(), // sha256 of canonical body
+  blockCount: int("blockCount").notNull(),
+  pdfStorageKey: varchar("pdfStorageKey", { length: 200 }), // /manus-storage/... key
+  drivePushed: boolean("drivePushed").default(false).notNull(),
+  driveFolderPath: varchar("driveFolderPath", { length: 200 }),
+  status: mysqlEnum("status", ["queued", "sent", "failed", "resent"]).default("queued").notNull(),
+  errorMessage: text("errorMessage"),
+  triggerKind: mysqlEnum("triggerKind", ["nightly", "change_resend", "manual"]).default("nightly").notNull(),
+});
+export type NightlyAgendaEmail = typeof nightlyAgendaEmails.$inferSelect;
+

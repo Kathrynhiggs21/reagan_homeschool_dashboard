@@ -5073,3 +5073,90 @@ export async function insertTutorDayNote(data: {
 export async function deleteTutorDayNote(id: number) {
   await getDb().delete(tutorDayNotes).where(eq(tutorDayNotes.id, id));
 }
+
+/* ============================== NIGHTLY AGENDA EMAILS ===================== */
+import { nightlyAgendaEmails } from "../drizzle/schema";
+
+export async function getLatestNightlyAgendaEmail(forDate: string) {
+  const rows = await getDb()
+    .select()
+    .from(nightlyAgendaEmails)
+    .where(eq(nightlyAgendaEmails.forDate, forDate))
+    .orderBy(desc(nightlyAgendaEmails.sentAt))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function listRecentNightlyAgendaEmails(limit = 14) {
+  return getDb()
+    .select()
+    .from(nightlyAgendaEmails)
+    .orderBy(desc(nightlyAgendaEmails.sentAt))
+    .limit(Math.max(1, Math.min(limit, 90)));
+}
+
+export async function insertNightlyAgendaEmail(row: {
+  forDate: string;
+  recipients: string;
+  agendaHash: string;
+  blockCount: number;
+  pdfStorageKey?: string | null;
+  drivePushed?: boolean;
+  driveFolderPath?: string | null;
+  status?: "queued" | "sent" | "failed" | "resent";
+  errorMessage?: string | null;
+  triggerKind?: "nightly" | "change_resend" | "manual";
+}) {
+  const r = await getDb()
+    .insert(nightlyAgendaEmails)
+    .values({
+      forDate: row.forDate,
+      recipients: row.recipients,
+      agendaHash: row.agendaHash,
+      blockCount: row.blockCount,
+      pdfStorageKey: row.pdfStorageKey ?? null,
+      drivePushed: row.drivePushed ?? false,
+      driveFolderPath: row.driveFolderPath ?? null,
+      status: row.status ?? "queued",
+      errorMessage: row.errorMessage ?? null,
+      triggerKind: row.triggerKind ?? "nightly",
+    } as any);
+  return Number((r as any)?.[0]?.insertId ?? (r as any)?.insertId ?? 0);
+}
+
+export async function markNightlyAgendaEmailStatus(args: {
+  id: number;
+  status: "sent" | "failed" | "resent";
+  errorMessage?: string | null;
+  drivePushed?: boolean;
+}) {
+  await getDb()
+    .update(nightlyAgendaEmails)
+    .set({
+      status: args.status,
+      errorMessage: args.errorMessage ?? null,
+      ...(args.drivePushed !== undefined ? { drivePushed: args.drivePushed } : {}),
+    } as any)
+    .where(eq(nightlyAgendaEmails.id, args.id));
+}
+
+/* ---------- block book references (used by agenda PDF) ---------- */
+export async function listBookAssignmentsForBlock(blockId: number) {
+  const rows = await getDb()
+    .select()
+    .from(bookAssignments)
+    .where(eq(bookAssignments.blockId, blockId));
+  if (rows.length === 0) return [];
+  const bookIds = Array.from(new Set(rows.map((r: any) => r.bookId)));
+  const bks = await getDb()
+    .select()
+    .from(books)
+    .where(inArray(books.id, bookIds));
+  const titleById = new Map(bks.map((b: any) => [b.id, b.title]));
+  return rows.map((r: any) => ({
+    bookId: r.bookId,
+    bookTitle: titleById.get(r.bookId) ?? `Book #${r.bookId}`,
+    fromPage: r.fromPage,
+    toPage: r.toPage,
+  }));
+}

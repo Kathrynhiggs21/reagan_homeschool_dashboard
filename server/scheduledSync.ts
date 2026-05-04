@@ -709,4 +709,145 @@ export function registerScheduledSync(app: Express) {
       return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
     }
   });
+
+  /* ============================================================================
+   * NIGHTLY AGENDA PDF EMAIL — 8 PM the night before each school day
+   *
+   * Manus scheduled task hits this nightly (and again at 6 AM as a change
+   * resend pass). It POSTs { forDate?, recipients?, force? } and we:
+   *   1. Assemble the agenda from the DB
+   *   2. Hash it canonically and short-circuit if unchanged since last sent
+   *   3. Render the PDF with pdfkit and upload to S3 storage
+   *   4. Return { pdfUrl, recipients, subject, htmlBody, recordId, status }
+   *      so the scheduled-task agent can hand it to gmail MCP for sending,
+   *      and to gws for the Drive Homeschool Hub mirror.
+   * ============================================================================ */
+  app.post("/api/scheduled/nightly-agenda-email", async (req: Request, res: Response) => {
+    let role: string | null = null;
+    try {
+      const u = await sdk.authenticateRequest(req);
+      role = u?.role ?? null;
+    } catch { role = null; }
+    if (!role || (role !== "user" && role !== "admin")) {
+      return res.status(401).json({ ok: false, error: "Unauthorized \u2014 scheduled-task cookie required." });
+    }
+    try {
+      // Resolve target date: explicit forDate, else next school day (skip Sat/Sun).
+      let forDate: string = (req.body?.forDate ?? "") as string;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(forDate)) {
+        const now = new Date();
+        let target = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        while (target.getDay() === 0 || target.getDay() === 6) {
+          target = new Date(target.getTime() + 24 * 60 * 60 * 1000);
+        }
+        forDate = target.toISOString().slice(0, 10);
+      }
+      const recipients: string[] = Array.isArray(req.body?.recipients) && req.body.recipients.length > 0
+        ? req.body.recipients
+        : ["marcy.spear@gmail.com", "spear.cpt@gmail.com"];
+      const force = !!req.body?.force;
+
+      const { assembleAgendaForDate } = await import("./_lib/agendaAssembler");
+      const { buildAgendaPdf } = await import("./_lib/agendaPdf");
+      const { storagePut } = await import("./storage");
+
+      const payload = await assembleAgendaForDate(forDate);
+      if (!payload) {
+        return res.json({ ok: true, status: "no_plan", forDate });
+      }
+      const { pdfBuffer, agendaHash } = await buildAgendaPdf(payload);
+
+      // Idempotency: if the most recent SENT row for this date has the same
+      // hash, skip (unless forced).
+      const last = await db.getLatestNightlyAgendaEmail(forDate);
+      if (last && last.agendaHash === agendaHash && last.status === "sent" && !force) {
+        return res.json({
+          ok: true,
+          status: "unchanged",
+          forDate,
+          agendaHash,
+          lastSentAt: last.sentAt,
+        });
+      }
+      const isResend = !!last;
+
+      // Upload PDF
+      const fileKey = `nightly-agendas/${forDate}/agenda_${agendaHash.slice(0, 8)}.pdf`;
+      const { key, url } = await storagePut(fileKey, pdfBuffer, "application/pdf");
+
+      // Insert queued row
+      const recordId = await db.insertNightlyAgendaEmail({
+        forDate,
+        recipients: recipients.join(", "),
+        agendaHash,
+        blockCount: payload.blocks.length,
+        pdfStorageKey: key,
+        status: "queued",
+        triggerKind: isResend ? "change_resend" : "nightly",
+      });
+
+      // Email body
+      const subject = (isResend ? "[UPDATED] " : "") + `${payload.studentName}'s school plan \u2014 ${payload.dayLabel}`;
+      const tutorLine = payload.tutorName
+        ? `<p style=\"color:#0a66c2;font-size:14px;\"><b>Tutor:</b> ${payload.tutorName}` +
+          (payload.tutorArrival ? ` &middot; arrives ${payload.tutorArrival}` : "") +
+          (payload.tutorDeparture ? ` &middot; leaves ${payload.tutorDeparture}` : "") + "</p>"
+        : "";
+      const blockListHtml = payload.blocks.map((b: any) => {
+        const head = `<b>${b.sortOrder}. ${b.startTime ?? "flex"} &middot; ${b.durationMin} min</b>` +
+          (b.subjectName ? ` <span style=\"color:#888;\">[${b.subjectName}]</span>` : "") +
+          (b.curriculumTopicCode ? ` <span style=\"color:#888;\">topic ${b.curriculumTopicCode}</span>` : "");
+        const desc = b.description ? `<div style=\"color:#444;font-size:13px;margin:2px 0 0 14px;\">${b.description}</div>` : "";
+        const books = (b.bookPageRefs ?? []).map((r: any) =>
+          `<div style=\"color:#0a66c2;font-size:13px;margin:2px 0 0 14px;\">\ud83d\udcd6 ${r.bookTitle} \u2014 pg. ${r.fromPage}\u2013${r.toPage}</div>`
+        ).join("");
+        return `<div style=\"padding:8px 0;border-bottom:1px solid #eee;\">${head}<div style=\"margin:2px 0 0 14px;\">${b.title}</div>${desc}${books}</div>`;
+      }).join("");
+      const html = `<!doctype html><html><body style=\"font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#222;max-width:680px;margin:0 auto;padding:20px;\">
+<div style=\"text-align:center;margin-bottom:8px;\"><div style=\"font-size:22px;font-weight:800;color:#1f3a2e;\">${payload.studentName}'s School Plan</div><div style=\"color:#666;font-size:14px;\">${payload.dayLabel}</div></div>
+${tutorLine}
+<div style=\"margin:20px 0;padding:14px 16px;border-left:4px solid #1f3a2e;background:#fafafa;border-radius:8px;\">${blockListHtml || '<div style=\"color:#888;\">No blocks scheduled.</div>'}</div>
+<p style=\"font-size:12px;color:#888;text-align:center;margin-top:24px;\">PDF agenda attached. If anything changes before school start, this email will be re-sent automatically.</p>
+</body></html>`;
+
+      return res.json({
+        ok: true,
+        status: isResend ? "resend_ready" : "send_ready",
+        forDate,
+        agendaHash,
+        recipients,
+        subject,
+        htmlBody: html,
+        pdfStorageKey: key,
+        pdfUrl: url,
+        recordId,
+        driveFolderHint: "Reagan / Homeschool Hub / Daily Agendas",
+      });
+    } catch (e: any) {
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
+
+  /** Mark a queued/sent agenda row complete after gmail MCP confirms send. */
+  app.post("/api/scheduled/nightly-agenda-email/result", async (req: Request, res: Response) => {
+    let role: string | null = null;
+    try { const u = await sdk.authenticateRequest(req); role = u?.role ?? null; } catch { role = null; }
+    if (!role || (role !== "user" && role !== "admin")) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
+    try {
+      const { recordId, status, errorMessage, drivePushed } = req.body ?? {};
+      if (typeof recordId !== "number") return res.status(400).json({ ok: false, error: "Expected { recordId }" });
+      const finalStatus: "sent" | "failed" | "resent" = status === "failed" ? "failed" : status === "resent" ? "resent" : "sent";
+      await db.markNightlyAgendaEmailStatus({
+        id: recordId,
+        status: finalStatus,
+        errorMessage: errorMessage ?? null,
+        drivePushed: drivePushed === true,
+      });
+      return res.json({ ok: true });
+    } catch (e: any) {
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
 }

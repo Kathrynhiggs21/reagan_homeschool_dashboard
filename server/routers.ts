@@ -2267,6 +2267,57 @@ export const appRouter = router({
     recent: protectedProcedure.input(z.object({ limit: z.number().default(12) }).optional())
       .query(({ input }) => db.listRecentDigests(input?.limit ?? 12)),
   }),
+  /* =================== NIGHTLY AGENDA EMAIL (8 PM PDF to Mom + Dad) =================== */
+  nightlyAgenda: router({
+    /** List recent agenda emails (status, hash, drive push). */
+    recent: protectedProcedure
+      .input(z.object({ limit: z.number().default(14) }).optional())
+      .query(({ input }) => db.listRecentNightlyAgendaEmails(input?.limit ?? 14)),
+    /** Latest record for a given school day. */
+    forDate: protectedProcedure
+      .input(z.object({ forDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
+      .query(({ input }) => db.getLatestNightlyAgendaEmail(input.forDate)),
+    /** Build a preview of the next-day agenda + canonical hash. Adults only. */
+    preview: protectedProcedure
+      .input(z.object({ forDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
+      .query(async ({ ctx, input }) => {
+        const role = (ctx as any)?.user?.role;
+        if (role !== "admin" && role !== "tutor") {
+          throw new Error("Adults only.");
+        }
+        const { assembleAgendaForDate } = await import("./_lib/agendaAssembler");
+        const { hashAgenda } = await import("./_lib/agendaPdf");
+        const payload = await assembleAgendaForDate(input.forDate);
+        if (!payload) return { ok: false as const, reason: "no_plan" as const };
+        const lines: string[] = [];
+        lines.push(`AGENDA: ${payload.forDate} | ${payload.dayLabel}`);
+        lines.push(`Student: ${payload.studentName}`);
+        if (payload.tutorName) lines.push(`Tutor: ${payload.tutorName} | Arrival: ${payload.tutorArrival ?? "n/a"} | Departure: ${payload.tutorDeparture ?? "n/a"}`);
+        for (const b of payload.blocks) {
+          lines.push(`#${b.sortOrder} @${b.startTime ?? "flex"} ${b.durationMin}m [${b.subjectName ?? ""}] (${b.curriculumTopicCode ?? ""}) ${b.title}`);
+        }
+        const canonical = lines.join("\n");
+        const hash = hashAgenda(canonical);
+        return { ok: true as const, payload, agendaHash: hash, blockCount: payload.blocks.length };
+      }),
+    /** Manually mark a day's agenda dirty so the next cron tick re-sends. */
+    markDirty: protectedProcedure
+      .input(z.object({ forDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), reason: z.string().max(200).optional() }))
+      .mutation(async ({ ctx, input }) => {
+        const role = (ctx as any)?.user?.role;
+        if (role !== "admin" && role !== "tutor") throw new Error("Adults only.");
+        await db.insertNightlyAgendaEmail({
+          forDate: input.forDate,
+          recipients: "",
+          agendaHash: "manual_markdirty_" + Date.now().toString(36),
+          blockCount: 0,
+          status: "queued",
+          triggerKind: "manual",
+          errorMessage: input.reason ?? null,
+        });
+        return { ok: true };
+      }),
+  }),
 
   /* =================== DRIVE AUTO-PUSH (mirrors uploads to Reagan Drive folder) =================== */
   drive: router({

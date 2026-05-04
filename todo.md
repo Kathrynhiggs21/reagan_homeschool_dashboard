@@ -1,5 +1,15 @@
 # Reagan's Homeschool Dashboard — TODO
 
+## Phase 11 — Nightly 8 PM agenda PDF email + Drive sync (DONE 2026-05-04)
+- [x] `nightlyAgendaEmails` table + migration 0049 (idempotency hash, drive flag, status)
+- [x] `server/_lib/agendaPdf.ts` (pdfkit-based PDF builder + canonical hash)
+- [x] `server/_lib/agendaAssembler.ts` (DB → AgendaPdfInput, includes tutor + book page refs + yesterday notes)
+- [x] tRPC `nightlyAgenda` router (`recent`, `forDate`, `preview`, `markDirty`)
+- [x] `/api/scheduled/nightly-agenda-email` endpoint (build PDF, hash-skip if unchanged, return send-ready payload + S3 PDF URL)
+- [x] `/api/scheduled/nightly-agenda-email/result` endpoint (post-send confirm)
+- [x] Cron schedule: 8 PM nightly + 6 AM change-resend pass to marcy.spear@gmail.com + spear.cpt@gmail.com
+- [x] Vitests for PDF builder + canonical hash stability (5 cases green)
+
 ## Recently Shipped
 - [x] Phase 4 batch (May 3 2026): Removed dead "At Indian Hill this week" banner from Today + SkillBuilderTile pill (school account dead). Activity Options panel under This Week (max 10 weighted ideas — interests + weather + season + time-of-day, pure server picker). adultStream.feed alias added on tRPC router (delegates to db.listFamilyFeed). Daily-shuffle weekday seed verified shipping via subjectColors.RAINBOW. 14 new vitest cases. Suite: 335 pass / 1 skipped.
 - [x] Weekend rule (May 2 2026): no auto-generated school blocks on Sat/Sun unless adult opts in. ensurePlanForDate, refreshTodayPlan, plans.aiGenerate, plans.aiCommit all weekend-aware. Plan dayType="off", blocks list empty by default. allowWeekend flag override on AI procedures. 5 new vitest cases (weekendPlan.test.ts + aiGenerateWeekend.test.ts).
