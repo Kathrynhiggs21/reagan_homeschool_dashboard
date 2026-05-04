@@ -92,13 +92,9 @@ function isSilenced(): boolean {
   }
 }
 
-/**
- * Speak `text` as the given companion. Honors the global silence gate. Falls
- * back to a no-op outside a browser or without speechSynthesis support.
- */
-export function speakAs(id: CompanionId | string | undefined | null, text: string) {
+/** Local fallback: speak via the browser's built-in speechSynthesis. */
+function speakLocal(id: CompanionId | string | undefined | null, text: string) {
   if (typeof window === "undefined") return;
-  if (isSilenced()) return;
   if (!("speechSynthesis" in window)) return;
   const cfg = getCompanionConfig(id);
   const u = new SpeechSynthesisUtterance(text);
@@ -113,6 +109,55 @@ export function speakAs(id: CompanionId | string | undefined | null, text: strin
   } catch {
     // ignore
   }
+}
+
+/** Module-level singleton so we can stop the previous cartoon clip. */
+let currentCartoonAudio: HTMLAudioElement | null = null;
+
+/**
+ * Speak `text` as the given companion.
+ *
+ * Phase 14: when `kiwiCartoonVoice === "1"` (Mom-toggled in Settings) we
+ * fetch a high-fidelity cartoon WAV from the server and play that instead
+ * of the OS speechSynthesis voice. We always fall back gracefully so
+ * silence is the worst-case behavior, never a crash.
+ */
+export function speakAs(id: CompanionId | string | undefined | null, text: string) {
+  if (typeof window === "undefined") return;
+  if (isSilenced()) return;
+  let useCartoon = false;
+  try { useCartoon = window.localStorage?.getItem("kiwiCartoonVoice") === "1"; } catch { /* no-op */ }
+  if (!useCartoon) { speakLocal(id, text); return; }
+  // tRPC fetch via plain fetch so we don't have to weave a hook in here.
+  const trimmed = String(text || "").slice(0, 800);
+  if (!trimmed) return;
+  const companionId = (typeof id === "string" && ["kiwi", "blue", "daffy", "honk"].includes(id))
+    ? id : "kiwi";
+  const body = JSON.stringify({ json: { companionId, text: trimmed } });
+  fetch("/api/trpc/kiwi.voice", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body,
+  })
+    .then(async (r) => {
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const j = await r.json();
+      const data = j?.result?.data?.json ?? j?.result?.data;
+      const b64: string | undefined = data?.audioBase64;
+      const mime: string = data?.mime || "audio/wav";
+      if (!b64) throw new Error("no audio");
+      const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+      const blob = new Blob([bytes], { type: mime });
+      const url = URL.createObjectURL(blob);
+      try { currentCartoonAudio?.pause(); } catch { /* no-op */ }
+      const audio = new Audio(url);
+      currentCartoonAudio = audio;
+      audio.onended = () => { URL.revokeObjectURL(url); };
+      audio.onerror = () => { URL.revokeObjectURL(url); speakLocal(id, text); };
+      audio.play().catch(() => speakLocal(id, text));
+    })
+    .catch(() => speakLocal(id, text));
 }
 
 /** Helper: returns the active companion id from localStorage, defaulting to "kiwi". */

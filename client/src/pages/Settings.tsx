@@ -48,6 +48,7 @@ export default function Settings() {
           <TutorsManager />
           <AdultPasscodeCard />
           <KiwiListeningCard />
+          <CartoonVoiceCard />
         </TabsContent>
 
         <TabsContent value="prizes">
@@ -522,6 +523,92 @@ function KiwiListeningCard() {
             )}
           </div>
         )}
+      </CardContent>
+    </Card>
+  );
+}
+
+
+/* ============================================================================
+ * CartoonVoiceCard — Phase 14 Mom-only toggle.
+ *
+ * When ON we set localStorage["kiwiCartoonVoice"] = "1", which makes the
+ * speakAs() helper fetch a Gemini-TTS WAV instead of using the OS voice.
+ * Includes a "Test voice" button per companion so Mom can sample each one
+ * before turning it on day-to-day.
+ * ========================================================================== */
+function CartoonVoiceCard() {
+  const initial = (() => {
+    try { return localStorage.getItem("kiwiCartoonVoice") === "1"; } catch { return false; }
+  })();
+  const [enabled, setEnabledState] = useState<boolean>(initial);
+  function setEnabled(b: boolean) {
+    setEnabledState(b);
+    try { localStorage.setItem("kiwiCartoonVoice", b ? "1" : "0"); } catch {}
+    if (b) toast.success("Cartoon voice on. Kiwi & friends will sound like real little birds.");
+    else toast.message("Cartoon voice off. Falls back to your device's built-in voice.");
+  }
+  const voice = trpc.kiwi.voice.useMutation();
+  function test(companionId: "kiwi" | "blue" | "daffy" | "honk", line: string) {
+    voice.mutate(
+      { companionId, text: line },
+      {
+        onSuccess: (res) => {
+          try {
+            const bytes = Uint8Array.from(atob(res.audioBase64), (c) => c.charCodeAt(0));
+            const blob = new Blob([bytes], { type: res.mime || "audio/wav" });
+            const url = URL.createObjectURL(blob);
+            const audio = new Audio(url);
+            audio.onended = () => URL.revokeObjectURL(url);
+            audio.play().catch(() => toast.error("Couldn't play sample"));
+          } catch {
+            toast.error("Couldn't decode sample");
+          }
+        },
+        onError: (e) => toast.error(`Voice failed: ${e.message}`),
+      }
+    );
+  }
+  const samples: Array<{ id: "kiwi" | "blue" | "daffy" | "honk"; label: string; line: string }> = [
+    { id: "kiwi",  label: "Kiwi (parakeet)",  line: "Hi Reagan! Ready for math? You've got this." },
+    { id: "blue",  label: "Blue (sidekick)",  line: "Take a breath. We can do one little step at a time." },
+    { id: "daffy", label: "Daffy (duckling)", line: "Quack-quack! Snack time? Let's go!" },
+    { id: "honk",  label: "Honk (gosling)",   line: "Big honk! Great job sticking with it today." },
+  ];
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Cartoon voice for Kiwi & friends</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 text-sm">
+        <p className="text-muted-foreground">
+          Uses a real text-to-speech voice instead of your device's default.
+          Sounds much more like a tiny bird. Falls back automatically if the
+          internet hiccups.
+        </p>
+        <div className="flex items-center justify-between rounded-md border p-3">
+          <div>
+            <div className="font-medium">Use cartoon voice</div>
+            <div className="text-xs text-muted-foreground">Off by default so first launch never makes noise unexpectedly.</div>
+          </div>
+          <Switch checked={enabled} onCheckedChange={setEnabled} aria-label="Use cartoon voice" />
+        </div>
+        <div className="rounded-md border p-3 space-y-2">
+          <div className="font-medium">Test each voice</div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {samples.map((s) => (
+              <Button
+                key={s.id}
+                variant="outline"
+                className="bg-background justify-start"
+                onClick={() => test(s.id, s.line)}
+                disabled={voice.isPending}
+              >
+                {voice.isPending ? "…" : "▶"} &nbsp; {s.label}
+              </Button>
+            ))}
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

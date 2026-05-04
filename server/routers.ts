@@ -1265,6 +1265,22 @@ export const appRouter = router({
   kiwi: router({
     history: publicProcedure.input(z.object({ limit: z.number().default(50) })).query(({ input }) => db.listKiwiMessages(input.limit)),
     clear: protectedProcedure.input(z.object({}).optional()).mutation(() => db.clearKiwiHistory()),
+    /**
+     * Phase 14 — cartoon voice for Kiwi/Blue/Daffy/Honk via Gemini TTS.
+     * Returns a base64 WAV the browser can drop straight into an <audio> tag.
+     * We cap text at 800 chars upstream and fall back to the existing
+     * SpeechSynthesis voice on the client if this errors.
+     */
+    voice: publicProcedure
+      .input(z.object({
+        companionId: z.enum(["kiwi", "blue", "daffy", "honk"]).default("kiwi"),
+        text: z.string().min(1).max(800),
+      }))
+      .mutation(async ({ input }) => {
+        const { synthesizeCartoonVoice } = await import("./_lib/cartoonVoice");
+        const { mime, data } = await synthesizeCartoonVoice(input.companionId, input.text);
+        return { mime, audioBase64: data.toString("base64") };
+      }),
     chat: publicProcedure.input(z.object({
       userMessage: z.string(),
       adultPresent: z.boolean().default(false),
