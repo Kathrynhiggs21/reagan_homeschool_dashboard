@@ -1167,6 +1167,86 @@ export const appRouter = router({
     delete: publicProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteJournalEntry(input.id)),
   }),
 
+  /* =================== ADULT AI (Mom + tutors) ====================================
+     This is the adult-side counterpart to `kiwi`. It is intentionally:
+       • text-only (no voice synthesis, no microphone, no character avatar)
+       • no Kiwi persona, no animal jokes, no kid-coded language
+       • protected (admin / tutor only)
+       • aware of today's plan, the topic catalog, the tutor of the day, and any
+         pending requests Reagan has submitted via Kiwi
+     Tool wiring (assignmentFinder, schedule edit, approve request) is layered in
+     subsequent phases; this router exposes the conversational baseline first so
+     the UI can already use it.
+  =================================================================== */
+  adultAi: router({
+    history: protectedProcedure.input(z.object({ limit: z.number().default(50) })).query(async ({ input, ctx }) => {
+      const role = (ctx.user as any)?.role;
+      if (role !== "admin" && role !== "tutor") return [];
+      try { return await db.listAdultAiMessages(input.limit); } catch { return []; }
+    }),
+    chat: protectedProcedure.input(z.object({
+      userMessage: z.string().min(1).max(4000),
+      forDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const role = (ctx.user as any)?.role;
+      if (role !== "admin" && role !== "tutor") {
+        throw new Error("Adult AI is only available to admins and tutors.");
+      }
+      const dateStr = input.forDate || new Date().toISOString().slice(0, 10);
+      const profile: any = await db.getProfile().catch(() => null);
+      const plan = await db.getPlanByDate(dateStr).catch(() => null);
+      const blocks = plan ? await db.listBlocksForPlan(plan.id).catch(() => []) : [];
+      const tutorOfDay = await resolveTutorOfDay(dateStr).catch(() => null);
+      const topicHints = await loadTopicHintsForPrompt().catch(() => []);
+      const pendingRequests = await db.listStudentRequests({ status: "pending", limit: 10 }).catch(() => []);
+
+      const sys = [
+        `You are the adult-side homeschool AI assistant for ${profile?.studentName || "Reagan"}'s dashboard.`,
+        `You are talking to ${ctx.user?.name || "an adult"} (role: ${role}).`,
+        `Tone: professional, concise, no emoji unless they appear in the user's message. No mascot persona, no "Kiwi" voice. Plain helpful prose.`,
+        ``,
+        `Today is ${dateStr}. Tutor today: ${tutorOfDay ? `${tutorOfDay.name} (${tutorOfDay.role || "tutor"}) ${tutorOfDay.arrival}–${tutorOfDay.departure}` : "Mom-only day, no outside tutor scheduled."}`,
+        ``,
+        `Today's planned blocks (${blocks.length}):`,
+        blocks.length
+          ? blocks.map((b: any) => `  • ${b.startTime || "??:??"}  ${b.title}  [${b.status}]`).join("\n")
+          : "  (no blocks yet)",
+        ``,
+        `Reagan has ${pendingRequests.length} pending request(s) waiting for adult review.`,
+        ``,
+        `Active curriculum topic catalog (you must reference these codes when discussing assignments):`,
+        topicHints.slice(0, 30).map(t => `  ${t.code} [${t.subjectSlug}] (${t.status}) — ${t.title}`).join("\n"),
+        ``,
+        `Capabilities you can offer today (describe in plain language; tool wiring will be added in a later release):`,
+        `  • Search the assignment library + connected apps + kid-safe web for matching activities`,
+        `  • Suggest a swap, soften, or postpone for any block; the human approves before it commits`,
+        `  • Approve or decline Reagan's pending requests`,
+        `  • Explain why a block was scheduled and which curriculum standard it covers`,
+        ``,
+        `Hard rules:`,
+        `  - Never speak as "Kiwi". You are the adult AI.`,
+        `  - Never reveal Reagan's struggles or mood notes verbatim; you may summarize gently when relevant.`,
+        `  - When suggesting a schedule edit, always include: which block, the new title/duration, and the curriculum topic code it covers.`,
+      ].join("\n");
+
+      try { await db.insertAdultAiMessage({ role: "user", content: input.userMessage, actorOpenId: ctx.user?.openId, actorName: ctx.user?.name }); } catch {}
+      const recent = await db.listAdultAiMessages(10).catch(() => [] as any[]);
+      const history = (recent as any[]).slice().reverse().slice(-10).map((m: any) => ({ role: m.role as any, content: String(m.content) }));
+
+      const response = await invokeLLM({
+        messages: [
+          { role: "system", content: sys },
+          ...history,
+          { role: "user", content: input.userMessage },
+        ],
+      });
+      const raw = response.choices[0]?.message?.content || "I do not have a response right now.";
+      const replyText: string = typeof raw === "string" ? raw : (raw as any[]).map((c: any) => c.text || "").join("");
+      try { await db.insertAdultAiMessage({ role: "assistant", content: replyText }); } catch {}
+      return { reply: replyText, dateStr, tutorOfDay, pendingRequestCount: pendingRequests.length };
+    }),
+  }),
+
   /* =================== HELP LIST (What I'd like help with) =================== */
   help: router({
     list: publicProcedure.query(() => db.listHelpList()),

@@ -1711,3 +1711,22 @@ export const studentRequests = mysqlTable("studentRequests", {
   resolvedByUserId: int("resolvedByUserId"),
 });
 export type StudentRequest = typeof studentRequests.$inferSelect;
+
+
+/* ============================================================
+ * adultAiMessages — chat history for the Mom + tutor "AI" search-bar assistant.
+ *
+ * Kept separate from `kiwiMessages` (Reagan's bird companion) so adult content
+ * never leaks into Reagan's history pull and so we can purge it independently
+ * for privacy. Logged with the actor's openId so multi-tutor environments can
+ * show who said what later.
+ * ============================================================ */
+export const adultAiMessages = mysqlTable("adultAiMessages", {
+  id: int("id").autoincrement().primaryKey(),
+  role: mysqlEnum("role", ["user", "assistant", "system"]).notNull(),
+  content: text("content").notNull(),
+  actorOpenId: varchar("actorOpenId", { length: 100 }),
+  actorName: varchar("actorName", { length: 100 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type AdultAiMessage = typeof adultAiMessages.$inferSelect;

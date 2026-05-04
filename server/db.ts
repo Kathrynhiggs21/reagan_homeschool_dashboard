@@ -17,6 +17,7 @@ import {
   stickers, goodWorkNotes, coinLedger, prizes, prizeRedemptions, certificates,
   appAccounts,
   proudMoments,
+  studentRequests, adultAiMessages,
 } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -4930,4 +4931,41 @@ export async function getTopicRollup(topicId: number) {
     listTopicBlocks(topicId),
   ]);
   return { resources, blocks };
+}
+
+
+/* ============================== STUDENT REQUESTS =========================== *
+ * Reagan -> adults messages (assignment / adventure / schedule / snack ideas).
+ * Kid-side talks to Kiwi which inserts here; adult AI bar lists + resolves.
+ * ========================================================================== */
+export async function listStudentRequests(opts: { status?: "pending" | "resolved"; limit?: number } = {}) {
+  const limit = Math.max(1, Math.min(opts.limit ?? 50, 200));
+  const q = getDb().select().from(studentRequests).orderBy(desc(studentRequests.createdAt)).limit(limit);
+  if (opts.status === "pending") return (q as any).where(isNull(studentRequests.resolvedAt));
+  if (opts.status === "resolved") return (q as any).where(isNotNull(studentRequests.resolvedAt));
+  return q;
+}
+export async function insertStudentRequest(r: typeof studentRequests.$inferInsert) {
+  await getDb().insert(studentRequests).values(r);
+}
+export async function resolveStudentRequest(id: number, opts: { resolvedByUserId?: number; note?: string }) {
+  await getDb().update(studentRequests).set({
+    resolvedAt: new Date(),
+    resolvedNote: opts.note ?? null,
+    resolvedByUserId: opts.resolvedByUserId ?? null,
+  } as any).where(eq(studentRequests.id, id));
+}
+
+/* ============================== ADULT AI MESSAGES ========================== *
+ * Mom + tutor chat history with the plain text-only adult AI assistant.
+ * Kept fully separate from `whisperSessions` (Reagan's Kiwi) for privacy.
+ * ========================================================================== */
+export async function listAdultAiMessages(limit = 50) {
+  return getDb().select().from(adultAiMessages).orderBy(desc(adultAiMessages.createdAt)).limit(Math.max(1, Math.min(limit, 200)));
+}
+export async function insertAdultAiMessage(m: typeof adultAiMessages.$inferInsert) {
+  await getDb().insert(adultAiMessages).values(m);
+}
+export async function clearAdultAiHistory() {
+  await getDb().delete(adultAiMessages);
 }

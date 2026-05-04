@@ -2167,3 +2167,38 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Move all schedule-mutation tools out of Kiwi's allowlist; keep only "submitRequest" + "togglePersonalSetting" + "openLink" + "kidSafeSearch"
 - [ ] Adult AI tool allowlist: scheduleEdit, swapBlock, softenBlock, postponeBlock, addBlock, approveRequest, declineRequest, assignmentFinder.search, assignmentFinder.addToSchedule, openLink, libraryAdd
 - [ ] Vitest: `personaSplit.test.ts` — kid role gets request-only tools; admin/tutor gets full edit tools; image-upload search rejects without role admin/tutor
+
+
+## EXPANDED SCOPE (cont.) — owned printed curriculum (2026-05-03)
+
+- [ ] Phase 5: add `ownedResources` table (title, kind=book|workbook|novel, totalPages, currentPage, defaultDailyPageSpan, subjectSlug, topicCodes[], notes)
+- [ ] Phase 5: seed Reagan's actual books:
+  - [ ] Tuck Everlasting (novel; ~140 pp; ~10 pp/day; ELA RL.5.1, RL.5.2, RL.5.3, RL.5.4, RL.5.6, W.5.3)
+  - [ ] Michael's World (workbook; subject pending Mom confirm; ~2 pp/day)
+  - [ ] Spectrum Science Grade 5 (workbook; ~150 pp; ~3 pp/day; science topics)
+  - [ ] 180 Days of Language for 5th Grade (daily warm-up; 1 pg/day; L.5.x grammar)
+- [ ] Phase 5: AI agenda generator must prefer these as primary anchors, format as "Read pg. 42-48 of *Tuck Everlasting*" / "Complete pg. 71 of *180 Days of Language*"; auto-advances `currentPage` when block status flips to complete
+- [ ] Phase 5: surface "today's pages" in the agenda PDF + email body; do NOT attach PDFs for printed-book lines
+- [ ] Phase 5: digital sources (apps, downloaded printables) keep PDF attachments as before
+- [ ] Phase 5: adult AI bar can answer "what page is Reagan on in Spectrum Science?" and "bump Tuck Everlasting back 5 pages"
+
+
+## Owned-curriculum seed values (2026-05-03)
+
+- [ ] Seed Michael's World currentChapter=31, status=in_progress (chapter-based progression rather than page-based)
+- [ ] Seed Tuck Everlasting currentPage=0, status=not_started, plan to start at Chapter 1 next ELA novel-study block
+- [ ] Seed Spectrum Science Grade 5 currentPage=0, status=not_started (Mom to confirm starting page)
+- [ ] Seed 180 Days of Language Grade 5 currentDay=1, status=not_started (Mom to confirm starting day)
+- [ ] Add `kind=novel|workbook|chapter_book` distinction so AI knows whether to write "Read pg. X-Y" or "Read Chapter N"
+- [ ] Reagan can tell Kiwi "I finished chapter 32" -> creates a studentRequest of kind=progress for adult approval
+- [ ] Adult AI bar can confirm/correct progress in one sentence ("Yes, advance to ch 33"), which writes back to ownedResources
+
+
+## Scattered-progress reconciliation (2026-05-03)
+
+- [ ] Phase 5: add `ownedResources.status` enum: not_started | in_progress | in_progress_unstructured | done
+- [ ] Phase 5: add `ownedResourcePages` table (resourceId, pageNumber, status=todo|done|skipped, completedAt, completedBy) — sparse storage, only rows for pages we know about
+- [ ] Phase 5: tutor-only "Mark pages already done" mini-screen (Curriculum page) — opens for each `in_progress_unstructured` book on first AI scheduling pass
+- [ ] Phase 5: AI scheduler reads `ownedResourcePages` and never re-assigns a page with status=done; advances to next todo page in numeric order
+- [ ] Phase 5: nightly agenda PDF labels each book line with the next assigned page span and (optionally) "skipping pp. X-Y already done" footnote
+- [ ] Phase 5: adult AI bar shortcut "Reagan did pages 12, 14, 19, 22 of Spectrum" -> bulk-marks those pages done in one mutation
