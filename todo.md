@@ -2414,3 +2414,43 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] Read-only quick view of current schedule when no preview is active
 - [x] 10 sample chips (tutor not here, swap topic, every block 20 min, etc.)
 - [x] 5 new vitests covering tutor, push, topic swap, uniform duration, brain break
+
+
+## 2026-05-04 — Agenda Editor: drag-drop + fix timeline edit
+- [ ] BUG: start-time (timeline) edits don't save in manual grid — diagnose & fix
+- [ ] Add drag-and-drop reorder to manual block grid (with keyboard a11y fallback)
+- [ ] Make blockType (theme/type), subject, topic all inline-editable dropdowns that save on change
+- [ ] New blocks.reorder mutation that takes orderedIds[] and rewrites sortOrder + cascades startTimes
+- [ ] Vitest: blocks.reorder + blocks.update startTime
+
+
+## 2026-05-04 — 12-hour AM/PM time + drag-drop in Agenda Editor
+- [ ] Time helper: parse "9:00 AM"/"1:30 PM"/"9am"/"13:00" → "HH:MM"; format "HH:MM" → "9:00 AM"
+- [ ] Use 12-hr in Advanced grid input (placeholder "9:00 AM"), in BlockLine display, and in the Current schedule view
+- [ ] Drag handle + HTML5 dnd on Advanced rows
+- [ ] blocks.reorder mutation (orderedIds) on server + zod schema
+- [ ] Vitest: parseTime12h + blocks.reorder
+
+
+## 2026-05-04 — five new adult asks
+- [ ] Kiwi voice error — diagnose from browser console + fix
+- [ ] Whole-day start-time shifter on Agenda Editor (one input, cascades)
+- [ ] AI agenda chat: file/image upload (assignment, worksheet) and "create custom worksheet" op
+- [ ] Settings page AI assistant (chat that toggles theme, quiet hours, tutor swap, …)
+- [ ] (in-flight) finish drag-and-drop in Advanced + 12-hour AM/PM time switch
+
+
+## 2026-05-04 — Kiwi voice neural TTS (sounds robotic)
+- [ ] Add server `kiwi.tts` endpoint using Gemini TTS or OpenAI TTS (Anthropic SDK in env)
+- [ ] Cache audio per text-hash in storage (avoid re-synthesizing same line)
+- [ ] Pick a natural tween-girl voice (gemini "Zephyr" / openai "shimmer" / "nova")
+- [ ] Wire client speakLikeBird to fetch + play audio (fallback to browser TTS if 5xx)
+- [ ] Vitest for tts route
+
+
+## 2026-05-04 — Wake-word + livelier Kiwi
+- [ ] Rename Settings toggle to "Wake word ('Hi Kiwi')" with clear hint
+- [ ] Same toggle visible inside Reagan's Kiwi chat popup header
+- [ ] More micro-actions on KiwiPerch (peck, stretch, head-tilt)
+- [ ] Occasional flock visit pop-ins (Blue / Daffy / Honk)
+- [ ] Tap → small "fly across" animation

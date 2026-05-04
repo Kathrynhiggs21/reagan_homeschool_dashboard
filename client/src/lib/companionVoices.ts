@@ -94,14 +94,15 @@ export function pickVoiceForCompanion(
   return pickBirdVoice(voices);
 }
 
-/** Shared silence gate (mirrors birdVoice.ts to keep the two in sync). */
+/** Shared silence gate (mirrors birdVoice.ts to keep the two in sync).
+ *  Defaults to AUDIBLE (only silent when adult flips kiwiSilent to "1"). */
 function isSilenced(): boolean {
   if (typeof window === "undefined") return true;
   try {
     const v = window.localStorage?.getItem("kiwiSilent");
-    return v === null || v === "1";
+    return v === "1";
   } catch {
-    return true;
+    return false;
   }
 }
 
@@ -131,11 +132,17 @@ let currentCartoonAudio: HTMLAudioElement | null = null;
 export function speakAs(id: CompanionId | string | undefined | null, text: string) {
   if (typeof window === "undefined") return;
   if (isSilenced()) return;
-  let useCartoon = false;
-  try { useCartoon = window.localStorage?.getItem("kiwiCartoonVoice") === "1"; } catch { /* no-op */ }
-  // Cartoon-only path: if Mom hasn't enabled cartoon voice yet, stay silent
-  // (no robot fallback). She can flip it on in Settings → People → Cartoon voice.
-  if (!useCartoon) return;
+  // May 4 fix: default cartoon (Gemini neural) voice ON. Adult can mute via
+  // kiwiSilent or pick "0" on kiwiCartoonVoice to fall back to browser TTS.
+  let useCartoon = true;
+  try {
+    const raw = window.localStorage?.getItem("kiwiCartoonVoice");
+    if (raw !== null) useCartoon = raw === "1";
+  } catch { /* no-op */ }
+  if (!useCartoon) {
+    speakLocal(id, text);
+    return;
+  }
   // tRPC fetch via plain fetch so we don't have to weave a hook in here.
   const trimmed = String(text || "").slice(0, 800);
   if (!trimmed) return;

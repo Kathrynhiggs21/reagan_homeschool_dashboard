@@ -7,11 +7,12 @@ import {
 } from "../client/src/lib/birdVoice";
 
 describe("birdVoice", () => {
-  it("exposes a bird-like pitch/rate preset", () => {
-    expect(BIRD_VOICE_CONFIG.pitch).toBeGreaterThan(1.3);
-    expect(BIRD_VOICE_CONFIG.rate).toBeGreaterThan(1.0);
+  it("exposes a bright tween-bird pitch/rate preset", () => {
+    // Tween-girl-meets-bird tuning: pitch should be noticeably above default.
+    expect(BIRD_VOICE_CONFIG.pitch).toBeGreaterThanOrEqual(1.7);
+    expect(BIRD_VOICE_CONFIG.rate).toBeGreaterThan(1.1);
     expect(BIRD_VOICE_CONFIG.volume).toBeLessThanOrEqual(1);
-    expect(BIRD_VOICE_CONFIG.volume).toBeGreaterThan(0);
+    expect(BIRD_VOICE_CONFIG.volume).toBeGreaterThan(0.5);
   });
 
   it("pickBirdVoice prefers bright/female voices over male/deep", () => {

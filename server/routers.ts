@@ -483,6 +483,36 @@ export const appRouter = router({
       await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: input.id, action: "update", summary: `move-${input.direction}` });
       return r;
     }),
+    /**
+     * Drag-and-drop reorder. Caller passes the date and the desired full
+     * list of block ids in the new order. We rewrite sortOrder for every
+     * matching block in one pass. Unknown ids are ignored. Blocks belonging
+     * to the day's plan that are absent from `orderedIds` retain their old
+     * sortOrder past the supplied list (defensive — avoids data loss).
+     */
+    reorder: protectedProcedure.input(z.object({
+      date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      orderedIds: z.array(z.number().int().positive()).min(1).max(50),
+    })).mutation(async ({ input, ctx }) => {
+      const plan = await db.getPlanByDate(input.date);
+      if (!plan) throw new Error("no plan for date");
+      const live: any[] = await db.listBlocksForPlan(plan.id);
+      const liveIds = new Set(live.map(b => b.id));
+      const cleaned = input.orderedIds.filter(id => liveIds.has(id));
+      let touched = 0;
+      for (let i = 0; i < cleaned.length; i++) {
+        await db.updateBlock(cleaned[i], { sortOrder: i } as any);
+        touched++;
+      }
+      // Append any blocks not mentioned (safety) preserving their relative order.
+      const mentioned = new Set(cleaned);
+      const tail = live.filter(b => !mentioned.has(b.id)).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+      for (let j = 0; j < tail.length; j++) {
+        await db.updateBlock(tail[j].id, { sortOrder: cleaned.length + j } as any);
+      }
+      await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: cleaned[0] ?? plan.id, action: "update", summary: `reorder ${touched} blocks (plan ${plan.id})` });
+      return { touched };
+    }),
     delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
       const r = await db.deleteBlock(input.id);
       await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: input.id, action: "delete" });
