@@ -2506,3 +2506,40 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Adult Settings: add Kiwi behavior sliders — animation amount (0–100), funny-personality dial (0–100), talking amount (0–100), and a wake-word-only toggle
 - [ ] Adult Settings: NO bird sprites in the sidebar (My Flock belt should not autoplay sprites); move sprites/animations to Today/Kiwi popup only
 - [ ] Adult Settings: per-object visibility + behavior cards for: Quick-Add FAB, Kiwi Perch, Notebook drawer pill, Resource Dock, Companion belt, Weather widget — each with show/hide + position preset
+
+
+## STANDING RULE (added 2026-05-05): "Don't show if no info"
+
+Any card, section, row, sidebar entry, banner, or analytics tile that would
+otherwise render an empty-state placeholder (`No X yet`, `Nothing logged`,
+`0 items`, persistent `Loading…`, etc.) MUST instead **render nothing**.
+
+Apply this everywhere:
+- Analytics page (every card)
+- Curriculum Hub (every section)
+- Today page strips
+- Adult dashboards
+- Tutor / Family / Settings tabs
+- Sidebar groups (no empty "More" header, no empty "For Adults" header)
+- Notebook drawer (no empty "Today's notes" panel; only the input form when
+  there are 0 saved notes)
+
+Empty-state copy is only allowed when an action is unconditionally needed
+on first run (e.g. Onboarding step 1). Otherwise: hide the wrapper.
+
+Sweep targets (initial pass):
+- [ ] Analytics: hide MoodArcChart card when 0 logs
+- [ ] Analytics: hide Skills Mastery card when 0 ladder rows
+- [ ] Analytics: hide Struggle hotspots card when 0 struggles
+- [ ] Analytics: hide Subject grades card when 0 grades
+- [ ] Analytics: hide Recent Submissions card when 0 submissions
+- [ ] Analytics: hide Screening History card when 0 screenings (already conditional)
+- [ ] Analytics: hide Recent Emotional Struggles when 0 struggles
+- [ ] Analytics: hide IEP Goals/Accommodations sub-columns when 0 each
+- [ ] PowerSchoolGradesCard: returns null when no data (DONE)
+- [ ] CozyShell: don't render "More" header when MORE_NAV is empty
+- [ ] CozyShell: My Flock belt — don't render header when belt has 0 items
+- [ ] DailyAgendas (deleted) — N/A
+- [ ] Tutor Day Notes panel: only render the saved-notes block when items.length > 0
+- [ ] Curriculum Hub: hide subject card when 0 topics
+- [ ] Today: hide adult quick-link card when adult locked or 0 adult tools
