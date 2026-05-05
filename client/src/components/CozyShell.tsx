@@ -37,17 +37,17 @@ const KID_NAV: NavItem[] = [
 // into Notebook. Kept the constant so existing render code stays stable.
 const MORE_NAV: NavItem[] = [];
 
-// Adult section — locked to 4 entries (May 4 2026):
-// Curriculum Hub, Daily Schedule, Agenda Editor (with AI bar pinned on top),
-// Settings (5-tab slim version: People, Prizes, Requests, Calendar,
-// Notifications). Everything else (Tutor Handoff, Family, Upload-Sync,
-// Daily Agendas, Daily Packet, Parent Notes, separate Analytics, separate
-// AI Assistant, separate Rewards) is consolidated or deleted.
+// Adult section — locked to 4 entries (May 5 2026):
+// Curriculum Hub, Agenda Editor (AI bar on top), Analytics, Settings.
+// Daily Schedule page deleted; tutor day notes now live in the global
+// NotebookDrawer (mid-right pill on every page). Everything else (Tutor
+// Handoff, Family, Upload-Sync, Daily Packet, Parent Notes, separate AI
+// Assistant, separate Rewards) is consolidated or deleted.
 const ADULT_NAV: NavItem[] = [
-  { to: "/curriculum", emoji: "📘", label: "Curriculum Hub" },
-  { to: "/agendas",    emoji: "🗓️", label: "Daily Schedule" },
+  { to: "/curriculum",    emoji: "📘", label: "Curriculum Hub" },
   { to: "/agenda-editor", emoji: "✏️", label: "Agenda Editor" },
-  { to: "/settings",   emoji: "⚙️", label: "Settings" },
+  { to: "/analytics",     emoji: "📊", label: "Analytics" },
+  { to: "/settings",      emoji: "⚙️", label: "Settings" },
 ];
 
 /**

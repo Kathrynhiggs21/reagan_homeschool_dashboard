@@ -2485,3 +2485,24 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Move per-topic progress arc cards from Curriculum Hub onto the new Analytics page
 - [ ] Use only real, factual analytics data on Analytics page (no synthetic events)
 - [ ] Add Analytics entry to the FOR ADULTS sidebar nav
+
+
+## 2026-05-05 — P12 + P14 status
+- [x] P12 — Trim curriculum extras: PEMDAS, Place value to billions, Real-world rates & ratios were never seeded; Volume Formulas for Rectangular Prisms (id 50) was already deleted in a prior pass. Confirmed via scripts/check50.mjs (only ids 48, 49 remain in the Volume strand).
+- [x] P14 — Tour gate hardened in Today.tsx: onClose handler now defensively writes `kiwiTourSeen=1` to localStorage on every close path, so even if some dismissal route bypasses IntroTour's internal markTourSeen() the tour will not auto-re-show on the next visit.
+
+
+## 2026-05-05 — additional scope (NEW from screenshot annotation + voice notes)
+
+- [ ] Analytics page: add 5th-grade total / "approx levels" alongside the mastery rings (so "0 of 37 skills" → also shows "≈ 5th-grade level X / 5th-grade total")
+- [ ] Analytics page: add Apps usage card (per-app launches + minutes) — surface IXL / Khan / Prodigy / etc. activity
+- [ ] Analytics page: delete the empty PowerSchool placeholder card (no PowerSchool data → remove the card entirely; do not show "No PowerSchool data yet…")
+- [ ] Analytics page: more visual variety but stay simple and not confusing — radar, sparklines, mastery bars, mood/struggle heatmap, app-usage card, IEP catch-up, current-standing card
+- [ ] Move per-topic progress arc cards from Curriculum Hub → Analytics page (already in earlier scope, restated for clarity)
+- [ ] Curriculum Hub: change font + color + box treatment so it's visually distinct from other adult cards and easier to read; update all adult-area grey/translucent boxes for legibility on every theme
+- [ ] Global grey-box pass: every grey/dark-translucent card should have foreground text contrast ≥ 4.5:1 on every theme
+- [ ] Printable daily agenda emailed PDF: keep page 1 = the agenda summary; **append one page per block with the full lesson** — video URL + description, attached worksheet pages (rasterized so they print), block instructions/materials, so the printout is fully usable when there is no dashboard access
+- [ ] Kid /schedule page: it's redundant with Today; either rework as a real **Reagan-friendly weekly view** (this week's plan, choice/adventure picks, what's coming) or delete and merge into Today. Defaulting to "rework as weekly kid view"
+- [ ] Adult Settings: add Kiwi behavior sliders — animation amount (0–100), funny-personality dial (0–100), talking amount (0–100), and a wake-word-only toggle
+- [ ] Adult Settings: NO bird sprites in the sidebar (My Flock belt should not autoplay sprites); move sprites/animations to Today/Kiwi popup only
+- [ ] Adult Settings: per-object visibility + behavior cards for: Quick-Add FAB, Kiwi Perch, Notebook drawer pill, Resource Dock, Companion belt, Weather widget — each with show/hide + position preset

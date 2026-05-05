@@ -15,6 +15,7 @@ import KiwiPerch from "./components/KiwiPerch";
 import KiwiQuietListener from "./components/KiwiQuietListener";
 import ResourceDock from "./components/ResourceDock";
 import QuickAddFab from "./components/QuickAddFab";
+import NotebookDrawer from "./components/NotebookDrawer";
 import Today from "./pages/Today";
 import Curriculum from "./pages/Curriculum";
 import Bookshelf from "./pages/Bookshelf";
@@ -22,7 +23,6 @@ import Apps from "./pages/Apps";
 import Settings from "@/pages/Settings";
 import Onboarding from "./pages/Onboarding";
 import TakeNotes from "./pages/TakeNotes";
-import DailyAgendas from "./pages/DailyAgendas";
 import Schedule from "./pages/Schedule";
 import KiwiCoins from "./pages/KiwiCoins";
 import PracticeForCoins from "./pages/PracticeForCoins";
@@ -64,9 +64,9 @@ function Router() {
         <Route path="/curriculum">
           <AdultGate><Curriculum /></AdultGate>
         </Route>
-        <Route path="/agendas">
-          <AdultGate><DailyAgendas /></AdultGate>
-        </Route>
+        {/* /agendas (Daily Schedule) page deleted 2026-05-05; tutor day
+            notes now live in the global NotebookDrawer (mid-right pill). */}
+        <Route path="/agendas"><Redirect to="/agenda-editor" /></Route>
         <Route path="/library">
           <AdultGate><AssignmentsLibrary /></AdultGate>
         </Route>
@@ -90,8 +90,8 @@ function Router() {
         <Route path="/timeline"><Redirect to="/schedule" /></Route>
         <Route path="/family"><Redirect to="/today" /></Route>
         <Route path="/analytics"><Redirect to="/curriculum" /></Route>
-        <Route path="/tutor"><Redirect to="/agendas" /></Route>
-        <Route path="/tutor/:id"><Redirect to="/agendas" /></Route>
+        <Route path="/tutor"><Redirect to="/agenda-editor" /></Route>
+        <Route path="/tutor/:id"><Redirect to="/agenda-editor" /></Route>
         <Route path="/knowledge"><Redirect to="/library" /></Route>
         <Route path="/needs-work"><Redirect to="/curriculum" /></Route>
         <Route path="/printables"><Redirect to="/library" /></Route>
@@ -112,6 +112,8 @@ function Router() {
       <KiwiCompanion />
       <KiwiQuietListener />
       <QuickAddFab />
+      {/* Global Notebook drawer — only renders when adult lock is unlocked. */}
+      <NotebookDrawer />
     </CozyShell>
   );
 }

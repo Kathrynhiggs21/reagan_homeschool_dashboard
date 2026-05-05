@@ -17,6 +17,12 @@ export default function PowerSchoolGradesCard() {
 
   const hasAny = gRows.length > 0 || aRows.length > 0 || iRows.length > 0;
 
+  // Per user request 2026-05-05: don't render an empty PowerSchool placeholder
+  // card on the Analytics page — if there's no data, the card just goes away.
+  // The import path lives in Settings → PowerSchool, no need to advertise it
+  // on the analytics surface.
+  if (!hasAny) return null;
+
   return (
     <Card className="cozy-card p-4">
       <div className="flex items-center justify-between mb-3">
@@ -33,11 +39,7 @@ export default function PowerSchoolGradesCard() {
         ) : null}
       </div>
 
-      {!hasAny ? (
-        <div className="text-sm text-muted-foreground italic">
-          No PowerSchool data yet. Paste a grade report in Settings → PowerSchool, or wait for the next scheduler run.
-        </div>
-      ) : (
+      {(
         <div className="grid md:grid-cols-2 gap-4">
           <div>
             <div className="text-xs font-semibold mb-2 uppercase tracking-wide text-muted-foreground">

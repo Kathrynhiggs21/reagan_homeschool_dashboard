@@ -972,7 +972,16 @@ export default function Today() {
         </DialogContent>
       </Dialog>
       {/* Kiwi-led intro tour overlay (auto-shows once; "🐤 Tour" replays it). */}
-      <IntroTour open={tourOpen} onClose={() => setTourOpen(false)} />
+      <IntroTour
+        open={tourOpen}
+        onClose={() => {
+          // Defensive: ensure the seen flag is set on EVERY close path so the
+          // tour never auto-re-shows next visit, even if the user dismisses
+          // by some path that didn't already call markTourSeen().
+          try { window.localStorage?.setItem("kiwiTourSeen", "1"); } catch {}
+          setTourOpen(false);
+        }}
+      />
     </div>
   );
 }
