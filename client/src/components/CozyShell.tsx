@@ -23,9 +23,12 @@ type NavItem = { to: string; emoji: string; label: string; dot?: string };
 // Adventures is a popup launched from Today, Journal merged into Notebook,
 // Whiteboard lives inside Notebook, About Me / Profile pulled (no kid-side
 // profile view needed), Proud Wall + My Levels deleted entirely.
-// 2026-05-05 — Kiwi Coins + Practice are now grouped under a single "Kiwi"
-// parent so they don't clutter the sidebar. The parent acts as a header that
-// expands the two children inline (always visible when this nav is rendered).
+// 2026-05-05 (later) — Coins and Practice were merged into ONE consolidated
+// /kiwi page per Mom's request. Sidebar is now a single "Kiwi" leaf entry,
+// no group, no children.
+//
+// Final 6 leaves (no group headers): Today, Schedule, Kiwi, Bookshelf,
+// Notebook, Apps & Tools.
 type NavGroup = { kind: "group"; key: string; emoji: string; label: string; children: NavItem[] };
 type NavRow = NavItem | NavGroup;
 function isGroup(r: NavRow): r is NavGroup { return (r as NavGroup).kind === "group"; }
@@ -33,10 +36,7 @@ function isGroup(r: NavRow): r is NavGroup { return (r as NavGroup).kind === "gr
 const KID_NAV: NavRow[] = [
   { to: "/today",     emoji: "📋", label: "Today",        dot: "#ff9b3d" },
   { to: "/schedule",  emoji: "🗓️", label: "Schedule",     dot: "#3b82f6" },
-  { kind: "group", key: "kiwi", emoji: "🐣", label: "Kiwi", children: [
-    { to: "/coins",    emoji: "🪙", label: "Coins",    dot: "#eab308" },
-    { to: "/practice", emoji: "✨", label: "Practice", dot: "#facc15" },
-  ]},
+  { to: "/kiwi",      emoji: "🐣", label: "Kiwi",         dot: "#eab308" },
   { to: "/bookshelf", emoji: "📚", label: "Bookshelf",    dot: "#ef4444" },
   { to: "/notes",     emoji: "📝", label: "Notebook",     dot: "#a855f7" },
   { to: "/apps",      emoji: "🎒", label: "Apps & Tools", dot: "#22c55e" },

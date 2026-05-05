@@ -37,9 +37,9 @@ function extractArrayLiteral(name: string): string {
 const kidBlock = extractArrayLiteral("KID_NAV");
 const adultBlock = extractArrayLiteral("ADULT_NAV");
 
-// 2026-05-05 — Kiwi Coins + Practice grouped under a "Kiwi" parent. Their
-// labels under that group are simplified to "Coins" and "Practice".
-const KID_REQUIRED = ["Today", "Schedule", "Coins", "Practice", "Bookshelf", "Notebook", "Apps & Tools"];
+// 2026-05-05 (later) — Coins + Practice merged into ONE consolidated /kiwi
+// page. Sidebar collapses back to a single "Kiwi" leaf entry.
+const KID_REQUIRED = ["Today", "Schedule", "Kiwi", "Bookshelf", "Notebook", "Apps & Tools"];
 // 2026-05-05 — "Daily Schedule" page deleted; "Analytics" added back as a real adult page.
 const ADULT_REQUIRED = ["Curriculum Hub", "Agenda Editor", "Analytics", "Settings"];
 
@@ -82,10 +82,11 @@ describe("sidebar contract", () => {
     }
   });
 
-  it("kid sidebar has exactly seven leaf entries (no creep), counting children of groups", () => {
+  it("kid sidebar has exactly six leaf entries (no creep, no group headers)", () => {
     const matches = kidBlock.match(/label:\s*"[^"]+"/g) ?? [];
-    // 7 leaves + 1 group header ("Kiwi") = 8 label tokens total
-    expect(matches.length).toBe(8);
+    // 2026-05-05 (later) — Coins + Practice merged into one /kiwi page,
+    // so the sidebar is back to 6 plain leaves and 0 group headers.
+    expect(matches.length).toBe(6);
   });
 
   it("adult sidebar has exactly four entries (no creep)", () => {

@@ -24,8 +24,7 @@ import Settings from "@/pages/Settings";
 import Onboarding from "./pages/Onboarding";
 import TakeNotes from "./pages/TakeNotes";
 import Schedule from "./pages/Schedule";
-import KiwiCoins from "./pages/KiwiCoins";
-import PracticeForCoins from "./pages/PracticeForCoins";
+import Kiwi from "./pages/Kiwi";
 import DailyPacket from "./pages/DailyPacket";
 import AgendaEditor from "./pages/AgendaEditor";
 import Analytics from "./pages/Analytics";
@@ -57,8 +56,9 @@ function Router() {
         <Route path="/" component={Today} />
         <Route path="/today" component={Today} />
         <Route path="/schedule" component={Schedule} />
-        <Route path="/coins" component={KiwiCoins} />
-        <Route path="/practice" component={PracticeForCoins} />
+        <Route path="/kiwi" component={Kiwi} />
+        <Route path="/coins" component={Kiwi} />
+        <Route path="/practice" component={Kiwi} />
         <Route path="/bookshelf" component={Bookshelf} />
         <Route path="/notes" component={TakeNotes} />
         <Route path="/apps" component={Apps} />

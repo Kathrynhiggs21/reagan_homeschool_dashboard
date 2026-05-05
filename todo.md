@@ -2702,3 +2702,15 @@ Settings (adult, sliders): unchanged from prior entry.
 
 - [ ] Apply CSS sweep to index.css
 - [ ] Verify on Today, Curriculum, Analytics, Settings, Notebook, Levels, Rewards, Bookshelf, Schedule, Apps
+
+
+## 2026-05-05 — Kiwi page consolidation (Coins + Practice → ONE /kiwi page)
+
+- [ ] Sidebar: collapse the two-child Kiwi group into a single `Kiwi` leaf entry pointing at `/kiwi`. Update sidebar contract test (kid required = Today, Schedule, Kiwi, Bookshelf, Notebook, Apps & Tools = 6 leaves, 0 group headers).
+- [ ] New `/kiwi` page top strip: big coin total on the left (no grey, no card chrome) + "Email Mom & Grandma to redeem coins" button on the right. Button opens a `mailto:` composer prefilled with the current coin total. No prize ladder, no list of current prizes.
+- [ ] Below: Practice activities grouped by subject. Each subject is its own colored panel (Math = blue, ELA = warm orange/amber, Science = green, Social = purple, Specials = pink, Other = sand). Use the same subject color tokens that Today already uses so it matches.
+- [ ] Finder-style view-mode toggle (Icon / List / Column) at the top right of the Practice section. Kid-remembered via localStorage. Default = Icon.
+- [ ] Each practice card shows: title, subject color stripe, coin reward chip. Tap = open the activity (route to existing practice activity page).
+- [ ] Hide-if-empty: subjects with 0 practice activities don't render. If kid has 0 practice activities total AND 0 coins, the whole Practice section hides (top strip still shows the email button).
+- [ ] Route both `/coins` and `/practice` to redirect to `/kiwi` so old links don't break.
+- [ ] Run vitest, save final checkpoint, deliver.
