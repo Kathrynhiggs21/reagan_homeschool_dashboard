@@ -37,6 +37,14 @@ export default function TutorsManager() {
     onError: (e) => toast.error(e.message),
   });
 
+  const removeTutor = trpc.tutors.delete.useMutation({
+    onSuccess: (res) => {
+      toast.success(res.deleted ? "Tutor removed." : "Tutor had sessions on file — marked inactive instead so history stays intact.");
+      utils.tutors.list.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   function save() {
     if (!editing?.name?.trim()) { toast.error("Name required"); return; }
     upsert.mutate({
@@ -92,6 +100,33 @@ export default function TutorsManager() {
               <div className="flex gap-2">
                 <Link href={`/tutor/${t.id}`}><Button size="sm" variant="outline">Briefing</Button></Link>
                 <Button size="sm" variant="ghost" onClick={() => setEditing(t)}>Edit</Button>
+                {t.active && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    title="Mark inactive (drop-off)"
+                    onClick={() => {
+                      if (window.confirm(`Mark ${t.name} as inactive (dropped off)? History is preserved.`)) {
+                        upsert.mutate({ id: t.id, name: t.name, active: false });
+                      }
+                    }}
+                  >
+                    Drop-off
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="text-destructive hover:bg-destructive/10"
+                  disabled={removeTutor.isPending}
+                  onClick={() => {
+                    if (window.confirm(`Permanently delete ${t.name}?\n\n(If they have past sessions, they’ll be marked inactive instead so history is kept.)`)) {
+                      removeTutor.mutate({ id: t.id });
+                    }
+                  }}
+                >
+                  Delete
+                </Button>
               </div>
             </li>
           ))}

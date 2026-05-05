@@ -3054,6 +3054,8 @@ export const appRouter = router({
         };
       }),
     resetRoster: protectedProcedure.mutation(() => db.resetTutorRoster()),
+    delete: protectedProcedure.input(z.object({ id: z.number() }))
+      .mutation(({ input }) => db.deleteTutor(input.id)),
     recordSession: protectedProcedure.input(z.object({
       tutorId: z.number(),
       scheduledAt: z.date().optional(),
@@ -3085,6 +3087,10 @@ export const appRouter = router({
           topicsCovered: z.string().max(2000).optional().nullable(),
           comfort: z.enum(["calm", "okay", "stretched", "overwhelmed"]).optional().nullable(),
           notes: z.string().min(1).max(8000),
+          // Quick tag chips chosen at the time of writing the note.
+          // Three buckets: subject (math/ela/...), concern (focus/sensory/anxiety/...),
+          // and frequent-on-list (recurring patterns Mom wants to track).
+          tags: z.array(z.string().min(1).max(40)).max(20).optional().nullable(),
         }),
       )
       .mutation(async ({ ctx, input }) => {
@@ -3098,6 +3104,7 @@ export const appRouter = router({
           topicsCovered: input.topicsCovered ?? null,
           comfort: input.comfort ?? null,
           notes: input.notes,
+          tags: input.tags ?? null,
         });
         return { ok: true };
       }),

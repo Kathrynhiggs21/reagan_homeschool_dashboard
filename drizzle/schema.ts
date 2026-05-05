@@ -1795,6 +1795,10 @@ export const tutorDayNotes = mysqlTable("tutorDayNotes", {
   topicsCovered: text("topicsCovered"), // free-form list
   comfort: mysqlEnum("comfort", ["calm", "okay", "stretched", "overwhelmed"]),
   notes: text("notes").notNull(), // the actual write-up
+  /* Free-form quick-tag chips chosen at note time (subject + concern + frequent-on-list).
+   * Used to power the analytics page's "top concerns" + "frequent flags" widgets and to
+   * let Mom filter the day-notes feed quickly. */
+  tags: json("tags").$type<string[]>(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

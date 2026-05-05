@@ -1,0 +1,1 @@
+ALTER TABLE `tutorDayNotes` ADD `tags` json;

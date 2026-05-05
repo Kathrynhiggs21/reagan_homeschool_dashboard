@@ -780,10 +780,26 @@ html[data-rtheme="chalkboard"] input[type="text"],
 html[data-rtheme="chalkboard"] input[type="number"],
 html[data-rtheme="chalkboard"] input[type="email"],
 html[data-rtheme="chalkboard"] input[type="search"],
-html[data-rtheme="chalkboard"] input:not([type]) {
+html[data-rtheme="chalkboard"] input[type="date"],
+html[data-rtheme="chalkboard"] input[type="time"],
+html[data-rtheme="chalkboard"] input[type="url"],
+html[data-rtheme="chalkboard"] input[type="password"],
+html[data-rtheme="chalkboard"] input:not([type]),
+html[data-rtheme="chalkboard"] select,
+html[data-rtheme="starry"] input[type="date"],
+html[data-rtheme="starry"] input[type="time"],
+html[data-rtheme="starry"] input[type="url"],
+html[data-rtheme="starry"] input[type="password"],
+html[data-rtheme="starry"] select {
   background: rgba(25, 25, 28, 0.85) !important;
   color: #f5f1e6 !important;
   border: 1px solid rgba(255, 255, 255, 0.22) !important;
+}
+/* Native dropdown options need their own override or they’ll show as black-on-black */
+html[data-rtheme="chalkboard"] select option,
+html[data-rtheme="starry"] select option {
+  background: #1a1a1d !important;
+  color: #f5f1e6 !important;
 }
 html[data-rtheme="starry"] textarea::placeholder,
 html[data-rtheme="starry"] input::placeholder,

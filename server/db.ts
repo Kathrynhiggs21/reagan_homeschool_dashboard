@@ -1250,7 +1250,38 @@ export async function deletePrintableFavorite(id: number) {
 /* ============================== ASSIGNMENT SUBMISSIONS LIST ============== */
 export async function listAssignmentSubmissions(limit = 50) {
   const db = getDb();
-  return db.select().from(assignmentSubmissions).orderBy(desc(assignmentSubmissions.submittedAt)).limit(limit);
+  const rows = await db.select().from(assignmentSubmissions).orderBy(desc(assignmentSubmissions.submittedAt)).limit(limit);
+  return enrichSubmissionsWithBlockTitles(rows as any[]);
+}
+
+/**
+ * 2026-05-04 — Curriculum recents was showing every row as "(untitled)"
+ * because most kid turn-ins don't pass a title; the title actually lives on
+ * the linked schedule block. This helper looks up each submission's block
+ * once and back-fills `title` (and `subjectName` when missing) so the UI
+ * can render meaningful labels without changing every caller.
+ */
+async function enrichSubmissionsWithBlockTitles(rows: any[]) {
+  if (!rows.length) return rows;
+  const db = getDb();
+  const blockIds = Array.from(new Set(rows.map((r) => r.blockId).filter((x) => Number.isFinite(x))));
+  if (!blockIds.length) return rows;
+  const blocks = await db.select({
+    id: scheduleBlocks.id,
+    title: scheduleBlocks.title,
+    subjectId: scheduleBlocks.subjectId,
+  }).from(scheduleBlocks).where(inArray(scheduleBlocks.id, blockIds as number[]));
+  const byId = new Map<number, { id: number; title: string | null; subjectId: number | null }>();
+  for (const b of blocks as any[]) byId.set(b.id, b);
+  return rows.map((r) => {
+    const blk = byId.get(r.blockId);
+    if (!blk) return r;
+    return {
+      ...r,
+      title: r.title || blk.title || r.subjectSlug || "Turn-in",
+      blockTitle: blk.title ?? null,
+    };
+  });
 }
 export async function createAssignmentSubmission(patch: Partial<typeof assignmentSubmissions.$inferInsert>) {
   const db = getDb();
@@ -1275,8 +1306,9 @@ export async function searchAssignmentSubmissions(q: string, limit = 25) {
   const needle = q.trim().toLowerCase();
   if (!needle) return [];
   const rows = await db.select().from(assignmentSubmissions).orderBy(desc(assignmentSubmissions.submittedAt)).limit(500);
-  const matches = (rows as any[]).filter((r) => {
-    const hay = [r.title, r.contentText, r.subjectSlug, r.adultNotes, r.autoFeedback]
+  const enriched = await enrichSubmissionsWithBlockTitles(rows as any[]);
+  const matches = enriched.filter((r) => {
+    const hay = [r.title, r.blockTitle, r.contentText, r.subjectSlug, r.adultNotes, r.autoFeedback]
       .map((v) => (v ? String(v).toLowerCase() : ""))
       .join(" \u0001 ");
     return hay.includes(needle);
@@ -2898,6 +2930,23 @@ export async function upsertTutor(opts: { id?: number; name: string; role?: stri
     active: opts.active ?? true, notes: opts.notes,
   } as any) as any;
   return { id: r?.insertId ?? null };
+}
+
+/**
+ * Hard-delete a tutor row when no sessions reference it. If sessions exist,
+ * we mark the tutor inactive instead so historical analytics keep working.
+ * Returns { deleted: true } or { deleted: false, deactivated: true }.
+ */
+export async function deleteTutor(id: number) {
+  const db = getDb();
+  const [hadSessions] = await db.select({ id: tutorSessions.id })
+    .from(tutorSessions).where(eq(tutorSessions.tutorId, id)).limit(1);
+  if (hadSessions) {
+    await db.update(tutors).set({ active: false } as any).where(eq(tutors.id, id));
+    return { deleted: false as const, deactivated: true as const };
+  }
+  await db.delete(tutors).where(eq(tutors.id, id));
+  return { deleted: true as const, deactivated: false as const };
 }
 
 export async function recentTutorSessions(tutorId: number, limit: number = 10) {
@@ -5217,6 +5266,7 @@ export async function insertTutorDayNote(data: {
   topicsCovered?: string | null;
   comfort?: "calm" | "okay" | "stretched" | "overwhelmed" | null;
   notes: string;
+  tags?: string[] | null;
 }) {
   await getDb().insert(tutorDayNotes).values(data as any);
 }

@@ -18,12 +18,12 @@ export default function SubjectColorKey({
   return (
     <Card className="classroom-card p-3 md:p-4">
       <button
-        className="w-full flex items-center justify-between text-sm font-display font-semibold"
+        className="w-full flex items-center justify-between text-sm font-display font-semibold text-foreground"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
       >
         <span className="flex items-center gap-2">🎨 Color Key</span>
-        <span className="text-xs text-muted-foreground">{open ? "hide" : "show"}</span>
+        <span className="text-xs opacity-80">{open ? "hide" : "show"}</span>
       </button>
       {open && (
         <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">

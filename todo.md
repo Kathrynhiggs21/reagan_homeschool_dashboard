@@ -2474,3 +2474,14 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] L. Render tutoring hours as a shaded "tutor here" band on the Daily Agenda timeline (so blocks visually anchor against the tutor's actual presence)
 - [ ] M. Save the recurring tutor schedule into the database. Week A: Mon Madison 10-3, Tue Sophie 10-3, Wed Madison 10-3, Thu Keith 11-2, Fri Sophie 10-3. Week B: Mon/Tue/Wed Sophie 10-3, Thu Keith 11-2, Fri Sophie 10-3.
 - [ ] M. Log today's tutor absence: 4 May 2026 — Madison sick (excused)
+
+
+## 2026-05-04 evening — additional scope (pending)
+
+- [ ] Delete `/agendas` (Daily Schedule) page entirely; remove its sidebar entry
+- [ ] Move TutorDayNotesBox component INTO the Notebook drawer (Notebook becomes a global open/close slide-over panel)
+- [ ] Notebook drawer launcher: small fixed pill on mid-right edge of every page (only visible when adult lock unlocked); positioned away from Quick-Add FAB + Kiwi perch so it's hard to hit accidentally; vertical "📓 Notebook" label; tap to slide open from right, backdrop or X to close
+- [ ] Build new `/analytics` adult page (rich behind-the-scenes records dashboard)
+- [ ] Move per-topic progress arc cards from Curriculum Hub onto the new Analytics page
+- [ ] Use only real, factual analytics data on Analytics page (no synthetic events)
+- [ ] Add Analytics entry to the FOR ADULTS sidebar nav

@@ -108,6 +108,18 @@ export default function AgendaEditor() {
       setEditPlan(data.plan);
       setBeforeBlocks(data.before);
       setAfterBlocks(data.after);
+      // If the AI returned 0 ops we still want the adult to see SOMETHING
+      // so the spinner ending is meaningful (was: "always stays the same").
+      const opsCount = data?.plan?.ops?.length ?? 0;
+      if (opsCount === 0) {
+        const note = data?.plan?.summary || "The AI didn't suggest any changes.";
+        const w0 = data?.plan?.warnings?.[0];
+        if (w0 === "timeout" || w0 === "upstream-error") {
+          toast.error(note);
+        } else {
+          toast(note);
+        }
+      }
     },
     onError: (e) => toast.error("Preview failed: " + e.message),
   });

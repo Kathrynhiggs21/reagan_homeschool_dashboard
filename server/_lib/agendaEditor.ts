@@ -398,33 +398,52 @@ export async function generateAgendaEditPlan(
       ]
     : userMsg;
 
-  const resp = await invokeLLM({
-    messages: [
-      { role: "system", content: SYSTEM_PROMPT },
-      { role: "user", content: userContent },
-    ],
-    response_format: {
-      type: "json_schema",
-      json_schema: {
-        name: "agenda_edit_plan",
-        strict: true,
-        schema: {
-          type: "object",
-          properties: {
-            summary: { type: "string" },
-            intent: { type: "string", enum: ["vibe", "targeted", "surgical", "bulk", "add", "remove", "mixed"] },
-            ops: {
-              type: "array",
-              items: { type: "object", additionalProperties: true },
+  // 50-second hard timeout so the UI spinner can never hang forever.
+  // If the gateway / model takes longer, we surface a friendly fallback plan.
+  const TIMEOUT_MS = 50_000;
+  let resp: any;
+  try {
+    resp = await Promise.race([
+      invokeLLM({
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          { role: "user", content: userContent },
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "agenda_edit_plan",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                summary: { type: "string" },
+                intent: { type: "string", enum: ["vibe", "targeted", "surgical", "bulk", "add", "remove", "mixed"] },
+                ops: {
+                  type: "array",
+                  items: { type: "object", additionalProperties: true },
+                },
+                warnings: { type: "array", items: { type: "string" } },
+              },
+              required: ["summary", "intent", "ops", "warnings"],
+              additionalProperties: false,
             },
-            warnings: { type: "array", items: { type: "string" } },
           },
-          required: ["summary", "intent", "ops", "warnings"],
-          additionalProperties: false,
         },
-      },
-    },
-  });
+      }),
+      new Promise((_, rej) => setTimeout(() => rej(new Error("LLM_TIMEOUT")), TIMEOUT_MS)),
+    ]);
+  } catch (err: any) {
+    const isTimeout = String(err?.message || "").includes("LLM_TIMEOUT");
+    return {
+      summary: isTimeout
+        ? "The AI took too long to answer (>50s). Try a shorter, more specific instruction — or use the manual editor below."
+        : `The AI couldn't be reached (${String(err?.message || err).slice(0, 120)}). Try again, or use the manual editor below.`,
+      intent: "vibe",
+      ops: [],
+      warnings: [isTimeout ? "timeout" : "upstream-error"],
+    };
+  }
 
   let parsed: AgendaEditPlan;
   try {

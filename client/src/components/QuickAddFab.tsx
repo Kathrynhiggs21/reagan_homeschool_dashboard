@@ -231,27 +231,64 @@ function BookForm({ onDone, onBack }: any) {
 }
 
 function AppLinkForm({ onDone, onBack }: any) {
-  const create = trpc.appLinks.create.useMutation();
+  const create = trpc.appLinks.create.useMutation({
+    onError: (e) => toast.error(`Couldn't save: ${e.message}`),
+  });
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [emoji, setEmoji] = useState("🔗");
   const [category, setCategory] = useState<string>("learning");
+  // Auto-pick a smarter emoji from the name as the user types (so Mom doesn't
+  // have to fiddle with the emoji field). User can still override.
+  const guessEmoji = (n: string): string => {
+    const s = n.toLowerCase();
+    if (/math|prodigy|ixl/.test(s)) return "➗";
+    if (/read|book|epic|story/.test(s)) return "📖";
+    if (/science|nature|merlin/.test(s)) return "🔬";
+    if (/history|geo|social/.test(s)) return "🌎";
+    if (/art|draw|paint|express/.test(s)) return "🎨";
+    if (/video|youtube|brainpop/.test(s)) return "🎥";
+    if (/music|piano|guitar/.test(s)) return "🎵";
+    if (/google|classroom/.test(s)) return "🏫";
+    return "🔗";
+  };
   async function save() {
-    if (!name.trim() || !url.trim()) return toast.error("Name and URL required.");
-    await create.mutateAsync({ name, url, emoji, category: category as any } as any);
-    onDone();
+    const n = name.trim();
+    let u = url.trim();
+    if (!n) return toast.error("Enter a name.");
+    if (!u) return toast.error("Enter a URL.");
+    if (!/^https?:\/\//i.test(u)) u = `https://${u}`;
+    try {
+      await create.mutateAsync({ name: n, url: u, emoji, category: category as any } as any);
+      toast.success(`✓ Saved ${n}`);
+      onDone();
+    } catch { /* error toast already shown */ }
   }
   return (
     <FormShell title="Add App / Link" onBack={onBack} busy={create.isPending} onSave={save}>
-      <Input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
-      <Input placeholder="URL (https://…)" value={url} onChange={(e) => setUrl(e.target.value)} />
-      <Input placeholder="Emoji" value={emoji} onChange={(e) => setEmoji(e.target.value)} />
-      <Select value={category} onValueChange={setCategory}>
-        <SelectTrigger><SelectValue /></SelectTrigger>
-        <SelectContent>
-          {["learning","creativity","school","nature","reading"].map(x => <SelectItem key={x} value={x}>{x}</SelectItem>)}
-        </SelectContent>
-      </Select>
+      <div className="space-y-1">
+        <label className="text-[11px] opacity-70 px-1">Name</label>
+        <Input placeholder="e.g. Khan Academy" value={name} onChange={(e) => { setName(e.target.value); if (emoji === "🔗" || emoji === guessEmoji(name)) setEmoji(guessEmoji(e.target.value)); }} autoFocus />
+      </div>
+      <div className="space-y-1">
+        <label className="text-[11px] opacity-70 px-1">Link / URL</label>
+        <Input type="url" placeholder="https://www.khanacademy.org" value={url} onChange={(e) => setUrl(e.target.value)} />
+      </div>
+      <div className="flex gap-2 items-end">
+        <div className="flex-1 space-y-1">
+          <label className="text-[11px] opacity-70 px-1">Category</label>
+          <Select value={category} onValueChange={setCategory}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {["learning","creativity","school","nature","reading"].map(x => <SelectItem key={x} value={x}>{x}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="w-20 space-y-1">
+          <label className="text-[11px] opacity-70 px-1">Icon</label>
+          <Input className="text-center text-lg" value={emoji} onChange={(e) => setEmoji(e.target.value || "🔗")} />
+        </div>
+      </div>
     </FormShell>
   );
 }

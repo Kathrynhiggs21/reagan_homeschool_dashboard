@@ -46,6 +46,7 @@ type Topic = {
   parentId: number | null;
   ord: number;
   status: "notStarted" | "inProgress" | "done";
+  completedAt?: string | Date | null;
   quarter: string | null;
   notes: string | null;
   khanUrl?: string | null;
@@ -294,7 +295,7 @@ export default function CurriculumTopicsTree() {
                           type="button"
                           onClick={() => setDrawerTopic(t)}
                           className={`text-sm text-left hover:underline ${
-                            t.status === "done" ? "line-through text-muted-foreground" : "font-medium"
+                            (t.status === "done" && t.completedAt) ? "line-through text-muted-foreground" : "font-medium"
                           }`}
                           title="Open topic resources & plan an assignment"
                         >
@@ -324,7 +325,7 @@ export default function CurriculumTopicsTree() {
                                 type="button"
                                 onClick={() => setDrawerTopic(k)}
                                 className={`text-left hover:underline ${
-                                  k.status === "done" ? "line-through text-muted-foreground" : ""
+                                  (k.status === "done" && k.completedAt) ? "line-through text-muted-foreground" : ""
                                 }`}
                               >
                                 {k.title}
