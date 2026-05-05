@@ -316,16 +316,16 @@ function DrillTile({
   disabled: boolean;
 }) {
   return (
-    <div className={`rounded-xl ring-1 ${color.ring} bg-white/80 dark:bg-black/30 p-3 flex flex-col gap-2`}>
+    <div className={`rounded-xl ring-1 ${color.ring} bg-white p-3 flex flex-col gap-2 shadow-sm`}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="font-semibold leading-snug truncate">{drill.title}</p>
-          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{drill.blurb}</p>
+          <p className={`font-semibold leading-snug truncate ${color.ink}`}>{drill.title}</p>
+          <p className="text-xs text-stone-700 mt-0.5 line-clamp-2">{drill.blurb}</p>
         </div>
         <Badge className={`shrink-0 text-xs ${color.chip}`}>🪙 {drill.coins}</Badge>
       </div>
       <div className="flex items-center justify-between gap-2 mt-auto">
-        <span className="text-[11px] text-muted-foreground truncate">{drill.provider} · ~{drill.minutes} min</span>
+        <span className="text-[11px] text-stone-600 truncate">{drill.provider} · ~{drill.minutes} min</span>
         <div className="flex gap-2 shrink-0">
           <a href={drill.url} target="_blank" rel="noopener noreferrer" onClick={onOpen}>
             <Button size="sm" variant="default">{opened ? "Reopen" : "Open"}</Button>
@@ -359,14 +359,14 @@ function DrillRow({
   disabled: boolean;
 }) {
   return (
-    <div className={`flex items-center gap-3 rounded-lg border-l-4 ${color.ring} ${color.bg} px-3 py-2`}>
+    <div className={`flex items-center gap-3 rounded-lg border-l-4 ${color.ring} bg-white px-3 py-2 shadow-sm`}>
       <span className="text-xl shrink-0" aria-hidden>{groupEmoji}</span>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <span className={`text-[11px] uppercase tracking-wide font-semibold ${color.ink} opacity-80`}>{groupLabel}</span>
-          <span className="text-xs text-muted-foreground">· ~{drill.minutes} min · {drill.provider}</span>
+          <span className={`text-[11px] uppercase tracking-wide font-semibold ${color.ink}`}>{groupLabel}</span>
+          <span className="text-xs text-stone-600">· ~{drill.minutes} min · {drill.provider}</span>
         </div>
-        <p className="font-medium leading-tight truncate">{drill.title}</p>
+        <p className={`font-medium leading-tight truncate ${color.ink}`}>{drill.title}</p>
       </div>
       <Badge className={`shrink-0 text-xs ${color.chip}`}>🪙 {drill.coins}</Badge>
       <div className="flex gap-2 shrink-0">
