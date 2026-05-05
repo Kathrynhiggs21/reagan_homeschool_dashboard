@@ -27,6 +27,19 @@ export type AgendaPdfBlock = {
   curriculumTopicCode?: string | null;
   bookPageRefs?: Array<{ bookTitle: string; fromPage: number; toPage: number }>;
   printablesAttached?: number;
+  /**
+   * 2026-05-05 — full self-contained lesson content. When present, the PDF
+   * also renders one lesson page per block AFTER the summary page so the
+   * print-out is usable without any dashboard access.
+   */
+  lesson?: {
+    instructions?: string | null;
+    objectives?: string[] | null;
+    materials?: string[] | null;
+    videos?: Array<{ title: string; url: string; description?: string | null; transcript?: string | null }>;
+    worksheets?: Array<{ title: string; description?: string | null; questions?: string[] | null; printableUrl?: string | null }>;
+    answerKey?: string | null;
+  } | null;
 };
 
 export type AgendaPdfInput = {
@@ -149,9 +162,95 @@ export async function buildAgendaPdf(input: AgendaPdfInput): Promise<AgendaPdfRe
     doc.fillColor("#222").fontSize(11).text(`${input.tutorNotesYesterday.tutorName}: ${input.tutorNotesYesterday.notes.trim()}`, { width: 500 });
   }
 
-  // Footer
+  // Footer for summary page
   doc.moveDown(0.8);
   doc.fillColor("#888").fontSize(8).text(`Hash: ${agendaHash.slice(0, 16)}…  ·  Generated for ${input.forDate}`);
+
+  /* ----------------------------------------------------------------------
+   * 2026-05-05 — Self-contained lesson pages.
+   * One page per block that has a `lesson` payload, so the printed packet
+   * is a complete day even without dashboard access.
+   * -------------------------------------------------------------------- */
+  const lessonBlocks = input.blocks.filter((b) => !!b.lesson);
+  for (const b of lessonBlocks) {
+    doc.addPage();
+    // Page header
+    doc.fillColor("#1f3a2e").fontSize(16).text(`${b.sortOrder}. ${b.title}`);
+    doc.fillColor("#666").fontSize(10).text(
+      [
+        b.startTime ? b.startTime : "flex",
+        `${b.durationMin} min`,
+        b.subjectName ?? "any",
+        b.curriculumTopicCode ? `topic ${b.curriculumTopicCode}` : null,
+      ].filter(Boolean).join("  ·  "),
+    );
+    doc.moveDown(0.4);
+    doc.strokeColor("#ddd").moveTo(48, doc.y).lineTo(564, doc.y).stroke();
+    doc.moveDown(0.4);
+
+    const L = b.lesson!;
+    if (L.objectives && L.objectives.length > 0) {
+      doc.fillColor("#1f3a2e").fontSize(12).text("Objectives");
+      for (const o of L.objectives) {
+        doc.fillColor("#222").fontSize(10).text(`• ${o}`, { width: 500 });
+      }
+      doc.moveDown(0.4);
+    }
+    if (L.materials && L.materials.length > 0) {
+      doc.fillColor("#1f3a2e").fontSize(12).text("Materials");
+      for (const m of L.materials) {
+        doc.fillColor("#222").fontSize(10).text(`• ${m}`, { width: 500 });
+      }
+      doc.moveDown(0.4);
+    }
+    if (L.instructions) {
+      doc.fillColor("#1f3a2e").fontSize(12).text("Instructions");
+      doc.fillColor("#222").fontSize(10).text(L.instructions.trim(), { width: 500 });
+      doc.moveDown(0.4);
+    }
+    if (L.videos && L.videos.length > 0) {
+      doc.fillColor("#1f3a2e").fontSize(12).text("Videos");
+      for (const v of L.videos) {
+        doc.fillColor("#0a66c2").fontSize(10).text(`▶ ${v.title}`, { link: v.url, underline: true });
+        if (v.description) {
+          doc.fillColor("#444").fontSize(9).text(v.description.trim(), { width: 500 });
+        }
+        if (v.transcript) {
+          doc.fillColor("#666").fontSize(8).text(`Transcript: ${v.transcript.trim().slice(0, 1200)}${v.transcript.length > 1200 ? "…" : ""}`, { width: 500 });
+        }
+        doc.moveDown(0.2);
+      }
+      doc.moveDown(0.2);
+    }
+    if (L.worksheets && L.worksheets.length > 0) {
+      doc.fillColor("#1f3a2e").fontSize(12).text("Worksheet");
+      for (const w of L.worksheets) {
+        doc.fillColor("#000").fontSize(11).text(w.title);
+        if (w.description) {
+          doc.fillColor("#444").fontSize(9).text(w.description.trim(), { width: 500 });
+        }
+        if (w.questions && w.questions.length > 0) {
+          doc.moveDown(0.2);
+          for (let i = 0; i < w.questions.length; i++) {
+            doc.fillColor("#222").fontSize(10).text(`${i + 1}. ${w.questions[i]}`, { width: 500 });
+            // answer line so it's writable on paper
+            doc.fillColor("#999").fontSize(10).text("_______________________________________________________________________", { width: 500 });
+            doc.moveDown(0.15);
+          }
+        }
+        if (w.printableUrl) {
+          doc.fillColor("#0a66c2").fontSize(9).text(`Printable: ${w.printableUrl}`, { link: w.printableUrl, underline: true });
+        }
+        doc.moveDown(0.3);
+      }
+    }
+    if (L.answerKey) {
+      doc.moveDown(0.2);
+      doc.fillColor("#888").fontSize(8).text(`Answer key (adult): ${L.answerKey.trim()}`, { width: 500 });
+    }
+    // page footer
+    doc.fillColor("#888").fontSize(8).text(`Block ${b.sortOrder} of ${input.blocks.length}  ·  ${input.forDate}`, 48, 740);
+  }
 
   doc.end();
   await done;

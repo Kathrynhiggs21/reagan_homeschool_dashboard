@@ -23,11 +23,20 @@ type NavItem = { to: string; emoji: string; label: string; dot?: string };
 // Adventures is a popup launched from Today, Journal merged into Notebook,
 // Whiteboard lives inside Notebook, About Me / Profile pulled (no kid-side
 // profile view needed), Proud Wall + My Levels deleted entirely.
-const KID_NAV: NavItem[] = [
+// 2026-05-05 — Kiwi Coins + Practice are now grouped under a single "Kiwi"
+// parent so they don't clutter the sidebar. The parent acts as a header that
+// expands the two children inline (always visible when this nav is rendered).
+type NavGroup = { kind: "group"; key: string; emoji: string; label: string; children: NavItem[] };
+type NavRow = NavItem | NavGroup;
+function isGroup(r: NavRow): r is NavGroup { return (r as NavGroup).kind === "group"; }
+
+const KID_NAV: NavRow[] = [
   { to: "/today",     emoji: "📋", label: "Today",        dot: "#ff9b3d" },
   { to: "/schedule",  emoji: "🗓️", label: "Schedule",     dot: "#3b82f6" },
-  { to: "/coins",     emoji: "🪙", label: "Kiwi Coins",   dot: "#eab308" },
-  { to: "/practice",  emoji: "✨", label: "Practice",     dot: "#facc15" },
+  { kind: "group", key: "kiwi", emoji: "🐣", label: "Kiwi", children: [
+    { to: "/coins",    emoji: "🪙", label: "Coins",    dot: "#eab308" },
+    { to: "/practice", emoji: "✨", label: "Practice", dot: "#facc15" },
+  ]},
   { to: "/bookshelf", emoji: "📚", label: "Bookshelf",    dot: "#ef4444" },
   { to: "/notes",     emoji: "📝", label: "Notebook",     dot: "#a855f7" },
   { to: "/apps",      emoji: "🎒", label: "Apps & Tools", dot: "#22c55e" },
@@ -108,21 +117,51 @@ export default function CozyShell({ children }: { children: ReactNode }) {
           <div className="px-2 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-1.5">
             For Reagan
           </div>
-          {KID_NAV.map((n) => (
-            <Link
-              key={n.to}
-              href={n.to}
-              className={`flex items-center gap-3 px-3 py-1.5 rounded-md text-[13px] transition-all ${
-                isActive(n.to)
-                  ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent"
-              }`}
-            >
-              <span className="text-2xl w-7 text-center">{n.emoji}</span>
-              <span className="flex-1">{n.label}</span>
-              {n.dot && <span className="w-2 h-2 rounded-full" style={{ background: n.dot }} aria-hidden />}
-            </Link>
-          ))}
+          {KID_NAV.map((row) => {
+            if (isGroup(row)) {
+              return (
+                <div key={row.key} className="mt-1">
+                  <div className="flex items-center gap-3 px-3 pt-1 pb-1 text-[12px] uppercase tracking-wide opacity-80">
+                    <span className="text-2xl w-7 text-center">{row.emoji}</span>
+                    <span className="font-semibold">{row.label}</span>
+                  </div>
+                  <div className="pl-3 border-l border-sidebar-border ml-4">
+                    {row.children.map((c) => (
+                      <Link
+                        key={c.to}
+                        href={c.to}
+                        className={`flex items-center gap-3 px-3 py-1.5 rounded-md text-[13px] transition-all ${
+                          isActive(c.to)
+                            ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+                            : "text-sidebar-foreground/90 hover:bg-sidebar-accent/40"
+                        }`}
+                      >
+                        <span className="text-xl w-6 text-center">{c.emoji}</span>
+                        <span className="flex-1">{c.label}</span>
+                        {c.dot ? <span className="w-1.5 h-1.5 rounded-full" style={{ background: c.dot }} aria-hidden /> : null}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              );
+            }
+            const n = row as NavItem;
+            return (
+              <Link
+                key={n.to}
+                href={n.to}
+                className={`flex items-center gap-3 px-3 py-1.5 rounded-md text-[13px] transition-all ${
+                  isActive(n.to)
+                    ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold"
+                    : "text-sidebar-foreground hover:bg-sidebar-accent"
+                }`}
+              >
+                <span className="text-2xl w-7 text-center">{n.emoji}</span>
+                <span className="flex-1">{n.label}</span>
+                {n.dot && <span className="w-2 h-2 rounded-full" style={{ background: n.dot }} aria-hidden />}
+              </Link>
+            );
+          })}
 
           {/* Companion belt: tap to switch active flock companion.
               Hidden by default per Mom's request 2026-05-05; toggle

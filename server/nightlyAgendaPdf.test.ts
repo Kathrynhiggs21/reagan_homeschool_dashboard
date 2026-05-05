@@ -69,6 +69,22 @@ describe("nightly agenda PDF builder", () => {
     expect(r.canonicalText).toContain("(5.NF.1)");
   });
 
+  it("appends per-block lesson pages when blocks include a lesson payload", async () => {
+    const withLesson = JSON.parse(JSON.stringify(samplePayload));
+    withLesson.blocks[0].lesson = {
+      objectives: ["Add unlike fractions"],
+      materials: ["Pencil", "Math notebook"],
+      instructions: "Solve each problem and show work.",
+      videos: [{ title: "Adding fractions", url: "https://www.youtube.com/watch?v=abc", description: "Khan Academy intro" }],
+      worksheets: [{ title: "Practice set A", questions: ["1/2 + 1/3 =", "3/4 + 1/6 ="] }],
+      answerKey: "1) 5/6   2) 11/12",
+    };
+    const r = await buildAgendaPdf(withLesson as any);
+    // Lesson pages roughly double the PDF size vs the no-lesson baseline.
+    const baseline = await buildAgendaPdf(samplePayload as any);
+    expect(r.pdfBuffer.length).toBeGreaterThan(baseline.pdfBuffer.length);
+  });
+
   it("hashAgenda is deterministic on the same canonical string", () => {
     const s = "AGENDA: 2026-05-04\nfoo\nbar";
     expect(hashAgenda(s)).toBe(hashAgenda(s));

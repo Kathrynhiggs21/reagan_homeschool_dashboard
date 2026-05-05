@@ -66,7 +66,9 @@ const SUMMER_START = new Date(2026, 4, 22); // May 22 2026
 // --- main page --------------------------------------------------------------
 
 export default function Schedule() {
-  const [view, setView] = useState<View>("day");
+  // 2026-05-05 — weekly is the default kid view (per Mom). Day view stays
+  // available via the segmented control at the top of the page.
+  const [view, setView] = useState<View>("week");
   const [cursor, setCursor] = useState<Date>(() => {
     const t = new Date(); t.setHours(0, 0, 0, 0); return t;
   });
