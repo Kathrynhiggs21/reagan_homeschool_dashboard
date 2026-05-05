@@ -102,9 +102,7 @@ export function PowerSchoolImporterCard() {
               </div>
             ))}
           </div>
-        ) : (
-          <p className="text-xs text-muted-foreground">No imports yet.</p>
-        )}
+        ) : null}
 
         <Divider label="Recent grades" />
         {recentGrades.data && recentGrades.data.length > 0 ? (
@@ -119,9 +117,7 @@ export function PowerSchoolImporterCard() {
               </div>
             ))}
           </div>
-        ) : (
-          <p className="text-xs text-muted-foreground">No grades yet.</p>
-        )}
+        ) : null}
 
         <Divider label="Recent assignments" />
         {recentAssignments.data && recentAssignments.data.length > 0 ? (
@@ -137,9 +133,7 @@ export function PowerSchoolImporterCard() {
               </div>
             ))}
           </div>
-        ) : (
-          <p className="text-xs text-muted-foreground">No assignments yet.</p>
-        )}
+        ) : null}
       </CardContent>
     </Card>
   );

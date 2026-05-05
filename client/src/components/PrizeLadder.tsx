@@ -35,15 +35,10 @@ export default function PrizeLadder() {
     );
   }
 
-  if (!sorted.length) {
-    return (
-      <LadderShell title="Prize Ladder">
-        <div className="text-sm opacity-80 px-3 py-4">
-          No prizes yet. Ask an adult to add some in <strong>Settings → Rewards</strong>.
-        </div>
-      </LadderShell>
-    );
-  }
+  // 2026-05-05 — standing rule: don't show if no info. Kid sees nothing
+  // instead of a 'No prizes yet' placeholder. Adult adds prizes via the
+  // Rewards manager and the ladder appears on next render.
+  if (!sorted.length) return null;
 
   const maxCost = sorted[sorted.length - 1].coinCost || 1;
   const balancePct = Math.min(100, (balance / maxCost) * 100);

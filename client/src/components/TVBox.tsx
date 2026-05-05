@@ -94,9 +94,8 @@ export default function TVBox({
           ) : (
             <div>
               {q.isLoading && <div className="text-sm text-muted-foreground">Loading…</div>}
-              {!q.isLoading && list.length === 0 && (
-                <div className="text-sm text-muted-foreground">No picks yet. Ask an adult to add some.</div>
-              )}
+              {/* 2026-05-05 — standing rule: don't show if no info. The empty
+                  TVBox simply renders nothing for the kid. */}
               <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {list.map((r: any) => (
                   <button
