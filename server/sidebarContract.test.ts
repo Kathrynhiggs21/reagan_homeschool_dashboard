@@ -24,9 +24,11 @@ const SHELL_PATH = resolve(
 const source = readFileSync(SHELL_PATH, "utf8");
 
 // Pull just the inside of KID_NAV / ADULT_NAV array literals so we don't
-// false-positive on comments above the array.
+// false-positive on comments above the array. KID_NAV is now NavRow[]
+// (since 2026-05-05 Kiwi Coins + Practice grouping), ADULT_NAV stays
+// NavItem[].
 function extractArrayLiteral(name: string): string {
-  const re = new RegExp(`const\\s+${name}\\s*:\\s*NavItem\\[\\]\\s*=\\s*\\[([\\s\\S]*?)\\];`, "m");
+  const re = new RegExp(`const\\s+${name}\\s*:\\s*(?:NavItem|NavRow)\\[\\]\\s*=\\s*\\[([\\s\\S]*?)\\];`, "m");
   const match = source.match(re);
   if (!match) throw new Error(`could not find ${name} in CozyShell.tsx`);
   return match[1];
@@ -35,8 +37,11 @@ function extractArrayLiteral(name: string): string {
 const kidBlock = extractArrayLiteral("KID_NAV");
 const adultBlock = extractArrayLiteral("ADULT_NAV");
 
-const KID_REQUIRED = ["Today", "Schedule", "Kiwi Coins", "Practice", "Bookshelf", "Notebook", "Apps & Tools"];
-const ADULT_REQUIRED = ["Curriculum Hub", "Daily Schedule", "Agenda Editor", "Settings"];
+// 2026-05-05 — Kiwi Coins + Practice grouped under a "Kiwi" parent. Their
+// labels under that group are simplified to "Coins" and "Practice".
+const KID_REQUIRED = ["Today", "Schedule", "Coins", "Practice", "Bookshelf", "Notebook", "Apps & Tools"];
+// 2026-05-05 — "Daily Schedule" page deleted; "Analytics" added back as a real adult page.
+const ADULT_REQUIRED = ["Curriculum Hub", "Agenda Editor", "Analytics", "Settings"];
 
 const KID_FORBIDDEN = ["Proud Wall", "My Levels", "About Me", "Adventures", "Journal", "Rewards"];
 const ADULT_FORBIDDEN = [
@@ -49,7 +54,7 @@ const ADULT_FORBIDDEN = [
   "AI Assistant",
   "Assignments Library",
   "Rewards / Prizes",
-  "Analytics",
+  "Daily Schedule",
 ];
 
 describe("sidebar contract", () => {
@@ -77,9 +82,10 @@ describe("sidebar contract", () => {
     }
   });
 
-  it("kid sidebar has exactly seven entries (no creep)", () => {
+  it("kid sidebar has exactly seven leaf entries (no creep), counting children of groups", () => {
     const matches = kidBlock.match(/label:\s*"[^"]+"/g) ?? [];
-    expect(matches.length).toBe(7);
+    // 7 leaves + 1 group header ("Kiwi") = 8 label tokens total
+    expect(matches.length).toBe(8);
   });
 
   it("adult sidebar has exactly four entries (no creep)", () => {

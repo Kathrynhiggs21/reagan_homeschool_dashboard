@@ -279,6 +279,36 @@ export default function AgendaEditor() {
             rows={4}
             className="text-base"
           />
+
+          {/* 2026-05-05 — Tutor-friendly canned day templates. One click
+              fills the instruction box with a full-day prompt so a tutor (or
+              Mom on a phone) doesn't have to type or remember syntax. */}
+          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
+            <div className="text-[11px] uppercase tracking-wide font-semibold text-amber-700 dark:text-amber-300 mb-2">
+              Quick day templates
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs">
+              {[
+                { label: "Standard school day", prompt: "Build a standard 4-block school day starting at 9 AM with 25-min blocks: math warm-up, ELA, science, social studies. Add a 10-min snack break between blocks 2 and 3." },
+                { label: "Half day (sick / early dismissal)", prompt: "Make today a half day: only the two most important blocks (ELA and math), 20 min each, starting at 9:30 AM. Drop everything else and add a rest block at the end." },
+                { label: "Tutor-only day", prompt: "Plan a tutor-only day: tutor arrives at 9 AM, leaves at 1 PM. Build 4 x 30-min blocks back-to-back focused on this week's curriculum, leaving 15 min at the end for tutor handoff notes." },
+                { label: "Field trip day", prompt: "Today is a field trip day. Replace the regular schedule with one 3-hour outing block (Adventure type) from 10 AM–1 PM, plus a 20-min reflection journal block at 1:30 PM." },
+                { label: "Catch-up day", prompt: "Make today a catch-up day. Pull any unfinished blocks from the last 5 school days and schedule them as 20-min blocks starting at 9 AM. Add a 15-min review block at the end." },
+                { label: "Copy yesterday", prompt: "Copy yesterday's schedule exactly as today's starting point." },
+                { label: "Copy from last Monday", prompt: "Copy last Monday's schedule as today's starting point." },
+              ].map((t) => (
+                <button
+                  key={t.label}
+                  type="button"
+                  onClick={() => setInstruction(t.prompt)}
+                  className="rounded-full border border-amber-500/50 bg-amber-500/10 px-3 py-1 text-amber-900 dark:text-amber-100 hover:bg-amber-500/20"
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="flex flex-wrap gap-2 text-xs">
             {[
               "Make it shorter and fun",
