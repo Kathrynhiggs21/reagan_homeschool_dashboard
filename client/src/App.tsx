@@ -28,9 +28,11 @@ import KiwiCoins from "./pages/KiwiCoins";
 import PracticeForCoins from "./pages/PracticeForCoins";
 import DailyPacket from "./pages/DailyPacket";
 import AgendaEditor from "./pages/AgendaEditor";
+import Analytics from "./pages/Analytics";
 import { trpc } from "@/lib/trpc";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
+import { useKiwi } from "@/contexts/KiwiContext";
 
 function OnboardingGuard() {
   const profile = trpc.profile.get.useQuery();
@@ -45,6 +47,7 @@ function OnboardingGuard() {
 }
 
 function Router() {
+  const ui = useKiwi();
   return (
     <CozyShell>
       <OnboardingGuard />
@@ -76,6 +79,9 @@ function Router() {
         <Route path="/agenda-editor">
           <AdultGate><AgendaEditor /></AdultGate>
         </Route>
+        <Route path="/analytics">
+          <AdultGate><Analytics /></AdultGate>
+        </Route>
 
         {/* === LEGACY REDIRECTS (deleted pages → closest live page) === */}
         <Route path="/week"><Redirect to="/schedule" /></Route>
@@ -89,7 +95,6 @@ function Router() {
         <Route path="/profile"><Redirect to="/settings" /></Route>
         <Route path="/timeline"><Redirect to="/schedule" /></Route>
         <Route path="/family"><Redirect to="/today" /></Route>
-        <Route path="/analytics"><Redirect to="/curriculum" /></Route>
         <Route path="/tutor"><Redirect to="/agenda-editor" /></Route>
         <Route path="/tutor/:id"><Redirect to="/agenda-editor" /></Route>
         <Route path="/knowledge"><Redirect to="/library" /></Route>
@@ -107,13 +112,14 @@ function Router() {
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
-      <KiwiPerch />
+      {ui.showKiwiPerch && <KiwiPerch />}
       <ResourceDock />
       <KiwiCompanion />
       <KiwiQuietListener />
-      <QuickAddFab />
-      {/* Global Notebook drawer — only renders when adult lock is unlocked. */}
-      <NotebookDrawer />
+      {ui.showQuickAddFab && <QuickAddFab />}
+      {/* Global Notebook drawer — only renders when adult lock is unlocked
+          AND the per-object toggle in Settings is on. */}
+      {ui.showNotebookDrawer && <NotebookDrawer />}
     </CozyShell>
   );
 }

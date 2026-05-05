@@ -794,6 +794,40 @@ export async function clearKiwiHistory() {
   await getDb().delete(whisperSessions);
 }
 
+/** 2026-05-05: kiwi behavior — derived from whisperSessions row timestamps. */
+export async function kiwiBehaviorForDate(dateStr: string) {
+  const start = new Date(dateStr + "T00:00:00");
+  const end = new Date(dateStr + "T23:59:59");
+  const rows = await getDb().select().from(whisperSessions)
+    .where(and(gte(whisperSessions.createdAt, start), lte(whisperSessions.createdAt, end)));
+  if (rows.length === 0) return null;
+  const userMsgs = rows.filter((r: any) => r.role === "user");
+  const aiMsgs = rows.filter((r: any) => r.role !== "user");
+  return {
+    interactions: rows.length,
+    userMessages: userMsgs.length,
+    aiMessages: aiMsgs.length,
+    firstAt: rows[0]?.createdAt ?? null,
+    lastAt: rows[rows.length - 1]?.createdAt ?? null,
+  };
+}
+
+export async function kiwiBehaviorAggregate() {
+  const rows = await getDb().select().from(whisperSessions);
+  if (rows.length === 0) return null;
+  const dayKey = (d: Date) => d.toISOString().slice(0, 10);
+  const days = new Set(rows.map((r: any) => dayKey(new Date(r.createdAt))));
+  return {
+    totalInteractions: rows.length,
+    daysTogether: days.size,
+    avgInteractionsPerDay: days.size === 0 ? 0 : Math.round(rows.length / days.size),
+    firstAt: rows.reduce((acc: Date, r: any) => {
+      const d = new Date(r.createdAt);
+      return acc && acc < d ? acc : d;
+    }, null as any),
+  };
+}
+
 /* ============================== HEART NOTES =============================== */
 export async function listHeartNotes(limit = 50) {
   return getDb().select().from(heartNotes).orderBy(desc(heartNotes.createdAt)).limit(limit);
@@ -5471,6 +5505,9 @@ export async function insertListeningSummary(s: {
   date: string;
   periodStart: Date;
   periodEnd: Date;
+  relevanceScore?: number | null;
+  discardedReason?: "background_noise"|"other_person"|"silence"|"non_school"|"too_short"|null;
+  schoolBlockId?: number | null;
   subjectGuess?: string | null;
   topicsJson?: any;
   completionsJson?: any;
@@ -5505,6 +5542,84 @@ export async function listListeningSummariesBetween(startDate: string, endDate: 
     ))
     .orderBy(asc(listeningSummaries.date), asc(listeningSummaries.periodStart));
   return rows;
+}
+
+/* ============================================================
+ * 2026-05-05: school-window detection + behavior derivations.
+ * A chunk is "in school window" if there's a scheduleBlock for the
+ * date whose [startTime, endTime) covers the chunk's periodStart.
+ * Returns the matching scheduleBlocks row id, or null if none.
+ * ========================================================== */
+export async function findCoveringSchoolBlock(dateStr: string, ts: Date): Promise<{ id: number; subjectGuess: string | null } | null> {
+  const plan = await getPlanByDate(dateStr);
+  if (!plan) return null;
+  const blocks = await listBlocksForPlan((plan as any).id);
+  // Build a wall-clock minute-of-day for ts, in local server tz.
+  const minOfDay = ts.getHours() * 60 + ts.getMinutes();
+  for (const b of blocks as any[]) {
+    const startStr: string | null = (b as any).startTime;
+    if (!startStr) continue;
+    const [hh, mm] = startStr.split(":").map((x: string) => parseInt(x, 10));
+    if (!Number.isFinite(hh) || !Number.isFinite(mm)) continue;
+    const startMin = hh * 60 + mm;
+    const endMin = startMin + (b.durationMin ?? 30);
+    if (minOfDay >= startMin && minOfDay < endMin) {
+      const subjectSlug = (b as any).subject?.slug ?? null;
+      return { id: b.id as number, subjectGuess: subjectSlug };
+    }
+  }
+  return null;
+}
+
+/** Behavior summary for one day, gated to relevant in-school chunks.
+ *  Returns null when no rows at all (caller hides UI per "no info" rule). */
+export async function listeningBehaviorForDate(dateStr: string) {
+  const all = await listListeningSummariesForDate(dateStr);
+  if (all.length === 0) return null;
+  const relevant = all.filter((r: any) => (r.relevanceScore ?? 100) >= 50);
+  const dropped = all.length - relevant.length;
+  const offTask = all.filter((r: any) => r.discardedReason === "non_school").length;
+  const distractions = all.filter((r: any) => r.discardedReason === "other_person" || r.discardedReason === "background_noise").length;
+  const focusPct = all.length === 0 ? 0 : Math.round((relevant.length / all.length) * 100);
+  // Top topic across relevant rows.
+  const topicCount = new Map<string, number>();
+  for (const r of relevant as any[]) {
+    const list: any[] = Array.isArray(r.topicsJson) ? r.topicsJson : [];
+    for (const t of list) {
+      const name = (t.name || t.topic || "").toString();
+      if (!name) continue;
+      topicCount.set(name, (topicCount.get(name) || 0) + 1);
+    }
+  }
+  const topTopic = Array.from(topicCount.entries()).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
+  return {
+    relevantCount: relevant.length,
+    droppedCount: dropped,
+    distractions,
+    offTask,
+    focusPct,
+    topTopic,
+  };
+}
+
+/** All-time behavior averages (focus%, dropped chunks, etc.). */
+export async function listeningBehaviorAggregate() {
+  const db = getDb();
+  const rows = await (db as any).select().from(listeningSummaries);
+  if (rows.length === 0) return null;
+  const relevant = rows.filter((r: any) => (r.relevanceScore ?? 100) >= 50);
+  const dropped = rows.length - relevant.length;
+  const focusPct = Math.round((relevant.length / rows.length) * 100);
+  // Days with at least one row ("days together").
+  const daySet = new Set(rows.map((r: any) => r.date));
+  return {
+    totalRows: rows.length,
+    relevantCount: relevant.length,
+    droppedCount: dropped,
+    focusPct,
+    daysTogether: daySet.size,
+    avgRelevantPerDay: daySet.size === 0 ? 0 : Math.round(relevant.length / daySet.size),
+  };
 }
 
 /** Aggregate the day's listening rows into a Mom-only daily sheet shape. */

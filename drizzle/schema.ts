@@ -1737,6 +1737,16 @@ export const listeningSummaries = mysqlTable("listeningSummaries", {
   difficultyScore: int("difficultyScore"),    // 0..100
   talkativenessScore: int("talkativenessScore"), // 0..100
   rawSummary: text("rawSummary"),
+  /** 2026-05-05: relevance gating. NULL = legacy row (assume relevant).
+   *  0 = clearly background/sibling/TV; 100 = clearly Reagan or her tutor. */
+  relevanceScore: int("relevanceScore"),
+  /** 2026-05-05: when relevant=false, why it was dropped. */
+  discardedReason: mysqlEnum("discardedReason", [
+    "background_noise", "other_person", "silence", "non_school", "too_short",
+  ]),
+  /** 2026-05-05: which scheduleBlocks row this chunk fell into; NULL means
+   *  the chunk arrived outside any active school block window. */
+  schoolBlockId: int("schoolBlockId"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 export type ListeningSummary = typeof listeningSummaries.$inferSelect;

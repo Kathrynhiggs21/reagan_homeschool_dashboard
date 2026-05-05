@@ -37,6 +37,10 @@ export default function SubjectRadar() {
     return m;
   }, [rows]);
 
+  // "Don't show if no info" rule — hide entire card if 0 rows.
+  // (placed AFTER all hooks to keep hook order stable.)
+  if (rows.length === 0) return null;
+
   const W = 320;
   const H = 320;
   const cx = W / 2;

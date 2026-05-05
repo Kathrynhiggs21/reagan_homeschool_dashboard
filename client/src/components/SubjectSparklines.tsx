@@ -65,17 +65,16 @@ export default function SubjectSparklines() {
 
   const slugs = Object.keys(grouped).sort((a, b) => grouped[b].n - grouped[a].n);
 
+  // "Don't show if no info" rule — hide the whole card when 0 subjects.
+  if (slugs.length === 0) return null;
+
   return (
     <Card className="p-4">
       <div className="flex items-center justify-between mb-3">
         <div className="font-semibold text-sm">Subject Sparklines — last 30 days</div>
         <div className="text-[11px] opacity-60 tabular-nums">{slugs.length} subjects</div>
       </div>
-      {slugs.length === 0 ? (
-        <div className="text-sm opacity-60 italic">
-          No graded submissions in the last 30 days yet.
-        </div>
-      ) : (
+      {(
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {slugs.map((slug) => {
             const g = grouped[slug];
@@ -109,3 +108,4 @@ export default function SubjectSparklines() {
     </Card>
   );
 }
+

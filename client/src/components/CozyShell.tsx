@@ -62,6 +62,7 @@ export const DRIVE_HUB_URL =
 
 export default function CozyShell({ children }: { children: ReactNode }) {
   const [loc] = useLocation();
+  const kiwi = useKiwi();
   const { companionName, photoUrl } = useKiwi() as unknown as {
     companionName: string;
     photoUrl?: string | null;
@@ -123,13 +124,17 @@ export default function CozyShell({ children }: { children: ReactNode }) {
             </Link>
           ))}
 
-          {/* Companion belt: tap to switch active flock companion. */}
-          <div className="px-2 mt-3">
-            <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-1">
-              My Flock
+          {/* Companion belt: tap to switch active flock companion.
+              Hidden by default per Mom's request 2026-05-05; toggle
+              in Settings → "Show Flock in sidebar". */}
+          {kiwi.showSidebarFlock && (
+            <div className="px-2 mt-3">
+              <div className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-1">
+                My Flock
+              </div>
+              <CompanionBelt size={36} />
             </div>
-            <CompanionBelt size={36} />
-          </div>
+          )}
 
           <div className="px-2 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mt-5 mb-1.5">
             More

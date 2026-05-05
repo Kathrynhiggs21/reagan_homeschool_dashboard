@@ -1,5 +1,23 @@
 import { useMemo } from "react";
 import { trpc } from "@/lib/trpc";
+import { useState } from "react";
+
+// 2026-05-05: Drive hub URL — set to the live folder once you have it.
+// Falls back to the parent /My Drive search for now.
+const DRIVE_HUB_URL = "https://drive.google.com/drive/search?q=Reagan%20School%20Hub%20Analytics";
+function OpenInDrive({ label }: { label?: string }) {
+  return (
+    <a
+      href={DRIVE_HUB_URL}
+      target="_blank"
+      rel="noreferrer"
+      className="text-[11px] text-primary underline opacity-80 hover:opacity-100"
+    >
+      {label || "Open in Drive"} →
+    </a>
+  );
+}
+
 import PrintButton from "@/components/PrintButton";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -90,6 +108,13 @@ export default function Analytics() {
   const screenings = trpc.iep.listScreenings.useQuery();
   const recentSubmissions = trpc.submissions.list.useQuery({ limit: 10 });
 
+  // 2026-05-05: new live-day + all-time strips for Kiwi + listening behavior.
+  const [today] = useState(() => new Date().toISOString().slice(0, 10));
+  const kiwiToday = trpc.kiwi.behaviorToday.useQuery({ date: today });
+  const kiwiAll = trpc.kiwi.behaviorAggregate.useQuery();
+  const listenToday = trpc.listening.todayBehavior.useQuery({ date: today });
+  const listenAll = trpc.listening.aggregate.useQuery();
+
   // Dedupe IEP goals + accommodations by normalized text (server bug ANALYTICS-DUP-1/2 — same row was being inserted twice across migrations)
   const uniqueGoals = useMemo(() => {
     const seen = new Set<string>();
@@ -130,6 +155,114 @@ export default function Analytics() {
 
       {/* Adaptation engine v2 — surfaces stacked-struggle alerts (parent only) */}
       <ParentFlagsBanner />
+
+      {/* ============================================================ */}
+      {/* 2026-05-05 — Day-to-day live strip (mirrors Drive Day Summaries) */}
+      {(kiwiToday.data || listenToday.data) && (
+        <section className="space-y-2">
+          <div className="flex items-baseline justify-between">
+            <h2 className="font-display font-semibold text-lg">Today — live</h2>
+            <OpenInDrive label="Day Summaries in Drive" />
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {kiwiToday.data && (
+              <Card className="cozy-card p-4">
+                <div className="text-xs text-muted-foreground">Kiwi today</div>
+                <div className="text-3xl font-display font-semibold mt-1">{(kiwiToday.data as any).interactions}</div>
+                <div className="text-[11px] text-muted-foreground mt-1">
+                  {(kiwiToday.data as any).userMessages} from Reagan · {(kiwiToday.data as any).aiMessages} from Kiwi
+                </div>
+              </Card>
+            )}
+            {listenToday.data && (
+              <Card className="cozy-card p-4">
+                <div className="text-xs text-muted-foreground">Listening focus today</div>
+                <div className="text-3xl font-display font-semibold mt-1">{(listenToday.data as any).focusPct}%</div>
+                <div className="text-[11px] text-muted-foreground mt-1">
+                  {(listenToday.data as any).relevantCount} relevant chunks · {(listenToday.data as any).droppedCount} dropped
+                </div>
+                {(listenToday.data as any).topTopic && (
+                  <div className="text-[11px] text-muted-foreground mt-1">Top: {(listenToday.data as any).topTopic}</div>
+                )}
+              </Card>
+            )}
+            {listenToday.data && ((listenToday.data as any).distractions + (listenToday.data as any).offTask) > 0 && (
+              <Card className="cozy-card p-4">
+                <div className="text-xs text-muted-foreground">Distractions</div>
+                <div className="text-3xl font-display font-semibold mt-1">{(listenToday.data as any).distractions}</div>
+                <div className="text-[11px] text-muted-foreground mt-1">{(listenToday.data as any).offTask} off-task moments</div>
+              </Card>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* All-time together strip */}
+      {(kiwiAll.data || listenAll.data) && (
+        <section className="space-y-2">
+          <div className="flex items-baseline justify-between">
+            <h2 className="font-display font-semibold text-lg">All-time together</h2>
+            <OpenInDrive label="Kiwi AI in Drive" />
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {kiwiAll.data && (
+              <Card className="cozy-card p-4">
+                <div className="text-xs text-muted-foreground">Days with Kiwi</div>
+                <div className="text-3xl font-display font-semibold mt-1">{(kiwiAll.data as any).daysTogether}</div>
+              </Card>
+            )}
+            {kiwiAll.data && (
+              <Card className="cozy-card p-4">
+                <div className="text-xs text-muted-foreground">Avg Kiwi msgs/day</div>
+                <div className="text-3xl font-display font-semibold mt-1">{(kiwiAll.data as any).avgInteractionsPerDay}</div>
+                <div className="text-[11px] text-muted-foreground mt-1">{(kiwiAll.data as any).totalInteractions} total</div>
+              </Card>
+            )}
+            {listenAll.data && (
+              <Card className="cozy-card p-4">
+                <div className="text-xs text-muted-foreground">Listening focus (all time)</div>
+                <div className="text-3xl font-display font-semibold mt-1">{(listenAll.data as any).focusPct}%</div>
+                <div className="text-[11px] text-muted-foreground mt-1">{(listenAll.data as any).droppedCount} dropped chunks</div>
+              </Card>
+            )}
+            {listenAll.data && (
+              <Card className="cozy-card p-4">
+                <div className="text-xs text-muted-foreground">Avg relevant chunks/day</div>
+                <div className="text-3xl font-display font-semibold mt-1">{(listenAll.data as any).avgRelevantPerDay}</div>
+                <div className="text-[11px] text-muted-foreground mt-1">across {(listenAll.data as any).daysTogether} days</div>
+              </Card>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* IEP at-a-glance mini-card (full breakdown lives in Drive) */}
+      {uniqueGoals.length > 0 && (
+        <Card className="cozy-card p-3">
+          <div className="flex items-baseline justify-between mb-2">
+            <h2 className="font-display font-semibold text-sm">IEP — at a glance</h2>
+            <OpenInDrive label="Goals / IEP-style Plans in Drive" />
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {uniqueGoals.slice(0, 6).map((g: any) => {
+              const status = String(g.status || "in_progress").toLowerCase();
+              const chip = status === "met"
+                ? "bg-emerald-100 text-emerald-900 border-emerald-200"
+                : status === "on_track"
+                  ? "bg-sky-100 text-sky-900 border-sky-200"
+                  : status === "at_risk"
+                    ? "bg-rose-100 text-rose-900 border-rose-200"
+                    : "bg-amber-100 text-amber-900 border-amber-200";
+              return (
+                <div key={g.id} className="p-2 rounded-md border bg-white/40 flex items-start gap-2 text-xs">
+                  <span className={`px-1.5 py-0.5 rounded-full border text-[10px] capitalize shrink-0 ${chip}`}>{status.replace("_", " ")}</span>
+                  <span className="line-clamp-2">{g.goalText}</span>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
       {/* Subject radar — 30-day rolling per-subject performance at a glance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -188,10 +321,12 @@ export default function Analytics() {
         </Card>
       </div>
 
-      <Card className="cozy-card p-4">
-        <h2 className="font-display font-semibold mb-3">Mood Arc — last 14 logs</h2>
-        <MoodArcChart moods={moods.data || []} />
-      </Card>
+      {(moods.data || []).length > 0 && (
+        <Card className="cozy-card p-4">
+          <h2 className="font-display font-semibold mb-3">Mood Arc — last 14 logs</h2>
+          <MoodArcChart moods={moods.data || []} />
+        </Card>
+      )}
 
       <div className="grid lg:grid-cols-2 gap-3">
         <Card className="cozy-card p-4">

@@ -1520,6 +1520,21 @@ export const appRouter = router({
           audioUrl = stored.url;
         }
         if (!audioUrl) return { ok: false as const, reason: "no_audio" };
+        // 2026-05-05: school-window guard. Only collect chunks that fall
+        // inside an active scheduleBlock for that date. Anything outside
+        // is logged as a tally row (no transcript, no audio reference).
+        const cover = await db.findCoveringSchoolBlock(input.date, start);
+        if (!cover) {
+          await db.insertListeningSummary({
+            date: input.date,
+            periodStart: start,
+            periodEnd: end,
+            relevanceScore: 0,
+            discardedReason: "non_school",
+            schoolBlockId: null,
+          } as any);
+          return { ok: false as const, reason: "non_school" };
+        }
         let summary: any = null;
         let transcript = "";
         try {
@@ -1527,6 +1542,47 @@ export const appRouter = router({
           transcript = (t as any)?.text ?? "";
         } catch (e: any) {
           // transcription failed — store an empty-summary marker so we can see gaps
+        }
+        // 2026-05-05: relevance classifier. If the transcript is empty or
+        // looks like background TV / a sibling / silence, drop it as a tally.
+        if (transcript.trim().length === 0) {
+          await db.insertListeningSummary({
+            date: input.date,
+            periodStart: start,
+            periodEnd: end,
+            relevanceScore: 0,
+            discardedReason: "silence",
+            schoolBlockId: cover.id,
+          } as any);
+          return { ok: false as const, reason: "silence" };
+        }
+        let relevance: { score: number; reason: "background_noise"|"other_person"|null } = { score: 100, reason: null };
+        try {
+          const { invokeLLM } = await import("./_core/llm");
+          const r0 = await invokeLLM({
+            messages: [
+              { role: "system", content: "You classify a short school-day audio transcript. Return STRICT JSON only." },
+              { role: "user", content: `Transcript:\n${transcript.slice(0, 3000)}\n\nReturn JSON: { relevant: bool, score: 0..100 (100 = clearly Reagan or her tutor doing schoolwork), reason: "background_noise"|"other_person"|null }. "other_person" applies when an adult phone call or sibling chat dominates the clip and Reagan is not engaged in school content. "background_noise" applies when TV / music / static dominates.` },
+            ],
+            response_format: { type: "json_schema", json_schema: { name: "relevance", strict: true, schema: { type: "object", properties: { relevant: { type: "boolean" }, score: { type: "integer" }, reason: { type: ["string","null"] } }, required: ["relevant","score","reason"], additionalProperties: false } } } as any,
+          } as any);
+          const c0: any = (r0 as any)?.choices?.[0]?.message?.content;
+          const parsed = typeof c0 === "string" ? JSON.parse(c0) : c0;
+          if (parsed && typeof parsed.score === "number") {
+            relevance.score = Math.max(0, Math.min(100, parsed.score));
+            relevance.reason = parsed.reason ?? null;
+          }
+        } catch {}
+        if (relevance.score < 50) {
+          await db.insertListeningSummary({
+            date: input.date,
+            periodStart: start,
+            periodEnd: end,
+            relevanceScore: relevance.score,
+            discardedReason: relevance.reason ?? "background_noise",
+            schoolBlockId: cover.id,
+          } as any);
+          return { ok: false as const, reason: "low_relevance" };
         }
         if (transcript.trim().length > 0) {
           try {
@@ -1569,7 +1625,10 @@ export const appRouter = router({
           date: input.date,
           periodStart: start,
           periodEnd: end,
-          subjectGuess: summary?.subjectGuess ?? input.subjectHint ?? null,
+          relevanceScore: relevance.score,
+          discardedReason: null,
+          schoolBlockId: cover.id,
+          subjectGuess: summary?.subjectGuess ?? cover.subjectGuess ?? input.subjectHint ?? null,
           topicsJson: summary?.topics ?? [],
           completionsJson: summary?.completions ?? [],
           emotionScore: summary?.emotionScore ?? null,
@@ -1597,6 +1656,13 @@ export const appRouter = router({
         const rows = await db.listListeningSummariesBetween(input.startDate, input.endDate);
         return { startDate: input.startDate, endDate: input.endDate, ...db.aggregateListeningDay(rows), rows };
       }),
+    /** 2026-05-05: today's school-window behavior summary (focus%, etc.). */
+    todayBehavior: protectedProcedure
+      .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
+      .query(({ input }) => db.listeningBehaviorForDate(input.date)),
+    /** 2026-05-05: all-time aggregate (avg per day, days together). */
+    aggregate: protectedProcedure
+      .query(() => db.listeningBehaviorAggregate()),
   }),
 
   /* =================== ANIMALS =================== */
@@ -1791,6 +1857,12 @@ export const appRouter = router({
   kiwi: router({
     history: publicProcedure.input(z.object({ limit: z.number().default(50) })).query(({ input }) => db.listKiwiMessages(input.limit)),
     clear: protectedProcedure.input(z.object({}).optional()).mutation(() => db.clearKiwiHistory()),
+    /** 2026-05-05: Kiwi behavior — today (basic) + all-time aggregate. */
+    behaviorToday: protectedProcedure
+      .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
+      .query(({ input }) => db.kiwiBehaviorForDate(input.date)),
+    behaviorAggregate: protectedProcedure
+      .query(() => db.kiwiBehaviorAggregate()),
     /**
      * Phase 14 — cartoon voice for Kiwi/Blue/Daffy/Honk via Gemini TTS.
      * Returns a base64 WAV the browser can drop straight into an <audio> tag.

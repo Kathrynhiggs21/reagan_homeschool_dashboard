@@ -2543,3 +2543,138 @@ Sweep targets (initial pass):
 - [ ] Tutor Day Notes panel: only render the saved-notes block when items.length > 0
 - [ ] Curriculum Hub: hide subject card when 0 topics
 - [ ] Today: hide adult quick-link card when adult locked or 0 adult tools
+
+
+## 2026-05-05 — Kiwi Behavior on Analytics + Settings sliders
+
+Analytics page (adult-only):
+- [ ] **Kiwi today** card: today's interaction count, talks today, top topic Reagan asked Kiwi, Kiwi-initiated check-ins today
+- [ ] **Kiwi together — averages** card: average interactions/day across all days together, total interactions, total days together, longest streak of daily kiwi use
+- [ ] Both cards hide when 0 interactions ever ("don't show if no info" rule)
+- [ ] Backend: `kiwi.behaviorDaily` + `kiwi.behaviorAggregate` tRPC queries reading from existing kiwi/adultAi message logs (no new table — derive from `adultAiMessages` + any per-day kiwi event log already present)
+
+Settings (adult):
+- [ ] **Sliders** for Kiwi: Animation amount, Talking amount, Funny personality (each 0–4)
+- [ ] Persist to `appSettings` (key per slider) — pre-existing `gamePrefs`/`appSettings` infra reused
+- [ ] Live-apply: KiwiCompanion + KiwiPerch read these from existing context and gate animations/messages by the level
+- [ ] Per-object controls below the Kiwi sliders: KiwiPerch on/off, sidebar sprite on/off (default off), QuickAddFab on/off, NotebookDrawer pill on/off
+- [ ] No bird sprites in sidebar by default
+
+
+## 2026-05-05 — School-window listening behavior log (CONFIRMED)
+
+Goal: a daily behavior summary derived from passive listening, but ONLY
+during Reagan-school-related time windows AND only when the chunk is
+actually relevant (her voice / tutor / school content). Background TV,
+sibling, or someone-else-on-phone chunks are dropped (not stored).
+
+Server:
+- [ ] Reuse existing `listeningSummaries` table — add fields if needed:
+      `relevanceScore` (0-100), `discardedReason` (enum: `background_noise` | `other_person` | `silence` | `non_school` | null), `schoolBlockId` nullable FK
+- [ ] Helper `isWithinSchoolWindow(ts)`:
+      a chunk is "within school window" only if a `scheduleBlocks` row
+      exists for today whose [startTime, endTime) covers ts. No active
+      block → reject up front, never call the LLM, never store audio ref.
+- [ ] Helper `classifyRelevance(transcript)`:
+      LLM 1-shot returning `{relevant: bool, reason: enum, topic: string?}`.
+      `relevant=false` → store ONLY a tiny tally row (no transcript, no
+      audio ref). `relevant=true` → store a normal listeningSummaries row.
+- [ ] tRPC `listening.todayBehavior` — derive: focus level (relevant/total
+      ratio), distraction count, off-task moments (non_school during a
+      school block), top topic.
+- [ ] tRPC `listening.aggregateBehavior` — all-time averages.
+
+Frontend (Analytics page):
+- [ ] "Kiwi today" card: append a "Today's listening behavior" sub-section
+      with focus%, distractions count, off-task count, top topic.
+      Hide entire sub-section when 0 chunks today.
+- [ ] "Kiwi together — averages" card: append all-time focus%, total
+      relevant chunks, total dropped chunks. Hide section when 0 ever.
+- [ ] Both root cards still hide entirely when zero kiwi interactions
+      AND zero listening data ("don't show if no info").
+
+Privacy:
+- [ ] Audio bytes are NEVER persisted; only the transcript when
+      `relevant=true`. Discarded chunks store only the reason + count.
+- [ ] All listening rows are adult-only — never queried from kid views.
+
+
+## 2026-05-05 — Analytics page mirrors Google Drive hub (CONFIRMED)
+
+Source of truth for the structure: pasted_content.txt (Reagan School Hub
+→ 05 - Progress and Reports/Analytics). Dashboard Analytics page is the
+LIVE view; Drive folders are the long-term archive.
+
+Top-level sections on /analytics (in this order):
+
+1) Day-to-day numbers
+   - [ ] Existing radar / sparklines / mastery / trajectory / IEP cards
+   - [ ] "Open in Drive" button → root Analytics folder
+
+2) Kiwi AI
+   - [ ] Day Summary card (today)
+   - [ ] Voice & speech signals: talkativity (WPM + minutes), Voice Mood
+         (Bright / Excited / Flat / Sleepy / Upset / Mixed),
+         modulation, clarity, pause count
+   - [ ] Activity levels: focus%, restlessness, engagement, breaks,
+         off-task, on-task streaks
+   - [ ] Adaptive level changes today: list of step-down / step-up events
+         with reason (LLM reasoning log) and adult-override toggle
+   - [ ] Alerts: surfaced from Models & Rules thresholds
+   - [ ] "Open in Drive" → Kiwi AI folder
+   - [ ] All sub-sections honor "don't show if no info"
+
+3) Behavior & Learning Insights
+   - [ ] Daily behavior log card (today)
+   - [ ] Day interpretation: Kiwi / Adult / Reagan tabs
+   - [ ] Trends over time: weekly, time-of-day heatmap, monthly
+   - [ ] Effects on learning: correlation strip (focus×subject grades)
+   - [ ] Ways she learns best: 8-style profile bar (Visual, Auditory,
+         Kinesthetic, R/W, Social, Solo, Game/Reward, Outdoor)
+   - [ ] Subjects best / struggling chips
+   - [ ] Recommendations: Tomorrow / Week / Month tabs
+   - [ ] "Open in Drive" → Behavior & Learning Insights folder
+
+Privacy & retention (rules baked in):
+- [ ] Raw audio: NEVER persisted on dashboard side. Drive hub holds
+      Today/ + Last 7 Days/ short-term audio if Mom enables it.
+- [ ] Voice mood + talkativity: adult-only display. Never shown on kid pages.
+- [ ] Listening data: only collected during Reagan school windows + only
+      stored when relevance classifier returns relevant=true.
+- [ ] Mirror: when listening summaries are written on the dashboard, the
+      next mirror run picks them up into Drive
+      `Kiwi AI/Day Summaries/Daily Recaps/` and
+      `Behavior & Learning Insights/Daily Behavior Logs/Today/`.
+
+Settings (adult, sliders): unchanged from prior entry.
+
+
+## 2026-05-05 — IEP at-a-glance mini-card on Analytics (CONFIRMED)
+
+- [ ] Tiny "IEP at a glance" card in Analytics → Kiwi AI section.
+      One row per active IEP goal: name + status chip
+      (Behind / On / Ahead) + "Open in Drive →" link to the
+      `Goals/IEP-style Plans` folder.
+- [ ] No detailed bars / source-labeled rows / estimated-vs-real charts
+      on the dashboard. Full breakdown lives in Drive only.
+- [ ] Mirror still writes the full breakdown to Drive on the next run
+      (Goals/IEP-style Plans + Behavior & Learning Insights → Subjects).
+- [ ] "Don't show if no info" — card hides until at least one IEP goal
+      exists in the DB.
+
+
+## 2026-05-05 — Tutor-friendly daily schedule editor
+
+- [ ] One-screen day builder for tutors (mobile-friendly).
+- [ ] Single "+" button to add a block; auto-fills next free time slot.
+- [ ] Drag to reorder; click chips to edit time / duration; inline rename.
+- [ ] Autosave on blur — no Save button.
+- [ ] One-tap templates: Standard school day, Half day (sick / early
+      dismissal), Tutor-only day, Field trip day.
+- [ ] Quick-attach worksheets / videos / lessons from a sidebar of
+      recent items per block.
+- [ ] "Copy yesterday" + "Copy from last Monday" buttons.
+- [ ] Tutor mode toggle: strips analytics / behavior / IEP from view,
+      shows only schedule editor.
+- [ ] Schedule editor is reachable from /schedule (adult/tutor sees
+      editor; Reagan sees the simple weekly view).

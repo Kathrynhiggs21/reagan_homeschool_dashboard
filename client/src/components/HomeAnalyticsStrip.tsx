@@ -20,6 +20,11 @@ export default function HomeAnalyticsStrip() {
   const doneToday = cov.reduce((s, r) => s + r.done, 0);
   const pctToday = totalToday > 0 ? Math.round((doneToday / totalToday) * 100) : 0;
 
+  // "Don't show if no info" rule — if there's truly nothing to display
+  // (no coverage, no mood logs, and no resume pointer), hide the whole strip
+  // instead of a row of zero-state placeholders.
+  if (cov.length === 0 && moodDays.length === 0 && !next) return null;
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 my-3">
       <Link href="/analytics">

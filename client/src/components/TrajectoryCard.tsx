@@ -47,6 +47,10 @@ export default function TrajectoryCard() {
   const skillsToGo = overall ? Math.max(0, Math.ceil((targetPctMastered / 100) * overall.totalSkills) - overall.totalMastered) : 0;
   const weeksToTarget = Math.ceil(skillsToGo / 3);
 
+  // "Don't show if no info" rule — hide entire card while loading or empty.
+  if (summary.isLoading) return null;
+  if (rows.length === 0) return null;
+
   return (
     <Card className="cozy-card p-5 space-y-4 border-2 border-amber-300/50">
       <div className="flex items-start justify-between gap-3">
@@ -56,12 +60,6 @@ export default function TrajectoryCard() {
         </div>
         <span className="text-3xl" aria-hidden>🎯</span>
       </div>
-
-      {summary.isLoading && <div className="text-sm text-muted-foreground">Loading…</div>}
-
-      {!summary.isLoading && rows.length === 0 && (
-        <div className="text-sm text-muted-foreground italic">No skill ladder data yet. Run the diagnostic placement to populate.</div>
-      )}
 
       {/* Overall headline */}
       {overall && (
