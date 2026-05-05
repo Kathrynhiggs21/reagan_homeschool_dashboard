@@ -14,6 +14,8 @@ import TutorsManager from "@/components/TutorsManager";
 import CalendarSyncCard from "@/components/CalendarSyncCard";
 import AppointmentsCardLite from "@/components/AppointmentsCardLite";
 import SettingsAIHelperCard from "@/components/SettingsAIHelperCard";
+import { useKiwi } from "@/contexts/KiwiContext";
+import { Slider } from "@/components/ui/slider";
 
 /**
  * Settings — slim version (locked May 4 2026).
@@ -38,12 +40,13 @@ export default function Settings() {
       <SettingsAIHelperCard />
 
       <Tabs defaultValue="people" className="w-full">
-        <TabsList className="grid grid-cols-5 w-full">
+        <TabsList className="grid grid-cols-6 w-full">
           <TabsTrigger value="people">People</TabsTrigger>
           <TabsTrigger value="prizes">Prizes</TabsTrigger>
           <TabsTrigger value="requests">Requests</TabsTrigger>
           <TabsTrigger value="calendar">Calendar</TabsTrigger>
           <TabsTrigger value="notifications">Email</TabsTrigger>
+          <TabsTrigger value="kiwi">Kiwi &amp; UI</TabsTrigger>
         </TabsList>
 
         <TabsContent value="people" className="space-y-4">
@@ -71,12 +74,68 @@ export default function Settings() {
         <TabsContent value="notifications">
           <NotificationsCard />
         </TabsContent>
+
+        <TabsContent value="kiwi" className="space-y-4">
+          <KiwiPersonalityCard />
+          <DashboardObjectsCard />
+        </TabsContent>
       </Tabs>
     </div>
   );
 }
 
 /* --------------------------------- Cards --------------------------------- */
+
+/** 2026-05-05: Kiwi personality — sliders for animation amount, talking, funny. */
+function KiwiPersonalityCard() {
+  const k = useKiwi();
+  const Row = ({ label, hint, value, onChange }: { label: string; hint: string; value: number; onChange: (v: any) => void }) => (
+    <div className="space-y-1">
+      <div className="flex items-baseline justify-between">
+        <Label className="text-sm">{label}</Label>
+        <span className="text-[11px] text-muted-foreground">{["Off","Calm","Soft","Normal","Lively"][value]}</span>
+      </div>
+      <Slider value={[value]} min={0} max={4} step={1} onValueChange={(v) => onChange(v[0] ?? 0)} />
+      <div className="text-[11px] text-muted-foreground">{hint}</div>
+    </div>
+  );
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-base">Kiwi personality</CardTitle></CardHeader>
+      <CardContent className="space-y-4">
+        <Row label="Animation amount" hint="How often Kiwi flutters, hops, or flies." value={k.animationLevel ?? 3} onChange={k.setAnimationLevel} />
+        <Row label="Talking amount" hint="How chatty Kiwi is when not directly asked." value={k.talkLevel ?? 3} onChange={k.setTalkLevel} />
+        <Row label="Funny" hint="How playful Kiwi's tone is." value={k.funnyLevel ?? 3} onChange={k.setFunnyLevel} />
+      </CardContent>
+    </Card>
+  );
+}
+
+/** 2026-05-05: per-object visibility toggles for dashboard helpers. */
+function DashboardObjectsCard() {
+  const k = useKiwi();
+  const Row = ({ label, hint, value, onChange }: { label: string; hint: string; value: boolean; onChange: (v: boolean) => void }) => (
+    <div className="flex items-start justify-between gap-3">
+      <div className="flex-1">
+        <Label className="text-sm">{label}</Label>
+        <div className="text-[11px] text-muted-foreground">{hint}</div>
+      </div>
+      <Switch checked={value} onCheckedChange={onChange} />
+    </div>
+  );
+  return (
+    <Card>
+      <CardHeader><CardTitle className="text-base">Dashboard helpers</CardTitle></CardHeader>
+      <CardContent className="space-y-4">
+        <Row label="Show bird sprites in sidebar" hint="My Flock row under the navigation. Off by default." value={!!k.showSidebarFlock} onChange={k.setShowSidebarFlock} />
+        <Row label="Show Kiwi perch (bottom-right)" hint="The cartoon Kiwi that lives on every page." value={k.showKiwiPerch !== false} onChange={k.setShowKiwiPerch} />
+        <Row label="Show Quick-Add button" hint="The +Quick Add button for adults at the bottom." value={k.showQuickAddFab !== false} onChange={k.setShowQuickAddFab} />
+        <Row label="Show Notebook drawer pill" hint="The mid-right edge handle that opens the Notebook." value={k.showNotebookDrawer !== false} onChange={k.setShowNotebookDrawer} />
+      </CardContent>
+    </Card>
+  );
+}
+
 
 function ReaganBasicsCard() {
   const profile = trpc.profile.get.useQuery();

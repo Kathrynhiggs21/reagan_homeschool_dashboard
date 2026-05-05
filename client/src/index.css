@@ -920,3 +920,137 @@ html[data-rtheme="notebook"] dt,
 html[data-rtheme="notebook"] dd {
   color: #1e2e52;
 }
+
+
+/* =========================================================================
+   2026-05-05 — Curriculum-only theming + global grey-box contrast pass
+   ------------------------------------------------------------------------- */
+
+/* Curriculum page reads as its own paper-style section, distinct from the
+   blackboard-feel of Today / Analytics. */
+.curriculum-page {
+  --curr-paper: #fbf7eb;
+  --curr-ink: #2a2010;
+  --curr-edge: rgba(160, 120, 60, 0.3);
+}
+.curriculum-page .curriculum-title {
+  font-family: "Bookman Old Style", "Georgia", "Iowan Old Style", serif;
+  letter-spacing: 0.005em;
+  color: oklch(0.92 0.05 80);
+}
+.curriculum-page .curriculum-subtitle {
+  color: oklch(0.82 0.025 80);
+}
+/* Cards on the curriculum page get a paper feel + readable warm border. */
+html[data-rtheme="starry"] .curriculum-page .cozy-card,
+html[data-rtheme="chalkboard"] .curriculum-page .cozy-card {
+  background: linear-gradient(180deg, rgba(35, 30, 22, 0.92), rgba(28, 24, 18, 0.92)) !important;
+  border: 1px solid rgba(220, 195, 130, 0.32) !important;
+  color: oklch(0.92 0.04 80) !important;
+}
+html[data-rtheme="cream"] .curriculum-page .cozy-card,
+html[data-rtheme="notebook"] .curriculum-page .cozy-card {
+  background: var(--curr-paper) !important;
+  border: 1px solid var(--curr-edge) !important;
+  color: var(--curr-ink) !important;
+}
+.curriculum-page h2 {
+  font-family: "Bookman Old Style", "Georgia", "Iowan Old Style", serif;
+}
+
+/* ------------- Global grey-box (muted) contrast floor -------------------
+   Old defaults:
+     dark themes  --muted-foreground: oklch(0.78 0.01 95)   on  oklch(0.28 …)
+     light themes --muted-foreground: oklch(0.38 0.04 60)
+   Both were borderline against busy backgrounds. Bump them and add a
+   readable default for any .bg-muted / [data-grey-box] surface. */
+html[data-rtheme="starry"],
+html[data-rtheme="chalkboard"] {
+  --muted-foreground: oklch(0.92 0.02 90) !important;
+}
+html[data-rtheme="cream"],
+html[data-rtheme="notebook"] {
+  --muted-foreground: oklch(0.30 0.04 60) !important;
+}
+/* Belt-and-suspenders: even when text-muted-foreground is overridden by a
+   per-theme rule, force a min contrast inside .bg-muted / muted chips. */
+.bg-muted,
+.bg-muted\/50,
+[data-grey-box] {
+  color: var(--muted-foreground) !important;
+}
+.bg-muted *:not(svg):not(path),
+.bg-muted\/50 *:not(svg):not(path),
+[data-grey-box] *:not(svg):not(path) {
+  color: inherit;
+}
+
+
+/* =========================================================================
+   2026-05-05 — STANDING RULE: NO GREY BOXES, ANYWHERE
+   -------------------------------------------------------------------------
+   Replace every Tailwind grey-family surface (bg-muted, bg-slate-*,
+   bg-gray-*, bg-zinc-*, bg-neutral-*) with a themed warm surface that
+   matches the active rtheme, and force inner text to a readable ink
+   color. Borders also get warmed up so dividers stop reading as grey.
+   ------------------------------------------------------------------------- */
+
+/* Warm tinted surfaces by theme */
+html[data-rtheme="starry"], html[data-rtheme="chalkboard"] {
+  --no-grey-surface: rgba(35, 30, 22, 0.78);
+  --no-grey-surface-strong: rgba(45, 38, 28, 0.92);
+  --no-grey-ink: oklch(0.95 0.03 85);
+  --no-grey-ink-soft: oklch(0.86 0.04 85);
+  --no-grey-edge: rgba(220, 195, 130, 0.32);
+}
+html[data-rtheme="cream"], html[data-rtheme="notebook"] {
+  --no-grey-surface: rgba(255, 245, 220, 0.7);
+  --no-grey-surface-strong: rgba(255, 240, 205, 0.92);
+  --no-grey-ink: #2a2010;
+  --no-grey-ink-soft: rgba(42, 32, 16, 0.75);
+  --no-grey-edge: rgba(160, 120, 60, 0.28);
+}
+:root {
+  --no-grey-surface: rgba(35, 30, 22, 0.78);
+  --no-grey-surface-strong: rgba(45, 38, 28, 0.92);
+  --no-grey-ink: oklch(0.95 0.03 85);
+  --no-grey-ink-soft: oklch(0.86 0.04 85);
+  --no-grey-edge: rgba(220, 195, 130, 0.32);
+}
+
+/* Surfaces — base muted family */
+.bg-muted, .bg-muted\/50, .bg-muted\/40, .bg-muted\/30, .bg-muted\/20,
+[data-grey-box] {
+  background: var(--no-grey-surface) !important;
+  color: var(--no-grey-ink) !important;
+  border-color: var(--no-grey-edge) !important;
+}
+
+/* Surfaces — tailwind grey scales (50-200 mostly used as cards/chips) */
+.bg-slate-50,  .bg-gray-50,  .bg-zinc-50,  .bg-neutral-50,
+.bg-slate-100, .bg-gray-100, .bg-zinc-100, .bg-neutral-100,
+.bg-slate-200, .bg-gray-200, .bg-zinc-200, .bg-neutral-200 {
+  background: var(--no-grey-surface) !important;
+  color: var(--no-grey-ink) !important;
+}
+
+/* Surfaces — tailwind grey scales (300-500 used as deeper chips) */
+.bg-slate-300, .bg-gray-300, .bg-zinc-300, .bg-neutral-300,
+.bg-slate-400, .bg-gray-400, .bg-zinc-400, .bg-neutral-400,
+.bg-slate-500, .bg-gray-500, .bg-zinc-500, .bg-neutral-500 {
+  background: var(--no-grey-surface-strong) !important;
+  color: var(--no-grey-ink) !important;
+}
+
+/* Text — keep grey-ish text from going invisible */
+.text-slate-400, .text-gray-400, .text-zinc-400, .text-neutral-400,
+.text-slate-500, .text-gray-500, .text-zinc-500, .text-neutral-500,
+.text-slate-600, .text-gray-600, .text-zinc-600, .text-neutral-600 {
+  color: var(--no-grey-ink-soft) !important;
+}
+
+/* Borders — warm divider line instead of cool grey */
+.border-slate-200, .border-gray-200, .border-zinc-200, .border-neutral-200,
+.border-slate-300, .border-gray-300, .border-zinc-300, .border-neutral-300 {
+  border-color: var(--no-grey-edge) !important;
+}

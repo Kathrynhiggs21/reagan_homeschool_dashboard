@@ -36,10 +36,10 @@ export default function Curriculum() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="curriculum-page space-y-6">
       <header>
-        <h1 className="text-3xl font-display font-semibold">Curriculum</h1>
-        <p className="text-muted-foreground text-sm mt-1">Subjects, skills, and the books we're working through.</p>
+        <h1 className="text-3xl font-display font-semibold curriculum-title">Curriculum</h1>
+        <p className="text-sm mt-1 curriculum-subtitle">Subjects, skills, and the books we're working through.</p>
       </header>
 
       {/* AI agenda sync strip — pinned at top so adults can refresh the next 5 school days from one place */}

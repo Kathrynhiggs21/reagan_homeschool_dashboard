@@ -2678,3 +2678,27 @@ Settings (adult, sliders): unchanged from prior entry.
       shows only schedule editor.
 - [ ] Schedule editor is reachable from /schedule (adult/tutor sees
       editor; Reagan sees the simple weekly view).
+
+
+## 2026-05-05 — /schedule reframe + sidebar Kiwi grouping
+
+- [ ] /schedule page: KEEP it (do not delete or merge).
+- [ ] /schedule default view = weekly (week-at-a-glance for Reagan);
+      Today view stays available as a tab inside.
+- [ ] Sidebar: collapse "Kiwi Coins" + "Practice" into a single "Kiwi"
+      parent entry with two child links (Coins, Practice). Frees a row
+      and groups Kiwi-themed kid surfaces together.
+
+
+## STANDING RULE (added 2026-05-05) — NO GREY BOXES, ANYWHERE
+
+- No `bg-muted`, `bg-slate-*`, `bg-gray-*`, `bg-zinc-*`, `bg-neutral-*` surfaces left visible.
+- Every previously-grey card / chip / hint band / placeholder is replaced with one of:
+  * Cream paper (cream/notebook themes)
+  * Warm dark slate with amber border (starry/chalkboard themes)
+  * Subject-tinted card on subject pages (uses tintCardStyle / tintInkStyle)
+- Inner text always uses the matching ink color so contrast stays AA+.
+- Implementation: one CSS sweep that overrides every `.bg-muted*`, `.bg-slate-*`, `.bg-gray-*`, `.bg-zinc-*`, `.bg-neutral-*` to the themed surface and forces ink to `currentColor` of the parent themed card.
+
+- [ ] Apply CSS sweep to index.css
+- [ ] Verify on Today, Curriculum, Analytics, Settings, Notebook, Levels, Rewards, Bookshelf, Schedule, Apps
