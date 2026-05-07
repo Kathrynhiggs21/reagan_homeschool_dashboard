@@ -259,3 +259,100 @@ describe("attachment param wiring", () => {
     expect(mod.generateAgendaEditPlan.length).toBeGreaterThanOrEqual(2);
   });
 });
+
+
+describe("loose blockType normalization (May 5 fix)", () => {
+  it("maps natural-language insert blockType variants to canonical instead of dropping them", async () => {
+    const mod = await import("./_lib/agendaEditor");
+    const variants: Array<[string, string]> = [
+      ["reading", "read_aloud"],
+      ["break", "choice"],
+      ["nature", "adventure"],
+      ["snack", "choice"],
+      ["walk", "adventure"],
+      ["catchup", "catch_up"],
+      ["warmup", "morning_warmup"],
+    ];
+    for (const [raw, expected] of variants) {
+      const plan: AgendaEditPlan = {
+        summary: "v", intent: "add", warnings: [],
+        ops: [{ kind: "insert", title: "x", blockType: raw, durationMin: 20 }],
+      };
+      const out = mod.validateEditPlan(plan, ctx([block(1)]));
+      expect(out.ops.length, `variant ${raw}`).toBe(1);
+      expect((out.ops[0] as any).blockType, `variant ${raw}`).toBe(expected);
+    }
+  });
+
+  it("coerces totally-unknown blockType to 'custom' instead of dropping the op", async () => {
+    const mod = await import("./_lib/agendaEditor");
+    const plan: AgendaEditPlan = {
+      summary: "v", intent: "add", warnings: [],
+      ops: [{ kind: "insert", title: "??", blockType: "yodeling-class", durationMin: 25 }],
+    };
+    const out = mod.validateEditPlan(plan, ctx([block(1)]));
+    expect(out.ops.length).toBe(1);
+    expect((out.ops[0] as any).blockType).toBe("custom");
+  });
+
+  it("keeps an update op even when subjectSlug is unknown (clears slug, keeps other field changes)", async () => {
+    const mod = await import("./_lib/agendaEditor");
+    const plan: AgendaEditPlan = {
+      summary: "v", intent: "surgical", warnings: [],
+      ops: [{ kind: "update", id: 1, title: "shorter", durationMin: 20, subjectSlug: "wizardry" }],
+    };
+    const out = mod.validateEditPlan(plan, ctx([block(1)]));
+    expect(out.ops.length).toBe(1);
+    const u = out.ops[0] as any;
+    expect(u.title).toBe("shorter");
+    expect(u.durationMin).toBe(20);
+    expect(u.subjectSlug).toBeUndefined();
+  });
+});
+
+describe("annotateNoOpDiff (May 5 'Apply 0 changes' bug guard)", () => {
+  it("rewrites summary when LLM proposed ops but validation stripped all of them", async () => {
+    const mod = await import("./_lib/agendaEditor");
+    const validated: AgendaEditPlan = {
+      summary: "I shortened the day",
+      intent: "vibe",
+      ops: [],
+      warnings: ["Skipped update for unknown block id 999."],
+    };
+    const llmRaw: AgendaEditPlan = {
+      summary: "I shortened the day",
+      intent: "vibe",
+      ops: [{ kind: "update", id: 999, durationMin: 20 } as any],
+      warnings: [],
+    };
+    const out = mod.annotateNoOpDiff(validated, llmRaw);
+    expect(out.ops.length).toBe(0);
+    expect(out.summary).toMatch(/proposed 1 edit/i);
+    expect(out.summary).not.toMatch(/^I shortened the day$/);
+    expect(out.warnings.some((w: string) => w.startsWith("[debug]"))).toBe(true);
+  });
+
+  it("leaves the summary alone when validated ops are non-empty", async () => {
+    const mod = await import("./_lib/agendaEditor");
+    const validated: AgendaEditPlan = {
+      summary: "Shortened math.",
+      intent: "targeted",
+      ops: [{ kind: "update", id: 1, durationMin: 20 }],
+      warnings: [],
+    };
+    const out = mod.annotateNoOpDiff(validated, validated);
+    expect(out.summary).toBe("Shortened math.");
+  });
+
+  it("falls back to a clear 'no change needed' when LLM legitimately returned empty ops", async () => {
+    const mod = await import("./_lib/agendaEditor");
+    const validated: AgendaEditPlan = {
+      summary: "",
+      intent: "vibe",
+      ops: [],
+      warnings: [],
+    };
+    const out = mod.annotateNoOpDiff(validated, validated);
+    expect(out.summary).toMatch(/no change needed/i);
+  });
+});

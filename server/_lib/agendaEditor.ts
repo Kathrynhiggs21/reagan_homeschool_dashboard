@@ -178,6 +178,57 @@ export function summarizeBlocksForPrompt(ctx: AgendaPlanContext): string {
  * adds explanatory warnings instead of throwing — better UX, the adult can
  * still preview what's safe.
  */
+// Normalize loose blockType values from the LLM into the canonical set.
+// Lots of natural variants showed up in production ("break", "reading",
+// "science", "snack") that USED to be silently dropped — now they get
+// mapped to the closest legal type so the user's request actually applies.
+function normalizeBlockType(raw: string | undefined | null): string | null {
+  if (!raw) return null;
+  const v = String(raw).toLowerCase().trim();
+  const direct = new Set([
+    "morning_warmup", "math", "adventure", "read_aloud", "choice",
+    "catch_up", "appointment", "custom",
+  ]);
+  if (direct.has(v)) return v;
+  // Map common variants that the LLM likes to emit:
+  const map: Record<string, string> = {
+    warmup: "morning_warmup",
+    "morning-warmup": "morning_warmup",
+    morning: "morning_warmup",
+    reading: "read_aloud",
+    "read-aloud": "read_aloud",
+    readaloud: "read_aloud",
+    book: "read_aloud",
+    ela: "read_aloud",
+    writing: "custom",
+    spelling: "custom",
+    grammar: "custom",
+    math_practice: "math",
+    arithmetic: "math",
+    science: "adventure",
+    "social-studies": "adventure",
+    social: "adventure",
+    art: "adventure",
+    music: "adventure",
+    pe: "adventure",
+    walk: "adventure",
+    nature: "adventure",
+    outdoor: "adventure",
+    break: "choice",
+    snack: "choice",
+    lunch: "choice",
+    free: "choice",
+    rest: "choice",
+    catchup: "catch_up",
+    "catch-up": "catch_up",
+    review: "catch_up",
+    appt: "appointment",
+    therapy: "appointment",
+  };
+  if (map[v]) return map[v];
+  return "custom"; // last-resort: never silently drop the op
+}
+
 export function validateEditPlan(
   plan: AgendaEditPlan,
   ctx: AgendaPlanContext,
@@ -201,12 +252,17 @@ export function validateEditPlan(
           warnings.push(`Skipped update for unknown block id ${op.id}.`);
           continue;
         }
-        if (op.blockType && !validBlockTypes.has(op.blockType)) {
-          warnings.push(`Dropped invalid blockType "${op.blockType}" on update.`);
-          delete (op as any).blockType;
+        if (op.blockType) {
+          const norm = normalizeBlockType(op.blockType);
+          if (norm && norm !== op.blockType) {
+            warnings.push(`Mapped blockType "${op.blockType}" → "${norm}".`);
+            (op as any).blockType = norm;
+          }
         }
         if (op.subjectSlug && !subjectSlugs.has(op.subjectSlug)) {
-          warnings.push(`Dropped unknown subject "${op.subjectSlug}".`);
+          // Don't drop the whole subject change — keep the op, just clear the
+          // unknown slug and warn. The op still has its other field changes.
+          warnings.push(`Unknown subject "${op.subjectSlug}" — keeping the rest of the edit.`);
           (op as any).subjectSlug = undefined;
         }
         if (op.curriculumTopicCode && !topicCodes.has(op.curriculumTopicCode.toUpperCase())) {
@@ -230,10 +286,17 @@ export function validateEditPlan(
         }
         cleanOps.push(op);
         break;
-      case "insert":
+      case "insert": {
+        const norm = normalizeBlockType(op.blockType);
+        if (norm && norm !== op.blockType) {
+          warnings.push(`Mapped insert blockType "${op.blockType}" → "${norm}".`);
+          op.blockType = norm;
+        }
         if (!validBlockTypes.has(op.blockType)) {
-          warnings.push(`Skipped insert with invalid blockType "${op.blockType}".`);
-          continue;
+          // Last-resort — even normalize couldn't save it. Convert to custom
+          // instead of dropping (the user's intent matters more than the type).
+          warnings.push(`Coerced unknown insert blockType to "custom".`);
+          op.blockType = "custom";
         }
         if (op.subjectSlug && !subjectSlugs.has(op.subjectSlug)) {
           warnings.push(`Dropped unknown subject "${op.subjectSlug}" on insert.`);
@@ -248,6 +311,7 @@ export function validateEditPlan(
         }
         cleanOps.push(op);
         break;
+      }
       case "reorder": {
         const seen = new Set<number>();
         const filtered = (op.orderedIds ?? []).filter(id => {
@@ -273,6 +337,39 @@ export function validateEditPlan(
   }
 
   return { ...plan, ops: cleanOps, warnings };
+}
+
+/**
+ * If the LLM returned a non-empty plan but validation stripped everything,
+ * rewrite the summary so the user understands WHY the diff is empty instead
+ * of seeing a misleading "I changed things" header on top of a 0-change diff.
+ * This is the May 5 "Apply 0 changes" bug guard.
+ */
+export function annotateNoOpDiff(
+  validated: AgendaEditPlan,
+  llmRaw: AgendaEditPlan | null,
+): AgendaEditPlan {
+  const validatedOps = validated.ops?.length ?? 0;
+  const rawOps = llmRaw?.ops?.length ?? 0;
+  if (validatedOps === 0 && rawOps > 0) {
+    return {
+      ...validated,
+      summary:
+        `The AI proposed ${rawOps} edit(s) but every op was rejected by validation. ` +
+        `See warnings below — try rephrasing more specifically (e.g. name the block).`,
+      warnings: [
+        ...(validated.warnings ?? []),
+        `[debug] Original LLM ops: ${JSON.stringify(llmRaw?.ops ?? []).slice(0, 400)}`,
+      ],
+    };
+  }
+  if (validatedOps === 0 && !validated.refusalReason) {
+    return {
+      ...validated,
+      summary: validated.summary || "No change needed for that request.",
+    };
+  }
+  return validated;
 }
 
 /**
@@ -457,5 +554,6 @@ export async function generateAgendaEditPlan(
       warnings: ["The AI could not produce a valid edit plan. Try rephrasing."],
     };
   }
-  return validateEditPlan(parsed, ctx);
+  const validated = validateEditPlan(parsed, ctx);
+  return annotateNoOpDiff(validated, parsed);
 }

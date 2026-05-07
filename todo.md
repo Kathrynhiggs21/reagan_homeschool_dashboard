@@ -2714,3 +2714,27 @@ Settings (adult, sliders): unchanged from prior entry.
 - [x] Hide-if-empty: subjects with 0 practice activities don't render. If kid has 0 practice activities total AND 0 coins, the whole Practice section hides (top strip still shows the email button).
 - [x] Route both `/coins` and `/practice` to redirect to `/kiwi` so old links don't break.
 - [x] Run vitest, save final checkpoint, deliver.
+
+
+## 2026-05-05 (later) — AI Agenda Editor rebuild + Adult Notebook upgrade
+
+### AI Agenda Editor — current bug
+- Returns "0 changes" diffs: Before === After, with a non-empty intent summary on top. Apply button literally says "Apply 0 changes".
+- Root cause likely: silent guard rejecting the LLM's proposed patch (locked-block guard, time-window guard, or schema validation), so the diff calculation sees no edits.
+
+### Fix scope
+- [ ] Strip silent restrictions in the agenda-editor pipeline. Replace any "drop on validation fail" with a logged rejection that bubbles up into the preview.
+- [ ] Convert the LLM call to tool-using: tools = `web_search`, `library_lookup`, `worksheet_search`, `video_search`, `weather_lookup`, `block_patch`. Every tool call shows up as a step in the preview.
+- [ ] LLM is required to either emit a non-empty `block_patch` OR explicitly say "no change because X". No silent no-ops.
+- [ ] Allow the editor to add brand-new blocks with worksheets/videos/articles it found via web_search — not just rearrange existing blocks.
+- [ ] Surface every rejected tool call + reason in the preview so it's never invisibly dropped.
+- [ ] Add a vitest that posts a "make it shorter and fun" request against a fixture day and asserts the diff is non-empty.
+
+### Adult Notebook upgrade
+- [ ] Reopen Notebook to today's page automatically; same day = same page; new day = new blank.
+- [ ] Light cream paper background (not chalkboard).
+- [ ] Add image: upload from device + take camera photo into the day's note.
+- [ ] Add PDF / worksheet attachment to the day's note.
+- [ ] Markup tools (pen, highlighter, eraser, color, undo) over any uploaded image OR PDF page.
+- [ ] Autosave per day; reopening tomorrow keeps yesterday's markup intact on yesterday's page.
+- [ ] Easy back/forward day navigation with date picker.
