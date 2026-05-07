@@ -2738,3 +2738,13 @@ Settings (adult, sliders): unchanged from prior entry.
 - [ ] Markup tools (pen, highlighter, eraser, color, undo) over any uploaded image OR PDF page.
 - [ ] Autosave per day; reopening tomorrow keeps yesterday's markup intact on yesterday's page.
 - [ ] Easy back/forward day navigation with date picker.
+
+
+## 2026-05-05 — Adult Notebook Drawer upgrade (DONE)
+- [x] `dayAttachments` table + migration 0055 (id, dateStr, kind, fileKey, fileName, markupKey, pageIndex, createdAt, updatedAt)
+- [x] `addDayAttachment` / `listDayAttachments` / `setDayAttachmentMarkup` / `removeDayAttachment` helpers in `server/db.ts` (uses `getDb()` pattern)
+- [x] `notebookAttachments` tRPC router (`list`, `add`, `saveMarkup`, `clearMarkup`, `remove`) — admin/tutor only
+- [x] `MarkupCanvas.tsx` — full-screen overlay (pen/highlighter/eraser, 6 colors, undo, clear, save). PDF first-page render via `pdfjs-dist`. Markup PNG saved to S3 as a separate object — original never overwritten.
+- [x] `NotebookDrawer.tsx` upgraded — light cream-paper bg regardless of theme, Day Attachments card with Upload image / Take photo (`capture="environment"`) / Upload PDF, thumbnail grid (hidden when empty per "don't show if no info"), tap-to-mark-up, marked badge, hover-X to remove.
+- [x] vitest `server/notebookAttachments.test.ts` (3 tests, db round-trip + data URL regex + dateStr regex)
+- [x] Full vitest suite: 485 passed / 1 skipped (was 482/1)

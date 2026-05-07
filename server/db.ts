@@ -5666,3 +5666,55 @@ export function aggregateListeningDay(rows: any[]) {
     topics,
   };
 }
+
+
+/* =========================== ADULT NOTEBOOK DAY ATTACHMENTS =================
+ * Per-day photos + worksheet PDFs + markup overlays for the global Notebook
+ * drawer. All file bytes live in S3; only metadata + S3 keys live in DB.
+ * Markup is a single transparent PNG overlay per attachment; saving a new
+ * markup just overwrites the previous markupKey reference (we let the
+ * unreferenced old object become orphaned per the storage layer's policy).
+ * =========================================================================== */
+import { dayAttachments } from "../drizzle/schema";
+
+export async function addDayAttachment(input: {
+  dateStr: string;
+  kind: "image" | "pdf";
+  fileKey: string;
+  fileName: string | null;
+  pageIndex?: number;
+}) {
+  const db = getDb();
+  const [r] = await db
+    .insert(dayAttachments)
+    .values({
+      dateStr: input.dateStr,
+      kind: input.kind,
+      fileKey: input.fileKey,
+      fileName: input.fileName,
+      pageIndex: input.pageIndex ?? 0,
+    })
+    .$returningId();
+  const id = (r as any)?.id as number;
+  const [row] = await db.select().from(dayAttachments).where(eq(dayAttachments.id, id));
+  return row;
+}
+
+export async function listDayAttachments(dateStr: string) {
+  return getDb()
+    .select()
+    .from(dayAttachments)
+    .where(eq(dayAttachments.dateStr, dateStr))
+    .orderBy(asc(dayAttachments.createdAt));
+}
+
+export async function setDayAttachmentMarkup(id: number, markupKey: string | null) {
+  await getDb()
+    .update(dayAttachments)
+    .set({ markupKey, updatedAt: new Date() })
+    .where(eq(dayAttachments.id, id));
+}
+
+export async function removeDayAttachment(id: number) {
+  await getDb().delete(dayAttachments).where(eq(dayAttachments.id, id));
+}

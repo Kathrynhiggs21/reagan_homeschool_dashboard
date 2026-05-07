@@ -1872,3 +1872,26 @@ export const icalEvents = mysqlTable("icalEvents", {
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 export type IcalEvent = typeof icalEvents.$inferSelect;
+
+
+
+/* ============================== ADULT NOTEBOOK DAY ATTACHMENTS =================
+ * Per-day photos + PDFs that the adult Notebook drawer attaches to a date.
+ * Files live in S3 (fileKey). Markup overlay (transparent PNG) is saved as a
+ * separate S3 key (markupKey) so it can be redrawn / cleared without losing
+ * the original. PDFs render page-by-page client-side; for now the markup is
+ * a single overlay per attachment (simple, fast). If we ever need per-page
+ * markup, add `pageIndex` later — schema has room.
+ * ============================================================================== */
+export const dayAttachments = mysqlTable("dayAttachments", {
+  id: int("id").autoincrement().primaryKey(),
+  dateStr: varchar("dateStr", { length: 10 }).notNull(), // YYYY-MM-DD
+  kind: mysqlEnum("kind", ["image", "pdf"]).notNull(),
+  fileKey: varchar("fileKey", { length: 240 }).notNull(),
+  fileName: varchar("fileName", { length: 200 }),
+  markupKey: varchar("markupKey", { length: 240 }), // null until first save
+  pageIndex: int("pageIndex").default(0).notNull(), // for PDFs; image=0
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+export type DayAttachment = typeof dayAttachments.$inferSelect;

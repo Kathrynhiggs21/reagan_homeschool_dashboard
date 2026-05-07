@@ -3191,6 +3191,81 @@ export const appRouter = router({
       }),
   }),
 
+  /* =================== ADULT NOTEBOOK — DAY ATTACHMENTS ===================
+   * Per-day photos + worksheet PDFs uploaded from the Notebook drawer.
+   * Adults only (admin or tutor). Markup overlays save as separate S3 keys
+   * and can be cleared/redrawn without losing the original. ============== */
+  notebookAttachments: router({
+    list: protectedProcedure
+      .input(z.object({ dateStr: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
+      .query(async ({ ctx, input }) => {
+        if (!ctx.user || (ctx.user.role !== "admin" && ctx.user.role !== "tutor")) return [];
+        return db.listDayAttachments(input.dateStr);
+      }),
+    add: protectedProcedure
+      .input(z.object({
+        dateStr: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        kind: z.enum(["image", "pdf"]),
+        dataUrl: z.string().regex(/^data:[^;]+;base64,/),
+        fileName: z.string().max(200).optional().nullable(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user || (ctx.user.role !== "admin" && ctx.user.role !== "tutor")) {
+          throw new Error("Adults only.");
+        }
+        const m = /^data:([^;]+);base64,(.+)$/.exec(input.dataUrl);
+        if (!m) throw new Error("Expected a data URL.");
+        const mime = m[1];
+        const buf = Buffer.from(m[2], "base64");
+        const ext = (mime.split("/")[1] ?? "bin").replace(/[^a-z0-9]/gi, "") || "bin";
+        const safeName = (input.fileName ?? `${input.kind}-${Date.now()}.${ext}`).replace(/[^a-zA-Z0-9._-]/g, "_");
+        const key = `notebook/${input.dateStr}/${Date.now()}-${safeName}`;
+        const stored = await storagePut(key, buf, mime);
+        const row = await db.addDayAttachment({
+          dateStr: input.dateStr,
+          kind: input.kind,
+          fileKey: stored.key,
+          fileName: safeName,
+        });
+        return { id: (row as any).id, url: stored.url, fileKey: stored.key };
+      }),
+    saveMarkup: protectedProcedure
+      .input(z.object({
+        id: z.number().int().positive(),
+        markupDataUrl: z.string().regex(/^data:image\/png;base64,/),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user || (ctx.user.role !== "admin" && ctx.user.role !== "tutor")) {
+          throw new Error("Adults only.");
+        }
+        const m = /^data:([^;]+);base64,(.+)$/.exec(input.markupDataUrl);
+        if (!m) throw new Error("Expected a PNG data URL.");
+        const buf = Buffer.from(m[2], "base64");
+        const key = `notebook-markup/${input.id}-${Date.now()}.png`;
+        const stored = await storagePut(key, buf, "image/png");
+        await db.setDayAttachmentMarkup(input.id, stored.key);
+        return { ok: true, markupKey: stored.key, markupUrl: stored.url };
+      }),
+    clearMarkup: protectedProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user || (ctx.user.role !== "admin" && ctx.user.role !== "tutor")) {
+          throw new Error("Adults only.");
+        }
+        await db.setDayAttachmentMarkup(input.id, null);
+        return { ok: true };
+      }),
+    remove: protectedProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ ctx, input }) => {
+        if (!ctx.user || (ctx.user.role !== "admin" && ctx.user.role !== "tutor")) {
+          throw new Error("Adults only.");
+        }
+        await db.removeDayAttachment(input.id);
+        return { ok: true };
+      }),
+  }),
+
   // ─────────────────────────────────────────────────────────────────────
   // Weekly Digest — auto-emailed Sunday 7 PM to spear.cpt@gmail.com
   // ─────────────────────────────────────────────────────────────────────
