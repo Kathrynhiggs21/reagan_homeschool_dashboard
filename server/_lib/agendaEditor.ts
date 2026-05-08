@@ -132,6 +132,22 @@ Operation types:
 
 Allowed blockType values: morning_warmup, math, adventure, read_aloud, choice,
 catch_up, appointment, custom.
+
+CRITICAL OUTPUT RULES (failure to follow = your output is rejected):
+- Every op MUST include a "kind" field.
+- update ops MUST include "id" AND at least one of: title, description,
+  blockType, startTime, durationMin, subjectSlug, curriculumTopicCode.
+- delete ops MUST include "id".
+- insert ops MUST include "title", "blockType", and "durationMin".
+- reorder ops MUST include a non-empty "orderedIds" array.
+- shiftAll ops MUST include a numeric "minutes" (negative = earlier).
+- NEVER emit {} or partial ops as placeholders. If you have nothing to do,
+  return ops:[] (empty array) and put the reason in warnings.
+- For requests like "no math today" or "drop science": find every block whose
+  subjectSlug or blockType matches and emit one delete op per matching id.
+- For requests like "shorter" / "more X": emit one update per affected block
+  with a real durationMin change. Do NOT emit updates with no field changes.
+
 Allowed subjectSlug values are listed in the input. curriculumTopicCode must
 match one in the topicCatalog (or omit it).
 startTime is "HH:MM" 24-hour. durationMin is 5–180.
@@ -246,6 +262,47 @@ export function validateEditPlan(
 
   for (const op of plan.ops ?? []) {
     if (!op || typeof op !== "object") continue;
+    // Defensive: even with the tightened schema, a model could emit an
+    // object with kind === undefined. Drop those before the switch so the
+    // op count we report to the user matches reality.
+    if (!(op as any).kind) {
+      warnings.push("Dropped op with no `kind` field (malformed LLM output).");
+      continue;
+    }
+    // Reject ops that have a kind but ZERO usable per-kind fields. This is
+    // what was causing the May 7 'Apply 0 changes' UX: the LLM emitted
+    // {kind: "update"} with nothing else and validation passed it through.
+    const opAny = op as any;
+    if (opAny.kind === "update" && opAny.id == null) {
+      warnings.push("Dropped update op missing `id`.");
+      continue;
+    }
+    if (opAny.kind === "update") {
+      const hasAnyFieldChange = [
+        "title", "description", "blockType", "startTime",
+        "durationMin", "subjectSlug", "curriculumTopicCode",
+      ].some(k => opAny[k] !== undefined);
+      if (!hasAnyFieldChange) {
+        warnings.push(`Dropped update for block ${opAny.id}: no field changes proposed.`);
+        continue;
+      }
+    }
+    if (opAny.kind === "delete" && opAny.id == null) {
+      warnings.push("Dropped delete op missing `id`.");
+      continue;
+    }
+    if (opAny.kind === "insert" && (!opAny.title || !opAny.blockType)) {
+      warnings.push("Dropped insert op missing `title` or `blockType`.");
+      continue;
+    }
+    if (opAny.kind === "reorder" && (!Array.isArray(opAny.orderedIds) || opAny.orderedIds.length === 0)) {
+      warnings.push("Dropped reorder op with no `orderedIds`.");
+      continue;
+    }
+    if (opAny.kind === "shiftAll" && typeof opAny.minutes !== "number") {
+      warnings.push("Dropped shiftAll op missing numeric `minutes`.");
+      continue;
+    }
     switch (op.kind) {
       case "update":
         if (!blockIds.has(op.id)) {
@@ -510,7 +567,9 @@ export async function generateAgendaEditPlan(
           type: "json_schema",
           json_schema: {
             name: "agenda_edit_plan",
-            strict: true,
+            // NOTE: not `strict: true` because we need oneOf + per-op required
+            // fields, and the OpenAI strict mode forbids oneOf at the moment.
+            // Validation still happens in validateEditPlan() server-side.
             schema: {
               type: "object",
               properties: {
@@ -518,7 +577,38 @@ export async function generateAgendaEditPlan(
                 intent: { type: "string", enum: ["vibe", "targeted", "surgical", "bulk", "add", "remove", "mixed"] },
                 ops: {
                   type: "array",
-                  items: { type: "object", additionalProperties: true },
+                  items: {
+                    type: "object",
+                    // The discriminator field is REQUIRED. This alone fixes the
+                    // May 7 "7 empty {} ops\" bug — the model can no longer
+                    // emit `{}` placeholders.
+                    properties: {
+                      kind: {
+                        type: "string",
+                        enum: ["update", "delete", "insert", "reorder", "shiftAll"],
+                      },
+                      // ---- update fields ----
+                      id: { type: "number" },
+                      title: { type: "string" },
+                      description: { type: ["string", "null"] },
+                      blockType: { type: "string" },
+                      startTime: { type: ["string", "null"] },
+                      durationMin: { type: "number" },
+                      subjectSlug: { type: ["string", "null"] },
+                      curriculumTopicCode: { type: ["string", "null"] },
+                      // ---- insert extra ----
+                      afterBlockId: { type: ["number", "null"] },
+                      // ---- reorder ----
+                      orderedIds: {
+                        type: "array",
+                        items: { type: "number" },
+                      },
+                      // ---- shiftAll ----
+                      minutes: { type: "number" },
+                    },
+                    required: ["kind"],
+                    additionalProperties: false,
+                  },
                 },
                 warnings: { type: "array", items: { type: "string" } },
               },

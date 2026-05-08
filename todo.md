@@ -2748,3 +2748,108 @@ Settings (adult, sliders): unchanged from prior entry.
 - [x] `NotebookDrawer.tsx` upgraded — light cream-paper bg regardless of theme, Day Attachments card with Upload image / Take photo (`capture="environment"`) / Upload PDF, thumbnail grid (hidden when empty per "don't show if no info"), tap-to-mark-up, marked badge, hover-X to remove.
 - [x] vitest `server/notebookAttachments.test.ts` (3 tests, db round-trip + data URL regex + dateStr regex)
 - [x] Full vitest suite: 485 passed / 1 skipped (was 482/1)
+
+
+## 2026-05-07 — AI Daily Agenda Editor REBUILD (in progress)
+Bug observed in production: prompt "No math today" returned 7 ops but `[debug] Original LLM ops: [{},{},{},{},{},{},{}]` — every op was an empty object, all rejected by validator, "Apply 0 changes" shown. Root cause: LLM not returning ops with required `type` + per-op fields. Plus user wants more capability.
+
+- [ ] Inspect current agendaEditor pipeline (`server/_lib/agendaEditor.ts` + `server/routers.ts` adultAi)
+- [ ] Rewrite the LLM JSON schema so each op MUST have a `type` enum + the per-type required fields, removing the "additionalProperties=true / 7 empty {} accepted" failure mode
+- [ ] Strengthen the system prompt with concrete examples for every op type and explicit anti-patterns
+- [ ] Expand op coverage:
+  - [ ] `removeAllOfSubject` (covers "no math today" / "drop science" by subject slug, not by exact title)
+  - [ ] `addBlock` with subject + topic + duration + suggested time
+  - [ ] `removeBlock` by id OR by title-substring OR by subject
+  - [ ] `reorderBlock` to specific position
+  - [ ] `setStartTime` / `shiftDayBy` (already exists — keep)
+  - [ ] `retitle` / `setSubject` / `setDuration`
+  - [ ] `moveToTomorrow` (per-block)
+  - [ ] `lookupAssignment` — search curriculum + practice library and return suggested blocks (followed by addBlock ops)
+- [ ] Pass attachment context (image/pdf data URLs from agendaEditor.uploadAttachment) into the LLM as multimodal content so "use this worksheet for math" works
+- [ ] Pass curriculum + practice library short index into the prompt for grounded lookups
+- [ ] vitests: empty-{} op rejection, "no math today" → real removeAllOfSubject ops, attachment context shape, lookupAssignment returns real blocks
+- [ ] Full vitest run + checkpoint
+
+
+## 2026-05-07 — Expanded scope (added)
+- [ ] AI agenda editor: full-day rewrite ops (rebuildDay)
+- [ ] AI agenda editor: weekly / date-range ops (applyToWeek)
+- [ ] AI agenda editor: by-subject + by-topic bulk ops (removeAllOfSubject, retimeAllOfSubject, swapSubject everywhere)
+- [ ] AI agenda editor: attach-upload-to-block op (link an uploaded worksheet to a specific block)
+- [ ] AI agenda editor: assignment lookup → returns candidate list (curriculum + practice library) for the adult/tutor to pick before applying
+- [ ] Open all editing surfaces (AI box, manual editor, uploads, lookup) to role: tutor (currently admin-only on some routes)
+- [ ] "Design today from blank" starter for tutors
+- [ ] Adult/tutor teleconference: tutorCalls table + tRPC router + Jitsi-embed component + Notify-tutor email + sidebar entry, AgendaEditor + Notebook entry points
+- [ ] Vitests for everything above
+- [ ] Full vitest run + checkpoint
+
+
+## 2026-05-07 — PIVOT: Auto year-paced day-builder + operable blocks (in progress)
+Direction change: stop treating the AI editor as the only source of changes. Instead the AI auto-builds every school day from a year-long backbone (curriculum + grade-5 Ohio standards), pulling from books Reagan already owns when possible. Tutors + adults can fully redesign any day.
+
+- [ ] Phase 1 — VALIDATOR FIX (unblocks the "0 changes" bug today)
+  - [ ] Replace `ops: { items: { type: "object", additionalProperties: true } }` with a strict per-op `oneOf` JSON schema (every op MUST have a `kind` enum + per-kind required fields)
+  - [ ] vitest: empty {} ops are stripped pre-validation; warning includes "[debug] Original LLM ops: ..."
+  - [ ] vitest: "no math today" returns at least one delete or removeAllOfSubject op (NOT all empty)
+
+- [ ] Phase 2 — YEAR-PLAN BACKBONE
+  - [ ] `yearPlan` table (subjectId, topicId, sequenceOrder, plannedWeek, status, completedAt, completedByBlockId)
+  - [ ] `yearPlanCursor` table (subjectId, currentSequenceOrder, lastAdvancedAt)
+  - [ ] Helper: `getNextTopicForSubject(subjectId)` returns the next pending topic
+  - [ ] Helper: `paceCheck()` returns days-remaining-vs-topics-remaining and a "behind by N" hint
+  - [ ] Auto-advance cursor when a block referencing a topic is marked complete
+
+- [ ] Phase 3 — OWNED BOOKS REGISTRY
+  - [ ] `ownedBooks` table (title, author, subjectSlug, totalUnits, unitKind: "page"|"day"|"chapter", cursorUnit, lastAdvancedAt)
+  - [ ] Seed: Spectrum Math 5, Spectrum Science 5, 180 Days of Language 5, Tuck Everlasting, Michael's World
+  - [ ] Helper: `nextBookAssignment(subjectSlug)` → { bookTitle, unitLabel, displayLine }
+  - [ ] Auto-advance cursor on block-complete when block references a book
+
+- [ ] Phase 4 — AUTO-BUILD TODAY (replaces the always-same-template build)
+  - [ ] `buildBalancedDayFromBackbone(date)` — pulls next math, ELA, science, social studies, reading, adventure from yearPlan + ownedBooks, slots them into a sensible morning-to-afternoon shape, includes one outdoor adventure when weather is good
+  - [ ] Wire this into `ensurePlanForDate` + nightly agenda generator + on-demand "Refresh today"
+  - [ ] Skip Sat/Sun unless allowWeekend (existing rule)
+
+- [ ] Phase 5 — FULLY OPERABLE BLOCKS
+  - [ ] Worksheet block: real questions in description (markdown) + answer key in `answerKey` column; printable PDF page renders both
+  - [ ] Video block: `videoUrl` + `videoDescription` columns; embeds inline + "Open" button
+  - [ ] Reading block: bookId + pageStart/pageEnd + 2–3 prompts in description
+  - [ ] Adventure block: materials list + steps + "what counts as done" already exist — confirm they print
+  - [ ] Practice block: deep-link URL + topic code already exist — confirm "Open" works
+
+- [ ] Phase 6 — EXPANDED EDITOR OPS (validator-strict)
+  - [ ] removeAllOfSubject, retimeAllOfSubject, swapSubjectEverywhere
+  - [ ] applyToWeek (Mon–Fri) / applyToDateRange
+  - [ ] rebuildDay (regenerate today from backbone + the adult's instruction)
+  - [ ] attachUploadToBlock (links agenda-attachment URL to a specific block)
+  - [ ] lookupAssignment (returns 3–6 candidate blocks; UI shows picker; selected ones become insert ops)
+
+- [ ] Phase 7 — TUTOR EDIT POWER + DESIGN-FROM-BLANK
+  - [ ] Open agendaEditor.preview/commit/upload + nightlyAgenda + lookup procedures to role: tutor
+  - [ ] "Design today from blank" button → wipes today and opens an empty editor
+
+- [ ] Phase 8 — ADULT/TUTOR TELECONFERENCE
+  - [ ] `tutorCalls` table (dateStr, roomKey, createdBy, createdAt, lastJoinedAt)
+  - [ ] tRPC `tutorCalls.startToday` / `joinToday` / `inviteTutor(email)`
+  - [ ] `<TutorCallPanel>` Jitsi-embedded iframe, mic-off-by-default
+  - [ ] Sidebar entry "Tutor call" + Notebook drawer + AgendaEditor entry buttons
+
+- [ ] Phase 9 — VITESTS + CHECKPOINT + DEPLOY
+
+
+## 2026-05-07 — Candidate picker (added to Phase 5)
+- [ ] AI accepts free-form adult/tutor input and searches WIDE: videos, lessons, printables, activities, IXL/Khan deep-links, adventure ideas
+- [ ] Returns 6–12 candidates with: title, source (Khan/IXL/book/PDF/video/outdoor), 1-line description, estimated time, subjectSlug, topicCode
+- [ ] Picker UI grouped by subject + format; quick-filter chips ("videos only" / "printables only" / "outdoor only")
+- [ ] Picker under each block: "Find options for this block" → swap-in without redoing the day
+- [ ] Selected candidates become insert (or update-replace) ops the validator passes; non-selected saved as `alternativeBlocks` for later swap
+
+
+## 2026-05-07 — Tutor + adult day powers + Drive sync (Phase B addendum)
+- [ ] Per-block edit affordance: tap block → tweak start time + duration inline (no need to open AI editor)
+- [ ] Per-block "Mark complete" with grade + note + "what stood out"
+- [ ] Coin award: preset chips (+1 / +3 / +5 / +10) + custom amount + reason note
+- [ ] Tutor notebook notes per day (separate from Reagan's notes); light-paper UI; admin OR tutor role
+- [ ] Google Drive sync per day: agenda.pdf + accomplishments.json + notebook attachments folder
+- [ ] Auto-sync on block-complete / coin-award / note-save + nightly 8 PM catch-up + manual "Sync now"
+- [ ] Vitests for grade-on-complete, coin-award audit log, tutor-note role gating, drive-sync payload shape

@@ -356,3 +356,97 @@ describe("annotateNoOpDiff (May 5 'Apply 0 changes' bug guard)", () => {
     expect(out.summary).toMatch(/no change needed/i);
   });
 });
+
+
+
+describe("May 7 fix: empty / partial ops are rejected by validator (was 'Apply 0 changes' bug)", () => {
+  it("drops ops with no `kind` (the literal {} the LLM was emitting)", async () => {
+    const mod = await import("./_lib/agendaEditor");
+    // Cast through any to simulate the malformed LLM output we observed in prod.
+    const plan: AgendaEditPlan = {
+      summary: "v",
+      intent: "mixed",
+      warnings: [],
+      ops: [{} as any, {} as any, { kind: "delete", id: 1 } as any],
+    };
+    const out = mod.validateEditPlan(plan, ctx([block(1)]));
+    expect(out.ops).toHaveLength(1);
+    expect(out.ops[0].kind).toBe("delete");
+    expect(out.warnings.some(w => w.toLowerCase().includes("no `kind`"))).toBe(true);
+  });
+
+  it("drops update ops missing both id and any field change (the silent no-op case)", async () => {
+    const mod = await import("./_lib/agendaEditor");
+    const plan: AgendaEditPlan = {
+      summary: "v",
+      intent: "mixed",
+      warnings: [],
+      ops: [
+        { kind: "update" } as any, // missing id
+        { kind: "update", id: 1 } as any, // has id, no field change
+      ],
+    };
+    const out = mod.validateEditPlan(plan, ctx([block(1)]));
+    expect(out.ops).toHaveLength(0);
+    expect(out.warnings.some(w => w.includes("missing `id`"))).toBe(true);
+    expect(out.warnings.some(w => w.includes("no field changes"))).toBe(true);
+  });
+
+  it("drops insert ops missing title or blockType", async () => {
+    const mod = await import("./_lib/agendaEditor");
+    const plan: AgendaEditPlan = {
+      summary: "v",
+      intent: "add",
+      warnings: [],
+      ops: [
+        { kind: "insert", blockType: "math", durationMin: 20 } as any, // no title
+        { kind: "insert", title: "Snack", durationMin: 15 } as any,    // no blockType
+        { kind: "insert", title: "Read", blockType: "read_aloud", durationMin: 25 } as any, // good
+      ],
+    };
+    const out = mod.validateEditPlan(plan, ctx([block(1)]));
+    expect(out.ops).toHaveLength(1);
+    expect((out.ops[0] as any).title).toBe("Read");
+  });
+
+  it("drops reorder with no ids and shiftAll with no minutes", async () => {
+    const mod = await import("./_lib/agendaEditor");
+    const plan: AgendaEditPlan = {
+      summary: "v",
+      intent: "bulk",
+      warnings: [],
+      ops: [
+        { kind: "reorder" } as any,
+        { kind: "reorder", orderedIds: [] } as any,
+        { kind: "shiftAll" } as any,
+      ],
+    };
+    const out = mod.validateEditPlan(plan, ctx([block(1)]));
+    expect(out.ops).toHaveLength(0);
+  });
+
+  it("a real 'no math today' plan returns delete ops, not empties", async () => {
+    const mod = await import("./_lib/agendaEditor");
+    // This is what a correct LLM response should look like for "no math today":
+    // one delete op per math-tagged block, no placeholder {}s.
+    const c = ctx([
+      block(1, { subjectSlug: "math", title: "Math warm-up" }),
+      block(2, { subjectSlug: "math", title: "Math practice" }),
+      block(3, { subjectSlug: "ela", title: "Reading" }),
+    ]);
+    const plan: AgendaEditPlan = {
+      summary: "Removed both math blocks today.",
+      intent: "remove",
+      warnings: [],
+      ops: [
+        { kind: "delete", id: 1 },
+        { kind: "delete", id: 2 },
+      ],
+    };
+    const out = mod.validateEditPlan(plan, c);
+    expect(out.ops).toHaveLength(2);
+    expect(out.ops.every(o => o.kind === "delete")).toBe(true);
+    const after = mod.applyEditPlanInMemory(c, out);
+    expect(after.map(b => b.id)).toEqual([3]);
+  });
+});
