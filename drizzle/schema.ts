@@ -1895,3 +1895,74 @@ export const dayAttachments = mysqlTable("dayAttachments", {
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 export type DayAttachment = typeof dayAttachments.$inferSelect;
+
+/* -------------------------------------------------------------------------- */
+/*  YEAR-PLAN BACKBONE + OWNED-BOOKS REGISTRY + BLOCKED-EMAILS (Phase B-α)    */
+/*                                                                            */
+/*  yearPlan: per-subject ordered list of curriculum topics the AI advances   */
+/*    through across the year. The day-builder pulls the next pending row     */
+/*    by sequenceOrder for each subject. Cursor advances when a scheduleBlock */
+/*    referencing the topic is marked complete.                               */
+/*                                                                            */
+/*  yearPlanCursor: per-subject "next sequenceOrder to assign" pointer.        */
+/*                                                                            */
+/*  ownedBooks: Reagan's physical books. AI references next un-done unit      */
+/*    (page / day / chapter) when day's subject matches.                       */
+/*                                                                            */
+/*  blockedEmails: hard list of email addresses the dashboard refuses to use  */
+/*    for OAuth / sync / app-account creation. Seeded with the inactive       */
+/*    reagan.higgs33@ihsd.us on 2026-05-08.                                    */
+/* -------------------------------------------------------------------------- */
+export const yearPlan = mysqlTable("yearPlan", {
+  id: int("id").autoincrement().primaryKey(),
+  subjectSlug: varchar("subject_slug", { length: 64 }).notNull(),
+  topicId: int("topic_id"),                                 // FK to curriculumTopics, nullable
+  topicCode: varchar("topic_code", { length: 48 }),         // denormalized
+  topicTitle: varchar("topic_title", { length: 512 }).notNull(),
+  sequenceOrder: int("sequence_order").notNull().default(0),
+  plannedWeek: varchar("planned_week", { length: 16 }),     // e.g. "2026-W19"
+  targetDate: date("target_date"),                          // June 5 stretch / Aug 15 catch
+  status: varchar("status", { length: 16 }).notNull().default("pending"),
+  completedAt: timestamp("completed_at"),
+  completedByBlockId: int("completed_by_block_id"),
+  isMain: boolean("is_main").notNull().default(true),       // true = required for June 5 main finish
+  notes: text("notes"),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type YearPlanRow = typeof yearPlan.$inferSelect;
+export type InsertYearPlanRow = typeof yearPlan.$inferInsert;
+
+export const yearPlanCursor = mysqlTable("yearPlanCursor", {
+  subjectSlug: varchar("subject_slug", { length: 64 }).primaryKey(),
+  currentSequenceOrder: int("current_sequence_order").notNull().default(0),
+  lastAdvancedAt: timestamp("last_advanced_at"),
+  notes: text("notes"),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+export type YearPlanCursorRow = typeof yearPlanCursor.$inferSelect;
+
+export const ownedBooks = mysqlTable("ownedBooks", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 256 }).notNull(),
+  author: varchar("author", { length: 256 }),
+  isbn: varchar("isbn", { length: 32 }),
+  subjectSlug: varchar("subject_slug", { length: 64 }).notNull(),
+  unitKind: varchar("unit_kind", { length: 16 }).notNull().default("page"), // page | day | chapter | lesson
+  totalUnits: int("total_units").notNull().default(0),
+  cursorUnit: int("cursor_unit").notNull().default(1),
+  pagesPerSession: int("pages_per_session").notNull().default(2),
+  notes: text("notes"),
+  lastAdvancedAt: timestamp("last_advanced_at"),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type OwnedBook = typeof ownedBooks.$inferSelect;
+export type InsertOwnedBook = typeof ownedBooks.$inferInsert;
+
+export const blockedEmails = mysqlTable("blockedEmails", {
+  email: varchar("email", { length: 255 }).primaryKey(),
+  reason: varchar("reason", { length: 255 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+export type BlockedEmail = typeof blockedEmails.$inferSelect;

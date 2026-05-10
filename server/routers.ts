@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { adminProcedure, publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { adminProcedure, adminOrTutorProcedure, publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import * as db from "./db";
 import { encryptPassword, decryptPassword } from "./passwordLocker";
 import { invokeLLM } from "./_core/llm";
@@ -605,10 +605,11 @@ export const appRouter = router({
      * in memory and returns before/after snapshots so the UI can render a
      * side-by-side diff with no DB writes.
      */
-    preview: protectedProcedure.input(z.object({
+    // Phase B-α.5 — tutors get full edit power on the agenda editor too.
+    preview: adminOrTutorProcedure.input(z.object({
       date: z.string(),
       instruction: z.string().min(1).max(2000),
-      // Optional file the adult attached. Either a public S3 URL
+      // Optional file the adult / tutor attached. Either a public S3 URL
       // (returned by agendaEditor.uploadAttachment) or a /manus-storage path.
       attachmentUrl: z.string().url().or(z.string().startsWith("/manus-storage/")).optional(),
       attachmentMimeType: z.string().regex(/^[\w.+-]+\/[\w.+-]+$/).optional(),
@@ -657,7 +658,8 @@ export const appRouter = router({
      * current blocks BEFORE applying so the client can pass the snapshot to
      * `undo` for a deterministic restore.
      */
-    commit: protectedProcedure.input(z.object({
+    // Phase B-α.5 — tutors can commit edits too. Audit log still records ctx.user.id.
+    commit: adminOrTutorProcedure.input(z.object({
       date: z.string(),
       ops: z.array(z.any()).max(60),
       summary: z.string().max(400).optional(),

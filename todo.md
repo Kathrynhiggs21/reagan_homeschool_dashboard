@@ -2853,3 +2853,34 @@ Direction change: stop treating the AI editor as the only source of changes. Ins
 - [ ] Google Drive sync per day: agenda.pdf + accomplishments.json + notebook attachments folder
 - [ ] Auto-sync on block-complete / coin-award / note-save + nightly 8 PM catch-up + manual "Sync now"
 - [ ] Vitests for grade-on-complete, coin-award audit log, tutor-note role gating, drive-sync payload shape
+
+
+## 2026-05-08 — Drive folder map (locked, used by B-β)
+- Root: https://drive.google.com/drive/folders/1r3bJacPLJN7VHI8y72rcx1-GRxspqo1r
+- Existing top-level folders are preserved (no parallel root):
+  - Daily Operations/ → workbook PDFs + accomplishments.json + tutor-notes.md
+  - Assignments and Work/ → uploaded worksheets, scans, photos, MarkupCanvas saves, notebook attachments
+  - Adventures and Enrichment/ → outdoor / adventure photos + submissions
+  - Printables and Resources/AI Generated/ → AI-made worksheets
+  - Progress and Reports/ → weekly digests + analytics exports
+  - Curriculum and Standards/ → monthly completion log
+  - Inbox (Unsorted)/ → fallback when classifier confidence is low
+- Per-day subfolder: `YYYY/MM - Month/YYYY-MM-DD Weekday/`
+- Sticky dedupe via `.sync-manifest.json` at Drive root + deterministic filename + content-hash skip
+- Nightly "fix-stragglers" pass moves any duplicates to the right folder, trashes older copies
+
+
+## 2026-05-10 — Wide free-resource search (B-γ addendum, 5th-grade-locked)
+Source allowlist + safety filters as above; never returns paywalled / off-allowlist content; results show in the same picker UI as candidate lookup with type/source/time filters; new standalone "Find Activities" page under Apps & Tools.
+- [ ] Source registry table `searchSources` (name, baseUrl, kind, allowlistRegex, freeTier:bool, signupRequired:bool, ageMin, ageMax)
+- [ ] Seed registry with sources above; one row per channel for YouTube allowlist
+- [ ] Backend search procedure `lookup.findResources(query, gradeLevel?, contentType?, maxTimeMin?, freeOnly:true)`
+- [ ] YouTube search restricted to allowlisted channels; safe-search hard-on
+- [ ] Web search via Manus search tool with strict 5th-grade + free + .gov/.edu/.org filters
+- [ ] Result schema: title, source, sourceLogo, description, contentType, estTimeMin, fitReason, url, isFree, requiresSignup
+- [ ] "Find Activities" page (adult/tutor only) with grid + filters + "Add to today" / "Add to a date" actions
+- [ ] Vitests: allowlist enforcement, paywall reject, signup label, safe-search rejection, gradeLevel filter
+
+
+## 2026-05-10 — Visual simplicity rules (apply to every slice from Slice 1 onward)
+Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary action per screen. Cards over forms. Tap-to-edit inline. Big tiles for iPad/phone. Mobile-first. Undo over confirm. Same card shape for every "thing you can do." Color = meaning. Zero-config defaults; advanced controls in a single accordion. Tutor + adult UI is identical (only destructive admin items hidden for tutors).

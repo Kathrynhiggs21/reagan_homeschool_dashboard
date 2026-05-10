@@ -5,6 +5,7 @@
  */
 import { describe, it, expect } from "vitest";
 import { appRouter } from "./routers";
+import { ensurePlanForDate } from "./db";
 
 function makeCaller() {
   // Mirror the pattern used by auth.logout.test.ts: instantiate caller with a
@@ -79,12 +80,21 @@ describe("printables hub", () => {
 describe("submissions + auto-grading", () => {
   it("creates a typed submission and auto-grades against an MC+text key", async () => {
     const caller = makeCaller();
-    // Create a block to attach to
-    const today = new Date().toISOString().slice(0, 10);
-    const plan: any = await caller.plans.ensureToday({ date: today }).catch(() => null);
-    // Use any existing block: pull today's schedule
-    const t: any = await caller.plans.today();
-    const block = t?.blocks?.[0];
+    // Pick a guaranteed weekday so the auto-builder produces blocks even when
+    // the test runs on a Sat/Sun (weekend plans intentionally skip auto-build).
+    // Use the next upcoming Tuesday as a stable seed.
+    function nextTuesday(): string {
+      const d = new Date();
+      const dow = d.getDay();
+      const delta = ((9 - dow) % 7) || 7; // 0->2, 1->1, 2->7, 3->6, ...
+      d.setDate(d.getDate() + delta);
+      return d.toISOString().slice(0, 10);
+    }
+    const dateStr = nextTuesday();
+    // Auth-free direct seed (the public caller can't call plans.create which is protected).
+    await ensurePlanForDate(dateStr, "full");
+    const t: any = await caller.plans.byDate({ date: dateStr });
+    const block = (t?.blocks || [])[0];
     expect(block).toBeTruthy();
 
     // Seed an answer key
