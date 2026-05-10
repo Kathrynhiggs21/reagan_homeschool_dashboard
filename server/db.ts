@@ -116,8 +116,33 @@ async function autoBuildBlocksForPlan(planId: number, dayType: string, dow: numb
   const subjs = await db.select().from(subjects);
   const findSlug = (slug: string) => subjs.find(s => s.slug === slug);
   const isTherapy = dayType === "therapy";
-
   const isWeekend = dayType === "weekend";
+
+  // Slice 2 — weekday full days now come from the varied dayBuilder so each
+  // weekday produces a different shape + pulls real owned-book pages. Weekend
+  // and therapy day still use the cozy hard-coded shapes (intentional).
+  if (!isWeekend && !isTherapy) {
+    const { buildVariedWeekdayTemplate } = await import("./_lib/dayBuilder");
+    const tmpl = await buildVariedWeekdayTemplate(dow).catch(() => null);
+    if (tmpl && tmpl.length) {
+      let order = 0;
+      for (const t of tmpl) {
+        const sub = t.slug ? findSlug(t.slug) : null;
+        await db.insert(scheduleBlocks).values({
+          planId,
+          sortOrder: order++,
+          blockType: t.type as any,
+          title: t.title,
+          description: t.description,
+          subjectId: sub?.id || null,
+          durationMin: t.minutes,
+          status: "not_started" as any,
+        });
+      }
+      return;
+    }
+  }
+
   const template: Array<{ title: string; description: string; slug?: string; type: string; minutes: number }> = isWeekend ? [
     // Weekend = soft, optional, no "school" pressure. Just connection + curiosity.
     { title: "Slow morning", description: "Sleep in. Hang with parakeets + ducks. No alarm.", slug: "animal-care", type: "morning_warmup", minutes: 45 },
