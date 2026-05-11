@@ -16,6 +16,7 @@ import { describeUser, roleForEmail, capabilitiesFor, type HomeRole } from "./_l
 import { loadTopicHintsForPrompt, resolveTopicId, resolveTopicIds } from "./_lib/topicCatalog";
 import { resolveTutorOfDay, tutorOfDayLabel } from "./_lib/tutorOfDay";
 import { loadOwnedBooksForAgenda } from "./_lib/ownedBooksHints";
+import { decideApproval, type ApprovalContext } from "./_lib/approvalDecider";
 import {
   generateAgendaEditPlan,
   validateEditPlan,
@@ -3814,6 +3815,110 @@ export const appRouter = router({
         .input(z.object({ bundleId: z.number() }))
         .query(({ input }) => db.getBundleWithItems(input.bundleId)),
     }),
+  }),
+
+  /* ----------------------------------------------------------------
+   * Slice 3.5 — Approvals (AI auto-approver + Mom/Grandma escalation)
+   * ---------------------------------------------------------------- */
+  approvals: router({
+    /** Submit a change for AI review. Auto-approved or queued + push-notified. */
+    submit: adminOrTutorProcedure
+      .input(z.object({
+        kind: z.string().min(1).max(64),
+        summary: z.string().min(1).max(500),
+        payload: z.record(z.string(), z.any()).default({}),
+        requesterRole: z.enum(["admin", "tutor", "student", "system"]).default("admin"),
+        localHour: z.number().int().min(0).max(23).optional(),
+        affectedDayHasCompletedBlock: z.boolean().optional(),
+        yearPlanPercentComplete: z.number().min(0).max(100).optional(),
+        ttlHours: z.number().int().min(1).max(168).default(48),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const userEmail = (ctx as any).user?.email ?? "unknown";
+        const apprCtx: ApprovalContext = {
+          kind: input.kind,
+          payload: input.payload ?? {},
+          requesterRole: input.requesterRole,
+          nowMs: Date.now(),
+          localHour: input.localHour,
+          affectedDayHasCompletedBlock: input.affectedDayHasCompletedBlock,
+          yearPlanPercentComplete: input.yearPlanPercentComplete,
+        };
+        const verdict = decideApproval(apprCtx);
+        const now = Date.now();
+        const expires = now + input.ttlHours * 3600 * 1000;
+        const id = await db.insertPendingApproval({
+          kind: input.kind,
+          summary: input.summary,
+          payloadJson: JSON.stringify(input.payload ?? {}),
+          requestedBy: userEmail,
+          requestedAt: now,
+          status: verdict.decision === "auto_approve" ? "auto_approved" : "pending",
+          aiDecision: verdict.decision,
+          aiReason: verdict.reason,
+          expiresAt: expires,
+          decidedBy: verdict.decision === "auto_approve" ? "ai" : null,
+          decidedAt: verdict.decision === "auto_approve" ? now : null,
+        } as any);
+        if (verdict.decision === "needs_review") {
+          // Fire-and-forget; never block the request on the push channel.
+          notifyOwner({
+            title: `Approval needed: ${input.kind}`,
+            content: `${input.summary}\n\nReason: ${verdict.reason}\nRequested by: ${userEmail}`,
+          }).catch(() => undefined);
+        }
+        return { id, decision: verdict.decision, reason: verdict.reason };
+      }),
+
+    listPending: adminOrTutorProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(200).default(50) }).optional())
+      .query(({ input }) => db.listPendingApprovalsByStatus("pending", input?.limit ?? 50)),
+
+    listRecent: adminOrTutorProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(200).default(50) }).optional())
+      .query(({ input }) => db.listRecentApprovals(input?.limit ?? 50)),
+
+    resolve: adminOrTutorProcedure
+      .input(z.object({
+        id: z.number().int().positive(),
+        status: z.enum(["approved", "rejected"]),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const who = (ctx as any).user?.email ?? "unknown";
+        const ok = await db.decidePendingApproval(input.id, input.status, who);
+        return { ok };
+      }),
+
+    expireSweep: adminProcedure
+      .mutation(() => db.expirePendingApprovals().then((n) => ({ expired: n }))),
+  }),
+
+  /* ----------------------------------------------------------------
+   * Slice 3.5 — Roster overrides + push targets
+   * ---------------------------------------------------------------- */
+  rosterOverride: router({
+    forWeek: adminOrTutorProcedure
+      .input(z.object({ dateStr: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
+      .query(({ input }) => db.getRosterForWeek(input.dateStr)),
+
+    set: adminProcedure
+      .input(z.object({
+        weekStartDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        activeTutorNames: z.array(z.string()),
+        helperNames: z.array(z.string()),
+        note: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        await db.upsertRosterOverride({
+          weekStartDate: input.weekStartDate,
+          activeTutorNamesJson: JSON.stringify(input.activeTutorNames),
+          helperNamesJson: JSON.stringify(input.helperNames),
+          note: input.note ?? null,
+        });
+        return { ok: true };
+      }),
+
+    pushTargets: adminOrTutorProcedure.query(() => db.listActivePushTargets()),
   }),
 });
 export type AppRouter = typeof appRouter;

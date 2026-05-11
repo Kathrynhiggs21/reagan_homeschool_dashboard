@@ -1,4 +1,5 @@
 import {
+  bigint,
   boolean,
   date,
   int,
@@ -1966,3 +1967,49 @@ export const blockedEmails = mysqlTable("blockedEmails", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 export type BlockedEmail = typeof blockedEmails.$inferSelect;
+
+
+/* -------------------------------------------------------------------------- */
+/*  Slice 3.5 — AI auto-approver + Manus push escalation + tutor roster        */
+/*    pendingApprovals: queue of risky changes the AI flagged or auto-approved.*/
+/*    tutorRosterOverride: weekly override of active tutors / helpers.         */
+/*    recipientPushTargets: who gets approval pings on the Manus app.          */
+/* -------------------------------------------------------------------------- */
+export const pendingApprovals = mysqlTable("pendingApprovals", {
+  id: int("id").autoincrement().primaryKey(),
+  kind: varchar("kind", { length: 64 }).notNull(),
+  summary: varchar("summary", { length: 500 }).notNull(),
+  payloadJson: text("payload_json").notNull(),
+  requestedBy: varchar("requested_by", { length: 255 }).notNull(),
+  requestedAt: bigint("requested_at", { mode: "number" }).notNull(),
+  status: varchar("status", { length: 32 }).notNull().default("pending"),
+  aiDecision: varchar("ai_decision", { length: 32 }),
+  aiReason: varchar("ai_reason", { length: 500 }),
+  decidedBy: varchar("decided_by", { length: 255 }),
+  decidedAt: bigint("decided_at", { mode: "number" }),
+  expiresAt: bigint("expires_at", { mode: "number" }).notNull(),
+});
+export type PendingApproval = typeof pendingApprovals.$inferSelect;
+export type InsertPendingApproval = typeof pendingApprovals.$inferInsert;
+
+export const tutorRosterOverride = mysqlTable("tutorRosterOverride", {
+  id: int("id").autoincrement().primaryKey(),
+  weekStartDate: varchar("week_start_date", { length: 10 }).notNull().unique(),
+  activeTutorNamesJson: text("active_tutor_names_json").notNull(),
+  helperNamesJson: text("helper_names_json").notNull(),
+  note: varchar("note", { length: 500 }),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
+});
+export type TutorRosterOverride = typeof tutorRosterOverride.$inferSelect;
+export type InsertTutorRosterOverride = typeof tutorRosterOverride.$inferInsert;
+
+export const recipientPushTargets = mysqlTable("recipientPushTargets", {
+  id: int("id").autoincrement().primaryKey(),
+  displayName: varchar("display_name", { length: 120 }).notNull().unique(),
+  role: varchar("role", { length: 32 }).notNull(),
+  phoneE164: varchar("phone_e164", { length: 32 }),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
+});
+export type RecipientPushTarget = typeof recipientPushTargets.$inferSelect;
+export type InsertRecipientPushTarget = typeof recipientPushTargets.$inferInsert;

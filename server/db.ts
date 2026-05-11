@@ -1,7 +1,7 @@
 import { ENV } from "./_core/env";
 import { drizzle } from "drizzle-orm/mysql2";
 import mysql from "mysql2/promise";
-import { eq, desc, and, gte, lte, sql, isNotNull, isNull, asc, inArray } from "drizzle-orm";
+import { eq, desc, and, gte, lte, lt, sql, isNotNull, isNull, asc, inArray } from "drizzle-orm";
 import {
   users, type InsertUser,
   subjects, dailyPlans, scheduleBlocks, bookAssignments, adventures,
@@ -5729,4 +5729,149 @@ export async function setDayAttachmentMarkup(id: number, markupKey: string | nul
 
 export async function removeDayAttachment(id: number) {
   await getDb().delete(dayAttachments).where(eq(dayAttachments.id, id));
+}
+
+
+/* ========================================================================== */
+/*  Slice 3.5 — AI auto-approver + Manus push escalation + tutor roster       */
+/* ========================================================================== */
+
+import {
+  pendingApprovals,
+  tutorRosterOverride,
+  recipientPushTargets,
+  type PendingApproval,
+  type TutorRosterOverride,
+  type RecipientPushTarget,
+  type InsertPendingApproval,
+  type InsertTutorRosterOverride,
+  type InsertRecipientPushTarget,
+} from "../drizzle/schema";
+
+/** Insert a new approval row. Returns the inserted id. */
+export async function insertPendingApproval(
+  row: Omit<InsertPendingApproval, "id">
+): Promise<number> {
+  const [res] = (await getDb().insert(pendingApprovals).values(row)) as any;
+  return Number(res?.insertId ?? 0);
+}
+
+/** Read one approval by id. */
+export async function getPendingApproval(
+  id: number
+): Promise<PendingApproval | null> {
+  const rows = await getDb()
+    .select()
+    .from(pendingApprovals)
+    .where(eq(pendingApprovals.id, id))
+    .limit(1);
+  return (rows[0] as PendingApproval) ?? null;
+}
+
+/** List approvals by status, newest first. Limit defaults to 50. */
+export async function listPendingApprovalsByStatus(
+  status: string,
+  limit: number = 50
+): Promise<PendingApproval[]> {
+  return (await getDb()
+    .select()
+    .from(pendingApprovals)
+    .where(eq(pendingApprovals.status, status))
+    .orderBy(desc(pendingApprovals.requestedAt))
+    .limit(limit)) as PendingApproval[];
+}
+
+/** List recent approvals across all statuses (for the Pending tab). */
+export async function listRecentApprovals(
+  limit: number = 50
+): Promise<PendingApproval[]> {
+  return (await getDb()
+    .select()
+    .from(pendingApprovals)
+    .orderBy(desc(pendingApprovals.requestedAt))
+    .limit(limit)) as PendingApproval[];
+}
+
+/** Mark an approval decided (approved or rejected). Returns true on success. */
+export async function decidePendingApproval(
+  id: number,
+  status: "approved" | "rejected",
+  decidedBy: string
+): Promise<boolean> {
+  const res = (await getDb()
+    .update(pendingApprovals)
+    .set({
+      status,
+      decidedBy,
+      decidedAt: Date.now(),
+    })
+    .where(eq(pendingApprovals.id, id))) as any;
+  return Number(res?.affectedRows ?? 0) > 0;
+}
+
+/** Sweep expired approvals from 'pending' → 'expired'. Returns affected count. */
+export async function expirePendingApprovals(now: number = Date.now()): Promise<number> {
+  const res = (await getDb()
+    .update(pendingApprovals)
+    .set({ status: "expired", decidedAt: now })
+    .where(
+      and(
+        eq(pendingApprovals.status, "pending"),
+        lt(pendingApprovals.expiresAt, now)
+      )
+    )) as any;
+  return Number(res?.affectedRows ?? 0);
+}
+
+/** Read the active tutor-roster override for the week containing dateStr (YYYY-MM-DD). */
+export async function getRosterForWeek(
+  dateStr: string
+): Promise<TutorRosterOverride | null> {
+  // Compute the Monday of dateStr's week.
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  if (Number.isNaN(d.getTime())) return null;
+  const day = d.getUTCDay(); // 0=Sun..6=Sat
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setUTCDate(d.getUTCDate() + diff);
+  const monday = d.toISOString().slice(0, 10);
+  const rows = await getDb()
+    .select()
+    .from(tutorRosterOverride)
+    .where(eq(tutorRosterOverride.weekStartDate, monday))
+    .limit(1);
+  return (rows[0] as TutorRosterOverride) ?? null;
+}
+
+/** Upsert a roster override row for a given Monday. */
+export async function upsertRosterOverride(
+  row: Omit<InsertTutorRosterOverride, "id" | "createdAt">
+): Promise<void> {
+  const existing = await getDb()
+    .select({ id: tutorRosterOverride.id })
+    .from(tutorRosterOverride)
+    .where(eq(tutorRosterOverride.weekStartDate, row.weekStartDate))
+    .limit(1);
+  if (existing[0]) {
+    await getDb()
+      .update(tutorRosterOverride)
+      .set({
+        activeTutorNamesJson: row.activeTutorNamesJson,
+        helperNamesJson: row.helperNamesJson,
+        note: row.note ?? null,
+      })
+      .where(eq(tutorRosterOverride.id, existing[0].id));
+  } else {
+    await getDb()
+      .insert(tutorRosterOverride)
+      .values({ ...row, createdAt: Date.now() });
+  }
+}
+
+/** List all active push targets (Mom + Grandma by default). */
+export async function listActivePushTargets(): Promise<RecipientPushTarget[]> {
+  return (await getDb()
+    .select()
+    .from(recipientPushTargets)
+    .where(eq(recipientPushTargets.isActive, true))
+    .orderBy(asc(recipientPushTargets.id))) as RecipientPushTarget[];
 }
