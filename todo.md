@@ -2884,3 +2884,45 @@ Source allowlist + safety filters as above; never returns paywalled / off-allowl
 
 ## 2026-05-10 — Visual simplicity rules (apply to every slice from Slice 1 onward)
 Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary action per screen. Cards over forms. Tap-to-edit inline. Big tiles for iPad/phone. Mobile-first. Undo over confirm. Same card shape for every "thing you can do." Color = meaning. Zero-config defaults; advanced controls in a single accordion. Tutor + adult UI is identical (only destructive admin items hidden for tutors).
+
+
+## 2026-05-10 — Rollback + Google Calendar sync
+
+- [x] Rolled back to Slice 1 state (v59908ff4 → rollback packaged as c7e86403) per user request; Slice 2 (varied weekday builder) deferred for re-attempt later.
+- [ ] Calendar ID `o81tqeb4425ej2k9il7lhmooh4@group.calendar.google.com` (Reagan's Homeschool, owned by `spear.cpt@gmail.com`) wired in as the canonical homeschool calendar.
+- [ ] Setting → Accounts & Emails panel surfaces calendar ID + owner email; editable later.
+- [ ] Dashboard → Calendar one-way sync: each auto-built daily block is written as a timed event on the calendar (owned/edited as spear.cpt@gmail.com via the existing Google connector).
+- [ ] Today + Schedule pages embed a read-only Google Calendar widget for the homeschool calendar (Reagan's view = read-only; adult/tutor view = read-only embed + "Open in Google Calendar" deep-link).
+- [ ] When a tutor is on the day, the tutor's email is added as a guest on the day's calendar events so they show on the tutor's phone.
+- [ ] Hard rule maintained: nothing reads/writes `reagan.higgs33@ihsd.us` (already in `blockedEmails`).
+- [ ] Vitest coverage: calendar ID setting persists, sync produces N events per day matching block count, blocked-email guard rejects ihsd.us if ever requested.
+
+
+## 2026-05-10 — Summer mode + catch-up + less-adult-review scope
+
+- [ ] Slice 5: Summer mode (auto-flip Jun 6 → Aug 15) — toggleable in Settings
+- [ ] Slice 5: Catch-up engine — per-subject mastery % + traffic-light + next-3 topics
+- [ ] Slice 5: Weekly summer digest email (Sunday evenings)
+- [ ] Slice 5: Vacation-aware date-range "off" toggle in Settings
+- [ ] Slice 4: Summer-friendly variant of each block type (outdoor/library/game/hands-on)
+- [ ] Slice 6: Streak boost + bigger surprise rewards for summer streaks
+- [ ] Slice 3: AI agenda edits auto-apply with 10s Undo toast (no tap-Apply needed)
+- [ ] Slice 6: Reagan-side block completion (no adult sign-off)
+- [ ] Slice 6: Reagan-side drag-reorder her own day (start/end times locked)
+- [ ] Slice 7: Reagan-side 3-option chooser for tomorrow's "summer choice" block
+- [ ] Settings: keep gated (admin/tutor) — destructive whole-day clears, large coin redemptions (>20), tutor/credential add, year-plan editing, student email, ihsd.us unblock, mastery true/false
+
+
+## 2026-05-10 — Approval/SMS + tutor roster scope (Slice 3.5)
+
+- [ ] phoneRecipients table (encrypted), seed Mom 513-926-5808 + Grandma 513-646-9281
+- [ ] pendingApprovals table (id, kind, payload, requestedBy, requestedAt, smsTo[], status, approvedBy, approvedAt, expiresAt)
+- [ ] AI auto-approver lib (decides AUTO-APPROVE vs NEEDS REVIEW per ruleset)
+- [ ] Hard-rule list (never auto-approve): tutor add/remove, app credential add, student email change, ihsd.us unblock, coin redemptions >20, year-plan target/grade, Reagan-initiated whole-day reset, identical-request flooding (>3/hr)
+- [ ] Auto-approve allowed list with conditions (whole-day reset only before 9am + healthy pacing + no completed work; summer mode only on/after Jun 1 + ≥80% backbone done; vacation ≤7 days)
+- [ ] SMS escalation via existing notifications connector (signed-token approval link, 30-min expiry, first-approve-wins, courtesy notice to other approver)
+- [ ] Pending tab in adult area (two sub-tabs: AI auto-approved last 24h, Needs your review)
+- [ ] tutorRosterOverride table (weekStart, activeTutorIds[], helperIds[], expiresOn) — auto-revert default after expiry
+- [ ] Seed override for week of May 11 → May 17 2026: tutors=[Keith], helpers=[Mom, Grandma]
+- [ ] Day-builder, calendar sync, SMS approval all consult tutorRosterOverride
+- [ ] Vitests for auto-approver decisions, SMS payload shape, roster override expiry

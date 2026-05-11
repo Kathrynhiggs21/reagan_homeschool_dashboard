@@ -416,6 +416,21 @@ export const appRouter = router({
       await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: (id as any), action: "create", summary: `Manual + Add: ${input.title}` });
       return { id, planId: plan.id };
     }),
+    /**
+     * Slice 3: "Design today from blank" starter. Clears every block on a given
+     * date so the adult/tutor can build the day from scratch (manual + Add
+     * blocks, or AI box). Plan row stays in place; dayType preserved.
+     * Returns { planId, deleted } so the UI can confirm.
+     */
+    clearDay: adminOrTutorProcedure.input(z.object({
+      date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    })).mutation(async ({ input, ctx }) => {
+      const plan = await db.ensurePlanForDate(input.date, "full", { allowWeekendAutoBuild: false } as any);
+      if (!plan) throw new Error("could not ensure plan for date");
+      const deleted = await db.deleteBlocksForPlan(plan.id);
+      await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "plan", entityId: plan.id, action: "clear", summary: `Cleared ${deleted} block(s) for ${input.date} (Design from blank)` });
+      return { planId: plan.id, deleted };
+    }),
     update: protectedProcedure.input(z.object({
       id: z.number(),
       title: z.string().optional(),

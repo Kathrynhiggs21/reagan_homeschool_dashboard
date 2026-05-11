@@ -356,6 +356,18 @@ export async function deleteBlock(id: number) {
   await getDb().delete(scheduleBlocks).where(eq(scheduleBlocks.id, id));
 }
 
+/**
+ * Slice 3: Wipe every scheduleBlock for a given plan id (used by
+ * "Design today from blank" starter). Leaves the dailyPlan row intact
+ * so the day still exists, just empty. Returns count of rows deleted.
+ */
+export async function deleteBlocksForPlan(planId: number): Promise<number> {
+  const live = await getDb().select({ id: scheduleBlocks.id }).from(scheduleBlocks).where(eq(scheduleBlocks.planId, planId));
+  if ((live as any[]).length === 0) return 0;
+  await getDb().delete(scheduleBlocks).where(eq(scheduleBlocks.planId, planId));
+  return (live as any[]).length;
+}
+
 export async function getBlock(id: number) {
   const rows = await getDb().select().from(scheduleBlocks).where(eq(scheduleBlocks.id, id)).limit(1);
   return rows[0] || null;
@@ -1764,8 +1776,8 @@ export async function deleteAppointment(id: number) {
 
 
 /* ============================== AUDIT LOG ================================= */
-export type AuditEntityType = "block" | "book" | "app" | "timeline" | "adventure" | "needsWork" | "recipient" | "appointment" | "note" | "submission" | "answerKey" | "academic" | "blockGrade";
-export type AuditAction = "create" | "update" | "delete" | "complete" | "reopen" | "grade" | "submit";
+export type AuditEntityType = "block" | "book" | "app" | "timeline" | "adventure" | "needsWork" | "recipient" | "appointment" | "note" | "submission" | "answerKey" | "academic" | "blockGrade" | "plan";
+export type AuditAction = "create" | "update" | "delete" | "complete" | "reopen" | "grade" | "submit" | "clear";
 
 export async function logAudit(input: {
   actorOpenId?: string | null;

@@ -101,6 +101,18 @@ export default function AgendaEditor() {
   const [savedSnapshot, setSavedSnapshot] = useState<Snapshot[] | null>(null);
 
   const utils = trpc.useUtils();
+  // Slice 3: clearDay mutation (Design today from blank). Wipes all blocks for
+  // the chosen date. Adult/tutor only via adminOrTutorProcedure on the server.
+  const clearDayMut = (trpc as any).blocks.clearDay.useMutation({
+    onSuccess: async (r: any) => {
+      toast.success(`Cleared ${r?.deleted ?? 0} block(s). Build a new day in the AI box, or use '+ Add block'.`);
+      await utils.agendaEditor.snapshot.invalidate({ date });
+      setEditPlan(null); setBeforeBlocks(null); setAfterBlocks(null);
+    },
+    onError: (e: any) => {
+      toast.error(e?.message ?? "Could not clear day");
+    },
+  });
   const snapQ = trpc.agendaEditor.snapshot.useQuery({ date });
 
   const previewM = trpc.agendaEditor.preview.useMutation({
@@ -253,6 +265,26 @@ export default function AgendaEditor() {
         <div className="flex items-center gap-2">
           <label className="text-sm opacity-70">Date</label>
           <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-44" />
+          {/* Slice 3: Design today from blank — wipes every block on the chosen
+              date so the adult/tutor can build it from scratch using the AI box
+              or the manual + Add block button. Confirm before destructive action. */}
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="bg-amber-500/10 border-amber-500/40 text-amber-900 dark:text-amber-100"
+            onClick={async () => {
+              const n = liveBlocks.length;
+              if (n === 0) {
+                toast.info("This day is already blank — use the AI box or '+ Add block' to start building.");
+                return;
+              }
+              if (!confirm(`Clear all ${n} block${n === 1 ? "" : "s"} on ${date} and start from scratch? This can't be undone — but you can re-build with the AI box.`)) return;
+              clearDayMut.mutate({ date });
+            }}
+          >
+            Design from blank
+          </Button>
         </div>
       </header>
 
