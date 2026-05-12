@@ -421,6 +421,13 @@
       "when": 1778619648168,
       "tag": "0059_cultured_wild_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "5",
+      "when": 1778623921699,
+      "tag": "0060_good_squadron_sinister",
+      "breakpoints": true
     }
   ]
 }

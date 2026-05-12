@@ -1355,10 +1355,20 @@ export type WeeklyDigest = typeof weeklyDigests.$inferSelect;
 /* -------------------------------------------------------------------------- */
 export const drivePushQueue = mysqlTable("drive_push_queue", {
   id: int("id").autoincrement().primaryKey(),
-  fileKey: varchar("file_key", { length: 500 }).notNull(),
-  fileUrl: varchar("file_url", { length: 500 }).notNull(),
+  // Slice 4.5 (2026-05-12): fileKey + fileUrl are now nullable so the dashboard
+  // can enqueue inline-content rows (markdown blob in contentText) for the
+  // worker to upload. Existing classifier rows still set both.
+  fileKey: varchar("file_key", { length: 500 }),
+  fileUrl: varchar("file_url", { length: 500 }),
   fileName: varchar("file_name", { length: 300 }).notNull(),
   mimeType: varchar("mime_type", { length: 100 }),
+  // For inline content (day logs, off-plan topics, recap replies) — the dashboard
+  // already has the markdown so we skip storage.put and let the worker create
+  // the Drive file directly from this column. Null for classifier rows.
+  contentText: text("content_text"),
+  // Subpath under the target folder, e.g. "2026-05" for month bucketing.
+  // Null means "root of target folder".
+  targetSubpath: varchar("target_subpath", { length: 200 }),
   // Which Drive folder the scheduled task should mirror this file into.
   // The agent prompt knows the folder mapping (root of "Reagan" Drive folder + subfolders).
   // Mom asked May 4 2026 — widened to all 11 Hub subfolders so every kind of
@@ -1387,6 +1397,11 @@ export const drivePushQueue = mysqlTable("drive_push_queue", {
     "practice",
     "notebook",
     "curriculum_checklist",
+    // Slice 4.5 (2026-05-12) — inline-content destinations.
+    "day_log",          // Daily Operations / Day Logs / {YYYY-MM} / {date} - Day Log.md
+    "recap_reply",      // Daily Operations / Recap Replies / {YYYY-MM} / {date} - {sender} - Recap.md
+    "topics_covered",   // Curriculum and Standards / Topics Covered / {YYYY-MM} / {date} - {subject} - {topic}.md
+    "agenda_pdf",       // Daily Operations / Daily Agenda PDFs / {YYYY-MM} / {date} - Agenda.pdf
   ]).default("reagan").notNull(),
   status: mysqlEnum("status", ["pending", "pushed", "skipped", "failed"]).default("pending").notNull(),
   driveFileId: varchar("drive_file_id", { length: 200 }),

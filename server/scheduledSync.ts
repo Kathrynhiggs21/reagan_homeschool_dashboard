@@ -1,6 +1,9 @@
 import type { Express, Request, Response } from "express";
 import * as db from "./db";
 import { sdk } from "./_core/sdk";
+import { buildDayLogMarkdown, dayLogFileName, dayLogSubpath } from "./_lib/dayLogBuilder";
+import { drivePushQueue } from "../drizzle/schema";
+import { and, eq } from "drizzle-orm";
 
 /** Build the HTML email body for the 7am Morning Brief. */
 export function renderMorningBriefHtml(
@@ -1407,42 +1410,80 @@ ${absolutePdfUrl ? `<p style=\"text-align:center;margin:24px 0;\"><a href=\"${ab
    * Cheap when nothing has changed (skips push if hash matches last enqueued).
    */
   app.post("/api/scheduled/daily-log-rebuild", async (req: Request, res: Response) => {
+    let role: string | null = null;
+    try {
+      const u = await sdk.authenticateRequest(req);
+      role = u?.role ?? null;
+    } catch {
+      role = null;
+    }
+    if (!role || (role !== "user" && role !== "admin")) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
     try {
       const dateISO = (req.body?.dateISO as string | undefined) ?? nowETDateISO();
 
-      // Pull pieces in parallel; tolerate any individual failure.
-      const [planRow, actual] = await Promise.all([
-        (db as any).getPlanByDate?.(dateISO).catch(() => null) ?? null,
-        (db as any).listActualForDate?.(dateISO).catch(() => []) ?? [],
-      ]);
-      let plannedBlocks: any[] = [];
-      if (planRow?.id) {
-        plannedBlocks = await (db as any).listBlocksForPlan?.(planRow.id).catch(() => []) ?? [];
-      }
-
-      const md = renderDayLogMarkdown(dateISO, plannedBlocks, actual);
-
-      // Stable file key per date so re-pushes overwrite the same target row.
-      const fileKey = `day-log-${dateISO}.md`;
-      const fileName = `${dateISO} - Day Log.md`;
+      // Build the markdown via the canonical builder (handles weekend, absence,
+      // off-plan topics, planned-complete counts, and source provenance).
+      const md = await buildDayLogMarkdown(dateISO);
       const enc = new TextEncoder();
       const bytes = enc.encode(md);
-      // We don't have a Drive direct-upload here; enqueue via existing push queue.
-      try {
-        await (db as any).enqueueDrivePush?.({
-          fileKey,
-          fileUrl: `data:text/markdown;base64,${Buffer.from(bytes).toString("base64")}`,
-          fileName,
-          mimeType: "text/markdown",
-          targetFolder: "daily_schedule",
-        });
-      } catch (eq) {
-        console.error("[daily-log-rebuild] enqueue failed", eq);
+      const fileName = dayLogFileName(dateISO);
+      const subpath = dayLogSubpath(dateISO);
+
+      // Idempotency: if a pending row already exists for this date with
+      // identical content, skip enqueueing a duplicate. Drive worker pushes
+      // one file per (target, subpath, fileName) tuple anyway, but avoiding
+      // duplicate queue rows keeps the worker's job count honest.
+      const dbInst = (db as any).getDb?.();
+      let alreadyQueued = false;
+      if (dbInst) {
+        try {
+          const existing: any[] = await dbInst
+            .select()
+            .from(drivePushQueue)
+            .where(
+              and(
+                eq(drivePushQueue.targetFolder as any, "day_log" as any),
+                eq(drivePushQueue.targetSubpath as any, subpath as any),
+                eq(drivePushQueue.fileName as any, fileName as any),
+                eq(drivePushQueue.status as any, "pending" as any),
+              ),
+            )
+            .limit(1);
+          if (existing.length > 0 && existing[0].contentText === md) {
+            alreadyQueued = true;
+          }
+        } catch (e) {
+          console.warn("[day-log-rebuild] idempotency check failed", e);
+        }
       }
 
-      return res.json({ ok: true, dateISO, blocks: plannedBlocks.length, actual: actual.length, bytes: bytes.length });
+      if (!alreadyQueued && dbInst) {
+        try {
+          await dbInst.insert(drivePushQueue).values({
+            targetFolder: "day_log" as any,
+            targetSubpath: subpath,
+            fileName,
+            mimeType: "text/markdown",
+            contentText: md,
+            status: "pending" as any,
+          } as any);
+        } catch (eq) {
+          console.error("[day-log-rebuild] enqueue failed", eq);
+        }
+      }
+
+      return res.json({
+        ok: true,
+        dateISO,
+        fileName,
+        subpath,
+        bytes: bytes.length,
+        alreadyQueued,
+      });
     } catch (e: any) {
-      console.error("[daily-log-rebuild] error", e);
+      console.error("[day-log-rebuild] error", e);
       return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
     }
   });

@@ -72,7 +72,8 @@ describe("Slice 4.5 — wiring assertions", () => {
 
   it("queueOffPlanTopicForDriveSync exists and enqueues into drivePushQueue", () => {
     expect(dbSrc).toMatch(/export async function queueOffPlanTopicForDriveSync/);
-    expect(dbSrc).toMatch(/db\.insert\(drivePushQueue\)\.values\(\{[^}]*target: "topics_covered"/s);
+    // Real impl uses targetFolder + the canonical "topics_covered" enum value.
+    expect(dbSrc).toMatch(/db\.insert\(drivePushQueue\)\.values\(\{[^}]*targetFolder: "topics_covered"/s);
   });
 
   it("markTopicAsCovered stamps last_covered_source + last_covered_at", () => {

@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE `drive_push_queue` MODIFY COLUMN `file_key` varchar(500); ALTER TABLE `drive_push_queue` MODIFY COLUMN `file_url` varchar(500); ALTER TABLE `drive_push_queue` MODIFY COLUMN `target_folder` enum('reagan','reagan_ihes','reagan_tutor','reagan_artwork','reagan_assignments','finished_work','daily_schedule','worksheets','printables','report_cards','journal','analytics','adult_notes','kiwi_coins','tutor','apps_tools','bookshelf','adventures','practice','notebook','curriculum_checklist','day_log','recap_reply','topics_covered','agenda_pdf') NOT NULL DEFAULT 'reagan'; ALTER TABLE `drive_push_queue` ADD `content_text` text; ALTER TABLE `drive_push_queue` ADD `target_subpath` varchar(200);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute ALTER TABLE `drive_push_queue` MODIFY COLUMN `file_key` varchar(500); ALTER TABLE `drive_push_queue` MODIFY COLUMN `file_url` varchar(500); ALTER TABLE `drive_push_queue` MODIFY COLUMN `target_folder` enum('reagan','reagan_ihes','reagan_tutor','reagan_artwork','reagan_assignments','finished_work','daily_schedule','worksheets','printables','report_cards','journal','analytics','adult_notes','kiwi_coins','tutor','apps_tools','bookshelf','adventures','practice','notebook','curriculum_checklist','day_log','recap_reply','topics_covered','agenda_pdf') NOT NULL DEFAULT 'reagan'; ALTER TABLE `drive_push_queue` ADD `content_text` text; ALTER TABLE `drive_push_queue` ADD `target_subpath` varchar(200);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1407
+}

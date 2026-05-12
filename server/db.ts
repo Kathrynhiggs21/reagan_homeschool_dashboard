@@ -3775,7 +3775,11 @@ export type DrivePushTarget =
   | "adventures"           // Adventures library entries + photos
   | "practice"             // Practice for Coins history
   | "notebook"             // Reagan notebook attachments
-  | "curriculum_checklist";// Auto-rebuilt weekly curriculum checklist
+  | "curriculum_checklist" // Auto-rebuilt weekly curriculum checklist
+  | "day_log"             // Slice 4.5 — Daily Operations / Day Logs / {YYYY-MM} / {date} - Day Log.md
+  | "recap_reply"         // Slice 4.5 — Daily Operations / Recap Replies / {YYYY-MM} / {date} - {sender} - Recap.md
+  | "topics_covered"      // Slice 4.5 — Curriculum and Standards / Topics Covered / {YYYY-MM} / {date} - {subject} - {topic}.md
+  | "agenda_pdf";          // Slice 4.5 — Daily Operations / Daily Agenda PDFs / {YYYY-MM} / {date} - Agenda.pdf
 
 /** Decide which Drive folder a file belongs in based on the classifier's RoutedResult. */
 export function pickDriveFolderForRouted(routed: RoutedResult, item: ClassifiedItem): DrivePushTarget {
@@ -3835,6 +3839,10 @@ export const DRIVE_FOLDER_NAMES: Record<DrivePushTarget, string> = {
   practice: "Practice for Coins",
   notebook: "Notebook",
   curriculum_checklist: "Curriculum Checklist (Weekly)",
+  day_log: "Day Logs",
+  recap_reply: "Recap Replies",
+  topics_covered: "Topics Covered",
+  agenda_pdf: "Daily Agenda PDFs",
 };
 
 /**
@@ -3878,6 +3886,10 @@ export const DRIVE_TARGET_TO_CANONICAL_PARENT: Record<DrivePushTarget, Canonical
   practice: "assignmentsAndWork",           // practice-for-coins worksheets
   notebook: "adminAndHomeschoolRecords",    // adult notebook entries
   curriculum_checklist: "curriculumAndStandards",
+  day_log: "dailyOperations",
+  recap_reply: "dailyOperations",
+  topics_covered: "curriculumAndStandards",
+  agenda_pdf: "dailyOperations",
 };
 
 /**
@@ -6277,13 +6289,12 @@ export async function queueOffPlanTopicForDriveSync(
   const safeName = topic.replace(/[^A-Za-z0-9]+/g, "_").slice(0, 80);
   const fileName = `${dateISO} - ${subjectSlug} - ${safeName}.md`;
   await db.insert(drivePushQueue).values({
-    target: "topics_covered" as any,
+    targetFolder: "topics_covered" as any,
     targetSubpath: ym,
     fileName,
-    fileMimeType: "text/markdown",
+    mimeType: "text/markdown",
     contentText: contentMarkdown,
     status: "pending" as any,
-    enqueuedAt: Date.now(),
   } as any);
   return { topicId, queued: true };
 }

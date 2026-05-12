@@ -1,0 +1,232 @@
+/**
+ * Day Log builder — Slice 4.5
+ *
+ * Builds the canonical Markdown doc that gets synced to Drive once per day at
+ *   Daily Operations / Day Logs / {YYYY-MM} / {date} - Day Log.md
+ *
+ * Source of truth:
+ *   - dailyPlans            — does a plan exist for this day, was it a sick day, etc.
+ *   - scheduleBlocks        — the planned agenda (what we set out to do)
+ *   - actualAgendaEntries   — what we actually did (Slice 4.5 source of truth)
+ *   - topicsCoveredOffPlan  — adult-flagged off-plan topics
+ *
+ * Pure helpers (formatDayLogMarkdown / dayLogFileName / dayLogSubpath) are
+ * exported separately so they can be unit-tested without DB access. The full
+ * `buildDayLogMarkdown(dateISO)` orchestrator does the DB reads + composition.
+ */
+
+import { and, eq } from "drizzle-orm";
+import {
+  getDb,
+  getPlanByDate,
+  listBlocksForPlan,
+  listActualForDate,
+} from "../db";
+import {
+  topicsCoveredOffPlan,
+  actualAgendaEntries,
+} from "../../drizzle/schema";
+
+export type DayLogPlannedBlock = {
+  id: number;
+  title: string;
+  subjectSlug: string | null;
+  startsAt: string | null;
+  durationMinutes: number | null;
+  status: string | null;
+};
+
+export type DayLogActualEntry = {
+  subjectSlug: string;
+  topic: string;
+  minutesSpent: number;
+  source: string;
+  notes: string | null;
+};
+
+export type DayLogOffPlanTopic = {
+  subjectSlug: string;
+  topic: string;
+};
+
+export type DayLogPayload = {
+  dateISO: string;
+  planExists: boolean;
+  isWeekend: boolean;
+  isAbsence: boolean;
+  absenceReason: string | null;
+  plannedBlocks: DayLogPlannedBlock[];
+  actualEntries: DayLogActualEntry[];
+  offPlanTopics: DayLogOffPlanTopic[];
+  totalActualMinutes: number;
+  plannedComplete: number;
+  plannedTotal: number;
+};
+
+/* ============================================================
+ * Pure helpers (no DB) — safe to unit test in isolation
+ * ============================================================ */
+
+export function dayLogFileName(dateISO: string): string {
+  return `${dateISO} - Day Log.md`;
+}
+
+export function dayLogSubpath(dateISO: string): string {
+  // YYYY-MM month folder under "Day Logs"
+  return dateISO.slice(0, 7);
+}
+
+function formatTime(startsAt: string | null): string {
+  if (!startsAt) return "";
+  const m = /^(\d{2}):(\d{2})/.exec(startsAt);
+  if (!m) return startsAt;
+  let hh = parseInt(m[1], 10);
+  const mm = m[2];
+  const ampm = hh >= 12 ? "PM" : "AM";
+  hh = hh % 12 || 12;
+  return `${hh}:${mm} ${ampm}`;
+}
+
+function escapeMd(s: string): string {
+  // Lightweight Markdown escape — just enough to keep table-breaking chars
+  // from corrupting the file. We don't need to escape pipes here because
+  // we're not using tables; bullets and headers are safe.
+  return s.replace(/\r/g, "").replace(/\n/g, " ");
+}
+
+/**
+ * Pure Markdown formatter — takes a hydrated payload, returns the full doc.
+ * Deterministic: same payload → same string (used in idempotency checks).
+ */
+export function formatDayLogMarkdown(p: DayLogPayload): string {
+  const lines: string[] = [];
+  lines.push(`# Day Log — ${p.dateISO}`);
+  lines.push("");
+
+  if (p.isWeekend) {
+    lines.push("**Weekend — no school day.**");
+    lines.push("");
+  }
+  if (p.isAbsence) {
+    lines.push(`**Absence:** ${p.absenceReason ?? "no reason given"}`);
+    lines.push("");
+  }
+  if (!p.planExists && !p.isWeekend && !p.isAbsence) {
+    lines.push("_No plan was generated for this date._");
+    lines.push("");
+  }
+
+  // Planned agenda
+  lines.push("## Planned");
+  if (p.plannedBlocks.length === 0) {
+    lines.push("_(no planned blocks)_");
+  } else {
+    lines.push(`_${p.plannedComplete} of ${p.plannedTotal} planned blocks marked complete._`);
+    lines.push("");
+    for (const b of p.plannedBlocks) {
+      const t = formatTime(b.startsAt);
+      const dur = b.durationMinutes ? ` · ${b.durationMinutes} min` : "";
+      const subj = b.subjectSlug ? ` [${b.subjectSlug}]` : "";
+      const checked = b.status === "complete" ? "[x]" : "[ ]";
+      lines.push(`- ${checked} ${t}${dur}${subj} — ${escapeMd(b.title)}`);
+    }
+  }
+  lines.push("");
+
+  // Actual entries (what really happened)
+  lines.push("## Actual");
+  if (p.actualEntries.length === 0) {
+    lines.push("_(nothing recorded yet)_");
+  } else {
+    lines.push(`_${p.totalActualMinutes} minutes total across ${p.actualEntries.length} ${p.actualEntries.length === 1 ? "entry" : "entries"}._`);
+    lines.push("");
+    for (const a of p.actualEntries) {
+      const src = a.source ? ` _(via ${a.source})_` : "";
+      const note = a.notes ? ` — ${escapeMd(a.notes)}` : "";
+      lines.push(`- **${a.subjectSlug}** · ${escapeMd(a.topic)} · ${a.minutesSpent} min${src}${note}`);
+    }
+  }
+  lines.push("");
+
+  // Off-plan topics (adult-flagged)
+  if (p.offPlanTopics.length > 0) {
+    lines.push("## Off-plan topics covered");
+    for (const o of p.offPlanTopics) {
+      lines.push(`- **${o.subjectSlug}** · ${escapeMd(o.topic)}`);
+    }
+    lines.push("");
+  }
+
+  lines.push("---");
+  lines.push(`_Generated by the homeschool dashboard. Source of truth: \`actualAgendaEntries\`. Re-run \`POST /api/scheduled/day-log-rebuild\` with \`dateISO=${p.dateISO}\` to regenerate._`);
+  lines.push("");
+
+  return lines.join("\n");
+}
+
+/* ============================================================
+ * DB-backed orchestrator
+ * ============================================================ */
+
+/** Read all the sources needed to compose the day log markdown. */
+export async function loadDayLogPayload(dateISO: string): Promise<DayLogPayload> {
+  const plan = await getPlanByDate(dateISO);
+  const dayOfWeek = new Date(`${dateISO}T00:00:00Z`).getUTCDay();
+  const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+  const isAbsence = Boolean((plan as any)?.isAbsent || (plan as any)?.absent);
+  const absenceReason: string | null =
+    ((plan as any)?.absenceReason as string | null | undefined) ?? null;
+
+  const plannedBlocks: DayLogPlannedBlock[] = plan
+    ? ((await listBlocksForPlan(plan.id)) as any[]).map((b) => ({
+        id: b.id,
+        title: b.title ?? "",
+        subjectSlug: b.subjectSlug ?? b.subject?.slug ?? null,
+        startsAt: b.startsAt ?? null,
+        durationMinutes: b.durationMinutes ?? null,
+        status: b.status ?? null,
+      }))
+    : [];
+
+  const actualRows = await listActualForDate(dateISO);
+  const actualEntries: DayLogActualEntry[] = actualRows.map((a: any) => ({
+    subjectSlug: a.subjectSlug ?? "other",
+    topic: a.topic ?? "",
+    minutesSpent: Number(a.minutesSpent ?? 0),
+    source: a.source ?? "manual",
+    notes: a.notes ?? null,
+  }));
+
+  const offRows: any[] = await getDb()
+    .select()
+    .from(topicsCoveredOffPlan)
+    .where(eq(topicsCoveredOffPlan.dateISO, dateISO));
+  const offPlanTopics: DayLogOffPlanTopic[] = offRows.map((o) => ({
+    subjectSlug: o.subjectSlug ?? "other",
+    topic: o.topic ?? "",
+  }));
+
+  const totalActualMinutes = actualEntries.reduce((s, e) => s + e.minutesSpent, 0);
+  const plannedComplete = plannedBlocks.filter((b) => b.status === "complete").length;
+  const plannedTotal = plannedBlocks.length;
+
+  return {
+    dateISO,
+    planExists: Boolean(plan),
+    isWeekend,
+    isAbsence,
+    absenceReason,
+    plannedBlocks,
+    actualEntries,
+    offPlanTopics,
+    totalActualMinutes,
+    plannedComplete,
+    plannedTotal,
+  };
+}
+
+/** Convenience: load + format in one call. */
+export async function buildDayLogMarkdown(dateISO: string): Promise<string> {
+  const payload = await loadDayLogPayload(dateISO);
+  return formatDayLogMarkdown(payload);
+}

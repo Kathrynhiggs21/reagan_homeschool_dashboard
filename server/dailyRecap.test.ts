@@ -54,8 +54,13 @@ describe("Slice 4.5 — daily recap + day log contracts", () => {
   });
 
   it("daily-log-rebuild enqueues to Drive via push queue", () => {
-    expect(src).toContain("enqueueDrivePush");
-    expect(src).toContain("daily_schedule");
+    // Slice 4.5 refactor: route inserts into drivePushQueue directly with the
+    // canonical "day_log" target instead of the legacy daily_schedule alias.
+    // The behavioral contract (a row is inserted into drivePushQueue when
+    // /api/scheduled/daily-log-rebuild runs) is exercised end-to-end by
+    // server/dayLogRebuildRoute.test.ts using a real DB.
+    expect(src).toMatch(/(?:db|dbInst)\.insert\(drivePushQueue\)/);
+    expect(src).toContain('"day_log"');
   });
 });
 
