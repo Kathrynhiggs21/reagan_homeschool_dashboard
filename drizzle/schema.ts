@@ -1016,7 +1016,7 @@ export const reviewResources = mysqlTable("reviewResources", {
 
 export const appSettings = mysqlTable("appSettings", {
   id: int("id").autoincrement().primaryKey(),
-  key: varchar("key", { length: 64 }).notNull().unique(),
+  key: varchar("key", { length: 255 }).notNull().unique(),
   value: text("value"),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

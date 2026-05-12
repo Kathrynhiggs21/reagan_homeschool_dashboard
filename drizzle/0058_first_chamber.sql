@@ -1,0 +1,1 @@
+ALTER TABLE `appSettings` MODIFY COLUMN `key` varchar(255) NOT NULL;

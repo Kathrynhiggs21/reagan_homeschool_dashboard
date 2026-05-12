@@ -96,7 +96,13 @@
 - [ ] **House rule (instructional/how-to docs)**: any doc titled 'How to use...', 'Tutor Handoff', 'Grandma Guide', 'Homeschool Hub README', 'Onboarding', 'Quick Start', etc. — whenever I find or touch one, AUTO-UPDATE it: rewrite stale references (defunct emails, old folder paths, removed features), add missing newer features (recap email, Day Logs, mood timeline, Mom+Grandma always-edit, Slice 4.5 surfaces). Save in place. If both .docx and .md exist for the same doc, update the .docx and trash the .md.
 - [ ] **House rule (trash policy)**: TRASH (not permanent delete) any file that is clearly old (`_old`, `_v1`, `_backup`, `_copy`, drafts pre-2025), pure duplicate where canonical exists, references defunct accounts, no homeschool relevance, empty-test, or AI scratch. Trash empty folders after moves. All trashes recoverable for 30 days from Drive Trash.
 - [x] Persist the resolved 9 canonical top-level folder IDs in `app_settings` (drive.rootFolderId + drive.folder.* — DONE 2026-05-12, vitest `driveCanonicalFolders.test.ts` passing). Subfolder map self-heal still pending.
-- [ ] Drive folder map persisted in `app_settings['drive.folderMap']` as JSON {folder name: id} for all SUB-folders. Self-heal on startup: list children once, only CREATE missing names, store IDs.
+- [x] Drive folder map persisted in `app_settings['drive.folderMap.<parent>.<sub>']` for all SUB-folders — actually backfilled end-to-end (DONE 2026-05-12):
+  - Worker contract endpoints exist (push 1)
+  - Server-side reader helper `getCanonicalSubfolderId(parent, sub)` added
+  - Schema migration `0058_first_chamber.sql` bumped `appSettings.key` to varchar(255)
+  - Backfill script `scripts/drive_subfolder_backfill.py` discovered/created all 31 canonical subfolders under the 9 hub roots (3 newly created: PowerSchool Snapshot, Adventures Library, Reagan's Books)
+  - All 31 IDs upserted into `app_settings`
+  - Vitests: `getCanonicalSubfolderId.test.ts` (3/3) + `driveSubfolderBackfillVerify.test.ts` (32/32) confirming every expected key resolves to a real Drive folder ID
 - [x] Worker contract endpoints `GET /api/scheduled/drive-folder-map` + `POST /api/scheduled/drive-folder-map/result` (DONE 2026-05-12, vitest `driveFolderMap.test.ts` 6/6 pass). External cron worker can now self-heal canonical subfolders and report resolved IDs back into `app_settings['drive.folderMap.<parent>.<sub>']`.
 - [ ] **Daily activity log auto-sync**: single canonical doc per day at `Daily Operations/{YYYY-MM}/{date} - Day Log.md` containing planned agenda + actual entries + completed work + curriculum coverage + analytics roll-up + tutor notes + recap reply text. Updated on EVERY dashboard write (block.update, block.complete, recap parse, quick-entry submit).
 - [ ] Drive: full two-way sync for ALL canonical subfolders under that root. Implementation: scheduled poll every 10 min + immediate push on every dashboard write (no waiting on poll).

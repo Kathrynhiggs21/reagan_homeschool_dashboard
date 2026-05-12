@@ -407,6 +407,13 @@
       "when": 1778612638004,
       "tag": "0057_shiny_king_cobra",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "5",
+      "when": 1778619058852,
+      "tag": "0058_first_chamber",
+      "breakpoints": true
     }
   ]
 }

@@ -3892,6 +3892,22 @@ export async function getCanonicalParentForRoutable(target: DrivePushTarget): Pr
   return { slug, folderId };
 }
 
+/**
+ * Resolve a CANONICAL SUBFOLDER's Drive ID once the worker has reported it
+ * back via POST /api/scheduled/drive-folder-map/result. Inputs are the
+ * human-readable parent name (e.g. "Daily Operations") and subfolder name
+ * (e.g. "Day Logs"). Both are slugified to alphanumerics + underscores to
+ * match how the worker's /result endpoint stored them.
+ *
+ * Returns null if the worker has not yet visited the folder map this cycle
+ * (caller must fall back to enqueueing under the parent's root and let the
+ * worker self-heal next tick).
+ */
+export async function getCanonicalSubfolderId(parentName: string, subfolderName: string): Promise<string | null> {
+  const slugify = (s: string) => s.replace(/[^A-Za-z0-9]+/g, "_");
+  return await getAppSetting(`drive.folderMap.${slugify(parentName)}.${slugify(subfolderName)}`);
+}
+
 export async function enqueueDrivePush(args: {
   fileKey: string;
   fileUrl: string;
