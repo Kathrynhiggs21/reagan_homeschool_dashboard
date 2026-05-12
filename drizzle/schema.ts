@@ -2013,3 +2013,71 @@ export const recipientPushTargets = mysqlTable("recipientPushTargets", {
 });
 export type RecipientPushTarget = typeof recipientPushTargets.$inferSelect;
 export type InsertRecipientPushTarget = typeof recipientPushTargets.$inferInsert;
+
+/**
+ * Slice 4.5 — Actual-vs-Planned agenda
+ *
+ * `actualAgendaEntries` is the source of truth for "what Reagan really did
+ * today". The planned-vs-actual delta drives curriculum coverage. If actual
+ * data is missing by 8 PM, a recap email is sent to Grandma Marcy whose
+ * reply is parsed into rows here.
+ */
+export const actualAgendaEntries = mysqlTable("actualAgendaEntries", {
+  id: int("id").autoincrement().primaryKey(),
+  dateISO: varchar("date_iso", { length: 10 }).notNull(),
+  plannedBlockId: int("planned_block_id"), // NULL = off-plan / spontaneous
+  subjectSlug: varchar("subject_slug", { length: 32 }).notNull(),
+  topic: varchar("topic", { length: 240 }).notNull(),
+  minutesSpent: int("minutes_spent").notNull().default(0),
+  source: mysqlEnum("source", [
+    "reagan-checkin",
+    "mom-input",
+    "grandma-recap",
+    "tutor-note",
+    "kiwi-listened",
+    "auto-derived",
+  ]).notNull(),
+  notes: text("notes"),
+  createdBy: varchar("created_by", { length: 240 }), // user email or 'system'
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
+});
+export type ActualAgendaEntry = typeof actualAgendaEntries.$inferSelect;
+export type InsertActualAgendaEntry = typeof actualAgendaEntries.$inferInsert;
+
+/**
+ * Topics covered that were NOT in the planned curriculum (or are not yet
+ * mapped to a known curriculum standard). When inserted, these get pushed
+ * to Drive at "Reagan School Hub > Topics Covered > {YYYY-MM} > {date} - {subject} - {topic}.md"
+ */
+export const topicsCoveredOffPlan = mysqlTable("topicsCoveredOffPlan", {
+  id: int("id").autoincrement().primaryKey(),
+  dateISO: varchar("date_iso", { length: 10 }).notNull(),
+  subjectSlug: varchar("subject_slug", { length: 32 }).notNull(),
+  topic: varchar("topic", { length: 240 }).notNull(),
+  mappedToCurriculumStandardId: varchar("mapped_to_standard_id", { length: 64 }), // NULL until reviewed
+  sourceEntryId: int("source_entry_id"), // FK to actualAgendaEntries.id
+  drivePushed: boolean("drive_pushed").notNull().default(false),
+  drivePath: varchar("drive_path", { length: 480 }),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
+});
+export type TopicCoveredOffPlan = typeof topicsCoveredOffPlan.$inferSelect;
+export type InsertTopicCoveredOffPlan = typeof topicsCoveredOffPlan.$inferInsert;
+
+/**
+ * Tracks the 8 PM recap email sent to Grandma Marcy when no actual agenda
+ * data was captured for a given day. The reply token is a signed string
+ * that the inbound parser uses to authorize writing to actualAgendaEntries.
+ */
+export const dailyRecapRequests = mysqlTable("dailyRecapRequests", {
+  id: int("id").autoincrement().primaryKey(),
+  dateISO: varchar("date_iso", { length: 10 }).notNull(),
+  sentTo: varchar("sent_to", { length: 240 }).notNull(),
+  sentAt: bigint("sent_at", { mode: "number" }).notNull(),
+  replyToken: varchar("reply_token", { length: 96 }).notNull().unique(),
+  status: mysqlEnum("status", ["sent", "replied", "expired"]).notNull().default("sent"),
+  repliedAt: bigint("replied_at", { mode: "number" }),
+  parsedEntriesCount: int("parsed_entries_count").notNull().default(0),
+  rawReplyText: text("raw_reply_text"),
+});
+export type DailyRecapRequest = typeof dailyRecapRequests.$inferSelect;
+export type InsertDailyRecapRequest = typeof dailyRecapRequests.$inferInsert;

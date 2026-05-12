@@ -20,6 +20,9 @@ import {
   studentRequests, adultAiMessages,
   bookPagesDone,
   listeningSummaries,
+  actualAgendaEntries, type ActualAgendaEntry, type InsertActualAgendaEntry,
+  topicsCoveredOffPlan, type InsertTopicCoveredOffPlan,
+  dailyRecapRequests, type DailyRecapRequest, type InsertDailyRecapRequest,
 } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -5874,4 +5877,179 @@ export async function listActivePushTargets(): Promise<RecipientPushTarget[]> {
     .from(recipientPushTargets)
     .where(eq(recipientPushTargets.isActive, true))
     .orderBy(asc(recipientPushTargets.id))) as RecipientPushTarget[];
+}
+
+
+/* ============================================================
+ * Slice 4.5 — Actual-vs-Planned agenda helpers
+ *
+ * Source of truth: actualAgendaEntries. Curriculum coverage and
+ * day-log Drive sync read from here. Planned scheduleBlocks are
+ * still the original plan, displayed alongside but not authoritative
+ * for "what was learned today".
+ * ========================================================== */
+
+/** Insert a single actual-agenda entry. Returns the inserted row id. */
+export async function recordActualEntry(
+  e: Omit<InsertActualAgendaEntry, "createdAt"> & { createdAt?: number },
+): Promise<number> {
+  const db = getDb();
+  const now = e.createdAt ?? Date.now();
+  const result: any = await db.insert(actualAgendaEntries).values({
+    ...e,
+    createdAt: now,
+  });
+  // mysql2 returns { insertId } via drizzle's result wrapper
+  return Number(result?.[0]?.insertId ?? result?.insertId ?? 0);
+}
+
+/** All actual entries for a date, oldest first. */
+export async function listActualForDate(dateISO: string): Promise<ActualAgendaEntry[]> {
+  return (await getDb()
+    .select()
+    .from(actualAgendaEntries)
+    .where(eq(actualAgendaEntries.dateISO, dateISO))
+    .orderBy(asc(actualAgendaEntries.createdAt))) as ActualAgendaEntry[];
+}
+
+/** Count actual entries for a date — used by 8 PM cron to decide whether
+ *  to send the recap email. Voice-gating ensures Kiwi-only days come
+ *  through here ONLY if they passed both voice + content classifiers. */
+export async function countActualForDate(dateISO: string): Promise<number> {
+  const rows = await getDb()
+    .select({ id: actualAgendaEntries.id })
+    .from(actualAgendaEntries)
+    .where(eq(actualAgendaEntries.dateISO, dateISO));
+  return rows.length;
+}
+
+/** Coverage delta: which planned-block topics are NOT yet covered by any
+ *  actual entry, AND which actual entries are off-plan (no matching block).
+ *
+ *  The match is a loose case-insensitive contains on title↔topic. This
+ *  intentionally keeps the rule simple — adults review the off-plan list
+ *  and approve/map them via the Topics Covered Drive doc.
+ */
+export function computeCoverageDelta(
+  plannedBlocks: Array<{ id: number; title: string; subjectSlug?: string | null }>,
+  actualEntries: Array<{ plannedBlockId: number | null; subjectSlug: string; topic: string }>,
+): {
+  coveredBlockIds: number[];
+  uncoveredBlocks: Array<{ id: number; title: string }>;
+  offPlanEntries: Array<{ subjectSlug: string; topic: string }>;
+} {
+  const coveredSet = new Set<number>();
+  const offPlan: Array<{ subjectSlug: string; topic: string }> = [];
+  for (const ae of actualEntries) {
+    if (ae.plannedBlockId !== null) {
+      coveredSet.add(ae.plannedBlockId);
+      continue;
+    }
+    const norm = ae.topic.toLowerCase().trim();
+    let matched: number | null = null;
+    for (const b of plannedBlocks) {
+      const t = b.title.toLowerCase();
+      if (t.includes(norm) || norm.includes(t)) {
+        matched = b.id;
+        break;
+      }
+    }
+    if (matched !== null) {
+      coveredSet.add(matched);
+    } else {
+      offPlan.push({ subjectSlug: ae.subjectSlug, topic: ae.topic });
+    }
+  }
+  const uncovered = plannedBlocks
+    .filter((b) => !coveredSet.has(b.id))
+    .map((b) => ({ id: b.id, title: b.title }));
+  return {
+    coveredBlockIds: Array.from(coveredSet),
+    uncoveredBlocks: uncovered,
+    offPlanEntries: offPlan,
+  };
+}
+
+/** Insert an off-plan topic row (created by either the recap parser, the
+ *  Kiwi-listened pipeline after passing voice+content gates, or an adult
+ *  quick-entry where the topic doesn't match any planned block).
+ *  The Drive push is performed separately by the driveSync module. */
+export async function recordOffPlanTopic(
+  e: Omit<InsertTopicCoveredOffPlan, "createdAt"> & { createdAt?: number },
+): Promise<number> {
+  const db = getDb();
+  const result: any = await db.insert(topicsCoveredOffPlan).values({
+    ...e,
+    createdAt: e.createdAt ?? Date.now(),
+  });
+  return Number(result?.[0]?.insertId ?? result?.insertId ?? 0);
+}
+
+/** Mark an off-plan row as having been pushed to Drive. */
+export async function markOffPlanDrivePushed(id: number, drivePath: string): Promise<void> {
+  await getDb()
+    .update(topicsCoveredOffPlan)
+    .set({ drivePushed: true, drivePath })
+    .where(eq(topicsCoveredOffPlan.id, id));
+}
+
+/** Create a recap-request row at 8 PM when a date has no actual entries.
+ *  Returns the reply token the email should embed in its magic link. */
+export async function createRecapRequest(opts: {
+  dateISO: string;
+  sentTo: string;
+  replyToken: string;
+}): Promise<number> {
+  const db = getDb();
+  const result: any = await db.insert(dailyRecapRequests).values({
+    dateISO: opts.dateISO,
+    sentTo: opts.sentTo,
+    sentAt: Date.now(),
+    replyToken: opts.replyToken,
+    status: "sent",
+    parsedEntriesCount: 0,
+  });
+  return Number(result?.[0]?.insertId ?? result?.insertId ?? 0);
+}
+
+/** Look up a pending recap request by token; null if expired/replied/missing. */
+export async function getRecapRequestByToken(
+  token: string,
+): Promise<DailyRecapRequest | null> {
+  const rows = (await getDb()
+    .select()
+    .from(dailyRecapRequests)
+    .where(eq(dailyRecapRequests.replyToken, token))
+    .limit(1)) as DailyRecapRequest[];
+  return rows[0] ?? null;
+}
+
+/** Mark a recap request as replied; record raw text + parsed count. */
+export async function markRecapReplied(
+  id: number,
+  rawReplyText: string,
+  parsedEntriesCount: number,
+): Promise<void> {
+  await getDb()
+    .update(dailyRecapRequests)
+    .set({
+      status: "replied",
+      repliedAt: Date.now(),
+      rawReplyText,
+      parsedEntriesCount,
+    })
+    .where(eq(dailyRecapRequests.id, id));
+}
+
+/** Has ANY recap request for this date already been replied?
+ *  Used to enforce "first reply wins" across Mom + Grandma + tutors. */
+export async function isRecapAlreadyAnswered(dateISO: string): Promise<boolean> {
+  const rows = await getDb()
+    .select({ id: dailyRecapRequests.id })
+    .from(dailyRecapRequests)
+    .where(and(
+      eq(dailyRecapRequests.dateISO, dateISO),
+      eq(dailyRecapRequests.status, "replied"),
+    ));
+  return rows.length > 0;
 }

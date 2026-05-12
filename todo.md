@@ -32,6 +32,31 @@
 - [x] No approval workflow can block them on agenda edits
 - [x] Vitests: 11 new family-admin gate tests + 5 existing routers tests updated to Mom-ctx — all 523 / 1 skipped pass
 
+### Slice 4.5 — Actual-vs-Planned + Grandma recap fallback + off-curriculum capture + Drive sync (NEW 2026-05-12)
+- [ ] Schema: `actualAgendaEntries` (id, dateISO, plannedBlockId NULL-able if off-plan, subjectSlug, topic, minutesSpent, source enum: 'reagan-checkin'|'mom-input'|'grandma-recap'|'tutor-note'|'kiwi-listened', notes, createdBy, createdAt)
+- [ ] Schema: `topicsCoveredOffPlan` (id, dateISO, subjectSlug, topic, mappedToCurriculumStandardId NULL-able, sourceEntryId, createdAt)
+- [ ] Schema: `dailyRecapRequests` (id, dateISO, sentTo email, sentAt, replyToken, status enum: 'sent'|'replied'|'expired', repliedAt, parsedEntriesCount)
+- [ ] db.ts helpers: `recordActualEntry`, `listActualForDate`, `getCoverageDelta(plannedBlocks, actualEntries)`, `markTopicAsCovered(standardId, source)`, `pushOffPlanTopicToDrive(topic)`
+- [ ] Curriculum-coverage now reads from `actualAgendaEntries` (NOT `scheduleBlocks`) — what was actually done is what counts. Planned blocks remain visible as the original plan.
+- [ ] **Kiwi-listened gate (REVISED)**: Kiwi audio counts toward `actualAgendaEntries` if BOTH (a) Reagan's voice is audibly present in the chunk (voice-print match against enrolled profile) AND (b) the content classifier flags it as one of: `lesson`, `reading-aloud`, `problem-solving`, `discussion-on-topic`, `adult-led-school-activity` (e.g., adult-led science experiment, museum walkthrough, baking-as-fractions, read-aloud by Mom while Reagan participates). Reagan does NOT have to be the one talking the whole time — she just has to be audibly present. Audio with no Reagan voice (TV alone, adults talking without her) does NOT count.
+- [ ] **Reagan mood + behavior captured per chunk** even if it does not pass the school-content gate: `listeningSummaries` row gets `reaganVoicePresent: bool`, `moodEstimate` (calm | engaged | frustrated | tired | silly | upset | excited), `behaviorTags[]` (focused, distracted, talking-back, asking-questions, off-topic, helping-out, refusing). Mom-side analytics + mood timeline always read these regardless of gate result.
+- [ ] Voice-print enrollment screen for Reagan (record 3 short samples on Reagan's onboarding) → store hash; rerun if accuracy drifts.
+- [ ] Even if Kiwi captured Reagan-voice school chunks, the 8 PM cron still emails recap if `actualAgendaEntries` is empty for the day.
+- [ ] Reagan-voice provenance badge in UI: any actual entry with `source='kiwi-listened'` shows a tiny mic+Reagan icon so adults can verify.
+- [ ] Mood timeline strip on Today: per-hour mood + behavior tags, color-coded, click to see the chunk's transcript snippet.
+- [ ] Cron 8 PM daily: if no actual entries AND no Reagan check-in AND no Mom/tutor entry — send recap email to ALL of: marcy.spear@gmail.com, spear.cpt@gmail.com, and every active tutor email. FIRST REPLY WINS — ignore subsequent replies. Subject "Reagan's day recap — what did she do today?". Body: 5 numbered prompt lines + magic-link reply token.
+- [ ] Inbound recap reply route `/api/scheduled/recap-reply/:token` → LLM extracts entries → writes `actualAgendaEntries`; off-curriculum topics auto-create `topicsCoveredOffPlan` rows AND get pushed to Drive Curriculum and Standards/Topics Covered/{YYYY-MM}/{date}-{subject}-{topic}.md
+- [ ] Adult UI on Today + Schedule: "Actual vs Planned" strip per block (left chip = planned, right chip = actual; tap to add)
+- [ ] Mom + Grandma manual-entry: tap actual chip → quick form (subject + topic + minutes + notes) — uses `familyAdminProcedure`
+- [ ] **Adult quick-entry card on Today** ("Today — what we actually did"): one-tap form even if nothing was scheduled or checked. Saves to `actualAgendaEntries` AND back-fills the Drive day log. familyAdmin only.
+- [ ] Drive root = `1r3bJacPLJN7VHI8y72rcx1-GRxspqo1r` under spear.cpt@gmail.com. Persist as `app_settings['drive.rootFolderId']`. Existing 8 child folders adopted as canonical (Admin and Homeschool Records, Adventures and Enrichment, Assignments and Work, Curriculum and Standards, Daily Operations, Inbox (Unsorted), Printables and Resources, Progress and Reports, Todo). NEVER recreate from scratch.
+- [ ] Drive folder map persisted in `app_settings['drive.folderMap']` as JSON {folder name: id}. Self-heal on startup: list children once, only CREATE missing names, store IDs.
+- [ ] **Daily activity log auto-sync**: single canonical doc per day at `Daily Operations/{YYYY-MM}/{date} - Day Log.md` containing planned agenda + actual entries + completed work + curriculum coverage + analytics roll-up + tutor notes + recap reply text. Updated on EVERY dashboard write (block.update, block.complete, recap parse, quick-entry submit).
+- [ ] Drive: full two-way sync for ALL canonical subfolders under that root. Implementation: scheduled poll every 10 min + immediate push on every dashboard write (no waiting on poll).
+- [ ] Drive sub-folder dedupe job: nightly compare folder names + content hashes; auto-merge dupes by moving children of dupe → canonical and trashing the empty dupe.
+- [ ] Vitests: 8 PM cron skips when actual entries exist; sends when empty; reply-token parser writes correct rows; off-plan topic creates Drive file; coverage delta uses actual not planned
+- [ ] Settings → Daily Recap panel: toggle, recipient list (default marcy.spear@gmail.com), send-time, sample preview
+
 ### Slice 4 — Fully operable + printable B-β-blocks (IN PROGRESS)
 - [ ] Worksheet body + answer key (PDF with both)
 - [ ] Video link + description + QR (printable + tap-to-play)
