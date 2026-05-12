@@ -27,6 +27,20 @@ import {
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
+/**
+ * Lazy-import wrapper around `enqueueDayLogRebuild` from
+ * `_lib/dayLogBuilder.ts`. The dynamic import breaks the otherwise
+ * circular dep (dayLogBuilder imports getDb/listActualForDate from
+ * THIS file). Always fire-and-forget: callers must not await this and
+ * any failure is swallowed so the original write succeeds.
+ */
+export function enqueueDayLogRebuildForDate(dateISO: string): void {
+  if (!dateISO || !/^\d{4}-\d{2}-\d{2}$/.test(dateISO)) return;
+  void import("./_lib/dayLogBuilder")
+    .then((m) => m.enqueueDayLogRebuild(dateISO).catch(() => {}))
+    .catch(() => {});
+}
+
 export function getDb() {
   if (_db) return _db;
   const pool = mysql.createPool({
@@ -316,6 +330,31 @@ export async function createBlock(b: typeof scheduleBlocks.$inferInsert) {
 export async function updateBlock(id: number, patch: Partial<typeof scheduleBlocks.$inferInsert>) {
   const db = getDb();
   await db.update(scheduleBlocks).set(patch).where(eq(scheduleBlocks.id, id));
+  // Slice 4.5 push 8: block status / title / time changes touch the day log.
+  // Best-effort lookup of the block's plan date — fire-and-forget.
+  void (async () => {
+    try {
+      const rows = await db
+        .select({ planId: scheduleBlocks.planId })
+        .from(scheduleBlocks)
+        .where(eq(scheduleBlocks.id, id))
+        .limit(1);
+      const planId = rows[0]?.planId;
+      if (planId) {
+        const planRows = await db.execute(
+          sql`SELECT date_iso FROM dailyPlans WHERE id = ${planId} LIMIT 1`,
+        );
+        const dateISO =
+          (planRows as any)?.[0]?.[0]?.date_iso ??
+          (planRows as any)?.[0]?.date_iso ??
+          (Array.isArray(planRows) && (planRows[0] as any)?.date_iso) ??
+          null;
+        if (dateISO) enqueueDayLogRebuildForDate(String(dateISO));
+      }
+    } catch {
+      // best-effort
+    }
+  })();
   // Cascade completion -> linked curriculum topic.
   // When a block is marked complete *and* anchored to a curriculumTopicId,
   // flip that topic's status to 'done' (only if it was notStarted/inProgress).
@@ -6105,6 +6144,10 @@ export async function recordActualEntry(
     ...e,
     createdAt: now,
   });
+  // Slice 4.5 push 8: every actual-entry write triggers a day-log
+  // rebuild for that date, fire-and-forget. Failure here MUST NOT
+  // block the original insert.
+  void enqueueDayLogRebuildForDate(e.dateISO);
   // mysql2 returns { insertId } via drizzle's result wrapper
   return Number(result?.[0]?.insertId ?? result?.insertId ?? 0);
 }
@@ -6296,6 +6339,8 @@ export async function queueOffPlanTopicForDriveSync(
     contentText: contentMarkdown,
     status: "pending" as any,
   } as any);
+  // Slice 4.5 push 8: off-plan topic add also touches the day log.
+  void enqueueDayLogRebuildForDate(dateISO);
   return { topicId, queued: true };
 }
 
