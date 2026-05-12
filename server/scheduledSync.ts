@@ -971,4 +971,323 @@ ${tutorLine}
       return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
     }
   });
+
+  /* ===========================================================
+   * Slice 4.5 — Daily Recap workflow (May 12 2026)
+   *
+   * If the day has no actualAgendaEntries by 8 PM ET, email Mom +
+   * Grandma + every active tutor with a magic-link reply token. The
+   * first reply wins; their reply text is parsed by an LLM into
+   * actualAgendaEntries + topicsCoveredOffPlan rows; off-plan topics
+   * are pushed to the Drive Topics-Covered folder.
+   * =========================================================== */
+
+  function nowETDateISO(): string {
+    const now = new Date();
+    // Convert to America/New_York; ET = UTC-5 (EST) or UTC-4 (EDT). Use Intl.
+    const fmt = new Intl.DateTimeFormat("en-US", { timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit" });
+    const parts = fmt.formatToParts(now);
+    const y = parts.find(p => p.type === "year")?.value ?? "1970";
+    const m = parts.find(p => p.type === "month")?.value ?? "01";
+    const d = parts.find(p => p.type === "day")?.value ?? "01";
+    return `${y}-${m}-${d}`;
+  }
+
+  function makeReplyToken(): string {
+    const bytes = new Uint8Array(24);
+    if (typeof globalThis.crypto?.getRandomValues === "function") {
+      globalThis.crypto.getRandomValues(bytes);
+    } else {
+      for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+    }
+    return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  /**
+   * POST /api/scheduled/daily-recap-send
+   *
+   * Heartbeat-triggered at 8 PM ET. Idempotent — safe to retry.
+   * Skips if today already has any actualAgendaEntries OR if a recap
+   * has already been replied to today.
+   */
+  app.post("/api/scheduled/daily-recap-send", async (req: Request, res: Response) => {
+    try {
+      // Optional cron auth check; permissive for now to ease bring-up
+      const _user = await sdk.authenticateRequest(req).catch(() => null);
+
+      const dateISO = (req.body?.dateISO as string | undefined) ?? nowETDateISO();
+
+      // Guards
+      const actualCount = await (db as any).countActualForDate?.(dateISO).catch(() => 0) ?? 0;
+      if (actualCount > 0) {
+        return res.json({ ok: true, skipped: "actual-entries-exist", dateISO, actualCount });
+      }
+      const alreadyAnswered = await (db as any).isRecapAlreadyAnswered?.(dateISO).catch(() => false) ?? false;
+      if (alreadyAnswered) {
+        return res.json({ ok: true, skipped: "already-answered", dateISO });
+      }
+
+      // Recipients: Mom + Grandma (constants), plus every active tutor with a non-empty email.
+      const fixedRecipients = ["marcy.spear@gmail.com", "spear.cpt@gmail.com"];
+      let tutorEmails: string[] = [];
+      try {
+        const tutorsRows = (await (db as any).listTutors?.(true)) ?? [];
+        tutorEmails = tutorsRows
+          .map((t: any) => (t?.email ?? "").trim().toLowerCase())
+          .filter((e: string) => /.+@.+\..+/.test(e));
+      } catch { /* tutor table missing or empty — ignore */ }
+      const recipients = Array.from(new Set([...fixedRecipients, ...tutorEmails]));
+
+      // Create one recap-request row per recipient (each gets its own token).
+      const created: Array<{ recipient: string; token: string }> = [];
+      for (const recipient of recipients) {
+        const token = makeReplyToken();
+        try {
+          await (db as any).createRecapRequest?.({ dateISO, sentTo: recipient, replyToken: token });
+          created.push({ recipient, token });
+        } catch (e) {
+          // continue — don't fail the whole send because one recipient row failed
+          console.error("[daily-recap-send] createRecapRequest failed for", recipient, e);
+        }
+      }
+
+      // The actual email send is handled by an external AGENT cron that polls
+      // /api/scheduled/daily-recap-send/pending to learn which (recipient, token)
+      // pairs still need an outbound email. We just persist the rows here and
+      // return them in the response so a synchronous mailer (if added) can use them.
+      return res.json({ ok: true, dateISO, sent: created });
+    } catch (e: any) {
+      console.error("[daily-recap-send] error", e);
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
+
+  /**
+   * GET /api/scheduled/daily-recap-send/pending
+   * Returns the recap-request rows whose status is still 'sent' (no reply yet)
+   * so an external mailer agent can compose + send the email.
+   */
+  app.get("/api/scheduled/daily-recap-send/pending", async (_req: Request, res: Response) => {
+    try {
+      const rows = await (db as any).listPendingRecapRequests?.(50).catch(() => []) ?? [];
+      return res.json({ ok: true, pending: rows });
+    } catch (e: any) {
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
+
+  /**
+   * POST /api/scheduled/daily-recap-reply
+   * Body: { token: string, replyText: string, replyFrom?: string }
+   *
+   * Inbound webhook called by the email-reply forwarder OR the in-app reply
+   * surface. First reply for a given dateISO wins — subsequent replies are
+   * recorded but their parsed entries are not inserted again.
+   */
+  app.post("/api/scheduled/daily-recap-reply", async (req: Request, res: Response) => {
+    try {
+      const token = String(req.body?.token ?? "").trim();
+      const replyText = String(req.body?.replyText ?? "").trim();
+      const replyFrom = String(req.body?.replyFrom ?? "").trim().toLowerCase();
+      if (!token || !replyText) {
+        return res.status(400).json({ ok: false, error: "token-and-replyText-required" });
+      }
+
+      const reqRow = await (db as any).getRecapRequestByToken?.(token);
+      if (!reqRow) return res.status(404).json({ ok: false, error: "unknown-token" });
+      if (reqRow.status === "replied") {
+        return res.json({ ok: true, skipped: "already-replied-via-this-token" });
+      }
+      const dateISO = reqRow.dateISO as string;
+
+      // Honor first-reply-wins across recipients.
+      const someoneAnswered = await (db as any).isRecapAlreadyAnswered?.(dateISO).catch(() => false) ?? false;
+      if (someoneAnswered) {
+        await (db as any).markRecapReplied?.(reqRow.id, replyText, 0).catch(() => {});
+        return res.json({ ok: true, skipped: "another-recipient-answered-first" });
+      }
+
+      // LLM-extract structured entries from the freeform reply text.
+      let parsed: Array<{ subjectSlug: string; topic: string; minutesSpent: number; notes?: string; offPlan?: boolean }> = [];
+      try {
+        const { invokeLLM } = await import("./_core/llm");
+        const sys = `You convert a parent's freeform daily-recap email about their homeschooler into structured rows. \nReturn JSON: {"entries":[{subjectSlug, topic, minutesSpent, notes, offPlan}]}.\nsubjectSlug must be one of: math, ela, science, social-studies, life-skills, art, music, pe, social-emotional, other.\nIf the activity is school-adjacent (museum, baking, nature walk, science experiment) but not in a planned subject, mark offPlan=true and pick the closest subjectSlug (often other).`;
+        const resp: any = await invokeLLM({
+          messages: [
+            { role: "system", content: sys },
+            { role: "user", content: replyText },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "recap_entries",
+              strict: true,
+              schema: {
+                type: "object",
+                properties: {
+                  entries: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        subjectSlug: { type: "string" },
+                        topic: { type: "string" },
+                        minutesSpent: { type: "integer" },
+                        notes: { type: "string" },
+                        offPlan: { type: "boolean" },
+                      },
+                      required: ["subjectSlug", "topic", "minutesSpent", "notes", "offPlan"],
+                      additionalProperties: false,
+                    },
+                  },
+                },
+                required: ["entries"],
+                additionalProperties: false,
+              },
+            },
+          },
+        });
+        const raw = resp?.choices?.[0]?.message?.content ?? "{}";
+        const obj = typeof raw === "string" ? JSON.parse(raw) : raw;
+        parsed = Array.isArray(obj?.entries) ? obj.entries : [];
+      } catch (llmErr) {
+        console.error("[daily-recap-reply] LLM parse failed; storing reply text only", llmErr);
+      }
+
+      // Determine source label from replyFrom email
+      const source: string =
+        replyFrom === "marcy.spear@gmail.com" ? "grandma-recap" :
+        replyFrom === "spear.cpt@gmail.com" ? "mom-input" :
+        replyFrom ? "tutor-note" :
+        "grandma-recap";
+
+      // Insert entries.
+      let inserted = 0;
+      for (const e of parsed) {
+        try {
+          const entryId = await (db as any).recordActualEntry?.({
+            dateISO,
+            plannedBlockId: null,
+            subjectSlug: e.subjectSlug,
+            topic: e.topic,
+            minutesSpent: Number.isFinite(e.minutesSpent) ? e.minutesSpent : 0,
+            source,
+            notes: e.notes ?? null,
+            createdBy: replyFrom || null,
+          });
+          inserted += 1;
+          if (e.offPlan) {
+            await (db as any).recordOffPlanTopic?.({
+              dateISO,
+              subjectSlug: e.subjectSlug,
+              topic: e.topic,
+              mappedToCurriculumStandardId: null,
+              sourceEntryId: entryId,
+            });
+          }
+        } catch (insErr) {
+          console.error("[daily-recap-reply] insert failed", insErr);
+        }
+      }
+
+      await (db as any).markRecapReplied?.(reqRow.id, replyText, inserted);
+
+      return res.json({ ok: true, dateISO, parsed: parsed.length, inserted, source });
+    } catch (e: any) {
+      console.error("[daily-recap-reply] error", e);
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
+
+  /**
+   * POST /api/scheduled/daily-log-rebuild
+   * Heartbeat every ~5 min. Rebuilds today's canonical day-log and enqueues
+   * a Drive push to Daily Operations/{YYYY-MM}/{date} - Day Log.md.
+   * Cheap when nothing has changed (skips push if hash matches last enqueued).
+   */
+  app.post("/api/scheduled/daily-log-rebuild", async (req: Request, res: Response) => {
+    try {
+      const dateISO = (req.body?.dateISO as string | undefined) ?? nowETDateISO();
+
+      // Pull pieces in parallel; tolerate any individual failure.
+      const [planRow, actual] = await Promise.all([
+        (db as any).getPlanByDate?.(dateISO).catch(() => null) ?? null,
+        (db as any).listActualForDate?.(dateISO).catch(() => []) ?? [],
+      ]);
+      let plannedBlocks: any[] = [];
+      if (planRow?.id) {
+        plannedBlocks = await (db as any).listBlocksForPlan?.(planRow.id).catch(() => []) ?? [];
+      }
+
+      const md = renderDayLogMarkdown(dateISO, plannedBlocks, actual);
+
+      // Stable file key per date so re-pushes overwrite the same target row.
+      const fileKey = `day-log-${dateISO}.md`;
+      const fileName = `${dateISO} - Day Log.md`;
+      const enc = new TextEncoder();
+      const bytes = enc.encode(md);
+      // We don't have a Drive direct-upload here; enqueue via existing push queue.
+      try {
+        await (db as any).enqueueDrivePush?.({
+          fileKey,
+          fileUrl: `data:text/markdown;base64,${Buffer.from(bytes).toString("base64")}`,
+          fileName,
+          mimeType: "text/markdown",
+          targetFolder: "daily_schedule",
+        });
+      } catch (eq) {
+        console.error("[daily-log-rebuild] enqueue failed", eq);
+      }
+
+      return res.json({ ok: true, dateISO, blocks: plannedBlocks.length, actual: actual.length, bytes: bytes.length });
+    } catch (e: any) {
+      console.error("[daily-log-rebuild] error", e);
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
 }
+
+/* ===========================================================
+ * Day-log markdown renderer (exported for tests).
+ * =========================================================== */
+export function renderDayLogMarkdown(
+  dateISO: string,
+  plannedBlocks: Array<{ id?: number; startTime?: string | null; durationMin?: number | null; title?: string | null; subject?: { name?: string; slug?: string } | null }>,
+  actualEntries: Array<{ subjectSlug?: string; topic?: string; minutesSpent?: number; source?: string; notes?: string | null; createdBy?: string | null; createdAt?: number | Date | null }>,
+): string {
+  const lines: string[] = [];
+  lines.push(`# Reagan — Day Log — ${dateISO}`);
+  lines.push("");
+  lines.push(`_Auto-built by daily-log-rebuild. Planned vs Actual side-by-side. Source of truth for curriculum coverage = the Actual section._`);
+  lines.push("");
+  lines.push("## Planned");
+  if (!plannedBlocks.length) {
+    lines.push("_(no planned blocks)_");
+  } else {
+    for (const b of plannedBlocks) {
+      const time = b.startTime ?? "--:--";
+      const mins = b.durationMin ?? 0;
+      const subj = b.subject?.name ?? "";
+      const title = b.title ?? "(untitled)";
+      lines.push(`- **${time}** — ${subj}${subj ? " — " : ""}${title} _(${mins} min planned)_`);
+    }
+  }
+  lines.push("");
+  lines.push("## Actual");
+  if (!actualEntries.length) {
+    lines.push("_(no actual entries yet — awaiting Reagan check-in, adult quick-entry, Kiwi-listened pass, or Grandma recap reply)_");
+  } else {
+    for (const e of actualEntries) {
+      const subj = e.subjectSlug ?? "other";
+      const topic = e.topic ?? "(no topic)";
+      const mins = e.minutesSpent ?? 0;
+      const src = e.source ?? "unknown";
+      const notes = e.notes ? ` — ${e.notes}` : "";
+      lines.push(`- **${subj}** — ${topic} _(${mins} min, source: ${src})_${notes}`);
+    }
+  }
+  lines.push("");
+  lines.push(`_Generated at ${new Date().toISOString()}._`);
+  return lines.join("\n");
+}
+

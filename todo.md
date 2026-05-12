@@ -26,6 +26,15 @@
 - [x] Phase 11 — Nightly 8 PM agenda PDF + worksheets + lesson plans + schedule + estimated times + answer keys → emailed to Mom + auto-saved to Drive (DONE 2026-05-04)
 - [ ] Add Grandma to the recipient list (CC marcy.spear@gmail.com)
 - [ ] Vitest: cron emits exactly ONE packet per day; packet includes worksheet PDFs + answer key PDFs
+- [ ] Bug fix from triage 2026-05-12 (shared task iPcHx9de76R5UjfLq8xZrH): the nightly-agenda-email PDF is currently served from `/manus-storage/...` which the cron cookie cannot read. Switch the PDF link in the email body to either an absolute presigned S3 URL or a `/api/scheduled/...` path that the cron cookie can authorize.
+
+### Session 2026-05-12 deferrals (acknowledged this session, scheduled for next focused session)
+- [ ] Slice 4.5 UI build: adult quick-entry card on Today, Actual-vs-Planned strip, mood timeline strip (deferred 2026-05-12 — needs user available to test)
+- [ ] Draft + upload the 12 reference Markdown docs to canonical Drive subfolders (deferred 2026-05-12 — needs explicit list of which 12 docs)
+- [ ] Map every existing `DRIVE_FOLDER_NAMES` routable target (worksheets, daily_schedule, finished_work, etc.) to one of the 9 canonical top-level parents (touches worker + routing logic)
+- [ ] Wire Color-Coded Warning Zones content into a `behavioralFlags` table feeding `anxietyScore` weights
+- [ ] Surface Crisis Decision Tree as adult-side reference card on the Adult Notes panel
+- [ ] Wire "What Works / What Doesn't Work" content into AI Agenda Editor as adaptive recommendations
 
 ### Mom + Grandma always-edit power (DONE 2026-05-11)
 - [x] `familyAdminProcedure` added — Mom + Grandma always pass any agenda-edit gate (past, today, future, any year)
@@ -50,7 +59,41 @@
 - [ ] Mom + Grandma manual-entry: tap actual chip → quick form (subject + topic + minutes + notes) — uses `familyAdminProcedure`
 - [ ] **Adult quick-entry card on Today** ("Today — what we actually did"): one-tap form even if nothing was scheduled or checked. Saves to `actualAgendaEntries` AND back-fills the Drive day log. familyAdmin only.
 - [ ] Drive root = `1r3bJacPLJN7VHI8y72rcx1-GRxspqo1r` under spear.cpt@gmail.com. Persist as `app_settings['drive.rootFolderId']`. Existing 8 child folders adopted as canonical (Admin and Homeschool Records, Adventures and Enrichment, Assignments and Work, Curriculum and Standards, Daily Operations, Inbox (Unsorted), Printables and Resources, Progress and Reports, Todo). NEVER recreate from scratch.
-- [ ] Drive folder map persisted in `app_settings['drive.folderMap']` as JSON {folder name: id}. Self-heal on startup: list children once, only CREATE missing names, store IDs.
+- [ ] Drive reorg pass: under each top folder add the canonical subfolders the dashboard syncs into:
+  - Daily Operations / Day Logs / {YYYY-MM} / {date} - Day Log.md
+  - Daily Operations / Daily Agenda PDFs / {YYYY-MM} / {date} - Agenda.pdf
+  - Daily Operations / Recap Replies / {YYYY-MM} / {date} - {sender} - Recap.md
+  - Assignments and Work / Worksheets to Do / {subject}
+  - Assignments and Work / Submitted Work / {YYYY-MM}
+  - Assignments and Work / Photos of Work / {YYYY-MM}
+  - Curriculum and Standards / Topics Covered / {YYYY-MM}
+  - Curriculum and Standards / Coverage Snapshots / {YYYY-MM}
+  - Curriculum and Standards / Standards Library / {subject}
+  - Progress and Reports / Weekly Digests / {YYYY-MM}
+  - Progress and Reports / Term Summaries
+  - Progress and Reports / Behavior + Mood Timeline / {YYYY-MM}
+  - Progress and Reports / Absences and Sick Days
+  - Progress and Reports / Analytics CSV Exports
+  - Adventures and Enrichment / Adventures Library
+  - Adventures and Enrichment / Field Trip Photos
+  - Adventures and Enrichment / Reading Journal (Bookshelf log)
+  - Admin and Homeschool Records / IEP Snapshots (preserved — historical Madeira data)
+  - Admin and Homeschool Records / 504 Plans (preserved — historical Madeira data)
+  - Admin and Homeschool Records / Tutor Agreements
+  - Admin and Homeschool Records / Annual Notice of Intent
+  - Admin and Homeschool Records / PowerSchool Snapshot (read-only, preserved — no future syncs)
+  - Printables and Resources / Coloring Pages
+  - Printables and Resources / Reward Charts
+  - Printables and Resources / Master Worksheet Library
+  - Printables and Resources / Reagan's Books (cover scans + page refs)
+  - Inbox (Unsorted) / Drop new things here — nightly classifier sweeps
+  - Todo / Mom Todos / Grandma Todos / Tutor Todos
+- [ ] Top-level README.md describing the structure for any human browsing Drive directly
+- [ ] **House rule (Drive)**: never number folders or subfolders. Use plain, descriptive names only. Existing setup-packet PDF filenames (00_README_..., 01_Academic_Snapshot_...) are kept as-is for historical reference but no NEW numbered names are introduced anywhere.
+- [ ] **House rule (instructional/how-to docs)**: any doc titled 'How to use...', 'Tutor Handoff', 'Grandma Guide', 'Homeschool Hub README', 'Onboarding', 'Quick Start', etc. — whenever I find or touch one, AUTO-UPDATE it: rewrite stale references (defunct emails, old folder paths, removed features), add missing newer features (recap email, Day Logs, mood timeline, Mom+Grandma always-edit, Slice 4.5 surfaces). Save in place. If both .docx and .md exist for the same doc, update the .docx and trash the .md.
+- [ ] **House rule (trash policy)**: TRASH (not permanent delete) any file that is clearly old (`_old`, `_v1`, `_backup`, `_copy`, drafts pre-2025), pure duplicate where canonical exists, references defunct accounts, no homeschool relevance, empty-test, or AI scratch. Trash empty folders after moves. All trashes recoverable for 30 days from Drive Trash.
+- [x] Persist the resolved 9 canonical top-level folder IDs in `app_settings` (drive.rootFolderId + drive.folder.* — DONE 2026-05-12, vitest `driveCanonicalFolders.test.ts` passing). Subfolder map self-heal still pending.
+- [ ] Drive folder map persisted in `app_settings['drive.folderMap']` as JSON {folder name: id} for all SUB-folders. Self-heal on startup: list children once, only CREATE missing names, store IDs.
 - [ ] **Daily activity log auto-sync**: single canonical doc per day at `Daily Operations/{YYYY-MM}/{date} - Day Log.md` containing planned agenda + actual entries + completed work + curriculum coverage + analytics roll-up + tutor notes + recap reply text. Updated on EVERY dashboard write (block.update, block.complete, recap parse, quick-entry submit).
 - [ ] Drive: full two-way sync for ALL canonical subfolders under that root. Implementation: scheduled poll every 10 min + immediate push on every dashboard write (no waiting on poll).
 - [ ] Drive sub-folder dedupe job: nightly compare folder names + content hashes; auto-merge dupes by moving children of dupe → canonical and trashing the empty dupe.

@@ -4593,6 +4593,21 @@ const APP_SETTING_DEFAULTS: Record<string, string> = {
   "parent.googleEmail": "spear.cpt@gmail.com",
   "grandma.googleEmail": "marcy.spear@gmail.com",
   "classroom.studentDomain": "gmail.com",
+  // Drive hub root (under spear.cpt@gmail.com) — established 2026-05-12.
+  // The 9 canonical top-level folders below already exist as children of
+  // this root and must NEVER be recreated. Worker code reads these ids at
+  // runtime so we never silently create duplicate top-level folders.
+  "drive.rootFolderId": "1r3bJacPLJN7VHI8y72rcx1-GRxspqo1r",
+  "drive.rootFolderOwner": "spear.cpt@gmail.com",
+  "drive.folder.adminAndHomeschoolRecords": "1RcO_WCr2mG2v_4cVxHjslx4UpsFflHan",
+  "drive.folder.adventuresAndEnrichment": "1i1-UtUYady8BcWJzozXpf_igQEoY_loa",
+  "drive.folder.assignmentsAndWork": "1--Z75dZRcTTrEVlRGtIVfP5b1OMi8hCT",
+  "drive.folder.curriculumAndStandards": "18HhQdVn6F-IS6eZOV41xRbST5cHGuqJM",
+  "drive.folder.dailyOperations": "1wyFk4rTPT-bZsadEVwODmqnABhevn6yb",
+  "drive.folder.inboxUnsorted": "1PQPK34gnnlZrNojxFLJddCnDSpUQ5kR1",
+  "drive.folder.printablesAndResources": "1MpQ0OGDBvloSz_DzCGa8pUYytSjOuHWw",
+  "drive.folder.progressAndReports": "1YYRTEko_yYCg0V3S-tx-wyT6wQ2F2mpj",
+  "drive.folder.todo": "15XPBzEZZD78Veq3mvk90yFFKP_vGMXHJ",
 };
 
 async function _seedAppSettingDefaultIfMissing(key: string): Promise<string | null> {
@@ -6052,4 +6067,16 @@ export async function isRecapAlreadyAnswered(dateISO: string): Promise<boolean> 
       eq(dailyRecapRequests.status, "replied"),
     ));
   return rows.length > 0;
+}
+
+
+/** Recap requests still awaiting a reply, oldest first. Used by the external
+ *  mailer agent to know which (recipient, token) pairs need an outbound email. */
+export async function listPendingRecapRequests(limit = 50): Promise<DailyRecapRequest[]> {
+  return (await getDb()
+    .select()
+    .from(dailyRecapRequests)
+    .where(eq(dailyRecapRequests.status, "sent"))
+    .orderBy(asc(dailyRecapRequests.sentAt))
+    .limit(limit)) as DailyRecapRequest[];
 }
