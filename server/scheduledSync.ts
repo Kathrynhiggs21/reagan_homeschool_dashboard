@@ -230,7 +230,34 @@ export function registerScheduledSync(app: Express) {
     }
     try {
       const rows = await db.listPendingDrivePushes(100);
-      return res.json({ ok: true, count: rows.length, items: rows });
+      // Enrich each row with the canonical-parent folder id so the worker
+      // can write the file directly under one of the 9 canonical top-level
+      // folders without rediscovering the structure (added 2026-05-12).
+      const items = await Promise.all(
+        rows.map(async (row: any) => {
+          let canonicalParentSlug: string | null = null;
+          let canonicalParentFolderId: string | null = null;
+          let subfolderName: string | null = null;
+          try {
+            const target = (row.targetFolder ?? row.target_folder) as any;
+            if (target) {
+              const parent = await db.getCanonicalParentForRoutable(target);
+              canonicalParentSlug = parent.slug;
+              canonicalParentFolderId = parent.folderId;
+              subfolderName = (db.DRIVE_FOLDER_NAMES as any)[target] ?? null;
+            }
+          } catch {
+            // best-effort enrichment; never fail the whole list because of one row
+          }
+          return {
+            ...row,
+            canonicalParentSlug,
+            canonicalParentFolderId,
+            subfolderName,
+          };
+        }),
+      );
+      return res.json({ ok: true, count: items.length, items });
     } catch (e: any) {
       return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
     }
@@ -263,6 +290,157 @@ export function registerScheduledSync(app: Express) {
         errorMessage: errorMessage ?? null,
       });
       return res.json({ ok: true });
+    } catch (e: any) {
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
+
+  /**
+   * GET /api/scheduled/drive-folder-map
+   *
+   * Contract for the external Drive worker: returns the canonical hub root id,
+   * the 9 canonical top-level folder ids (already established in spear.cpt's
+   * Drive on 2026-05-12), and the canonical SUBFOLDER names the dashboard
+   * wants under each. The worker is expected to:
+   *   1. Read this once per cron tick.
+   *   2. List children of each top-level folder.
+   *   3. For any canonical subfolder name that is missing, CREATE it.
+   *   4. POST resolved {parentName, subfolderName, driveFolderId} tuples
+   *      back to /api/scheduled/drive-folder-map/result so we cache them in
+   *      app_settings['drive.folderMap.<parent>.<sub>'].
+   *
+   * The worker MUST NEVER recreate the 9 top-level folders — those ids are
+   * fixed and editing/duplicating them would break every existing reference.
+   */
+  app.get("/api/scheduled/drive-folder-map", async (req: Request, res: Response) => {
+    let role: string | null = null;
+    try {
+      const u = await sdk.authenticateRequest(req);
+      role = u?.role ?? null;
+    } catch {
+      role = null;
+    }
+    if (!role || (role !== "user" && role !== "admin")) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
+    try {
+      const rootFolderId = await db.getAppSetting("drive.rootFolderId");
+      const rootFolderOwner = await db.getAppSetting("drive.rootFolderOwner");
+      const topLevel: Record<string, { id: string | null; subfolders: string[] }> = {
+        "Admin and Homeschool Records": {
+          id: await db.getAppSetting("drive.folder.adminAndHomeschoolRecords"),
+          subfolders: [
+            "IEP Snapshots (preserved)",
+            "504 Plans (preserved)",
+            "Tutor Agreements",
+            "Annual Notice of Intent",
+            "PowerSchool Snapshot (read-only)",
+            "Reagan Health (medical, IEP, 504, anxiety timeline)",
+            "Behavior History (preserved)",
+          ],
+        },
+        "Adventures and Enrichment": {
+          id: await db.getAppSetting("drive.folder.adventuresAndEnrichment"),
+          subfolders: [
+            "Adventures Library",
+            "Field Trip Photos",
+            "Reading Journal (Bookshelf log)",
+          ],
+        },
+        "Assignments and Work": {
+          id: await db.getAppSetting("drive.folder.assignmentsAndWork"),
+          subfolders: [
+            "Worksheets to Do",
+            "Submitted Work",
+            "Photos of Work",
+          ],
+        },
+        "Curriculum and Standards": {
+          id: await db.getAppSetting("drive.folder.curriculumAndStandards"),
+          subfolders: [
+            "Topics Covered",
+            "Coverage Snapshots",
+            "Standards Library",
+          ],
+        },
+        "Daily Operations": {
+          id: await db.getAppSetting("drive.folder.dailyOperations"),
+          subfolders: [
+            "Day Logs",
+            "Daily Agenda PDFs",
+            "Recap Replies",
+          ],
+        },
+        "Inbox (Unsorted)": {
+          id: await db.getAppSetting("drive.folder.inboxUnsorted"),
+          subfolders: [],
+        },
+        "Printables and Resources": {
+          id: await db.getAppSetting("drive.folder.printablesAndResources"),
+          subfolders: [
+            "Coloring Pages",
+            "Reward Charts",
+            "Master Worksheet Library",
+            "Reagan's Books (cover scans + page refs)",
+          ],
+        },
+        "Progress and Reports": {
+          id: await db.getAppSetting("drive.folder.progressAndReports"),
+          subfolders: [
+            "Weekly Digests",
+            "Term Summaries",
+            "Behavior + Mood Timeline",
+            "Absences and Sick Days",
+            "Analytics CSV Exports",
+          ],
+        },
+        "Todo": {
+          id: await db.getAppSetting("drive.folder.todo"),
+          subfolders: [
+            "Mom Todos",
+            "Grandma Todos",
+            "Tutor Todos",
+          ],
+        },
+      };
+      return res.json({ ok: true, rootFolderId, rootFolderOwner, topLevel });
+    } catch (e: any) {
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
+
+  /**
+   * POST /api/scheduled/drive-folder-map/result
+   *
+   * Worker reports back the resolved subfolder ids it discovered or created.
+   * Body: { entries: Array<{ parentName, subfolderName, driveFolderId }> }
+   * We cache each as app_settings['drive.folderMap.<parent>.<sub>'].
+   */
+  app.post("/api/scheduled/drive-folder-map/result", async (req: Request, res: Response) => {
+    let role: string | null = null;
+    try {
+      const u = await sdk.authenticateRequest(req);
+      role = u?.role ?? null;
+    } catch {
+      role = null;
+    }
+    if (!role || (role !== "user" && role !== "admin")) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
+    try {
+      const entries = (req.body?.entries ?? []) as Array<{ parentName?: string; subfolderName?: string; driveFolderId?: string }>;
+      if (!Array.isArray(entries) || entries.length === 0) {
+        return res.status(400).json({ ok: false, error: "Expected { entries: [{ parentName, subfolderName, driveFolderId }, ...] }" });
+      }
+      let saved = 0;
+      for (const e of entries) {
+        if (!e.parentName || !e.subfolderName || !e.driveFolderId) continue;
+        const slugParent = e.parentName.replace(/[^A-Za-z0-9]+/g, "_");
+        const slugSub = e.subfolderName.replace(/[^A-Za-z0-9]+/g, "_");
+        await db.setAppSetting(`drive.folderMap.${slugParent}.${slugSub}`, e.driveFolderId);
+        saved++;
+      }
+      return res.json({ ok: true, saved });
     } catch (e: any) {
       return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
     }
@@ -749,7 +927,7 @@ export function registerScheduledSync(app: Express) {
 
       const { assembleAgendaForDate } = await import("./_lib/agendaAssembler");
       const { buildAgendaPdf } = await import("./_lib/agendaPdf");
-      const { storagePut } = await import("./storage");
+      const { storagePut, storageGetSignedUrl } = await import("./storage");
 
       const payload = await assembleAgendaForDate(forDate);
       if (!payload) {
@@ -771,9 +949,20 @@ export function registerScheduledSync(app: Express) {
       }
       const isResend = !!last;
 
-      // Upload PDF
+      // Upload PDF, then immediately request an ABSOLUTE presigned S3 GET URL
+      // for the email body. The relative `/manus-storage/...` path requires a
+      // dashboard cookie to follow the 307 redirect, which Mom and Grandma do
+      // NOT have when clicking the link from Gmail. Bug fix 2026-05-12.
       const fileKey = `nightly-agendas/${forDate}/agenda_${agendaHash.slice(0, 8)}.pdf`;
       const { key, url } = await storagePut(fileKey, pdfBuffer, "application/pdf");
+      let absolutePdfUrl: string | null = null;
+      try {
+        absolutePdfUrl = await storageGetSignedUrl(key);
+      } catch (e) {
+        // If presign fails we still want the email to send — fall back to
+        // attachment-only delivery (the gmail MCP attaches the buffer separately).
+        absolutePdfUrl = null;
+      }
 
       // Insert queued row
       const recordId = await db.insertNightlyAgendaEmail({
@@ -807,6 +996,7 @@ export function registerScheduledSync(app: Express) {
 <div style=\"text-align:center;margin-bottom:8px;\"><div style=\"font-size:22px;font-weight:800;color:#1f3a2e;\">${payload.studentName}'s School Plan</div><div style=\"color:#666;font-size:14px;\">${payload.dayLabel}</div></div>
 ${tutorLine}
 <div style=\"margin:20px 0;padding:14px 16px;border-left:4px solid #1f3a2e;background:#fafafa;border-radius:8px;\">${blockListHtml || '<div style=\"color:#888;\">No blocks scheduled.</div>'}</div>
+${absolutePdfUrl ? `<p style=\"text-align:center;margin:24px 0;\"><a href=\"${absolutePdfUrl}\" style=\"display:inline-block;padding:10px 20px;background:#1f3a2e;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;\">Download today's agenda PDF</a></p>` : ''}
 <p style=\"font-size:12px;color:#888;text-align:center;margin-top:24px;\">PDF agenda attached. If anything changes before school start, this email will be re-sent automatically.</p>
 </body></html>`;
 
@@ -820,6 +1010,7 @@ ${tutorLine}
         htmlBody: html,
         pdfStorageKey: key,
         pdfUrl: url,
+        pdfDownloadUrl: absolutePdfUrl,
         recordId,
         driveFolderHint: "Reagan / Homeschool Hub / Daily Agendas",
       });

@@ -24,14 +24,17 @@
 
 ### Daily Agenda Email Packet (CANONICAL — supersedes all earlier daily-email items)
 - [x] Phase 11 — Nightly 8 PM agenda PDF + worksheets + lesson plans + schedule + estimated times + answer keys → emailed to Mom + auto-saved to Drive (DONE 2026-05-04)
-- [ ] Add Grandma to the recipient list (CC marcy.spear@gmail.com)
+- [x] Add Grandma to the recipient list — already in default `["marcy.spear@gmail.com", "spear.cpt@gmail.com"]` in `nightly-agenda-email` handler (verified 2026-05-12)
 - [ ] Vitest: cron emits exactly ONE packet per day; packet includes worksheet PDFs + answer key PDFs
-- [ ] Bug fix from triage 2026-05-12 (shared task iPcHx9de76R5UjfLq8xZrH): the nightly-agenda-email PDF is currently served from `/manus-storage/...` which the cron cookie cannot read. Switch the PDF link in the email body to either an absolute presigned S3 URL or a `/api/scheduled/...` path that the cron cookie can authorize.
+- [x] Bug fix from triage 2026-05-12 (shared task iPcHx9de76R5UjfLq8xZrH): nightly-agenda-email PDF link now uses `storageGetSignedUrl(key)` for an absolute presigned S3 URL embedded in the HTML body + returned as `pdfDownloadUrl`. Vitest `nightlyAgendaEmailPdfLink.test.ts` 6/6 pass. (DONE 2026-05-12)
 
 ### Session 2026-05-12 deferrals (acknowledged this session, scheduled for next focused session)
 - [ ] Slice 4.5 UI build: adult quick-entry card on Today, Actual-vs-Planned strip, mood timeline strip (deferred 2026-05-12 — needs user available to test)
 - [ ] Draft + upload the 12 reference Markdown docs to canonical Drive subfolders (deferred 2026-05-12 — needs explicit list of which 12 docs)
-- [ ] Map every existing `DRIVE_FOLDER_NAMES` routable target (worksheets, daily_schedule, finished_work, etc.) to one of the 9 canonical top-level parents (touches worker + routing logic)
+- [x] Map every `DRIVE_FOLDER_NAMES` routable target to one of the 9 canonical top-level parents (DONE 2026-05-12):
+  - Added `DRIVE_TARGET_TO_CANONICAL_PARENT` constant + `getCanonicalParentForRoutable()` helper in `server/db.ts`
+  - Wired into `GET /api/scheduled/drive-push/pending` so each row now includes `canonicalParentSlug`, `canonicalParentFolderId`, `subfolderName` for the worker
+  - Vitests: `driveCanonicalParents.test.ts` (6/6) + `drivePushPendingEnrichment.test.ts` (5/5)
 - [ ] Wire Color-Coded Warning Zones content into a `behavioralFlags` table feeding `anxietyScore` weights
 - [ ] Surface Crisis Decision Tree as adult-side reference card on the Adult Notes panel
 - [ ] Wire "What Works / What Doesn't Work" content into AI Agenda Editor as adaptive recommendations
@@ -94,6 +97,7 @@
 - [ ] **House rule (trash policy)**: TRASH (not permanent delete) any file that is clearly old (`_old`, `_v1`, `_backup`, `_copy`, drafts pre-2025), pure duplicate where canonical exists, references defunct accounts, no homeschool relevance, empty-test, or AI scratch. Trash empty folders after moves. All trashes recoverable for 30 days from Drive Trash.
 - [x] Persist the resolved 9 canonical top-level folder IDs in `app_settings` (drive.rootFolderId + drive.folder.* — DONE 2026-05-12, vitest `driveCanonicalFolders.test.ts` passing). Subfolder map self-heal still pending.
 - [ ] Drive folder map persisted in `app_settings['drive.folderMap']` as JSON {folder name: id} for all SUB-folders. Self-heal on startup: list children once, only CREATE missing names, store IDs.
+- [x] Worker contract endpoints `GET /api/scheduled/drive-folder-map` + `POST /api/scheduled/drive-folder-map/result` (DONE 2026-05-12, vitest `driveFolderMap.test.ts` 6/6 pass). External cron worker can now self-heal canonical subfolders and report resolved IDs back into `app_settings['drive.folderMap.<parent>.<sub>']`.
 - [ ] **Daily activity log auto-sync**: single canonical doc per day at `Daily Operations/{YYYY-MM}/{date} - Day Log.md` containing planned agenda + actual entries + completed work + curriculum coverage + analytics roll-up + tutor notes + recap reply text. Updated on EVERY dashboard write (block.update, block.complete, recap parse, quick-entry submit).
 - [ ] Drive: full two-way sync for ALL canonical subfolders under that root. Implementation: scheduled poll every 10 min + immediate push on every dashboard write (no waiting on poll).
 - [ ] Drive sub-folder dedupe job: nightly compare folder names + content hashes; auto-merge dupes by moving children of dupe → canonical and trashing the empty dupe.

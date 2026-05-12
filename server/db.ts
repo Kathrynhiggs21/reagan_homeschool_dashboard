@@ -3827,6 +3827,61 @@ export const DRIVE_FOLDER_NAMES: Record<DrivePushTarget, string> = {
   curriculum_checklist: "Curriculum Checklist (Weekly)",
 };
 
+/**
+ * Canonical-parent mapping (added 2026-05-12) — every routable target above
+ * resolves to one of the 9 canonical top-level Drive folders established at
+ * the hub root (see APP_SETTING_DEFAULTS['drive.folder.*']). The external
+ * Drive worker reads this map so it never silently creates a duplicate
+ * top-level folder — every legacy `DRIVE_FOLDER_NAMES` subfolder is nested
+ * under the right canonical parent.
+ */
+export type CanonicalParentSlug =
+  | "adminAndHomeschoolRecords"
+  | "adventuresAndEnrichment"
+  | "assignmentsAndWork"
+  | "curriculumAndStandards"
+  | "dailyOperations"
+  | "inboxUnsorted"
+  | "printablesAndResources"
+  | "progressAndReports"
+  | "todo";
+
+export const DRIVE_TARGET_TO_CANONICAL_PARENT: Record<DrivePushTarget, CanonicalParentSlug> = {
+  reagan: "inboxUnsorted",                  // catch-all → Inbox (Unsorted)
+  reagan_ihes: "printablesAndResources",    // legacy "Printables"
+  reagan_tutor: "adminAndHomeschoolRecords",// tutor handoffs are admin records
+  reagan_artwork: "assignmentsAndWork",     // finished work
+  reagan_assignments: "assignmentsAndWork",
+  finished_work: "assignmentsAndWork",
+  daily_schedule: "dailyOperations",
+  worksheets: "assignmentsAndWork",         // Worksheets to Do live under Assignments
+  printables: "printablesAndResources",
+  report_cards: "progressAndReports",
+  journal: "adventuresAndEnrichment",       // Reagan's reading/feelings journal
+  analytics: "progressAndReports",          // CSV exports
+  adult_notes: "adminAndHomeschoolRecords", // Mom + Grandma + tutor notes
+  kiwi_coins: "progressAndReports",         // coin redemption history
+  tutor: "adminAndHomeschoolRecords",       // tutor session logs
+  apps_tools: "progressAndReports",         // apps + tools usage snapshots
+  bookshelf: "adventuresAndEnrichment",     // reading log
+  adventures: "adventuresAndEnrichment",
+  practice: "assignmentsAndWork",           // practice-for-coins worksheets
+  notebook: "adminAndHomeschoolRecords",    // adult notebook entries
+  curriculum_checklist: "curriculumAndStandards",
+};
+
+/**
+ * Resolve the canonical top-level Drive folder ID a routed target belongs to.
+ * Reads the persisted folder id from app_settings; returns null if the worker
+ * has not yet been told the id (which should never happen post-2026-05-12 since
+ * APP_SETTING_DEFAULTS seeds them).
+ */
+export async function getCanonicalParentForRoutable(target: DrivePushTarget): Promise<{ slug: CanonicalParentSlug; folderId: string | null }> {
+  const slug = DRIVE_TARGET_TO_CANONICAL_PARENT[target];
+  const folderId = await getAppSetting(`drive.folder.${slug}`);
+  return { slug, folderId };
+}
+
 export async function enqueueDrivePush(args: {
   fileKey: string;
   fileUrl: string;
