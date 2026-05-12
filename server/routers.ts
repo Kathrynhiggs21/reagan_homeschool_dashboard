@@ -3620,6 +3620,7 @@ export const appRouter = router({
   }),
   today: router({
     coverage: protectedProcedure.query(() => db.todayCoverage()),
+    coverageWithActuals: protectedProcedure.query(() => db.todayCoverageWithActuals()),
     resumePointer: protectedProcedure.query(() => db.resumePointer()),
     moodStrip: protectedProcedure
       .input(z.object({ days: z.number().min(1).max(14).optional() }).optional())

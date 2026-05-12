@@ -8,7 +8,8 @@ import { Link } from "wouter";
  * - Resume-where-we-left-off card (tap → jumps to the block)
  */
 export default function HomeAnalyticsStrip() {
-  const coverage = trpc.today.coverage.useQuery();
+  // Slice 4.5: source of truth is `actualAgendaEntries` (merged with planned blocks via effectivePct)
+  const coverage = trpc.today.coverageWithActuals.useQuery();
   const mood = trpc.today.moodStrip.useQuery({ days: 3 });
   const resume = trpc.today.resumePointer.useQuery();
 
@@ -16,9 +17,13 @@ export default function HomeAnalyticsStrip() {
   const moodDays = mood.data || [];
   const next = resume.data;
 
-  const totalToday = cov.reduce((s, r) => s + r.total, 0);
-  const doneToday = cov.reduce((s, r) => s + r.done, 0);
-  const pctToday = totalToday > 0 ? Math.round((doneToday / totalToday) * 100) : 0;
+  // Show "effective" coverage (planned-done + actual-entries, capped at planned total).
+  // Off-plan subjects (no planned blocks but Mom/Grandma logged actuals) count as 100% effective.
+  const planned = cov.filter((r) => !r.offPlan);
+  const totalToday = planned.reduce((s, r) => s + r.plannedTotal, 0);
+  const effectiveDone = planned.reduce((s, r) => s + Math.round((r.effectivePct / 100) * r.plannedTotal), 0);
+  const pctToday = totalToday > 0 ? Math.round((effectiveDone / totalToday) * 100) : 0;
+  const offPlanCount = cov.filter((r) => r.offPlan).reduce((s, r) => s + r.actualEntries, 0);
 
   // "Don't show if no info" rule — if there's truly nothing to display
   // (no coverage, no mood logs, and no resume pointer), hide the whole strip
@@ -32,19 +37,23 @@ export default function HomeAnalyticsStrip() {
           <div className="text-[11px] uppercase tracking-wide font-semibold text-slate-700">Today's coverage</div>
           <div className="flex items-baseline gap-2 mt-0.5">
             <div className="text-2xl font-bold text-slate-800">{pctToday}%</div>
-            <div className="text-xs text-slate-500">{doneToday}/{totalToday || 0} blocks</div>
+            <div className="text-xs text-slate-500">{effectiveDone}/{totalToday || 0} blocks</div>
           </div>
           <div className="mt-2 space-y-1">
             {cov.slice(0, 5).map((r) => (
               <div key={r.subjectSlug} className="flex items-center gap-2 text-xs">
                 <span className="w-16 shrink-0 capitalize text-slate-600">{r.subjectSlug}</span>
                 <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-2 bg-emerald-400" style={{ width: `${r.pct}%` }} />
+                  <div className="h-2 bg-emerald-400" style={{ width: `${r.effectivePct}%` }} />
                 </div>
-                <span className="w-8 text-right text-slate-500">{r.pct}%</span>
+                <span className="w-8 text-right text-slate-500">{r.effectivePct}%</span>
+                {r.offPlan && <span className="text-[10px] text-amber-600 font-semibold">off-plan</span>}
               </div>
             ))}
             {cov.length === 0 && <div className="text-xs text-slate-400">No plan today yet.</div>}
+            {offPlanCount > 0 && (
+              <div className="text-[10px] text-amber-700 mt-1">+{offPlanCount} off-plan {offPlanCount === 1 ? "entry" : "entries"} captured today</div>
+            )}
           </div>
         </div>
       </Link>

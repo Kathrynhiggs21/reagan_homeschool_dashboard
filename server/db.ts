@@ -4602,6 +4602,104 @@ export async function todayCoverage(): Promise<Array<{ subjectSlug: string; tota
 }
 
 /**
+ * Per-subject planned coverage for an arbitrary date (extracted for testability).
+ */
+export async function coverageForDate(dateISO: string): Promise<Array<{ subjectSlug: string; total: number; done: number; pct: number }>> {
+  const db = getDb();
+  const plans = await db.select({ id: dailyPlans.id })
+    .from(dailyPlans)
+    .where(sql`DATE(${dailyPlans.date}) = ${dateISO}`)
+    .orderBy(desc(dailyPlans.id))
+    .limit(1);
+  const planId = plans[0]?.id;
+  if (!planId) return [];
+  const subjectList = await db.select({ id: subjects.id, slug: subjects.slug }).from(subjects);
+  const subjectBySlugId = new Map<number, string>();
+  for (const s of subjectList) subjectBySlugId.set(s.id as number, s.slug as string);
+  const rows = await db.select({ subjectId: scheduleBlocks.subjectId, status: scheduleBlocks.status })
+    .from(scheduleBlocks)
+    .where(eq(scheduleBlocks.planId, planId));
+  const map = new Map<string, { total: number; done: number }>();
+  for (const r of rows) {
+    const key = subjectBySlugId.get(r.subjectId as number) || "other";
+    const cur = map.get(key) || { total: 0, done: 0 };
+    cur.total += 1;
+    if (r.status === "complete") cur.done += 1;
+    map.set(key, cur);
+  }
+  return Array.from(map.entries()).map(([subjectSlug, v]) => ({
+    subjectSlug,
+    total: v.total,
+    done: v.done,
+    pct: v.total > 0 ? Math.round((v.done / v.total) * 100) : 0,
+  }));
+}
+
+/**
+ * Slice 4.5 — per-subject coverage that ALSO accounts for `actualAgendaEntries`.
+ * Effective % = max(plannedDone/plannedTotal, distinctActualSubjectCount/plannedTotal).
+ * If plannedTotal is 0 but actuals exist, returns those as off-plan rows with planned=0.
+ * What was actually done is what counts.
+ */
+export async function todayCoverageWithActuals(dateISO?: string): Promise<
+  Array<{
+    subjectSlug: string;
+    plannedTotal: number;
+    plannedDone: number;
+    plannedPct: number;
+    actualEntries: number;
+    actualMinutes: number;
+    effectivePct: number;
+    offPlan: boolean;
+  }>
+> {
+  const today = dateISO ?? new Date().toISOString().slice(0, 10);
+  const planned = dateISO ? await coverageForDate(dateISO) : await todayCoverage();
+  const actuals = await listActualForDate(today);
+  const actualBySubject = new Map<string, { entries: number; minutes: number }>();
+  for (const a of actuals) {
+    const slug = a.subjectSlug || "other";
+    const cur = actualBySubject.get(slug) || { entries: 0, minutes: 0 };
+    cur.entries += 1;
+    cur.minutes += a.minutesSpent || 0;
+    actualBySubject.set(slug, cur);
+  }
+  const plannedSlugs = new Set(planned.map((p) => p.subjectSlug));
+  const merged = planned.map((p) => {
+    const a = actualBySubject.get(p.subjectSlug) || { entries: 0, minutes: 0 };
+    // Effective coverage: planned-done OR actual entries can substitute (1 actual per planned slot).
+    // Cap effectivePct at 100.
+    const effectiveCovered = Math.min(p.total, p.done + a.entries);
+    const effectivePct = p.total > 0 ? Math.round((effectiveCovered / p.total) * 100) : 0;
+    return {
+      subjectSlug: p.subjectSlug,
+      plannedTotal: p.total,
+      plannedDone: p.done,
+      plannedPct: p.pct,
+      actualEntries: a.entries,
+      actualMinutes: a.minutes,
+      effectivePct,
+      offPlan: false,
+    };
+  });
+  // Off-plan subjects (have actuals, no planned blocks).
+  for (const [slug, a] of Array.from(actualBySubject.entries())) {
+    if (plannedSlugs.has(slug)) continue;
+    merged.push({
+      subjectSlug: slug,
+      plannedTotal: 0,
+      plannedDone: 0,
+      plannedPct: 0,
+      actualEntries: a.entries,
+      actualMinutes: a.minutes,
+      effectivePct: a.entries > 0 ? 100 : 0, // off-plan but covered
+      offPlan: true,
+    });
+  }
+  return merged;
+}
+
+/**
  * Next incomplete schedule block for today (or null).
  */
 export async function resumePointer(): Promise<{ id: number; title: string; subjectSlug: string; description: string | null } | null> {
