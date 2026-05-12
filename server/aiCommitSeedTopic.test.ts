@@ -4,7 +4,7 @@ import { getDb } from "./db";
 import { curriculumTopics, scheduleBlocks, dailyPlans } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 
-const ctxOwner = { user: { id: "owner-1", role: "owner" as const, name: "Owner", openId: "x" } };
+const ctxOwner = { user: { id: "owner-1", role: "owner" as const, name: "Owner", openId: "x", email: "spear.cpt@gmail.com" } };
 const callerOwner = appRouter.createCaller(ctxOwner as any);
 
 describe("plans.aiCommit — seedTopicId persistence", () => {

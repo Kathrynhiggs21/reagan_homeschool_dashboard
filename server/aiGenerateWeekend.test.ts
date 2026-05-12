@@ -11,7 +11,9 @@ describe("aiGenerate weekend guard \u2014 contract", () => {
 
   it("aiGenerate accepts an allowWeekend flag", () => {
     const src = readFileSync(join(root, "server/routers.ts"), "utf8");
-    expect(src).toMatch(/aiGenerate:\s*protectedProcedure[\s\S]*?allowWeekend:\s*z\.boolean\(\)\.optional\(\)/);
+    // May 11 2026: gate moved from protectedProcedure to familyAdminProcedure
+    // (Mom + Grandma must be able to AI-draft any day's agenda).
+    expect(src).toMatch(/aiGenerate:\s*(?:protectedProcedure|familyAdminProcedure)[\s\S]*?allowWeekend:\s*z\.boolean\(\)\.optional\(\)/);
   });
 
   it("aiGenerate returns weekendBlocked:true for weekend dates without override", () => {
@@ -22,6 +24,6 @@ describe("aiGenerate weekend guard \u2014 contract", () => {
 
   it("aiCommit accepts an allowWeekend flag too", () => {
     const src = readFileSync(join(root, "server/routers.ts"), "utf8");
-    expect(src).toMatch(/aiCommit:\s*protectedProcedure[\s\S]*?allowWeekend:\s*z\.boolean\(\)\.optional\(\)/);
+    expect(src).toMatch(/aiCommit:\s*(?:protectedProcedure|familyAdminProcedure)[\s\S]*?allowWeekend:\s*z\.boolean\(\)\.optional\(\)/);
   });
 });

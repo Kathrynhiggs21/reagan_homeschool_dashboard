@@ -2926,3 +2926,12 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [ ] Seed override for week of May 11 → May 17 2026: tutors=[Keith], helpers=[Mom, Grandma]
 - [ ] Day-builder, calendar sync, SMS approval all consult tutorRosterOverride
 - [ ] Vitests for auto-approver decisions, SMS payload shape, roster override expiry
+
+
+## Mom + Grandma always-edit power (URGENT — May 11 2026) — DONE
+- [x] Add familyAdmin role helper: Mom (spear.cpt@gmail.com) + Grandma (marcy.spear@gmail.com) ALWAYS pass any agenda-edit gate
+- [x] No date restriction (past, today, future, any year — verified by 2027-09-13 future-date test)
+- [x] No approval workflow can ever block them on agenda edits (gate sits in front of any approval routing)
+- [x] Audit blocks.* + plans.* + agendaEditor.* procedures and swapped onto familyAdminProcedure: blocks.{create, createForDate, clearDay, update, complete, move, reorder, delete, shiftDay} + plans.{create, update, aiGenerate, aiCommit} + agendaEditor.{preview, commit}
+- [x] Vitest: prove Mom + Grandma can update/insert/delete blocks on a past, today, and future date (familyAdminGate.test.ts + existing routers tests now run as Mom)
+- [x] Save checkpoint

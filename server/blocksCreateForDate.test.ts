@@ -3,7 +3,7 @@ import { appRouter } from "./routers";
 import * as db from "./db";
 
 const ownerOpenId = process.env.OWNER_OPEN_ID || "manus-ci";
-const ctx = { user: { openId: ownerOpenId, role: "owner" as const, name: "ci", id: 1 } };
+const ctx = { user: { openId: ownerOpenId, role: "owner" as const, name: "ci", id: 1, email: "spear.cpt@gmail.com" } };
 const caller = appRouter.createCaller(ctx as any);
 
 describe("blocks.createForDate (Agenda Editor + Add block)", () => {

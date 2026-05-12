@@ -3,7 +3,7 @@ import { TRPCError } from "@trpc/server";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { adminProcedure, adminOrTutorProcedure, publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import { adminProcedure, adminOrTutorProcedure, familyAdminProcedure, publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import * as db from "./db";
 import { encryptPassword, decryptPassword } from "./passwordLocker";
 import { invokeLLM } from "./_core/llm";
@@ -253,15 +253,15 @@ export const appRouter = router({
       return { plan, blocks };
     }),
     list: publicProcedure.query(() => db.listPlans(60)),
-    create: protectedProcedure.input(z.object({
+    create: familyAdminProcedure.input(z.object({
       date: z.string(), dayType: DayType.optional(), notes: z.string().optional(),
     })).mutation(async ({ input }) => db.ensurePlanForDate(input.date, input.dayType || "full")),
-    update: protectedProcedure.input(z.object({
+    update: familyAdminProcedure.input(z.object({
       id: z.number(), dayType: DayType.optional(), status: PlanStatus.optional(), notes: z.string().optional(),
     })).mutation(({ input }) => db.updatePlan(input.id, { dayType: input.dayType, status: input.status, notes: input.notes })),
 
     /* ----- AI Schedule Generator (Kiwi drafts a day's blocks) ----- */
-    aiGenerate: protectedProcedure.input(z.object({
+    aiGenerate: familyAdminProcedure.input(z.object({
       date: z.string(),
       dayLength: z.enum(["full", "half", "off"]).optional(),
       adultPrompt: z.string().max(2000).optional(),
@@ -302,7 +302,7 @@ export const appRouter = router({
       return { ...draft, tutorOfDay, tutorLabel: tutorOfDayLabel(tutorOfDay) };
     }),
 
-    aiCommit: protectedProcedure.input(z.object({
+    aiCommit: familyAdminProcedure.input(z.object({
       date: z.string(),
       dayLength: z.enum(["full", "half", "off"]).optional(),
       summary: z.string().optional(),
@@ -370,7 +370,7 @@ export const appRouter = router({
   /* =================== BLOCKS =================== */
   blocks: router({
     list: publicProcedure.input(z.object({ planId: z.number() })).query(({ input }) => db.listBlocksForPlan(input.planId)),
-    create: protectedProcedure.input(z.object({
+    create: familyAdminProcedure.input(z.object({
       planId: z.number(), blockType: BlockType, title: z.string(), description: z.string().optional(),
       durationMin: z.number().default(30), startTime: z.string().optional(), sortOrder: z.number().default(0),
       subjectId: z.number().optional(), adventureId: z.number().optional(), ihAssignmentId: z.number().optional(),
@@ -384,7 +384,7 @@ export const appRouter = router({
      * Takes a date, ensures (or creates) a plan for it, then appends a new
      * block at the end of that day.
      */
-    createForDate: protectedProcedure.input(z.object({
+    createForDate: familyAdminProcedure.input(z.object({
       date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       title: z.string().default("New block"),
       blockType: BlockType.default("custom" as any),
@@ -423,7 +423,7 @@ export const appRouter = router({
      * blocks, or AI box). Plan row stays in place; dayType preserved.
      * Returns { planId, deleted } so the UI can confirm.
      */
-    clearDay: adminOrTutorProcedure.input(z.object({
+    clearDay: familyAdminProcedure.input(z.object({
       date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
     })).mutation(async ({ input, ctx }) => {
       const plan = await db.ensurePlanForDate(input.date, "full", { allowWeekendAutoBuild: false } as any);
@@ -432,7 +432,7 @@ export const appRouter = router({
       await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "plan", entityId: plan.id, action: "clear", summary: `Cleared ${deleted} block(s) for ${input.date} (Design from blank)` });
       return { planId: plan.id, deleted };
     }),
-    update: protectedProcedure.input(z.object({
+    update: familyAdminProcedure.input(z.object({
       id: z.number(),
       title: z.string().optional(),
       description: z.string().optional(),
@@ -472,7 +472,7 @@ export const appRouter = router({
       await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: input.id, action: input.status === "complete" ? "complete" : "update", summary: input.title || (input.status ?? "edit") });
       return r;
     }),
-    complete: protectedProcedure.input(z.object({ id: z.number(), grade: z.string().optional(), notes: z.string().optional() }))
+    complete: familyAdminProcedure.input(z.object({ id: z.number(), grade: z.string().optional(), notes: z.string().optional() }))
       .mutation(async ({ input, ctx }) => {
         const r = await db.updateBlock(input.id, {
           status: "complete", grade: input.grade, notes: input.notes,
@@ -492,7 +492,7 @@ export const appRouter = router({
         }
         return r;
       }),
-    move: protectedProcedure.input(z.object({
+    move: familyAdminProcedure.input(z.object({
       id: z.number(), direction: z.enum(["up", "down"]),
     })).mutation(async ({ input, ctx }) => {
       const r = await db.moveBlock(input.id, input.direction);
@@ -506,7 +506,7 @@ export const appRouter = router({
      * to the day's plan that are absent from `orderedIds` retain their old
      * sortOrder past the supplied list (defensive — avoids data loss).
      */
-    reorder: protectedProcedure.input(z.object({
+    reorder: familyAdminProcedure.input(z.object({
       date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       orderedIds: z.array(z.number().int().positive()).min(1).max(50),
     })).mutation(async ({ input, ctx }) => {
@@ -529,7 +529,7 @@ export const appRouter = router({
       await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: cleaned[0] ?? plan.id, action: "update", summary: `reorder ${touched} blocks (plan ${plan.id})` });
       return { touched };
     }),
-    delete: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
+    delete: familyAdminProcedure.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
       const r = await db.deleteBlock(input.id);
       await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: input.id, action: "delete" });
       return r;
@@ -541,7 +541,7 @@ export const appRouter = router({
      * Blocks that would cross midnight in either direction are skipped (no
      * day-rollover surprises).
      */
-    shiftDay: protectedProcedure.input(z.object({
+    shiftDay: familyAdminProcedure.input(z.object({
       date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       minutes: z.number().int().min(-12 * 60).max(12 * 60),
     })).mutation(async ({ input, ctx }) => {
@@ -622,7 +622,7 @@ export const appRouter = router({
      * side-by-side diff with no DB writes.
      */
     // Phase B-α.5 — tutors get full edit power on the agenda editor too.
-    preview: adminOrTutorProcedure.input(z.object({
+    preview: familyAdminProcedure.input(z.object({
       date: z.string(),
       instruction: z.string().min(1).max(2000),
       // Optional file the adult / tutor attached. Either a public S3 URL
@@ -675,7 +675,7 @@ export const appRouter = router({
      * `undo` for a deterministic restore.
      */
     // Phase B-α.5 — tutors can commit edits too. Audit log still records ctx.user.id.
-    commit: adminOrTutorProcedure.input(z.object({
+    commit: familyAdminProcedure.input(z.object({
       date: z.string(),
       ops: z.array(z.any()).max(60),
       summary: z.string().max(400).optional(),

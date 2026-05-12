@@ -10,7 +10,8 @@ import { describe, it, expect } from "vitest";
 import { appRouter } from "./routers";
 import * as db from "./db";
 
-const adultCtx: any = { user: { id: 1, openId: "ops-test", name: "Vitest Adult", role: "user" } };
+// Mom's email so the post-May-11-2026 familyAdminProcedure gate accepts the call.
+const adultCtx: any = { user: { id: 1, openId: "ops-test", name: "Vitest Adult", role: "user", email: "spear.cpt@gmail.com" } };
 
 const today = (() => {
   const d = new Date();

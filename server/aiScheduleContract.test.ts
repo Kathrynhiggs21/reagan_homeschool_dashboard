@@ -13,8 +13,9 @@ describe("AI Schedule Generator wiring", () => {
 
   it("plans router exposes aiGenerate and aiCommit", () => {
     const src = readFileSync(join(root, "server/routers.ts"), "utf8");
-    expect(src).toMatch(/aiGenerate\s*:\s*protectedProcedure/);
-    expect(src).toMatch(/aiCommit\s*:\s*protectedProcedure/);
+    // May 11 2026: gate moved from protectedProcedure to familyAdminProcedure.
+    expect(src).toMatch(/aiGenerate\s*:\s*(?:protectedProcedure|familyAdminProcedure)/);
+    expect(src).toMatch(/aiCommit\s*:\s*(?:protectedProcedure|familyAdminProcedure)/);
   });
 
   it("AIScheduleGeneratorCard component file exists and uses both procedures", () => {
