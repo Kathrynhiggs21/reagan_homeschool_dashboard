@@ -57,6 +57,15 @@ beforeAll(async () => {
   await cleanFutureDate();
 });
 
+// Helper: spy on sdk.authenticateRequest to return an authenticated user.
+// Push 9 (2026-05-12) tightened the recap-send route auth gate so it
+// requires a real authenticated user with role 'user' or 'admin'.
+function stubAuth(role: "user" | "admin" = "admin") {
+  return vi
+    .spyOn(sdk, "authenticateRequest")
+    .mockResolvedValue({ id: "test", role } as any);
+}
+
 afterAll(async () => {
   vi.restoreAllMocks();
   try {
@@ -68,7 +77,32 @@ afterAll(async () => {
 });
 
 describe("/api/scheduled/daily-recap-send cron behavior", () => {
+  it("AUTH gate: rejects anonymous POST with 401 and creates 0 recap rows", async () => {
+    // CRITICAL: ensure no leftover spy from a previous run leaks in.
+    vi.restoreAllMocks();
+    await cleanFutureDate();
+    // No stubAuth() — anonymous request.
+    const r = await fetch(`${baseUrl}/api/scheduled/daily-recap-send`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ dateISO: FUTURE_DATE }),
+    });
+    expect(r.status).toBe(401);
+    const body: any = await r.json();
+    expect(body.ok).toBe(false);
+    expect(body.error).toBe("Unauthorized");
+
+    // No recap-request rows created.
+    const db = (dbMod as any).getDb();
+    const rows = await db
+      .select()
+      .from(dailyRecapRequests)
+      .where(eq(dailyRecapRequests.dateISO, FUTURE_DATE));
+    expect(rows.length).toBe(0);
+  });
+
   it("SKIP path: returns skipped='actual-entries-exist' and creates 0 recap rows when the day has actuals", async () => {
+    stubAuth();
     await cleanFutureDate();
     // Seed an actual entry for the future date.
     await dbMod.recordActualEntry({
@@ -103,6 +137,7 @@ describe("/api/scheduled/daily-recap-send cron behavior", () => {
   });
 
   it("SEND path: creates recap-request rows for Mom + Grandma with unique tokens and status='sent' when day is empty", async () => {
+    stubAuth();
     await cleanFutureDate();
 
     const r = await fetch(`${baseUrl}/api/scheduled/daily-recap-send`, {
@@ -145,6 +180,7 @@ describe("/api/scheduled/daily-recap-send cron behavior", () => {
   });
 
   it("SKIP path: returns skipped='already-answered' and creates 0 NEW recap rows when one row is already replied", async () => {
+    stubAuth();
     await cleanFutureDate();
 
     // First, create a recap-request row directly, then mark it replied.

@@ -1205,10 +1205,23 @@ ${absolutePdfUrl ? `<p style=\"text-align:center;margin:24px 0;\"><a href=\"${ab
    * has already been replied to today.
    */
   app.post("/api/scheduled/daily-recap-send", async (req: Request, res: Response) => {
+    // Auth gate — tightened in push 9 (2026-05-12).
+    // Previously this route silently swallowed missing auth and always
+    // proceeded, which meant any anonymous internet caller could create
+    // recap-request rows + trigger downstream email sends. This route
+    // now matches the rest of the /api/scheduled/* family: require a
+    // real authenticated user with role==='user' OR 'admin'.
+    let role: string | null = null;
     try {
-      // Optional cron auth check; permissive for now to ease bring-up
-      const _user = await sdk.authenticateRequest(req).catch(() => null);
-
+      const u = await sdk.authenticateRequest(req);
+      role = u?.role ?? null;
+    } catch {
+      role = null;
+    }
+    if (!role || (role !== "user" && role !== "admin")) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
+    try {
       const dateISO = (req.body?.dateISO as string | undefined) ?? nowETDateISO();
 
       // Guards
