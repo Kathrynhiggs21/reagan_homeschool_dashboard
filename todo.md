@@ -281,7 +281,7 @@
 - [x] 5 new vitests covering tutor, push, topic swap, uniform duration, brain break
 
 ## 2026-05-04 — Agenda Editor: drag-drop + fix timeline edit
-- [ ] BUG: start-time (timeline) edits don't save in manual grid — diagnose & fix
+- [~] BUG: start-time (timeline) edits don't save in manual grid — INVESTIGATED 2026-05-12 push 10. Diagnosis: persistence layer is correct (Vitest `blockUpdateStartTime.test.ts`, 5/5 pass): `db.updateBlock(id, {startTime})` round-trips both 'HH:MM' and null, preserves unrelated fields, idempotent. tRPC `blocks.update` zod accepts `startTime: z.string().regex(/^\d{1,2}:\d{2}$/).nullable().optional()`. agendaEditor.snapshot maps `startTime: b.startTime ?? null`. Frontend `parseTime12h` canonicalizes user-typed '1:30 PM' → '13:30' before patching. NO data-flow bug found at any layer. Most likely real-world cause = user not seeing visual confirmation because the snapshot refetch latency (~300ms) makes them think nothing happened, OR they typed an unparseable string and the toast.error was missed. Follow-up: add optimistic update + clearer save indicator. Mark as ~ until UX confirmation lands.
 - [ ] Add drag-and-drop reorder to manual block grid (with keyboard a11y fallback)
 - [ ] Make blockType (theme/type), subject, topic all inline-editable dropdowns that save on change
 - [ ] New blocks.reorder mutation that takes orderedIds[] and rewrites sortOrder + cascades startTimes
