@@ -76,6 +76,8 @@
 - [ ] Strip @ihsd.us copy from Schedule.tsx, Settings.tsx, UploadOrSync.tsx, googleAuthLink.ts, DrivePushQueueCard.tsx
 - [ ] Strip "PowerSchool — Indian Hill" from seed.mjs (preserve already-imported PowerSchool grade rows + ihAssignments display path as read-only history)
 - [ ] DB: `UPDATE app_settings SET value='reaganhiggs910@gmail.com' WHERE key='student.googleEmail'`
+- [ ] DB: `UPDATE app_settings SET value='spear.cpt@gmail.com' WHERE key='parent.googleEmail'`
+- [ ] DB: `UPDATE app_settings SET value='marcy.spear@gmail.com' WHERE key='grandma.googleEmail'`
 - [ ] Preserved: IEP goals + accommodations (Madeira origin label retained), PowerSchool grade snapshot, IH Q1–Q4 curriculum codes already seeded — all stay queryable + visible on analytics
 
 ### URGENT scrub (Apr 28) — still pending
@@ -114,6 +116,7 @@
 - [ ] Wipe today's existing scheduleBlocks for May 4 2026
 - [ ] Insert a video-lesson block built around https://youtu.be/fajsyiKRfxI
 - [ ] Tie the block to the saved Plants topic (curriculumTopics)
+- [ ] Tie the block to the saved Angle Signatures topic (curriculumTopics)
 - [ ] Verify on Today + Daily Schedule + Agenda Editor pages
 
 ## 2026-05-04 user request — refined (option B)
@@ -122,6 +125,7 @@
 - [ ] Locate or create the saved "Angle Signatures" math topic
 - [ ] Wipe today's 8 scheduleBlocks (planId 360001)
 - [ ] Insert one Video Lesson block for today tied to Plants (Sci 2-1) + Angle Signatures
+- [ ] Verify on Today + Daily Schedule + Agenda Editor
 
 ## 2026-05-04 user request — refined v2 (math arc)
 - [ ] Locate or create math topic for "Circles & 360° (vocabulary, parts of a circle)"
@@ -251,6 +255,7 @@
 - [ ] Analytics page: add 5th-grade total / "approx levels" alongside the mastery rings (so "0 of 37 skills" → also shows "≈ 5th-grade level X / 5th-grade total")
 - [ ] Analytics page: add Apps usage card (per-app launches + minutes) — surface IXL / Khan / Prodigy / etc. activity
 - [ ] Analytics page: more visual variety but stay simple and not confusing — radar, sparklines, mastery bars, mood/struggle heatmap, app-usage card, IEP catch-up, current-standing card
+- [ ] Move per-topic progress arc cards from Curriculum Hub → Analytics page (already in earlier scope, restated for clarity)
 - [ ] Curriculum Hub: change font + color + box treatment so it's visually distinct from other adult cards and easier to read; update all adult-area grey/translucent boxes for legibility on every theme
 - [ ] Global grey-box pass: every grey/dark-translucent card should have foreground text contrast ≥ 4.5:1 on every theme
 - [ ] Printable daily agenda emailed PDF: keep page 1 = the agenda summary; **append one page per block with the full lesson** — video URL + description, attached worksheet pages (rasterized so they print), block instructions/materials, so the printout is fully usable when there is no dashboard access
@@ -1426,6 +1431,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [ ] Wire Kiwi to schedule completion events (flap on Done)
 - [ ] Rainbow-per-row coloring on Today list
 - [ ] Material-icon subject tiles (huge icon, small title under)
+- [ ] Today page completion-based playlist (no hard times)
 - [ ] Tour Mode card for Apr 28 + 11am Tutor Trial card
 - [ ] Sticker-on-Done + confetti + coin increment
 - [ ] Sticker Book page + Prize Shop page (basic grids)
@@ -1445,8 +1451,10 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [ ] Adaptive Learning Engine (signals, modality detector, nightly auto-adjust, weekly digest)
 - [ ] Review Library (videos, web pages, apps, printables) keyed off gaps
 - [ ] Textbook scope-and-sequence ingestion (Spectrum Science G5, 180 Days of Science G5, Tuck Everlasting, Michael's World)
+- [ ] Recommendations column (Mom+Grandma approve only)
 - [ ] Google Calendar duplicate sync
 - [ ] Home-hub widgets + Joke of the Day + Pet of the Day + YouTube TV Box + Resource popups + Play-Break footer
+- [ ] Full whiteboard note tool (pen/text/shapes/images/highlighter/voice)
 - [ ] Placement mini-tasks engine
 - [ ] Template/theme picker (chalkboard/groovy/nature/galaxy/forest)
 - [ ] Adult Help onboarding page
@@ -1681,6 +1689,8 @@ Every feature is judged by 3 questions:
 
 ## URGENT (Apr 28 2026): Scrub fake/seeded analytics — adult section must be 100% real
 - [ ] Inventory every Adult Analytics widget + admin view; list each data source it queries (table + filter)
+- [ ] Identify every seed script that wrote demo/sample/example/placeholder rows into those tables (moods, events, uploads, submissions, grades, summaries, parentFlags, struggles, gradesByDay, etc.)
+- [ ] Run a one-shot SQL cleanup that deletes ONLY the seeded/demo rows (preserve any rows actually entered by parent / Reagan / tutor)
 - [ ] Disable any future runs of those demo seeders (delete or comment out the seed scripts; remove any auto-seed-on-empty logic in routers)
 - [ ] Verify on the live preview that Adult Analytics shows zero phantom entries
 - [ ] Vitest: assert listMoods/listEvents/listSubmissions/listParentFlags return [] on a fresh DB (no auto-seed)
@@ -1782,8 +1792,10 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 ## Overnight session (Apr 29 night → Apr 30 morning)
 
 - [ ] Verify contrast CSS fixes visually (Cream, Notebook, Chalkboard, Starry)
+- [ ] Bookshelf pruned to exactly 4 books (Tuck Everlasting, Michael's World, + 2 academic)
 - [ ] IEP present-levels → Analytics subject-level indicator chip
 - [ ] 5+1 subject palette (Math/Science/Social/ELA/Specials/Other) across subjectColors.ts
+- [ ] Remap blocks/skills/skillsMastery/adventures/weeklyTopics to 5+1 subject slugs
 - [ ] classroom-ingest scheduled-task endpoint
 - [ ] iep-refresh scheduled-task endpoint
 - [ ] Mark genuinely-completed older items as [x]; tag Mom-blocked items with "⚠ Mom"
@@ -1953,6 +1965,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Reward auto-Feathers from completion based on time + difficulty (already partially there — verify)
 
 # Apr 30 — Afternoon batch (Mom)
+- [ ] Reward auto-Feathers from completion based on time + difficulty
 - [ ] My Levels: restructure into subject categories with kid-friendly progress UI (not wall of text)
 - [ ] Apply Reagan design rule globally: not overwhelming, image+title tile-first layouts everywhere
 - [ ] Wire Reagan app tiles to auto-launch under her Indian Hill Google account (use authuser= or AccountChooser?Email= so Chrome doesn't re-prompt)
@@ -1971,6 +1984,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Daily Printables — award Kiwi Coins on submit (base + difficulty/time bonus)
 - [ ] Daily Printables — file PDF + uploaded photo into Reagan/IHES Drive folder, dated
 - [ ] Adult Rewards Manager — manual create + one-click preset library (image+title+cost+description), Reagan view shows image tiles with popup
+- [ ] Google Classroom pull under spear.cpt@gmail.com — daily sync of assignments into dashboard
 - [ ] Reagan Profile Model: tracks finished/abandoned, format preference (drawing/write-in/cut-paste/outdoor/online), Hard/Getting it/Got it per skill, subject affinity, real pacing per block, mood signals
 - [ ] Use Profile Model to drive both daily printables AND online activity suggestions (best for Reagan, not loyal to any single source)
 - [ ] Daily Printables = SCHOOL-DAY work, NOT homework. Frame as "today's school work" everywhere; finish before end of school day.
@@ -2068,6 +2082,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 
 ### Visual polish (Phase 7)
 - [ ] 3D glossy/glass pop-out boxes throughout
+- [ ] Replace prize text list with image-tile cards
 - [ ] Cute extras: summer countdown, Kiwi animations preserved
 
 ### Delivery (Phase 8)
@@ -2088,7 +2103,9 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] Adult: large 3D glossy Kiwi Coin counter (AdultCoinCounter mounted on Analytics + Rewards)
 - [x] Adult: image-tile prize cards (image + title + cost) — already implemented on Prizes page
 - [ ] Analytics rebuild as visual charts (radar / sparklines / mood ring)
+- [ ] Analytics: Curriculum Coverage 0-100% per 5th-grade subject as arcs
 - [ ] Adult Settings audit: combine duplicates, one short scroll
+- [ ] Visual: 3D glossy/glass pop-out boxes throughout
 - [ ] Visual: Summer countdown bottom-left of sidebar (cute kiwi mascot)
 - [ ] Visual: Kiwi Tea Party decorative scene (more kiwi-bird fun)
 - [ ] Weather widget: glassy realistic-material, upper-left
@@ -2136,10 +2153,13 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 
 ## Apr 30 night — round 4 flock + decor (consolidated)
 
+- [ ] Cuddling ducklings sprite in cozy corner
 - [ ] Egg-hatch animation
+- [ ] Flock grows over time with streaks / coins
 - [ ] Mama Duck waddles in occasionally to scoop a duckling
 - [ ] Pool/pond corner
 - [ ] Weather-aware (rain droplets + leaf umbrella)
+- [ ] Duck mud footprints after rain
 - [ ] Easter eggs: peeking silhouettes, droppable feathers, worm wiggles
 
 ## Apr 30 night final additions
@@ -2338,7 +2358,10 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] OAuth via existing google-classroom MCP / gws CLI
 
 ### Phase 7: Kiwi always-on listening
+- [ ] Wake word "Hey Kiwi" detection (Web Speech API + keyword spotter)
 - [ ] Ambient mode: 10s windows transcribed locally, frustration/comprehension flags
+- [ ] All audio stays in-browser; only transcripts sent server-side
+- [ ] Adult-only toggle in Settings + privacy notice + per-block opt-in indicator
 
 ### Pending data from user
 - [ ] Tutor email addresses for Madison / Sophie / Keith
@@ -2357,6 +2380,9 @@ Tests at end of batch: 211 passed | 1 skipped.
 
 ### Phase 1: dead-account scrub + role rename
 - [ ] Hide ihAssignments UI (table stays read-only legacy)
+- [ ] DB: UPDATE app_settings SET value='reaganhiggs910@gmail.com' WHERE key='student.googleEmail'
+- [ ] DB: UPDATE app_settings SET value='spear.cpt@gmail.com' WHERE key='parent.googleEmail' (insert if missing)
+- [ ] DB: UPDATE app_settings SET value='marcy.spear@gmail.com' WHERE key='grandma.googleEmail' (insert if missing)
 - [ ] Rename UI labels Adult/Helper/Owner → Parent / Grandma / Tutor / Student
 
 ### Phase 2: multi-account roles
@@ -2371,6 +2397,8 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Assigned-day automatic block ownership (Tuesday's blocks = Sophie's tutor handoff page)
 
 ### Phase 4: Curriculum hub
+- [ ] Subjects → strands → standards → topics → lessons (5th-grade Ohio)
+- [ ] Per-topic status + evidence + last_touched_at + who_marked_it
 - [ ] Curriculum.tsx coverage % visualization
 
 ### Phase 5: Family Update Stream
@@ -2379,15 +2407,28 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Auto-refresh every 30s, plus daily digest email Sun 6pm
 
 ### Phase 6: Daily Lesson Generator (nightly)
+- [ ] LLM plans full day from curriculum gaps + interests + IEP + tomorrow's calendar + which tutor will be there
+- [ ] Each block: video URL + lesson + assignment + printable + app drill + tutor-led-or-independent flag
+- [ ] Failure fallback to last-week template + email Parent
 
 ### Phase 7: Sync layer
+- [ ] Daily 7am pull from Parent's Gmail (spear.cpt@gmail.com): curriculum/tutor/parent emails
+- [ ] Daily 7am pull from Drive: Reagan folder mirror into assignments_library
+- [ ] Daily 11pm push: photo submissions + completed printables → Drive Reagan/{date} archive folder
 
 ### Phase 8: Kiwi always-on listening
+- [ ] Ambient mode 10s windows with frustration/comprehension flags
+- [ ] All audio in-browser; only transcripts sent server-side
 
 ### Pending data from Parent
+- [ ] Tutor email addresses (Madison / Sophie / Keith)
+- [ ] Confirm Grandma's email = marcy.spear@gmail.com (locked)
+- [ ] Confirm Reagan's last day of school (default 2026-06-04 from seed)
 
 ## 2026-05-02 Role + Daily-Assessment updates
 - [x] Grandma Marcy role = full editor via `familyAdminProcedure` (May 11 2026)
+- [ ] User.role enum extended: admin | parent | editor | tutor | student | viewer
+- [ ] Permissions matrix: parent=full, editor=write+upload+notes (no billing), tutor=write blocks/notes on assigned days, student=own day, viewer=read-only
 - [ ] Daily Assessment one-tap launcher card on Today: opens every app needed for today's blocks with `?authuser=reaganhiggs910@gmail.com` URL hint, copies non-Google passwords to clipboard, marks blocks in_progress on launch
 - [ ] First-time consent disclaimer: kid/parent must click Allow once per app, then one-click forever
 - [ ] Vitest: Daily Assessment launcher resolves correct app set from today's blocks + adds correct authuser hint
@@ -2401,6 +2442,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Vitest: tutor procedures pass authorization check; tutor cannot mutate billing/secrets endpoints
 
 ## In Flight (May 2 2026)
+- [ ] Per-app dual identity: Student (reaganhiggs910@gmail.com) + Parent (spear.cpt@gmail.com) Google sign-in buttons on every app card
 - [ ] Tutor profile rows: Madison, Sophie, Keith (placeholder emails until user provides) + Grandma Marcy editor row
 - [ ] Role-based permission matrix: parent / editor / tutor / student / viewer
 - [ ] Curriculum hub keyed on Indian Hill 5th grade (subject → unit → topic, done/in-progress/todo, % complete)
@@ -2491,6 +2533,13 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Use existing scheduled-task pattern via /api/scheduled/nightlyAgenda endpoint + schedule entry (cron 0 0 20 * * 1-5)
 
 ### Phase 4 — Cuts + leveling drop (same as before)
+- [ ] Delete TutorHandoff/TutorBriefing pages + nav + routes
+- [ ] Delete FamilyFeed.tsx + /family + adult sidebar entry
+- [ ] Delete DailyAgendas.tsx + nav + route (replaced by email pipeline)
+- [ ] Delete DailyPacket.tsx + nav + route (replaced by email pipeline)
+- [ ] Delete standalone Whiteboard.tsx (move into Settings sub-panel)
+- [ ] Delete ProudWall.tsx + /proud + nav
+- [ ] Strip level-up notifications + badges + XP from Today/Analytics/Apps
 
 ### Phase 5 — Adventures popup, Notebook merge, request button, My Skills rename
 - [ ] Convert Adventures from page → AdventuresDialog popup (keep all data)
@@ -2508,10 +2557,13 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Kiwi-Helper kid-safe content filter: server-side classifier blocks unsafe queries before answering
 - [ ] Kiwi can: open YouTube link, open kid-safe Google search, open approved app links, change theme/companion/audio settings via prefs.set
 - [ ] Whitelist tools the Kiwi-Helper can call (settings.set, theme.change, companion.activity, audio.toggle, openLink, openYouTube)
+- [ ] grep "Scribbles"/"scribbles" across client+server, replace with neutral wording
 
 ### Phase 7 — iCal + Whiteboard in Settings + Library AI search
 - [ ] Server: ical.fetch route — fetches + parses iCal, returns events for date range
 - [ ] Schedule: toggleable "Mom's calendar" overlay layer
+- [ ] Settings: Whiteboard sub-panel (move existing Whiteboard editor inline)
+- [ ] Settings: trim sub-panels to Profile / Appearance / Companion / Lock / Whiteboard / Calendar / Notifications / Logs
 - [ ] AssignmentsLibrary: AI search box (subject + topic + format) → returns ~10 suggestions with "Add to a day"
 
 ### Phase 8 — Quiet listening + Mom-only analytics sheet
@@ -2730,3 +2782,4 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] UI: chat-style editor on AgendaEditor page with diff preview, Apply, Undo
 - [ ] UI: full block grid (drag to reorder, edit time/duration inline, change type/topic/tutor)
 - [ ] Vitests for instruction parser + commit/undo
+
