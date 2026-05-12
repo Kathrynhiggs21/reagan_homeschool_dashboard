@@ -6019,6 +6019,177 @@ export async function countActualForDate(dateISO: string): Promise<number> {
   return rows.length;
 }
 
+/* ==========================================================
+ * Slice 4.5 — Coverage delta + off-plan topic capture
+ * ========================================================== */
+
+export interface CoverageDeltaPlannedBlock {
+  blockId: number;
+  subjectSlug: string | null;
+  title: string | null;
+  status: string | null;
+  curriculumTopicId: number | null;
+}
+
+export interface CoverageDeltaActualEntry {
+  entryId: number;
+  subjectSlug: string;
+  topic: string;
+  minutesSpent: number;
+  source: string;
+  plannedBlockId: number | null;
+}
+
+export interface CoverageDelta {
+  plannedBlocks: CoverageDeltaPlannedBlock[];
+  actualEntries: CoverageDeltaActualEntry[];
+  /** Planned blocks for which an actual entry exists with matching plannedBlockId or subjectSlug+topic match. */
+  matched: { blockId: number; entryIds: number[] }[];
+  /** Planned blocks with NO matching actual entry (gaps in coverage). */
+  unmatchedPlanned: CoverageDeltaPlannedBlock[];
+  /** Actual entries with no matching planned block (off-plan topics). */
+  unmatchedActual: CoverageDeltaActualEntry[];
+  totalPlannedBlocks: number;
+  totalActualEntries: number;
+  coveragePercent: number; // matched / totalPlanned * 100, rounded
+}
+
+/**
+ * Compute the planned-vs-actual coverage delta for a single date.
+ * Pure function over plannedBlocks + actualEntries; no DB writes.
+ * Matching rule: an actual entry matches a planned block if
+ *   (a) actualEntry.plannedBlockId === plannedBlock.blockId, OR
+ *   (b) plannedBlock.subjectSlug === actualEntry.subjectSlug AND
+ *       case-insensitive substring overlap between block title and entry topic.
+ */
+export function getCoverageDelta(
+  plannedBlocks: CoverageDeltaPlannedBlock[],
+  actualEntries: CoverageDeltaActualEntry[],
+): CoverageDelta {
+  const matched: { blockId: number; entryIds: number[] }[] = [];
+  const matchedActualIds = new Set<number>();
+  const unmatchedPlanned: CoverageDeltaPlannedBlock[] = [];
+
+  for (const pb of plannedBlocks) {
+    const hits = actualEntries.filter((ae) => {
+      if (ae.plannedBlockId === pb.blockId) return true;
+      if (
+        pb.subjectSlug &&
+        ae.subjectSlug &&
+        pb.subjectSlug === ae.subjectSlug
+      ) {
+        const t1 = (pb.title || "").toLowerCase();
+        const t2 = ae.topic.toLowerCase();
+        if (t1 && t2 && (t1.includes(t2) || t2.includes(t1))) return true;
+      }
+      return false;
+    });
+    if (hits.length > 0) {
+      matched.push({ blockId: pb.blockId, entryIds: hits.map((h) => h.entryId) });
+      for (const h of hits) matchedActualIds.add(h.entryId);
+    } else {
+      unmatchedPlanned.push(pb);
+    }
+  }
+
+  const unmatchedActual = actualEntries.filter((ae) => !matchedActualIds.has(ae.entryId));
+  const totalPlannedBlocks = plannedBlocks.length;
+  const totalActualEntries = actualEntries.length;
+  const coveragePercent =
+    totalPlannedBlocks === 0 ? 0 : Math.round((matched.length / totalPlannedBlocks) * 100);
+
+  return {
+    plannedBlocks,
+    actualEntries,
+    matched,
+    unmatchedPlanned,
+    unmatchedActual,
+    totalPlannedBlocks,
+    totalActualEntries,
+    coveragePercent,
+  };
+}
+
+/**
+ * Mark a curriculum topic as covered. Sets status to 'done' (not 'in_progress')
+ * and stamps the source so analytics know whether it came from planned blocks,
+ * actual entries, or grandma-recap. Returns true if a row was updated.
+ */
+export async function markTopicAsCovered(
+  standardId: string,
+  source: "planned-block" | "actual-entry" | "grandma-recap" | "tutor-note" | "kiwi-listened" | "manual",
+): Promise<boolean> {
+  const numId = Number(standardId);
+  if (!Number.isFinite(numId) || numId <= 0) return false;
+  const db = getDb();
+  // curriculumTopics is accessed via raw SQL across the codebase (not in drizzle schema import).
+  // bump to 'done' + stamp source provenance for analytics.
+  const now = Date.now();
+  const result: any = await db.execute(
+    sql`UPDATE curriculumTopics
+        SET status = 'done',
+            completed_at = ${new Date(now)},
+            last_covered_source = ${source},
+            last_covered_at = ${now}
+        WHERE id = ${numId}`,
+  );
+  return Number(result?.[0]?.affectedRows ?? result?.affectedRows ?? 0) > 0;
+}
+
+/**
+ * Queue an off-plan topic for Drive sync. Inserts a row into topicsCoveredOffPlan
+ * AND enqueues a drivePushQueue task targeting Curriculum and Standards/Topics Covered.
+ * Idempotent: if an off-plan row already exists for (dateISO, subjectSlug, topic), reuse it.
+ */
+export async function queueOffPlanTopicForDriveSync(
+  dateISO: string,
+  subjectSlug: string,
+  topic: string,
+  sourceEntryId: number | null,
+  contentMarkdown: string,
+): Promise<{ topicId: number; queued: boolean }> {
+  const db = getDb();
+  const existing: any[] = await db
+    .select()
+    .from(topicsCoveredOffPlan)
+    .where(
+      and(
+        eq(topicsCoveredOffPlan.dateISO, dateISO),
+        eq(topicsCoveredOffPlan.subjectSlug, subjectSlug),
+        eq(topicsCoveredOffPlan.topic, topic),
+      ),
+    )
+    .limit(1);
+  let topicId: number;
+  if (existing.length > 0) {
+    topicId = Number(existing[0].id);
+  } else {
+    const result: any = await db.insert(topicsCoveredOffPlan).values({
+      dateISO,
+      subjectSlug,
+      topic,
+      sourceEntryId: sourceEntryId ?? null,
+      drivePushed: false,
+      createdAt: Date.now(),
+    } as any);
+    topicId = Number(result?.[0]?.insertId ?? result?.insertId ?? 0);
+  }
+  // Enqueue Drive push targeting topics_covered routable target.
+  const ym = dateISO.slice(0, 7); // YYYY-MM
+  const safeName = topic.replace(/[^A-Za-z0-9]+/g, "_").slice(0, 80);
+  const fileName = `${dateISO} - ${subjectSlug} - ${safeName}.md`;
+  await db.insert(drivePushQueue).values({
+    target: "topics_covered" as any,
+    targetSubpath: ym,
+    fileName,
+    fileMimeType: "text/markdown",
+    contentText: contentMarkdown,
+    status: "pending" as any,
+    enqueuedAt: Date.now(),
+  } as any);
+  return { topicId, queued: true };
+}
+
 /** Coverage delta: which planned-block topics are NOT yet covered by any
  *  actual entry, AND which actual entries are off-plan (no matching block).
  *

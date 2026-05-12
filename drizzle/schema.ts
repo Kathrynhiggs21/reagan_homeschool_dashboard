@@ -1508,6 +1508,9 @@ export const curriculumTopics = mysqlTable("curriculumTopics", {
   // Apr 30 — surface go-deeper practice links per topic
   khanUrl: varchar("khan_url", { length: 600 }),
   ixlUrl: varchar("ixl_url", { length: 600 }),
+  // 2026-05-12 (Slice 4.5) — source provenance for coverage analytics
+  lastCoveredSource: varchar("last_covered_source", { length: 32 }),
+  lastCoveredAt: bigint("last_covered_at", { mode: "number" }),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

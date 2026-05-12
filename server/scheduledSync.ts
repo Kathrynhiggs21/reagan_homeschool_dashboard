@@ -1368,13 +1368,15 @@ ${absolutePdfUrl ? `<p style=\"text-align:center;margin:24px 0;\"><a href=\"${ab
           });
           inserted += 1;
           if (e.offPlan) {
-            await (db as any).recordOffPlanTopic?.({
+            // Slice 4.5: insert + enqueue for Drive sync to Curriculum and Standards/Topics Covered/{YYYY-MM}/
+            const md = `# ${e.topic}\n\n- Date: ${dateISO}\n- Subject: ${e.subjectSlug}\n- Minutes: ${e.minutesSpent}\n- Source: ${source}${replyFrom ? ` (${replyFrom})` : ""}\n${e.notes ? `\n## Notes\n${e.notes}\n` : ""}`;
+            await (db as any).queueOffPlanTopicForDriveSync?.(
               dateISO,
-              subjectSlug: e.subjectSlug,
-              topic: e.topic,
-              mappedToCurriculumStandardId: null,
-              sourceEntryId: entryId,
-            });
+              e.subjectSlug,
+              e.topic,
+              entryId,
+              md,
+            );
           }
         } catch (insErr) {
           console.error("[daily-recap-reply] insert failed", insErr);

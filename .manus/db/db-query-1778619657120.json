@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE `curriculumTopics` ADD `last_covered_source` varchar(32); ALTER TABLE `curriculumTopics` ADD `last_covered_at` bigint;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute ALTER TABLE `curriculumTopics` ADD `last_covered_source` varchar(32); ALTER TABLE `curriculumTopics` ADD `last_covered_at` bigint;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 988
+}
