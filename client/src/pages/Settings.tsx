@@ -10,6 +10,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { useAdultLock } from "@/contexts/AdultLockContext";
 import RewardsManagerCard from "@/components/RewardsManagerCard";
+import IepReferencePanel from "@/components/IepReferencePanel";
 import TutorsManager from "@/components/TutorsManager";
 import CalendarSyncCard from "@/components/CalendarSyncCard";
 import AppointmentsCardLite from "@/components/AppointmentsCardLite";
@@ -40,12 +41,13 @@ export default function Settings() {
       <SettingsAIHelperCard />
 
       <Tabs defaultValue="people" className="w-full">
-        <TabsList className="grid grid-cols-6 w-full">
+        <TabsList className="grid grid-cols-7 w-full">
           <TabsTrigger value="people">People</TabsTrigger>
           <TabsTrigger value="prizes">Prizes</TabsTrigger>
           <TabsTrigger value="requests">Requests</TabsTrigger>
           <TabsTrigger value="calendar">Calendar</TabsTrigger>
           <TabsTrigger value="notifications">Email</TabsTrigger>
+          <TabsTrigger value="iep">IEP Ref</TabsTrigger>
           <TabsTrigger value="kiwi">Kiwi &amp; UI</TabsTrigger>
         </TabsList>
 
@@ -73,6 +75,10 @@ export default function Settings() {
 
         <TabsContent value="notifications">
           <NotificationsCard />
+        </TabsContent>
+
+        <TabsContent value="iep" className="space-y-4">
+          <IepReferencePanel />
         </TabsContent>
 
         <TabsContent value="kiwi" className="space-y-4">

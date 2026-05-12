@@ -35,9 +35,9 @@
   - Added `DRIVE_TARGET_TO_CANONICAL_PARENT` constant + `getCanonicalParentForRoutable()` helper in `server/db.ts`
   - Wired into `GET /api/scheduled/drive-push/pending` so each row now includes `canonicalParentSlug`, `canonicalParentFolderId`, `subfolderName` for the worker
   - Vitests: `driveCanonicalParents.test.ts` (6/6) + `drivePushPendingEnrichment.test.ts` (5/5)
-- [ ] Wire Color-Coded Warning Zones content into a `behavioralFlags` table feeding `anxietyScore` weights
-- [ ] Surface Crisis Decision Tree as adult-side reference card on the Adult Notes panel
-- [ ] Wire "What Works / What Doesn't Work" content into AI Agenda Editor as adaptive recommendations
+- [x] Codify Color-Coded Warning Zones in `server/_lib/warningZones.ts` with weighted anxietyScore contribution. (Skipped a `behavioralFlags` table — the existing `moods` table + the typed weight constant is enough; new table would just duplicate signal.) DONE 2026-05-12.
+- [x] Surface Crisis Decision Tree as adult-side reference card on Settings → IEP Ref tab (3 expandable cards: Warning Zones, Crisis Protocol, What Works Matrix). DONE 2026-05-12.
+- [x] Wire "What Works / What Doesn't Work" content into AI Agenda Editor system prompt via `whatWorksPromptAddendum()` so every regeneration uses Reagan-specific rules. DONE 2026-05-12. Vitests: `iepBehavioralLibs.test.ts` (15), `iepWarningZonesProc.test.ts` (3), `agendaEditorReaganGuidance.test.ts` (4), `iepReferencePanelMounted.test.ts` (4). Full suite 586/587.
 
 ### Mom + Grandma always-edit power (DONE 2026-05-11)
 - [x] `familyAdminProcedure` added — Mom + Grandma always pass any agenda-edit gate (past, today, future, any year)

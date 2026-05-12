@@ -11,6 +11,7 @@
  * exactly.
  */
 import { invokeLLM } from "../_core/llm";
+import { whatWorksPromptAddendum } from "./whatWorks";
 
 export type AgendaBlockSnapshot = {
   id: number;
@@ -180,7 +181,11 @@ Interpretation rules — be generous, infer intent:
 - Never invent blocks unless the instruction asks to add one.
 - Prefer minimal-diff edits. Never re-emit unchanged fields on update.
 
-Return JSON only. No prose, no markdown.`;
+Return JSON only. No prose, no markdown.
+
+${whatWorksPromptAddendum()}
+
+When the adult mentions Reagan is anxious, struggling, in a yellow zone, or asks to "shorten", "make easier", "go gentler", lean on the AVOID/DO guidance above. Specifically: cut writing tasks first, switch to verbal/scribe support, add a short adventure or choice block, and never add timed work or surprise assessments.`;
 
 export function summarizeBlocksForPrompt(ctx: AgendaPlanContext): string {
   const lines = ctx.blocks.map((b, i) => {

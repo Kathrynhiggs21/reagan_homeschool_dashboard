@@ -894,6 +894,7 @@ export async function insertSpecialDay(d: typeof specialDays.$inferInsert) {
 }
 
 /* ============================== ANALYTICS HELPERS ========================= */
+import { anxietyContributionFromZones, type WarningZone } from "./_lib/warningZones";
 export async function wellnessScore(daysBack = 7) {
   const moods = await listRecentMood(daysBack);
   const struggles = await listStruggles(daysBack);
@@ -901,7 +902,16 @@ export async function wellnessScore(daysBack = 7) {
   const reds = moods.filter(m => m.zone === "red").length;
   const greens = moods.filter(m => m.zone === "green").length;
   const totalMoods = moods.length || 1;
-  const anxietyScore = Math.min(100, Math.round((reds * 30 + yellows * 15) + (struggles.filter(s => s.intensity === "red").length * 10)));
+  // 2026-05-12: replaced legacy hard-coded `reds*30 + yellows*15` with the
+  // canonical Color-Coded Warning Zones weights (server/_lib/warningZones.ts).
+  // Black-zone moods (if any are logged) now contribute 60 each per the doc;
+  // red struggles still add a small +10 each (intensity-based, separate signal).
+  const observedZones: WarningZone[] = moods
+    .map(m => m.zone as string)
+    .filter((z): z is WarningZone => z === "green" || z === "yellow" || z === "red" || z === "black");
+  const zoneContribution = anxietyContributionFromZones(observedZones);
+  const struggleContribution = struggles.filter(s => s.intensity === "red").length * 10;
+  const anxietyScore = Math.min(100, zoneContribution + struggleContribution);
   const cheerful = greens / totalMoods;
   const depressionScore = Math.round((1 - cheerful) * 60 + (reds * 5));
   return {

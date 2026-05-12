@@ -2665,6 +2665,24 @@ export const appRouter = router({
     listGoals: publicProcedure.query(() => db.listIepGoals()),
     listAccommodations: publicProcedure.query(() => db.listIepAccommodations()),
     listScreenings: publicProcedure.query(() => db.listAssessmentScreenings()),
+    /**
+     * Codified Color-Coded Warning Zones from the canonical IEP-aligned
+     * doc. Frontend renders these in the adult-side reference panel so
+     * Mom and Grandma always see Reagan-specific guidance, not generic
+     * anxiety advice.
+     */
+    warningZones: publicProcedure.query(async () => {
+      const { WARNING_ZONES } = await import("./_lib/warningZones");
+      return WARNING_ZONES;
+    }),
+    crisisProtocol: publicProcedure.query(async () => {
+      const { CRISIS_PROTOCOL } = await import("./_lib/warningZones");
+      return CRISIS_PROTOCOL;
+    }),
+    whatWorksMatrix: publicProcedure.query(async () => {
+      const { WHAT_WORKS_MATRIX } = await import("./_lib/whatWorks");
+      return WHAT_WORKS_MATRIX;
+    }),
   }),
 
   /* =================== REWARDS (stickers, coins, prizes, notes) =================== */
