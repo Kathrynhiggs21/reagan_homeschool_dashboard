@@ -1277,8 +1277,9 @@ ${absolutePdfUrl ? `<p style=\"text-align:center;margin:24px 0;\"><a href=\"${ab
    */
   app.post("/api/scheduled/daily-recap-reply", async (req: Request, res: Response) => {
     try {
+      const { clampReplyText, isNothingHappenedReply, normalizeRecapEntries } = await import("./_lib/normalizeRecapEntry");
       const token = String(req.body?.token ?? "").trim();
-      const replyText = String(req.body?.replyText ?? "").trim();
+      const replyText = clampReplyText(String(req.body?.replyText ?? "").trim());
       const replyFrom = String(req.body?.replyFrom ?? "").trim().toLowerCase();
       if (!token || !replyText) {
         return res.status(400).json({ ok: false, error: "token-and-replyText-required" });
@@ -1298,8 +1299,14 @@ ${absolutePdfUrl ? `<p style=\"text-align:center;margin:24px 0;\"><a href=\"${ab
         return res.json({ ok: true, skipped: "another-recipient-answered-first" });
       }
 
+      // Short-circuit "nothing happened today" replies — mark as replied, no LLM call.
+      if (isNothingHappenedReply(replyText)) {
+        await (db as any).markRecapReplied?.(reqRow.id, replyText, 0).catch(() => {});
+        return res.json({ ok: true, dateISO, parsed: 0, inserted: 0, source: "nothing-happened", note: "day-off-or-rest" });
+      }
+
       // LLM-extract structured entries from the freeform reply text.
-      let parsed: Array<{ subjectSlug: string; topic: string; minutesSpent: number; notes?: string; offPlan?: boolean }> = [];
+      let parsed: Array<{ subjectSlug: string; topic: string; minutesSpent: number; notes: string | null; offPlan: boolean }> = [];
       try {
         const { invokeLLM } = await import("./_core/llm");
         const sys = `You convert a parent's freeform daily-recap email about their homeschooler into structured rows. \nReturn JSON: {"entries":[{subjectSlug, topic, minutesSpent, notes, offPlan}]}.\nsubjectSlug must be one of: math, ela, science, social-studies, life-skills, art, music, pe, social-emotional, other.\nIf the activity is school-adjacent (museum, baking, nature walk, science experiment) but not in a planned subject, mark offPlan=true and pick the closest subjectSlug (often other).`;
@@ -1340,7 +1347,8 @@ ${absolutePdfUrl ? `<p style=\"text-align:center;margin:24px 0;\"><a href=\"${ab
         });
         const raw = resp?.choices?.[0]?.message?.content ?? "{}";
         const obj = typeof raw === "string" ? JSON.parse(raw) : raw;
-        parsed = Array.isArray(obj?.entries) ? obj.entries : [];
+        // Normalize: clamp minutes, alias subjectSlugs, drop empty topics, etc.
+        parsed = normalizeRecapEntries(obj?.entries);
       } catch (llmErr) {
         console.error("[daily-recap-reply] LLM parse failed; storing reply text only", llmErr);
       }
