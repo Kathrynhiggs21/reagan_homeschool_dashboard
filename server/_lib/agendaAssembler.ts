@@ -6,6 +6,7 @@
 import * as db from "../db";
 import { resolveTutorOfDay } from "./tutorOfDay";
 import type { AgendaPdfInput, AgendaPdfBlock } from "./agendaPdf";
+import { hydrateLessonForBlock } from "./hydrateLessonForBlock";
 
 function previousDateStr(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00");
@@ -52,11 +53,22 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
 
   // Hydrate book assignments per block in parallel
   const bookRefsByBlockId = new Map<number, Array<{ bookTitle: string; fromPage: number; toPage: number }>>();
+  // Hydrate lesson content (lesson_plan + worksheets + answer_key + videos)
+  // per block in parallel. The PDF builder renders a per-block lesson page
+  // when this is non-null, so without this hydration the nightly packet has
+  // no worksheets / no answer keys.
+  const lessonByBlockId = new Map<number, NonNullable<AgendaPdfBlock["lesson"]>>();
   await Promise.all(
     blocksRaw.map(async (b) => {
       try {
         const refs = await db.listBookAssignmentsForBlock(b.id);
         if (refs.length > 0) bookRefsByBlockId.set(b.id, refs);
+      } catch {
+        // ignore
+      }
+      try {
+        const lesson = await hydrateLessonForBlock(b.id);
+        if (lesson) lessonByBlockId.set(b.id, lesson);
       } catch {
         // ignore
       }
@@ -73,7 +85,8 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
     description: b.description ?? null,
     curriculumTopicCode: b.curriculumTopicId ? topicCodeById.get(b.curriculumTopicId) ?? null : null,
     bookPageRefs: bookRefsByBlockId.get(b.id) ?? [],
-    printablesAttached: 0, // wired later when printables-per-block exists
+    printablesAttached: lessonByBlockId.get(b.id)?.worksheets?.length ?? 0,
+    lesson: lessonByBlockId.get(b.id) ?? null,
   }));
 
   // Tutor of the day

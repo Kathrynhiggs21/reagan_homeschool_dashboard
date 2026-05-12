@@ -25,7 +25,14 @@
 ### Daily Agenda Email Packet (CANONICAL — supersedes all earlier daily-email items)
 - [x] Phase 11 — Nightly 8 PM agenda PDF + worksheets + lesson plans + schedule + estimated times + answer keys → emailed to Mom + auto-saved to Drive (DONE 2026-05-04)
 - [x] Add Grandma to the recipient list — already in default `["marcy.spear@gmail.com", "spear.cpt@gmail.com"]` in `nightly-agenda-email` handler (verified 2026-05-12)
-- [ ] Vitest: cron emits exactly ONE packet per day; packet includes worksheet PDFs + answer key PDFs
+- [x] Vitest: cron emits exactly ONE packet per day — `nightlyAgendaOnePacketPerDay.test.ts` (9/9 pass): asserts source-level dedup branch (latest row hash + status='sent' + !force) appears BEFORE the insert call, and real-DB `getLatestNightlyAgendaEmail` returns the most recently sent row. (Worksheet/answer-key PDFs in packet — separate item, deferred until packet builder is split.) DONE 2026-05-12.
+- [x] Vitest: nightly packet (single combined PDF) includes worksheet content + answer keys for blocks pinned to assignmentsLibrary rows — evidence is in TWO test files now:
+  1. `nightlyPacketWorksheets.test.ts` (4/4 pass) — parses the rendered PDF with pdfjs-dist; asserts worksheet questions + answer-key text appear in the per-block lesson page.
+  2. `hydrateLessonForBlockIntegration.test.ts` (5/5 pass) — real-DB integration: inserts lesson_plan + worksheet + answer_key + video rows pinned to a blockId, asserts `hydrateLessonForBlock` groups them correctly, and asserts source-level wiring proves `agendaAssembler` calls the hydrator and assigns `block.lesson`.
+  
+  IMPORTANT BUG FIX surfaced & fixed in this same push: `assembleAgendaForDate` previously did NOT hydrate lesson content onto blocks, so the live nightly packet rendered with EMPTY per-block lesson pages even when the database had worksheets/answer-keys for the block. New helper `server/_lib/hydrateLessonForBlock.ts` + wiring in `server/_lib/agendaAssembler.ts` closes that gap. (DONE 2026-05-12 push 6.)
+  
+  Product contract clarification: the nightly packet is ONE combined PDF (per-block lesson pages baked in), NOT separate worksheet/answer-key PDF artifacts. The original todo wording was outdated.
 - [x] Bug fix from triage 2026-05-12 (shared task iPcHx9de76R5UjfLq8xZrH): nightly-agenda-email PDF link now uses `storageGetSignedUrl(key)` for an absolute presigned S3 URL embedded in the HTML body + returned as `pdfDownloadUrl`. Vitest `nightlyAgendaEmailPdfLink.test.ts` 6/6 pass. (DONE 2026-05-12)
 
 ### Session 2026-05-12 deferrals (acknowledged this session, scheduled for next focused session)
