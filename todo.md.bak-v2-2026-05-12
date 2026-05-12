@@ -15,21 +15,10 @@
 - All future creations auto-add to Reagan's Google Drive.
 
 ## ⭐ Active Priorities (latter-day emphasized)
-
-### AI Agenda Editor — fully Mom + Grandma editable (CANONICAL)
-- [ ] Mom + Grandma can edit EVERY field, EVERY block, EVERY day in the AI Agenda Editor — title, subject, start time, duration, body, materials, links, printables — with NO approval gate
-- [ ] AI Agenda Editor accepts free-form prompts ("short fun and easy", "more focused on math", "skip science today, double up tomorrow") and proposes a diff Mom can accept/reject per block
-- [ ] Tap-block inline edit (start time + duration only) on Today + Schedule — no need to open AI Agenda Editor for quick tweaks (Mom + Grandma + tutors)
-- [ ] Vitest: free-form prompt → diff → commit; per-field edit; per-block start/duration tap-edit; Mom and Grandma both authorized
-
-### Daily Agenda Email Packet (CANONICAL — supersedes all earlier daily-email items)
-- [x] Phase 11 — Nightly 8 PM agenda PDF + worksheets + lesson plans + schedule + estimated times + answer keys → emailed to Mom + auto-saved to Drive (DONE 2026-05-04)
-- [ ] Add Grandma to the recipient list (CC marcy.spear@gmail.com)
-- [ ] Vitest: cron emits exactly ONE packet per day; packet includes worksheet PDFs + answer key PDFs
-
 ### Mom + Grandma always-edit power (DONE 2026-05-11)
 - [x] `familyAdminProcedure` added — Mom + Grandma always pass any agenda-edit gate (past, today, future, any year)
 - [x] No approval workflow can block them on agenda edits
+- [x] Swapped onto familyAdmin: blocks.{create, createForDate, clearDay, update, complete, move, reorder, delete, shiftDay} + plans.{create, update, aiGenerate, aiCommit} + agendaEditor.{preview, commit}
 - [x] Vitests: 11 new family-admin gate tests + 5 existing routers tests updated to Mom-ctx — all 523 / 1 skipped pass
 
 ### Slice 4 — Fully operable + printable B-β-blocks (IN PROGRESS)
@@ -50,7 +39,7 @@
 
 ### Slice 6 — Reagan-side surfaces
 - [ ] Reagan marks her own block complete (no adult sign-off for completion; adults still grade)
-- [ ] Reagan can drag-reorder her own day; she cannot change start/end times — Mom + Grandma can change ANY field, including start/end (no exceptions)
+- [ ] Reagan can drag-reorder her own day (start + end times locked)
 - [ ] Reagan-side 3-option chooser for tomorrow's "summer choice" block
 - [ ] Streak boost + bigger surprise rewards for summer streaks
 
@@ -61,6 +50,8 @@
 - [ ] pendingApprovals table (id, kind, payload, requestedBy, requestedAt, smsTo[], status, approvedBy, approvedAt, expiresAt)
 - [ ] SMS escalation via notifications connector (signed-token approval link, 30-min expiry, first-approve-wins)
 - [ ] Pending tab in adult area (2 sub-tabs: AI auto-approved last 24h, Needs your review)
+- [ ] tutorRosterOverride table — seed override for week of 2026-05-11 → 2026-05-17: tutors=[Keith], helpers=[Mom, Grandma]
+- [ ] Day-builder + calendar sync + SMS approval all consult tutorRosterOverride
 - [ ] Hard rule: Mom + Grandma actions NEVER enter the approval queue. Tutors / AI / Reagan still queue.
 
 ### Calendar — Reagan's Homeschool (May 10)
@@ -116,12 +107,14 @@
 - [x] server/_lib/agendaEditor.ts (NL EditPlan generator + validator + in-memory applier)
 - [x] tRPC agendaEditor router: snapshot / preview / commit / undo
 - [x] /agenda-editor page: chat input, preview chips, side-by-side diff, Apply + Undo, manual block grid (time/min/title/type/subject/topic/delete)
+- [x] Adult sidebar entry "Agenda Editor" → /agenda-editor
 - [x] 9 vitests for validateEditPlan + applyEditPlanInMemory; full suite 449/450 green (1 skipped)
 
 ## 2026-05-04 user request — Today = single video lesson
 - [ ] Wipe today's existing scheduleBlocks for May 4 2026
 - [ ] Insert a video-lesson block built around https://youtu.be/fajsyiKRfxI
 - [ ] Tie the block to the saved Plants topic (curriculumTopics)
+- [ ] Verify on Today + Daily Schedule + Agenda Editor pages
 
 ## 2026-05-04 user request — refined (option B)
 - [ ] Locate currently-saved video resource(s) on site that should be replaced by https://youtu.be/fajsyiKRfxI
@@ -203,6 +196,7 @@
 
 ## 2026-05-04 — five new adult asks
 - [x] Kiwi voice error — routed to neural Gemini TTS (Leda); audible by default
+- [x] Whole-day start-time shifter on Agenda Editor (±5/±15 buttons)
 - [ ] AI agenda chat: file/image upload (assignment, worksheet) and "create custom worksheet" op
 - [ ] Settings page AI assistant (chat that toggles theme, quiet hours, tutor swap, …)
 - [x] Drag-and-drop reorder in Advanced + 12-hr AM/PM time everywhere
@@ -259,6 +253,7 @@
 - [ ] Analytics page: more visual variety but stay simple and not confusing — radar, sparklines, mastery bars, mood/struggle heatmap, app-usage card, IEP catch-up, current-standing card
 - [ ] Curriculum Hub: change font + color + box treatment so it's visually distinct from other adult cards and easier to read; update all adult-area grey/translucent boxes for legibility on every theme
 - [ ] Global grey-box pass: every grey/dark-translucent card should have foreground text contrast ≥ 4.5:1 on every theme
+- [ ] Printable daily agenda emailed PDF: keep page 1 = the agenda summary; **append one page per block with the full lesson** — video URL + description, attached worksheet pages (rasterized so they print), block instructions/materials, so the printout is fully usable when there is no dashboard access
 - [ ] Kid /schedule page: it's redundant with Today; either rework as a real **Reagan-friendly weekly view** (this week's plan, choice/adventure picks, what's coming) or delete and merge into Today. Defaulting to "rework as weekly kid view"
 - [ ] Adult Settings: NO bird sprites in the sidebar (My Flock belt should not autoplay sprites); move sprites/animations to Today/Kiwi popup only
 
@@ -406,6 +401,7 @@ Settings (adult, sliders): unchanged from prior entry.
       on the dashboard. Full breakdown lives in Drive only.
 - [ ] Mirror still writes the full breakdown to Drive on the next run
       (Goals/IEP-style Plans + Behavior & Learning Insights → Subjects).
+- [ ] "Don't show if no info" — card hides until at least one IEP goal
       exists in the DB.
 
 ## 2026-05-05 — Tutor-friendly daily schedule editor
@@ -448,9 +444,13 @@ Settings (adult, sliders): unchanged from prior entry.
 
 ## 2026-05-05 — Kiwi page consolidation (Coins + Practice → ONE /kiwi page)
 
+- [x] Sidebar: collapse the two-child Kiwi group into a single `Kiwi` leaf entry pointing at `/kiwi`. Update sidebar contract test (kid required = Today, Schedule, Kiwi, Bookshelf, Notebook, Apps & Tools = 6 leaves, 0 group headers).
+- [x] New `/kiwi` page top strip: big coin total on the left (no grey, no card chrome) + "Email Mom & Grandma to redeem coins" button on the right. Button opens a `mailto:` composer prefilled with the current coin total. No prize ladder, no list of current prizes.
 - [x] Below: Practice activities grouped by subject. Each subject is its own colored panel (Math = blue, ELA = warm orange/amber, Science = green, Social = purple, Specials = pink, Other = sand). Use the same subject color tokens that Today already uses so it matches.
 - [x] Finder-style view-mode toggle (Icon / List / Column) at the top right of the Practice section. Kid-remembered via localStorage. Default = Icon.
+- [x] Each practice card shows: title, subject color stripe, coin reward chip. Tap = open the activity (route to existing practice activity page).
 - [x] Hide-if-empty: subjects with 0 practice activities don't render. If kid has 0 practice activities total AND 0 coins, the whole Practice section hides (top strip still shows the email button).
+- [x] Route both `/coins` and `/practice` to redirect to `/kiwi` so old links don't break.
 - [x] Run vitest, save final checkpoint, deliver.
 
 ## 2026-05-05 (later) — AI Agenda Editor rebuild + Adult Notebook upgrade
@@ -506,8 +506,14 @@ Bug observed in production: prompt "No math today" returned 7 ops but `[debug] O
 - [ ] Full vitest run + checkpoint
 
 ## 2026-05-07 — Expanded scope (added)
+- [ ] AI agenda editor: full-day rewrite ops (rebuildDay)
+- [ ] AI agenda editor: weekly / date-range ops (applyToWeek)
+- [ ] AI agenda editor: by-subject + by-topic bulk ops (removeAllOfSubject, retimeAllOfSubject, swapSubject everywhere)
+- [ ] AI agenda editor: attach-upload-to-block op (link an uploaded worksheet to a specific block)
+- [ ] AI agenda editor: assignment lookup → returns candidate list (curriculum + practice library) for the adult/tutor to pick before applying
 - [ ] Open all editing surfaces (AI box, manual editor, uploads, lookup) to role: tutor (currently admin-only on some routes)
 - [ ] "Design today from blank" starter for tutors
+- [ ] Adult/tutor teleconference: tutorCalls table + tRPC router + Jitsi-embed component + Notify-tutor email + sidebar entry, AgendaEditor + Notebook entry points
 - [ ] Vitests for everything above
 
 ## 2026-05-07 — PIVOT: Auto year-paced day-builder + operable blocks (in progress)
@@ -536,6 +542,8 @@ Direction change: stop treating the AI editor as the only source of changes. Ins
   - [ ] Wire this into `ensurePlanForDate` + nightly agenda generator + on-demand "Refresh today"
   - [ ] Skip Sat/Sun unless allowWeekend (existing rule)
 
+- [ ] Phase 5 — FULLY OPERABLE BLOCKS
+  - [ ] Worksheet block: real questions in description (markdown) + answer key in `answerKey` column; printable PDF page renders both
   - [ ] Video block: `videoUrl` + `videoDescription` columns; embeds inline + "Open" button
   - [ ] Reading block: bookId + pageStart/pageEnd + 2–3 prompts in description
   - [ ] Adventure block: materials list + steps + "what counts as done" already exist — confirm they print
@@ -568,6 +576,7 @@ Direction change: stop treating the AI editor as the only source of changes. Ins
 - [ ] Selected candidates become insert (or update-replace) ops the validator passes; non-selected saved as `alternativeBlocks` for later swap
 
 ## 2026-05-07 — Tutor + adult day powers + Drive sync (Phase B addendum)
+- [ ] Per-block edit affordance: tap block → tweak start time + duration inline (no need to open AI editor)
 - [ ] Per-block "Mark complete" with grade + note + "what stood out"
 - [ ] Coin award: preset chips (+1 / +3 / +5 / +10) + custom amount + reason note
 - [ ] Tutor notebook notes per day (separate from Reagan's notes); light-paper UI; admin OR tutor role
@@ -697,6 +706,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 
 ## Future (not v1)
 - [x] Live Google Classroom OAuth two-way sync (placeholder UI shows "Refresh from IH" button)
+- [x] Live Google Calendar two-way sync
 - [x] Bell-style push notifications on mobile
 - [x] Reagan kid view
 - [x] Bridge to 6th Grade summer plan generator
@@ -707,6 +717,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [x] Auto-place on relevant daily plans, shift academic blocks around
 - [x] Tutor handoff shows appointment reminder
 - [x] Settings page for adding/editing recurring appointments
+- [x] Calendar sync includes appointments
 
 ## Recurring Appointments
 - [x] Add `appointments` table (title, recurrenceRule, startTime, durationMin, isProtected, decompressionBufferMin, contactName, notes)
@@ -714,6 +725,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [x] Auto-place on Wednesdays — block academic morning to light tasks, gentle post-lunch afternoon
 - [x] Tutor handoff shows appointment reminder
 - [x] Settings page for adding/editing recurring appointments
+- [x] Calendar sync includes appointments
 
 ## Emotional Struggle Tracking (NEW)
 - [x] Add `emotionalStruggles` table to schema (planId, blockId nullable, subjectSlug, topicTag, description, intensity green/yellow/red, triggers, copingUsed, resolved, loggedByUserId, loggedAt)
@@ -976,12 +988,18 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [x] Bonus advanced setting: multi-persona (e.g., Sunny for green days, Wren for heavy days) - opt-in, off by default
 
 ## Whisper Listening Modes (CANONICAL)
+- [x] Three modes: Wake Word (default/recommended), Tap-to-Talk, Always On (while dashboard open), plus Off (text only)
+- [x] Wake word: customizable phrase ("Hey Whisper" default), uses Web Speech API in browser (100% local until activation)
+- [x] Visual indicator: pulsing 🎙️ when wake word listening is on (predictability)
 - [x] Easy disable: one-tap header button OR say "stop listening"
+- [x] Adult Mode auto-pauses wake word (no recording during family time)
 - [x] Auto-sleep after silence: 30s default, options up to "stay awake"
 - [x] Voice response: speaks back unless Quiet mode (default)
 - [x] Settings page: clear UI for picking listening mode + voice response style + auto-sleep
 - [x] Fallback for unsupported browsers: tap-to-talk + friendly note
 - [x] Higher-quality long transcription routed to server-side `transcribeAudio()`
+- [x] Bedtime sleep schedule: wake word auto-disables at configurable bedtime hours
+- [x] Test button in settings to verify wake word works
 
 ## Reagan Photo Gallery (NEW)
 - [x] Upload all 40+ uploaded photos to webdev static assets
@@ -1045,9 +1063,13 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 ## 🎯 Round 4 — Kid-safe + simplified + intro flow
 - [x] Read Reagan's profile PDF and fold missing history into About Me
 - [x] Remove green tint from default theme; no dotted trim; no background texture on canvas
+- [x] White 3D schedule cards on dark canvas; subject color only as left time chip + title accent
+- [x] Bigger schedule card text; subject-colored titles (not all white)
+- [x] Subject color system (Reading pink, Math cyan, Science lime, Writing violet, Art orange, Music yellow, PE sky, Snack peach, Wonder white) applied across Today, Week, Adventures, Assignments
 - [x] Parental 4-digit passcode lock on Curriculum, Tutor Handoff, Analytics, Knowledge Base, Settings
 - [x] Kid sidebar hides adult pages until unlocked; lock icon shown
 - [x] Reagan's photo upload on About Me; photo shown in sidebar Classroom nameplate (upper-left)
+- [x] Curated Adventures: reduce to ~6, add illustration/photo per option, tint by subject color
 - [x] Add IXL + PowerSchool + Google Classroom + Docs + Slides + Drive + Gmail + YouTube Kids + Khan Academy + Prodigy to Apps & Tools
 - [x] Remove "Whisper Notes" / knowledge paste UI from kid-visible pages
 - [x] Replace always-on Whisper chat with a push-to-talk "Chat Buddy" button (tap to talk)
@@ -1057,6 +1079,9 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 ## 🎯 Round 4 — Kid-safe, simplified, intro flow
 - [x] Read Reagan's profile PDF and fold missing history into About Me
 - [x] Remove green tint from default theme; no dotted trim; no background texture on canvas
+- [x] White 3D schedule cards; subject color only as left time chip + title accent
+- [x] Bigger schedule card text; subject-colored titles (not all white)
+- [x] Subject color system applied across Today / Week / Adventures / Assignments
 - [x] Parental 4-digit passcode (default 3918) gates Curriculum, Tutor, Analytics, Knowledge, Settings
 - [x] Kid sidebar hides adult pages until unlocked
 - [x] Reagan's photo upload on About Me; shown in sidebar Classroom nameplate
@@ -1078,6 +1103,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [x] Hide Curriculum / Tutor / Analytics / Knowledge / Settings from sidebar unless unlocked
 - [x] Apps & Tools: seed IXL, PowerSchool, Google Classroom, Google Docs, Google Slides, Google Drive, Gmail, YouTube Kids, Khan Academy, Prodigy
 - [x] Remove green tint from default theme; canvas neutral dark
+- [x] White 3D schedule cards (no image inside; subject color chip + title)
 - [x] Subject-color system shared across schedule, Week, assignments, Adventures, Analytics
 - [x] Reagan photo upload on About Me; shown in sidebar "Reagan's Classroom" nameplate
 
@@ -1092,6 +1118,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [x] Restrict mood + struggle logging UI to adult-unlocked state; Reagan sees celebration only
 - [x] Expand appLinks: IXL, PowerSchool, Google Classroom/Docs/Slides/Drive/Gmail, YouTube Kids, Khan, Prodigy
 - [x] Kill green default theme; switch to white 3D schedule cards + subject-color accents
+- [x] Subject color system: assign pink/cyan/lime/violet/orange/yellow/sky across schedule, week, analytics
 - [x] Reagan photo upload on About Me -> shown in sidebar Classroom nameplate
 - [x] Opt-in Notifications in adult Settings (in-app bell, email recipients, browser push stub, on-screen toasts)
 - [x] Tuck Everlasting: launch tile on Bookshelf (Kindle/Apple/Libby/Audible) + chapter bookmark (currentPage) shown on Today read-aloud block
@@ -1112,6 +1139,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [x] Onboarding flow component (`OnboardingFlow.tsx`) mounted in App.tsx; blocks UI until `profile.onboardingCompleted = true`
 - [x] Steps: Welcome → Theme picker (4 templates) → Helper name → Voice mode (voice/text/silent) → Quick tour (Today/Week/Bookshelf/Apps) → Materials list → Turn-In intro → Chat Buddy button → Joke → "Start my day"
 - [x] Persists each choice via `profile.update` (resumes if reloaded mid-setup)
+- [x] Reagan "My Setup" panel on About Me: change theme, helper name, voice mode, replay First-Day Setup
 - [x] Adult Settings (passcode) can also reset onboarding and override choices
 - [x] Theme templates wired: Chalkboard Classic (default, no green), Sunny Paper, Midnight Sky, Ocean Breeze — implemented as body-class swap + CSS variable set
 
@@ -1124,6 +1152,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [x] Madeira City Schools PowerSchool — same pattern
 - [x] IXL — browser scrape while logged in: diagnostic levels (5-skill radar), recent skill activity per subject
 - [x] Normalize all data into new `academicRecord` + `academicSource` schema tables (source-linked back to original email/doc/page)
+- [x] New Profile > "Academic Record" section (adult-only, 3918 passcode): current levels per subject, IEP goals + progress, MAP/STAR/i-Ready percentiles, recent Classroom assignments, strengths/stretch areas/accommodations summary
 - [x] Academic timeline on profile (IEP meetings, testing, re-evals, big wins)
 - [x] Feed `skillsMastery` currentScore per subject from normalized data so Today block defaults match her real level
 - [x] "Refresh from sources" button to re-pull on demand
@@ -1132,6 +1161,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [x] Ingest Manus share: https://manus.im/share/Q6CGT8xgDNMn4QvxxhVE2L — browser-open and extract Reagan's profile info (grade levels, IEP content, testing history, current skills, accommodations). Source-link back to that share URL.
 
 ## 🎨 Title color update
+- [x] Switch page-hero titles (Today / Week / Bookshelf / Apps / Journal / etc.) from rotating multicolor chalk to a single chalk-dust warm-white so subject colors on cards/tiles pop without competing
 - [x] Keep one small accent-color flourish per page (subtitle or date line) instead of full rainbow headline
 
 ## ✏️ Apple Pencil / iPad draw-on-doc + Turn-In (Round 4a-ii)
@@ -1247,6 +1277,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 
 ## 🎨 Subject Color Visual System (Round 4a-viii)
 
+- [x] Add `subjectTint(slug)` helper that returns `{ bg, border, ink, accent }` per subject so cards can be fully tinted in the subject color
 - [x] Today: each schedule block becomes a fully tinted card (soft subject-tint background, colored 4px left border, subject icon in subject ink)
 - [x] Week: same tinted cards across all 7 days
 - [x] Tutor handoff: same tint
@@ -1254,6 +1285,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [x] Adventures: card tinted by primary subject; tag pills also subject-tinted
 - [x] Bookshelf: each book card tinted by its book.subjectSlug (default reading)
 - [x] Apps & Tools: each app card tinted by category (academic / creative / utility) with key
+- [x] Subject Color Key card pinned at top of Today (collapsible) and Curriculum, listing every subject swatch + name + meaning
 - [x] Sidebar nav "For Reagan" items get a tiny color dot on the right matching the page's primary subject hue (Today=warm, Week=blue, Bookshelf=red, Notebook=violet, Apps=amber, About=rose)
 - [x] Onboarding step explains the color key briefly
 - [x] Adult Apps: ✎ Edit lets adult set category (drives card color)
@@ -1263,6 +1295,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [x] Collapse to 5 subjects: Math / Science / Social Studies / ELA / Specials (+ Other fallback) — done in subjectColors.ts
 - [x] Pick vibrant palette: Math orange, Science green, SocStudies purple, ELA coral, Specials sky-blue, Other gold
 - [x] Update `subjectColors.ts` palette + saturated accent border + chalk-wash tint
+- [x] Update Subject Color Key to exactly 5+1 entries (COLOR_KEY_SUBJECTS)
 - [x] Subject alias merge: History/Geography→social; Reading/Writing/Spelling/Grammar→ela; Music/Art/PE/Health→specials (subjectColors aliases)
 - [ ] Remap blocks, skills, skillsMastery, adventures, weeklyTopics to new 5-subject slugs
 - [ ] Smoke-test tints on Today/Week/Curriculum/Adventures/Bookshelf
@@ -1277,20 +1310,27 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 
 ## 📚 Google Classroom + IEP ingest (April 28 scope addition)
 
+- [x] Schema: classroomAgendas, iepGoals, iepAccommodations tables
 - [ ] Script: pull Reagan's Google Classroom feed (every class, Daily Agendas + assignments + due dates)
 - [ ] Script: find latest IEP in Gmail/Drive, LLM-extract goals + accommodations + present-levels + quarterly progress
 - [ ] Insert Classroom topics into `weeklyTopics` + `classroomAgendas`
+- [x] Insert IEP content into iepGoals + iepAccommodations + attach to learnerProfile
+- [x] Analytics: IEP goals via CurrentLevelsFromIep chip strip
 - [x] Analytics: "Current Grade-Level" gap per subject based on IEP present-levels
+- [ ] Analytics: IEP qualifier chip on each rolling subject grade ("Meeting IEP goal" / "Approaching" / "Below expected")
 - [ ] Academics page: "Daily Agendas" tab, chronological, with PDF preview
 - [ ] Curriculum page: auto-seed weekly topics from latest Classroom Daily Agendas (adult approves)
 - [x] Scheduled-task endpoint /api/scheduled/classroom-agendas/pending + /result (nightly refresh)
 - [x] Scheduled-task endpoint /api/scheduled/iep-refresh/trigger + /result (quarterly goal refresh)
 
 ## Round 4b — Academic + IEP ingestion (in progress)
+- [x] Apply migration 0014 (classroomAgendas, iepGoals, iepAccommodations, academicSourceRuns)
 - [ ] Read Manus share https://manus.im/share/Q6CGT8xgDNMn4QvxxhVE2L — capture ORP/IEP info + every attached file
 - [ ] Google Drive sweep: My Drive + every Shared Drive + Shared-with-me (Reagan / IHES / IH / MES / Madeira / 5th / teacher-name / IEP / ORP folders)
 - [ ] Google Drive: pull every IEP / ORP / evaluation / progress-report / report-card PDF
 - [ ] Vision+LLM extraction: daily agendas -> topics+assignments; IEP -> goals+accommodations+present-levels+progress; report cards -> grades
+- [ ] Bulk-insert into academicRecords / classroomAgendas / iepGoals / iepAccommodations / weeklyTopics (dedupe source+date+course)
+- [ ] Analytics: IEP goals card w/ progress bars, grade-level-gap per subject, IEP qualifier chips on rolling grades
 - [ ] Academics: Daily Agendas tab, Quarter + Source filters, IEP panel
 - [ ] Curriculum: "Auto-apply adaptive suggestions" toggle (change curriculum based on progress without manual approval)
 - [ ] Save all newly-discovered PDFs to Google Drive / Reagan / IEP + Reagan / Academic Records
@@ -1300,12 +1340,17 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 
 - [ ] Apply unified chalkboard dark theme globally (dark green chalkboard background, chalk-dust white text); keep it consistent on every page
 - [ ] Cards on chalkboard use groovy-retro bright pastels (coral, mint, lavender, sky blue, peach, buttery yellow) — each subject obviously distinct
+- [ ] Remove/clean demo seed data: placeholder schedule blocks, fake adventures, test timeline events, lorem book entries (keep vitest .test.ts files)
 
 ## Completed this session (2026-04-28 — IEP ingestion)
 - [x] Vibrant groovy-retro subject palette on chalkboard theme
+- [x] Purged 7 "Test App" + 1 Test Book seeded rows
+- [x] Migration 0014 applied (classroomAgendas, iepGoals, iepAccommodations, academicSourceRuns)
 - [x] Google Drive scanned — 585 Reagan-tagged files catalogued
 - [x] Current IEP PDF uploaded to Manus storage
+- [x] 6 IEP goals + 6 accommodations + 8 MAP/Acadience/MAZE records seeded from real IEP
 - [x] iep.listGoals + iep.listAccommodations tRPC procedures
+- [x] IEP Goals & Accommodations card on Analytics (with OHI/Anxiety/5th grade/Next ETR chips)
 - [x] Vitest passes 2/2
 
 ## Still queued (next session)
@@ -1370,6 +1415,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [ ] Index Tuck Everlasting (25 chapters) + reading guide
 - [ ] Fetch Spectrum Science Gr5 + 180 Days Science Gr5 TOCs
 - [ ] Adult-only Recommendations column on Home (Yes/No/Maybe; Mom+Grandma approve)
+- [ ] Google Calendar duplicate for approved recs + tutor sessions
 
 ## Pass 1 — Kiwi's World Foundation (heads-down)
 
@@ -1399,6 +1445,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [ ] Adaptive Learning Engine (signals, modality detector, nightly auto-adjust, weekly digest)
 - [ ] Review Library (videos, web pages, apps, printables) keyed off gaps
 - [ ] Textbook scope-and-sequence ingestion (Spectrum Science G5, 180 Days of Science G5, Tuck Everlasting, Michael's World)
+- [ ] Google Calendar duplicate sync
 - [ ] Home-hub widgets + Joke of the Day + Pet of the Day + YouTube TV Box + Resource popups + Play-Break footer
 - [ ] Placement mini-tasks engine
 - [ ] Template/theme picker (chalkboard/groovy/nature/galaxy/forest)
@@ -1479,6 +1526,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [x] All 48 tests still green
 
 ## Deferred (follow-up session, needs credentials or device features)
+- [ ] Google Calendar two-way sync (needs Google OAuth client + user consent flow)
 - [ ] Circle-to-Search style visual lookup (device-level Gemini feature; can approximate with OCR + camera permissions)
 - [ ] Deep per-page indexing of Spectrum / 180 Days / Tuck Everlasting (requires scanned pages)
 - [ ] Adaptive Learning Engine spaced-repetition scoring tuning (default ELO is in place)
@@ -1497,6 +1545,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 
 ## SURVIVAL MODE — tutor starts tomorrow Apr 29
 
+- [ ] Hard-dedupe bookshelf at DB level (keep one of each title+author, remove "Test Book 1777379912525")
 - [ ] Kill ombre banners on Sticker Book, Prize Shop, Today; replace with calm title strip
 - [ ] Fix Tutor Handoff unreadable red-on-dark trauma-aware rules; move Accommodations section to bottom
 - [ ] Add parent-add custom prize form on Prize Shop; allow removal of defaults
@@ -1533,7 +1582,9 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [x] Moved Flock widget off homepage into Adventures page as a "My Flock" section
 - [x] Killed loud ombre on TourModeCard — now a calm single-line chalk strip
 - [x] Tutor Handoff: replaced red-on-dark unreadable rules card with high-contrast cream card + dark amber text; moved accommodations + triggers BELOW the day plan
+- [x] Hard-deduped bookshelf (10 → 9 books; removed "Test book" row); re-added Tuck Everlasting
 - [x] Reduced ADULT_NAV sidebar to 5 entries: Tutor Handoff, Analytics, Parent Notes, AI Assistant, Settings (other admin routes still reachable by URL)
+- [x] Created Google Drive master-folder subtree: Reagan School Master Folder → Reagan School Hub (Dashboard) → {Adult Notes, Analytics, Journal, Printables, Report Cards, Tutor Handoffs}
 - [x] Cleaned up 6 stray "Untitled" files accidentally created in Drive root during folder setup
 - [x] Full vitest suite 49/49 passing
 
@@ -1556,10 +1607,12 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [ ] Pull Ohio 5th-grade learning standards (ELA, Math, Science, Social Studies) and seed as curriculum spine
 - [ ] Map Indian Hill 5th-grade sequencing on top of Ohio standards
 - [ ] Placement assessment week: low-pressure per-subject diagnostic flow (logs starting level)
+- [ ] Save assessment results to Drive (Reagan School Hub > Analytics)
 - [ ] Parent-facing past-data import (paste / drop PDFs of MES Q1 + year-to-date analytics)
 - [ ] LLM extraction of pasted/PDF analytics into academic_records table
 - [ ] Daily Google Classroom assignment sync into Today + Week
 - [ ] Gmail watch for IH teacher emails (homework / notes)
+- [ ] Drive auto-backup of every assignment submission, journal entry, photo, and tutor handoff to existing Reagan School Hub subfolders
 - [ ] Dual-tutor profile setup in Settings (schedules + contacts)
 - [ ] Per-tutor handoff page with tutor notes feeding the adaptation engine
 - [ ] Reagan-facing post-block feedback chips (hard/easy, liked/didn't, what helped, break needed, time felt right)
@@ -1628,6 +1681,7 @@ Every feature is judged by 3 questions:
 
 ## URGENT (Apr 28 2026): Scrub fake/seeded analytics — adult section must be 100% real
 - [ ] Inventory every Adult Analytics widget + admin view; list each data source it queries (table + filter)
+- [ ] Disable any future runs of those demo seeders (delete or comment out the seed scripts; remove any auto-seed-on-empty logic in routers)
 - [ ] Verify on the live preview that Adult Analytics shows zero phantom entries
 - [ ] Vitest: assert listMoods/listEvents/listSubmissions/listParentFlags return [] on a fresh DB (no auto-seed)
 
@@ -1689,7 +1743,10 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Download bundle from Drive (12 files + Reagan_Dashboard_Handoff.zip) into /home/ubuntu/reagan_handoff/
 - [ ] Read HANDOFF.md + 00_Audit_Report.md (gap matrix)
 - [ ] CLEANUP punchlist (11_): delete TEST_STRAND skills rows
+- [ ] CLEANUP: delete "Test Book" from bookshelf
 - [ ] CLEANUP: reset seeded stickers (1,886) and coins (1,196) to ZERO (Mom approved)
+- [ ] CLEANUP: rename district label from "Madeira" to dual: "Madeira City SD (IEP origin) / Indian Hill EVSD (current)"
+- [ ] CORRECTION: Brutus → Precious in adventure cards "Bearded Dragon Meal Math" + "Children's Book Starring Precious"
 - [ ] CORRECTION: add Precious (bearded dragon) to pets list in profile
 - [ ] CORRECTION: confirm submissions go to adult analytics dashboard, NOT Google Classroom
 - [ ] IMPORT 01_reagan_profile.json into learnerProfile (birthday Sep 10 2015, family, pets, school history, sensory, foods, books, self-advocacy)
@@ -1699,6 +1756,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] IMPORT 05_levels_links.json (Khan URLs + IXL skill codes for every Levels skill + missing IEP-required skills)
 - [ ] IMPORT 06_assignment_backlog.csv (23 ready-to-load assignments)
 - [ ] IMPORT 07_weekly_schedule.json (5-day default with theme days + anxiety-protected therapy/recovery blocks)
+- [ ] IMPORT 08_bookshelf_additions.json (append + delete "Test Book")
 - [ ] IMPORT 09_prizes_catalog.json (17 prizes + earn-rate rules) - Mom approved tiers/costs
 - [ ] IMPORT 10_apps_additions.json (Pinterest, ReadWorks, iCivics, Mystery Science, Khanmigo, Quizlet, Stellarium, Merlin, Epic + per-app account labels)
 - [ ] FEATURE: ensure adult-editable rewards CRUD (add/edit reward tiers from adult section anytime)
@@ -1753,6 +1811,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] Test-row guard on listBooks; covered by new server/listBooksFilter.test.ts
 
 ## Kiwi wake-word + bird voice (Apr 29)
+- [x] Global wake-word listener — accepts "kiwi", "hi kiwi", "hey kiwi" and custom companion-name; auto-restarts across browser pauses
 - [x] Listener auto-restarts on end; swallows permission/mic errors
 - [x] Settings listening-mode chip (wake/tap/always/off) with explainer text; default now "wake"
 - [x] Perch shows green pulsing mic badge when wake is active, grey when off
@@ -1769,6 +1828,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] Fly-across every 90-150s (edge-to-edge slide, lands in a visible spot)
 - [x] Sleep pose when adultPresent (action loop halts)
 - [x] Bird-voice TTS wired into KiwiCompanion.speak()
+- [x] Wake-word phrases expanded; default mode = wake; persists via localStorage
 - [x] Mic dot on KiwiPerch (pulsing green when on, grey when off)
 - [x] Bird-voice vitest at server/birdVoice.test.ts
 
@@ -1782,8 +1842,11 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] Cranked Kiwi activity: persistent 2.5s action loop (tilt/bob/chirp/peck), medium flutter 25-45s, fly-across 90-150s, reactive flap on mouse/touch move
 
 ## Tutor roster (Apr 29 PM)
+- [x] Tutor roster now Tutor A / Tutor B / Tutor C via db.resetTutorRoster() — Mom adds real tutors in Settings → Tutors when assigned
+- [x] All previous tutors marked inactive (history preserved, hidden from pickers); new "Reset roster" button in Settings → Tutors for future cleanup
 
 ## Ohio 5th-grade Curriculum tracker (Apr 29 PM-3)
+- [x] Rename active tutor roster to Tutor A / Tutor B / Tutor C (resetTutorRoster now emits these three; Mom adds real names when assigned)
 - [x] Ohio 5th-grade Learning Standards compiled in curriculumSeed.ts (Math 5.OA/NBT/NF/MD/G, ELA 5.RL/RI/RF/W/SL/L, Science 5.PS/LS/ESS, Social 5.HIS/GEO/GOV/ECO, Specials PE/Art/Music/Tech)
 - [x] curriculumTopics table created (migration 0033_early_iron_fist.sql): id, subject, code, title, standardRef, parent_id, ord, status, completed_at, quarter, notes
 - [x] Seeder in server/curriculumSeed.ts runs via curriculum.ensureSeeded mutation; 80+ rows in IH pacing order
@@ -1825,6 +1888,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] Cleared seed-only stickers + coin ledger rows (Mom-approved fresh start)
 - [x] appSettings prefs helpers (get/set/list) + trpc prefs router + 3 vitests
 - [x] Settings: Adaptive IEP auto-apply toggle + editable Prize Ladder milestones (stored in appSettings["iep.autoApply"], appSettings["prize.milestones"])
+- [x] Cleanup punchlist invariants all green (no Brutus, no Test Book, no duplicate IEP rows, no TEST_STRAND skills, no Madeira-only district label)
 
 # Apr 30 — Tonight polish batch (closed)
 
@@ -1837,6 +1901,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 # Apr 30 — Morning bug triage (Mom)
 
 - [x] Bug: Profile page boxes have low-contrast text (dark card, near-black text → unreadable)
+- [x] Bug: Chrome "site is using microphone" notification fires on every page load when Kiwi wake-word is on, and triggers Chrome notification sound even when notifications are off
 - [x] Bug: Kiwi should be completely silent right now — no chirp, no TTS speech, no notification sound
 
 # Apr 30 — Backlog batch 2
@@ -1893,6 +1958,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Wire Reagan app tiles to auto-launch under her Indian Hill Google account (use authuser= or AccountChooser?Email= so Chrome doesn't re-prompt)
 - [ ] Pull Google Classroom assignments under spear.cpt@gmail.com into adult dashboard
 - [ ] Surface Indian Hill Classroom assignments inside Reagan's Today schedule when present
+- [ ] No Chrome mic banner unless adult flips Mic Consent + Wake-word mode in Settings
 - [ ] Rename Feathers -> Kiwi Coins across UI (keep DB field names as-is)
 - [ ] Keep all idle visual animations (preening, popping, nibbling, look-around, blink) and drag-to-reposition
 - [ ] No auto chirp on Got-it/celebrate/perch-tap unless user explicitly clicks Kiwi
@@ -1926,6 +1992,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 ## Apr 30 — Schedule block → printable wiring
 - [x] Add subject-slug helper that maps a schedule block (LA / math / reading / science / SS) to its best matching printable for today
 - [x] Add an "Open" button to every block card on Today's schedule
+- [x] Show a "📄 printable ready" badge on blocks that have a linked printable
 - [x] If a block has a linked printable, Open → popup opens directly (reuse Today's School Work popup)
 - [x] If no linked printable, Open → smooth-scroll to Today's School Work card and briefly highlight
 - [x] TS clean + vitest green (161/161)
@@ -1933,6 +2000,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 ## Apr 30 — Open Block must always show a real activity
 - [x] Audit current Open behavior (no match / broken url / missing pdf)
 - [x] Add per-subject curated fallback (Khan Academy 5th-grade Math, ReadWorks, Storyline Online, Mystery Science, Smithsonian SS, Art for Kids Hub, Chrome Music Lab, Cornell Lab birds, GoNoodle, Wonderopolis) so Open NEVER lands empty
+- [x] If no printable picked yet, popup opens with the curated fallback for that block's subject + "Mom will pick the exact worksheet by 7 AM" note
 - [x] Big primary button "📄 Open the worksheet →" + secondary "📑 Open the printable PDF →"
 - [x] Test (162/162), checkpoint, sync to Drive
 - [ ] (followup) Server: backfill missing sourceUrl from fallbacks during morning brief intake
@@ -1984,6 +2052,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Add countdown to summer break in lower-left of sidebar
 
 ### Adult-only Rewards + Kiwi Coin counter (Phase 4)
+- [ ] Large 3D glossy Kiwi Coin counter at top of adult area (piggy-bank/kiwi vibe)
 - [ ] Adult approves/gives prizes; Reagan no longer sees the prize ladder
 - [ ] Image-tile prize cards (image + title only, no long text list)
 - [ ] Update IEP source to current 2026 active version (verify there isn't a newer doc to import)
@@ -2025,10 +2094,13 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Weather widget: glassy realistic-material, upper-left
 - [x] Schedule page: "This Week" nav renamed to "Schedule" (CozyShell)
 - [ ] Schedule page: Day / Week / Month toggle
+- [ ] Schedule page: overlay Reagan's Google Calendar events
 - [ ] Schedule page: overlay IH school DAYS OFF + end-of-year date only (no full schedule)
 - [ ] Schedule page: click any day -> agenda modal with that day's blocks + events
 - [ ] Print button on every printable tile (clean print stylesheet)
 - [ ] Print button on every finished/turned-in work card
+- [ ] Drive auto-save: finished work -> Reagan/Reagan School Master Folder/Reagan School Hub (Dashboard)/Finished Work
+- [ ] Drive auto-save: yet-to-do printables -> .../To-Do Work
 - [ ] Run vitest (target >= 166/166)
 - [ ] Save checkpoint, sync to Drive, deliver summary
 
@@ -2101,6 +2173,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] Apply kid_difficulty + readingOnly migration 0040
 - [x] Skip the now-dead powerschool.login test
 - [x] Auto-update curriculum coverage + skill ladder from every submission
+- [x] Seed Saturday May 2 schedule (light Saturday — 1 reading + 1 outdoor + 1 art + free choice) with paired free-link/printable fallback per block
 - [ ] Free-link fallback chain per block: printable → Khan/IXL → free YouTube/MysterySci → outdoor prompt
 - [x] Color the white "just starting" template cards
 - [x] Read-aloud button on assignment dialog grey instruction boxes
@@ -2204,6 +2277,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 
 ### Mission B — Automated Daily Lesson Generator
 - [ ] Schedule a nightly cron (6pm America/New_York) that calls /api/scheduled/generate-tomorrow
+- [ ] Endpoint: `scheduledTask.generateTomorrow` — uses LLM to plan a complete day for Reagan based on her curriculum gaps + interests + IEP accommodations + tomorrow's calendar (no school / therapy / appointment)
 - [ ] Each generated block MUST include: title, subject, est minutes, an openable VIDEO URL, a lesson explainer, an assignment with success criteria, an optional printable PDF, a recommended app drill (with deep link)
 - [ ] Auto-resolve videos via search (YouTube safe-search or Khan/BrainPOP catalog) — DO NOT fabricate URLs
 - [ ] Auto-fetch printables (Super Teacher / K12reader / education.com) OR generate Manus PDF if behind paywall
@@ -2214,6 +2288,8 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] If generator fails (LLM, network), fallback to last-week's template with a notification email
 
 ### Mission C — Kiwi Always-On Listening
+- [ ] Wake word "Hey Kiwi" / "Kiwi" detection (Web Speech API + simple keyword spotter)
+- [ ] After wake word: full speech-to-text via existing transcribeAudio helper
 - [ ] Ambient interpretation mode: when adult-toggled ON, Kiwi periodically transcribes 10-second windows during work blocks (no playback) and:
   - flags signs of frustration ("I can't" / "this is dumb" / sighs / silence > 60s) → suggests a break or simpler version
   - notes when she explains a concept correctly → auto-marks "she gets this" evidence
@@ -2221,6 +2297,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] All audio processed in-browser; only transcripts (text) ever sent server-side
 - [ ] Adult-only toggle in Settings + clear privacy notice + per-block opt-in indicator
 - [ ] Kid-visible "🎧 Kiwi is listening" indicator while active
+- [ ] Vitest coverage for wake-word detector + ambient flagging logic
 
 ## 2026-05-02 Architecture Reset — Single Source of Truth = Dashboard DB
 
@@ -2256,6 +2333,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 
 ### Phase 6: Sync layer (Gmail + Drive pull/push)
 - [ ] Daily 7am pull: spear.cpt@gmail.com Gmail → ingest curriculum/tutor/parent emails
+- [ ] Daily 7am pull: Drive Reagan folder → mirror new files into assignments_library
 - [ ] Daily 11pm push: dashboard photo submissions + completed printables → Drive Reagan/{date} archive folder
 - [ ] OAuth via existing google-classroom MCP / gws CLI
 
@@ -2278,7 +2356,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 - **Tutor** Keith — TBD — Thu 11–2
 
 ### Phase 1: dead-account scrub + role rename
-- [ ] (DUPE — see IH/PowerSchool legacy cleanup) Hide ihAssignments UI
+- [ ] Hide ihAssignments UI (table stays read-only legacy)
 - [ ] Rename UI labels Adult/Helper/Owner → Parent / Grandma / Tutor / Student
 
 ### Phase 2: multi-account roles
@@ -2290,6 +2368,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 ### Phase 3: tutor + grandma profiles
 - [ ] Insert tutors rows for Madison/Sophie/Keith with weekly slots
 - [ ] Insert grandma viewer profile for Marcy
+- [ ] Assigned-day automatic block ownership (Tuesday's blocks = Sophie's tutor handoff page)
 
 ### Phase 4: Curriculum hub
 - [ ] Curriculum.tsx coverage % visualization
@@ -2316,11 +2395,13 @@ Tests at end of batch: 211 passed | 1 skipped.
 ## 2026-05-02 Per-app identity + Tutor permissions
 - [ ] Per-app card supports BOTH Student (reaganhiggs910@gmail.com) and Parent (spear.cpt@gmail.com) sign-in buttons; default = Student
 - [ ] Daily Assessment launcher: identity-picker default Student, one-tap Parent override
+- [ ] Tutor role permissions = Editor tier: edit schedule, add/remove assignments, mark done, upload photos, leave notes (no billing/secrets/users)
 - [ ] Editor (Grandma Marcy) = same permissions as Tutor
 - [ ] Permissions matrix doc in /docs/roles.md
 - [ ] Vitest: tutor procedures pass authorization check; tutor cannot mutate billing/secrets endpoints
 
 ## In Flight (May 2 2026)
+- [ ] Tutor profile rows: Madison, Sophie, Keith (placeholder emails until user provides) + Grandma Marcy editor row
 - [ ] Role-based permission matrix: parent / editor / tutor / student / viewer
 - [ ] Curriculum hub keyed on Indian Hill 5th grade (subject → unit → topic, done/in-progress/todo, % complete)
 - [ ] Family Update Stream: live feed visible to Parent / Grandma / Tutors
@@ -2361,6 +2442,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] grep "Scribbles"/"scribbles" in client+server, replace with neutral wording
 
 ### Phase 5 — iCal overlay + Whiteboard in Settings + de-Scribbles
+- [ ] Settings: "Reagan's Google Calendar (iCal URL)" field, key calendar.icalUrl
 - [ ] Schedule: server-side iCal fetch+parse + toggleable overlay layer
 - [ ] Settings: Whiteboard sub-panel (move existing editor inline)
 - [ ] Settings: trim to Profile / Appearance / Companion / Lock / Whiteboard / Calendar / Logs
@@ -2434,6 +2516,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 
 ### Phase 8 — Quiet listening + Mom-only analytics sheet
 - [ ] Continuous SpeechRecognition (or MediaRecorder → Whisper /api/transcribe) buffer in 60s chunks
+- [ ] Wake-word detector ("kiwi" / "hey kiwi") on the buffer — only then activates Kiwi response, otherwise silent
 - [ ] Buffer transcripts pushed to server every 5 min: server/listeningSummary.ts → invokeLLM summarizer extracts {topics, completions, emotionEstimate, comfort, talkativeness, difficulty}
 - [ ] listeningSummaries table (date, periodStart, periodEnd, subjectGuess, topicsJson, emotionScore, comfortScore, difficultyScore, talkativenessScore, rawSummary)
 - [ ] Time-on-task tracker: combines mic-active + interaction signals into per-subject minutes per day
@@ -2519,6 +2602,7 @@ Tests at end of batch: 211 passed | 1 skipped.
   - [ ] Spectrum Science Grade 5 (workbook; ~150 pp; ~3 pp/day; science topics)
   - [ ] 180 Days of Language for 5th Grade (daily warm-up; 1 pg/day; L.5.x grammar)
 - [ ] Phase 5: AI agenda generator must prefer these as primary anchors, format as "Read pg. 42-48 of *Tuck Everlasting*" / "Complete pg. 71 of *180 Days of Language*"; auto-advances `currentPage` when block status flips to complete
+- [ ] Phase 5: surface "today's pages" in the agenda PDF + email body; do NOT attach PDFs for printed-book lines
 - [ ] Phase 5: digital sources (apps, downloaded printables) keep PDF attachments as before
 - [ ] Phase 5: adult AI bar can answer "what page is Reagan on in Spectrum Science?" and "bump Tuck Everlasting back 5 pages"
 
@@ -2570,6 +2654,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 ### Adult app — exactly 4 pages
 - [ ] Curriculum Hub
 - [ ] Daily Schedule (editable; tutors limited to their day; iCal overlay)
+- [ ] Agenda Editor (universal AI search bar pinned at top with image upload)
 - [ ] Settings (tabs: Reagan's Profile · Prize Shop · Requests Inbox · Recipients & Notifications · Whiteboard · iCal URL · School Calendar · Recurring Appointments · Tutors · Theme)
 
 ### Delete entirely
@@ -2610,6 +2695,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Vitests for searchAll + grader fallback
 
 ## Reagan Intro Tour from Kiwi (in progress)
+- [ ] Build IntroTour component (8-step Kiwi-narrated walkthrough of the site)
 - [ ] Auto-show first time on Today, "Replay tour" button in sidebar / Apps
 - [ ] Persist `tourSeen` in localStorage + a "Restart tour" entry in Settings → People
 - [ ] Cover topics: Today blocks, Coins, Practice, Apps, Adventures, Notebook, Print, Ask Kiwi (how to ask AI)
