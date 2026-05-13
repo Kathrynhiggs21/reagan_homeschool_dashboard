@@ -7294,3 +7294,393 @@ export async function buildMoodTimelineForDate(
     totals: { chunks: rows.length, relevantChunks: relevant.length },
   };
 }
+
+
+/* -------------------------------------------------------------------------- *
+ * Push 45 (2026-05-13) — Catch-up engine                                       *
+ *                                                                             *
+ * Spec: "Per-subject mastery % + traffic light + next-3 topics".               *
+ *                                                                             *
+ * Design notes:                                                                *
+ *   - "Mastery %" is the same metric Reagan + Mom already see on the           *
+ *     Curriculum hub: done / total curriculum topics in that subject. It is    *
+ *     the most legible single number and lines up with the topic list adults   *
+ *     already act on. Coverage-for-date / actuals do not roll into mastery     *
+ *     because they describe *today*, not lifetime progress.                    *
+ *   - Traffic light thresholds are explicit (not magic numbers): green ≥ 67%,  *
+ *     yellow 34–66%, red ≤ 33%. They mirror Reagan-on-track expectations for   *
+ *     Q4 / EOY grade level.                                                    *
+ *   - "Next 3" pulls the lowest-ord open topics for each subject. We bias      *
+ *     toward `inProgress` first so a half-started topic finishes before a      *
+ *     brand-new one — that's how a real catch-up plan should work.             *
+ *   - Subject slug mapping reuses the same conventions the rest of db.ts uses  *
+ *     (math/ela/science/social-studies). Anything else is preserved as-is so   *
+ *     the engine never silently drops curriculum subjects we added later.     *
+ * -------------------------------------------------------------------------- */
+
+export type CatchUpTrafficLight = "green" | "yellow" | "red";
+
+export interface CatchUpNextTopic {
+  id: number;
+  code: string;
+  title: string;
+  status: "notStarted" | "inProgress";
+  khanUrl: string | null;
+  ixlUrl: string | null;
+}
+
+export interface CatchUpSubject {
+  subjectName: string;
+  subjectSlug: string;
+  done: number;
+  total: number;
+  masteryPct: number;
+  trafficLight: CatchUpTrafficLight;
+  nextThree: CatchUpNextTopic[];
+}
+
+/**
+ * Translate the lifetime done/total ratio into a clear traffic-light bucket.
+ * Edge case: if total is 0 (a subject with no curriculum rows yet) we return
+ * "yellow" so the UI doesn't false-alarm in red. Mom can still see the 0/0
+ * and ignore.
+ */
+export function catchUpTrafficLightForPct(masteryPct: number, total: number): CatchUpTrafficLight {
+  if (total === 0) return "yellow";
+  if (masteryPct >= 67) return "green";
+  if (masteryPct >= 34) return "yellow";
+  return "red";
+}
+
+/** Map the legacy curriculumTopics.subject TitleCase strings to our slug. */
+function catchUpSubjectSlugFor(subject: string): string {
+  const s = subject.trim().toLowerCase();
+  if (s === "math") return "math";
+  if (s === "english language arts" || s === "ela") return "ela";
+  if (s === "science") return "science";
+  if (s === "social studies" || s === "social-studies") return "social-studies";
+  if (s === "life skills" || s === "life-skills") return "life-skills";
+  return s.replace(/\s+/g, "-");
+}
+
+export async function getCatchUpRollup(): Promise<CatchUpSubject[]> {
+  const db = getDb();
+  // (a) lifetime totals per subject — same numerator/denominator as the hub.
+  const totals: any = (await db.execute(sql`
+    SELECT subject,
+           SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) AS done,
+           COUNT(*) AS total
+      FROM curriculumTopics
+     GROUP BY subject
+     ORDER BY subject ASC
+  `))[0];
+  const out: CatchUpSubject[] = [];
+  for (const t of totals as any[]) {
+    const subjectName = String(t.subject);
+    const done = Number(t.done ?? 0);
+    const total = Number(t.total ?? 0);
+    const masteryPct = total > 0 ? Math.round((done / total) * 100) : 0;
+    const trafficLight = catchUpTrafficLightForPct(masteryPct, total);
+
+    // (b) next 3 open topics — inProgress first, then notStarted, ord ASC.
+    const next: any = (await db.execute(sql`
+      SELECT id, code, title, status,
+             khan_url AS khanUrl, ixl_url AS ixlUrl
+        FROM curriculumTopics
+       WHERE subject = ${subjectName}
+         AND status <> 'done'
+       ORDER BY CASE WHEN status = 'inProgress' THEN 0 ELSE 1 END ASC,
+                ord ASC
+       LIMIT 3
+    `))[0];
+    const nextThree: CatchUpNextTopic[] = (next as any[]).map((r) => ({
+      id: Number(r.id),
+      code: String(r.code),
+      title: String(r.title),
+      status: (r.status === "inProgress" ? "inProgress" : "notStarted") as
+        | "notStarted"
+        | "inProgress",
+      khanUrl: r.khanUrl ? String(r.khanUrl) : null,
+      ixlUrl: r.ixlUrl ? String(r.ixlUrl) : null,
+    }));
+
+    out.push({
+      subjectName,
+      subjectSlug: catchUpSubjectSlugFor(subjectName),
+      done,
+      total,
+      masteryPct,
+      trafficLight,
+      nextThree,
+    });
+  }
+  return out;
+}
+
+
+/* -------------------------------------------------------------------------- *
+ * Push 46 (2026-05-13) — Settings → Daily Recap panel                          *
+ *                                                                             *
+ * "Daily Recap" is the OUTBOUND end-of-day digest that goes to Mom +           *
+ * Grandma + any opted-in tutors after Reagan's school day. Distinct from       *
+ * the existing daily-recap-send endpoint, which is the INBOUND ask-for-a-      *
+ * recap workflow when no actual entries exist.                                 *
+ *                                                                             *
+ * Persisted prefs (in appSettings, single source of truth):                    *
+ *   - recap.enabled           "1" | "0"   default off                          *
+ *   - recap.sendTimeET        "HH:MM" 24h  default "18:00"                     *
+ *   - recap.includeKiwi       "1" | "0"   default "1"                          *
+ *   - recap.includeMood       "1" | "0"   default "1"                          *
+ *   - recap.recipients        JSON: email[]; falls back to listRecipients()    *
+ *                                                                             *
+ * The actual send is wired by a future Heartbeat cron; this push owns the      *
+ * data model + the live HTML preview Mom can see right inside Settings so      *
+ * she can decide whether to turn it on. Pure functions are exported so the     *
+ * preview composes deterministically against `loadDayLogPayload` output.       *
+ * -------------------------------------------------------------------------- */
+
+export interface DailyRecapPrefs {
+  enabled: boolean;
+  sendTimeET: string;     // "HH:MM" 24-hour, ET
+  includeKiwi: boolean;   // include "Kiwi heard" listening focus block
+  includeMood: boolean;   // include mood-timeline bar
+  recipients: string[];   // explicit override; empty array means "use listRecipients()"
+}
+
+const RECAP_PREF_KEYS = {
+  enabled: "recap.enabled",
+  sendTimeET: "recap.sendTimeET",
+  includeKiwi: "recap.includeKiwi",
+  includeMood: "recap.includeMood",
+  recipients: "recap.recipients",
+} as const;
+
+/** Read all recap prefs in one shot. Falls back to safe defaults. */
+export async function getDailyRecapPrefs(): Promise<DailyRecapPrefs> {
+  const [enabled, sendTimeET, includeKiwi, includeMood, recipientsRaw] = await Promise.all([
+    getAppSetting(RECAP_PREF_KEYS.enabled),
+    getAppSetting(RECAP_PREF_KEYS.sendTimeET),
+    getAppSetting(RECAP_PREF_KEYS.includeKiwi),
+    getAppSetting(RECAP_PREF_KEYS.includeMood),
+    getAppSetting(RECAP_PREF_KEYS.recipients),
+  ]);
+  let recipients: string[] = [];
+  if (recipientsRaw) {
+    try {
+      const parsed = JSON.parse(recipientsRaw);
+      if (Array.isArray(parsed)) recipients = parsed.filter((s) => typeof s === "string");
+    } catch {
+      // tolerate bad JSON — treat as no override
+    }
+  }
+  return {
+    enabled: enabled === "1",
+    sendTimeET: /^\d{2}:\d{2}$/.test(sendTimeET || "") ? (sendTimeET as string) : "18:00",
+    includeKiwi: includeKiwi !== "0",
+    includeMood: includeMood !== "0",
+    recipients,
+  };
+}
+
+/** Persist a partial patch — only writes the keys actually present. */
+export async function setDailyRecapPrefs(patch: Partial<DailyRecapPrefs>): Promise<DailyRecapPrefs> {
+  if (patch.enabled !== undefined) {
+    await setAppSetting(RECAP_PREF_KEYS.enabled, patch.enabled ? "1" : "0");
+  }
+  if (patch.sendTimeET !== undefined) {
+    if (!/^\d{2}:\d{2}$/.test(patch.sendTimeET)) {
+      throw new Error("sendTimeET must be HH:MM (24h)");
+    }
+    await setAppSetting(RECAP_PREF_KEYS.sendTimeET, patch.sendTimeET);
+  }
+  if (patch.includeKiwi !== undefined) {
+    await setAppSetting(RECAP_PREF_KEYS.includeKiwi, patch.includeKiwi ? "1" : "0");
+  }
+  if (patch.includeMood !== undefined) {
+    await setAppSetting(RECAP_PREF_KEYS.includeMood, patch.includeMood ? "1" : "0");
+  }
+  if (patch.recipients !== undefined) {
+    await setAppSetting(RECAP_PREF_KEYS.recipients, JSON.stringify(patch.recipients));
+  }
+  return getDailyRecapPrefs();
+}
+
+/**
+ * Pure: compose the recap email HTML for a given DayLog-style payload.
+ * Importing the DayLogPayload type directly would cause a circular import,
+ * so we accept a structurally-typed minimal shape. Kept side-effect-free so
+ * unit tests can run without a DB.
+ */
+export interface DailyRecapPreviewInput {
+  dateISO: string;
+  studentName: string;
+  plannedTotal: number;
+  plannedComplete: number;
+  totalActualMinutes: number;
+  actualEntries: Array<{
+    subjectSlug: string;
+    topic: string;
+    minutesSpent: number;
+    source?: string | null;
+    notes?: string | null;
+  }>;
+  offPlanTopics: Array<{ subjectSlug: string; topic: string }>;
+  /** Optional Kiwi-listening focus rollup so prefs.includeKiwi can drive layout. */
+  kiwiFocus?: Array<{ subjectSlug: string; minutes: number }>;
+  /** Optional 24-bucket mood histogram (0..1) so prefs.includeMood can render. */
+  moodHistogram?: number[];
+  prefs: Pick<DailyRecapPrefs, "includeKiwi" | "includeMood">;
+}
+
+export function formatDailyRecapHtml(input: DailyRecapPreviewInput): string {
+  const lines: string[] = [];
+  lines.push(`<!doctype html><html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#222;max-width:680px;margin:0 auto;padding:20px;">`);
+  lines.push(
+    `<div style="text-align:center;margin-bottom:8px;">` +
+      `<div style="font-size:22px;font-weight:800;color:#1f3a2e;">${escapeHtml(input.studentName)}'s Day Recap</div>` +
+      `<div style="color:#666;font-size:14px;">${escapeHtml(input.dateISO)}</div>` +
+    `</div>`,
+  );
+
+  // Headline numbers — what an adult should glance at first.
+  const completionPct = input.plannedTotal > 0
+    ? Math.round((input.plannedComplete / input.plannedTotal) * 100)
+    : 0;
+  lines.push(
+    `<div style="display:flex;flex-wrap:wrap;gap:12px;margin:18px 0;padding:14px 16px;background:#fafafa;border-left:4px solid #1f3a2e;border-radius:8px;">` +
+      `<div><b>${input.plannedComplete}/${input.plannedTotal}</b> blocks completed <span style="color:#888;">(${completionPct}%)</span></div>` +
+      `<div><b>${input.totalActualMinutes} min</b> of learning logged</div>` +
+      `<div><b>${input.actualEntries.length}</b> entries</div>` +
+    `</div>`,
+  );
+
+  // What we actually did.
+  lines.push(`<h3 style="margin:18px 0 6px 0;color:#1f3a2e;">What we actually did</h3>`);
+  if (input.actualEntries.length === 0) {
+    lines.push(`<p style="color:#888;">No entries logged today.</p>`);
+  } else {
+    lines.push(`<ul style="padding-left:20px;margin:6px 0;">`);
+    for (const e of input.actualEntries) {
+      const src = e.source ? ` <span style="color:#888;">(${escapeHtml(e.source)})</span>` : "";
+      const note = e.notes ? ` — ${escapeHtml(e.notes)}` : "";
+      lines.push(
+        `<li><b>${escapeHtml(e.subjectSlug)}</b> · ${escapeHtml(e.topic)} · ${e.minutesSpent} min${src}${note}</li>`,
+      );
+    }
+    lines.push(`</ul>`);
+  }
+
+  if (input.offPlanTopics.length > 0) {
+    lines.push(`<h3 style="margin:18px 0 6px 0;color:#1f3a2e;">Off-plan topics covered</h3>`);
+    lines.push(`<ul style="padding-left:20px;margin:6px 0;">`);
+    for (const o of input.offPlanTopics) {
+      lines.push(`<li><b>${escapeHtml(o.subjectSlug)}</b> · ${escapeHtml(o.topic)}</li>`);
+    }
+    lines.push(`</ul>`);
+  }
+
+  if (input.prefs.includeKiwi && input.kiwiFocus && input.kiwiFocus.length > 0) {
+    lines.push(`<h3 style="margin:18px 0 6px 0;color:#1f3a2e;">Kiwi listening focus</h3>`);
+    lines.push(`<ul style="padding-left:20px;margin:6px 0;">`);
+    for (const k of input.kiwiFocus) {
+      lines.push(`<li><b>${escapeHtml(k.subjectSlug)}</b> · ${k.minutes} min</li>`);
+    }
+    lines.push(`</ul>`);
+  }
+
+  if (input.prefs.includeMood && input.moodHistogram && input.moodHistogram.length > 0) {
+    const max = Math.max(...input.moodHistogram, 0.0001);
+    const bars = input.moodHistogram
+      .map((v) => {
+        const h = Math.max(2, Math.round((v / max) * 36));
+        return `<span style="display:inline-block;width:8px;height:${h}px;background:#1f3a2e;margin-right:1px;vertical-align:bottom;"></span>`;
+      })
+      .join("");
+    lines.push(`<h3 style="margin:18px 0 6px 0;color:#1f3a2e;">Mood through the day</h3>`);
+    lines.push(`<div style="padding:8px;background:#fafafa;border-radius:6px;height:48px;">${bars}</div>`);
+  }
+
+  lines.push(`<p style="font-size:12px;color:#888;text-align:center;margin-top:24px;">Auto-sent from Reagan's Homeschool Dashboard.</p>`);
+  lines.push(`</body></html>`);
+  return lines.join("\n");
+}
+
+/** Tiny HTML escape — recap content only ever holds short topic strings. */
+function escapeHtml(s: string): string {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/**
+ * Live preview composer — pulls today's DayLogPayload and renders the recap
+ * HTML using the saved prefs. Used by Settings → Daily Recap "Sample preview".
+ */
+export async function previewDailyRecap(dateISO?: string): Promise<{
+  dateISO: string;
+  html: string;
+  prefs: DailyRecapPrefs;
+  effectiveRecipients: string[];
+}> {
+  const date = dateISO ?? new Date().toISOString().slice(0, 10);
+  const prefs = await getDailyRecapPrefs();
+  // Dynamic import to avoid the circular-type dance with dayLogBuilder.
+  const { loadDayLogPayload } = await import("./_lib/dayLogBuilder");
+  const payload = await loadDayLogPayload(date);
+  const kiwiFocus = await (async () => {
+    if (!prefs.includeKiwi) return undefined;
+    try {
+      const summaries = await listListeningSummariesForDate(date);
+      const byTopic: Record<string, number> = {};
+      for (const s of summaries as any[]) {
+        const k = String(s.subjectGuess ?? s.subject ?? "other");
+        byTopic[k] = (byTopic[k] ?? 0) + Number(s.minutes ?? 0);
+      }
+      return Object.entries(byTopic)
+        .map(([subjectSlug, minutes]) => ({ subjectSlug, minutes }))
+        .sort((a, b) => b.minutes - a.minutes)
+        .slice(0, 5);
+    } catch {
+      return undefined;
+    }
+  })();
+  const moodHistogram = await (async () => {
+    if (!prefs.includeMood) return undefined;
+    try {
+      const tl = await buildMoodTimelineForDate(date);
+      // Use raw chunk count per bin so the preview sparkline reflects activity intensity even when emotion scores are missing.
+      return tl?.bins?.map((b: any) => Number(b.count ?? 0)) ?? undefined;
+    } catch {
+      return undefined;
+    }
+  })();
+  const effectiveRecipients = prefs.recipients.length > 0
+    ? prefs.recipients
+    : (await listRecipients() as any[])
+        .map((r) => String(r.email ?? "").trim())
+        .filter((s) => /.+@.+\..+/.test(s));
+  const html = formatDailyRecapHtml({
+    dateISO: date,
+    studentName: "Reagan",
+    plannedTotal: (payload as any).plannedTotal ?? 0,
+    plannedComplete: (payload as any).plannedComplete ?? 0,
+    totalActualMinutes: (payload as any).totalActualMinutes ?? 0,
+    actualEntries: ((payload as any).actualEntries ?? []).map((a: any) => ({
+      subjectSlug: a.subjectSlug,
+      topic: a.topic,
+      minutesSpent: a.minutesSpent,
+      source: a.source ?? null,
+      notes: a.notes ?? null,
+    })),
+    offPlanTopics: ((payload as any).offPlanTopics ?? []).map((o: any) => ({
+      subjectSlug: o.subjectSlug,
+      topic: o.topic,
+    })),
+    kiwiFocus,
+    moodHistogram,
+    prefs,
+  });
+  return { dateISO: date, html, prefs, effectiveRecipients };
+}

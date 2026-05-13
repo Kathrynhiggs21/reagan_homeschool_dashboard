@@ -101,6 +101,9 @@ export default function Curriculum() {
         </Card>
       )}
 
+      {/* Push 45 (2026-05-13) — Catch-up engine rollup. */}
+      <CatchUpRollupStrip />
+
       {/* AI agenda sync strip — pinned at top so adults can refresh the next 5 school days from one place */}
       <Card className="cozy-card p-4 border-2 border-amber-300/40 bg-amber-50/50 dark:bg-amber-950/20">
         <div className="flex items-start justify-between gap-3">
@@ -237,5 +240,111 @@ export default function Curriculum() {
         </div>
       </section>
     </div>
+  );
+}
+
+
+/**
+ * Push 45 (2026-05-13) — Catch-up engine rollup.
+ *
+ * Reads `trpc.curriculum.catchUp` once and renders a single horizontal
+ * row of subject pills. Each pill carries:
+ *   - subject name + mastery % (done/total),
+ *   - a colored traffic-light dot (green/yellow/red bucket),
+ *   - the next 3 open topics as inline chips Mom can click to deep-link
+ *     into the topic-list scroll position via #topic-${id} anchors.
+ *
+ * Hidden entirely when the query is empty so the page doesn't show a
+ * placebo card before curriculum has been seeded.
+ */
+function CatchUpRollupStrip() {
+  const q = (trpc as any).curriculum?.catchUp?.useQuery?.(undefined, { staleTime: 60_000 });
+  const data = (q?.data as Array<any> | undefined) ?? [];
+  if (!data.length) return null;
+
+  const lightStyles: Record<string, { dot: string; pill: string; label: string }> = {
+    green: {
+      dot: "bg-emerald-500",
+      pill: "border-emerald-300 bg-emerald-50/70 dark:bg-emerald-950/30 dark:border-emerald-700",
+      label: "text-emerald-800 dark:text-emerald-200",
+    },
+    yellow: {
+      dot: "bg-amber-500",
+      pill: "border-amber-300 bg-amber-50/70 dark:bg-amber-950/30 dark:border-amber-700",
+      label: "text-amber-800 dark:text-amber-200",
+    },
+    red: {
+      dot: "bg-rose-500",
+      pill: "border-rose-300 bg-rose-50/70 dark:bg-rose-950/30 dark:border-rose-700",
+      label: "text-rose-800 dark:text-rose-200",
+    },
+  };
+
+  return (
+    <Card className="cozy-card p-4" data-testid="catch-up-rollup-strip">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div>
+          <h2 className="font-display font-semibold text-base">Catch-up snapshot</h2>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Per-subject mastery % + next three open topics. Tap a chip to jump to that topic below.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> ≥ 67%</span>
+          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500" /> 34–66%</span>
+          <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500" /> ≤ 33%</span>
+        </div>
+      </div>
+      <div className="grid gap-2 md:grid-cols-2">
+        {data.map((s: any) => {
+          const style = lightStyles[s.trafficLight] ?? lightStyles.yellow;
+          return (
+            <div
+              key={s.subjectSlug}
+              className={"flex flex-col gap-1.5 rounded-lg border p-2.5 " + style.pill}
+              data-subject={s.subjectSlug}
+              data-traffic-light={s.trafficLight}
+              data-testid={`catch-up-pill-${s.subjectSlug}`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className={"w-2.5 h-2.5 rounded-full " + style.dot} aria-hidden />
+                  <span className={"font-medium truncate " + style.label}>{s.subjectName}</span>
+                </div>
+                <div className="text-[11px] tabular-nums text-muted-foreground">
+                  <span className="font-semibold">{s.masteryPct}%</span>
+                  <span className="opacity-70"> · {s.done}/{s.total}</span>
+                </div>
+              </div>
+              {s.nextThree.length === 0 ? (
+                <p className="text-[11px] italic text-muted-foreground">All topics done. 🎉</p>
+              ) : (
+                <div className="flex flex-wrap gap-1">
+                  {s.nextThree.map((t: any) => (
+                    <a
+                      key={t.id}
+                      href={`#topic-${t.id}`}
+                      title={t.title}
+                      className={
+                        "inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded border " +
+                        (t.status === "inProgress"
+                          ? "border-sky-300 bg-sky-50 text-sky-900 dark:bg-sky-950/40 dark:text-sky-200"
+                          : "border-border bg-card/60 hover:bg-card")
+                      }
+                    >
+                      <span className="font-mono text-[10px] opacity-70">{t.code}</span>
+                      <span className="truncate max-w-[12rem]">{t.title}</span>
+                      {t.status === "inProgress" && (
+                        <span aria-hidden className="text-sky-500">·</span>
+                      )}
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </Card>
   );
 }

@@ -41,12 +41,13 @@ export default function Settings() {
       <SettingsAIHelperCard />
 
       <Tabs defaultValue="people" className="w-full">
-        <TabsList className="grid grid-cols-7 w-full">
+        <TabsList className="grid grid-cols-8 w-full">
           <TabsTrigger value="people">People</TabsTrigger>
           <TabsTrigger value="prizes">Prizes</TabsTrigger>
           <TabsTrigger value="requests">Requests</TabsTrigger>
           <TabsTrigger value="calendar">Calendar</TabsTrigger>
           <TabsTrigger value="notifications">Email</TabsTrigger>
+          <TabsTrigger value="recap">Recap</TabsTrigger>
           <TabsTrigger value="iep">IEP Ref</TabsTrigger>
           <TabsTrigger value="kiwi">Kiwi &amp; UI</TabsTrigger>
         </TabsList>
@@ -76,6 +77,10 @@ export default function Settings() {
 
         <TabsContent value="notifications">
           <NotificationsCard />
+        </TabsContent>
+
+        <TabsContent value="recap" className="space-y-4">
+          <DailyRecapCard />
         </TabsContent>
 
         <TabsContent value="iep" className="space-y-4">
@@ -741,5 +746,162 @@ function CartoonVoiceCard() {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+
+/* -------------------------------------------------------------------------- *
+ * DailyRecapCard — push 46 (2026-05-13)                                       *
+ *                                                                             *
+ * Single-page panel for the OUTBOUND end-of-day digest. Lives under the new   *
+ * Recap tab so it doesn't crowd the Email tab (which is for the nightly       *
+ * 8 PM agenda + recipient address book). Mom sees the live HTML preview      *
+ * right next to the toggle so she can decide whether to enable.              *
+ * -------------------------------------------------------------------------- */
+function DailyRecapCard() {
+  const utils = trpc.useUtils();
+  const get = (trpc as any).dailyRecap?.get?.useQuery?.() ?? { data: null, isLoading: false };
+  const preview = (trpc as any).dailyRecap?.preview?.useQuery?.({}) ?? { data: null, isLoading: false };
+  const set = (trpc as any).dailyRecap?.set?.useMutation?.({
+    onSuccess: () => {
+      (utils as any).dailyRecap?.get?.invalidate?.();
+      (utils as any).dailyRecap?.preview?.invalidate?.();
+      toast.success("Saved.");
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Save failed"),
+  }) ?? { mutate: () => {}, isPending: false };
+
+  const prefs = get.data;
+  // Local overrides so the user can type in the time field without each
+  // keystroke firing a server write. We commit on blur / Save click.
+  const [time, setTime] = useState<string>("");
+  const [recipientsText, setRecipientsText] = useState<string>("");
+  useEffect(() => {
+    if (!prefs) return;
+    setTime(prefs.sendTimeET ?? "18:00");
+    setRecipientsText((prefs.recipients ?? []).join(", "));
+  }, [prefs]);
+
+  if (get.isLoading || !prefs) {
+    return (
+      <Card>
+        <CardHeader><CardTitle>Daily recap email</CardTitle></CardHeader>
+        <CardContent className="text-sm text-muted-foreground">Loading…</CardContent>
+      </Card>
+    );
+  }
+
+  const commitRecipients = () => {
+    const list = recipientsText
+      .split(/[,\s\n]+/)
+      .map((s) => s.trim())
+      .filter((s) => /.+@.+\..+/.test(s));
+    (set as any).mutate({ recipients: list });
+  };
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>Daily recap email</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between border rounded-lg p-3">
+            <div>
+              <div className="font-medium text-sm">Send end-of-day recap</div>
+              <div className="text-xs text-muted-foreground">
+                A short HTML email summarizing what Reagan actually did today —
+                blocks complete, minutes logged, off-plan topics. Distinct
+                from the morning agenda email.
+              </div>
+            </div>
+            <Switch
+              checked={!!prefs.enabled}
+              onCheckedChange={(v) => (set as any).mutate({ enabled: v })}
+            />
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-3">
+            <div>
+              <Label>Send time (ET)</Label>
+              <Input
+                type="time"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                onBlur={() => {
+                  if (/^\d{2}:\d{2}$/.test(time) && time !== prefs.sendTimeET) {
+                    (set as any).mutate({ sendTimeET: time });
+                  }
+                }}
+              />
+              <div className="text-[11px] text-muted-foreground mt-1">
+                Default 6:00 PM ET. Heartbeat cron will pick this up.
+              </div>
+            </div>
+            <div className="space-y-2 pt-5">
+              <label className="flex items-center justify-between text-sm">
+                <span>Include Kiwi listening focus</span>
+                <Switch
+                  checked={!!prefs.includeKiwi}
+                  onCheckedChange={(v) => (set as any).mutate({ includeKiwi: v })}
+                />
+              </label>
+              <label className="flex items-center justify-between text-sm">
+                <span>Include mood-through-day strip</span>
+                <Switch
+                  checked={!!prefs.includeMood}
+                  onCheckedChange={(v) => (set as any).mutate({ includeMood: v })}
+                />
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <Label>Recipients (comma-separated)</Label>
+            <textarea
+              value={recipientsText}
+              onChange={(e) => setRecipientsText(e.target.value)}
+              onBlur={commitRecipients}
+              rows={2}
+              className="mt-1 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm"
+              placeholder="leave empty to use the Email tab's address book"
+            />
+            <div className="text-[11px] text-muted-foreground mt-1">
+              Empty = fall back to the Email tab's recipients. Otherwise this
+              list overrides it for the recap only.
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Sample preview</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {preview.isLoading ? (
+            <div className="text-sm text-muted-foreground py-6 text-center">Composing preview…</div>
+          ) : preview.data?.html ? (
+            <>
+              <div className="text-[11px] text-muted-foreground mb-2">
+                {preview.data.effectiveRecipients?.length > 0
+                  ? `Will send to: ${preview.data.effectiveRecipients.join(", ")}`
+                  : "No recipients configured yet."}
+              </div>
+              <iframe
+                title="Daily recap preview"
+                srcDoc={preview.data.html}
+                className="w-full rounded-md border bg-white"
+                style={{ height: 480 }}
+              />
+            </>
+          ) : (
+            <div className="text-sm text-muted-foreground py-6 text-center">
+              Nothing to preview yet — log a few entries on Today and come back.
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </>
   );
 }

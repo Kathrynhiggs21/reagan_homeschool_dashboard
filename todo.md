@@ -2740,3 +2740,7 @@ shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
 - [x] Push 40 — Per-block Actual-vs-Planned chip strip on Today + Schedule (db.getActualVsPlannedForDate + trpc actuals.vsPlanned + 2 components)
 - [x] Push 41 — Today mood timeline strip (db.buildMoodTimelineForDate + trpc listening.moodTimeline + adult-gated 12-bin chart)
 - [x] Push 42 — Per-field edits (inline description in AgendaEditor) + tap-block deep-edit (Today title button, Schedule jump to /agenda-editor)
+- [x] Push 43 — Reagan self-mark-complete (blocks.selfComplete public proc, audit summary=reagan-self-mark, Today routes to selfComplete when locked, complete when unlocked, still awards sticker+coin)
+- [x] Push 44 — Kiwi-listened provenance badge on actual entries (Today chips, Today quick-entry recent list, Schedule day-view chips)
+- [x] Push 45 — Catch-up engine (db.getCatchUpRollup + catchUpTrafficLightForPct, curriculum.catchUp router, CatchUpRollupStrip card above the AI agenda sync strip)
+- [x] Push 46 — Settings → Daily Recap panel (db.getDailyRecapPrefs/setDailyRecapPrefs/formatDailyRecapHtml/previewDailyRecap, dailyRecap router with get/set/preview, Settings Recap tab + DailyRecapCard + live iframe preview)

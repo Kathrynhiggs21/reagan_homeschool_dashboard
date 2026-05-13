@@ -542,6 +542,49 @@ export const appRouter = router({
         }
         return r;
       }),
+    /**
+     * Push 43 (2026-05-13) — Reagan self-marks her own block complete.
+     *
+     * Spec from todo.md:
+     *   "Reagan marks her own block complete (no adult sign-off for
+     *    completion; adults still grade). She CANNOT change start/end
+     *    times — only Mom + Grandma can."
+     *
+     * Differences vs blocks.complete (familyAdmin):
+     *   - publicProcedure: Reagan does not have a family-admin session.
+     *   - never writes grade or notes (those stay an adult action).
+     *   - records source='kiwi' so the audit log can tell adults later
+     *     that Reagan marked it herself.
+     *   - still awards the sticker + coin so the economy isn't bypassed.
+     */
+    selfComplete: publicProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const r = await db.updateBlock(input.id, {
+          status: "complete",
+          completedAt: new Date(),
+          completedByUserId: ctx.user?.id ?? null,
+        } as any);
+        await db.logAudit({
+          actorOpenId: ctx.user?.openId ?? "reagan-self",
+          actorName: ctx.user?.name ?? "Reagan",
+          entityType: "block",
+          entityId: input.id,
+          action: "complete",
+          summary: "reagan-self-mark",
+        });
+        try {
+          await db.awardSticker({
+            userId: (ctx.user as any)?.id ?? null,
+            reason: "block_done",
+            blockId: input.id,
+            coins: 1,
+          });
+        } catch (e) {
+          console.warn("[rewards] awardSticker failed (selfComplete)", e);
+        }
+        return r;
+      }),
     move: familyAdminProcedure.input(z.object({
       id: z.number(), direction: z.enum(["up", "down"]),
     })).mutation(async ({ input, ctx }) => {
@@ -3654,6 +3697,14 @@ export const appRouter = router({
      * the 9 PM `nightly-lesson-gen` cron ran and what's queued. Pure read.
      */
     tomorrowPreview: protectedProcedure.query(() => db.getTomorrowDraftPreview()),
+    /**
+     * Push 45 (2026-05-13) — Catch-up engine rollup. Returns one row per
+     * curriculum subject with lifetime mastery %, traffic-light bucket
+     * (red/yellow/green), and the next 3 open topics (inProgress first,
+     * then notStarted). Read-only — the UI doesn't mutate anything from
+     * the rollup itself; tapping a topic uses existing curriculum.toggle.
+     */
+    catchUp: protectedProcedure.query(() => db.getCatchUpRollup()),
     toggle: protectedProcedure
       .input(z.object({ id: z.number(), status: z.enum(["notStarted", "inProgress", "done"]) }))
       .mutation(({ input }) => db.toggleCurriculumTopic(input.id, input.status)),
@@ -3860,6 +3911,44 @@ export const appRouter = router({
       .input(z.object({ prefix: z.string().optional() }).optional())
       .query(({ input }) => db.listAppSettings(input?.prefix)),
   }),
+  // ── Daily Recap (push 46, 2026-05-13) ────────────────────
+  /**
+   * dailyRecap — Settings panel for the OUTBOUND end-of-day digest. Read
+   * prefs, write a partial patch, preview a fully-rendered HTML for today.
+   * familyAdmin-gated because recipient email lists and toggle persistence
+   * are not safe to expose publicly.
+   */
+  dailyRecap: router({
+    get: protectedProcedure.query(({ ctx }) => {
+      if (ctx.user.role !== "admin" && ctx.user.role !== "user") {
+        throw new Error("forbidden");
+      }
+      return db.getDailyRecapPrefs();
+    }),
+    set: protectedProcedure
+      .input(z.object({
+        enabled: z.boolean().optional(),
+        sendTimeET: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+        includeKiwi: z.boolean().optional(),
+        includeMood: z.boolean().optional(),
+        recipients: z.array(z.string().email()).optional(),
+      }))
+      .mutation(({ ctx, input }) => {
+        if (ctx.user.role !== "admin" && ctx.user.role !== "user") {
+          throw new Error("forbidden");
+        }
+        return db.setDailyRecapPrefs(input);
+      }),
+    preview: protectedProcedure
+      .input(z.object({ dateISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() }).optional())
+      .query(({ ctx, input }) => {
+        if (ctx.user.role !== "admin" && ctx.user.role !== "user") {
+          throw new Error("forbidden");
+        }
+        return db.previewDailyRecap(input?.dateISO);
+      }),
+  }),
+
   // ── Settings AI Helper ──────────────────────────────────
   /**
    * settingsAI — "Just tell the AI what to change" for the adult Settings page.

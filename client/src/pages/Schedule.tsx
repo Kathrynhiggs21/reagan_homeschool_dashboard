@@ -494,22 +494,38 @@ function ScheduleActualVsPlannedChips({ blockId, dateISO }: { blockId: number; d
       data-testid={`schedule-actual-vs-planned-${blockId}`}
     >
       <span className="text-[10px] uppercase tracking-wide opacity-70">Actual:</span>
-      {block.actuals.slice(0, 3).map((a: any) => (
-        <span
-          key={a.id}
-          title={a.notes || a.source}
-          className={
-            "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] " +
-            (a.pinned
-              ? "bg-emerald-100 border-emerald-300 text-emerald-900 dark:bg-emerald-900/30 dark:text-emerald-100"
-              : "bg-amber-100 border-amber-300 text-amber-900 dark:bg-amber-900/30 dark:text-amber-100")
-          }
-        >
-          <span aria-hidden>{a.pinned ? "✓" : "≈"}</span>
-          <span className="truncate max-w-[14rem]">{a.topic}</span>
-          <span className="opacity-70">{a.minutesSpent}m</span>
-        </span>
-      ))}
+      {block.actuals.slice(0, 3).map((a: any) => {
+        // Push 44 — Kiwi-listened provenance badge (mirror of Today).
+        const fromKiwi = a.source === "kiwi-listened";
+        return (
+          <span
+            key={a.id}
+            title={`${a.notes || a.source}${fromKiwi ? " — captured by Kiwi listening" : ""}`}
+            data-source={a.source}
+            className={
+              "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] " +
+              (a.pinned
+                ? "bg-emerald-100 border-emerald-300 text-emerald-900 dark:bg-emerald-900/30 dark:text-emerald-100"
+                : "bg-amber-100 border-amber-300 text-amber-900 dark:bg-amber-900/30 dark:text-amber-100")
+            }
+          >
+            <span aria-hidden>{a.pinned ? "✓" : "≈"}</span>
+            {fromKiwi && (
+              <span
+                aria-label="Captured by Kiwi listening"
+                title="Captured by Kiwi listening"
+                className="inline-flex items-center gap-0.5"
+                data-testid="kiwi-listened-badge"
+              >
+                <span aria-hidden>🎙️</span>
+                <span aria-hidden>🐥</span>
+              </span>
+            )}
+            <span className="truncate max-w-[14rem]">{a.topic}</span>
+            <span className="opacity-70">{a.minutesSpent}m</span>
+          </span>
+        );
+      })}
       {block.actuals.length > 3 && (
         <span className="text-[10px] opacity-60">+{block.actuals.length - 3} more</span>
       )}

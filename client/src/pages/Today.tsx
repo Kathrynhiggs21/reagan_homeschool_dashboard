@@ -100,6 +100,10 @@ export default function Today() {
   const struggleM = trpc.struggles.log.useMutation({ onSuccess: () => toast.success("Logged.") });
   const moodM = trpc.mood.log.useMutation({ onSuccess: () => toast.success("Got it.") });
   const completeM = trpc.blocks.complete.useMutation();
+  // Push 43 (2026-05-13) — Reagan self-completes her own block.
+  // Used when the adult area is locked; adult-unlocked sessions still use
+  // blocks.complete so the audit log captures the grading adult.
+  const selfCompleteM = (trpc as any).blocks?.selfComplete?.useMutation?.();
   const moveBlockM = trpc.blocks.move.useMutation();
   // adultAi.postponeBlock = move-to-any-date; we use it for the inline
   // "→ Tomorrow" quick-action so Mom can defer a block without opening the editor.
@@ -750,7 +754,17 @@ export default function Today() {
                     if (isDone) return;
                     const tgt = ev.currentTarget as HTMLElement;
                     popConfettiFromElement(tgt);
-                    completeM.mutate({ id: b.id }, { onSuccess: () => { toast.success("Done!"); celebrateKiwi("Yay! 🎉 +1 sticker!"); utils.plans.today.invalidate(); }});
+                    // Push 43 — if adult is unlocked, use the family-admin
+                    // procedure (records adult as completer for grading).
+                    // Otherwise Reagan herself marks via selfComplete.
+                    const onDone = { onSuccess: () => { toast.success("Done!"); celebrateKiwi("Yay! 🎉 +1 sticker!"); utils.plans.today.invalidate(); } };
+                    if (unlocked) {
+                      completeM.mutate({ id: b.id }, onDone);
+                    } else if (selfCompleteM) {
+                      selfCompleteM.mutate({ id: b.id }, onDone);
+                    } else {
+                      completeM.mutate({ id: b.id }, onDone);
+                    }
                   }}
                 >
                   {isDone ? (
@@ -1332,14 +1346,31 @@ function TodayQuickEntryCard() {
           <div className="text-[11px] text-muted-foreground uppercase tracking-wider">
             Today so far ({recent.length})
           </div>
-          {recent.slice(-6).reverse().map((r: any) => (
+          {recent.slice(-6).reverse().map((r: any) => {
+            // Push 44 — Kiwi-listened provenance badge in the recent
+            // entries list so Mom/Grandma can spot which rows came from
+            // passive listening vs their own manual entry.
+            const fromKiwi = r.source === "kiwi-listened";
+            return (
             <div
               key={r.id}
+              data-source={r.source}
               className="flex items-center gap-2 flex-wrap rounded border border-border/60 bg-card/40 px-2 py-1.5 text-xs"
             >
               <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted opacity-80">
                 {r.subjectSlug}
               </span>
+              {fromKiwi && (
+                <span
+                  aria-label="Captured by Kiwi listening"
+                  title="Captured by Kiwi listening"
+                  className="inline-flex items-center gap-0.5 text-[10px] px-1 py-0.5 rounded bg-amber-300/15 text-amber-200"
+                  data-testid="kiwi-listened-badge"
+                >
+                  <span aria-hidden>🎙️</span>
+                  <span aria-hidden>🐥</span>
+                </span>
+              )}
               <span className="flex-1 min-w-0 truncate" title={r.topic}>{r.topic}</span>
               <span className="opacity-70">{r.minutesSpent} min</span>
               <span className="opacity-50 text-[10px]">{r.source}</span>
@@ -1353,7 +1384,8 @@ function TodayQuickEntryCard() {
                 Undo
               </Button>
             </div>
-          ))}
+          );
+          })}
         </div>
       )}
     </Card>
@@ -1384,22 +1416,41 @@ function ActualVsPlannedChips({ blockId }: { blockId: number }) {
       data-testid={`actual-vs-planned-chips-${blockId}`}
     >
       <span className="text-[10px] uppercase tracking-wide opacity-70 chalk-white">Actual:</span>
-      {block.actuals.slice(0, 3).map((a: any) => (
-        <span
-          key={a.id}
-          title={a.notes || a.source}
-          className={
-            "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] " +
-            (a.pinned
-              ? "bg-emerald-400/15 border-emerald-300/40 text-emerald-50"
-              : "bg-amber-300/10 border-amber-300/30 text-amber-50")
-          }
-        >
-          <span aria-hidden>{a.pinned ? "✓" : "≈"}</span>
-          <span className="truncate max-w-[14rem]">{a.topic}</span>
-          <span className="opacity-70">{a.minutesSpent}m</span>
-        </span>
-      ))}
+      {block.actuals.slice(0, 3).map((a: any) => {
+        // Push 44 (2026-05-13) — Kiwi-listened provenance badge.
+        // Any actual entry whose source is 'kiwi-listened' gets a tiny
+        // mic+chick icon so adults can tell at a glance which entries
+        // came from passive listening vs. manual mom/grandma entry.
+        const fromKiwi = a.source === "kiwi-listened";
+        return (
+          <span
+            key={a.id}
+            title={`${a.notes || a.source}${fromKiwi ? " — captured by Kiwi listening" : ""}`}
+            data-source={a.source}
+            className={
+              "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] " +
+              (a.pinned
+                ? "bg-emerald-400/15 border-emerald-300/40 text-emerald-50"
+                : "bg-amber-300/10 border-amber-300/30 text-amber-50")
+            }
+          >
+            <span aria-hidden>{a.pinned ? "✓" : "≈"}</span>
+            {fromKiwi && (
+              <span
+                aria-label="Captured by Kiwi listening"
+                title="Captured by Kiwi listening"
+                className="inline-flex items-center gap-0.5 text-amber-200"
+                data-testid="kiwi-listened-badge"
+              >
+                <span aria-hidden>🎙️</span>
+                <span aria-hidden>🐥</span>
+              </span>
+            )}
+            <span className="truncate max-w-[14rem]">{a.topic}</span>
+            <span className="opacity-70">{a.minutesSpent}m</span>
+          </span>
+        );
+      })}
       {block.actuals.length > 3 && (
         <span className="text-[10px] opacity-60">+{block.actuals.length - 3} more</span>
       )}
