@@ -31,6 +31,7 @@ import CurrentLevelsFromIep from "@/components/CurrentLevelsFromIep";
 import AdultCoinCounter from "@/components/AdultCoinCounter";
 import SubjectRadar from "@/components/SubjectRadar";
 import SubjectSparklines from "@/components/SubjectSparklines";
+import CurriculumCoverageArcs from "@/components/CurriculumCoverageArcs";
 
 function MoodArcChart({ moods }: { moods: any[] }) {
   // Map zone to numeric score (green=2, yellow=1, red=0); render the last 14 entries chronologically
@@ -301,6 +302,12 @@ export default function Analytics() {
         <SubjectRadar />
         <SubjectSparklines />
       </div>
+
+      {/* Push 62 (2026-05-13) — Curriculum coverage arcs.
+          Visual companion to the existing rolling-grade radar; reads
+          curriculum.progress (catalog topics done/total). Self-hides
+          when no catalog rows exist. */}
+      <CurriculumCoverageArcs />
 
       {/* Catch-up trajectory: Reagan's path back to grade level + IEP exit indicators */}
       <TrajectoryCard />
