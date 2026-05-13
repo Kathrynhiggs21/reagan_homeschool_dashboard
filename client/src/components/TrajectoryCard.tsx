@@ -110,7 +110,7 @@ export default function TrajectoryCard() {
           <li><b>Math:</b> MAP RIT score at or above 5th-grade fall norm (~209) and growing; class-based unit assessments at 75%+.</li>
           <li><b>Curriculum-based measures:</b> 4 of 5 5th-grade Ohio standards mastered per subject (≥80% on this ladder).</li>
         </ul>
-        <div className="pt-1 italic text-neutral-500">Reagan never sees this card. She only sees her own ladder going up on the My Levels page.</div>
+        <div className="pt-1 italic text-neutral-500">Reagan never sees this card. She only sees her own ladder going up on the My Skills page.</div>
       </div>
     </Card>
   );

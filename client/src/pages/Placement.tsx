@@ -149,7 +149,7 @@ function PlacementSubject({ subjectSlug, onDone }: { subjectSlug: string; onDone
           <h2 className="font-display text-2xl">Done with {meta.label}!</h2>
           <p className="text-sm text-neutral-300">
             I learned where to start with you on every {meta.label.toLowerCase()} skill. Your starting points are saved on
-            <Link href="/levels" className="text-amber-400 underline ml-1">My Levels</Link>.
+            <Link href="/coins" className="text-amber-400 underline ml-1">My Skills</Link>.
           </p>
           <Button onClick={onDone} className="bg-amber-400 text-neutral-900">Pick another subject</Button>
         </Card>

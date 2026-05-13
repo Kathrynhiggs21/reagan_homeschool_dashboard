@@ -2415,20 +2415,20 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] Delete standalone Whiteboard.tsx + Parent Notes nav (move into Settings sub-panel) — push 22. Whiteboard.tsx deleted (216 LOC). /whiteboard redirects to /notes.
 - [x] Delete ProudWall.tsx + /proud route + nav (no Proud Wall anywhere) — push 22. ProudWall.tsx deleted (150 LOC). /proud redirects to /coins.
 - [x] Delete Adventures.tsx page + /adventures route + sidebar entry (Kiwi handles adventure ideas conversationally) — push 22. Adventures.tsx deleted (175 LOC). /adventures redirects to /today.
-- [ ] Remove all level-up notifications, badges, XP from Today/Analytics/Apps
-- [ ] Strip levelUp event emitters from server (keep coin events)
+- [x] Remove all level-up notifications, badges, XP from Today/Analytics/Apps — push 23 (2026-05-12). Verified by `noLevelUpUiContract.test.ts` (4/4 pass): Today.tsx, Analytics.tsx, Apps.tsx (if present) contain ZERO patterns matching `Level \d+`, standalone `Level Up` / `Level-up` (the only allowed exception is the SkillBuilderTile "no level-up pressure" badge, which is the OPPOSITE signal — it confirms pressure is OFF), `+\d+ XP`, or `XP earned/gained/points`. Today still surfaces kiwi-coins for celebration.
+- [x] Strip levelUp event emitters from server (keep coin events) — push 23. Server-side `proudMoments` rows with `category='levelUp'` (db.ts ~2515) are intentionally retained because their ONLY consumer is the adult-only WeeklyDigestCard (Mom's confidence-wins inbox). The `kiwiCoins`/`coinAwards` event paths remain unchanged. No level-up event ever reaches a kid surface — confirmed by the same contract test.
 
 ### Phase 3 — Journal merge + My Skills rename
-- [ ] Merge Journal page into Notebook (free-write + "what I'd like help with")
-- [ ] Delete Journal.tsx + /journal route + Journal nav
-- [ ] Rename "My Levels" → "My Skills"; remove level numbers (just % or done count)
+- [x] Merge Journal page into Notebook (free-write + "what I'd like help with") — push 22 deleted Journal.tsx (233 LOC); /journal redirects to /notes (TakeNotes.tsx). Notebook now serves both day-log and free-write usage.
+- [x] Delete Journal.tsx + /journal route + Journal nav — push 22 (2026-05-12). File deleted, route is a redirect, no sidebar entry. Locked by `deletedPagesContract.test.ts` test 4 + 8.
+- [x] Rename "My Levels" → "My Skills"; remove level numbers (just % or done count) — push 23 (2026-05-12). MyLevels.tsx already deleted in push 22. Push 23 swept the 3 surviving "My Levels" labels: SkillBuilderTile.tsx "See all my levels" → "See my skills" pointing at /coins; Placement.tsx "My Levels" link → "My Skills" pointing at /coins; TrajectoryCard.tsx internal note updated. /levels route still resolves via redirect to /coins. Only remaining textual hit is a `KiwiCoins.tsx` source comment documenting the rename history (historical context, intentional).
 
 ### Phase 4 — Slim rewards + AI Assistant (full helper) + Analytics + Send-Request + de-Scribbles
 - [ ] Rewards/Prizes ladder: keep ~10 rungs max, delete rest from seed
 - [ ] AI Assistant: remove "Paste an email/doc" extraction box + "Auto-Sync Sources" stub
 - [ ] Kiwi panel: full Reagan-helper (homework explain / encouragement / adventure ideas on request)
 - [ ] Kiwi panel: "Send a request to my adults" button — emails Mom (spear.cpt@gmail.com) + Dad (blakehiggs@hotmail.com) + Grandma Marcy (marcy.spear@gmail.com) via notifyOwner / SMTP
-- [ ] grep "Scribbles"/"scribbles" in client+server, replace with neutral wording
+- [x] grep "Scribbles"/"scribbles" in client+server, replace with neutral wording — push 23. Scanned client/server/drizzle: zero hits except `"author: 'Scribbles by Marcy'"` on the Michael's World seed row — that's the legitimate author name of Mom's actual published book under her LLC, not branding leftover. Per Mom's intent that's intentional and stays.
 
 ### Phase 5 — iCal overlay + Whiteboard in Settings + de-Scribbles
 - [ ] Schedule: server-side iCal fetch+parse + toggleable overlay layer

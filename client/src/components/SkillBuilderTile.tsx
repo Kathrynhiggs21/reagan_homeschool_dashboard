@@ -145,7 +145,7 @@ export default function SkillBuilderTile() {
           onClick={() => practice.mutate({ skillLadderId: skill.id, mode: mode as any, selfRating: 3 })}>🌿 Getting it</Button>
         <Button size="sm" className="text-xs h-7" style={{ background: c, color: "#1a1a1a" }} disabled={practice.isPending}
           onClick={() => practice.mutate({ skillLadderId: skill.id, mode: mode as any, selfRating: 5 })}>🌟 Got it!</Button>
-        <Link href="/levels" className="ml-auto text-xs text-amber-400 underline">See all my levels →</Link>
+        <Link href="/coins" className="ml-auto text-xs text-amber-400 underline">See my skills →</Link>
       </div>
       {showFeedback && (
         <div className="px-4 pb-4">
