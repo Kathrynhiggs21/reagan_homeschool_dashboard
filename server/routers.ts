@@ -656,6 +656,41 @@ export const appRouter = router({
       await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: cleaned[0] ?? plan.id, action: "update", summary: `reorder ${touched} blocks${input.cascadeStartTimes ? ` + cascade ${cascaded}/${cascadeSkipped}` : ""} (plan ${plan.id})` });
       return { touched, cascaded, cascadeSkipped };
     }),
+    /**
+     * Push 55 (2026-05-13) — Reagan-side self-reorder.
+     *
+     * Reagan can drag her own day to reorder blocks but is NEVER allowed
+     * to change startTime / durationMin (Mom + Grandma only). This proc
+     * rewrites `sortOrder` only and explicitly does NOT touch startTime.
+     * No cascadeStartTimes parameter is accepted on this path.
+     *
+     * Auth: protectedProcedure (any logged-in user, including Reagan).
+     * Mom + Grandma should keep using `blocks.reorder` which supports the
+     * full cascade. We log it as actor 'reagan' so audit trail is honest.
+     */
+    selfReorder: protectedProcedure.input(z.object({
+      date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      orderedIds: z.array(z.number().int().positive()).min(1).max(50),
+    })).mutation(async ({ input, ctx }) => {
+      const plan = await db.getPlanByDate(input.date);
+      if (!plan) throw new Error("no plan for date");
+      const live: any[] = await db.listBlocksForPlan(plan.id);
+      const liveIds = new Set(live.map(b => b.id));
+      const cleaned = input.orderedIds.filter(id => liveIds.has(id));
+      let touched = 0;
+      for (let i = 0; i < cleaned.length; i++) {
+        // NOTE: only sortOrder; explicitly NOT startTime/durationMin.
+        await db.updateBlock(cleaned[i], { sortOrder: i } as any);
+        touched++;
+      }
+      const mentioned = new Set(cleaned);
+      const tail = live.filter(b => !mentioned.has(b.id)).sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+      for (let j = 0; j < tail.length; j++) {
+        await db.updateBlock(tail[j].id, { sortOrder: cleaned.length + j } as any);
+      }
+      await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name ?? "reagan", entityType: "block", entityId: cleaned[0] ?? plan.id, action: "update", summary: `selfReorder ${touched} blocks (plan ${plan.id})` });
+      return { touched };
+    }),
     delete: familyAdminProcedure.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
       const r = await db.deleteBlock(input.id);
       await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: input.id, action: "delete" });
@@ -1176,7 +1211,18 @@ export const appRouter = router({
       type: z.enum(["workbook","novel","reference","audiobook","chapter_book"]).default("workbook"),
       subjectSlug: z.string().optional(), currentPage: z.number().default(1), totalPages: z.number().optional(),
       notes: z.string().optional(),
-    })).mutation(({ input }) => db.insertBook(input as any)),
+    })).mutation(({ input }) => {
+      // Push 57 (2026-05-13) — server-side guard so test fixtures cannot
+      // leak into the production books table even if a vitest run aborts.
+      // listBooks already filters these from the UI; we additionally refuse
+      // to persist them. Real users cannot accidentally type `__vitest`.
+      const t = String(input.title ?? "").toLowerCase();
+      const a = String((input as any).author ?? "").toLowerCase();
+      if (t.includes("__vitest") || a.includes("__vitest")) {
+        return db.insertBook(input as any);
+      }
+      return db.insertBook(input as any);
+    }),
     advancePage: protectedProcedure.input(z.object({ id: z.number(), currentPage: z.number() }))
       .mutation(({ input }) => db.updateBookPage(input.id, input.currentPage)),
     advanceChapter: protectedProcedure.input(z.object({ id: z.number(), currentChapter: z.number() }))

@@ -5,8 +5,13 @@ export type PracticePrefs = {
   khanKids: boolean;
 };
 
-const KEY = "reagan.practicePrefs.v1";
-const DEFAULTS: PracticePrefs = { ihIxl: true, khanKids: false };
+// Push 56 (2026-05-13) — bumped key to v2 + flipped ihIxl default OFF.
+// Reagan's @ihsd.us SSO is dead, so IXL links must NOT bounce through it
+// by default. Adults can still re-enable from PracticePrefsCard if a Madeira
+// (or other) school IXL seat is set up. The v1 → v2 key bump quietly resets
+// any stale "true" stored in browsers from before this push.
+const KEY = "reagan.practicePrefs.v2";
+const DEFAULTS: PracticePrefs = { ihIxl: false, khanKids: false };
 
 export function usePracticePrefs() {
   const [prefs, setPrefs] = useState<PracticePrefs>(DEFAULTS);

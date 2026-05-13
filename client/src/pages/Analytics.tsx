@@ -24,7 +24,10 @@ import { Progress } from "@/components/ui/progress";
 import TrajectoryCard from "@/components/TrajectoryCard";
 import ParentFlagsBanner from "@/components/ParentFlagsBanner";
 import CurrentLevelsFromIep from "@/components/CurrentLevelsFromIep";
-import PowerSchoolGradesCard from "@/components/PowerSchoolGradesCard";
+// Push 56 (2026-05-13) — PowerSchool/IH classroom surfaces removed from Analytics
+// because the @ihsd.us school account is dead. The component still exists for
+// any future Madeira reuse but no longer renders on the parent dashboard.
+// (was: import PowerSchoolGradesCard from "@/components/PowerSchoolGradesCard")
 import AdultCoinCounter from "@/components/AdultCoinCounter";
 import SubjectRadar from "@/components/SubjectRadar";
 import SubjectSparklines from "@/components/SubjectSparklines";
@@ -308,8 +311,8 @@ export default function Analytics() {
         screenings={(screenings.data as any[]) || []}
       />
 
-      {/* Indian Hill PowerSchool — paste or scheduled-scraper imports */}
-      <PowerSchoolGradesCard />
+      {/* Push 56 (2026-05-13) — Indian Hill PowerSchool card removed: stale data
+          from a defunct school account adds clutter without surfacing real progress. */}
 
       {/* DON'T-SHOW-IF-NO-INFO (2026-05-12 push 14): Subject grades hides when no real grades */}
       {realSubjectGrades.length > 0 && (

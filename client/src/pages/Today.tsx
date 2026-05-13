@@ -115,6 +115,10 @@ export default function Today() {
   // blocks.complete so the audit log captures the grading adult.
   const selfCompleteM = (trpc as any).blocks?.selfComplete?.useMutation?.();
   const moveBlockM = trpc.blocks.move.useMutation();
+  // Push 55 (2026-05-13) — Reagan-side reorder mutation. Optional access
+  // via `as any` so the build doesn't bind to it strictly; we still get
+  // type completion at the call site through optional chaining.
+  const selfReorderM = (trpc as any).blocks?.selfReorder?.useMutation?.();
   // adultAi.postponeBlock = move-to-any-date; we use it for the inline
   // "→ Tomorrow" quick-action so Mom can defer a block without opening the editor.
   const postponeBlockM = (trpc as any).adultAi?.postponeBlock?.useMutation?.();
@@ -645,6 +649,58 @@ export default function Today() {
                     >
                       Help
                     </Button>
+                    {/* Push 55 (2026-05-13) — Reagan-side reorder.
+                       When adult is NOT unlocked, Reagan still gets up/down arrows
+                       to reorder her own day. selfReorder rewrites sortOrder only;
+                       startTime + durationMin are never touched (Mom/Grandma only). */}
+                    {!unlocked && (selfReorderM as any) && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="bg-white/10 border-white/25 chalk-white hover:bg-white/20 h-8 px-3 text-xs"
+                          onClick={() => {
+                            const ids = blocks.map((x: any) => x.id);
+                            if (i <= 0) return;
+                            const reordered = ids.slice();
+                            const tmp = reordered[i - 1];
+                            reordered[i - 1] = reordered[i];
+                            reordered[i] = tmp;
+                            (selfReorderM as any).mutate(
+                              { date: new Date().toISOString().slice(0, 10), orderedIds: reordered },
+                              { onSuccess: () => { utils.plans.today.invalidate(); } },
+                            );
+                          }}
+                          disabled={i === 0 || (selfReorderM as any)?.isPending}
+                          title="Move this block earlier in my day"
+                          data-testid="reagan-reorder-up"
+                        >
+                          ↑ Earlier
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="bg-white/10 border-white/25 chalk-white hover:bg-white/20 h-8 px-3 text-xs"
+                          onClick={() => {
+                            const ids = blocks.map((x: any) => x.id);
+                            if (i >= ids.length - 1) return;
+                            const reordered = ids.slice();
+                            const tmp = reordered[i + 1];
+                            reordered[i + 1] = reordered[i];
+                            reordered[i] = tmp;
+                            (selfReorderM as any).mutate(
+                              { date: new Date().toISOString().slice(0, 10), orderedIds: reordered },
+                              { onSuccess: () => { utils.plans.today.invalidate(); } },
+                            );
+                          }}
+                          disabled={i === blocks.length - 1 || (selfReorderM as any)?.isPending}
+                          title="Move this block later in my day"
+                          data-testid="reagan-reorder-down"
+                        >
+                          ↓ Later
+                        </Button>
+                      </>
+                    )}
                     {unlocked && (
                       <>
                         <Button
