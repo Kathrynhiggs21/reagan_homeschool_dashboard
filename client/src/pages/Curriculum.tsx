@@ -19,6 +19,11 @@ export default function Curriculum() {
   const decideM = trpc.adjustments.decide.useMutation();
   const rebuildM = trpc.adjustments.rebuild.useMutation();
   const syncFutureDays = trpc.curriculum.syncFutureDays.useMutation();
+  // Push 37 (2026-05-13): pinned "Tomorrow's draft" strip so Mom can see
+  // overnight if the 9 PM cron actually committed the next school day's
+  // blocks. Soft-fail (any) so a missing procedure on stale clients
+  // doesn't break the page.
+  const tomorrowPreview = (trpc as any).curriculum?.tomorrowPreview?.useQuery?.() ?? { data: null, isLoading: false };
   const utils = trpc.useUtils();
 
   const proposed = ((adjustments.data as any[]) ?? []).filter((a) => a.status === "proposed");
@@ -41,6 +46,60 @@ export default function Curriculum() {
         <h1 className="text-3xl font-display font-semibold curriculum-title">Curriculum</h1>
         <p className="text-sm mt-1 curriculum-subtitle">Subjects, skills, and the books we're working through.</p>
       </header>
+
+      {/* Push 37 (2026-05-13) — Tomorrow's draft preview strip. */}
+      {tomorrowPreview.data && (
+        <Card
+          className="cozy-card p-4 border-2 border-sky-300/40 bg-sky-50/50 dark:bg-sky-950/20"
+          data-testid="tomorrow-draft-strip"
+        >
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="min-w-0">
+              <h2 className="font-display font-semibold text-base">
+                Tomorrow's draft · {(tomorrowPreview.data as any).dayLabel}
+              </h2>
+              {(tomorrowPreview.data as any).planExists ? (
+                (tomorrowPreview.data as any).blockCount > 0 ? (
+                  <>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {(tomorrowPreview.data as any).blockCount} block{(tomorrowPreview.data as any).blockCount === 1 ? "" : "s"} committed by the nightly draft.
+                      {(tomorrowPreview.data as any).firstBlockTitle ? (
+                        <> First up: <span className="font-medium">{(tomorrowPreview.data as any).firstBlockTitle}</span>.</>
+                      ) : null}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
+                      {((tomorrowPreview.data as any).subjects as string[]).map((s) => (
+                        <span key={s} className="px-2 py-0.5 rounded bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200">
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                    {(tomorrowPreview.data as any).lastGeneratedAt && (
+                      <p className="text-[10px] text-muted-foreground mt-1.5">
+                        Generated {new Date((tomorrowPreview.data as any).lastGeneratedAt).toLocaleString()}.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-xs text-amber-700 dark:text-amber-300 mt-0.5">
+                    Plan row exists but no blocks were committed by the nightly draft. Re-run with the button below.
+                  </p>
+                )
+              ) : (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  No plan row yet — the nightly draft hasn't run for this date. Use "Sync next 5 school days" to force it now.
+                </p>
+              )}
+            </div>
+            <a
+              href="/agenda-editor"
+              className="text-xs px-3 py-1.5 rounded-md border border-sky-400/60 bg-white hover:bg-sky-100 dark:bg-sky-900/40 dark:hover:bg-sky-900/60 text-sky-900 dark:text-sky-100 shrink-0"
+            >
+              Open in Agenda Editor →
+            </a>
+          </div>
+        </Card>
+      )}
 
       {/* AI agenda sync strip — pinned at top so adults can refresh the next 5 school days from one place */}
       <Card className="cozy-card p-4 border-2 border-amber-300/40 bg-amber-50/50 dark:bg-amber-950/20">

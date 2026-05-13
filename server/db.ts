@@ -343,14 +343,30 @@ export async function updateBlock(id: number, patch: Partial<typeof scheduleBloc
       const planId = rows[0]?.planId;
       if (planId) {
         const planRows = await db.execute(
-          sql`SELECT date_iso FROM dailyPlans WHERE id = ${planId} LIMIT 1`,
+          sql`SELECT DATE_FORMAT(date, '%Y-%m-%d') AS date_iso FROM dailyPlans WHERE id = ${planId} LIMIT 1`,
         );
         const dateISO =
           (planRows as any)?.[0]?.[0]?.date_iso ??
           (planRows as any)?.[0]?.date_iso ??
           (Array.isArray(planRows) && (planRows[0] as any)?.date_iso) ??
           null;
-        if (dateISO) enqueueDayLogRebuildForDate(String(dateISO));
+        if (dateISO) {
+          enqueueDayLogRebuildForDate(String(dateISO));
+          // Push 35 (2026-05-13): if any field a recipient sees changed,
+          // flag the day so the next nightly tick triggers a resend.
+          if (
+            patch.title !== undefined ||
+            patch.subjectId !== undefined ||
+            patch.startTime !== undefined ||
+            patch.durationMin !== undefined ||
+            patch.status !== undefined ||
+            patch.sortOrder !== undefined ||
+            patch.description !== undefined ||
+            patch.curriculumTopicId !== undefined
+          ) {
+            void markAgendaDirtyForDate(String(dateISO), "updateBlock").catch(() => {});
+          }
+        }
       }
     } catch {
       // best-effort
@@ -5186,7 +5202,7 @@ export async function markPrintableDone(id: number, opts: { photoKey?: string | 
         JOIN dailyPlans dp ON dp.id = sb.planId
         JOIN subjects s ON s.id = sb.subjectId
            SET ct.status = 'done', ct.completed_at = ${new Date()}
-         WHERE dp.date_iso = ${row.forDate}
+         WHERE DATE_FORMAT(dp.date, '%Y-%m-%d') = ${row.forDate}
            AND s.slug = ${row.subjectSlug}
            AND ct.status <> 'done'
       `);
@@ -6675,4 +6691,340 @@ export async function seedQ4Standards(): Promise<{ inserted: number; total: numb
       }
     },
   });
+}
+
+/* ============================================================================
+ * PUSH 34 (2026-05-13) — Mom-only daily analytics CSV builder + Drive enqueue
+ * ----------------------------------------------------------------------------
+ * Pulls together the day's listening behavior, kiwi-chat behavior, planned-vs-
+ * completed block counts, IEP goal Behind/On/Ahead bucket counts, and off-plan
+ * topic count into one canonical CSV row. Persisted to Drive at:
+ *   Progress and Reports / Analytics CSV Exports / {YYYY-MM} / {date} - Daily
+ *   Analytics.csv
+ *
+ * Idempotent: re-running for the same date is safe — the underlying queries
+ * are read-only, and the Drive enqueue uses contentText-equality skip.
+ *
+ * Adult-only — exposed via the `curriculum.exportDailyAnalytics` familyAdmin
+ * tRPC mutation.
+ * ========================================================================== */
+
+export async function buildDailyAnalyticsCsvForDate(dateISO: string): Promise<{
+  csv: string;
+  fileName: string;
+  subpath: string;
+  bytes: number;
+}> {
+  const {
+    buildDailyAnalyticsCsv,
+    dailyAnalyticsFileName,
+    dailyAnalyticsSubpath,
+    bucketIepGoal,
+  } = await import("./_lib/dailyAnalyticsCsv");
+
+  // ---- Listening behavior + aggregate (today only) -----------------------
+  const listeningRows = await listListeningSummariesForDate(dateISO);
+  const behavior = await listeningBehaviorForDate(dateISO);
+  const dayAgg = aggregateListeningDay(listeningRows as any[]);
+
+  const listening = behavior
+    ? {
+        relevantCount: behavior.relevantCount,
+        droppedCount: behavior.droppedCount,
+        focusPct: behavior.focusPct,
+        offTask: behavior.offTask,
+        distractions: behavior.distractions,
+        topTopic: behavior.topTopic,
+        avgEmotion: dayAgg.avgEmotion,
+        avgComfort: dayAgg.avgComfort,
+        avgDifficulty: dayAgg.avgDifficulty,
+        avgTalkativeness: dayAgg.avgTalkativeness,
+        minutesOnTask: dayAgg.minutesOnTask,
+      }
+    : null;
+
+  // ---- Kiwi-chat behavior -----------------------------------------------
+  const kiwi = await kiwiBehaviorForDate(dateISO);
+  const kiwiBlock = kiwi
+    ? {
+        interactions: kiwi.interactions,
+        userMessages: kiwi.userMessages,
+        aiMessages: kiwi.aiMessages,
+        kiwiInitiatedCount: kiwi.kiwiInitiatedCount,
+        topTopic: kiwi.topTopic,
+        topTopicCount: kiwi.topTopicCount,
+      }
+    : null;
+
+  // ---- Block totals -----------------------------------------------------
+  const plan = await getPlanByDate(dateISO);
+  let plannedTotal = 0;
+  let completedTotal = 0;
+  let skippedTotal = 0;
+  if (plan) {
+    const blocks: any[] = await listBlocksForPlan((plan as any).id);
+    plannedTotal = blocks.length;
+    completedTotal = blocks.filter((b) => b.status === "complete").length;
+    skippedTotal = blocks.filter((b) => b.status === "skipped").length;
+  }
+
+  // ---- Coverage per subject (planned-vs-completed) ----------------------
+  const coverage = await coverageForDate(dateISO);
+
+  // ---- IEP buckets ------------------------------------------------------
+  const iepGoals = await listIepGoals();
+  const iepBuckets = { behind: 0, onTrack: 0, ahead: 0 };
+  for (const g of iepGoals as any[]) {
+    const b = bucketIepGoal({
+      status: g.status,
+      currentPercent: g.currentPercent,
+      targetPercent: g.targetPercent,
+    });
+    if (b === "behind") iepBuckets.behind += 1;
+    else if (b === "ahead") iepBuckets.ahead += 1;
+    else iepBuckets.onTrack += 1;
+  }
+
+  // ---- Off-plan topics for this date -----------------------------------
+  const offPlanRows: any[] = await getDb()
+    .select({ id: topicsCoveredOffPlan.id })
+    .from(topicsCoveredOffPlan)
+    .where(eq(topicsCoveredOffPlan.dateISO, dateISO));
+
+  const csv = buildDailyAnalyticsCsv({
+    dateISO,
+    listening,
+    kiwi: kiwiBlock,
+    coverage: coverage as any,
+    blocks: { plannedTotal, completedTotal, skippedTotal },
+    iep: iepBuckets,
+    offPlanTopicsCount: offPlanRows.length,
+  });
+  const fileName = dailyAnalyticsFileName(dateISO);
+  const subpath = dailyAnalyticsSubpath(dateISO);
+  const bytes = new TextEncoder().encode(csv).length;
+  return { csv, fileName, subpath, bytes };
+}
+
+/**
+ * Enqueue the day's analytics CSV to Drive. Idempotent: skips if a
+ * pending row with the same contentText already exists.
+ */
+export async function enqueueDailyAnalyticsExport(
+  dateISO: string,
+): Promise<{
+  ok: boolean;
+  alreadyQueued: boolean;
+  bytes: number;
+  fileName: string;
+  reason?: string;
+}> {
+  try {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateISO)) {
+      return { ok: false, alreadyQueued: false, bytes: 0, fileName: "", reason: "bad-date" };
+    }
+    const { csv, fileName, subpath, bytes } = await buildDailyAnalyticsCsvForDate(dateISO);
+    const db = getDb();
+    let alreadyQueued = false;
+    try {
+      const existing: any[] = await db
+        .select()
+        .from(drivePushQueue)
+        .where(
+          and(
+            eq(drivePushQueue.targetFolder as any, "analytics" as any),
+            eq(drivePushQueue.targetSubpath as any, subpath as any),
+            eq(drivePushQueue.fileName as any, fileName as any),
+            eq(drivePushQueue.status as any, "pending" as any),
+          ),
+        );
+      if (existing.some((row: any) => row?.contentText === csv)) {
+        alreadyQueued = true;
+      }
+    } catch {
+      /* non-fatal */
+    }
+    if (!alreadyQueued) {
+      await db.insert(drivePushQueue).values({
+        targetFolder: "analytics" as any,
+        targetSubpath: subpath,
+        fileName,
+        mimeType: "text/csv",
+        contentText: csv,
+        status: "pending" as any,
+      } as any);
+    }
+    return { ok: true, alreadyQueued, bytes, fileName };
+  } catch (e: any) {
+    return {
+      ok: false,
+      alreadyQueued: false,
+      bytes: 0,
+      fileName: "",
+      reason: e?.message ?? "exception",
+    };
+  }
+}
+
+/* ============================================================================
+ * PUSH 35 (2026-05-13) — Agenda change-detection enqueue
+ * ----------------------------------------------------------------------------
+ * Inserts a `nightlyAgendaEmails` placeholder row tagged `triggerKind:
+ * 'change_resend'` so the nightly handler (or a 7 AM "morning resend"
+ * tick) will pick it up and re-send the agenda IF its current content
+ * hash differs from the last sent row's hash. The handler's existing
+ * idempotency branch (same hash + status='sent' + !force) means we can
+ * mark dirty defensively — duplicate resends never go out.
+ *
+ * Called from `updateBlock` whenever a block edit on a date >= today
+ * actually changes a field that the email body shows: title,
+ * subjectId, startTime, durationMin, status, sortOrder, description,
+ * curriculumTopicId. Pure flag-flip + idempotent insert — never throws.
+ *
+ * Spec items closed:
+ *   - "8 PM nightly packet must re-send if Mom edits the schedule
+ *      before school start"
+ *   - "Add agenda-change resend pipeline"
+ * ========================================================================== */
+export async function markAgendaDirtyForDate(
+  dateISO: string,
+  reason: string = "block_edit",
+): Promise<{ enqueued: boolean }> {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateISO)) {
+    return { enqueued: false };
+  }
+  // Skip past dates — no point resending yesterday's email.
+  const today = new Date().toISOString().slice(0, 10);
+  if (dateISO < today) {
+    return { enqueued: false };
+  }
+  try {
+    // Idempotency: if a queued change_resend row already exists for this
+    // date, don't add another one.
+    const existing = await getDb()
+      .select({ id: nightlyAgendaEmails.id })
+      .from(nightlyAgendaEmails)
+      .where(
+        and(
+          eq(nightlyAgendaEmails.forDate, dateISO),
+          eq(nightlyAgendaEmails.status, "queued"),
+          eq(nightlyAgendaEmails.triggerKind, "change_resend"),
+        ),
+      )
+      .limit(1);
+    if (existing.length > 0) {
+      return { enqueued: false };
+    }
+    await insertNightlyAgendaEmail({
+      forDate: dateISO,
+      recipients: "",
+      agendaHash: "dirty_" + Date.now().toString(36),
+      blockCount: 0,
+      status: "queued",
+      triggerKind: "change_resend",
+      errorMessage: reason,
+    });
+    return { enqueued: true };
+  } catch {
+    return { enqueued: false };
+  }
+}
+
+/* ============================================================================
+ * PUSH 37 (2026-05-13) — Tomorrow's draft preview for Curriculum hub
+ * ----------------------------------------------------------------------------
+ * Pure read helper used by the Curriculum page's pinned "Tomorrow's draft"
+ * strip. The 9 PM `nightly-lesson-gen` cron already commits a fresh plan
+ * for the next school day; this helper just reports what got committed so
+ * Mom can see — at a glance, the first thing she opens in the morning —
+ * whether the nightly draft actually ran AND what's queued.
+ *
+ * Returns:
+ *   - `dateISO` / `dayLabel` for the next school day (skips Sat/Sun)
+ *   - `planExists`: did `ensurePlanForDate` ever create a row?
+ *   - `blockCount`: how many blocks committed
+ *   - `subjects[]`: distinct subject names covered, in plan order
+ *   - `firstBlockTitle`: helpful glance at the first activity
+ *   - `lastGeneratedAt`: max `createdAt` across the tomorrow blocks (or
+ *     null when planExists but blocks=0; signals "draft is empty")
+ *
+ * No mutation, no Drive enqueue, no auth — safe for the Curriculum hub's
+ * familyAdmin context.
+ * ========================================================================== */
+export async function getTomorrowDraftPreview(): Promise<{
+  dateISO: string;
+  dayLabel: string;
+  planExists: boolean;
+  blockCount: number;
+  subjects: string[];
+  firstBlockTitle: string | null;
+  lastGeneratedAt: number | null;
+}> {
+  // Compute next school day, skipping Sat (6) + Sun (0).
+  const now = new Date();
+  let target = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+  while (target.getDay() === 0 || target.getDay() === 6) {
+    target = new Date(target.getTime() + 24 * 60 * 60 * 1000);
+  }
+  const dateISO = target.toISOString().slice(0, 10);
+  const dayLabel = target.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  });
+  const plan = await getPlanByDate(dateISO);
+  if (!plan) {
+    return {
+      dateISO,
+      dayLabel,
+      planExists: false,
+      blockCount: 0,
+      subjects: [],
+      firstBlockTitle: null,
+      lastGeneratedAt: null,
+    };
+  }
+  const blocks = (await listBlocksForPlan(plan.id)) as any[];
+  if (blocks.length === 0) {
+    return {
+      dateISO,
+      dayLabel,
+      planExists: true,
+      blockCount: 0,
+      subjects: [],
+      firstBlockTitle: null,
+      lastGeneratedAt: null,
+    };
+  }
+  // Resolve subject names.
+  const subjList = (await listSubjects()) as any[];
+  const idToName = new Map<number, string>(subjList.map((s) => [s.id as number, s.name as string]));
+  const seen = new Set<string>();
+  const subjectsOrdered: string[] = [];
+  for (const b of blocks) {
+    const name = b.subjectId ? idToName.get(b.subjectId) : null;
+    if (name && !seen.has(name)) {
+      seen.add(name);
+      subjectsOrdered.push(name);
+    }
+  }
+  const sorted = [...blocks].sort(
+    (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0),
+  );
+  const firstBlockTitle = sorted[0]?.title ?? null;
+  // Estimate generation time from max createdAt of the blocks.
+  let maxCreated = 0;
+  for (const b of blocks) {
+    const t = b.createdAt instanceof Date ? b.createdAt.getTime() : (typeof b.createdAt === "number" ? b.createdAt : 0);
+    if (t > maxCreated) maxCreated = t;
+  }
+  return {
+    dateISO,
+    dayLabel,
+    planExists: true,
+    blockCount: blocks.length,
+    subjects: subjectsOrdered,
+    firstBlockTitle,
+    lastGeneratedAt: maxCreated || null,
+  };
 }

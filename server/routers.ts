@@ -3623,6 +3623,30 @@ export const appRouter = router({
         const { backfillScheduleBlockTopics } = await import("./_lib/backfillScheduleBlockTopics");
         return backfillScheduleBlockTopics({ dryRun: input.dryRun ?? false });
       }),
+    /**
+     * Push 34 (2026-05-13) — Mom-only daily analytics CSV export.
+     * Builds a stable-schema CSV row of the day's listening focus,
+     * Kiwi chat activity, planned-vs-completed blocks, per-subject
+     * coverage, IEP Behind/On/Ahead chip counts, and off-plan topic
+     * count. Enqueued to Drive at:
+     *   Progress and Reports / Analytics CSV Exports / {YYYY-MM} /
+     *   {date} - Daily Analytics.csv
+     * Idempotent — re-runs skip if the same content is already queued.
+     */
+    exportDailyAnalytics: familyAdminProcedure
+      .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }).optional())
+      .mutation(async ({ input }) => {
+        const dateISO = input?.date ?? new Date().toISOString().slice(0, 10);
+        const result = await db.enqueueDailyAnalyticsExport(dateISO);
+        return { dateISO, ...result };
+      }),
+    /**
+     * Push 37 (2026-05-13) — Tomorrow's draft preview for the Curriculum hub.
+     * Returns the next-school-day plan summary (block count, subjects, first
+     * block title, last-generated time) so Mom can see at a glance whether
+     * the 9 PM `nightly-lesson-gen` cron ran and what's queued. Pure read.
+     */
+    tomorrowPreview: protectedProcedure.query(() => db.getTomorrowDraftPreview()),
     toggle: protectedProcedure
       .input(z.object({ id: z.number(), status: z.enum(["notStarted", "inProgress", "done"]) }))
       .mutation(({ input }) => db.toggleCurriculumTopic(input.id, input.status)),
@@ -3812,6 +3836,7 @@ export const appRouter = router({
           "classroom.studentDomain",    // e.g. indianhill.k12.oh.us
           "roblox.allowed",             // adult toggle: "1" shows the Roblox launcher tile, "0" hides it
           "ui.theme",                   // Reagan's chosen visual theme — server-persisted across devices
+          "tutor.mode",                 // push 36 (2026-05-13): "1" => sidebar enters tutor focus, "0" / null => off
         ]);
         // absence:YYYY-MM-DD flags are non-sensitive and Reagan's UI needs to read them
         const isAbsenceFlag = /^absence:\d{4}-\d{2}-\d{2}$/.test(input.key);

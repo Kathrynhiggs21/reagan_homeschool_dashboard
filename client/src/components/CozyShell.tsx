@@ -7,6 +7,8 @@ import { Lock, Unlock } from "lucide-react";
 import { daysUntilSummerBreak } from "@/lib/summerCountdown";
 import WeatherWidget from "./WeatherWidget";
 import CompanionBelt from "./CompanionBelt";
+import { useTutorMode } from "@/hooks/useTutorMode";
+import { GraduationCap } from "lucide-react";
 
 /**
  * Sidebar navigation.
@@ -77,6 +79,19 @@ export default function CozyShell({ children }: { children: ReactNode }) {
     photoUrl?: string | null;
   };
   const { unlocked, lock } = useAdultLock();
+  // Push 36 (2026-05-13): tutor focus mode collapses the adult sidebar
+  // to the three pages tutors actually use mid-lesson. Read even when
+  // the adult area is locked so the kid-side knows to render the
+  // "Tutor Mode is on" banner.
+  const { enabled: tutorModeOn, setEnabled: setTutorMode } = useTutorMode();
+
+  // When tutor mode is on, the adult sidebar is reduced to these three
+  // pages — everything else (Analytics, Settings, Drive Hub) is hidden
+  // so a tutor can't drift into the parent's admin area.
+  const TUTOR_FOCUS_PATHS = new Set(["/curriculum", "/agenda-editor", "/notes"]);
+  const adultNavFiltered = tutorModeOn
+    ? ADULT_NAV.filter((n) => TUTOR_FOCUS_PATHS.has(n.to))
+    : ADULT_NAV;
 
   const isActive = (to: string) => loc === to || (loc === "/" && to === "/today");
 
@@ -203,7 +218,7 @@ export default function CozyShell({ children }: { children: ReactNode }) {
                 <Unlock className="w-3 h-3" />
                 <span>For Adults</span>
               </div>
-              {ADULT_NAV.map((n) => (
+              {adultNavFiltered.map((n) => (
                 <Link
                   key={n.to}
                   href={n.to}
@@ -217,18 +232,21 @@ export default function CozyShell({ children }: { children: ReactNode }) {
                   <span>{n.label}</span>
                 </Link>
               ))}
-              {/* External: open the Drive Hub in a new tab */}
-              <a
-                href={DRIVE_HUB_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 px-3 py-1.5 rounded-md text-[13px] transition-all text-sidebar-foreground hover:bg-sidebar-accent"
-                title="Opens Reagan's Drive folder in a new tab"
-              >
-                <span className="text-2xl w-7 text-center">📁</span>
-                <span className="flex-1">Drive Hub</span>
-                <span className="text-xs opacity-60">↗</span>
-              </a>
+              {/* External: open the Drive Hub in a new tab. Hidden in tutor mode
+                  so non-family users can't drift into the parent's Drive. */}
+              {!tutorModeOn && (
+                <a
+                  href={DRIVE_HUB_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 px-3 py-1.5 rounded-md text-[13px] transition-all text-sidebar-foreground hover:bg-sidebar-accent"
+                  title="Opens Reagan's Drive folder in a new tab"
+                >
+                  <span className="text-2xl w-7 text-center">📁</span>
+                  <span className="flex-1">Drive Hub</span>
+                  <span className="text-xs opacity-60">↗</span>
+                </a>
+              )}
             </>
           )}
         </nav>
@@ -241,15 +259,29 @@ export default function CozyShell({ children }: { children: ReactNode }) {
             <SummerCountdown />
           </div>
           {unlocked ? (
-            <Button
-              size="sm"
-              variant="outline"
-              className="w-full bg-white/5"
-              onClick={lock}
-              title="Lock adult area"
-            >
-              <Lock className="w-3.5 h-3.5 mr-1.5" /> Lock adult area
-            </Button>
+            <>
+              {/* Push 36 (2026-05-13): tutor focus toggle. Visible only when
+                  the adult area is unlocked so Reagan can't flip it. */}
+              <Button
+                size="sm"
+                variant={tutorModeOn ? "default" : "outline"}
+                className={`w-full ${tutorModeOn ? "bg-amber-500 text-black hover:bg-amber-400" : "bg-white/5"}`}
+                onClick={() => setTutorMode(!tutorModeOn)}
+                title={tutorModeOn ? "Turn tutor focus off" : "Hide Analytics/Settings during a tutor session"}
+              >
+                <GraduationCap className="w-3.5 h-3.5 mr-1.5" />
+                {tutorModeOn ? "Tutor mode ON" : "Tutor mode"}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full bg-white/5"
+                onClick={lock}
+                title="Lock adult area"
+              >
+                <Lock className="w-3.5 h-3.5 mr-1.5" /> Lock adult area
+              </Button>
+            </>
           ) : (
             <Link href="/settings">
               <Button size="sm" variant="outline" className="w-full bg-white/5" title="Unlock adult area">

@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { parseTime12h, formatTime12h } from "@/lib/time12h";
+import { useTutorMode } from "@/hooks/useTutorMode";
 
 type Snapshot = {
   id: number;
@@ -293,8 +294,27 @@ export default function AgendaEditor() {
   const tutorOfDayQ = (trpc as any).tutors?.tutorOfDay?.useQuery?.({ dateStr: date }) ?? { data: null };
   const tutorOfDay: { name: string; role: string | null; arrival: string | null; departure: string | null; label: string } | null = tutorOfDayQ.data ?? null;
 
+  // Push 36 (2026-05-13): if Mom flipped on tutor focus mode we show a
+  // banner at the top of every adult page so it's obvious the sidebar is
+  // intentionally narrowed (and the tutor can ask her to flip it off if
+  // they need Settings or Analytics).
+  const { enabled: tutorModeOn, setEnabled: setTutorMode } = useTutorMode();
   return (
     <div className="container max-w-6xl py-6 space-y-6">
+      {tutorModeOn && (
+        <div
+          className="rounded-md border border-amber-400/60 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 text-sm text-amber-900 dark:text-amber-100 flex items-center justify-between gap-3"
+          data-testid="tutor-mode-banner"
+        >
+          <span>
+            <span className="font-semibold">Tutor mode is on.</span>{" "}
+            The sidebar is narrowed to Curriculum Hub, Agenda Editor, and Notebook. Analytics and Settings are hidden until Mom flips it off.
+          </span>
+          <Button size="sm" variant="outline" onClick={() => setTutorMode(false)} className="shrink-0">
+            Turn off
+          </Button>
+        </div>
+      )}
       <header className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-3xl font-semibold">Agenda Editor</h1>
@@ -552,6 +572,14 @@ export default function AgendaEditor() {
         </Card>
       )}
 
+      {/* Push 38 (2026-05-13) — Quick-attach worksheets sidebar.
+          Surfaces every unpinned library item dated for the selected day so
+          Mom can one-tap pin it to a block. Hidden when there are no live
+          blocks (nothing to pin to). */}
+      {!editPlan && liveBlocks.length > 0 && (
+        <QuickAttachWorksheets date={date} liveBlocks={liveBlocks} />
+      )}
+
       {/* MANUAL BLOCK EDITOR — demoted to collapsible "Advanced" footer */}
       <details className="rounded-lg border border-border/60 bg-card/30">
         <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium opacity-80 hover:opacity-100">
@@ -634,6 +662,116 @@ export default function AgendaEditor() {
         </div>
       </details>
     </div>
+  );
+}
+
+function QuickAttachWorksheets({ date, liveBlocks }: { date: string; liveBlocks: Snapshot[] }) {
+  // Pull every library item dated for the selected day. The library router
+  // already supports filter by `dateFor` + `blockId` so we can split
+  // unpinned vs pinned in one round-trip per state slice. Soft-fail (any)
+  // so a stale client never crashes the page.
+  const unpinnedQ = (trpc as any).library?.list?.useQuery?.({
+    dateFor: date, blockId: null, limit: 50, orderBy: "recommendedUse",
+  }) ?? { data: null, isLoading: false };
+  const pinnedQ = (trpc as any).library?.list?.useQuery?.({
+    dateFor: date, limit: 100, orderBy: "recommendedUse",
+  }) ?? { data: null };
+  const updateM = (trpc as any).library?.update?.useMutation?.({
+    onSuccess: () => {
+      // Hand the cache a fresh page — cheap because the strip is small.
+      (trpc as any).useUtils?.()?.library?.list?.invalidate?.();
+    },
+  });
+  const items: any[] = (unpinnedQ.data as any[]) ?? [];
+  const pinned: any[] = (pinnedQ.data as any[]) ?? [];
+  // Filter pinned client-side to ones actually attached to a live block on
+  // this date (some library rows are dateFor="YYYY-MM-DD" but blockId is
+  // null on a different day).
+  const liveIds = new Set(liveBlocks.map((b) => b.id));
+  const pinnedForToday = pinned.filter((p) => p.blockId && liveIds.has(p.blockId));
+  const unpinnedForToday = items.filter((p) => !p.blockId);
+  if (unpinnedForToday.length === 0 && pinnedForToday.length === 0) {
+    // "Don't show if no info" — nothing to attach, nothing pinned yet.
+    return null;
+  }
+  const blockLabel = (b: Snapshot) => {
+    const t = b.startTime ? formatTime12h(b.startTime) : "";
+    return `${t ? t + " · " : ""}${b.title}`;
+  };
+  return (
+    <Card data-testid="quick-attach-worksheets">
+      <CardHeader className="py-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <span aria-hidden>📎</span>
+          Quick-attach worksheets for {date}
+          <span className="text-xs font-normal opacity-60">
+            ({unpinnedForToday.length} unpinned, {pinnedForToday.length} pinned)
+          </span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pt-0 space-y-3">
+        {unpinnedForToday.length > 0 && (
+          <div className="space-y-1.5">
+            <div className="text-xs opacity-70">Today's library items that aren't pinned to a block yet:</div>
+            {unpinnedForToday.map((it: any) => (
+              <div key={it.id} className="flex items-center gap-2 flex-wrap rounded border border-border/60 bg-card/40 px-2 py-1.5">
+                <span className="text-[11px] px-1.5 py-0.5 rounded bg-muted opacity-70">{it.type}</span>
+                {it.subjectSlug && (
+                  <span className="text-[11px] opacity-70">{it.subjectSlug}</span>
+                )}
+                <span className="text-sm flex-1 min-w-0 truncate" title={it.title}>{it.title}</span>
+                <Select
+                  onValueChange={(v) => {
+                    if (!v || !updateM) return;
+                    const blockId = Number(v);
+                    updateM.mutate({ id: it.id, patch: { blockId } });
+                    toast.success(`Attached “${it.title}” to block.`);
+                  }}
+                >
+                  <SelectTrigger className="h-7 w-44 text-xs">
+                    <SelectValue placeholder="Attach to block…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {liveBlocks.map((b) => (
+                      <SelectItem key={b.id} value={String(b.id)}>{blockLabel(b)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ))}
+          </div>
+        )}
+        {pinnedForToday.length > 0 && (
+          <div className="space-y-1.5">
+            <div className="text-xs opacity-70">Already pinned to blocks today:</div>
+            {pinnedForToday.map((it: any) => {
+              const block = liveBlocks.find((b) => b.id === it.blockId);
+              return (
+                <div key={it.id} className="flex items-center gap-2 flex-wrap rounded border border-emerald-300/50 bg-emerald-50/60 dark:bg-emerald-950/20 px-2 py-1.5">
+                  <span className="text-[11px] px-1.5 py-0.5 rounded bg-emerald-200/60 dark:bg-emerald-800/40">{it.type}</span>
+                  <span className="text-sm flex-1 min-w-0 truncate" title={it.title}>{it.title}</span>
+                  {block && (
+                    <span className="text-[11px] opacity-70 truncate max-w-[12rem]">→ {blockLabel(block)}</span>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      if (!updateM) return;
+                      updateM.mutate({ id: it.id, patch: { blockId: null } });
+                      toast.success(`Unpinned “${it.title}”.`);
+                    }}
+                  >
+                    Unpin
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

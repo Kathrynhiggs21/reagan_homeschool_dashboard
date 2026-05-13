@@ -2728,3 +2728,11 @@ shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
 - [x] Backend left intact: `skillLadder.placementLevel`, `currentLevel`, `leveledUp` API field still exist. The adapt engine + Mom's adult digest depend on them. Kid surfaces now treat these as internal-only.
 - [x] vitest `noKidLevelsContract.test.ts` added (14/14 pass) scanning 9 kid pages + 2 components for 8 forbidden patterns (literal "Level N" / "Lvl N" / "Mastery N" / "Stage N" / `{level}` / `{currentLevel}` / `{placementLevel}` JSX renders / kid toast wording).
 - [x] Sidebar tooltip / mini-card on /coins — CozyShell.tsx Kiwi entry says "Coins, prizes, your skills" (no level word). Locked by contract test 10.
+
+- [x] Push 34 (planned) — Mom-only daily analytics CSV builder + familyAdmin tRPC mutation + Drive enqueue
+
+- [x] Push 34 — Mom-only daily analytics CSV builder + Drive enqueue + Analytics tab button
+- [x] Push 35 — Agenda change-detection: updateBlock flags dirty + change_resend pipeline
+- [x] Push 36 — Tutor focus mode (sidebar lens + AgendaEditor banner, tutor.mode appSetting)
+- [x] Push 37 — Curriculum Hub Tomorrow's Draft pinned strip (db.getTomorrowDraftPreview + trpc curriculum.tomorrowPreview + Curriculum.tsx card)
+- [x] Push 38 — Quick-attach worksheets sidebar in AgendaEditor (library.list + library.update patch.blockId)
