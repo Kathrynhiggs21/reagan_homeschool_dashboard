@@ -848,19 +848,62 @@ export async function clearKiwiHistory() {
   await getDb().delete(whisperSessions);
 }
 
-/** 2026-05-05: kiwi behavior — derived from whisperSessions row timestamps. */
+/**
+ * 2026-05-05 + push 16 (2026-05-12): kiwi behavior — derived from
+ * whisperSessions (Reagan ↔ Kiwi chat) and `actualAgendaEntries.source='kiwi-listened'`
+ * (passive Kiwi listening events). Returns null when there's NO data
+ * for the day so the frontend can honor the "don't show if no info" rule.
+ */
 export async function kiwiBehaviorForDate(dateStr: string) {
   const start = new Date(dateStr + "T00:00:00");
   const end = new Date(dateStr + "T23:59:59");
   const rows = await getDb().select().from(whisperSessions)
     .where(and(gte(whisperSessions.createdAt, start), lte(whisperSessions.createdAt, end)));
-  if (rows.length === 0) return null;
+  // Kiwi-initiated check-ins are recorded as actualAgendaEntries with
+  // source='kiwi-listened'. We pull them in the same window so the card
+  // can show "X interactions + Y check-ins."
+  let kiwiInitiatedCount = 0;
+  try {
+    const checkins = await getDb().select().from(actualAgendaEntries)
+      .where(and(
+        eq(actualAgendaEntries.dateISO as any, dateStr),
+        eq(actualAgendaEntries.source as any, "kiwi-listened" as any),
+      ));
+    kiwiInitiatedCount = checkins.length;
+  } catch { /* table may not exist in older fixtures */ }
+  if (rows.length === 0 && kiwiInitiatedCount === 0) return null;
   const userMsgs = rows.filter((r: any) => r.role === "user");
   const aiMsgs = rows.filter((r: any) => r.role !== "user");
+  // "Top topic" is the most-used non-stopword across user messages today.
+  // We don't run an LLM for this — too expensive for a card. Cheap word-bag
+  // heuristic that surfaces the noun Reagan asked about most.
+  const STOP = new Set([
+    "the","a","an","is","i","you","to","of","and","it","in","on","for","do",
+    "can","with","my","me","we","are","was","this","that","have","has",
+    "what","how","why","where","when","who","be","so","if","like","just",
+    "about","but","or","not","no","yes","its","it's","i'm","i'll",
+    "please","kiwi","hi","hey","hello",
+  ]);
+  const counts = new Map<string, number>();
+  for (const m of userMsgs) {
+    const text = String((m as any).content || "").toLowerCase();
+    for (const word of text.match(/[a-z][a-z']{2,}/g) || []) {
+      if (STOP.has(word)) continue;
+      counts.set(word, (counts.get(word) || 0) + 1);
+    }
+  }
+  let topTopic: string | null = null;
+  let topTopicCount = 0;
+  counts.forEach((n, w) => {
+    if (n > topTopicCount) { topTopicCount = n; topTopic = w; }
+  });
   return {
     interactions: rows.length,
     userMessages: userMsgs.length,
     aiMessages: aiMsgs.length,
+    kiwiInitiatedCount,
+    topTopic,
+    topTopicCount,
     firstAt: rows[0]?.createdAt ?? null,
     lastAt: rows[rows.length - 1]?.createdAt ?? null,
   };
@@ -871,10 +914,28 @@ export async function kiwiBehaviorAggregate() {
   if (rows.length === 0) return null;
   const dayKey = (d: Date) => d.toISOString().slice(0, 10);
   const days = new Set(rows.map((r: any) => dayKey(new Date(r.createdAt))));
+  // Longest streak of consecutive day-keys with any interaction.
+  const sortedDays = Array.from(days).sort();
+  let longestStreak = 0;
+  let current = 0;
+  let prev: string | null = null;
+  for (const d of sortedDays) {
+    if (prev === null) {
+      current = 1;
+    } else {
+      const prevDate = new Date(prev + "T00:00:00Z");
+      const cur = new Date(d + "T00:00:00Z");
+      const diffDays = Math.round((cur.getTime() - prevDate.getTime()) / 86_400_000);
+      current = diffDays === 1 ? current + 1 : 1;
+    }
+    if (current > longestStreak) longestStreak = current;
+    prev = d;
+  }
   return {
     totalInteractions: rows.length,
     daysTogether: days.size,
     avgInteractionsPerDay: days.size === 0 ? 0 : Math.round(rows.length / days.size),
+    longestStreak,
     firstAt: rows.reduce((acc: Date, r: any) => {
       const d = new Date(r.createdAt);
       return acc && acc < d ? acc : d;

@@ -397,10 +397,10 @@ Sweep targets (push 14 — 2026-05-12):
 ## 2026-05-05 — Kiwi Behavior on Analytics + Settings sliders
 
 Analytics page (adult-only):
-- [ ] **Kiwi today** card: today's interaction count, talks today, top topic Reagan asked Kiwi, Kiwi-initiated check-ins today
-- [ ] **Kiwi together — averages** card: average interactions/day across all days together, total interactions, total days together, longest streak of daily kiwi use
-- [ ] Both cards hide when 0 interactions ever ("don't show if no info" rule)
-- [ ] Backend: `kiwi.behaviorDaily` + `kiwi.behaviorAggregate` tRPC queries reading from existing kiwi/adultAi message logs (no new table — derive from `adultAiMessages` + any per-day kiwi event log already present)
+- [x] **Kiwi today** card: today's interaction count, talks today, top topic Reagan asked Kiwi, Kiwi-initiated check-ins today — push 16 (2026-05-12). `kiwiBehaviorForDate` now returns `topTopic`/`topTopicCount` (word-bag heuristic over user messages, stopwords filtered) + `kiwiInitiatedCount` (count of `actualAgendaEntries.source='kiwi-listened'` for the date). The existing Analytics "Kiwi today" card (lines 168–187 in Analytics.tsx) renders both as conditional sub-rows that hide when null/0.
+- [x] **Kiwi together — averages** card: average interactions/day across all days together, total interactions, total days together, longest streak of daily kiwi use — push 16. `kiwiBehaviorAggregate` now returns `longestStreak` (count of consecutive day-keys in whisperSessions). The existing All-time strip already shows daysTogether + avgInteractionsPerDay + totalInteractions; push 16 added a fourth card "Longest Kiwi streak" that hides when 0.
+- [x] Both cards hide when 0 interactions ever ("don't show if no info" rule) — `kiwiBehaviorForDate` returns null when 0 whisper rows AND 0 kiwi-listened entries; `kiwiBehaviorAggregate` returns null when 0 whisper rows ever; the entire "Today — live" and "All-time together" sections in Analytics.tsx are wrapped in `{(kiwiToday.data || listenToday.data) && (...)}` and `{(kiwiAll.data || listenAll.data) && (...)}` so they don't render at all when both data sources are empty.
+- [x] Backend: `kiwi.behaviorToday` + `kiwi.behaviorAggregate` tRPC queries — already existed (`server/routers.ts:1913-1917`), now backed by the extended helpers. Vitest `kiwiBehaviorExtended.test.ts` (5/5 pass): null-when-no-data, topTopic word-bag with stopword filter, kiwiInitiatedCount from actualAgendaEntries, longestStreak across consecutive days, structural assertion that aggregate exposes longestStreak.
 
 Settings (adult) — push 15 (2026-05-12):
 - [x] **Sliders** for Kiwi (each 0–4) — already wired in `Settings.tsx` lines 96–117 via `KiwiPersonalityCard` (Animation amount, Talking amount, Funny). Verified live UI + 5-step semantic labels (Off/Calm/Soft/Normal/Lively).

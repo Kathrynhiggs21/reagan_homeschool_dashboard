@@ -165,13 +165,24 @@ export default function Analytics() {
             <OpenInDrive label="Day Summaries in Drive" />
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {kiwiToday.data && (
+{kiwiToday.data && (
               <Card className="cozy-card p-4">
                 <div className="text-xs text-muted-foreground">Kiwi today</div>
                 <div className="text-3xl font-display font-semibold mt-1">{(kiwiToday.data as any).interactions}</div>
                 <div className="text-[11px] text-muted-foreground mt-1">
                   {(kiwiToday.data as any).userMessages} from Reagan · {(kiwiToday.data as any).aiMessages} from Kiwi
                 </div>
+                {(kiwiToday.data as any).topTopic && (
+                  <div className="text-[11px] text-muted-foreground mt-1">
+                    Top topic: <span className="font-medium">{(kiwiToday.data as any).topTopic}</span>
+                    {" "}· {(kiwiToday.data as any).topTopicCount}×
+                  </div>
+                )}
+                {(kiwiToday.data as any).kiwiInitiatedCount > 0 && (
+                  <div className="text-[11px] text-muted-foreground mt-1">
+                    Kiwi-initiated check-ins: {(kiwiToday.data as any).kiwiInitiatedCount}
+                  </div>
+                )}
               </Card>
             )}
             {listenToday.data && (
@@ -211,11 +222,18 @@ export default function Analytics() {
                 <div className="text-3xl font-display font-semibold mt-1">{(kiwiAll.data as any).daysTogether}</div>
               </Card>
             )}
-            {kiwiAll.data && (
+{kiwiAll.data && (
               <Card className="cozy-card p-4">
                 <div className="text-xs text-muted-foreground">Avg Kiwi msgs/day</div>
                 <div className="text-3xl font-display font-semibold mt-1">{(kiwiAll.data as any).avgInteractionsPerDay}</div>
                 <div className="text-[11px] text-muted-foreground mt-1">{(kiwiAll.data as any).totalInteractions} total</div>
+              </Card>
+            )}
+            {kiwiAll.data && ((kiwiAll.data as any).longestStreak ?? 0) > 0 && (
+              <Card className="cozy-card p-4">
+                <div className="text-xs text-muted-foreground">Longest Kiwi streak</div>
+                <div className="text-3xl font-display font-semibold mt-1">{(kiwiAll.data as any).longestStreak}</div>
+                <div className="text-[11px] text-muted-foreground mt-1">consecutive days together</div>
               </Card>
             )}
             {listenAll.data && (
