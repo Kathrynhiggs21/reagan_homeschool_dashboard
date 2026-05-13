@@ -6272,6 +6272,23 @@ export async function countActualForDate(dateISO: string): Promise<number> {
   return rows.length;
 }
 
+/**
+ * Push 39 (2026-05-13) — Mom-only undo for the Today quick-entry card.
+ * We don't fully delete — we delete the row and trigger a day-log
+ * rebuild so the Drive day-log stays consistent.
+ */
+export async function deleteActualEntry(id: number): Promise<void> {
+  const rows = await getDb()
+    .select({ dateISO: actualAgendaEntries.dateISO })
+    .from(actualAgendaEntries)
+    .where(eq(actualAgendaEntries.id, id));
+  const dateISO = rows[0]?.dateISO ?? null;
+  await getDb()
+    .delete(actualAgendaEntries)
+    .where(eq(actualAgendaEntries.id, id));
+  if (dateISO) void enqueueDayLogRebuildForDate(dateISO);
+}
+
 /* ==========================================================
  * Slice 4.5 — Coverage delta + off-plan topic capture
  * ========================================================== */
@@ -7026,5 +7043,254 @@ export async function getTomorrowDraftPreview(): Promise<{
     subjects: subjectsOrdered,
     firstBlockTitle,
     lastGeneratedAt: maxCreated || null,
+  };
+}
+
+
+/**
+ * Push 40 (2026-05-13) — Actual-vs-Planned per-block strip.
+ *
+ * Single-call helper that returns, for the given dateISO:
+ *   - the planned schedule blocks for the day, and
+ *   - the list of actual entries pinned to each block (one row maps to
+ *     0..N actuals), plus loose-matched actuals via computeCoverageDelta,
+ *   - the list of off-plan actual entries that didn't map anywhere.
+ *
+ * Used by Today.tsx + Schedule.tsx to render a small chip strip under
+ * every planned block:
+ *
+ *     [Planned: Long division] [✓ actual: 22 min — Mom] [+ off-plan]
+ *
+ * One database call from the client, no waterfalls.
+ */
+export interface ActualVsPlannedBlock {
+  id: number;
+  title: string;
+  subjectSlug: string | null;
+  status: string | null;
+  startTime: number;
+  durationMin: number;
+  actuals: Array<{
+    id: number;
+    topic: string;
+    minutesSpent: number;
+    source: string;
+    notes: string | null;
+    pinned: boolean; // true if plannedBlockId === id, false if loose-matched by title
+  }>;
+}
+
+export interface ActualVsPlannedForDate {
+  dateISO: string;
+  blocks: ActualVsPlannedBlock[];
+  offPlanActuals: Array<{
+    id: number;
+    subjectSlug: string;
+    topic: string;
+    minutesSpent: number;
+    source: string;
+    notes: string | null;
+  }>;
+  totals: {
+    plannedBlocks: number;
+    plannedDone: number;
+    actualEntries: number;
+    actualMinutes: number;
+  };
+}
+
+export async function getActualVsPlannedForDate(dateISO: string): Promise<ActualVsPlannedForDate> {
+  // Resolve the daily plan for the date. If there's no plan we still
+  // return a useful object so the strip can show "no plan, here's what
+  // they did anyway".
+  const plan = await getDb()
+    .select()
+    .from(dailyPlans)
+    .where(sql`DATE(${dailyPlans.date}) = ${dateISO}`)
+    .limit(1);
+  const planRow = plan[0] ?? null;
+  const blocks: Array<any> = planRow
+    ? await getDb()
+        .select()
+        .from(scheduleBlocks)
+        .where(eq(scheduleBlocks.planId, planRow.id))
+        .orderBy(asc(scheduleBlocks.startTime))
+    : [];
+  const actuals = await listActualForDate(dateISO);
+
+  // Pinned-by-id first.
+  const byId = new Map<number, ActualVsPlannedBlock>();
+  for (const b of blocks) {
+    byId.set(b.id, {
+      id: b.id,
+      title: b.title,
+      subjectSlug: b.subjectSlug ?? null,
+      status: b.status ?? null,
+      startTime: b.startTime,
+      durationMin: b.durationMin,
+      actuals: [],
+    });
+  }
+  const offPlan: ActualVsPlannedForDate["offPlanActuals"] = [];
+
+  for (const ae of actuals) {
+    if (ae.plannedBlockId && byId.has(ae.plannedBlockId)) {
+      byId.get(ae.plannedBlockId)!.actuals.push({
+        id: ae.id,
+        topic: ae.topic,
+        minutesSpent: ae.minutesSpent,
+        source: ae.source,
+        notes: ae.notes ?? null,
+        pinned: true,
+      });
+      continue;
+    }
+    // Loose match by title contains topic (same rule as computeCoverageDelta).
+    const norm = ae.topic.toLowerCase().trim();
+    let matchedId: number | null = null;
+    for (const b of blocks) {
+      const t = (b.title ?? "").toLowerCase();
+      if (t && (t.includes(norm) || norm.includes(t))) {
+        matchedId = b.id;
+        break;
+      }
+    }
+    if (matchedId !== null) {
+      byId.get(matchedId)!.actuals.push({
+        id: ae.id,
+        topic: ae.topic,
+        minutesSpent: ae.minutesSpent,
+        source: ae.source,
+        notes: ae.notes ?? null,
+        pinned: false,
+      });
+    } else {
+      offPlan.push({
+        id: ae.id,
+        subjectSlug: ae.subjectSlug,
+        topic: ae.topic,
+        minutesSpent: ae.minutesSpent,
+        source: ae.source,
+        notes: ae.notes ?? null,
+      });
+    }
+  }
+
+  const blocksOut = Array.from(byId.values());
+  const plannedDone = blocksOut.filter((b) => b.status === "done" || b.actuals.length > 0).length;
+  const actualMinutes = actuals.reduce((s, a) => s + (a.minutesSpent || 0), 0);
+
+  return {
+    dateISO,
+    blocks: blocksOut,
+    offPlanActuals: offPlan,
+    totals: {
+      plannedBlocks: blocksOut.length,
+      plannedDone,
+      actualEntries: actuals.length,
+      actualMinutes,
+    },
+  };
+}
+
+
+/**
+ * Push 41 (2026-05-13) — Mood timeline strip on Today.
+ *
+ * Returns a thin, plot-ready slice of listeningSummaries for the date,
+ * down-sampled into ~12 visual bins across the school day window.
+ *
+ * Why this lives in db.ts:
+ *   - aggregateListeningDay returns whole-day averages, not a timeline.
+ *   - the recap email + Analytics may want the same shape later, so we
+ *     keep one source of truth.
+ *
+ * The bins are evenly spaced from periodStart-of-day to periodEnd-of-day.
+ * Each bin reports avg emotion (-100..100) and avg comfort (0..100) of
+ * the chunks whose periodStart falls inside it, plus an inferred mood
+ * label using the same thresholds the day-log uses. Chunks with
+ * relevanceScore < 50 are excluded so background noise + sibling chatter
+ * don't drag the strip down.
+ */
+export interface MoodTimelinePoint {
+  binIndex: number;
+  bucketStart: number; // unix ms
+  bucketEnd: number;
+  count: number;
+  avgEmotion: number | null;
+  avgComfort: number | null;
+  mood: "green" | "yellow" | "red" | null;
+}
+
+export interface MoodTimelineForDate {
+  dateISO: string;
+  bins: MoodTimelinePoint[];
+  totals: { chunks: number; relevantChunks: number };
+}
+
+function classifyMoodFromScores(emotion: number | null, comfort: number | null): MoodTimelinePoint["mood"] {
+  if (emotion === null && comfort === null) return null;
+  const e = emotion ?? 0;
+  const c = comfort ?? 50;
+  if (e <= -30 || c <= 30) return "red";
+  if (e <= 10 || c <= 60) return "yellow";
+  return "green";
+}
+
+export async function buildMoodTimelineForDate(
+  dateISO: string,
+  binCount: number = 12,
+): Promise<MoodTimelineForDate> {
+  const rows: any[] = await listListeningSummariesForDate(dateISO);
+  const relevant = rows.filter((r: any) => (r.relevanceScore ?? 100) >= 50);
+  if (relevant.length === 0) {
+    return {
+      dateISO,
+      bins: [],
+      totals: { chunks: rows.length, relevantChunks: 0 },
+    };
+  }
+  const starts = relevant.map((r: any) => new Date(r.periodStart).getTime());
+  const ends = relevant.map((r: any) => new Date(r.periodEnd).getTime());
+  const minT = Math.min(...starts);
+  const maxT = Math.max(...ends);
+  // Avoid zero-width when there's a single chunk: spread it over 1 hour.
+  const span = Math.max(maxT - minT, 60 * 60 * 1000);
+  const step = Math.max(1, Math.floor(span / binCount));
+
+  const bins: MoodTimelinePoint[] = [];
+  for (let i = 0; i < binCount; i++) {
+    const bucketStart = minT + i * step;
+    const bucketEnd = i === binCount - 1 ? maxT : bucketStart + step;
+    const inBin = relevant.filter((r: any) => {
+      const t = new Date(r.periodStart).getTime();
+      return t >= bucketStart && t < bucketEnd + (i === binCount - 1 ? 1 : 0);
+    });
+    if (inBin.length === 0) {
+      bins.push({ binIndex: i, bucketStart, bucketEnd, count: 0, avgEmotion: null, avgComfort: null, mood: null });
+      continue;
+    }
+    const e = inBin
+      .map((r: any) => r.emotionScore)
+      .filter((v: any) => typeof v === "number") as number[];
+    const c = inBin
+      .map((r: any) => r.comfortScore)
+      .filter((v: any) => typeof v === "number") as number[];
+    const avgE = e.length ? e.reduce((s, v) => s + v, 0) / e.length : null;
+    const avgC = c.length ? c.reduce((s, v) => s + v, 0) / c.length : null;
+    bins.push({
+      binIndex: i,
+      bucketStart,
+      bucketEnd,
+      count: inBin.length,
+      avgEmotion: avgE === null ? null : Math.round(avgE),
+      avgComfort: avgC === null ? null : Math.round(avgC),
+      mood: classifyMoodFromScores(avgE, avgC),
+    });
+  }
+  return {
+    dateISO,
+    bins,
+    totals: { chunks: rows.length, relevantChunks: relevant.length },
   };
 }

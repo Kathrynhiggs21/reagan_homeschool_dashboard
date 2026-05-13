@@ -485,7 +485,7 @@ export const appRouter = router({
     update: familyAdminProcedure.input(z.object({
       id: z.number(),
       title: z.string().optional(),
-      description: z.string().optional(),
+      description: z.string().nullable().optional(),
       status: BlockStatus.optional(),
       grade: z.string().optional(),
       notes: z.string().optional(),
@@ -1765,6 +1765,13 @@ export const appRouter = router({
     /** 2026-05-05: all-time aggregate (avg per day, days together). */
     aggregate: protectedProcedure
       .query(() => db.listeningBehaviorAggregate()),
+    /** Push 41 (2026-05-13): mood timeline (binned chart-ready array). */
+    moodTimeline: protectedProcedure
+      .input(z.object({
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        binCount: z.number().int().min(4).max(48).default(12),
+      }))
+      .query(({ input }) => db.buildMoodTimelineForDate(input.date, input.binCount)),
   }),
 
   /* =================== ANIMALS =================== */
@@ -4115,6 +4122,65 @@ export const appRouter = router({
       }),
 
     pushTargets: adminOrTutorProcedure.query(() => db.listActivePushTargets()),
+  }),
+  /**
+   * Push 39 (2026-05-13) — Slice 4.5 adult quick-entry router for the
+   * Today page "what we actually did" card. Mom + Grandma + active tutor
+   * tutors can record an actual entry without touching the planned
+   * schedule. familyAdminProcedure means the gate is open for the entire
+   * household (past, today, future). Each insert kicks off a Drive
+   * day-log rebuild via the existing `enqueueDayLogRebuildForDate` hook
+   * inside `recordActualEntry`.
+   */
+  actuals: router({
+    /** List actual entries for a date — used by Today + Schedule + Analytics. */
+    listForDate: protectedProcedure
+      .input(z.object({ dateISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
+      .query(({ input }) => db.listActualForDate(input.dateISO)),
+    /** Push 40 — single-call payload for the Actual-vs-Planned strip. */
+    vsPlanned: protectedProcedure
+      .input(z.object({ dateISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
+      .query(({ input }) => db.getActualVsPlannedForDate(input.dateISO)),
+    /**
+     * Quick-entry: one-tap form on Today. Required fields are subject,
+     * topic, and minutes. Optional plannedBlockId pins the entry to a
+     * planned block so the Actual-vs-Planned strip can render the
+     * "✓ actual" chip next to the right block.
+     */
+    quickAdd: familyAdminProcedure
+      .input(
+        z.object({
+          dateISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          plannedBlockId: z.number().int().positive().nullable().optional(),
+          subjectSlug: z.string().min(1).max(32),
+          topic: z.string().min(1).max(240),
+          minutesSpent: z.number().int().min(0).max(600).default(0),
+          notes: z.string().max(2000).nullable().optional(),
+          source: z
+            .enum(["reagan-checkin", "mom-input", "grandma-recap", "tutor-note"])
+            .default("mom-input"),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        const insertedId = await db.recordActualEntry({
+          dateISO: input.dateISO,
+          plannedBlockId: input.plannedBlockId ?? null,
+          subjectSlug: input.subjectSlug,
+          topic: input.topic,
+          minutesSpent: input.minutesSpent,
+          source: input.source,
+          notes: input.notes ?? null,
+          createdBy: (ctx as any).user?.email ?? (ctx as any).user?.name ?? "system",
+        } as any);
+        return { ok: true, id: insertedId };
+      }),
+    /** Mom-only undo for an entry inserted in the last minute. */
+    deleteRecent: familyAdminProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(async ({ input }) => {
+        await db.deleteActualEntry(input.id);
+        return { ok: true };
+      }),
   }),
 });
 export type AppRouter = typeof appRouter;

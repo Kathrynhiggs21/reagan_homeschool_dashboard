@@ -2736,3 +2736,7 @@ shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
 - [x] Push 36 — Tutor focus mode (sidebar lens + AgendaEditor banner, tutor.mode appSetting)
 - [x] Push 37 — Curriculum Hub Tomorrow's Draft pinned strip (db.getTomorrowDraftPreview + trpc curriculum.tomorrowPreview + Curriculum.tsx card)
 - [x] Push 38 — Quick-attach worksheets sidebar in AgendaEditor (library.list + library.update patch.blockId)
+- [x] Push 39 — Today adult quick-entry card + actuals tRPC router (familyAdmin quickAdd / listForDate / deleteRecent + db.deleteActualEntry with day-log rebuild hook)
+- [x] Push 40 — Per-block Actual-vs-Planned chip strip on Today + Schedule (db.getActualVsPlannedForDate + trpc actuals.vsPlanned + 2 components)
+- [x] Push 41 — Today mood timeline strip (db.buildMoodTimelineForDate + trpc listening.moodTimeline + adult-gated 12-bin chart)
+- [x] Push 42 — Per-field edits (inline description in AgendaEditor) + tap-block deep-edit (Today title button, Schedule jump to /agenda-editor)

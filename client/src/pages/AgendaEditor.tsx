@@ -794,10 +794,15 @@ function ManualBlockRow({
   const [title, setTitle] = useState(block.title);
   const [startTime, setStartTime] = useState(formatTime12h(block.startTime));
   const [durationMin, setDurationMin] = useState<number>(block.durationMin);
+  // Push 42 (2026-05-13) — per-field edit completeness.
+  // Description (notes) is now inline so Mom + Grandma can edit it without
+  // opening the modal. Patches on blur.
+  const [description, setDescription] = useState<string>(block.description ?? "");
 
   useEffect(() => { setTitle(block.title); }, [block.title]);
   useEffect(() => { setStartTime(formatTime12h(block.startTime)); }, [block.startTime]);
   useEffect(() => { setDurationMin(block.durationMin); }, [block.durationMin]);
+  useEffect(() => { setDescription(block.description ?? ""); }, [block.description]);
 
   // Filter topics by chosen subject
   const eligibleTopics = topicCatalog.filter(
@@ -908,6 +913,24 @@ function ManualBlockRow({
         >
           Del
         </Button>
+      </div>
+      {/* Push 42 (2026-05-13) — inline description editor. Spans the right
+          half of the row so adults can drop quick notes on a block without
+          opening the modal. Patches on blur. */}
+      <div style={{ gridColumn: "4 / -1" }}>
+        <Input
+          className="h-7 text-[11px] mt-1 bg-transparent"
+          placeholder="Notes for this block (videos, hints, pacing)…"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          onBlur={() => {
+            const next = description.trim() === "" ? null : description;
+            if (next !== (block.description ?? null)) {
+              onPatch({ description: next });
+            }
+          }}
+          data-testid={`block-description-input-${block.id}`}
+        />
       </div>
     </div>
   );

@@ -4,6 +4,8 @@ import { popConfettiFromElement } from "@/lib/confetti";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useKiwi } from "@/contexts/KiwiContext";
 import { useAdultLock } from "@/contexts/AdultLockContext";
 import { useState } from "react";
@@ -382,6 +384,22 @@ export default function Today() {
         </Card>
       )}
 
+      {/* Push 39 (2026-05-13) — Adult quick-entry card.
+          One-tap log of what Reagan actually did today (subject + topic +
+          minutes + optional notes). Writes through trpc.actuals.quickAdd
+          (familyAdmin gate). Hidden when adult is not unlocked so the
+          kid view stays calm. */}
+      {unlocked && (
+        <TodayQuickEntryCard />
+      )}
+
+      {/* Push 41 (2026-05-13) — Mood timeline strip.
+          Adult-only visualisation derived from the same ambient-listening
+          chunks that power the Kiwi behavior helper. 12 bins across the
+          school day, color-coded green/yellow/red. Empty days render
+          nothing so the page stays calm. */}
+      {unlocked && <TodayMoodTimelineStrip />}
+
       {/* AI Schedule Generator — adult-gated */}
       {unlocked && (
         <AIScheduleGeneratorCard defaultDate={new Date().toISOString().slice(0, 10)} />
@@ -497,7 +515,25 @@ export default function Today() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="time-chip time-chip-v2" style={rainbowPillStyle(i)}>{blockTimeLabel(i)}</span>
                     <span className="text-xl" aria-hidden="true">{tint.emoji}</span>
-                    <div className="font-display font-bold leading-tight" style={{ ...rainbowInkStyle(i), fontSize: "clamp(1.05rem, 2.1vw, 1.35rem)" }}>{b.title}</div>
+                    {/* Push 42 (2026-05-13) — tap title to edit block.
+                        For adults, the block title becomes a one-tap shortcut
+                        to the full BlockEditor dialog so they can fix the
+                        plan from Today without bouncing to AgendaEditor.
+                        For Reagan, it stays a static title. */}
+                    {unlocked ? (
+                      <button
+                        type="button"
+                        className="font-display font-bold leading-tight text-left hover:underline focus:underline cursor-pointer"
+                        style={{ ...rainbowInkStyle(i), fontSize: "clamp(1.05rem, 2.1vw, 1.35rem)", background: "transparent", border: 0, padding: 0 }}
+                        title="Adult: tap to edit this block"
+                        onClick={() => setBlockEditor({ open: true, block: b as any })}
+                        data-testid={`today-block-tap-edit-${b.id}`}
+                      >
+                        {b.title}
+                      </button>
+                    ) : (
+                      <div className="font-display font-bold leading-tight" style={{ ...rainbowInkStyle(i), fontSize: "clamp(1.05rem, 2.1vw, 1.35rem)" }}>{b.title}</div>
+                    )}
                     <CurriculumChip match={`${b.title || ""} ${b.description || ""}`} />
                   </div>
                   <div className="mt-1">
@@ -701,6 +737,9 @@ export default function Today() {
                     )}
                   </div>
                 </div>
+                {unlocked && (
+                  <ActualVsPlannedChips blockId={b.id} />
+                )}
                 {/* BIG obvious end-of-row checkmark */}
                 <button
                   type="button"
@@ -1165,6 +1204,293 @@ function TutorOfDayStrip() {
         <span className="font-display font-semibold">{t.name}</span>
         {t.role ? <span className="text-muted-foreground">· {t.role}</span> : null}
         {window ? <span className="text-muted-foreground">· {window}</span> : null}
+      </div>
+    </Card>
+  );
+}
+
+/**
+ * Push 39 (2026-05-13) — Adult quick-entry card for "what we actually did".
+ *
+ * UX intent: Mom finishes a block, glances at Today, and wants to log
+ * "Reagan actually did 20 min of long division" without leaving the page.
+ * This card avoids the full Agenda Editor for the simple case.
+ *
+ * Data path: trpc.actuals.quickAdd → db.recordActualEntry → automatic
+ * day-log Drive rebuild via enqueueDayLogRebuildForDate. Coverage delta
+ * + IEP analytics + 8 PM recap email all read from the same
+ * actualAgendaEntries table, so the entry shows up everywhere with no
+ * extra wiring.
+ */
+function TodayQuickEntryCard() {
+  const dateISO = new Date().toISOString().slice(0, 10);
+  const subjectsQ = trpc.subjects.list.useQuery();
+  const recentQ = (trpc as any).actuals?.listForDate?.useQuery?.({ dateISO });
+  const utils = trpc.useUtils();
+  const addM = (trpc as any).actuals?.quickAdd?.useMutation?.({
+    onSuccess: () => {
+      // Re-fetch the inline recent list + the day-log readers.
+      (utils as any).actuals?.listForDate?.invalidate?.({ dateISO });
+      toast.success("Logged what Reagan actually did.");
+    },
+    onError: (e: any) => {
+      toast.error(e?.message ?? "Couldn't save — try again.");
+    },
+  });
+  const deleteM = (trpc as any).actuals?.deleteRecent?.useMutation?.({
+    onSuccess: () => {
+      (utils as any).actuals?.listForDate?.invalidate?.({ dateISO });
+      toast.success("Removed.");
+    },
+  });
+
+  const [subjectSlug, setSubjectSlug] = useState<string>("");
+  const [topic, setTopic] = useState<string>("");
+  const [minutes, setMinutes] = useState<string>("15");
+  const [notes, setNotes] = useState<string>("");
+
+  const subjects = (subjectsQ.data as Array<{ slug: string; name: string }> | undefined) ?? [];
+  const recent = (recentQ?.data as Array<any> | undefined) ?? [];
+
+  const canSubmit = subjectSlug.trim() !== "" && topic.trim() !== "" && Number(minutes) >= 0;
+
+  function submit() {
+    if (!canSubmit || !addM) return;
+    addM.mutate({
+      dateISO,
+      subjectSlug,
+      topic: topic.trim(),
+      minutesSpent: Math.max(0, Math.min(600, Number(minutes) || 0)),
+      notes: notes.trim() ? notes.trim() : null,
+      source: "mom-input",
+    });
+    // Reset the lighter fields so Mom can log a second entry fast; keep
+    // subject so multiple entries in the same subject only need topic +
+    // minutes.
+    setTopic("");
+    setNotes("");
+    setMinutes("15");
+  }
+
+  return (
+    <Card className="classroom-card p-4" data-testid="today-quick-entry-card">
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
+        <div className="font-display text-sm font-semibold chalk-white">
+          What we actually did
+          <span className="ml-2 text-[10px] font-normal text-muted-foreground uppercase tracking-wider">
+            Mom/Grandma quick log
+          </span>
+        </div>
+        <div className="text-[11px] text-muted-foreground">
+          Auto-syncs to Drive day-log + Analytics
+        </div>
+      </div>
+
+      <div className="grid gap-2 md:grid-cols-[140px_1fr_80px_auto] items-center">
+        <Select value={subjectSlug} onValueChange={setSubjectSlug}>
+          <SelectTrigger className="h-9">
+            <SelectValue placeholder="Subject…" />
+          </SelectTrigger>
+          <SelectContent>
+            {subjects.map((s) => (
+              <SelectItem key={s.slug} value={s.slug}>{s.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Input
+          placeholder="Topic (e.g. long division — remainders)"
+          value={topic}
+          onChange={(e) => setTopic(e.target.value)}
+        />
+        <Input
+          type="number"
+          min={0}
+          max={600}
+          placeholder="min"
+          value={minutes}
+          onChange={(e) => setMinutes(e.target.value)}
+          aria-label="Minutes spent"
+        />
+        <Button
+          size="sm"
+          onClick={submit}
+          disabled={!canSubmit || addM?.isPending}
+          data-testid="today-quick-entry-submit"
+        >
+          {addM?.isPending ? "Logging…" : "+ Log"}
+        </Button>
+      </div>
+      <Input
+        className="mt-2"
+        placeholder="Optional notes (great focus, struggled with regrouping, etc.)"
+        value={notes}
+        onChange={(e) => setNotes(e.target.value)}
+      />
+
+      {recent.length > 0 && (
+        <div className="mt-3 space-y-1.5" data-testid="today-quick-entry-recent">
+          <div className="text-[11px] text-muted-foreground uppercase tracking-wider">
+            Today so far ({recent.length})
+          </div>
+          {recent.slice(-6).reverse().map((r: any) => (
+            <div
+              key={r.id}
+              className="flex items-center gap-2 flex-wrap rounded border border-border/60 bg-card/40 px-2 py-1.5 text-xs"
+            >
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted opacity-80">
+                {r.subjectSlug}
+              </span>
+              <span className="flex-1 min-w-0 truncate" title={r.topic}>{r.topic}</span>
+              <span className="opacity-70">{r.minutesSpent} min</span>
+              <span className="opacity-50 text-[10px]">{r.source}</span>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 text-[11px]"
+                onClick={() => deleteM?.mutate({ id: r.id })}
+                disabled={deleteM?.isPending}
+              >
+                Undo
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+
+/**
+ * Push 40 (2026-05-13) — Per-block "Actual-vs-Planned" chip strip.
+ *
+ * Renders directly under the planned block actions. Pulls
+ * trpc.actuals.vsPlanned once per day (cached at the strip level via
+ * react-query default dedupe) and filters to the rows that map to this
+ * block. Hidden when adult is locked OR when there are no actuals on
+ * the block (no clutter for kids, no noise for unfilled blocks).
+ */
+function ActualVsPlannedChips({ blockId }: { blockId: number }) {
+  const dateISO = new Date().toISOString().slice(0, 10);
+  const q = (trpc as any).actuals?.vsPlanned?.useQuery?.({ dateISO }, { staleTime: 30_000 });
+  const data = q?.data as any;
+  if (!data) return null;
+  const block = (data.blocks ?? []).find((b: any) => b.id === blockId);
+  if (!block || !block.actuals || block.actuals.length === 0) return null;
+  const total = block.actuals.reduce((s: number, a: any) => s + (a.minutesSpent || 0), 0);
+  return (
+    <div
+      className="flex flex-wrap items-center gap-1.5 mt-1 ml-1"
+      data-testid={`actual-vs-planned-chips-${blockId}`}
+    >
+      <span className="text-[10px] uppercase tracking-wide opacity-70 chalk-white">Actual:</span>
+      {block.actuals.slice(0, 3).map((a: any) => (
+        <span
+          key={a.id}
+          title={a.notes || a.source}
+          className={
+            "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] " +
+            (a.pinned
+              ? "bg-emerald-400/15 border-emerald-300/40 text-emerald-50"
+              : "bg-amber-300/10 border-amber-300/30 text-amber-50")
+          }
+        >
+          <span aria-hidden>{a.pinned ? "✓" : "≈"}</span>
+          <span className="truncate max-w-[14rem]">{a.topic}</span>
+          <span className="opacity-70">{a.minutesSpent}m</span>
+        </span>
+      ))}
+      {block.actuals.length > 3 && (
+        <span className="text-[10px] opacity-60">+{block.actuals.length - 3} more</span>
+      )}
+      <span className="text-[10px] opacity-70 ml-1">= {total}m</span>
+    </div>
+  );
+}
+
+
+/**
+ * Push 41 (2026-05-13) — Today mood timeline strip.
+ *
+ * Pulls trpc.listening.moodTimeline once, renders a horizontal row of
+ * 12 cells. Each cell is colored by inferred mood; tooltip exposes the
+ * raw emotion + comfort numbers + bin window. The strip is hidden
+ * entirely when there are no relevant chunks for the day so Mom never
+ * sees a flat empty bar.
+ */
+function TodayMoodTimelineStrip() {
+  const dateISO = new Date().toISOString().slice(0, 10);
+  const q = (trpc as any).listening?.moodTimeline?.useQuery?.(
+    { date: dateISO, binCount: 12 },
+    { staleTime: 60_000 },
+  );
+  const data = q?.data as {
+    bins: Array<{
+      binIndex: number;
+      bucketStart: number;
+      bucketEnd: number;
+      count: number;
+      avgEmotion: number | null;
+      avgComfort: number | null;
+      mood: "green" | "yellow" | "red" | null;
+    }>;
+    totals: { chunks: number; relevantChunks: number };
+  } | undefined;
+
+  if (!data || data.totals.relevantChunks === 0) return null;
+
+  const colorFor = (m: string | null): string => {
+    if (m === "green") return "#36c66f";
+    if (m === "yellow") return "#f5c84b";
+    if (m === "red") return "#e9543a";
+    return "#3a3a3a";
+  };
+
+  const fmtTime = (t: number) =>
+    new Date(t).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+
+  return (
+    <Card className="classroom-card p-4" data-testid="today-mood-timeline">
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-2">
+        <div className="font-display text-sm font-semibold chalk-white">
+          Mood timeline
+          <span className="ml-2 text-[10px] font-normal text-muted-foreground uppercase tracking-wider">
+            from ambient listening · adult view
+          </span>
+        </div>
+        <div className="text-[11px] text-muted-foreground">
+          {data.totals.relevantChunks} relevant chunks / {data.totals.chunks} total
+        </div>
+      </div>
+      <div className="flex items-stretch gap-1" role="list" aria-label="Mood timeline bins">
+        {data.bins.map((b) => (
+          <div
+            key={b.binIndex}
+            role="listitem"
+            title={
+              b.count > 0
+                ? `${fmtTime(b.bucketStart)}–${fmtTime(b.bucketEnd)} · ${b.count} chunk(s)\n` +
+                  `emotion ${b.avgEmotion ?? "—"} · comfort ${b.avgComfort ?? "—"} · ${b.mood ?? "no data"}`
+                : `${fmtTime(b.bucketStart)}–${fmtTime(b.bucketEnd)} · no data`
+            }
+            className="flex-1 h-9 rounded-md border border-white/10"
+            style={{
+              backgroundColor: colorFor(b.mood),
+              opacity: b.count === 0 ? 0.25 : 0.9,
+            }}
+            data-mood={b.mood ?? "none"}
+            data-count={b.count}
+          />
+        ))}
+      </div>
+      <div className="flex items-center justify-between mt-1 text-[10px] text-muted-foreground">
+        <span>{fmtTime(data.bins[0]?.bucketStart ?? Date.now())}</span>
+        <span>
+          <span className="inline-block w-2 h-2 rounded-full mr-1" style={{ background: "#36c66f" }} />green
+          <span className="inline-block w-2 h-2 rounded-full ml-2 mr-1" style={{ background: "#f5c84b" }} />yellow
+          <span className="inline-block w-2 h-2 rounded-full ml-2 mr-1" style={{ background: "#e9543a" }} />red
+        </span>
+        <span>{fmtTime(data.bins[data.bins.length - 1]?.bucketEnd ?? Date.now())}</span>
       </div>
     </Card>
   );

@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { useAdultLock } from "@/contexts/AdultLockContext";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -195,6 +196,8 @@ function DayView({
 }: { date: Date; today: Date; offByDate: Record<string, { label: string; source?: string | null }>; onOpenAgenda: (d: Date) => void; }) {
   const dateStr = ymd(date);
   const off = offByDate[dateStr];
+  // Push 42 (2026-05-13) — needed for tap-block-to-edit jump.
+  const [, navigate] = useLocation();
   const planQ = trpc.plans.byDate.useQuery({ date: dateStr });
   const plan: any = planQ.data;
   const blocksQ = trpc.blocks.list.useQuery({ planId: plan?.id || 0 }, { enabled: !!plan?.id });
@@ -227,12 +230,27 @@ function DayView({
             <li key={b.id} className="flex flex-col gap-1 p-2 rounded-lg bg-white/70 dark:bg-amber-950/30 border border-amber-200">
               <div className="flex items-center gap-3">
                 <Badge className="capitalize">{b.subjectSlug || b.kind || "block"}</Badge>
-                <div className="font-medium">{b.title}</div>
+                {/* Push 42 (2026-05-13) — tap title to jump straight to the
+                    AgendaEditor for that date, scrolled to this block. The
+                    Schedule page lacks an inline editor so the simplest
+                    safe path is a deep link. Only adults see the cursor
+                    affordance. */}
+                <button
+                  type="button"
+                  className="font-medium text-left hover:underline focus:underline"
+                  style={{ background: "transparent", border: 0, padding: 0, cursor: "pointer" }}
+                  title="Adult: tap to edit in AgendaEditor"
+                  onClick={() => navigate(`/agenda-editor?date=${dateStr}#block-${b.id}`)}
+                  data-testid={`schedule-block-tap-edit-${b.id}`}
+                >
+                  {b.title}
+                </button>
                 <div className="ml-auto text-xs text-muted-foreground">
                   {b.status === "complete" ? "✓ done" : "to do"}
                 </div>
               </div>
               <TopicLabel subjectSlug={b.subjectSlug} topicName={b.curriculumTopicName ?? null} size="xs" />
+              <ScheduleActualVsPlannedChips blockId={b.id} dateISO={dateStr} />
             </li>
           ))}
         </ul>
@@ -447,5 +465,55 @@ function GoogleCalendarOverlayStub() {
         </div>
       </div>
     </Card>
+  );
+}
+
+
+/**
+ * Push 40 (2026-05-13) — Schedule day-view Actual-vs-Planned chip strip.
+ *
+ * Mirrors the Today.tsx version but parameterized by date so historical
+ * days (Schedule lets you scroll back/forward) render the right
+ * actuals. Adult-gated to stay out of Reagan's clean schedule view.
+ */
+function ScheduleActualVsPlannedChips({ blockId, dateISO }: { blockId: number; dateISO: string }) {
+  const { unlocked } = useAdultLock();
+  const q = (trpc as any).actuals?.vsPlanned?.useQuery?.(
+    { dateISO },
+    { enabled: unlocked, staleTime: 30_000 },
+  );
+  if (!unlocked) return null;
+  const data = q?.data as any;
+  if (!data) return null;
+  const block = (data.blocks ?? []).find((b: any) => b.id === blockId);
+  if (!block || !block.actuals || block.actuals.length === 0) return null;
+  const total = block.actuals.reduce((s: number, a: any) => s + (a.minutesSpent || 0), 0);
+  return (
+    <div
+      className="flex flex-wrap items-center gap-1.5 mt-1"
+      data-testid={`schedule-actual-vs-planned-${blockId}`}
+    >
+      <span className="text-[10px] uppercase tracking-wide opacity-70">Actual:</span>
+      {block.actuals.slice(0, 3).map((a: any) => (
+        <span
+          key={a.id}
+          title={a.notes || a.source}
+          className={
+            "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] " +
+            (a.pinned
+              ? "bg-emerald-100 border-emerald-300 text-emerald-900 dark:bg-emerald-900/30 dark:text-emerald-100"
+              : "bg-amber-100 border-amber-300 text-amber-900 dark:bg-amber-900/30 dark:text-amber-100")
+          }
+        >
+          <span aria-hidden>{a.pinned ? "✓" : "≈"}</span>
+          <span className="truncate max-w-[14rem]">{a.topic}</span>
+          <span className="opacity-70">{a.minutesSpent}m</span>
+        </span>
+      ))}
+      {block.actuals.length > 3 && (
+        <span className="text-[10px] opacity-60">+{block.actuals.length - 3} more</span>
+      )}
+      <span className="text-[10px] opacity-70 ml-1">= {total}m</span>
+    </div>
   );
 }
