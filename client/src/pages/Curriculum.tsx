@@ -43,7 +43,7 @@ export default function Curriculum() {
       </header>
 
       {/* AI agenda sync strip — pinned at top so adults can refresh the next 5 school days from one place */}
-      <Card className="cozy-card p-4 border-2 border-amber-300/40 bg-amber-50/50">
+      <Card className="cozy-card p-4 border-2 border-amber-300/40 bg-amber-50/50 dark:bg-amber-950/20">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="font-display font-semibold text-base">Tomorrow & the week ahead</h2>
@@ -54,10 +54,10 @@ export default function Curriculum() {
               <div className="mt-2 flex flex-wrap gap-1.5 text-[11px]">
                 {(syncFutureDays.data as any).results?.map((r: any) => (
                   <span key={r.date} className={
-                    r.status === "committed" ? "px-2 py-0.5 rounded bg-emerald-100 text-emerald-800" :
-                    r.status === "skipped_weekend" ? "px-2 py-0.5 rounded bg-slate-100 text-slate-600" :
-                    r.status === "skipped_off" ? "px-2 py-0.5 rounded bg-blue-100 text-blue-700" :
-                    "px-2 py-0.5 rounded bg-rose-100 text-rose-700"
+                    r.status === "committed" ? "px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200" :
+                    r.status === "skipped_weekend" ? "px-2 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-800/40 dark:text-slate-300" :
+                    r.status === "skipped_off" ? "px-2 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200" :
+                    "px-2 py-0.5 rounded bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-200"
                   }>
                     {r.date.slice(5)} {r.status === "committed" ? `✓ ${r.blockCount}` : r.status.replace("skipped_","— ")}
                   </span>
@@ -116,7 +116,7 @@ export default function Curriculum() {
         ) : (
           <div className="space-y-2">
             {proposed.map((r: any) => (
-              <div key={r.id} className="p-3 rounded-md border bg-white/40">
+              <div key={r.id} className="p-3 rounded-md border bg-card/40 dark:bg-card/30">
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-semibold capitalize">{r.subjectSlug}</div>

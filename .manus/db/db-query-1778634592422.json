@@ -1,0 +1,73 @@
+{
+  "query": "SELECT t.name, ts.scheduledAt, ts.durationMin, ts.status, LEFT(ts.focus, 60) AS focus\nFROM tutorSessions ts JOIN tutors t ON t.id = ts.tutorId\nWHERE ts.scheduledAt BETWEEN '2026-05-04' AND '2026-05-15'\nORDER BY ts.scheduledAt;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT t.name, ts.scheduledAt, ts.durationMin, ts.status, LEFT(ts.focus, 60) AS focus\nFROM tutorSessions ts JOIN tutors t ON t.id = ts.tutorId\nWHERE ts.scheduledAt BETWEEN '2026-05-04' AND '2026-05-15'\nORDER BY ts.scheduledAt;",
+  "rows": [
+    {
+      "name": "Madison",
+      "scheduledAt": "2026-05-04 14:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "focus": "Week A · Monday tutor session"
+    },
+    {
+      "name": "Sophie",
+      "scheduledAt": "2026-05-05 14:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "focus": "Week A · Tuesday tutor session"
+    },
+    {
+      "name": "Madison",
+      "scheduledAt": "2026-05-06 14:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "focus": "Week A · Wednesday tutor session"
+    },
+    {
+      "name": "Keith",
+      "scheduledAt": "2026-05-07 15:00:00",
+      "durationMin": "180",
+      "status": "scheduled",
+      "focus": "Week A · Thursday tutor session"
+    },
+    {
+      "name": "Sophie",
+      "scheduledAt": "2026-05-08 14:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "focus": "Week A · Friday tutor session"
+    },
+    {
+      "name": "Sophie",
+      "scheduledAt": "2026-05-11 14:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "focus": "Week B · Monday tutor session"
+    },
+    {
+      "name": "Sophie",
+      "scheduledAt": "2026-05-12 14:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "focus": "Week B · Tuesday tutor session"
+    },
+    {
+      "name": "Sophie",
+      "scheduledAt": "2026-05-13 14:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "focus": "Week B · Wednesday tutor session"
+    },
+    {
+      "name": "Keith",
+      "scheduledAt": "2026-05-14 15:00:00",
+      "durationMin": "180",
+      "status": "scheduled",
+      "focus": "Week B · Thursday tutor session"
+    }
+  ],
+  "messages": [],
+  "stdout": "name\tscheduledAt\tdurationMin\tstatus\tfocus\nMadison\t2026-05-04 14:00:00\t300\tscheduled\tWeek A · Monday tutor session\nSophie\t2026-05-05 14:00:00\t300\tscheduled\tWeek A · Tuesday tutor session\nMadison\t2026-05-06 14:00:00\t300\tscheduled\tWeek A · Wednesday tutor session\nKeith\t2026-05-07 15:00:00\t180\tscheduled\tWeek A · Thursday tutor session\nSophie\t2026-05-08 14:00:00\t300\tscheduled\tWeek A · Friday tutor session\nSophie\t2026-05-11 14:00:00\t300\tscheduled\tWeek B · Monday tutor session\nSophie\t2026-05-12 14:00:00\t300\tscheduled\tWeek B · Tuesday tutor session\nSophie\t2026-05-13 14:00:00\t300\tscheduled\tWeek B · Wednesday tutor session\nKeith\t2026-05-14 15:00:00\t180\tscheduled\tWeek B · Thursday tutor session\n",
+  "stderr": "",
+  "execution_time_ms": 555
+}

@@ -255,6 +255,13 @@ export default function AgendaEditor() {
   const subjects: Array<{ slug: string; name: string }> = ctx?.subjects ?? [];
   const topicCatalog: Array<{ code: string; title: string; subjectSlug: string }> = ctx?.topicCatalog ?? [];
 
+  // 2026-05-12 push 13 — Item L: tutor-of-day strip on the AgendaEditor page,
+  // matched to the currently selected date in the date picker. Reads from the
+  // public tutors.tutorOfDay procedure (single source of truth, also drives
+  // the kid Today page). Falls back to a friendly "Mom-only day" line.
+  const tutorOfDayQ = (trpc as any).tutors?.tutorOfDay?.useQuery?.({ dateStr: date }) ?? { data: null };
+  const tutorOfDay: { name: string; role: string | null; arrival: string | null; departure: string | null; label: string } | null = tutorOfDayQ.data ?? null;
+
   return (
     <div className="container max-w-6xl py-6 space-y-6">
       <header className="flex items-center justify-between gap-3 flex-wrap">
@@ -265,6 +272,22 @@ export default function AgendaEditor() {
         <div className="flex items-center gap-2">
           <label className="text-sm opacity-70">Date</label>
           <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-44" />
+          {/* Item L — tutor strip beside the date picker so adults always see
+              who's slated to be with Reagan on the day they're editing. */}
+          <div className="text-xs px-2.5 py-1 rounded-full border border-border/60 bg-card/50 dark:bg-card/30 whitespace-nowrap" data-testid="tutor-of-day-strip">
+            {tutorOfDay ? (
+              <>
+                <span className="opacity-60 mr-1">👩‍🏫</span>
+                <span className="font-semibold">{tutorOfDay.name}</span>
+                {tutorOfDay.role && <span className="opacity-60"> · {tutorOfDay.role}</span>}
+                {tutorOfDay.arrival && tutorOfDay.departure && (
+                  <span className="opacity-60"> · {tutorOfDay.arrival}–{tutorOfDay.departure}</span>
+                )}
+              </>
+            ) : (
+              <span className="opacity-60">👩‍💻 Mom-only day</span>
+            )}
+          </div>
           {/* Slice 3: Design today from blank — wipes every block on the chosen
               date so the adult/tutor can build it from scratch using the AI box
               or the manual + Add block button. Confirm before destructive action. */}

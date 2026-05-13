@@ -1,0 +1,38 @@
+{
+  "query": "-- Re-anchor seeded recurring sessions to the literal local clock times Marcy\n-- specified (Madison/Sophie 10:00, Keith 11:00) rather than whatever the\n-- script's Date.toISOString() round-trip produced. tutorOfDay reads getHours()\n-- on the JS Date object so the value stored MUST be the local clock time we\n-- want to display.\nUPDATE tutorSessions\n   SET scheduledAt = DATE_FORMAT(scheduledAt, '%Y-%m-%d 10:00:00')\n WHERE focus LIKE 'Week % · Monday tutor session'\n    OR focus LIKE 'Week % · Tuesday tutor session'\n    OR focus LIKE 'Week % · Wednesday tutor session'\n    OR focus LIKE 'Week % · Friday tutor session';\n\nUPDATE tutorSessions\n   SET scheduledAt = DATE_FORMAT(scheduledAt, '%Y-%m-%d 11:00:00')\n WHERE focus LIKE 'Week % · Thursday tutor session';\n\nSELECT t.name, ts.scheduledAt, ts.durationMin, ts.status, LEFT(ts.focus, 50) AS focus\nFROM tutorSessions ts JOIN tutors t ON t.id = ts.tutorId\nWHERE ts.scheduledAt BETWEEN '2026-05-11' AND '2026-05-15'\nORDER BY ts.scheduledAt;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute -- Re-anchor seeded recurring sessions to the literal local clock times Marcy\n-- specified (Madison/Sophie 10:00, Keith 11:00) rather than whatever the\n-- script's Date.toISOString() round-trip produced. tutorOfDay reads getHours()\n-- on the JS Date object so the value stored MUST be the local clock time we\n-- want to display.\nUPDATE tutorSessions\n   SET scheduledAt = DATE_FORMAT(scheduledAt, '%Y-%m-%d 10:00:00')\n WHERE focus LIKE 'Week % · Monday tutor session'\n    OR focus LIKE 'Week % · Tuesday tutor session'\n    OR focus LIKE 'Week % · Wednesday tutor session'\n    OR focus LIKE 'Week % · Friday tutor session';\n\nUPDATE tutorSessions\n   SET scheduledAt = DATE_FORMAT(scheduledAt, '%Y-%m-%d 11:00:00')\n WHERE focus LIKE 'Week % · Thursday tutor session';\n\nSELECT t.name, ts.scheduledAt, ts.durationMin, ts.status, LEFT(ts.focus, 50) AS focus\nFROM tutorSessions ts JOIN tutors t ON t.id = ts.tutorId\nWHERE ts.scheduledAt BETWEEN '2026-05-11' AND '2026-05-15'\nORDER BY ts.scheduledAt;",
+  "rows": [
+    {
+      "name": "Sophie",
+      "scheduledAt": "2026-05-11 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "focus": "Week B · Monday tutor session"
+    },
+    {
+      "name": "Sophie",
+      "scheduledAt": "2026-05-12 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "focus": "Week B · Tuesday tutor session"
+    },
+    {
+      "name": "Sophie",
+      "scheduledAt": "2026-05-13 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "focus": "Week B · Wednesday tutor session"
+    },
+    {
+      "name": "Keith",
+      "scheduledAt": "2026-05-14 11:00:00",
+      "durationMin": "180",
+      "status": "scheduled",
+      "focus": "Week B · Thursday tutor session"
+    }
+  ],
+  "messages": [],
+  "stdout": "name\tscheduledAt\tdurationMin\tstatus\tfocus\nSophie\t2026-05-11 10:00:00\t300\tscheduled\tWeek B · Monday tutor session\nSophie\t2026-05-12 10:00:00\t300\tscheduled\tWeek B · Tuesday tutor session\nSophie\t2026-05-13 10:00:00\t300\tscheduled\tWeek B · Wednesday tutor session\nKeith\t2026-05-14 11:00:00\t180\tscheduled\tWeek B · Thursday tutor session\n",
+  "stderr": "",
+  "execution_time_ms": 674
+}

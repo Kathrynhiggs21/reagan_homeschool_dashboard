@@ -73,10 +73,13 @@ function PracticeLinks({ t, small = false }: { t: Topic; small?: boolean }) {
     : "text-[10px] px-1.5 py-0 h-5 rounded border bg-transparent";
   const khanLabel = links.usedKhanKids ? "Khan Kids" : "Khan";
   const ixlLabel = links.usedIhSso ? "IXL (IH)" : "IXL";
+  // 2026-05-12 push 13 — swap from text-emerald-700/rose-700 (illegible on dark
+  // theme) to dual-tone classes via dark: variants so the chips read on both
+  // Cream Homeschool (light) AND Starry Chalkboard / Chalkboard Night (dark).
   return (
     <span className="inline-flex gap-1 ml-1">
-      <a href={links.khan} target="_blank" rel="noopener noreferrer" className={cls + " border-emerald-400 text-emerald-700 hover:bg-emerald-50"} title={links.usedKhanKids ? "Open on Khan Academy Kids" : "Open on Khan Academy"}>{khanLabel}</a>
-      <a href={links.ixl} target="_blank" rel="noopener noreferrer" className={cls + " border-rose-400 text-rose-700 hover:bg-rose-50"} title={links.usedIhSso ? "Open IXL via Indian Hill SSO" : "Open on IXL"}>{ixlLabel}</a>
+      <a href={links.khan} target="_blank" rel="noopener noreferrer" className={cls + " border-emerald-400 text-emerald-700 hover:bg-emerald-50 dark:text-emerald-300 dark:hover:bg-emerald-900/30"} title={links.usedKhanKids ? "Open on Khan Academy Kids" : "Open on Khan Academy"}>{khanLabel}</a>
+      <a href={links.ixl} target="_blank" rel="noopener noreferrer" className={cls + " border-rose-400 text-rose-700 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-900/30"} title={links.usedIhSso ? "Open IXL via Indian Hill SSO" : "Open on IXL"}>{ixlLabel}</a>
     </span>
   );
 }
@@ -109,7 +112,7 @@ function MoreLinksButton(props: { subjectSlug: string; topicName: string; small?
     <span className="relative inline-block">
       <button
         type="button"
-        className={`rounded-full border ${sz} border-amber-400 text-amber-700 hover:bg-amber-50`}
+        className={`rounded-full border ${sz} border-amber-400 text-amber-700 hover:bg-amber-50 dark:text-amber-300 dark:hover:bg-amber-900/30`}
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpen((v) => !v); }}
         title="Find more for this topic (Khan / IXL / printable / outdoor)"
       >
@@ -266,7 +269,7 @@ export default function CurriculumTopicsTree() {
               const kids = childrenOf(t.id);
               const allDone = kids.length > 0 && kids.every((k) => k.status === "done");
               return (
-                <div key={t.id} className="rounded-md border border-border/60 bg-white/40 p-2">
+                <div key={t.id} className="rounded-md border border-border/60 bg-card/40 dark:bg-card/30 p-2">
                   <div className="flex items-start gap-2">
                     <Checkbox
                       checked={t.status === "done" || allDone}
