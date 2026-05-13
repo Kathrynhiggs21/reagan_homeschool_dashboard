@@ -2836,3 +2836,9 @@ shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
 - [x] Push 92 (2026-05-13) — Drive sync path helpers (canonical month bucket + safe name segment + per-target descriptor for topics_covered/day_log/recap_reply/agenda_pdf, 13/13 contract)
 
 - [x] Push 93 (2026-05-13) — Tutor identity + dual sign-in pure helpers (CANONICAL_TUTORS Madison/Sophie/Keith, @tbd.local placeholder emails for Editor-tier auth, evaluateDualSignIn confirmed-only-when-both rule, 11/11 contract)
+
+- [x] Push 94 (2026-05-13) — Weekly digest Grandma recipient toggle pure helper (Mom permanent, Grandma toggleable, extras append + dedupe + mute banner, 6/6 contract)
+
+- [x] Push 95 (2026-05-13) — Recap-email composer pure helper (Grandma Marcy at marcy.spear@gmail.com; noon vs evening cadence; planned subjects + observed signals; idempotency key recap:date:cadence; 10/10 contract)
+
+- [x] Push 96 (2026-05-13) — Reagan kid-request presets pure helper (assignment / adventure / schedule canonical order, schedule routes to approvals.submit kind=schedule_change, others land in inbox, defaultMessage templates with blanks; 8/8 contract)
