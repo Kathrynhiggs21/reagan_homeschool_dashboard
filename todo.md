@@ -2860,3 +2860,9 @@ shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
 - [x] Push 104 (2026-05-13) -- Listening-summary mood + behavior payload normalizer pure helper (clamps moodEstimate to canonical 7-value enum; clamps behaviorTags to canonical 7-value set with dedupe + 4-cap; clamps contentClassifier; countsTowardCoverage requires Reagan voice AND school classifier; mood/behavior still recorded for non-school; non-array behaviorTags returns []; 10/10)
 
 - [x] Push 105 (2026-05-13) -- Agenda prompt diff applier pure helper (preview-then-write pair to Push 88; complete blocks NEVER mutated; skip is non-destructive status-only; markFun/markEasy append flags; updateDuration idempotent; unknown blockIds silently ignored; perBlockReasons audit log; input order preserved; 9/9)
+
+- [x] Push 106 (2026-05-13) -- Grandma viewer audience pure helper (canonical GRANDMA_EMAILS = [marcy.spear@gmail.com]; isGrandmaEmail case-insensitive + trims + rejects non-strings; grandmaAudienceFor returns audience+homeRole+isDigestRecipient+isRecapEmailRecipient bundle; shouldRenderGrandmaCopy gate for IEP/recap/digest/snippet UI surfaces; 9/9)
+
+- [x] Push 107 (2026-05-13) -- Off-plan topic auto-add gating pure helper (manual override always promotes; kiwi-confident at confidence>=0.6 inclusive; repeated-capture at >=2 hits; rejects empty label / non-canonical subject / already-in-curriculum case-insensitive; CANONICAL_SUBJECTS = math/ela/science/social-studies/specials; 10/10)
+
+- [x] Push 108 (2026-05-13) -- Sunday-only digest gating pure helper (FAMILY_TIMEZONE=America/New_York; 19:00-20:30 family-local window inclusive of 20:30; not-sunday short-circuit; before-window/after-window distinct reasons; same-family-date idempotency for cron retries / manual replay; EST winter + EDT summer both pinned; familyLocalDateOf YYYY-MM-DD; invalid-now defense; 12/12)
