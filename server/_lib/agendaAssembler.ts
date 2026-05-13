@@ -35,16 +35,20 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
   // Resolve curriculum topic codes for blocks anchored to a topic
   const topicIds = Array.from(new Set(blocksRaw.map((b) => b.curriculumTopicId).filter(Boolean)));
   const topicCodeById = new Map<number, string>();
+  // Push 30 (2026-05-13): also fetch the plain-language title so the PDF can
+  // print "Math · 5.OA.1 · Order of Operations" instead of just the code.
+  const topicTitleById = new Map<number, string>();
   if (topicIds.length > 0) {
     try {
-      // Inline raw query to fetch topic codes in one shot
       const dbi = (await import("./../db")).getDb();
       const { sql } = await import("drizzle-orm");
-      // Use IN list. TopicIds are already ints from drizzle.
       const idsList = topicIds.join(",");
       if (idsList.length > 0) {
-        const [rows] = (await dbi.execute(sql.raw(`SELECT id, code FROM curriculumTopics WHERE id IN (${idsList})`))) as any;
-        for (const r of rows ?? []) topicCodeById.set(Number(r.id), String(r.code));
+        const [rows] = (await dbi.execute(sql.raw(`SELECT id, code, title FROM curriculumTopics WHERE id IN (${idsList})`))) as any;
+        for (const r of rows ?? []) {
+          topicCodeById.set(Number(r.id), String(r.code));
+          if (r.title) topicTitleById.set(Number(r.id), String(r.title));
+        }
       }
     } catch {
       // best-effort
@@ -84,6 +88,7 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
     title: b.title,
     description: b.description ?? null,
     curriculumTopicCode: b.curriculumTopicId ? topicCodeById.get(b.curriculumTopicId) ?? null : null,
+    curriculumTopicTitle: b.curriculumTopicId ? topicTitleById.get(b.curriculumTopicId) ?? null : null,
     bookPageRefs: bookRefsByBlockId.get(b.id) ?? [],
     printablesAttached: lessonByBlockId.get(b.id)?.worksheets?.length ?? 0,
     lesson: lessonByBlockId.get(b.id) ?? null,

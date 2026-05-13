@@ -25,6 +25,11 @@ export type AgendaPdfBlock = {
   title: string;
   description?: string | null;
   curriculumTopicCode?: string | null;
+  /** Push 30 (2026-05-13): plain-language topic title shown alongside the code
+   *  on the agenda head + lesson page header so tutors don't need to look up
+   *  what "5.OA.1" means. Optional for back-compat — existing payloads
+   *  rendered without it still hash identically. */
+  curriculumTopicTitle?: string | null;
   bookPageRefs?: Array<{ bookTitle: string; fromPage: number; toPage: number }>;
   printablesAttached?: number;
   /**
@@ -78,7 +83,12 @@ function canonicalize(input: AgendaPdfInput): string {
       b.startTime ? `@${b.startTime}` : "@flex",
       `${b.durationMin}m`,
       b.subjectName ? `[${b.subjectName}]` : "",
-      b.curriculumTopicCode ? `(${b.curriculumTopicCode})` : "",
+      // Push 30: only stamp the topic title in canonical text when it's
+      // both present AND a code exists — keeps hashes stable for blocks that
+      // never had a topic at all.
+      b.curriculumTopicCode
+        ? (b.curriculumTopicTitle ? `(${b.curriculumTopicCode}: ${b.curriculumTopicTitle})` : `(${b.curriculumTopicCode})`)
+        : "",
       b.title,
     ].filter(Boolean).join(" ");
     lines.push(parts);
@@ -136,7 +146,11 @@ export async function buildAgendaPdf(input: AgendaPdfInput): Promise<AgendaPdfRe
   }
   for (const b of input.blocks) {
     const head = `${b.sortOrder}. ${b.startTime ?? "flex"} · ${b.durationMin} min · ${b.subjectName ?? "any"}` +
-      (b.curriculumTopicCode ? `  ·  topic ${b.curriculumTopicCode}` : "");
+      (b.curriculumTopicCode
+        ? (b.curriculumTopicTitle
+            ? `  ·  ${b.curriculumTopicCode}  ·  ${b.curriculumTopicTitle}`
+            : `  ·  topic ${b.curriculumTopicCode}`)
+        : "");
     doc.fillColor("#222").fontSize(11).text(head);
     doc.fillColor("#000").fontSize(12).text(`   ${b.title}`);
     if (b.description) {
@@ -181,7 +195,11 @@ export async function buildAgendaPdf(input: AgendaPdfInput): Promise<AgendaPdfRe
         b.startTime ? b.startTime : "flex",
         `${b.durationMin} min`,
         b.subjectName ?? "any",
-        b.curriculumTopicCode ? `topic ${b.curriculumTopicCode}` : null,
+        b.curriculumTopicCode
+          ? (b.curriculumTopicTitle
+              ? `${b.curriculumTopicCode} · ${b.curriculumTopicTitle}`
+              : `topic ${b.curriculumTopicCode}`)
+          : null,
       ].filter(Boolean).join("  ·  "),
     );
     doc.moveDown(0.4);
