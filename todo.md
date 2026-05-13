@@ -2854,3 +2854,9 @@ shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
 - [x] Push 101 (2026-05-13) -- IEP paperwork PDF render-plan helper (audience-aware sections for iep-meeting/grandma-share/tutor-handoff; mood-timeline/coverage/behavior-tags self-hide when empty; voice-provenance-note gated by hasReaganVoiceVerified; per-audience footer copy with grandmaShareFooter reuse; 7/7)
 
 - [x] Push 102 (2026-05-13) -- Mood timeline click-to-snippet privacy pure helper (kid NEVER sees own transcript; Mom+Grandma always see when snippet exists; tutor only with Reagan voice present; privacy-flagged hidden from all adults; empty/whitespace returns no-snippet; snippet trimmed; kid-not-allowed beats all other reasons; 8/8)
+
+- [x] Push 103 (2026-05-13) -- TapEditPopover validator pure helper (HH:MM 06:00-22:00 inclusive window; duration 5-240 whole minutes; end must not pass 22:30 wind-down; locked-block collision detection with self-block skip; touching-not-overlapping allowed; 11/11)
+
+- [x] Push 104 (2026-05-13) -- Listening-summary mood + behavior payload normalizer pure helper (clamps moodEstimate to canonical 7-value enum; clamps behaviorTags to canonical 7-value set with dedupe + 4-cap; clamps contentClassifier; countsTowardCoverage requires Reagan voice AND school classifier; mood/behavior still recorded for non-school; non-array behaviorTags returns []; 10/10)
+
+- [x] Push 105 (2026-05-13) -- Agenda prompt diff applier pure helper (preview-then-write pair to Push 88; complete blocks NEVER mutated; skip is non-destructive status-only; markFun/markEasy append flags; updateDuration idempotent; unknown blockIds silently ignored; perBlockReasons audit log; input order preserved; 9/9)
