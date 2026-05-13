@@ -2848,3 +2848,9 @@ shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
 - [x] Push 98 (2026-05-13) -- Recap email send queue planner (Grandma-only at marcy.spear@gmail.com; skips when actualEntryCount>0 OR reaganListeningConfirmed OR key already queued OR bad-input; noon/evening are independent idempotency slots; 8/8 contract)
 
 - [x] Push 99 (2026-05-13) -- Mood-log PDF labels pure helper (Green-Calm / Yellow-Watch / Red-Crisis badges; Tailwind 500 hex; bucket boundaries 11/14/18; grandmaShareFooter IEP language; 8/8)
+
+- [x] Push 100 (2026-05-13) -- Reagan-voice provenance badge pure helper (kiwi-listened+voice+school-classifier => verified; kiwi+voice+off-topic/tv/silence => voice-only; non-kiwi => null; SCHOOL_CONTENT_CLASSIFIERS canonical list; 7/7)
+
+- [x] Push 101 (2026-05-13) -- IEP paperwork PDF render-plan helper (audience-aware sections for iep-meeting/grandma-share/tutor-handoff; mood-timeline/coverage/behavior-tags self-hide when empty; voice-provenance-note gated by hasReaganVoiceVerified; per-audience footer copy with grandmaShareFooter reuse; 7/7)
+
+- [x] Push 102 (2026-05-13) -- Mood timeline click-to-snippet privacy pure helper (kid NEVER sees own transcript; Mom+Grandma always see when snippet exists; tutor only with Reagan voice present; privacy-flagged hidden from all adults; empty/whitespace returns no-snippet; snippet trimmed; kid-not-allowed beats all other reasons; 8/8)
