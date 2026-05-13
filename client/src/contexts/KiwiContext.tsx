@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { trpc } from "@/lib/trpc";
 
 type KiwiMode = "off" | "tap" | "wake" | "always";
 type KiwiVoiceMode = "text" | "voice";
@@ -119,9 +120,77 @@ export function KiwiProvider({ children }: { children: ReactNode }) {
     else sessionStorage.removeItem("adultUnlocked");
   };
   const persistLvl = (k: string, n: KiwiLevel) => { try { localStorage.setItem(k, String(n)); } catch {} };
-  const setAnimationLevel = (n: KiwiLevel) => { setAnimationLevelState(n); persistLvl("kiwiAnimationLevel", n); };
-  const setTalkLevel = (n: KiwiLevel) => { setTalkLevelState(n); persistLvl("kiwiTalkLevel", n); };
-  const setFunnyLevel = (n: KiwiLevel) => { setFunnyLevelState(n); persistLvl("kiwiFunnyLevel", n); };
+
+  // 2026-05-12 push 15: also mirror to server appSettings so Mom's chosen
+  // slider values follow Reagan across devices/browsers. publicProcedure
+  // `prefs.set` requires auth, so this only fires for logged-in adults; if
+  // the call fails we still keep the localStorage write as the source of
+  // truth for the current session.
+  // Hooks called once at the top of the provider (Rules of Hooks).
+  const trpcUtils = (trpc as any).useUtils?.();
+  const prefsSet = (trpc as any).prefs?.set?.useMutation?.({
+    retry: false,
+    onError: () => {
+      // swallow — localStorage already updated, server mirror is best-effort
+    },
+  });
+  const persistLvlServer = (key: string, n: KiwiLevel) => {
+    try {
+      prefsSet?.mutate?.({ key, value: String(n) });
+    } catch {
+      // ignore — slider still works locally
+    }
+  };
+  const setAnimationLevel = (n: KiwiLevel) => {
+    setAnimationLevelState(n);
+    persistLvl("kiwiAnimationLevel", n);
+    persistLvlServer("kiwi.animationLevel", n);
+  };
+  const setTalkLevel = (n: KiwiLevel) => {
+    setTalkLevelState(n);
+    persistLvl("kiwiTalkLevel", n);
+    persistLvlServer("kiwi.talkLevel", n);
+  };
+  const setFunnyLevel = (n: KiwiLevel) => {
+    setFunnyLevelState(n);
+    persistLvl("kiwiFunnyLevel", n);
+    persistLvlServer("kiwi.funnyLevel", n);
+  };
+
+  // 2026-05-12 push 15: on first mount, ask the server for the canonical
+  // slider values and overlay them on top of whatever localStorage had.
+  // This is what gives Mom's prefs cross-device portability.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        if (!trpcUtils?.prefs?.get?.fetch) return;
+        const [a, t, f] = await Promise.all([
+          trpcUtils.prefs.get.fetch({ key: "kiwi.animationLevel" }).catch(() => null),
+          trpcUtils.prefs.get.fetch({ key: "kiwi.talkLevel" }).catch(() => null),
+          trpcUtils.prefs.get.fetch({ key: "kiwi.funnyLevel" }).catch(() => null),
+        ]);
+        if (cancelled) return;
+        const clamp = (s: string | null): KiwiLevel | null => {
+          if (!s) return null;
+          const n = parseInt(s, 10);
+          if (Number.isFinite(n) && n >= 0 && n <= 4) return n as KiwiLevel;
+          return null;
+        };
+        const ac = clamp(a);
+        const tc = clamp(t);
+        const fc = clamp(f);
+        if (ac !== null) { setAnimationLevelState(ac); persistLvl("kiwiAnimationLevel", ac); }
+        if (tc !== null) { setTalkLevelState(tc); persistLvl("kiwiTalkLevel", tc); }
+        if (fc !== null) { setFunnyLevelState(fc); persistLvl("kiwiFunnyLevel", fc); }
+      } catch {
+        // ignore — local values still work as a fallback
+      }
+    })();
+    return () => { cancelled = true; };
+    // run once on mount; the prefs router is auth-gated so this only succeeds for logged-in users
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const persistBool = (k: string, b: boolean) => { try { localStorage.setItem(k, b ? "1" : "0"); } catch {} };
   const setShowSidebarFlock = (b: boolean) => { setShowSidebarFlockState(b); persistBool("showSidebarFlock", b); };
   const setShowKiwiPerch = (b: boolean) => { setShowKiwiPerchState(b); persistBool("showKiwiPerch", b); };

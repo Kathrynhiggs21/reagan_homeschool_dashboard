@@ -402,10 +402,10 @@ Analytics page (adult-only):
 - [ ] Both cards hide when 0 interactions ever ("don't show if no info" rule)
 - [ ] Backend: `kiwi.behaviorDaily` + `kiwi.behaviorAggregate` tRPC queries reading from existing kiwi/adultAi message logs (no new table — derive from `adultAiMessages` + any per-day kiwi event log already present)
 
-Settings (adult):
-- [ ] **Sliders** for Kiwi: Animation amount, Talking amount, Funny personality (each 0–4)
-- [ ] Persist to `appSettings` (key per slider) — pre-existing `gamePrefs`/`appSettings` infra reused
-- [ ] No bird sprites in sidebar by default
+Settings (adult) — push 15 (2026-05-12):
+- [x] **Sliders** for Kiwi (each 0–4) — already wired in `Settings.tsx` lines 96–117 via `KiwiPersonalityCard` (Animation amount, Talking amount, Funny). Verified live UI + 5-step semantic labels (Off/Calm/Soft/Normal/Lively).
+- [x] Persist to `appSettings` (key per slider). `KiwiContext.tsx` previously persisted to localStorage only — PUSH 15 added cross-device persistence: every slider write also calls `trpc.prefs.set` with keys `kiwi.animationLevel`/`kiwi.talkLevel`/`kiwi.funnyLevel`; on first mount the provider hydrates those three keys from the server via `prefs.get.fetch` and overlays them on top of localStorage. Server failures are swallowed so the slider keeps working offline. Vitest `kiwiSlidersPrefs.test.ts` (6/6 pass): null-when-absent, 0..4 round-trip, overwrite, clear-to-null, KiwiContext source contract pins the 3 keys + the on-mount fetch, prefs router still uses protectedProcedure for get/set (no security regression).
+- [x] No bird sprites in sidebar by default — `KiwiContext.tsx` line 101 sets `showSidebarFlock` default to `false`; CozyShell renders `<CompanionBelt />` only when this is true; `CompanionBelt` itself returns null on empty roster (push 14).
 
 ## 2026-05-05 — School-window listening behavior log (CONFIRMED)
 
