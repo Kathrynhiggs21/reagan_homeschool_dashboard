@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, TrendingUp, Heart, AlertTriangle, GraduationCap, BookOpen } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CalendarDays, TrendingUp, Heart, AlertTriangle, GraduationCap, BookOpen, Eye } from "lucide-react";
 
 const SUBJECT_LABEL: Record<string, string> = {
   math: "Math",
@@ -24,10 +26,16 @@ const HELPER_LABEL: Record<string, string> = {
 };
 
 export default function WeeklyDigestCard() {
+  const [showPreview, setShowPreview] = useState(false);
   // preview = the *current* week so far (live, before Sunday's email)
   const preview = trpc.digest.preview.useQuery();
   // recent = the rows actually saved by Sunday scheduled task
   const recent = trpc.digest.recent.useQuery({ limit: 4 });
+  // HTML preview — only fetched when Mom/Grandma click Preview email
+  const previewHtml = trpc.digest.previewHtml.useQuery(
+    { summerActive: false },
+    { enabled: showPreview },
+  );
 
   const p = preview.data as any;
   const lastSaved = (recent.data ?? [])[0] as any;
@@ -59,17 +67,49 @@ export default function WeeklyDigestCard() {
             This Week — Reagan&rsquo;s Digest
           </h2>
           <p className="text-xs text-muted-foreground mt-1">
-            {weekRange} · auto-emails to <code>spear.cpt@gmail.com</code> every Sunday at 7&nbsp;PM.
+            {weekRange} · auto-emails to <code>spear.cpt@gmail.com</code> and <code>marcy.spear@gmail.com</code> every Sunday at 7&nbsp;PM.
           </p>
         </div>
-        <div className="text-right">
+        <div className="text-right flex flex-col items-end gap-2">
           {lastEmailedStr ? (
             <Badge className="bg-emerald-500/20 text-emerald-200 border-emerald-500/40">Last sent: {lastEmailedStr}</Badge>
           ) : (
             <Badge variant="secondary">No digest sent yet — first one goes Sunday 7&nbsp;PM</Badge>
           )}
+          <Button
+            size="sm"
+            variant="outline"
+            className="bg-background/40"
+            onClick={() => setShowPreview((v) => !v)}
+            data-testid="digest-preview-toggle"
+          >
+            <Eye className="w-3.5 h-3.5 mr-1" />
+            {showPreview ? "Hide email preview" : "Preview email"}
+          </Button>
         </div>
       </header>
+
+      {showPreview && (
+        <div className="mb-4 rounded-md border border-white/10 bg-background/40 overflow-hidden" data-testid="digest-html-preview">
+          <div className="px-3 py-2 text-xs text-muted-foreground border-b border-white/10 flex items-center justify-between">
+            <span>Email preview — not yet sent. Mom + Grandma both receive this.</span>
+            {previewHtml.data?.recipients && (
+              <span className="opacity-80">To: {previewHtml.data.recipients.join(", ")}</span>
+            )}
+          </div>
+          {previewHtml.isLoading ? (
+            <div className="p-4 text-sm text-muted-foreground">Rendering email…</div>
+          ) : previewHtml.data?.html ? (
+            <iframe
+              title="Sunday digest preview"
+              srcDoc={previewHtml.data.html}
+              className="w-full h-[480px] bg-white"
+            />
+          ) : (
+            <div className="p-4 text-sm text-muted-foreground italic">No preview available.</div>
+          )}
+        </div>
+      )}
 
       {preview.isLoading && (
         <div className="text-sm text-muted-foreground">Loading this week&hellip;</div>

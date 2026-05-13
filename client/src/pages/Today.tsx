@@ -29,6 +29,7 @@ import HomeAnalyticsStrip from "@/components/HomeAnalyticsStrip";
 // Push 59 (2026-05-13) — Kid-friendly micro strips at top of Today.
 import KidHeaderStrips from "@/components/KidHeaderStrips";
 import SummerModeBadge from "@/components/SummerModeBadge";
+import CatchUpNextDayCard from "@/components/CatchUpNextDayCard";
 // Push 50 (2026-05-13) — Post-block feedback chips for Reagan.
 import FeedbackChips from "@/components/FeedbackChips";
 import AIScheduleGeneratorCard from "@/components/AIScheduleGeneratorCard";
@@ -485,6 +486,10 @@ export default function Today() {
           progress %, last 3 days of mood dots, resume-where-left-off card.
           Always visible to Reagan; adults still see the analytics card lower. */}
       <KidHeaderStrips />
+
+      {/* Push 73 (2026-05-13) — "From yesterday" catch-up nudges; self-hides
+          when nothing was missed and never blocks the schedule. */}
+      <CatchUpNextDayCard />
 
       {/* Diagnostic Placement invite — gentle, optional, dismisses at 100% */}
       <PlacementInviteCard />

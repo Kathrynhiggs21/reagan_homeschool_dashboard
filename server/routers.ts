@@ -3855,6 +3855,15 @@ export const appRouter = router({
      * the rollup itself; tapping a topic uses existing curriculum.toggle.
      */
     catchUp: protectedProcedure.query(() => db.getCatchUpRollup()),
+    /**
+     * Push 73 (2026-05-13) — "From yesterday" nudges for Today.
+     * Hydrates the pure catchUpQueueFor() helper from real plan data.
+     * Self-hides when empty (the UI renders nothing if items.length === 0).
+     */
+    nextDayQueue: protectedProcedure.query(async () => {
+      const { computeNextDayCatchUpQueue } = await import("./_lib/nextDayCatchUp");
+      return computeNextDayCatchUpQueue();
+    }),
     toggle: protectedProcedure
       .input(z.object({ id: z.number(), status: z.enum(["notStarted", "inProgress", "done"]) }))
       .mutation(({ input }) => db.toggleCurriculumTopic(input.id, input.status)),

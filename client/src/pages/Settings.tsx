@@ -14,6 +14,8 @@ import IepReferencePanel from "@/components/IepReferencePanel";
 import TutorsManager from "@/components/TutorsManager";
 import CalendarSyncCard from "@/components/CalendarSyncCard";
 import AppointmentsCardLite from "@/components/AppointmentsCardLite";
+import SummerModeSettingsCard from "@/components/SummerModeSettingsCard";
+import CatchUpQueueSettingsCard from "@/components/CatchUpQueueSettingsCard";
 import SettingsAIHelperCard from "@/components/SettingsAIHelperCard";
 import { useKiwi } from "@/contexts/KiwiContext";
 import { Slider } from "@/components/ui/slider";
@@ -73,6 +75,7 @@ export default function Settings() {
           <IcalFeedsCard />
           <CalendarSyncCard />
           <AppointmentsCardLite />
+          <SummerModeSettingsCard />
         </TabsContent>
 
         <TabsContent value="notifications">
@@ -82,6 +85,7 @@ export default function Settings() {
         <TabsContent value="recap" className="space-y-4">
           <RecapRequestCard />
           <DailyRecapCard />
+          <CatchUpQueueSettingsCard />
         </TabsContent>
 
         <TabsContent value="iep" className="space-y-4">

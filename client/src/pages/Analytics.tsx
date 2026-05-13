@@ -32,6 +32,7 @@ import AdultCoinCounter from "@/components/AdultCoinCounter";
 import SubjectRadar from "@/components/SubjectRadar";
 import SubjectSparklines from "@/components/SubjectSparklines";
 import CurriculumCoverageArcs from "@/components/CurriculumCoverageArcs";
+import WeeklyDigestCard from "@/components/WeeklyDigestCard";
 
 function MoodArcChart({ moods }: { moods: any[] }) {
   // Map zone to numeric score (green=2, yellow=1, red=0); render the last 14 entries chronologically
@@ -308,6 +309,11 @@ export default function Analytics() {
           curriculum.progress (catalog topics done/total). Self-hides
           when no catalog rows exist. */}
       <CurriculumCoverageArcs />
+
+      {/* Push 71 (2026-05-13) — Sunday digest preview (Mom + Grandma).
+          Auto-emails Sunday 7 PM to both adults; this card surfaces the
+          live current-week view + an HTML email preview drawer. */}
+      <WeeklyDigestCard />
 
       {/* Catch-up trajectory: Reagan's path back to grade level + IEP exit indicators */}
       <TrajectoryCard />

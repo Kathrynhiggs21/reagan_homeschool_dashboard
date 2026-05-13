@@ -45,6 +45,19 @@ export type AgendaPdfBlock = {
     worksheets?: Array<{ title: string; description?: string | null; questions?: string[] | null; printableUrl?: string | null }>;
     answerKey?: string | null;
   } | null;
+  /**
+   * Push 74 (2026-05-13) — operable + printable per-type block payload
+   * from server/_lib/blockGenerators. Optional and back-compat: legacy
+   * blocks rendered before this field existed still hash identically
+   * because canonicalize() only includes fields it knows about.
+   */
+  generated?: {
+    kind: "reading" | "adventure" | "practice";
+    title: string;
+    instructions: string[];
+    printable: string;
+    operable: { url?: string; supplyList?: string[] };
+  } | null;
 };
 
 export type AgendaPdfInput = {
