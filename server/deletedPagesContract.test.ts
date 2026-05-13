@@ -34,6 +34,28 @@ const DELETED_PAGE_FILES = [
   "ParentNotes.tsx",
   "TutorHandoff.tsx",
   "Whiteboard.tsx",
+  // Push 61 (2026-05-13) — orphan page modules deleted (no imports anywhere).
+  // Each redirects via App.tsx to its closest live page so adults don't 404.
+  "Academics.tsx",
+  "Animals.tsx",
+  "ComponentShowcase.tsx",
+  "Home.tsx",
+  "KiwiCoins.tsx",
+  "Knowledge.tsx",
+  "NeedsWork.tsx",
+  "Placement.tsx",
+  "PracticeForCoins.tsx",
+  "Printables.tsx",
+  "Prizes.tsx",
+  "Profile.tsx",
+  "ReportCard.tsx",
+  "ReviewLibrary.tsx",
+  "Rewards.tsx",
+  "Scratch.tsx",
+  "Stickers.tsx",
+  "Timeline.tsx",
+  "TutorBriefing.tsx",
+  "Week.tsx",
 ];
 
 describe("deleted pages + dupe-route consolidation — contract (push 22)", () => {
@@ -85,6 +107,29 @@ describe("deleted pages + dupe-route consolidation — contract (push 22)", () =
     for (const label of forbidden) {
       expect(navBlock).not.toContain(`label: "${label}"`);
     }
+  });
+
+  it("Push 61 — every Push-61-deleted page has either no route or a Redirect (never a component)", () => {
+    const REDIRECT_OR_NONE = [
+      "/academics", "/animals", "/knowledge", "/needs-work", "/placement",
+      "/practice-for-coins", "/printables", "/prizes", "/profile", "/report-card",
+      "/review-library", "/rewards", "/scratch", "/stickers", "/timeline",
+      "/tutor", "/tutor/:id", "/week",
+    ];
+    for (const r of REDIRECT_OR_NONE) {
+      const escaped = r.replace(/\//g, "\\/").replace(/:/g, "\\:");
+      const componentPattern = new RegExp(`path="${escaped}"\\s+component=`);
+      expect(APP_TSX).not.toMatch(componentPattern);
+    }
+  });
+
+  it("FlockWidget jumps to /settings (not deleted /profile)", () => {
+    const flockWidget = readFileSync(
+      path.join(__dirname, "..", "client", "src", "components", "FlockWidget.tsx"),
+      "utf8",
+    );
+    expect(flockWidget).not.toMatch(/href="\/profile"/);
+    expect(flockWidget).toMatch(/href="\/settings"/);
   });
 
   it("no /tutor-handoff, /upload-sync, /family-feed, /daily-agendas, /daily-packet, /parent-notes hard-component routes left in App.tsx", () => {

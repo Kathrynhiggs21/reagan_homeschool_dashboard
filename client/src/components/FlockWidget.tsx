@@ -25,7 +25,7 @@ export default function FlockWidget() {
           return (
             <Link
               key={m}
-              href="/profile"
+              href="/settings"
               className="group flex flex-col items-center gap-1 rounded-2xl px-3 py-2 bg-background/60 hover:bg-background transition border"
               style={{ borderColor: `${meta.accent}55` }}
             >
