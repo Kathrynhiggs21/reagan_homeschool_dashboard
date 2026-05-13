@@ -2748,3 +2748,7 @@ shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
 - [x] Push 48 — Curriculum hub Tap-block inline edit (curriculum.tomorrowBlocks query + TomorrowTapEditList with startTime + durationMin only, clamped 5..180)
 - [x] Push 49 — Weekly digest send endpoint (POST /api/scheduled/weekly-digest-send Sundays 6 PM ET via heartbeat task_uid 8uQSo9vBNbEiCDCpWhWFmu, builds payload + saves row + notifyOwner with recipient list)
 - [x] Push 50 — Reagan post-block feedback chips dialog (reuses existing FeedbackChips component; Today triggers it only on Reagan-side selfComplete, not adult grading; captures feltIt/whatHelped/timeFelt/wantedBreak via feedback.record)
+- [x] Push 51 — Mom request-recap admin surface (recap.listPending/isAnswered/fireNow familyAdmin router + Settings RecapRequestCard + heartbeat task_uid G3nUcAT5ir4EWyiuNsADNc nightly 8 PM ET /api/scheduled/daily-recap-send)
+- [x] Push 52 — Auto-add off-plan recap topics into curriculumTopics (db.autoAddRecapTopicToCurriculum + RECAP-{date}-{slug} code, status='covered', last_covered_source; wired into /api/scheduled/daily-recap-reply right after Drive enqueue)
+- [x] Push 53 — Notebook day-pinned reopen (notebook.lastDate localStorage + setDateStrPinned + Today/Yesterday quick buttons; camera/image/PDF entry points preserved)
+- [x] Push 54 — Global Reagan-side request pill (MakeRequestPill mounted in App.tsx; kid-only, no mic/SpeechRecognition/mediaDevices; reuses kidRequests.create + textarea-only MakeRequestButton)

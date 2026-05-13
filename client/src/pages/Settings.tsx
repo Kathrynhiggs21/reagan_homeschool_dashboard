@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -80,6 +80,7 @@ export default function Settings() {
         </TabsContent>
 
         <TabsContent value="recap" className="space-y-4">
+          <RecapRequestCard />
           <DailyRecapCard />
         </TabsContent>
 
@@ -903,5 +904,114 @@ function DailyRecapCard() {
         </CardContent>
       </Card>
     </>
+  );
+}
+
+
+/* ------------------------------------------------------------------------- *
+ * Push 51 (2026-05-13) — Recap Request admin card
+ *
+ * Mom's at-a-glance + fire-now control for the daily-recap email flow that
+ * triggers on no-actuals days. Lists pending recap requests, shows their
+ * dateISO + recipient + sent time, lets her fire a manual request for any
+ * date, and reflects "already-answered" or "actuals-exist" skip reasons.
+ * ------------------------------------------------------------------------- */
+function RecapRequestCard() {
+  const utils = (trpc as any).useUtils?.();
+  const pendingQ = (trpc as any).recap?.listPending?.useQuery?.({ limit: 50 }, {
+    refetchInterval: 60_000,
+  });
+  const fireNowM = (trpc as any).recap?.fireNow?.useMutation?.({
+    onSuccess: () => utils?.recap?.listPending?.invalidate?.(),
+  });
+  const [targetDate, setTargetDate] = useState<string>(() =>
+    new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString().slice(0, 10),
+  );
+  const [lastResult, setLastResult] = useState<any>(null);
+  const pending: any[] = pendingQ?.data ?? [];
+  const grouped = useMemo(() => {
+    const m = new Map<string, any[]>();
+    for (const r of pending) {
+      const k = r.dateISO ?? r.date_iso ?? "?";
+      if (!m.has(k)) m.set(k, []);
+      m.get(k)!.push(r);
+    }
+    return Array.from(m.entries()).sort((a, b) => (a[0] < b[0] ? 1 : -1));
+  }, [pending]);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Recap requests (no-entry days)</CardTitle>
+        <div className="text-xs text-muted-foreground mt-1">
+          A nightly 8:00 PM ET job emails Mom + Grandma + tutors asking for a
+          short reply when the day has zero actual entries. First reply wins,
+          gets LLM-parsed, and the entries are inserted into Reagan's day.
+          Off-plan topics are auto-mirrored to Curriculum/Standards on Drive.
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex flex-wrap items-end gap-2">
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Date</label>
+            <Input
+              type="date"
+              value={targetDate}
+              onChange={(e) => setTargetDate(e.target.value)}
+              className="w-44"
+            />
+          </div>
+          <Button
+            disabled={!fireNowM?.mutate || fireNowM?.isPending}
+            onClick={() => {
+              fireNowM
+                ?.mutateAsync?.({ dateISO: targetDate })
+                .then((r: any) => setLastResult(r))
+                .catch((err: any) => setLastResult({ ok: false, error: err?.message ?? String(err) }));
+            }}
+          >
+            {fireNowM?.isPending ? "Sending…" : "Send recap request now"}
+          </Button>
+          {lastResult ? (
+            <div className="text-xs text-muted-foreground">
+              {lastResult.skipped
+                ? `Skipped: ${lastResult.skipped}`
+                : lastResult.error
+                  ? `Error: ${lastResult.error}`
+                  : `Created ${lastResult.sent?.length ?? 0} requests for ${lastResult.dateISO}`}
+            </div>
+          ) : null}
+        </div>
+
+        <div>
+          <div className="text-xs text-muted-foreground mb-2">
+            Pending (no reply yet) — {pending.length}
+          </div>
+          {pending.length === 0 ? (
+            <div className="text-sm text-muted-foreground italic">
+              Nothing pending. Either every day has actuals or every recap has been answered.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {grouped.map(([date, rows]) => (
+                <div key={date} className="rounded-md border p-3">
+                  <div className="font-medium">{date}</div>
+                  <ul className="mt-1 text-sm text-muted-foreground space-y-0.5">
+                    {rows.map((r: any) => (
+                      <li key={r.id} className="flex justify-between gap-4">
+                        <span className="truncate">{r.sentTo ?? r.sent_to}</span>
+                        <span className="shrink-0 tabular-nums">
+                          {r.sentAt ? new Date(r.sentAt).toLocaleString() : ""}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

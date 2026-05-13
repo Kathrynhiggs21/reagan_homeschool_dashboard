@@ -16,6 +16,7 @@ import KiwiQuietListener from "./components/KiwiQuietListener";
 import ResourceDock from "./components/ResourceDock";
 import QuickAddFab from "./components/QuickAddFab";
 import NotebookDrawer from "./components/NotebookDrawer";
+import MakeRequestPill from "./components/MakeRequestPill";
 import Today from "./pages/Today";
 import Curriculum from "./pages/Curriculum";
 import Bookshelf from "./pages/Bookshelf";
@@ -119,6 +120,8 @@ function Router() {
       {/* Global Notebook drawer — only renders when adult lock is unlocked
           AND the per-object toggle in Settings is on. */}
       {ui.showNotebookDrawer && <NotebookDrawer />}
+      {/* Push 54 — global Reagan request pill (kid-only; no mic, no voice). */}
+      <MakeRequestPill />
     </CozyShell>
   );
 }

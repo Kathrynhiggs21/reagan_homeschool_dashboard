@@ -56,7 +56,27 @@ export default function NotebookDrawer() {
   const { unlocked } = useAdultLock();
   const [open, setOpen] = useState(false);
   const today = new Date().toISOString().slice(0, 10);
-  const [dateStr, setDateStr] = useState<string>(today);
+  // Push 53 — day-pinned reopen. Mom asked for the Notebook to reopen on the
+  // same day she was just on (not jump to today every time). Persist the
+  // last-viewed date in localStorage; default to today on first ever open.
+  const [dateStr, setDateStr] = useState<string>(() => {
+    try {
+      const v = window.localStorage.getItem("notebook.lastDate");
+      // Only honor saved value if it's a valid YYYY-MM-DD; else default to today.
+      if (v && /^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+    } catch { /* SSR / private mode — fall through */ }
+    return today;
+  });
+  const setDateStrPinned = (next: string) => {
+    const safe = next || today;
+    setDateStr(safe);
+    try { window.localStorage.setItem("notebook.lastDate", safe); } catch { /* ignore */ }
+  };
+  const yesterdayISO = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().slice(0, 10);
+  })();
   const [editing, setEditing] = useState<DayAttachmentRow | null>(null);
 
   const utils = trpc.useUtils();
@@ -163,9 +183,25 @@ export default function NotebookDrawer() {
                 <Input
                   type="date"
                   value={dateStr}
-                  onChange={(e) => setDateStr(e.target.value || today)}
+                  onChange={(e) => setDateStrPinned(e.target.value || today)}
                   className="w-44 bg-white text-stone-900"
                 />
+                <div className="flex gap-1 mt-1">
+                  <button
+                    type="button"
+                    onClick={() => setDateStrPinned(today)}
+                    className={`text-[11px] rounded px-1.5 py-0.5 border ${dateStr === today ? "bg-amber-200 border-amber-400" : "bg-white border-amber-300 hover:bg-amber-100"}`}
+                  >
+                    Today
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDateStrPinned(yesterdayISO)}
+                    className={`text-[11px] rounded px-1.5 py-0.5 border ${dateStr === yesterdayISO ? "bg-amber-200 border-amber-400" : "bg-white border-amber-300 hover:bg-amber-100"}`}
+                  >
+                    Yesterday
+                  </button>
+                </div>
               </div>
               <div className="ml-auto text-sm">
                 {tutorOfDayName ? (

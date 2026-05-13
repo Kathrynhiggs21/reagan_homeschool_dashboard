@@ -1401,6 +1401,18 @@ ${absolutePdfUrl ? `<p style=\"text-align:center;margin:24px 0;\"><a href=\"${ab
               entryId,
               md,
             );
+            // Push 52: also seed a real curriculumTopics row (status='covered',
+            // source='recap-reply') so catch-up + coverage analytics surface it.
+            try {
+              await (db as any).autoAddRecapTopicToCurriculum?.({
+                subjectSlug: e.subjectSlug,
+                topic: e.topic,
+                dateISO,
+                sourceLabel: source,
+              });
+            } catch (curErr) {
+              console.error("[daily-recap-reply] autoAddRecapTopicToCurriculum failed", curErr);
+            }
           }
         } catch (insErr) {
           console.error("[daily-recap-reply] insert failed", insErr);

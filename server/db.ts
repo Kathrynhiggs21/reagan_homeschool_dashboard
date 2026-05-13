@@ -7684,3 +7684,109 @@ export async function previewDailyRecap(dateISO?: string): Promise<{
   });
   return { dateISO: date, html, prefs, effectiveRecipients };
 }
+
+
+/* ============================================================================
+ * PUSH 52 (2026-05-13) — Auto-add new topics from recap reply into curriculum
+ * ----------------------------------------------------------------------------
+ * When Mom or Grandma replies to a daily-recap email and the LLM extracts an
+ * off-plan topic (e.g. "kitchen fractions during cookie baking"), the existing
+ * pipeline already inserts a topicsCoveredOffPlan row + enqueues a Drive push.
+ *
+ * This push closes the LAST gap: it also seeds a real `curriculumTopics` row
+ * (status='covered', source='recap-reply') so the catch-up engine + coverage
+ * analytics surface the topic next time. Idempotent — if a topic with the same
+ * slug+normalized-title already exists for the subject, we just mark covered.
+ * ========================================================================= */
+const RECAP_SUBJ_MAP_TO_TITLE: Record<string, string> = {
+  math: "Math",
+  ela: "ELA",
+  reading: "ELA",
+  writing: "ELA",
+  science: "Science",
+  "social-studies": "Social",
+  ss: "Social",
+  social_studies: "Social",
+  art: "Specials",
+  music: "Specials",
+  pe: "Specials",
+  "life-skills": "Specials",
+  "social-emotional": "Specials",
+  other: "Specials",
+};
+
+function normalizeTopicTitleForMatch(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .slice(0, 80);
+}
+
+/**
+ * Insert a curriculumTopics row for an off-plan recap topic — or, if a row
+ * with the same subject+normalized-title already exists, just mark it covered.
+ *
+ * Returns the resolved topicId + a `created` flag (true when a brand-new row
+ * was inserted, false when an existing row was matched + marked-covered).
+ */
+export async function autoAddRecapTopicToCurriculum(opts: {
+  subjectSlug: string;
+  topic: string;
+  dateISO: string;
+  sourceLabel?: string; // "recap-reply" | "mom-input" | "grandma-recap"
+}): Promise<{ topicId: number | null; created: boolean; subjectTitle: string | null }> {
+  const slug = (opts.subjectSlug || "").toLowerCase();
+  const subjectTitle = RECAP_SUBJ_MAP_TO_TITLE[slug] ?? null;
+  if (!subjectTitle || !opts.topic.trim()) {
+    return { topicId: null, created: false, subjectTitle };
+  }
+  const normalized = normalizeTopicTitleForMatch(opts.topic);
+  if (!normalized) return { topicId: null, created: false, subjectTitle };
+
+  const db = getDb();
+  // 1. Try to find an existing row by normalized title prefix.
+  const [rowsRaw]: any = await db.execute(sql`
+    SELECT id, title FROM curriculumTopics WHERE subject = ${subjectTitle}
+  `);
+  const existing: any[] = rowsRaw as any[];
+  const hit = existing.find((r) => {
+    const t = normalizeTopicTitleForMatch(String(r.title ?? ""));
+    return t === normalized || (t.length >= 6 && (t.includes(normalized) || normalized.includes(t)));
+  });
+
+  const sourceLabel = opts.sourceLabel ?? "recap-reply";
+
+  if (hit) {
+    // Mark covered via the existing helper so provenance is consistent.
+    try {
+      await db.execute(sql`
+        UPDATE curriculumTopics
+        SET status = 'covered',
+            last_covered_at = ${Date.now()},
+            last_covered_source = ${sourceLabel}
+        WHERE id = ${hit.id}
+      `);
+    } catch { /* best-effort */ }
+    return { topicId: Number(hit.id), created: false, subjectTitle };
+  }
+
+  // 2. No match → insert new. Use a recap-prefixed code so it sorts to the
+  // bottom and is visually distinct from seeded standards.
+  const code = `RECAP-${opts.dateISO}-${normalized.replace(/\s+/g, "-").slice(0, 40)}`;
+  const [ordRows]: any = await db.execute(sql`
+    SELECT COALESCE(MAX(ord), -1) AS maxOrd FROM curriculumTopics WHERE subject = ${subjectTitle}
+  `);
+  const nextOrd = Number((ordRows?.[0] ?? ordRows)?.maxOrd ?? -1) + 1;
+  try {
+    const result: any = await db.execute(sql`
+      INSERT INTO curriculumTopics (subject, code, title, standard_ref, ord, status, quarter, last_covered_at, last_covered_source)
+      VALUES (${subjectTitle}, ${code}, ${opts.topic.trim().slice(0, 240)}, ${"recap"}, ${nextOrd}, ${"covered"}, ${"Q4"}, ${Date.now()}, ${sourceLabel})
+    `);
+    const insertId = Number(result?.[0]?.insertId ?? result?.insertId ?? 0);
+    return { topicId: insertId || null, created: true, subjectTitle };
+  } catch (e) {
+    console.error("[autoAddRecapTopicToCurriculum] insert failed", e);
+    return { topicId: null, created: false, subjectTitle };
+  }
+}

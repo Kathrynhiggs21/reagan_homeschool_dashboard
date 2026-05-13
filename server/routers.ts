@@ -2192,6 +2192,64 @@ export const appRouter = router({
     }),
    }),
 
+  /* =================== RECAP REQUESTS (Push 51, 2026-05-13) ===================
+   *
+   * Adult-side surface for the daily-recap email pipeline that fires nightly
+   * at 8 PM ET when the day has no actuals. Lets Mom see which recap requests
+   * are still pending, manually fire a recap request for a specific date, and
+   * preview the prompt that gets emailed. Backed by the existing
+   * dailyRecapRequests table + db.createRecapRequest/listPendingRecapRequests.
+   */
+  recap: router({
+    listPending: familyAdminProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(200).optional() }).optional())
+      .query(({ input }) => db.listPendingRecapRequests(input?.limit ?? 50)),
+    isAnswered: familyAdminProcedure
+      .input(z.object({ dateISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
+      .query(({ input }) => db.isRecapAlreadyAnswered(input.dateISO)),
+    /**
+     * Fire-now manual recap request. Idempotent: if any actuals exist for the
+     * date OR a recap has already been answered, returns skipped reason.
+     * Otherwise creates one row per recipient (Mom + Grandma + active tutors)
+     * and returns the tokens so the external mailer can pick them up on the
+     * next /pending poll.
+     */
+    fireNow: familyAdminProcedure
+      .input(z.object({
+        dateISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const dateISO = input.dateISO ?? new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        const actualCount = await db.countActualForDate?.(dateISO).catch(() => 0) ?? 0;
+        if (actualCount > 0) return { ok: true, skipped: "actual-entries-exist", dateISO, actualCount };
+        const answered = await db.isRecapAlreadyAnswered(dateISO).catch(() => false);
+        if (answered) return { ok: true, skipped: "already-answered", dateISO };
+
+        const fixedRecipients = ["marcy.spear@gmail.com", "spear.cpt@gmail.com"];
+        let tutorEmails: string[] = [];
+        try {
+          const tutors = (await (db as any).listTutors?.(true)) ?? [];
+          tutorEmails = tutors
+            .map((t: any) => (t?.email ?? "").trim().toLowerCase())
+            .filter((e: string) => /.+@.+\..+/.test(e));
+        } catch { /* best-effort */ }
+        const recipients = Array.from(new Set([...fixedRecipients, ...tutorEmails]));
+
+        const created: Array<{ recipient: string; token: string }> = [];
+        for (const recipient of recipients) {
+          // Token format matches the scheduled-send route (16 hex chars).
+          const token = Array.from({ length: 16 }, () => Math.floor(Math.random() * 16).toString(16)).join("");
+          try {
+            await db.createRecapRequest({ dateISO, sentTo: recipient, replyToken: token });
+            created.push({ recipient, token });
+          } catch (e) {
+            console.error("[recap.fireNow] createRecapRequest failed", recipient, e);
+          }
+        }
+        return { ok: true, dateISO, sent: created };
+      }),
+  }),
+
   /* =================== JOURNAL (Reagan's free-form) =================== */
   journal: router({
     list: publicProcedure.input(z.object({ limit: z.number().optional() }).optional()).query(({ input }) => db.listJournalEntries(input?.limit ?? 50)),
