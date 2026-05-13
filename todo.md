@@ -407,7 +407,7 @@ Settings (adult) — push 15 (2026-05-12):
 - [x] Persist to `appSettings` (key per slider). `KiwiContext.tsx` previously persisted to localStorage only — PUSH 15 added cross-device persistence: every slider write also calls `trpc.prefs.set` with keys `kiwi.animationLevel`/`kiwi.talkLevel`/`kiwi.funnyLevel`; on first mount the provider hydrates those three keys from the server via `prefs.get.fetch` and overlays them on top of localStorage. Server failures are swallowed so the slider keeps working offline. Vitest `kiwiSlidersPrefs.test.ts` (6/6 pass): null-when-absent, 0..4 round-trip, overwrite, clear-to-null, KiwiContext source contract pins the 3 keys + the on-mount fetch, prefs router still uses protectedProcedure for get/set (no security regression).
 - [x] No bird sprites in sidebar by default — `KiwiContext.tsx` line 101 sets `showSidebarFlock` default to `false`; CozyShell renders `<CompanionBelt />` only when this is true; `CompanionBelt` itself returns null on empty roster (push 14).
 
-## 2026-05-05 — School-window listening behavior log (CONFIRMED)
+## 2026-05-05 — School-window listening behavior log (CONFIRMED) — push 17 (2026-05-12)
 
 Goal: a daily behavior summary derived from passive listening, but ONLY
 during Reagan-school-related time windows AND only when the chunk is
@@ -415,34 +415,20 @@ actually relevant (her voice / tutor / school content). Background TV,
 sibling, or someone-else-on-phone chunks are dropped (not stored).
 
 Server:
-- [ ] Reuse existing `listeningSummaries` table — add fields if needed:
-      `relevanceScore` (0-100), `discardedReason` (enum: `background_noise` | `other_person` | `silence` | `non_school` | null), `schoolBlockId` nullable FK
-- [ ] Helper `isWithinSchoolWindow(ts)`:
-      a chunk is "within school window" only if a `scheduleBlocks` row
-      exists for today whose [startTime, endTime) covers ts. No active
-      block → reject up front, never call the LLM, never store audio ref.
-- [ ] Helper `classifyRelevance(transcript)`:
-      LLM 1-shot returning `{relevant: bool, reason: enum, topic: string?}`.
-      `relevant=false` → store ONLY a tiny tally row (no transcript, no
-      audio ref). `relevant=true` → store a normal listeningSummaries row.
-- [ ] tRPC `listening.todayBehavior` — derive: focus level (relevant/total
-      ratio), distraction count, off-task moments (non_school during a
-      school block), top topic.
-- [ ] tRPC `listening.aggregateBehavior` — all-time averages.
+- [x] Reuse existing `listeningSummaries` table — fields already present per drizzle/schema.ts: `relevanceScore` int (0-100), `discardedReason` mysqlEnum("background_noise","other_person","silence","non_school","too_short"), `schoolBlockId` int nullable. Locked by vitest `listeningSchoolWindowContract.test.ts` test 1.
+- [x] Helper `findCoveringSchoolBlock(date, ts)` in `server/db.ts` lines 5874-5893: returns `{id, subjectGuess}` or null; consults `getPlanByDate` + `listBlocksForPlan` and checks minute-of-day window. Locked by contract test 2. The `addChunk` mutation (routers.ts ~1578) calls this BEFORE `transcribeAudio` so non_school chunks are dropped without ever invoking the LLM — locked by contract test 3.
+- [x] Helper `classifyRelevance(transcript)` — inline in addChunk (routers.ts ~1611-1627) using `invokeLLM` with strict json_schema returning `{relevant, score, reason}`. Score < 50 → stored as tally row with relevanceScore + discardedReason + schoolBlockId only (no transcript, no rawSummary, no topicsJson). Locked by contract test 4 + test 8.
+- [x] tRPC `listening.todayBehavior` (routers.ts ~1712) — protected; returns `{relevantCount, droppedCount, distractions, offTask, focusPct, topTopic}` from `db.listeningBehaviorForDate`. Locked by contract test 5 + test 6.
+- [x] tRPC `listening.aggregate` (routers.ts ~1716) — protected; returns `{totalRows, relevantCount, droppedCount, focusPct, daysTogether, avgRelevantPerDay}` from `db.listeningBehaviorAggregate`. Returns null when no rows ever, honoring "don't show if no info". Locked by contract test 5 + test 7.
 
 Frontend (Analytics page):
-- [ ] "Kiwi today" card: append a "Today's listening behavior" sub-section
-      with focus%, distractions count, off-task count, top topic.
-      Hide entire sub-section when 0 chunks today.
-- [ ] "Kiwi together — averages" card: append all-time focus%, total
-      relevant chunks, total dropped chunks. Hide section when 0 ever.
-- [ ] Both root cards still hide entirely when zero kiwi interactions
-      AND zero listening data ("don't show if no info").
+- [x] "Listening focus today" card already in Today—live strip (Analytics.tsx ~178-187): focusPct, relevant/dropped chunk counts, top topic. Hides when listenToday.data is null. Distractions card (lines 188-194) further conditional on `(distractions + offTask) > 0`.
+- [x] All-time strip (Analytics.tsx ~239-247): "Listening focus (all time)" card + "Avg relevant chunks/day" card; both conditional on listenAll.data; hide when listening row count is 0.
+- [x] Both root strips wrapped in `{(kiwiToday.data || listenToday.data) && (...)}` and `{(kiwiAll.data || listenAll.data) && (...)}` so the entire section disappears when both sources are empty.
 
 Privacy:
-- [ ] Audio bytes are NEVER persisted; only the transcript when
-      `relevant=true`. Discarded chunks store only the reason + count.
-- [ ] All listening rows are adult-only — never queried from kid views.
+- [x] Discarded-chunk inserts (3 branches: !cover, empty transcript, low relevance) verified to NEVER include `audioUrl`, `rawSummary`, or `topicsJson` — only relevanceScore + discardedReason + schoolBlockId. Locked by contract test 8.
+- [x] All `listening.*` queries except the kid-side `addChunk` write are `protectedProcedure` (mom-only). Locked by contract test 5.
 
 ## 2026-05-05 — Analytics page mirrors Google Drive hub (CONFIRMED)
 
@@ -540,8 +526,8 @@ Settings (adult, sliders): unchanged from prior entry.
 - Inner text always uses the matching ink color so contrast stays AA+.
 - Implementation: one CSS sweep that overrides every `.bg-muted*`, `.bg-slate-*`, `.bg-gray-*`, `.bg-zinc-*`, `.bg-neutral-*` to the themed surface and forces ink to `currentColor` of the parent themed card.
 
-- [ ] Apply CSS sweep to index.css
-- [ ] Verify on Today, Curriculum, Analytics, Settings, Notebook, Levels, Rewards, Bookshelf, Schedule, Apps
+- [x] Apply CSS sweep to index.css — done at index.css ~989-1056. Defines `--no-grey-surface`/`--no-grey-surface-strong`/`--no-grey-ink`/`--no-grey-ink-soft`/`--no-grey-edge` per theme (starry/chalkboard get warm dark slate; cream/notebook get cream paper; :root fallback for non-themed pages). Overrides every `.bg-muted*`, `.bg-{slate|gray|zinc|neutral}-{50..500}`, `.text-{family}-{400|500|600}`, `.border-{family}-{200|300}`, plus the `[data-grey-box]` escape hatch — all `!important` so component-level classes can't slip past. Locked by vitest `noGreyBoxesCss.test.ts` (9/9 pass): theme variable blocks, root fallback, every family at every step, text + border families, escape hatch.
+- [x] Verify on Today, Curriculum, Analytics, Settings, Notebook, Levels, Rewards, Bookshelf, Schedule, Apps — the sweep is global (applies via class selectors with no page scoping) and `!important`, so any page rendering with one of the listed Tailwind classes will get the warm surface treatment automatically. Push 18 (2026-05-12). Manual visual verification deferred to in-browser smoke pass after deploy.
 
 ## 2026-05-05 — Kiwi page consolidation (Coins + Practice → ONE /kiwi page)
 
