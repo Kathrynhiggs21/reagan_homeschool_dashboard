@@ -31,6 +31,8 @@ import KidHeaderStrips from "@/components/KidHeaderStrips";
 import SummerModeBadge from "@/components/SummerModeBadge";
 import CatchUpNextDayCard from "@/components/CatchUpNextDayCard";
 import { TomorrowChoiceCard } from "@/components/TomorrowChoiceCard";
+// Push 84 (2026-05-13) — Adult Today recap: off-plan capture summary.
+import { OffPlanCaptureCard } from "@/components/OffPlanCaptureCard";
 import GeneratedBlockHint from "@/components/GeneratedBlockHint";
 // Push 50 (2026-05-13) — Post-block feedback chips for Reagan.
 import FeedbackChips from "@/components/FeedbackChips";
@@ -492,6 +494,12 @@ export default function Today() {
       {/* Push 73 (2026-05-13) — "From yesterday" catch-up nudges; self-hides
           when nothing was missed and never blocks the schedule. */}
       <CatchUpNextDayCard />
+
+      {/* Push 84 (2026-05-13) — Adult Today recap: off-plan capture summary.
+          Self-hides when totalCount === 0 OR when caller is Reagan (the
+          server returns allowed:false). Adults see today's captured topics
+          + Drive push status; kid never sees this. */}
+      <OffPlanCaptureCard />
 
       {/* Push 82 (2026-05-13) — Tomorrow's summer-choice 3-option chooser.
           Only renders when summer mode is active for tomorrow's date.

@@ -1982,7 +1982,50 @@ export async function awardSticker(params: {
   const db = getDb();
   const art = params.art || STICKER_ART[Math.floor(Math.random() * STICKER_ART.length)];
   const palette = params.palette || ["coral", "peach", "butter", "mint", "sky", "lavender", "pink"][Math.floor(Math.random() * 7)];
-  const coins = params.coins ?? 1;
+  const baseCoins = params.coins ?? 1;
+  // Push 83 (2026-05-13) — Summer streak boost. Pure helpers only; we
+  // fail soft when prefs/streak math hits any error so the core award
+  // path stays robust.
+  let streakBoostMultiplier = 1;
+  let streakDays = 0;
+  let summerActive = false;
+  try {
+    const [autoFlip, start, end, override, vacJson] = await Promise.all([
+      getAppSetting("summer.autoFlipEnabled"),
+      getAppSetting("summer.start"),
+      getAppSetting("summer.end"),
+      getAppSetting("summer.override"),
+      getAppSetting("summer.vacationRanges"),
+    ]);
+    const { summerSettingsFromKv, effectiveSummerActive, streakBoostMultiplier: mult } =
+      await import("./summerMode");
+    const settings = summerSettingsFromKv({
+      "summer.autoFlipEnabled": autoFlip,
+      "summer.start": start,
+      "summer.end": end,
+      "summer.override": override,
+      "summer.vacationRanges": vacJson,
+    });
+    const today = new Date().toISOString().slice(0, 10);
+    summerActive = effectiveSummerActive(today, settings).active;
+    if (summerActive) {
+      // Pull recent earn days from coinLedger (kind="earn_sticker") and
+      // pipe through pure streak helper.
+      const since = new Date();
+      since.setDate(since.getDate() - 30);
+      const rows: any[] = await db.select().from(coinLedger);
+      const dayKey = (d: Date) => d.toISOString().slice(0, 10);
+      const dayList = rows
+        .filter((r: any) => r.kind === "earn_sticker" && r.createdAt)
+        .map((r: any) => dayKey(new Date(r.createdAt)));
+      // We're about to insert today's earn, so include today.
+      dayList.push(today);
+      const { dailyBlockCompletionStreak } = await import("./_lib/completionStreak");
+      streakDays = dailyBlockCompletionStreak(dayList, today);
+      streakBoostMultiplier = mult(streakDays, summerActive);
+    }
+  } catch { /* boost is best-effort */ }
+  const coins = Math.round(baseCoins * streakBoostMultiplier);
   const [res]: any = await db.insert(stickers).values({
     userId: params.userId ?? null,
     reason: params.reason,
@@ -2005,7 +2048,16 @@ export async function awardSticker(params: {
       stickerId: stickerId ?? null,
     } as any);
   }
-  return { stickerId, art, palette, coins };
+  return {
+    stickerId,
+    art,
+    palette,
+    coins,
+    baseCoins,
+    streakBoostMultiplier,
+    streakDays,
+    summerActive,
+  };
 }
 
 export async function listStickers(userId?: number | null) {
@@ -6535,6 +6587,50 @@ export async function markOffPlanDrivePushed(id: number, drivePath: string): Pro
     .update(topicsCoveredOffPlan)
     .set({ drivePushed: true, drivePath })
     .where(eq(topicsCoveredOffPlan.id, id));
+}
+
+/**
+ * Push 84 (2026-05-13) — Adult Today recap: "Off-plan capture summary".
+ * Reads the topicsCoveredOffPlan rows for one date and rolls them up
+ * into a single payload so the adult Today card can render counts +
+ * per-row Drive push status. Pure read; no side effects.
+ */
+export async function offPlanCaptureSummaryForDate(dateISO: string): Promise<{
+  totalCount: number;
+  drivePushedCount: number;
+  pendingCount: number;
+  items: Array<{
+    id: number;
+    subjectSlug: string;
+    topic: string;
+    drivePushed: boolean;
+    drivePath: string | null;
+  }>;
+}> {
+  const rows: any[] = await getDb()
+    .select({
+      id: topicsCoveredOffPlan.id,
+      subjectSlug: topicsCoveredOffPlan.subjectSlug,
+      topic: topicsCoveredOffPlan.topic,
+      drivePushed: topicsCoveredOffPlan.drivePushed,
+      drivePath: topicsCoveredOffPlan.drivePath,
+    })
+    .from(topicsCoveredOffPlan)
+    .where(eq(topicsCoveredOffPlan.dateISO, dateISO));
+  const items = rows.map((r: any) => ({
+    id: Number(r.id),
+    subjectSlug: String(r.subjectSlug),
+    topic: String(r.topic),
+    drivePushed: Boolean(r.drivePushed),
+    drivePath: r.drivePath ?? null,
+  }));
+  const drivePushedCount = items.filter((i) => i.drivePushed).length;
+  return {
+    totalCount: items.length,
+    drivePushedCount,
+    pendingCount: items.length - drivePushedCount,
+    items,
+  };
 }
 
 /** Create a recap-request row at 8 PM when a date has no actual entries.

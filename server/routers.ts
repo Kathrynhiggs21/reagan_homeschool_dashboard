@@ -4148,6 +4148,29 @@ export const appRouter = router({
         return { ok: true, chosenKind: input.chosenKind, autoApproved: true };
       }),
     /**
+     * Push 84 (2026-05-13) — Off-plan capture summary for adult Today
+     * recap. Counts today's off-plan actuals + Drive push status so Mom
+     * knows what got captured outside the planned curriculum.
+     * Adult-only (admin/tutor/user role); Reagan never sees this.
+     */
+    offPlanCaptureSummary: protectedProcedure
+      .input(z.object({ date: z.string().optional() }).optional())
+      .query(async ({ ctx, input }) => {
+        const date = input?.date ?? new Date().toISOString().slice(0, 10);
+        if (ctx.user.role !== "admin" && ctx.user.role !== "tutor" && ctx.user.role !== "user") {
+          return {
+            totalCount: 0,
+            drivePushedCount: 0,
+            pendingCount: 0,
+            items: [] as Array<{ id: number; subjectSlug: string; topic: string; drivePushed: boolean; drivePath: string | null }>,
+            allowed: false,
+            date,
+          };
+        }
+        const summary = await db.offPlanCaptureSummaryForDate(date);
+        return { ...summary, allowed: true, date };
+      }),
+    /**
      * refresh — rebuild today's plan blocks from the active template,
      * preserving completed/in-progress work. Available to Reagan (public)
      * because she sometimes wants a clean slate after a rough start.
