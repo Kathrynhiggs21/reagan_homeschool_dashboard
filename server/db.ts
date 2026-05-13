@@ -6615,3 +6615,42 @@ export async function markKidRequestNotified(id: number, ok: boolean): Promise<v
   const db = getDb();
   await db.update(kidRequests).set({ notifyOwnerOk: ok } as any).where(eq(kidRequests.id, id));
 }
+
+
+/* ----------------------------------------------------------------- */
+/*  Push 29 (2026-05-13) — Q4 Standards seeder bridge                  */
+/*  Idempotent insert from server/_knowledge/q4_standards.txt into     */
+/*  curriculumTopics. Never modifies existing rows.                    */
+/* ----------------------------------------------------------------- */
+
+export async function seedQ4Standards(): Promise<{ inserted: number; total: number }> {
+  const { seedQ4StandardsIfMissing } = await import("./_lib/q4StandardsSeeder");
+  const db = getDb();
+  return seedQ4StandardsIfMissing({
+    listExisting: async () => {
+      const rows: any = await db.execute(sql`SELECT subject, code FROM curriculumTopics`);
+      return ((rows?.[0] ?? rows) as Array<{ subject: string; code: string }>) ?? [];
+    },
+    insert: async (toInsert) => {
+      // Find current max ord per subject so we append cleanly.
+      const ordRows: any = await db.execute(sql`
+        SELECT subject, COALESCE(MAX(ord), -1) AS maxOrd
+        FROM curriculumTopics
+        GROUP BY subject
+      `);
+      const ordBySubject = new Map<string, number>();
+      for (const r of (ordRows?.[0] ?? ordRows) as Array<{ subject: string; maxOrd: number }>) {
+        ordBySubject.set(r.subject, Number(r.maxOrd ?? -1));
+      }
+      for (const r of toInsert) {
+        const baseOrd = ordBySubject.get(r.subject) ?? -1;
+        const nextOrd = baseOrd + 1;
+        ordBySubject.set(r.subject, nextOrd);
+        await db.execute(sql`
+          INSERT INTO curriculumTopics (subject, code, title, standard_ref, ord, quarter)
+          VALUES (${r.subject}, ${r.code}, ${r.title}, ${r.standardRef}, ${nextOrd}, ${r.quarter})
+        `);
+      }
+    },
+  });
+}

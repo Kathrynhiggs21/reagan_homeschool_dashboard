@@ -2462,7 +2462,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] Assignment tracker copied to server/_knowledge/assignment_tracker.csv
 - [x] Add knowledgeBundle helper that loads all _knowledge files at boot and exposes summarized text into generateScheduleDraft — push 25 (already implemented earlier; locked now). `server/_lib/knowledgeBundle.ts` exports `loadKnowledgeBundle()` which reads all 5 files in `server/_knowledge/`, caches the bundle, and exposes a structured `KnowledgeBundle`. Existing `server/knowledgeBundle.test.ts` covers cache + content checks. Locked by `phase4Contract.test.ts` tests 2 + 3 + 4.
 - [x] aiScheduleGenerator system prompt: include Q4 standards + IEP focus + scope/sequence currently-not-mastered topics + recent listening summaries + recent struggles — push 25 (already wired). `server/_lib/aiScheduleGenerator.ts` line 13 imports `loadKnowledgeBundle` and line 165 calls it inside the prompt-building flow. Locked by contract test 3.
-- [ ] Seed any missing curriculum_topics rows from Q4 standards (5.OA.1-3, 5.G.1-4, RL/RF/RI/W/SL/L 5.x) — idempotent
+- [x] Seed any missing curriculum_topics rows from Q4 standards (5.OA.1-3, 5.G.1-4, RL/RF/RI/W/SL/L 5.x) — idempotent — push 29 (2026-05-13). New `server/_lib/q4StandardsSeeder.ts` parses `server/_knowledge/q4_standards.txt` into structured `Q4Standard[]` (subject + code + title + standardRef). New `db.seedQ4Standards()` (server/db.ts append) does the keyed-on-subject+code idempotent insert with per-subject ord append. Exposed as `curriculum.seedQ4Standards` familyAdmin mutation (server/routers.ts:3618). Locked by vitest `q4StandardsSeeder.test.ts` (7/7 pass): all 7 Math codes (5.OA.1–3, 5.G.1–4) parsed, 4+ ELA strand families, idempotent on second run, gap-fill on partially-seeded DB, every inserted row carries quarter=Q4.
 
 ### Phase 2 — Curriculum hub + AI agenda + sync
 - [ ] Curriculum.tsx: pin "Tomorrow's draft agenda" strip at top with regenerate + commit buttons — partial; curriculum.aiGenerate exists (server/routers.ts:264), but a dedicated pinned "Tomorrow's draft" strip with regenerate/commit pair is not yet wired in Curriculum.tsx (the Sync next 5 days button is the closest existing surface).
@@ -2532,8 +2532,8 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Worksheet/lesson PDF filenames stamped with topic code: `5.OA.1__order-of-ops__worksheet.pdf`
 - [ ] Printable agenda PDF prints "Math · 5.OA.1 · Order of Operations" under each task
 - [ ] Topic-coverage rollup auto-credits the matched topic when the block is marked complete (already partially in `updateBlock` cascade — extend to library + printables too)
-- [ ] Q4 standards from `5thGrade-4thQuarterStandards.docx` are imported into `curriculumTopics` if not already present (idempotent seeder)
-- [ ] Q4 ELA standards (RL/RF/RI/W/SL/L 5.x) imported as their own topics
+- [x] Q4 standards from `5thGrade-4thQuarterStandards.docx` are imported into `curriculumTopics` if not already present (idempotent seeder) — push 29. The Word doc was extracted to `server/_knowledge/q4_standards.txt` (plain text, easier to grep + parse than .docx). The seeder reads that file. See `server/_lib/q4StandardsSeeder.ts` + `seedQ4Standards()` db helper.
+- [x] Q4 ELA standards (RL/RF/RI/W/SL/L 5.x) imported as their own topics — push 29. The parser handles all 6 ELA strand prefixes (RL, RF, RI, W, SL, L) via the regex `\d+\.(?:RL|RF|RI|W|SL|L)\.5\.\d+[a-z]?`. Each ELA standard becomes its own row with subject="ELA". Locked by `q4StandardsSeeder.test.ts` test "parses ELA standards across RL/RF/RI/W/SL/L families" (asserts ≥4 of 6 families present in the current dump).
 - [ ] Vitest guard: `agendaTagging.test.ts` asserts no agenda item without a curriculumTopicId can land in scheduleBlocks via the AI generator
 
 ## EXPANDED SCOPE (cont.) — Tutor-of-the-day on every agenda + tutor AI co-pilot

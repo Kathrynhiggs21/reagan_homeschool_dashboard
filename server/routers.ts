@@ -3609,6 +3609,13 @@ export const appRouter = router({
       .query(({ input }) => db.listCurriculumTopics(input?.subject)),
     progress: protectedProcedure.query(() => db.curriculumProgress()),
     ensureSeeded: protectedProcedure.mutation(() => db.ensureCurriculumSeeded()),
+    /**
+     * Push 29: idempotent seeder for the 5th-grade Q4 Ohio standards
+     * parsed out of server/_knowledge/q4_standards.txt. Adult-only.
+     * Returns { inserted, total } so Mom can see exactly how many
+     * rows were added without having to query the DB directly.
+     */
+    seedQ4Standards: familyAdminProcedure.mutation(() => db.seedQ4Standards()),
     toggle: protectedProcedure
       .input(z.object({ id: z.number(), status: z.enum(["notStarted", "inProgress", "done"]) }))
       .mutation(({ input }) => db.toggleCurriculumTopic(input.id, input.status)),
