@@ -5172,6 +5172,28 @@ export async function markPrintableDone(id: number, opts: { photoKey?: string | 
       } as any);
     }
   } catch { /* coins are best-effort */ }
+  // Push 31 (2026-05-13) — Topic-coverage rollup extension.
+  // When a printable is finished, look up scheduleBlocks for the same
+  // (forDate, subjectSlug). If any of those blocks is anchored to a
+  // curriculumTopicId, mark that topic 'done' (only if not already).
+  // This mirrors the updateBlock cascade so the rollup credits printables
+  // and library worksheets the same way it credits in-block completions.
+  if (row?.forDate && row?.subjectSlug) {
+    try {
+      await d.execute(sql`
+        UPDATE curriculumTopics ct
+        JOIN scheduleBlocks sb ON sb.curriculumTopicId = ct.id
+        JOIN dailyPlans dp ON dp.id = sb.planId
+        JOIN subjects s ON s.id = sb.subjectId
+           SET ct.status = 'done', ct.completed_at = ${new Date()}
+         WHERE dp.date_iso = ${row.forDate}
+           AND s.slug = ${row.subjectSlug}
+           AND ct.status <> 'done'
+      `);
+    } catch {
+      // Non-fatal: rollup is best-effort, the printable is already marked done.
+    }
+  }
   return row;
 }
 
