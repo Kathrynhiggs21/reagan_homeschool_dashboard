@@ -2756,3 +2756,5 @@ shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
 - [x] Push 56 — ihsd.us → gmail.com migration (remove PowerSchoolGradesCard mount from Analytics; flip usePracticePrefs.ihIxl default OFF + bump localStorage key v1→v2; preserve seeded blockedEmails + classroom.studentDomain="gmail.com" app_setting)
 - [x] Push 57 — Demo-seed cleanup (deleted 150 leaked __vitest book rows from prod; wrapped listBooksFilter.test.ts create() in try/finally so cleanup runs even on failure; added Push 57 marker comment to books.create; locked the three contracts in demoSeedCleanup.test.ts)
 - [x] Push 58 — Manual block grid drag-and-drop reorder + inline-editable subject/topic/blockType/title/start/duration/description (already shipped; locked by manualBlockGrid.test.ts so a future refactor can't silently regress)
+
+- [x] Push 59 (2026-05-13) — KidHeaderStrips: kid-facing today % progress bar, last-3-days mood dots, and resume-where-left-off card mounted above Today's Schedule. Adult HomeAnalyticsStrip untouched. Vitest `server/kidHeaderStrips.test.ts` (5/5) + `server/homeAnalyticsStrip.test.ts` (4/4) lock the helper contract.

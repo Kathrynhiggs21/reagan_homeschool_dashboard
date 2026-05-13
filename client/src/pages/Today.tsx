@@ -26,6 +26,8 @@ import CurriculumChip from "@/components/CurriculumChip";
 import TopicLabel from "@/components/TopicLabel";
 import GameBreakCard from "@/components/GameBreakCard";
 import HomeAnalyticsStrip from "@/components/HomeAnalyticsStrip";
+// Push 59 (2026-05-13) — Kid-friendly micro strips at top of Today.
+import KidHeaderStrips from "@/components/KidHeaderStrips";
 // Push 50 (2026-05-13) — Post-block feedback chips for Reagan.
 import FeedbackChips from "@/components/FeedbackChips";
 import AIScheduleGeneratorCard from "@/components/AIScheduleGeneratorCard";
@@ -472,6 +474,11 @@ export default function Today() {
 
       {/* Kiwi intro — dismissible, plain-language */}
       <KiwiIntroStrip />
+
+      {/* Push 59 (2026-05-13) — Kid-readable today strips:
+          progress %, last 3 days of mood dots, resume-where-left-off card.
+          Always visible to Reagan; adults still see the analytics card lower. */}
+      <KidHeaderStrips />
 
       {/* Diagnostic Placement invite — gentle, optional, dismisses at 100% */}
       <PlacementInviteCard />
