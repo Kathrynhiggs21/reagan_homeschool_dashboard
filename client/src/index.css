@@ -1054,3 +1054,76 @@ html[data-rtheme="cream"], html[data-rtheme="notebook"] {
 .border-slate-300, .border-gray-300, .border-zinc-300, .border-neutral-300 {
   border-color: var(--no-grey-edge) !important;
 }
+
+/* =========================================================================
+   Push 60 (2026-05-13) — STANDING RULE: no white-on-white, no dark-on-dark
+   -------------------------------------------------------------------------
+   The light-theme overrides above already flip "dark text on white card"
+   to readable dark ink, and "white text on cream bg" to readable dark ink.
+   This block adds the symmetric guards for the two DARK themes (starry +
+   chalkboard), where any component using Tailwind's classic dark inks
+   (text-slate-700/800/900, text-gray-700/800/900, text-neutral-700/800/900,
+   text-zinc-700/800/900) would otherwise render dark-on-dark and disappear.
+   We promote those to a readable warm chalk ink so kid + adult cards stay
+   legible across all four themes without per-component rewrites.
+   ------------------------------------------------------------------------- */
+
+html[data-rtheme="starry"]    .text-slate-700,
+html[data-rtheme="starry"]    .text-slate-800,
+html[data-rtheme="starry"]    .text-slate-900,
+html[data-rtheme="starry"]    .text-gray-700,
+html[data-rtheme="starry"]    .text-gray-800,
+html[data-rtheme="starry"]    .text-gray-900,
+html[data-rtheme="starry"]    .text-neutral-700,
+html[data-rtheme="starry"]    .text-neutral-800,
+html[data-rtheme="starry"]    .text-neutral-900,
+html[data-rtheme="starry"]    .text-zinc-700,
+html[data-rtheme="starry"]    .text-zinc-800,
+html[data-rtheme="starry"]    .text-zinc-900,
+html[data-rtheme="chalkboard"].text-slate-700,
+html[data-rtheme="chalkboard"] .text-slate-700,
+html[data-rtheme="chalkboard"] .text-slate-800,
+html[data-rtheme="chalkboard"] .text-slate-900,
+html[data-rtheme="chalkboard"] .text-gray-700,
+html[data-rtheme="chalkboard"] .text-gray-800,
+html[data-rtheme="chalkboard"] .text-gray-900,
+html[data-rtheme="chalkboard"] .text-neutral-700,
+html[data-rtheme="chalkboard"] .text-neutral-800,
+html[data-rtheme="chalkboard"] .text-neutral-900,
+html[data-rtheme="chalkboard"] .text-zinc-700,
+html[data-rtheme="chalkboard"] .text-zinc-800,
+html[data-rtheme="chalkboard"] .text-zinc-900 {
+  /* warm chalk ink on dark slate — high contrast, matches existing chalk-white */
+  color: oklch(0.94 0.04 85) !important;
+}
+
+/* KidHeaderStrips never wants its hard-coded warm ink overridden by the
+   above dark-theme rule, because the strips are cream-paper cards that sit
+   ON the dark slate. So we exempt anything inside data-kid-header-strips. */
+[data-kid-header-strips] .text-slate-700,
+[data-kid-header-strips] .text-slate-800,
+[data-kid-header-strips] .text-slate-900,
+[data-kid-header-strips] .text-gray-700,
+[data-kid-header-strips] .text-gray-800,
+[data-kid-header-strips] .text-gray-900,
+[data-kid-header-strips] .text-neutral-700,
+[data-kid-header-strips] .text-neutral-800,
+[data-kid-header-strips] .text-neutral-900,
+[data-kid-header-strips] .text-zinc-700,
+[data-kid-header-strips] .text-zinc-800,
+[data-kid-header-strips] .text-zinc-900 {
+  color: #2a2010 !important;
+}
+
+/* Belt-and-suspenders: in any card explicitly painted with bg-white /
+   bg-white/* we always want dark ink for body text, regardless of theme.
+   This catches HomeAnalyticsStrip and any future kid card that paints
+   itself white. */
+.bg-white .text-slate-700,
+.bg-white .text-slate-800,
+.bg-white .text-slate-900,
+[class*="bg-white/"] .text-slate-700,
+[class*="bg-white/"] .text-slate-800,
+[class*="bg-white/"] .text-slate-900 {
+  color: #1f2937 !important;
+}

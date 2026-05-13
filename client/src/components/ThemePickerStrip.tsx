@@ -21,11 +21,18 @@ export default function ThemePickerStrip({ compact = false }: { compact?: boolea
   const idleBorder = isLightTheme ? "2px solid rgba(0,0,0,0.18)" : "2px solid rgba(255,255,255,0.15)";
 
   // Container also swaps for light themes so the picker isn't a dark
-  // panel slapped onto a cream page.
+  // panel slapped onto a cream page. Push 60 (2026-05-13): on the pure-
+  // black Chalkboard Night theme the previous container gradient washed
+  // into the body background, so we now use a slightly warmer slate so
+  // the picker reads as its own card, not a smudge on the page.
   const containerBg = isLightTheme
     ? "linear-gradient(180deg, rgba(255,255,255,0.85), rgba(0,0,0,0.04))"
-    : "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0.18))";
-  const containerBorder = isLightTheme ? "1px solid rgba(0,0,0,0.12)" : "1px solid rgba(255,255,255,0.12)";
+    : themeId === "chalkboard"
+      ? "linear-gradient(180deg, rgba(38,32,22,0.85), rgba(28,24,18,0.85))"
+      : "linear-gradient(180deg, rgba(255,255,255,0.04), rgba(0,0,0,0.18))";
+  const containerBorder = isLightTheme
+    ? "1px solid rgba(0,0,0,0.12)"
+    : "1px solid rgba(220, 195, 130, 0.28)";
   const headerColor = isLightTheme ? "#3a2a00" : "#f4eedc";
 
   return (

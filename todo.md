@@ -2758,3 +2758,13 @@ shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
 - [x] Push 58 — Manual block grid drag-and-drop reorder + inline-editable subject/topic/blockType/title/start/duration/description (already shipped; locked by manualBlockGrid.test.ts so a future refactor can't silently regress)
 
 - [x] Push 59 (2026-05-13) — KidHeaderStrips: kid-facing today % progress bar, last-3-days mood dots, and resume-where-left-off card mounted above Today's Schedule. Adult HomeAnalyticsStrip untouched. Vitest `server/kidHeaderStrips.test.ts` (5/5) + `server/homeAnalyticsStrip.test.ts` (4/4) lock the helper contract.
+
+- [x] Push 60 (2026-05-13) — Today UX contrast pass:
+      1) Global CSS rule promotes `text-slate-700/800/900`, `text-gray-700/800/900`, `text-neutral-700/800/900`, `text-zinc-700/800/900` to warm chalk ink on the two dark themes (Starry + Chalkboard Night) so any kid card painted with Tailwind dark inks stops disappearing on dark backgrounds.
+      2) Kid header strips are exempted (they're cream-paper cards on top of dark slate so they keep their own dark ink).
+      3) `bg-white .text-slate-*` always renders as `#1f2937` regardless of theme — protects HomeAnalyticsStrip and any future white kid card.
+      4) `ThemePickerStrip` container gradient + border tightened: on Chalkboard Night theme the picker now has its own warm slate panel + warm gold border so it stops blending into the pure-black body. Header label stays chalk cream on dark, warm dark on light. No "white-on-white" pills possible.
+      5) Schedule near top verified: header → tutor strip → daily tip → confidence principles → kiwi intro → KidHeaderStrips → placement invite → Today's Schedule. Less than one screen between login and the schedule on the kid view.
+      Coverage: `tsc --noEmit` clean; `kidHeaderStrips.test.ts` (5/5) + `homeAnalyticsStrip.test.ts` (4/4) green.
+
+- [x] Push 60 (2026-05-13) — Today UX contrast pass: dark-theme override promotes `text-slate-700..900`, `text-gray-700..900`, `text-neutral-700..900`, `text-zinc-700..900` to warm chalk ink on Starry + Chalkboard Night so dark-on-dark text disappears nowhere; KidHeaderStrips exempted (cream-paper cards keep their own dark ink); any `.bg-white .text-slate-700..900` is forced to `#1f2937` regardless of theme so HomeAnalyticsStrip stays readable; ThemePickerStrip container + border re-toned for the Chalkboard Night case so the picker reads as its own card; schedule confirmed near top of Today (header → tutor strip → daily tip → confidence → kiwi intro → KidHeaderStrips → placement → Today’s Schedule). `tsc --noEmit` clean; `kidHeaderStrips.test.ts` (5/5) + `homeAnalyticsStrip.test.ts` (4/4) green.
