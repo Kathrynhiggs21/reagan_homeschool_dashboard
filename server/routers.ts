@@ -3864,6 +3864,42 @@ export const appRouter = router({
       const { computeNextDayCatchUpQueue } = await import("./_lib/nextDayCatchUp");
       return computeNextDayCatchUpQueue();
     }),
+    /**
+     * Push 75 (2026-05-13) — generated payloads for Today's blocks.
+     * Returns a `{ [blockId]: generated|null }` map keyed by scheduleBlocks.id
+     * so the Today UI can show the operable+printable line WITHOUT shipping the
+     * blockGenerators bundle to the client.
+     */
+    generatedForDate: protectedProcedure
+      .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
+      .query(async ({ input }) => {
+        const { deriveGeneratedForBlock } = await import("./_lib/blockGeneratorMatch");
+        const plan = await (db as any).getPlanByDate?.(input.date);
+        if (!plan?.id) return { byBlockId: {} as Record<number, any> };
+        const blocks = ((await (db as any).listBlocksForPlan?.(plan.id)) ?? []) as any[];
+        const out: Record<number, any> = {};
+        for (const b of blocks) {
+          let firstRef = null as { bookTitle: string; fromPage: number; toPage: number } | null;
+          try {
+            const refs = (await (db as any).listBookAssignmentsForBlock?.(b.id)) ?? [];
+            firstRef = refs[0] ?? null;
+          } catch {
+            firstRef = null;
+          }
+          const gen = deriveGeneratedForBlock(
+            {
+              id: b.id,
+              blockType: b.blockType,
+              subjectName: b.subjectName,
+              durationMin: b.durationMin,
+              description: b.description,
+            },
+            firstRef,
+          );
+          out[b.id] = gen;
+        }
+        return { byBlockId: out };
+      }),
     toggle: protectedProcedure
       .input(z.object({ id: z.number(), status: z.enum(["notStarted", "inProgress", "done"]) }))
       .mutation(({ input }) => db.toggleCurriculumTopic(input.id, input.status)),

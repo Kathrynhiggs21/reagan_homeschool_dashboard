@@ -1,0 +1,59 @@
+import { trpc } from "@/lib/trpc";
+import { Button } from "@/components/ui/button";
+
+/**
+ * Push 75 (2026-05-13) — Surface the per-type generated payload on Today.
+ *
+ * Reads `trpc.curriculum.generatedForDate` for `today`, then renders a
+ * single calm line per block: printable label + optional "Open" button
+ * when `operable.url` is set. Self-hides when the block already has
+ * description / pageRefs / no generated payload — matches the no-info rule.
+ */
+export default function GeneratedBlockHint({
+  blockId,
+  hasPageRefs,
+  hasDescription,
+  todayDate,
+}: {
+  blockId: number;
+  hasPageRefs: boolean;
+  hasDescription: boolean;
+  todayDate: string;
+}) {
+  // Single shared query — react-query dedupes across all instances on the same
+  // page so this still only fires once per render even with many blocks.
+  const q = trpc.curriculum.generatedForDate.useQuery(
+    { date: todayDate },
+    { staleTime: 60_000 },
+  );
+
+  if (hasPageRefs || hasDescription) return null;
+  if (q.isLoading || !q.data) return null;
+  const gen = q.data.byBlockId?.[blockId];
+  if (!gen) return null;
+
+  return (
+    <div
+      data-testid={`generated-hint-${blockId}`}
+      className="mt-1.5 flex items-center gap-2 rounded-md bg-amber-300/15 border border-amber-300/35 px-2.5 py-1 text-[11px] text-amber-50"
+    >
+      <span className="font-semibold truncate">{gen.printable}</span>
+      {gen.operable?.url ? (
+        <Button
+          asChild
+          size="sm"
+          className="h-6 px-2 text-[10px] font-bold bg-amber-300 text-amber-950 hover:bg-amber-200 ml-auto"
+        >
+          <a
+            href={gen.operable.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-testid={`generated-open-${blockId}`}
+          >
+            Open ↗
+          </a>
+        </Button>
+      ) : null}
+    </div>
+  );
+}

@@ -7,72 +7,7 @@ import * as db from "../db";
 import { resolveTutorOfDay } from "./tutorOfDay";
 import type { AgendaPdfInput, AgendaPdfBlock } from "./agendaPdf";
 import { hydrateLessonForBlock } from "./hydrateLessonForBlock";
-import {
-  buildReadingBlock,
-  buildAdventureBlock,
-  buildPracticeBlock,
-  OWNED_BOOKS,
-  type OwnedBookSlug,
-  type AdventureTheme,
-  type GeneratedBlock,
-} from "./blockGenerators";
-import type { PracticeSubject } from "./practiceLibrary";
-
-/**
- * Push 74 (2026-05-13) — derive an OWNED_BOOKS slug from a book title.
- * Match is case-insensitive substring so "Tuck Everlasting" maps cleanly
- * regardless of whether the row stored "Tuck Everlasting (paperback)".
- */
-function matchOwnedBookSlug(title: string | null | undefined): OwnedBookSlug | null {
-  if (!title) return null;
-  const t = title.toLowerCase();
-  for (const slug of Object.keys(OWNED_BOOKS) as OwnedBookSlug[]) {
-    const ref = OWNED_BOOKS[slug].title.toLowerCase();
-    if (t.includes(ref) || ref.includes(t)) return slug;
-  }
-  return null;
-}
-
-/**
- * Map a scheduleBlocks subject slug or name to a PracticeSubject. Defaults
- * to "math" because that's the most common practice block — callers should
- * still narrow before relying on the result.
- */
-function matchPracticeSubject(subjectName: string | null | undefined): PracticeSubject | null {
-  const n = (subjectName ?? "").toLowerCase();
-  if (!n) return null;
-  if (n.includes("math")) return "math";
-  if (n.includes("ela") || n.includes("language") || n.includes("reading")) return "ela";
-  if (n.includes("science")) return "science";
-  if (n.includes("social") || n.includes("history")) return "social";
-  if (n.includes("spell")) return "spelling";
-  return null;
-}
-
-function safeGenerate(b: any, bookRef: { bookTitle: string; fromPage: number; toPage: number } | null): GeneratedBlock | null {
-  const blockType = String(b?.blockType ?? "");
-  try {
-    if (blockType === "read_aloud" && bookRef) {
-      const slug = matchOwnedBookSlug(bookRef.bookTitle);
-      if (slug) {
-        const span = Math.max(1, bookRef.toPage - bookRef.fromPage + 1);
-        return buildReadingBlock({ bookSlug: slug, startPage: bookRef.fromPage, pagesPerDay: span });
-      }
-    }
-    if (blockType === "adventure") {
-      // Default to nature-scavenger if no specific theme available.
-      const theme: AdventureTheme = "nature-scavenger";
-      return buildAdventureBlock({ theme, durationMin: b?.durationMin ?? 30 });
-    }
-    if (blockType === "math") {
-      const subj = matchPracticeSubject(b?.subjectName) ?? "math";
-      return buildPracticeBlock({ subject: subj, seed: `${b?.id}` });
-    }
-  } catch {
-    /* fall through */
-  }
-  return null;
-}
+import { deriveGeneratedForBlock } from "./blockGeneratorMatch";
 
 
 function previousDateStr(dateStr: string): string {
@@ -149,7 +84,16 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
   const blocks: AgendaPdfBlock[] = blocksRaw.map((b, i) => {
     const refs = bookRefsByBlockId.get(b.id) ?? [];
     const firstRef = refs[0] ?? null;
-    const generated = safeGenerate(b, firstRef);
+    const generated = deriveGeneratedForBlock(
+      {
+        id: b.id,
+        blockType: b.blockType,
+        subjectName: b.subjectName,
+        durationMin: b.durationMin,
+        description: b.description,
+      },
+      firstRef,
+    );
     return {
       sortOrder: (b.sortOrder ?? i) + 1, // 1-indexed for printout
       startTime: b.startTime ?? null,

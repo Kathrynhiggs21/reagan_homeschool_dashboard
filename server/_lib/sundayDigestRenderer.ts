@@ -142,7 +142,7 @@ export function renderSundayDigestHtml(
   <ul style="padding-left:18px;margin:0">${ihHtml}</ul>
 
   <p style="color:#6b7280;font-size:12px;margin-top:24px">
-    Sunday Digest preview · Mom-only · no auto-send yet.
+    Sunday Digest · Mom + Grandma recipients · preview pane.
   </p>
 </body></html>`;
 }

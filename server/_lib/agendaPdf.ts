@@ -177,6 +177,15 @@ export async function buildAgendaPdf(input: AgendaPdfInput): Promise<AgendaPdfRe
     if ((b.printablesAttached ?? 0) > 0) {
       doc.fillColor("#27ae60").fontSize(10).text(`   📎 ${b.printablesAttached} printable(s) attached to email`);
     }
+    // Push 76 (2026-05-13) — surface generated payload (single calm line)
+    // on the summary page when there's no description and no book page refs
+    // already, so adults see "🎯 Practice — 4 problems" / "🌟 Adventure …"
+    // without flipping to the addendum page.
+    if (b.generated && !b.description && !(b.bookPageRefs && b.bookPageRefs.length > 0)) {
+      const kindIcon = b.generated.kind === "reading" ? "📖" :
+                       b.generated.kind === "adventure" ? "🌟" : "🎯";
+      doc.fillColor("#7a4d00").fontSize(10).text(`   ${kindIcon} ${b.generated.printable}`);
+    }
     doc.moveDown(0.5);
   }
 
@@ -198,6 +207,62 @@ export async function buildAgendaPdf(input: AgendaPdfInput): Promise<AgendaPdfRe
    * One page per block that has a `lesson` payload, so the printed packet
    * is a complete day even without dashboard access.
    * -------------------------------------------------------------------- */
+  /* ----------------------------------------------------------------------
+   * Push 76 (2026-05-13) — Generated payload addendum pages.
+   * One page per block that has a `generated` payload but NO `lesson` (so
+   * we don't double-render the same block). Keeps the printed packet
+   * self-contained: instructions, supply list, printable, operable URL.
+   * -------------------------------------------------------------------- */
+  const generatedBlocks = input.blocks.filter((b) => !!b.generated && !b.lesson);
+  for (const b of generatedBlocks) {
+    doc.addPage();
+    doc.fillColor("#1f3a2e").fontSize(16).text(`${b.sortOrder}. ${b.title}`);
+    doc.fillColor("#666").fontSize(10).text(
+      [
+        b.startTime ? b.startTime : "flex",
+        `${b.durationMin} min`,
+        b.subjectName ?? "any",
+        b.generated!.kind,
+      ].filter(Boolean).join("  ·  "),
+    );
+    doc.moveDown(0.4);
+    doc.strokeColor("#ddd").moveTo(48, doc.y).lineTo(564, doc.y).stroke();
+    doc.moveDown(0.4);
+
+    const G = b.generated!;
+    doc.fillColor("#1f3a2e").fontSize(12).text("What to do");
+    for (const step of G.instructions) {
+      doc.fillColor("#222").fontSize(10).text(`• ${step}`, { width: 500 });
+    }
+    doc.moveDown(0.3);
+
+    if (G.operable.supplyList && G.operable.supplyList.length > 0) {
+      doc.fillColor("#1f3a2e").fontSize(12).text("Supplies");
+      for (const s of G.operable.supplyList) {
+        doc.fillColor("#222").fontSize(10).text(`• ${s}`, { width: 500 });
+      }
+      doc.moveDown(0.3);
+    }
+
+    doc.fillColor("#1f3a2e").fontSize(12).text("Printable");
+    doc.fillColor("#000").fontSize(11).text(G.printable, { width: 500 });
+    doc.moveDown(0.3);
+
+    if (G.operable.url) {
+      doc.fillColor("#0a66c2").fontSize(10).text(`Open: ${G.operable.url}`, {
+        link: G.operable.url,
+        underline: true,
+      });
+    }
+
+    // Footer text — NOT pinned to y=740 (which can overflow into a new page);
+    // a small moveDown + text keeps it on the same addendum page.
+    doc.moveDown(0.4);
+    doc.fillColor("#888").fontSize(8).text(
+      `Block ${b.sortOrder} of ${input.blocks.length}  ·  ${input.forDate}`,
+    );
+  }
+
   const lessonBlocks = input.blocks.filter((b) => !!b.lesson);
   for (const b of lessonBlocks) {
     doc.addPage();

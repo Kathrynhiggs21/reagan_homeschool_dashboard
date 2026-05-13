@@ -30,6 +30,7 @@ import HomeAnalyticsStrip from "@/components/HomeAnalyticsStrip";
 import KidHeaderStrips from "@/components/KidHeaderStrips";
 import SummerModeBadge from "@/components/SummerModeBadge";
 import CatchUpNextDayCard from "@/components/CatchUpNextDayCard";
+import GeneratedBlockHint from "@/components/GeneratedBlockHint";
 // Push 50 (2026-05-13) — Post-block feedback chips for Reagan.
 import FeedbackChips from "@/components/FeedbackChips";
 import AIScheduleGeneratorCard from "@/components/AIScheduleGeneratorCard";
@@ -621,6 +622,15 @@ export default function Today() {
                   {b.description && (
                     <p className="mt-1 chalk-white/90" style={{ fontSize: "0.95rem", opacity: 0.82, lineHeight: 1.35 }}>{b.description}</p>
                   )}
+                  {/* Push 75 (2026-05-13) — generated payload hint:
+                      shows printable + operable line ONLY when there's no
+                      description AND no pageRefs already on the block. */}
+                  <GeneratedBlockHint
+                    blockId={b.id}
+                    hasPageRefs={Array.isArray(b.pageRefs) && b.pageRefs.length > 0}
+                    hasDescription={!!(b.description && b.description.trim().length > 0)}
+                    todayDate={todayDate}
+                  />
                   <div className="flex gap-1.5 mt-2 flex-wrap">
                     {(() => {
                       const slug = detectSubjectSlug(b);
