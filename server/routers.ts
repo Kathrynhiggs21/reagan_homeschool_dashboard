@@ -3616,6 +3616,13 @@ export const appRouter = router({
      * rows were added without having to query the DB directly.
      */
     seedQ4Standards: familyAdminProcedure.mutation(() => db.seedQ4Standards()),
+    /** Push 32 (2026-05-13) — Backfill curriculumTopicId on existing scheduleBlocks. */
+    backfillBlockTopics: familyAdminProcedure
+      .input(z.object({ dryRun: z.boolean().optional() }))
+      .mutation(async ({ input }) => {
+        const { backfillScheduleBlockTopics } = await import("./_lib/backfillScheduleBlockTopics");
+        return backfillScheduleBlockTopics({ dryRun: input.dryRun ?? false });
+      }),
     toggle: protectedProcedure
       .input(z.object({ id: z.number(), status: z.enum(["notStarted", "inProgress", "done"]) }))
       .mutation(({ input }) => db.toggleCurriculumTopic(input.id, input.status)),
