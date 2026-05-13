@@ -370,6 +370,22 @@ export const appRouter = router({
   /* =================== BLOCKS =================== */
   blocks: router({
     list: publicProcedure.input(z.object({ planId: z.number() })).query(({ input }) => db.listBlocksForPlan(input.planId)),
+    /**
+     * Push 87 (2026-05-13) — kid-safe gate for inline tap-edit.
+     *
+     * Mirrors familyAdminProcedure logic but returns a flag rather than
+     * throwing so the UI can render the tap-edit pencil only for adults.
+     * Reagan's session returns { allowed: false } and the popover never
+     * mounts. Belt-and-suspenders: even if she calls blocks.update directly,
+     * familyAdminProcedure will reject her.
+     */
+    canInlineEdit: publicProcedure.query(({ ctx }) => {
+      if (!ctx.user) return { allowed: false as const };
+      const dbRoleOk = ctx.user.role === "admin" || ctx.user.role === "tutor";
+      const familyRole = roleForEmail((ctx.user as any).email ?? null);
+      const familyOk = familyRole === "parent" || familyRole === "editor" || familyRole === "tutor";
+      return { allowed: (dbRoleOk || familyOk) as boolean };
+    }),
     create: familyAdminProcedure.input(z.object({
       planId: z.number(), blockType: BlockType, title: z.string(), description: z.string().optional(),
       durationMin: z.number().default(30), startTime: z.string().optional(), sortOrder: z.number().default(0),
@@ -738,6 +754,36 @@ export const appRouter = router({
 
   /* =================== AGENDA EDITOR (Manus-style) =================== */
   agendaEditor: router({
+    /**
+     * Push 88 (2026-05-13) — Free-form prompt → diff scaffold.
+     *
+     * Mom types "short fun and easy" or "add 10 min to math" and the
+     * deterministic keyword parser returns a list of `Directive`s plus the
+     * diff ops they would produce on today's blocks. No DB writes here —
+     * just a preview the UI can render before Mom hits "Apply".
+     */
+    previewPromptDiff: familyAdminProcedure
+      .input(z.object({
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        prompt: z.string().min(1).max(800),
+      }))
+      .mutation(async ({ input }) => {
+        const { parseAgendaPromptToDirectives, applyDirectivesAsDiff } = await import(
+          "./_lib/agendaPromptParser"
+        );
+        const directives = parseAgendaPromptToDirectives(input.prompt);
+        const plan = await db.getPlanByDate(input.date);
+        const blocks = plan ? await db.listBlocksForPlan(plan.id) : [];
+        const snapshot = (blocks as any[]).map((b: any) => ({
+          id: b.id as number,
+          title: b.title as string,
+          subjectSlug: (b.subjectSlug ?? null) as string | null,
+          durationMin: (b.durationMin ?? 30) as number,
+          startTime: (b.startTime ?? null) as string | null,
+          status: (b.status ?? "not_started") as string,
+        }));
+        return applyDirectivesAsDiff(snapshot, directives);
+      }),
     /**
      * Build the AgendaPlanContext for a date — used by both the LLM call and
      * the manual block-grid view. Returns the current snapshot plus the
@@ -4054,6 +4100,42 @@ export const appRouter = router({
     moodStrip: protectedProcedure
       .input(z.object({ days: z.number().min(1).max(14).optional() }).optional())
       .query(({ input }) => db.recentMoodStrip(input?.days ?? 3)),
+    /**
+     * Push 90 (2026-05-13) — hour-by-hour mood timeline for Today.
+     *
+     * Returns a strip of hour cells across Reagan's school-day window
+     * (default 8a..4p). Each cell is the latest mood log within that
+     * local hour, or null if there was none. The kid-facing component
+     * self-hides when `hasAny` is false (no info → no render).
+     */
+    moodTimelineStrip: protectedProcedure
+      .input(
+        z
+          .object({
+            localDateIso: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+            tzOffsetMin: z.number().int().min(-720).max(840),
+            startHour: z.number().int().min(0).max(23).optional(),
+            endHour: z.number().int().min(1).max(24).optional(),
+          }),
+      )
+      .query(async ({ input }) => {
+        const { buildMoodTimelineStrip } = await import("./_lib/moodTimelineStrip");
+        // Fetch a wide window of recent moods, then filter by local day in the
+        // pure helper. 36 hours back is comfortably more than the largest
+        // school-day window across any timezone.
+        const rows = await db.listRecentMood(2);
+        const inputs = rows.map((r: any) => ({
+          loggedAtMs: new Date(r.loggedAt).getTime(),
+          zone: r.zone as "green" | "yellow" | "red",
+          note: (r.note ?? null) as string | null,
+        }));
+        return buildMoodTimelineStrip(inputs, {
+          localDateIso: input.localDateIso,
+          tzOffsetMin: input.tzOffsetMin,
+          startHour: input.startHour,
+          endHour: input.endHour,
+        });
+      }),
     /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block

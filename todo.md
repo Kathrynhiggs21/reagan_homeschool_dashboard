@@ -2822,3 +2822,11 @@ shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
 - [x] Push 85 (2026-05-13) — Sunday digest scheduled-send helpers. New pure module server/_lib/sundayDigestScheduler.ts with isDigestSendWindow (defaults Sun 7-8 PM local; configurable dayOfWeek/hour/durationMin), weekStartFor (anchor previous Sunday ISO; crosses month + year boundaries), digestIdempotencyKey (sha256[:12] of {weekStartISO|lowercased+trimmed email}; case-fold + whitespace-fold so dupes are impossible), and decideDigestSends orchestrator (empty outside window; one plan per non-already-sent recipient; preserves caller-provided recipient order so Mom + Grandma stay in their canonical positions). server/sundayDigestScheduler.test.ts 25/25; tsc + lsp clean.
 
 - [x] Push 86 (2026-05-13) — Kid-side daily report (parent-readable) renderer. New pure module server/_lib/dailyReportRenderer.ts: renderDailyReport(input) emits a calm mobile-friendly HTML fragment for Grandma-day / tutor-day recaps. Inputs: dateISO, caretakerLabel, optional moodZone+moodNote, plannedBlocks[], offPlanTopics[], optional coinsEarned. Output: friendly weekday header, zone-colored mood strip (self-hides when null), planned-block list with subject label + title + topic + skipped flag + time label, off-plan section (hidden when empty), warm coin closing line (singular/plural correct, hidden when 0), auto-sent disclaimer pointing replies to Mom. All user-supplied strings are HTML-escaped (caretakerLabel, titles, topics, mood notes). server/dailyReportRenderer.test.ts 18/18; tsc + lsp clean.
+
+- [x] Push 87 (2026-05-13) — Tap-block inline edit (start time + duration) on Today; adult-only canInlineEdit gate + familyAdmin defense-in-depth + 7/7 contract
+
+- [x] Push 88 (2026-05-13) — AI Agenda Editor free-form prompt → diff scaffold; deterministic parser covers shorter/longer/fun/easy/focus/bump/trim/remove/deprioritize + familyAdmin gate + 14/14 contract
+
+- [x] Push 89 (2026-05-13) — Voice-print enrollment scaffold (pure signing helpers w/ intent binding + Reagan-only enrollment policy + mime/duration guards + 12/12 contract)
+
+- [x] Push 90 (2026-05-13) — MoodTimelineStrip on Today (hour-by-hour zone bars, self-hides empty, today.moodTimelineStrip procedure + 8/8 contract)

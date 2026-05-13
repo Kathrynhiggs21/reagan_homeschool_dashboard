@@ -28,11 +28,13 @@ import GameBreakCard from "@/components/GameBreakCard";
 import HomeAnalyticsStrip from "@/components/HomeAnalyticsStrip";
 // Push 59 (2026-05-13) — Kid-friendly micro strips at top of Today.
 import KidHeaderStrips from "@/components/KidHeaderStrips";
+import MoodTimelineStrip from "@/components/MoodTimelineStrip";
 import SummerModeBadge from "@/components/SummerModeBadge";
 import CatchUpNextDayCard from "@/components/CatchUpNextDayCard";
 import { TomorrowChoiceCard } from "@/components/TomorrowChoiceCard";
 // Push 84 (2026-05-13) — Adult Today recap: off-plan capture summary.
 import { OffPlanCaptureCard } from "@/components/OffPlanCaptureCard";
+import { TapEditPopover } from "@/components/TapEditPopover";
 import GeneratedBlockHint from "@/components/GeneratedBlockHint";
 // Push 50 (2026-05-13) — Post-block feedback chips for Reagan.
 import FeedbackChips from "@/components/FeedbackChips";
@@ -491,6 +493,11 @@ export default function Today() {
           Always visible to Reagan; adults still see the analytics card lower. */}
       <KidHeaderStrips />
 
+      {/* Push 90 (2026-05-13) — Hour-by-hour mood timeline strip.
+          Kid-facing zone-colored bars across today's school-day window.
+          Self-hides when no mood entries have been logged for today. */}
+      <MoodTimelineStrip />
+
       {/* Push 73 (2026-05-13) — "From yesterday" catch-up nudges; self-hides
           when nothing was missed and never blocks the schedule. */}
       <CatchUpNextDayCard />
@@ -566,6 +573,7 @@ export default function Today() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="time-chip time-chip-v2" style={rainbowPillStyle(i)}>{blockTimeLabel(i)}</span>
+                    <TapEditPopover blockId={b.id} startTime={b.startTime ?? null} durationMin={b.durationMin ?? 30} />
                     <span className="text-xl" aria-hidden="true">{tint.emoji}</span>
                     {/* Push 42 (2026-05-13) — tap title to edit block.
                         For adults, the block title becomes a one-tap shortcut
