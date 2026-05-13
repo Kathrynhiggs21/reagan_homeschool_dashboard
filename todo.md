@@ -2714,3 +2714,17 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] UI: chat-style editor on AgendaEditor page with diff preview, Apply, Undo
 - [ ] UI: full block grid (drag to reorder, edit time/duration inline, change type/topic/tutor)
 - [ ] Vitests for instruction parser + commit/undo
+
+## 2026-05-12 — Mom: "don't want levels" (push 24)
+
+Hard rule: zero level numbers anywhere Reagan can see. Internally the skill
+ladder rows still exist (Mom + adapt engine need them), but the kid surface
+shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
+
+- [x] Audit kid-facing pages (Today, Schedule, Kiwi, KiwiCoins, Bookshelf, TakeNotes, Apps, Placement, Library) and their child components (SkillBuilderTile, CozyShell) — push 24. Scanned with regex `"Level [0-9]"|>Level [0-9]|Lvl[ \.][0-9]|level \{level\}|Mastery [0-9]|Stage [0-9]`. Only hits were source comments + the now-fixed strings below.
+- [x] Replace visible level number on /coins skill chips with emoji-only progress + "Got it ×N" count — KiwiCoins.tsx already had "No leveling, no progress bars beyond the affordable/unaffordable hint" as a design rule (line 18); no level chip survived. Verified by contract scan.
+- [x] SkillBuilderTile: remove level wording — push 24. Two edits: (1) the leveledUp success toast `"You moved up a level on this skill — that used to be hard!"` → `"That used to be hard — look how it felt today!"` (still celebrates the breakthrough, never names the mechanic); (2) the softer-next chip `"no level-up pressure"` → `"easier round today"`. Locked by contract test 11 + 13.
+- [x] Placement: kid headline `"Hi Reagan — let's find your level."` → `"Hi Reagan — let's see what feels easy and what feels new."` Locked by contract test 12. Existing copy already said "There are no scores, no grades, no winning or losing" so the rest of the page is consistent.
+- [x] Backend left intact: `skillLadder.placementLevel`, `currentLevel`, `leveledUp` API field still exist. The adapt engine + Mom's adult digest depend on them. Kid surfaces now treat these as internal-only.
+- [x] vitest `noKidLevelsContract.test.ts` added (14/14 pass) scanning 9 kid pages + 2 components for 8 forbidden patterns (literal "Level N" / "Lvl N" / "Mastery N" / "Stage N" / `{level}` / `{currentLevel}` / `{placementLevel}` JSX renders / kid toast wording).
+- [x] Sidebar tooltip / mini-card on /coins — CozyShell.tsx Kiwi entry says "Coins, prizes, your skills" (no level word). Locked by contract test 10.

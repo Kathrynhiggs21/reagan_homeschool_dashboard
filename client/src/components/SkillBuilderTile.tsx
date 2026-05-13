@@ -36,7 +36,7 @@ export default function SkillBuilderTile() {
       utils.skillLadder.list.invalidate();
       utils.proud.list.invalidate();
       if (res?.leveledUp) {
-        toast.success("You moved up a level on this skill — that used to be hard!", { icon: "🌟" });
+        toast.success("That used to be hard — look how it felt today!", { icon: "🌟" });
       } else {
         toast(`${companionAvatar} ${companionName || "Kiwi"}: I saw that effort. That counts.`, { icon: "💛" });
       }
@@ -96,7 +96,7 @@ export default function SkillBuilderTile() {
               <span>💡</span>
               <span className="text-amber-300">Kiwi suggests:</span>
               <span className="font-semibold text-amber-200">{suggested}</span>
-              {softerNext && <span className="ml-1 rounded-full bg-amber-500/20 text-amber-200 px-1.5 py-0.5">no level-up pressure</span>}
+              {softerNext && <span className="ml-1 rounded-full bg-amber-500/20 text-amber-200 px-1.5 py-0.5">easier round today</span>}
             </div>
           )}
         </div>

@@ -58,7 +58,7 @@ export default function Placement() {
       <div className="container py-6 max-w-2xl mx-auto space-y-4">
         <Card className="classroom-card p-6 space-y-4 text-center">
           <div className="text-6xl" aria-hidden>🌱</div>
-          <h1 className="font-display text-3xl">Hi Reagan — let's find your level.</h1>
+          <h1 className="font-display text-3xl">Hi Reagan — let's see what feels easy and what feels new.</h1>
           <p className="text-base leading-relaxed text-neutral-300 max-w-lg mx-auto">
             This is <strong>not</strong> a test. There are <strong>no scores</strong>, no grades, no winning or losing.
             I'm just trying to learn what feels easy for you and what feels harder, so we can build the right next steps together.
