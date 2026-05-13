@@ -3601,6 +3601,33 @@ export const appRouter = router({
     preview: protectedProcedure.query(() => db.buildWeeklyDigestPayload()),
     recent: protectedProcedure.input(z.object({ limit: z.number().default(12) }).optional())
       .query(({ input }) => db.listRecentDigests(input?.limit ?? 12)),
+    /**
+     * Push 70 — Sunday digest HTML preview (Mom + Grandma).
+     * Returns a rendered HTML string from the current weekly payload so
+     * Mom and Grandma can preview what the future Sunday email will look
+     * like, without actually sending anything. familyAdminProcedure
+     * means Mom (spear.cpt@gmail.com) and Grandma (marcy.spear@gmail.com)
+     * both pass the gate; tutors and Reagan do not.
+     */
+    previewHtml: familyAdminProcedure
+      .input(z.object({ summerActive: z.boolean().optional() }).optional())
+      .query(async ({ input }) => {
+        const payload = await db.buildWeeklyDigestPayload();
+        const recipients = [
+          "spear.cpt@gmail.com",
+          "marcy.spear@gmail.com",
+        ];
+        const { renderSundayDigestHtml } = await import("./_lib/sundayDigestRenderer");
+        return {
+          html: renderSundayDigestHtml(payload as any, {
+            summerActive: input?.summerActive ?? false,
+            recipients,
+          }),
+          recipients,
+          weekStart: (payload as any).weekStart,
+          weekEnd: (payload as any).weekEnd,
+        };
+      }),
   }),
   /* =================== NIGHTLY AGENDA EMAIL (8 PM PDF to Mom + Dad) =================== */
   nightlyAgenda: router({
