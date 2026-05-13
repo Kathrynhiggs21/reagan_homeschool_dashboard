@@ -185,6 +185,14 @@ export async function buildAgendaPdf(input: AgendaPdfInput): Promise<AgendaPdfRe
       const kindIcon = b.generated.kind === "reading" ? "📖" :
                        b.generated.kind === "adventure" ? "🌟" : "🎯";
       doc.fillColor("#7a4d00").fontSize(10).text(`   ${kindIcon} ${b.generated.printable}`);
+      // Push 80 (2026-05-13) — for adventure blocks, surface the
+      // outdoor/indoor hint (first instruction line is the safety chip)
+      // on the summary too so Mom can pick weather-friendly slots without
+      // flipping to the addendum.
+      if (b.generated.kind === "adventure" && b.generated.instructions[0]) {
+        const hint = b.generated.instructions[0];
+        doc.fillColor("#7a4d00").fontSize(9).text(`     ${hint}`);
+      }
     }
     doc.moveDown(0.5);
   }
@@ -230,8 +238,18 @@ export async function buildAgendaPdf(input: AgendaPdfInput): Promise<AgendaPdfRe
     doc.moveDown(0.4);
 
     const G = b.generated!;
+    // Push 80 (2026-05-13) — for adventure blocks, the safety chip is the
+    // first instruction; pull it out into its own "Safety" callout so it
+    // doesn't blend into the numbered steps and Mom can spot it at a glance.
+    let stepsToRender = G.instructions;
+    if (G.kind === "adventure" && stepsToRender.length > 0) {
+      const safety = stepsToRender[0];
+      stepsToRender = stepsToRender.slice(1);
+      doc.fillColor("#7a4d00").fontSize(11).text(`Safety: ${safety}`, { width: 500 });
+      doc.moveDown(0.3);
+    }
     doc.fillColor("#1f3a2e").fontSize(12).text("What to do");
-    for (const step of G.instructions) {
+    for (const step of stepsToRender) {
       doc.fillColor("#222").fontSize(10).text(`• ${step}`, { width: 500 });
     }
     doc.moveDown(0.3);

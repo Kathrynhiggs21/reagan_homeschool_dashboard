@@ -4055,6 +4055,99 @@ export const appRouter = router({
       .input(z.object({ days: z.number().min(1).max(14).optional() }).optional())
       .query(({ input }) => db.recentMoodStrip(input?.days ?? 3)),
     /**
+     * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
+     * Returns the deterministic 3-option set for tomorrow's choice block
+     * + the active summer status. Reagan-callable (public). Self-empty
+     * when summer mode is inactive so the kid-side card can hide.
+     */
+    tomorrowChoice: publicProcedure
+      .input(z.object({ blockType: z.string().default("choice") }).optional())
+      .query(async ({ input }) => {
+        const blockType = input?.blockType ?? "choice";
+        const d = new Date();
+        d.setDate(d.getDate() + 1);
+        const tomorrowIso = d.toISOString().slice(0, 10);
+        const [autoFlip, start, end, override, vacJson] = await Promise.all([
+          db.getAppSetting("summer.autoFlipEnabled"),
+          db.getAppSetting("summer.start"),
+          db.getAppSetting("summer.end"),
+          db.getAppSetting("summer.override"),
+          db.getAppSetting("summer.vacationRanges"),
+        ]);
+        const { summerSettingsFromKv, effectiveSummerActive, summerChoiceOptions } =
+          await import("./summerMode");
+        const settings = summerSettingsFromKv({
+          "summer.autoFlipEnabled": autoFlip,
+          "summer.start": start,
+          "summer.end": end,
+          "summer.override": override,
+          "summer.vacationRanges": vacJson,
+        });
+        const status = effectiveSummerActive(tomorrowIso, settings);
+        const seed = `${tomorrowIso}:${blockType}`;
+        const options = status.active
+          ? summerChoiceOptions(blockType as any, seed)
+          : [];
+        const savedKey = `tomorrowChoice.${tomorrowIso}.${blockType}`;
+        const savedRaw = await db.getAppSetting(savedKey);
+        return {
+          tomorrowDate: tomorrowIso,
+          blockType,
+          active: status.active,
+          reason: status.reason,
+          seed,
+          options,
+          chosenKind: savedRaw ?? null,
+        };
+      }),
+    /**
+     * Push 82 (2026-05-13) — Reagan records her pick for tomorrow's
+     * choice block. Because the options are a pre-approved set, this
+     * auto-approves (no SMS to Mom/Grandma per the never-queued rule).
+     * The pick is rejected if the requested kind isn't in the
+     * deterministic option list for that date.
+     */
+    recordTomorrowChoice: publicProcedure
+      .input(z.object({
+        chosenKind: z.string().min(1),
+        blockType: z.string().default("choice"),
+      }))
+      .mutation(async ({ input }) => {
+        const blockType = input.blockType;
+        const d = new Date();
+        d.setDate(d.getDate() + 1);
+        const tomorrowIso = d.toISOString().slice(0, 10);
+        const [autoFlip, start, end, override, vacJson] = await Promise.all([
+          db.getAppSetting("summer.autoFlipEnabled"),
+          db.getAppSetting("summer.start"),
+          db.getAppSetting("summer.end"),
+          db.getAppSetting("summer.override"),
+          db.getAppSetting("summer.vacationRanges"),
+        ]);
+        const { summerSettingsFromKv, effectiveSummerActive, summerChoiceOptions } =
+          await import("./summerMode");
+        const settings = summerSettingsFromKv({
+          "summer.autoFlipEnabled": autoFlip,
+          "summer.start": start,
+          "summer.end": end,
+          "summer.override": override,
+          "summer.vacationRanges": vacJson,
+        });
+        const status = effectiveSummerActive(tomorrowIso, settings);
+        if (!status.active) {
+          throw new Error("summer mode is not active for tomorrow");
+        }
+        const seed = `${tomorrowIso}:${blockType}`;
+        const options = summerChoiceOptions(blockType as any, seed);
+        const allowedKinds = options.map((o) => o.kind);
+        if (!allowedKinds.includes(input.chosenKind as any)) {
+          throw new Error(`chosenKind not in pre-approved set: ${allowedKinds.join(", ")}`);
+        }
+        const savedKey = `tomorrowChoice.${tomorrowIso}.${blockType}`;
+        await db.setAppSetting(savedKey, input.chosenKind);
+        return { ok: true, chosenKind: input.chosenKind, autoApproved: true };
+      }),
+    /**
      * refresh — rebuild today's plan blocks from the active template,
      * preserving completed/in-progress work. Available to Reagan (public)
      * because she sometimes wants a clean slate after a rough start.

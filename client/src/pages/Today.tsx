@@ -30,6 +30,7 @@ import HomeAnalyticsStrip from "@/components/HomeAnalyticsStrip";
 import KidHeaderStrips from "@/components/KidHeaderStrips";
 import SummerModeBadge from "@/components/SummerModeBadge";
 import CatchUpNextDayCard from "@/components/CatchUpNextDayCard";
+import { TomorrowChoiceCard } from "@/components/TomorrowChoiceCard";
 import GeneratedBlockHint from "@/components/GeneratedBlockHint";
 // Push 50 (2026-05-13) — Post-block feedback chips for Reagan.
 import FeedbackChips from "@/components/FeedbackChips";
@@ -491,6 +492,12 @@ export default function Today() {
       {/* Push 73 (2026-05-13) — "From yesterday" catch-up nudges; self-hides
           when nothing was missed and never blocks the schedule. */}
       <CatchUpNextDayCard />
+
+      {/* Push 82 (2026-05-13) — Tomorrow's summer-choice 3-option chooser.
+          Only renders when summer mode is active for tomorrow's date.
+          Reagan picks among pre-approved options; the pick auto-approves
+          (no SMS to Mom/Grandma per the never-queued rule). */}
+      <TomorrowChoiceCard />
 
       {/* Diagnostic Placement invite — gentle, optional, dismisses at 100% */}
       <PlacementInviteCard />

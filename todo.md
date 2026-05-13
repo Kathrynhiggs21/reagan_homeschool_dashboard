@@ -2806,3 +2806,11 @@ shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
 - [x] Push 77 (2026-05-13) — SMS approvals scaffold: signed-token helpers (HMAC-SHA256, tamper+expiry guarded) + approvalQueuePolicy (Mom + Grandma never queued — auto-approve, tutors/assistant queued on risky kinds only). Re-used existing recipientPushTargets table for phone roster. server/smsApprovalsScaffold.test.ts — 13/13 green.
 
 - [x] Push 78 (2026-05-13) — Sunday digest send queue: deterministic recipient list (Mom always 1st, Grandma always 2nd, extras appended), idempotency key = weekStart:lower(email), dedupe helper, render footer updated to "Mom + Grandma recipients". server/sundayDigestSendQueue.test.ts — 8/8 green.
+
+- [x] Push 79 (2026-05-13) — Tutor identity roster: resetTutorRoster() now seeds Madison/Sophie/Keith with matching placeholder emails (*@tbd.local) recognized by permissions.roleForEmail; tutor capabilities verified identical to editor (Grandma-tier). server/tutorIdentityRoster.test.ts — 9/9 green.
+
+- [x] Push 80 (2026-05-13) — Adventure printable doc on agenda PDF: safety chip pulled into its own "Safety:" callout on addendum page; outdoor/indoor hint surfaced as sub-line on summary page; supplies + steps sections locked. server/agendaPdfAdventure.test.ts — 10/10 green; full PDF suite 37/37 green.
+
+- [x] Push 81 (2026-05-13) — Analytics mood-ring visual: calm SVG ring with 7 segments oldest-first clockwise, shared green/yellow/red/blue/gray palette with KidHeaderStrips, self-hides when no zones logged, per-segment hover tooltip, center "good days" counter. Mounted on Analytics next to SubjectRadar/SubjectSparklines. server/moodRing.test.ts — 12/12 green; tsc + lsp clean.
+
+- [x] Push 82 (2026-05-13) — Tomorrow choice 3-option chooser: today.tomorrowChoice (public query) + today.recordTomorrowChoice (public mutation, auto-approves only when chosenKind is in deterministic option set, never queues SMS per Mom+Grandma rule). Seed = `${tomorrowIso}:${blockType}` for stable nightly options. Pick persisted under tomorrowChoice.<date>.<blockType> appSetting. Kid-side TomorrowChoiceCard mounted on Today under CatchUpNextDayCard; self-hides when summer mode inactive or options empty; collapses to confirmation pill after pick. server/tomorrowChoice.test.ts — 18/18 green; full Push 79–82 batch 104/104 across 8 files; tsc + lsp clean.

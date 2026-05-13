@@ -4393,33 +4393,36 @@ export async function recordIepRefresh(args: {
 
 /**
  * resetTutorRoster — replace the active tutor list with the canonical three:
- *   Mike, Sophie, College tutor.
+ *   Madison, Sophie, Keith. (Push 79, 2026-05-13)
  *
  * Deactivates (active=false) every other tutor so past session history stays
  * referenced but they stop showing up in Tutor Handoff / pickers. Inserts new
  * rows only for names that don't already exist (or reactivates matching ones).
- * Intentionally does NOT seed phone/email so no fake contact info surfaces.
+ * Email is seeded to the placeholder *@tbd.local addresses recognized by
+ * permissions.roleForEmail, so the auth chain treats them as Editor-tier
+ * the moment a real Google sign-in arrives with the matching identity.
  */
 export async function resetTutorRoster() {
   const dbi = getDb();
   await dbi.update(tutors).set({ active: false });
   const want = [
-    { name: "Tutor A", role: "tutor" },
-    { name: "Tutor B", role: "tutor" },
-    { name: "Tutor C", role: "tutor" },
+    { name: "Madison", role: "tutor", email: "madison@tbd.local" },
+    { name: "Sophie",  role: "tutor", email: "sophie@tbd.local"  },
+    { name: "Keith",   role: "tutor", email: "keith@tbd.local"   },
   ];
   for (const w of want) {
     const existing = await dbi.select().from(tutors).where(eq(tutors.name, w.name)).limit(1);
     if (existing.length > 0) {
       await dbi.update(tutors)
-        .set({ active: true, role: w.role })
+        .set({ active: true, role: w.role, email: w.email })
         .where(eq(tutors.id, existing[0].id));
     } else {
       await dbi.insert(tutors).values({
         name: w.name,
         role: w.role,
+        email: w.email,
         active: true,
-      });
+      } as any);
     }
   }
   const final = await dbi.select().from(tutors).where(eq(tutors.active, true));

@@ -33,6 +33,7 @@ import SubjectRadar from "@/components/SubjectRadar";
 import SubjectSparklines from "@/components/SubjectSparklines";
 import CurriculumCoverageArcs from "@/components/CurriculumCoverageArcs";
 import WeeklyDigestCard from "@/components/WeeklyDigestCard";
+import { MoodRing } from "@/components/MoodRing";
 
 function MoodArcChart({ moods }: { moods: any[] }) {
   // Map zone to numeric score (green=2, yellow=1, red=0); render the last 14 entries chronologically
@@ -303,6 +304,12 @@ export default function Analytics() {
         <SubjectRadar />
         <SubjectSparklines />
       </div>
+
+      {/* Push 81 (2026-05-13) — 7-day mood ring. Reads trpc.today.moodStrip
+          and self-hides when every day in the window is null. Shares the
+          green/yellow/red/blue/gray palette with KidHeaderStrips and
+          HomeAnalyticsStrip so adults learn one color key once. */}
+      <MoodRing />
 
       {/* Push 62 (2026-05-13) — Curriculum coverage arcs.
           Visual companion to the existing rolling-grade radar; reads
