@@ -2884,3 +2884,20 @@ shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
 - [x] Push 116 (2026-05-13) -- Khan/IXL deeplink builder pure helper (5th-grade subject-roots for math/ela/science/social-studies/spelling on both Khan and IXL; topic slugified lowercase a-z0-9 with hyphens; blank/whitespace/non-string/empty-after-slugify topic falls back to subject root; subject and provider matching case-insensitive; unknown subject -> unknown-subject reject; unknown provider -> unknown-provider reject; spelling+IXL routes to spelling-patterns by default; 11/11)
 
 - [x] Push 117 (2026-05-13) -- Printable daily schedule render-plan pure helper (self-hides when no dateIso or no valid blocks; sorts by start time HH:MM; per-block line shows start label and est minutes with locked passthrough; header has Reagan-or-custom kidName and pretty Wed May 13 date; tutorOfDay line includes name and optional window; resources mapped Worksheet/Lesson/Video/Link with optional URL and blanks filtered; noteLines defaults 6 / clamps non-finite-or-negative to 6 / caps at 40; footer carries IEP paper-trail framing and submit-picture reminder; ignores blocks with NaN duration / blank label / non-HHMM time; whitespace kidName falls back to Reagan; 12/12)
+
+- [x] Push 118 (2026-05-13) -- Worksheet-photo submission preflight pure helper (accepts JPG/PNG/HEIC/HEIF/WebP case-insensitive; rejects missing/unsupported mime, missing/non-finite size, too-small <8KB, too-large >12MB, blur-suspected <0.3, missing blockId/kidId; non-finite blurScore treated as unknown; missing photo -> missing-mime; kid-facing messages never frame Reagan as wrong; exposes WORKSHEET_PHOTO_LIMITS constants; 11/11)
+
+- [ ] Push 118 (2026-05-13) — Remove "soft stay" from daily agenda template
+- [ ] Push 118 (2026-05-13) — Remove "soft stay" Kiwi idle daily nudge
+- [ ] Push 118 (2026-05-13) — Remove "soft stay" line from daily digest copy (Mom + Grandma)
+- [ ] Push 118 (2026-05-13) — Remove "soft stay" close from recap email (noon + evening)
+- [ ] Push 118 (2026-05-13) — Vitest no-soft-stay invariant across all four surfaces
+
+- [ ] Push 118 (revised, 2026-05-13) — Find what auto-inserts assignmentSubmissions rows against morning-warmup ("Soft start") blocks
+- [ ] Push 118 (revised, 2026-05-13) — Kill that emitter (no more daily auto-rows)
+- [ ] Push 118 (revised, 2026-05-13) — Purge existing duplicate "Soft start" pending submissions on Reagan's account
+- [ ] Push 118 (revised, 2026-05-13) — Filter type='morning_warmup' off Analytics → Recent Submissions
+- [ ] Push 118 (revised, 2026-05-13) — Filter type='morning_warmup' off assignments-checklist surfaces
+- [ ] Push 118 (revised, 2026-05-13) — Vitest invariant: morning-warmup blocks never produce submissions/checklist items + tsc + checkpoint
+
+- [x] Push 118 (2026-05-13) — Slay Charge ⚡ morning-vibe block: rename morning_warmup→morning_vibe, 5 min, "Soft start" seed retired, Recent Submissions filter wired, curated joke/clip pool + deterministic daily pick + reroll, 14/14 vitest, tsc clean.

@@ -138,13 +138,13 @@ async function autoBuildBlocksForPlan(planId: number, dayType: string, dow: numb
   const isWeekend = dayType === "weekend";
   const template: Array<{ title: string; description: string; slug?: string; type: string; minutes: number }> = isWeekend ? [
     // Weekend = soft, optional, no "school" pressure. Just connection + curiosity.
-    { title: "Slow morning", description: "Sleep in. Hang with parakeets + ducks. No alarm.", slug: "animal-care", type: "morning_warmup", minutes: 45 },
+    { title: "Slay Charge ⚡", description: "Tiny daily mood-setter — a joke or a short funny clip. Not schoolwork.", slug: "animal-care", type: "morning_vibe", minutes: 5 },
     { title: "Pick-your-path adventure", description: "Creek, garden, art, baking, Lego \u2014 your call. Outdoors counts double.", slug: "science", type: "adventure", minutes: 60 },
     { title: "Family read-aloud", description: "Cuddle up for one chapter together. Optional.", slug: "ela", type: "read_aloud", minutes: 25 },
     { title: "Choice play", description: "Roblox, drawing, makeup, music \u2014 reset and recharge.", slug: "choice", type: "choice", minutes: 45 },
     { title: "One little win", description: "Pick ONE tiny thing to log: a bird seen, a meal helped with, a kindness done.", slug: undefined, type: "catch_up", minutes: 10 },
   ] : isTherapy ? [
-    { title: "Soft start", description: "Time with the parakeets and ducklings. Just be.", slug: "animal-care", type: "morning_warmup", minutes: 30 },
+    { title: "Slay Charge ⚡", description: "Tiny daily mood-setter — a joke or a short funny clip. Not schoolwork.", slug: "animal-care", type: "morning_vibe", minutes: 5 },
     { title: "Easy math warm-up", description: "A few duckling-themed practice problems. No pressure.", slug: "math", type: "math", minutes: 25 },
     { title: "Choice block", description: "What you want today. Art, makeup, drawing, anything.", slug: "choice", type: "choice", minutes: 30 },
     { title: "Therapy with Ali", description: "Wednesday session with Ali Hill. Mom will let you know.", slug: undefined, type: "appointment", minutes: 90 },
@@ -152,7 +152,7 @@ async function autoBuildBlocksForPlan(planId: number, dayType: string, dow: numb
     { title: "Read-aloud", description: "Tuck Everlasting, snug-in time.", slug: "ela", type: "read_aloud", minutes: 25 },
     { title: "Adventure of the day", description: "Pick something gentle from the Adventure library.", slug: "science", type: "adventure", minutes: 35 },
   ] : [
-    { title: "Soft start", description: "Time with the parakeets and ducklings. Just be.", slug: "animal-care", type: "morning_warmup", minutes: 25 },
+    { title: "Slay Charge ⚡", description: "Tiny daily mood-setter — a joke or a short funny clip. Not schoolwork.", slug: "animal-care", type: "morning_vibe", minutes: 5 },
     { title: "Math warm-up", description: "A few problems to wake up your math brain. You've got this.", slug: "math", type: "math", minutes: 30 },
     { title: "Choice block", description: "What you want today. Art, makeup, drawing, anything.", slug: "choice", type: "choice", minutes: 30 },
     { title: "Brain break", description: "Move, stretch, snack, sit-spot. Your call.", slug: undefined, type: "custom", minutes: 15 },
@@ -214,13 +214,13 @@ export async function refreshTodayPlan(opts: { dateStr?: string; allowWeekend?: 
   const subjs = await db.select().from(subjects);
   const findSlug = (slug: string) => (subjs as any[]).find((s) => s.slug === slug);
   const template = isWeekend ? [
-    { title: "Slow morning", description: "Sleep in. Hang with parakeets + ducks. No alarm.", slug: "animal-care", type: "morning_warmup", minutes: 45 },
+    { title: "Slay Charge ⚡", description: "Tiny daily mood-setter — a joke or a short funny clip. Not schoolwork.", slug: "animal-care", type: "morning_vibe", minutes: 5 },
     { title: "Pick-your-path adventure", description: "Creek, garden, art, baking, Lego \u2014 your call. Outdoors counts double.", slug: "science", type: "adventure", minutes: 60 },
     { title: "Family read-aloud", description: "Cuddle up for one chapter together. Optional.", slug: "ela", type: "read_aloud", minutes: 25 },
     { title: "Choice play", description: "Roblox, drawing, makeup, music \u2014 reset and recharge.", slug: "choice", type: "choice", minutes: 45 },
     { title: "One little win", description: "Pick ONE tiny thing to log: a bird seen, a meal helped with, a kindness done.", slug: undefined as any, type: "catch_up", minutes: 10 },
   ] : dow === 3 ? [
-    { title: "Soft start", description: "Time with the parakeets and ducklings. Just be.", slug: "animal-care", type: "morning_warmup", minutes: 30 },
+    { title: "Slay Charge ⚡", description: "Tiny daily mood-setter — a joke or a short funny clip. Not schoolwork.", slug: "animal-care", type: "morning_vibe", minutes: 5 },
     { title: "Easy math warm-up", description: "A few duckling-themed practice problems. No pressure.", slug: "math", type: "math", minutes: 25 },
     { title: "Choice block", description: "What you want today. Art, makeup, drawing, anything.", slug: "choice", type: "choice", minutes: 30 },
     { title: "Therapy with Ali", description: "Wednesday session with Ali Hill. Mom will let you know.", slug: undefined as any, type: "appointment", minutes: 90 },
@@ -228,7 +228,7 @@ export async function refreshTodayPlan(opts: { dateStr?: string; allowWeekend?: 
     { title: "Read-aloud", description: "Tuck Everlasting, snug-in time.", slug: "ela", type: "read_aloud", minutes: 25 },
     { title: "Adventure of the day", description: "Pick something gentle from the Adventure library.", slug: "science", type: "adventure", minutes: 35 },
   ] : [
-    { title: "Soft start", description: "Time with the parakeets and ducklings. Just be.", slug: "animal-care", type: "morning_warmup", minutes: 25 },
+    { title: "Slay Charge ⚡", description: "Tiny daily mood-setter — a joke or a short funny clip. Not schoolwork.", slug: "animal-care", type: "morning_vibe", minutes: 5 },
     { title: "Math warm-up", description: "A few problems to wake up your math brain. You've got this.", slug: "math", type: "math", minutes: 30 },
     { title: "Choice block", description: "What you want today. Art, makeup, drawing, anything.", slug: "choice", type: "choice", minutes: 30 },
     { title: "Brain break", description: "Move, stretch, snack, sit-spot. Your call.", slug: undefined as any, type: "custom", minutes: 15 },

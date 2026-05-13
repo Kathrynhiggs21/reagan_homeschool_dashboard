@@ -476,7 +476,18 @@ export default function Analytics() {
 
       {/* Recent Submissions — every Reagan submission lands here, NEVER pushed to Google Classroom */}
       {/* DON'T-SHOW-IF-NO-INFO (2026-05-12 push 14): hide whole card when 0 submissions */}
-      {((recentSubmissions.data as any[]) || []).length > 0 && (
+      {/* Push 118 (2026-05-13): never show Slay Charge ⚡ / legacy 'Soft start' morning-vibe blocks here.
+          They're a mood-setter, not schoolwork — filtered at render time. */}
+      {(() => {
+        const allRows = (recentSubmissions.data as any[]) || [];
+        const isVibeRow = (r: any) => {
+          const t = String(r?.blockType ?? r?.type ?? '').toLowerCase();
+          if (t === 'morning_vibe' || t === 'morning_warmup') return true;
+          const title = String(r?.title ?? r?.blockTitle ?? '').trim().toLowerCase();
+          return title === 'slay charge ⚡' || title === 'soft start' || title === 'slow morning';
+        };
+        const filteredRows = allRows.filter((r) => !isVibeRow(r));
+        return filteredRows.length > 0 && (
       <Card className="cozy-card p-4 border-l-4" style={{ borderLeftColor: 'oklch(0.7 0.15 25)' }}>
         <div className="mb-3">
           <h2 className="font-display font-semibold text-xl">Recent Submissions</h2>
@@ -487,7 +498,7 @@ export default function Analytics() {
         </div>
         {recentSubmissions.isLoading ? null : (
           <div className="divide-y">
-            {((recentSubmissions.data as any[]) || []).map((s) => {
+            {filteredRows.map((s) => {
               const when = new Date(s.submittedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
               const typeIcon = s.submissionType === "photo" ? "📷" : s.submissionType === "audio" ? "🎙️" : s.submissionType === "file" ? "📎" : "📝";
               const status = s.reviewStatus || "pending";
@@ -528,7 +539,8 @@ export default function Analytics() {
           </div>
         )}
       </Card>
-      )}
+      );
+      })()}
 
       {/* Screening history (Reagan handoff Apr 2026) */}
       {((screenings.data as any[]) || []).length > 0 && (
