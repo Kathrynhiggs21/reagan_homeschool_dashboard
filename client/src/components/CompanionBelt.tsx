@@ -44,6 +44,9 @@ export default function CompanionBelt({
     speakAs(id as CompanionId, `Hi! I'm ${meta.name}.`);
   }
 
+  // DON'T-SHOW-IF-NO-INFO (2026-05-12 push 14): if the flock list ever empties, render nothing
+  if (!FLOCK_MEMBERS || FLOCK_MEMBERS.length === 0) return null;
+
   return (
     <div
       className={`flex items-center gap-2 px-2 py-1.5 rounded-xl bg-black/20 border border-white/10 ${className ?? ""}`}

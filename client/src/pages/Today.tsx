@@ -381,8 +381,8 @@ export default function Today() {
               <Button size="sm" variant="outline" className="bg-transparent" onClick={() => (window.location.href = "/analytics")}>
                 📊 Analytics
               </Button>
-              <Button size="sm" variant="outline" className="bg-transparent" onClick={() => (window.location.href = "/agendas")}>
-                📝 Daily Agendas
+              <Button size="sm" variant="outline" className="bg-transparent" onClick={() => (window.location.href = "/agenda-editor")}>
+                📝 Agenda Editor
               </Button>
             </div>
           </div>

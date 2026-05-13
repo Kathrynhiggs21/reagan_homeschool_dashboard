@@ -175,9 +175,12 @@ export default function CozyShell({ children }: { children: ReactNode }) {
             </div>
           )}
 
-          <div className="px-2 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mt-5 mb-1.5">
-            More
-          </div>
+          {/* DON'T-SHOW-IF-NO-INFO (2026-05-12 push 14): hide "More" header when MORE_NAV is empty */}
+          {MORE_NAV.length > 0 && (
+            <div className="px-2 text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mt-5 mb-1.5">
+              More
+            </div>
+          )}
           {MORE_NAV.map((n) => (
             <Link
               key={n.to}

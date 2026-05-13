@@ -282,14 +282,13 @@ export default function Analytics() {
       {/* Indian Hill PowerSchool — paste or scheduled-scraper imports */}
       <PowerSchoolGradesCard />
 
-      <Card className="cozy-card p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="font-display font-semibold">Subject grades (last 30 days)</h2>
-          <div className="text-[10px] text-muted-foreground">Rolling avg of auto-graded turn-ins (70%) + block completion grades (30%)</div>
-        </div>
-        {realSubjectGrades.length === 0 ? (
-          <div className="text-sm text-muted-foreground italic">No grades yet. Once Reagan turns in an assignment with an answer key, numbers appear here.</div>
-        ) : (
+      {/* DON'T-SHOW-IF-NO-INFO (2026-05-12 push 14): Subject grades hides when no real grades */}
+      {realSubjectGrades.length > 0 && (
+        <Card className="cozy-card p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-display font-semibold">Subject grades (last 30 days)</h2>
+            <div className="text-[10px] text-muted-foreground">Rolling avg of auto-graded turn-ins (70%) + block completion grades (30%)</div>
+          </div>
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-2">
             {realSubjectGrades.map((g) => (
               <div key={g.subjectSlug} className="p-3 rounded-md border bg-white/40">
@@ -301,8 +300,8 @@ export default function Analytics() {
               </div>
             ))}
           </div>
-        )}
-      </Card>
+        </Card>
+      )}
 
       <div className="grid sm:grid-cols-3 gap-3">
         <Card className="cozy-card p-4">
@@ -321,6 +320,7 @@ export default function Analytics() {
         </Card>
       </div>
 
+      {/* DON'T-SHOW-IF-NO-INFO (2026-05-12 push 14): MoodArc only renders when there's >=1 log */}
       {(moods.data || []).length > 0 && (
         <Card className="cozy-card p-4">
           <h2 className="font-display font-semibold mb-3">Mood Arc — last 14 logs</h2>
@@ -328,27 +328,34 @@ export default function Analytics() {
         </Card>
       )}
 
-      <div className="grid lg:grid-cols-2 gap-3">
-        <Card className="cozy-card p-4">
-          <h2 className="font-display font-semibold mb-3">Skills Mastery</h2>
-          <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
-            {skills.data?.map((sk: any) => (
-              <div key={sk.id}>
-                <div className="flex justify-between text-sm">
-                  <span>{sk.skillName} <span className="text-xs text-muted-foreground">({sk.subjectSlug || sk.subjectId})</span></span>
-                  <span className="font-mono text-xs">{sk.currentScore || 0}%</span>
-                </div>
-                <Progress value={sk.currentScore || 0} className="h-2 mt-1" />
+      {/* DON'T-SHOW-IF-NO-INFO: Skills+Struggles row hides when both are empty */}
+      {(((skills.data as any[]) || []).length > 0 || ((struggles.data as any[]) || []).length > 0) && (
+        <div className="grid lg:grid-cols-2 gap-3">
+          {((skills.data as any[]) || []).length > 0 && (
+            <Card className="cozy-card p-4">
+              <h2 className="font-display font-semibold mb-3">Skills Mastery</h2>
+              <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
+                {skills.data?.map((sk: any) => (
+                  <div key={sk.id}>
+                    <div className="flex justify-between text-sm">
+                      <span>{sk.skillName} <span className="text-xs text-muted-foreground">({sk.subjectSlug || sk.subjectId})</span></span>
+                      <span className="font-mono text-xs">{sk.currentScore || 0}%</span>
+                    </div>
+                    <Progress value={sk.currentScore || 0} className="h-2 mt-1" />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </Card>
+            </Card>
+          )}
 
-        <Card className="cozy-card p-4">
-          <h2 className="font-display font-semibold mb-3">Struggle hotspots (by subject)</h2>
-          <CoverageChart struggles={struggles.data || []} />
-        </Card>
-      </div>
+          {((struggles.data as any[]) || []).length > 0 && (
+            <Card className="cozy-card p-4">
+              <h2 className="font-display font-semibold mb-3">Struggle hotspots (by subject)</h2>
+              <CoverageChart struggles={struggles.data || []} />
+            </Card>
+          )}
+        </div>
+      )}
 
       {/* ============ IEP Goals & Accommodations (RHiggs 2025-26 IEP.pdf) ============ */}
       <Card className="cozy-card p-4 border-l-4" style={{ borderLeftColor: 'oklch(0.78 0.16 340)' }}>
@@ -364,7 +371,8 @@ export default function Analytics() {
             <span className="text-[10px] px-2 py-1 rounded-full bg-emerald-200/40 text-emerald-900 border border-emerald-300">Next ETR 2/17/2028</span>
           </div>
         </div>
-        <div className="grid lg:grid-cols-2 gap-4">
+        <div className={`grid gap-4 ${uniqueGoals.length > 0 && uniqueAccoms.length > 0 ? "lg:grid-cols-2" : "lg:grid-cols-1"}`}>
+          {uniqueGoals.length > 0 && (
           <div>
             <h3 className="font-display font-semibold text-sm mb-2 flex items-center gap-2">
               <span className="text-base">🎯</span> Measurable Annual Goals
@@ -384,11 +392,10 @@ export default function Analytics() {
                   {g.measuredBy && <div className="text-[10px] text-muted-foreground mt-1 italic">Measured by: {g.measuredBy}</div>}
                 </div>
               ))}
-              {uniqueGoals.length === 0 && (
-                <div className="text-sm text-muted-foreground italic p-3">No IEP goals loaded.</div>
-              )}
             </div>
           </div>
+          )}
+          {uniqueAccoms.length > 0 && (
           <div>
             <h3 className="font-display font-semibold text-sm mb-2 flex items-center gap-2">
               <span className="text-base">🛡️</span> Active Accommodations
@@ -409,15 +416,15 @@ export default function Analytics() {
                   </div>
                 </div>
               ))}
-              {uniqueAccoms.length === 0 && (
-                <div className="text-sm text-muted-foreground italic p-3">No accommodations loaded.</div>
-              )}
             </div>
           </div>
+          )}
         </div>
       </Card>
 
       {/* Recent Submissions — every Reagan submission lands here, NEVER pushed to Google Classroom */}
+      {/* DON'T-SHOW-IF-NO-INFO (2026-05-12 push 14): hide whole card when 0 submissions */}
+      {((recentSubmissions.data as any[]) || []).length > 0 && (
       <Card className="cozy-card p-4 border-l-4" style={{ borderLeftColor: 'oklch(0.7 0.15 25)' }}>
         <div className="mb-3">
           <h2 className="font-display font-semibold text-xl">Recent Submissions</h2>
@@ -426,11 +433,7 @@ export default function Analytics() {
             Submissions are <strong>never</strong> auto-pushed to Google Classroom — Mom decides what goes back to the school.
           </p>
         </div>
-        {recentSubmissions.isLoading ? (
-          <div className="text-sm text-muted-foreground">Loading…</div>
-        ) : ((recentSubmissions.data as any[]) || []).length === 0 ? (
-          <div className="text-sm text-muted-foreground italic">No submissions yet.</div>
-        ) : (
+        {recentSubmissions.isLoading ? null : (
           <div className="divide-y">
             {((recentSubmissions.data as any[]) || []).map((s) => {
               const when = new Date(s.submittedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
@@ -473,6 +476,7 @@ export default function Analytics() {
           </div>
         )}
       </Card>
+      )}
 
       {/* Screening history (Reagan handoff Apr 2026) */}
       {((screenings.data as any[]) || []).length > 0 && (
@@ -532,21 +536,26 @@ export default function Analytics() {
         </Card>
       )}
 
-      <Card className="cozy-card p-4">
-        <h2 className="font-display font-semibold mb-3">Recent Emotional Struggles</h2>
-        <div className="space-y-2">
-          {(struggles.data ?? []).slice(0, 10).map((s: any) => (
-            <div key={s.id} className="text-sm flex items-start gap-2 p-2 rounded-lg bg-muted/30">
-              <span className={`w-2 h-2 rounded-full mt-2 ${s.intensity === "red" ? "bg-rose-500" : s.intensity === "yellow" ? "bg-amber-400" : "bg-emerald-400"}`}/>
-              <div className="flex-1">
-                <div className="text-xs text-muted-foreground">{new Date(s.loggedAt).toLocaleDateString()} · {s.subjectSlug || "general"}</div>
-                {s.description && <div>{s.description}</div>}
+      {/* DON'T-SHOW-IF-NO-INFO (2026-05-12 push 14): Emotional Struggles hides when 0 */}
+      {((struggles.data as any[]) || []).length > 0 && (
+        <Card className="cozy-card p-4">
+          <h2 className="font-display font-semibold mb-3">Recent Emotional Struggles</h2>
+          <div className="space-y-2">
+            {(struggles.data ?? []).slice(0, 10).map((s: any) => (
+              <div key={s.id} className="text-sm flex items-start gap-2 p-2 rounded-lg bg-muted/30">
+                <span className={`w-2 h-2 rounded-full mt-2 ${s.intensity === "red" ? "bg-rose-500" : s.intensity === "yellow" ? "bg-amber-400" : "bg-emerald-400"}`}/>
+                <div className="flex-1">
+                  <div className="text-xs text-muted-foreground">{new Date(s.loggedAt).toLocaleDateString()} · {s.subjectSlug || "general"}</div>
+                  {s.description && <div>{s.description}</div>}
+                </div>
               </div>
-            </div>
-          ))}
-          {struggles.data?.length === 0 && <div className="text-sm text-muted-foreground italic">No struggles logged. ✨</div>}
-        </div>
-      </Card>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* DON'T-SHOW-IF-NO-INFO (2026-05-12 push 14): Subject grades hides when no real grades */}
+      {realSubjectGrades.length === 0 ? null : null}
     </div>
   );
 }

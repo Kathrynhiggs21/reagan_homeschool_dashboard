@@ -378,21 +378,21 @@ Apply this everywhere:
 Empty-state copy is only allowed when an action is unconditionally needed
 on first run (e.g. Onboarding step 1). Otherwise: hide the wrapper.
 
-Sweep targets (initial pass):
-- [ ] Analytics: hide MoodArcChart card when 0 logs
-- [ ] Analytics: hide Skills Mastery card when 0 ladder rows
-- [ ] Analytics: hide Struggle hotspots card when 0 struggles
-- [ ] Analytics: hide Subject grades card when 0 grades
-- [ ] Analytics: hide Recent Submissions card when 0 submissions
-- [ ] Analytics: hide Screening History card when 0 screenings (already conditional)
-- [ ] Analytics: hide Recent Emotional Struggles when 0 struggles
-- [ ] Analytics: hide IEP Goals/Accommodations sub-columns when 0 each
-- [ ] CozyShell: don't render "More" header when MORE_NAV is empty
-- [ ] CozyShell: My Flock belt — don't render header when belt has 0 items
-- [ ] DailyAgendas (deleted) — N/A
-- [ ] Tutor Day Notes panel: only render the saved-notes block when items.length > 0
-- [ ] Curriculum Hub: hide subject card when 0 topics
-- [ ] Today: hide adult quick-link card when adult locked or 0 adult tools
+Sweep targets (push 14 — 2026-05-12):
+- [x] Analytics: hide MoodArcChart card when 0 logs (already had a guard; comment annotated DON'T-SHOW-IF-NO-INFO)
+- [x] Analytics: hide Skills Mastery card when 0 ladder rows (added guard around Skills+Struggles row + each card)
+- [x] Analytics: hide Struggle hotspots card when 0 struggles (added guard)
+- [x] Analytics: hide Subject grades card when 0 grades (was a `?:` placeholder — now full hide)
+- [x] Analytics: hide Recent Submissions card when 0 submissions (was a `?:` placeholder — now full hide)
+- [x] Analytics: hide Screening History card when 0 screenings (already conditional, verified)
+- [x] Analytics: hide Recent Emotional Struggles when 0 struggles (added guard)
+- [x] Analytics: hide IEP Goals/Accommodations sub-columns when 0 each (each column wraps in own guard; grid columns adapt 1→02)
+- [x] CozyShell: don't render "More" header when MORE_NAV is empty (added explicit length check)
+- [x] CozyShell: My Flock belt — CompanionBelt now early-returns null when FLOCK_MEMBERS is empty
+- [x] DailyAgendas (deleted) — N/A confirmed
+- [x] Tutor Day Notes panel: only render the saved-notes block when items.length > 0 — already guarded at line 102, verified
+- [x] Curriculum Hub: hide subject card when 0 topics (subject button skipped when total===0 AND no rows match)
+- [x] Today: hide adult quick-link card when adult locked — already guarded by `{unlocked && ...}`; bonus fix: dead `/agendas` link rewritten to `/agenda-editor` (📝 Agenda Editor)
 
 ## 2026-05-05 — Kiwi Behavior on Analytics + Settings sliders
 

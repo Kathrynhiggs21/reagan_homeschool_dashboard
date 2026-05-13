@@ -228,6 +228,7 @@ export default function CurriculumTopicsTree() {
       </div>
 
       {/* progress strip */}
+      {/* DON'T-SHOW-IF-NO-INFO (2026-05-12 push 14): hide subject buttons that have 0 topics seeded */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">
         {SUBJECTS.map((s) => {
           const p = (progress.data as any[])?.find((x) => x.subject === s);
@@ -235,6 +236,7 @@ export default function CurriculumTopicsTree() {
           const done = p?.done ?? 0;
           const total = p?.total ?? 0;
           const active = tab === s;
+          if (total === 0 && (rows.filter((r) => r.subject === s).length === 0)) return null;
           return (
             <button
               key={s}
