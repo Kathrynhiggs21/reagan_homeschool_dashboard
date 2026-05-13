@@ -13,6 +13,7 @@ import RewardsManagerCard from "@/components/RewardsManagerCard";
 import IepReferencePanel from "@/components/IepReferencePanel";
 import TutorsManager from "@/components/TutorsManager";
 import CalendarSyncCard from "@/components/CalendarSyncCard";
+import ApprovalsAdminCard from "@/components/ApprovalsAdminCard";
 import AppointmentsCardLite from "@/components/AppointmentsCardLite";
 import SummerModeSettingsCard from "@/components/SummerModeSettingsCard";
 import CatchUpQueueSettingsCard from "@/components/CatchUpQueueSettingsCard";
@@ -69,6 +70,8 @@ export default function Settings() {
         <TabsContent value="requests" className="space-y-4">
           <KidRequestsCard />
           <RequestsInboxCard />
+          {/* Push 91 — Approvals queue + active push recipients. */}
+          <ApprovalsAdminCard />
         </TabsContent>
 
         <TabsContent value="calendar" className="space-y-4">

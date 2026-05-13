@@ -2830,3 +2830,9 @@ shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
 - [x] Push 89 (2026-05-13) — Voice-print enrollment scaffold (pure signing helpers w/ intent binding + Reagan-only enrollment policy + mime/duration guards + 12/12 contract)
 
 - [x] Push 90 (2026-05-13) — MoodTimelineStrip on Today (hour-by-hour zone bars, self-hides empty, today.moodTimelineStrip procedure + 8/8 contract)
+
+- [x] Push 91 (2026-05-13) — Approvals admin card on Settings → Requests tab (pending queue + push targets + Approve/Reject buttons, self-hides empty, 8/8 contract)
+
+- [x] Push 92 (2026-05-13) — Drive sync path helpers (canonical month bucket + safe name segment + per-target descriptor for topics_covered/day_log/recap_reply/agenda_pdf, 13/13 contract)
+
+- [x] Push 93 (2026-05-13) — Tutor identity + dual sign-in pure helpers (CANONICAL_TUTORS Madison/Sophie/Keith, @tbd.local placeholder emails for Editor-tier auth, evaluateDualSignIn confirmed-only-when-both rule, 11/11 contract)
