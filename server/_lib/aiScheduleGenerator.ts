@@ -64,6 +64,21 @@ export type AIGenerateInput = {
   tutorOfDay?: { name: string; arrival: string; departure: string; role?: string | null } | null;
   /** Reagan's owned printed books — the AI should reference these by page/chapter rather than inventing. */
   ownedBooks?: AIOwnedBookHint[];
+  /**
+   * Push 33 (2026-05-13) — Hard-reject mode.
+   *
+   * When true, the generator REJECTS any academic block returned by
+   * the LLM that lacks a `curriculumTopicCode` and triggers a single
+   * retry with a stricter system message reminding the model that
+   * curriculumTopicCode is mandatory for academic blocks. The retry's
+   * output is sanitized again; if academic blocks STILL come back
+   * un-tagged, those rows are dropped (rather than committed un-tagged)
+   * and the dropped count is surfaced in `warnings`.
+   *
+   * Default false preserves the existing warning-only behavior so
+   * unit tests + offline calls keep working.
+   */
+  enforceTopic?: boolean;
 };
 
 export type AIOwnedBookHint = {
@@ -241,6 +256,7 @@ export function buildPromptMessages(input: AIGenerateInput) {
 /* ----------------------- main entry ----------------------- */
 
 export async function generateScheduleDraft(input: AIGenerateInput): Promise<AIGenerateResult> {
+  const enforceTopic = input.enforceTopic === true;
   const messages = buildPromptMessages(input);
   const validSlugs = new Set(input.subjects.map(s => s.slug));
 
@@ -284,7 +300,79 @@ export async function generateScheduleDraft(input: AIGenerateInput): Promise<AIG
   let parsed: any = {};
   try { parsed = typeof raw === "string" ? JSON.parse(raw) : raw; } catch { parsed = {}; }
   const validTopicCodes = new Set((input.topicCatalog || []).map(t => t.code.toUpperCase()));
-  const { blocks, warnings } = sanitizeBlocks(parsed?.blocks, validSlugs, validTopicCodes);
+  let { blocks, warnings } = sanitizeBlocks(parsed?.blocks, validSlugs, validTopicCodes);
+
+  // Push 33 — hard-reject + retry path.
+  if (enforceTopic) {
+    const untagged = blocks.filter((b) => ACADEMIC_BLOCK_TYPES.has(b.blockType) && !b.curriculumTopicCode);
+    if (untagged.length > 0 && validTopicCodes.size > 0) {
+      // Single retry with a stricter reminder appended to the system msg.
+      const retryMessages = [
+        ...messages,
+        {
+          role: "system" as const,
+          content:
+            "REJECT NOTICE: Your previous response had " +
+            untagged.length +
+            " academic block(s) without a curriculumTopicCode. " +
+            "This is mandatory for every academic block. Reissue the SAME schedule but assign " +
+            "every academic block (morning_warmup, math, read_aloud, choice, catch_up, custom) a " +
+            "valid curriculumTopicCode from the catalog above. Do not invent codes.",
+        },
+      ];
+      const retryResp = await invokeLLM({
+        messages: retryMessages,
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "schedule_draft_retry",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                summary: { type: "string" },
+                blocks: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      blockType: { type: "string", enum: [...ALLOWED_BLOCK_TYPES] },
+                      title: { type: "string" },
+                      description: { type: "string" },
+                      durationMin: { type: "integer" },
+                      startTime: { type: "string" },
+                      subjectSlug: { type: ["string", "null"] },
+                      curriculumTopicCode: { type: ["string", "null"] },
+                    },
+                    required: ["blockType", "title", "description", "durationMin", "startTime", "subjectSlug", "curriculumTopicCode"],
+                    additionalProperties: false,
+                  },
+                },
+              },
+              required: ["summary", "blocks"],
+              additionalProperties: false,
+            },
+          },
+        },
+      } as any);
+      const retryRaw = (retryResp as any)?.choices?.[0]?.message?.content ?? "{}";
+      let retryParsed: any = {};
+      try { retryParsed = typeof retryRaw === "string" ? JSON.parse(retryRaw) : retryRaw; } catch { retryParsed = {}; }
+      const retried = sanitizeBlocks(retryParsed?.blocks, validSlugs, validTopicCodes);
+      blocks = retried.blocks;
+      warnings = [...warnings, "hard-reject retry triggered: " + untagged.length + " academic block(s) lacked topicCode on first pass", ...retried.warnings];
+      // Drop any academic blocks that STILL lack a topicCode after the retry.
+      const before = blocks.length;
+      blocks = blocks.filter((b) => !ACADEMIC_BLOCK_TYPES.has(b.blockType) || !!b.curriculumTopicCode);
+      const dropped = before - blocks.length;
+      if (dropped > 0) {
+        warnings.push("hard-reject: dropped " + dropped + " academic block(s) that remained un-tagged after retry");
+      }
+      const summaryFromRetry = typeof retryParsed?.summary === "string" ? retryParsed.summary.slice(0, 600) : "";
+      return { blocks, summary: summaryFromRetry || (typeof parsed?.summary === "string" ? parsed.summary.slice(0, 600) : ""), warnings };
+    }
+  }
+
   return {
     blocks,
     summary: typeof parsed?.summary === "string" ? parsed.summary.slice(0, 600) : "",
