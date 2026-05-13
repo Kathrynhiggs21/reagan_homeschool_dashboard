@@ -1989,6 +1989,28 @@ export const appRouter = router({
       // Save user message
       await db.insertKiwiMessage({ role: "user", content: input.userMessage } as any);
 
+      // Push 28: kid-safe content prefilter — runs BEFORE the LLM call so we
+      // never spend a network round-trip on flagged content and never risk
+      // the model fail-opening on a network error. Self-harm + violence +
+      // explicit + scary_horror + personal_info + stranger_contact all get
+      // a soft Kiwi-voiced redirect, the redirect is logged as Kiwi's
+      // assistant turn so the chat history stays consistent, and Mom is
+      // pinged via notifyOwner with the matched category for awareness.
+      const { classifyKidSafe } = await import("./_lib/kidSafeClassifier");
+      const safety = classifyKidSafe(input.userMessage);
+      if (safety.flagged) {
+        await db.insertKiwiMessage({ role: "assistant", content: safety.redirect } as any);
+        try {
+          await notifyOwner({
+            title: `Kiwi safety flag: ${safety.categories.join(", ")}`,
+            content: `Reagan asked Kiwi: "${input.userMessage.slice(0, 200)}"\n\nMatched: ${safety.matchedSnippet ?? "\u2014"}\nKiwi replied with the soft redirect.`,
+          });
+        } catch {
+          // Owner notify is best-effort; safety reply still goes back.
+        }
+        return { reply: safety.redirect, nameChange: null, blockedCategories: safety.categories };
+      }
+
       // Detect name-change requests like "call me Sunny", "your name is Sunny", "I want to call you Sunny"
       const nameMatch = input.userMessage.match(/(?:call (?:you|yourself)|your name is|i(?:'ll| will| wanna| want to)? call you|new name is|name yourself)\s+([A-Za-z][A-Za-z\- ]{1,18})/i);
       let nameChange: string | null = null;
