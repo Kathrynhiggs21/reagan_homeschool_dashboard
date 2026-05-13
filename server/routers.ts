@@ -509,6 +509,16 @@ export const appRouter = router({
     reorder: familyAdminProcedure.input(z.object({
       date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
       orderedIds: z.array(z.number().int().positive()).min(1).max(50),
+      /**
+       * Slice 4 push 11 (2026-05-12): when true, AFTER rewriting sortOrder we
+       * walk the reordered blocks left→right and reassign each block.startTime
+       * by stacking durations from the first reordered block's existing
+       * startTime. Skipped cleanly when:
+       *   - flag is false / undefined (current callers behave as before)
+       *   - first reordered block has no startTime (no anchor)
+       *   - any computed time would cross midnight (skip just that block, keep going)
+       */
+      cascadeStartTimes: z.boolean().optional().default(false),
     })).mutation(async ({ input, ctx }) => {
       const plan = await db.getPlanByDate(input.date);
       if (!plan) throw new Error("no plan for date");
@@ -526,8 +536,32 @@ export const appRouter = router({
       for (let j = 0; j < tail.length; j++) {
         await db.updateBlock(tail[j].id, { sortOrder: cleaned.length + j } as any);
       }
-      await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: cleaned[0] ?? plan.id, action: "update", summary: `reorder ${touched} blocks (plan ${plan.id})` });
-      return { touched };
+      // Slice 4 push 11: optional startTime cascade.
+      let cascaded = 0, cascadeSkipped = 0;
+      if (input.cascadeStartTimes && cleaned.length > 0) {
+        const byId = new Map<number, any>(live.map(b => [b.id, b]));
+        const firstBlock = byId.get(cleaned[0]);
+        const anchor = firstBlock?.startTime ? String(firstBlock.startTime) : null;
+        const m = anchor ? anchor.match(/^(\d{1,2}):(\d{2})$/) : null;
+        if (m) {
+          let cursor = parseInt(m[1], 10) * 60 + parseInt(m[2], 10);
+          for (let i = 0; i < cleaned.length; i++) {
+            const b = byId.get(cleaned[i]);
+            if (!b) continue;
+            if (cursor < 0 || cursor >= 24 * 60) { cascadeSkipped++; continue; }
+            const hh = Math.floor(cursor / 60).toString().padStart(2, "0");
+            const mm = (cursor % 60).toString().padStart(2, "0");
+            await db.updateBlock(b.id, { startTime: `${hh}:${mm}` } as any);
+            cascaded++;
+            cursor += Math.max(0, Number(b.durationMin) || 0);
+          }
+        } else {
+          // no usable anchor: silently skip cascade rather than throw
+          cascadeSkipped = cleaned.length;
+        }
+      }
+      await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: cleaned[0] ?? plan.id, action: "update", summary: `reorder ${touched} blocks${input.cascadeStartTimes ? ` + cascade ${cascaded}/${cascadeSkipped}` : ""} (plan ${plan.id})` });
+      return { touched, cascaded, cascadeSkipped };
     }),
     delete: familyAdminProcedure.input(z.object({ id: z.number() })).mutation(async ({ input, ctx }) => {
       const r = await db.deleteBlock(input.id);
