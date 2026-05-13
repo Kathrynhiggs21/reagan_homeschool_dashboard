@@ -2842,3 +2842,9 @@ shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
 - [x] Push 95 (2026-05-13) — Recap-email composer pure helper (Grandma Marcy at marcy.spear@gmail.com; noon vs evening cadence; planned subjects + observed signals; idempotency key recap:date:cadence; 10/10 contract)
 
 - [x] Push 96 (2026-05-13) — Reagan kid-request presets pure helper (assignment / adventure / schedule canonical order, schedule routes to approvals.submit kind=schedule_change, others land in inbox, defaultMessage templates with blanks; 8/8 contract)
+
+- [x] Push 97 (2026-05-13) -- WeeklyDigestCard Grandma toggle UI (header says Mom permanent; data-testid grandma-toggle-btn/row/mute-banner; aria-pressed bound; default on; 6/6)
+
+- [x] Push 98 (2026-05-13) -- Recap email send queue planner (Grandma-only at marcy.spear@gmail.com; skips when actualEntryCount>0 OR reaganListeningConfirmed OR key already queued OR bad-input; noon/evening are independent idempotency slots; 8/8 contract)
+
+- [x] Push 99 (2026-05-13) -- Mood-log PDF labels pure helper (Green-Calm / Yellow-Watch / Red-Crisis badges; Tailwind 500 hex; bucket boundaries 11/14/18; grandmaShareFooter IEP language; 8/8)

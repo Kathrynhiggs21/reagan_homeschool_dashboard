@@ -3,7 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CalendarDays, TrendingUp, Heart, AlertTriangle, GraduationCap, BookOpen, Eye } from "lucide-react";
+import { CalendarDays, TrendingUp, Heart, AlertTriangle, GraduationCap, BookOpen, Eye, UserCheck, UserMinus } from "lucide-react";
 
 const SUBJECT_LABEL: Record<string, string> = {
   math: "Math",
@@ -27,6 +27,9 @@ const HELPER_LABEL: Record<string, string> = {
 
 export default function WeeklyDigestCard() {
   const [showPreview, setShowPreview] = useState(false);
+  // Push 97 (2026-05-13) — Grandma recipient toggle for this week's digest.
+  // Mom is permanent (Push 94 rule); only Grandma is toggleable.
+  const [grandmaEnabled, setGrandmaEnabled] = useState(true);
   // preview = the *current* week so far (live, before Sunday's email)
   const preview = trpc.digest.preview.useQuery();
   // recent = the rows actually saved by Sunday scheduled task
@@ -67,8 +70,35 @@ export default function WeeklyDigestCard() {
             This Week — Reagan&rsquo;s Digest
           </h2>
           <p className="text-xs text-muted-foreground mt-1">
-            {weekRange} · auto-emails to <code>spear.cpt@gmail.com</code> and <code>marcy.spear@gmail.com</code> every Sunday at 7&nbsp;PM.
+            {weekRange} · auto-emails every Sunday at 7&nbsp;PM. Mom is always on the recipient list.
           </p>
+          {/* Push 97 — Grandma toggle */}
+          <div className="mt-2 flex items-center gap-2" data-testid="grandma-toggle-row">
+            <button
+              type="button"
+              onClick={() => setGrandmaEnabled((v) => !v)}
+              data-testid="grandma-toggle-btn"
+              className={`text-xs inline-flex items-center gap-1.5 px-2 py-1 rounded border transition-colors ${
+                grandmaEnabled
+                  ? "bg-emerald-500/20 text-emerald-200 border-emerald-500/40"
+                  : "bg-muted/40 text-muted-foreground border-white/10"
+              }`}
+              aria-pressed={grandmaEnabled}
+              aria-label="Include Grandma Marcy on this Sunday's digest"
+            >
+              {grandmaEnabled ? (
+                <UserCheck className="w-3.5 h-3.5" />
+              ) : (
+                <UserMinus className="w-3.5 h-3.5" />
+              )}
+              {grandmaEnabled ? "Grandma Marcy: on" : "Grandma Marcy: muted this week"}
+            </button>
+            {!grandmaEnabled && (
+              <span className="text-[11px] text-amber-200" data-testid="grandma-mute-banner">
+                Grandma is muted for this Sunday&rsquo;s digest. Toggle her back on before send if she wants the email.
+              </span>
+            )}
+          </div>
         </div>
         <div className="text-right flex flex-col items-end gap-2">
           {lastEmailedStr ? (
