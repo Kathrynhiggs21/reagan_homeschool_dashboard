@@ -1,0 +1,28 @@
+{
+  "query": "SELECT b.id, b.title, LEFT(b.description, 120) AS desc_preview, p.date\nFROM scheduleBlocks b JOIN dailyPlans p ON p.id = b.planId\nWHERE (LOWER(b.title) LIKE '%planet%' OR LOWER(b.description) LIKE '%planet%')\n  AND p.date >= '2026-04-01'\nORDER BY p.date DESC, b.sortOrder\nLIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT b.id, b.title, LEFT(b.description, 120) AS desc_preview, p.date\nFROM scheduleBlocks b JOIN dailyPlans p ON p.id = b.planId\nWHERE (LOWER(b.title) LIKE '%planet%' OR LOWER(b.description) LIKE '%planet%')\n  AND p.date >= '2026-04-01'\nORDER BY p.date DESC, b.sortOrder\nLIMIT 20;",
+  "rows": [
+    {
+      "id": "720001",
+      "title": "📝 Writing — \"Fake Blood Spider\" (Reagan's story)",
+      "desc_preview": "Reagan wrote a short suspense story this morning before the planet video. Two versions saved (original spelling preserve",
+      "date": "2026-05-04"
+    },
+    {
+      "id": "690010",
+      "title": "👵 Grandma's Lesson — recap of today's topics (45 min)",
+      "desc_preview": "Grandma walked through everything today: planets, day & night, axial tilt, the seasons, degrees, full circles (360°), an",
+      "date": "2026-05-04"
+    }
+  ],
+  "messages": [
+    "690011\t🧭 Build Your Own Compass + Degrees Video\tWatch & build! Video: https://www.youtube.com/watch?v=ZaQkohuqoXY",
+    "🛠️ DIY Compass (10 min):",
+    "• 1 sewing needle (or straig\t2026-05-05",
+    "690012\t🎬 Planets Recap — rewatch Earth's Movements video\tCozy end-of-day recap. Rewatch: https://youtu.be/fajsyiKRfxI",
+    "This time, see how much MORE you understand. Pause it when\t2026-05-04"
+  ],
+  "stdout": "id\ttitle\tdesc_preview\tdate\n690011\t🧭 Build Your Own Compass + Degrees Video\tWatch & build! Video: https://www.youtube.com/watch?v=ZaQkohuqoXY\n\n🛠️ DIY Compass (10 min):\n• 1 sewing needle (or straig\t2026-05-05\n720001\t📝 Writing — \"Fake Blood Spider\" (Reagan's story)\tReagan wrote a short suspense story this morning before the planet video. Two versions saved (original spelling preserve\t2026-05-04\n690010\t👵 Grandma's Lesson — recap of today's topics (45 min)\tGrandma walked through everything today: planets, day & night, axial tilt, the seasons, degrees, full circles (360°), an\t2026-05-04\n690012\t🎬 Planets Recap — rewatch Earth's Movements video\tCozy end-of-day recap. Rewatch: https://youtu.be/fajsyiKRfxI\n\nThis time, see how much MORE you understand. Pause it when\t2026-05-04\n",
+  "stderr": "",
+  "execution_time_ms": 578
+}

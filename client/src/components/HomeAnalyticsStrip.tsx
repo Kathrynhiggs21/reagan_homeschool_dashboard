@@ -1,5 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { Link } from "wouter";
+import { DescriptionWithLinks } from "@/components/DescriptionWithLinks";
 
 /**
  * Adult-facing micro-analytics at the top of Today:
@@ -82,7 +83,7 @@ export default function HomeAnalyticsStrip() {
             <div className="text-[11px] uppercase tracking-wide text-amber-700">Resume where you left off</div>
             <div className="font-bold text-slate-800 mt-0.5 truncate">{next.title || "Next block"}</div>
             <div className="text-xs text-slate-600 capitalize">{next.subjectSlug}</div>
-            {next.description && <div className="text-xs text-slate-500 line-clamp-2 mt-1">{next.description}</div>}
+            {next.description && <DescriptionWithLinks text={next.description} embeds={false} className="text-xs text-slate-500 line-clamp-2 mt-1" />}
             <div className="text-xs font-semibold text-amber-700 mt-1">Jump →</div>
           </div>
         </Link>

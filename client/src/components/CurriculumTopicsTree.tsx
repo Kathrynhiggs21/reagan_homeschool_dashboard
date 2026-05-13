@@ -209,7 +209,7 @@ export default function CurriculumTopicsTree() {
         <div>
           <h2 className="font-display font-semibold text-lg">Topics & Standards</h2>
           <p className="text-xs text-muted-foreground">
-            Ohio 5th-grade scope, in Indian Hill pacing order. Tick to mark complete.
+            Ohio 5th-grade scope. Tick to mark complete.
           </p>
         </div>
         <div className="flex gap-2">

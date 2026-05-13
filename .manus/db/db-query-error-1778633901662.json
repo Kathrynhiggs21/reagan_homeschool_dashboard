@@ -1,0 +1,8 @@
+{
+  "query": "SELECT b.id, b.title, LEFT(b.description, 80) AS desc_preview, p.date_iso\nFROM scheduleBlocks b JOIN dailyPlans p ON p.id = b.planId\nWHERE (LOWER(b.title) LIKE '%planet%' OR LOWER(b.description) LIKE '%planet%')\n  AND p.date_iso >= '2026-04-01'\nORDER BY p.date_iso DESC, b.sortOrder\nLIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT b.id, b.title, LEFT(b.description, 80) AS desc_preview, p.date_iso\nFROM scheduleBlocks b JOIN dailyPlans p ON p.id = b.planId\nWHERE (LOWER(b.title) LIKE '%planet%' OR LOWER(b.description) LIKE '%planet%')\n  AND p.date_iso >= '2026-04-01'\nORDER BY p.date_iso DESC, b.sortOrder\nLIMIT 20;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'p.date_iso' in 'order clause'"
+  ]
+}

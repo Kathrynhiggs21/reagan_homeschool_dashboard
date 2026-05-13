@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { toast } from "sonner";
 import { popConfettiFromElement } from "@/lib/confetti";
 import TopicLabel from "@/components/TopicLabel";
+import { DescriptionWithLinks } from "@/components/DescriptionWithLinks";
 
 type Bucket = "have_to_do" | "optional" | "extra";
 
@@ -298,7 +299,7 @@ const TodaySchoolWork = forwardRef<TodaySchoolWorkHandle, { onItemsChanged?: (it
               )}
 
               <div className="space-y-3 text-sm">
-                {open.description && <div>{open.description}</div>}
+                {open.description && <DescriptionWithLinks text={open.description} />}
               {open.sourceUrl ? (
                 <a
                   href={open.sourceUrl}

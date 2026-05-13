@@ -5,6 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import { DescriptionWithLinks } from "@/components/DescriptionWithLinks";
 
 /**
  * Adult-only card on Today: ask Kiwi to draft a schedule for a date.
@@ -140,7 +141,7 @@ export default function AIScheduleGeneratorCard({ defaultDate }: { defaultDate: 
                         {b.subjectSlug ? ` · ${b.subjectSlug}` : ""}
                       </div>
                     </div>
-                    {b.description && <div className="text-xs mt-1 whitespace-pre-wrap">{b.description}</div>}
+                    {b.description && <DescriptionWithLinks text={b.description} className="text-xs mt-1 whitespace-pre-wrap" />}
                   </div>
                 ))}
                 {draft.blocks.length === 0 && (
