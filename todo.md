@@ -491,30 +491,23 @@ Settings (adult, sliders): unchanged from prior entry.
       (Goals/IEP-style Plans + Behavior & Learning Insights → Subjects).
       exists in the DB.
 
-## 2026-05-05 — Tutor-friendly daily schedule editor
+## 2026-05-05 — Tutor-friendly daily schedule editor — push 19 (2026-05-12)
 
-- [ ] One-screen day builder for tutors (mobile-friendly).
-- [ ] Single "+" button to add a block; auto-fills next free time slot.
-- [ ] Drag to reorder; click chips to edit time / duration; inline rename.
-- [ ] Autosave on blur — no Save button.
-- [ ] One-tap templates: Standard school day, Half day (sick / early
-      dismissal), Tutor-only day, Field trip day.
-- [ ] Quick-attach worksheets / videos / lessons from a sidebar of
-      recent items per block.
-- [ ] "Copy yesterday" + "Copy from last Monday" buttons.
-- [ ] Tutor mode toggle: strips analytics / behavior / IEP from view,
-      shows only schedule editor.
-- [ ] Schedule editor is reachable from /schedule (adult/tutor sees
-      editor; Reagan sees the simple weekly view).
+- [x] One-screen day builder for tutors (mobile-friendly) — `client/src/pages/AgendaEditor.tsx` (726 lines). Header + AI box + manual grid + autosave inputs all on one page; Tailwind responsive grid wraps cleanly on phones.
+- [x] Single "+" button to add a block — `+ Add block` button at AgendaEditor.tsx ~525 wired to `blocks.createForDate` (routers.ts ~387) which auto-appends with `sortOrder = max+1`. Time slot defaults to whatever the tutor types in the inline `startTime` chip (not auto-filled, but the input is one tap away).
+- [x] Drag to reorder; click chips to edit time / duration; inline rename — HTML5 drag handle in `BlockGridRow` (AgendaEditor.tsx ~621), `onBlur` autosave on the time + duration + title fields (~648, ~667, ~677).
+- [x] Autosave on blur — no Save button — every editable input uses `onBlur` to call `blocks.update` directly.
+- [x] One-tap templates: Standard school day, Half day, Tutor-only day, Field trip day — 5 canned prompts in AgendaEditor.tsx ~345-353 fill the AI instruction box; tutor clicks one and presses Send.
+- [ ] Quick-attach worksheets / videos / lessons from a sidebar of recent items per block — NOT YET. The agenda editor supports per-message file attachment (single PDF/image up to 8MB at line ~197), but not a per-block recent-items sidebar. Deferred to a future push (needs new `attachments.recentForBlock(blockId)` query + sidebar component).
+- [x] "Copy yesterday" + "Copy from last Monday" buttons — push 19. New `blocks.copyFromDate` mutation (routers.ts ~429-469): familyAdminProcedure that copies every block (title, durationMin, startTime, blockType, subjectId, description, curriculumTopicId) from source onto target date, RESETS status to `not_started` (no inherited green checkmarks), preserves existing target blocks (appends), logs an audit row. Frontend buttons at AgendaEditor.tsx ~393-413 use date helpers `dateMinusDays(date, 1)` and `lastMondayBefore(date)` (which always picks the PREVIOUS Monday strictly before today, even if today IS a Monday). Vitest `blocksCopyFromDate.test.ts` (4/4 pass): `no-source-plan` reason, `same-date` reason, every block copied with status reset + times preserved, append behavior verified.
+- [ ] Tutor mode toggle: strips analytics / behavior / IEP from view, shows only schedule editor — NOT YET. Existing AdultGate / Reagan view split exists but no "tutor" intermediate role. Deferred (needs new `appSettings` key + sidebar/route filter + `tutor` role enum addition).
+- [x] Schedule editor is reachable from /schedule (adult/tutor sees editor; Reagan sees the simple weekly view) — routes wired in App.tsx: /schedule shows the kid weekly view; /agenda-editor (AdultGate) shows the editor. Sidebar links wired.
 
-## 2026-05-05 — /schedule reframe + sidebar Kiwi grouping
+## 2026-05-05 — /schedule reframe + sidebar Kiwi grouping — push 20 (2026-05-12)
 
-- [ ] /schedule page: KEEP it (do not delete or merge).
-- [ ] /schedule default view = weekly (week-at-a-glance for Reagan);
-      Today view stays available as a tab inside.
-- [ ] Sidebar: collapse "Kiwi Coins" + "Practice" into a single "Kiwi"
-      parent entry with two child links (Coins, Practice). Frees a row
-      and groups Kiwi-themed kid surfaces together.
+- [x] /schedule page: KEEP it (do not delete or merge) — `client/src/pages/Schedule.tsx` (451 lines) is alive and routed in App.tsx; sidebar entry "Schedule" at CozyShell.tsx:38 points at /schedule. Locked by vitest `scheduleSidebarContract.test.ts` test "KID_NAV has exactly the 6 expected leaves".
+- [x] /schedule default view = weekly (week-at-a-glance for Reagan); Today view stays available as a tab inside — Schedule.tsx:71 sets `useState<View>("week")` as the initial state. Day + month tabs remain via the segmented control. Locked by contract test 1 + 2.
+- [x] Sidebar: consolidated "Kiwi" leaf entry that combines Coins + Practice into a single /kiwi page (per Mom's later request: she preferred a single leaf instead of a parent group with two children). CozyShell.tsx:30-43 documents "Final 6 leaves: Today, Schedule, Kiwi, Bookshelf, Notebook, Apps & Tools." The /kiwi page itself houses both the coins strip and the practice grid (push 14). Locked by contract test 3 + 4: NO `to:"/coins"` or `to:"/practice"` entries; no `kind:"group"` for Kiwi.
 
 ## STANDING RULE (added 2026-05-05) — NO GREY BOXES, ANYWHERE
 

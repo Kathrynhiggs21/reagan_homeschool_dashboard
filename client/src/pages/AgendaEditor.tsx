@@ -181,6 +181,37 @@ export default function AgendaEditor() {
     onSuccess: () => utils.agendaEditor.snapshot.invalidate({ date }),
     onError: (e) => toast.error("Reorder failed: " + e.message),
   });
+  // Push 19 (2026-05-12) — Tutor convenience: direct "copy from another
+  // day" mutation. Used by the two canned buttons below; bypasses the
+  // LLM for an instant, lossless copy of every block field.
+  const copyFromDateM = (trpc as any).blocks?.copyFromDate?.useMutation?.({
+    onSuccess: (r: any) => {
+      if (r?.copied > 0) {
+        toast.success(`Copied ${r.copied} block${r.copied === 1 ? "" : "s"} into ${date}.`);
+      } else if (r?.reason === "no-source-plan" || r?.reason === "empty-source") {
+        toast.info("That source day was empty — nothing to copy. Try a different date or use the AI box.");
+      } else if (r?.reason === "same-date") {
+        toast.info("Source and target date are the same — nothing to copy.");
+      }
+      utils.agendaEditor.snapshot.invalidate({ date });
+    },
+    onError: (e: any) => toast.error("Copy failed: " + (e?.message || "unknown")),
+  });
+  // Helper: yesterday in YYYY-MM-DD relative to current `date` field.
+  const dateMinusDays = (iso: string, days: number): string => {
+    const d = new Date(iso + "T00:00:00");
+    d.setDate(d.getDate() - days);
+    return d.toISOString().slice(0, 10);
+  };
+  // Helper: most recent Monday strictly before the current `date`.
+  const lastMondayBefore = (iso: string): string => {
+    const d = new Date(iso + "T00:00:00");
+    const dow = d.getDay(); // 0=Sun..6=Sat
+    // Days back to PREVIOUS Monday: if today is Mon (1), go back 7; otherwise (dow + 6) % 7.
+    const back = dow === 1 ? 7 : (dow + 6) % 7;
+    d.setDate(d.getDate() - back);
+    return d.toISOString().slice(0, 10);
+  };
   const shiftDayM = trpc.blocks.shiftDay.useMutation({
     onSuccess: (data: any) => {
       toast.success(`Shifted ${data.shifted} block${data.shifted === 1 ? "" : "s"}` + (data.skipped ? ` (skipped ${data.skipped})` : ""));
@@ -349,8 +380,6 @@ export default function AgendaEditor() {
                 { label: "Tutor-only day", prompt: "Plan a tutor-only day: tutor arrives at 9 AM, leaves at 1 PM. Build 4 x 30-min blocks back-to-back focused on this week's curriculum, leaving 15 min at the end for tutor handoff notes." },
                 { label: "Field trip day", prompt: "Today is a field trip day. Replace the regular schedule with one 3-hour outing block (Adventure type) from 10 AM–1 PM, plus a 20-min reflection journal block at 1:30 PM." },
                 { label: "Catch-up day", prompt: "Make today a catch-up day. Pull any unfinished blocks from the last 5 school days and schedule them as 20-min blocks starting at 9 AM. Add a 15-min review block at the end." },
-                { label: "Copy yesterday", prompt: "Copy yesterday's schedule exactly as today's starting point." },
-                { label: "Copy from last Monday", prompt: "Copy last Monday's schedule as today's starting point." },
               ].map((t) => (
                 <button
                   key={t.label}
@@ -361,6 +390,27 @@ export default function AgendaEditor() {
                   {t.label}
                 </button>
               ))}
+              {/* Push 19 — direct, instant, lossless copy buttons (bypass LLM). */}
+              <button
+                type="button"
+                disabled={!copyFromDateM || copyFromDateM.isPending}
+                onClick={() => copyFromDateM?.mutate?.({ sourceDate: dateMinusDays(date, 1), targetDate: date })}
+                className="rounded-full border border-emerald-500/50 bg-emerald-500/10 px-3 py-1 text-emerald-900 dark:text-emerald-100 hover:bg-emerald-500/20 disabled:opacity-50"
+                data-testid="copy-yesterday-btn"
+                title="Copy every block from yesterday onto this date (lossless, instant)"
+              >
+                {copyFromDateM?.isPending ? "Copying…" : "→ Copy yesterday"}
+              </button>
+              <button
+                type="button"
+                disabled={!copyFromDateM || copyFromDateM.isPending}
+                onClick={() => copyFromDateM?.mutate?.({ sourceDate: lastMondayBefore(date), targetDate: date })}
+                className="rounded-full border border-emerald-500/50 bg-emerald-500/10 px-3 py-1 text-emerald-900 dark:text-emerald-100 hover:bg-emerald-500/20 disabled:opacity-50"
+                data-testid="copy-last-monday-btn"
+                title="Copy every block from the previous Monday onto this date (lossless, instant)"
+              >
+                {copyFromDateM?.isPending ? "Copying…" : "→ Copy last Monday"}
+              </button>
             </div>
           </div>
 

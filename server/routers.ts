@@ -418,6 +418,56 @@ export const appRouter = router({
       return { id, planId: plan.id };
     }),
     /**
+     * Push 19 (2026-05-12) — Tutor convenience: copy every block from a
+     * source date onto the target date. Used by the AgendaEditor's
+     * "Copy yesterday" / "Copy from last Monday" quick buttons. Existing
+     * blocks on the target date are PRESERVED and the copied blocks are
+     * appended (sortOrder keeps incrementing). Status resets to
+     * `not_started` so the tutor doesn't inherit a green checkmark; grades
+     * + notes + completion timestamps are not copied.
+     */
+    copyFromDate: familyAdminProcedure.input(z.object({
+      sourceDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      targetDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    })).mutation(async ({ input, ctx }) => {
+      if (input.sourceDate === input.targetDate) {
+        return { copied: 0, skipped: 0, reason: "same-date" as const };
+      }
+      const srcPlan = await db.getPlanByDate(input.sourceDate);
+      if (!srcPlan) return { copied: 0, skipped: 0, reason: "no-source-plan" as const };
+      const srcBlocks = await db.listBlocksForPlan((srcPlan as any).id);
+      if (!srcBlocks.length) return { copied: 0, skipped: 0, reason: "empty-source" as const };
+      const targetPlan = await db.ensurePlanForDate(input.targetDate, "full", { allowWeekendAutoBuild: false } as any);
+      if (!targetPlan) throw new Error("could not ensure target plan");
+      const existing = await db.listBlocksForPlan((targetPlan as any).id);
+      let nextSort = Math.max(0, ...(existing as any[]).map(b => b.sortOrder || 0)) + 1;
+      let copied = 0;
+      for (const b of srcBlocks as any[]) {
+        await db.createBlock({
+          planId: (targetPlan as any).id,
+          blockType: b.blockType,
+          subjectId: b.subjectId ?? null,
+          title: b.title,
+          description: b.description ?? null,
+          durationMin: b.durationMin ?? 30,
+          startTime: b.startTime ?? null,
+          sortOrder: nextSort++,
+          status: "not_started" as any,
+          curriculumTopicId: b.curriculumTopicId ?? null,
+        } as any);
+        copied++;
+      }
+      await db.logAudit({
+        actorOpenId: ctx.user?.openId,
+        actorName: ctx.user?.name,
+        entityType: "plan",
+        entityId: (targetPlan as any).id,
+        action: "create",
+        summary: `Copied ${copied} block(s) from ${input.sourceDate} into ${input.targetDate}`,
+      });
+      return { copied, skipped: 0, planId: (targetPlan as any).id };
+    }),
+    /**
      * Slice 3: "Design today from blank" starter. Clears every block on a given
      * date so the adult/tutor can build the day from scratch (manual + Add
      * blocks, or AI box). Plan row stays in place; dayType preserved.
