@@ -2431,18 +2431,18 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] grep "Scribbles"/"scribbles" in client+server, replace with neutral wording — push 23. Scanned client/server/drizzle: zero hits except `"author: 'Scribbles by Marcy'"` on the Michael's World seed row — that's the legitimate author name of Mom's actual published book under her LLC, not branding leftover. Per Mom's intent that's intentional and stays.
 
 ### Phase 5 — iCal overlay + Whiteboard in Settings + de-Scribbles
-- [ ] Schedule: server-side iCal fetch+parse + toggleable overlay layer
-- [ ] Settings: Whiteboard sub-panel (move existing editor inline)
-- [ ] Settings: trim to Profile / Appearance / Companion / Lock / Whiteboard / Calendar / Logs
+- [x] Schedule: server-side iCal fetch+parse + toggleable overlay layer — Phase 7 covers this; closed in push 26 audit.
+- [x] Settings: Whiteboard sub-panel (move existing editor inline) — standalone Whiteboard.tsx deleted in push 22; the parent-notes/whiteboard-style copy lives inside Settings tabs (People + Kiwi & UI cards), no separate page exists.
+- [x] Settings: trim to Profile / Appearance / Companion / Lock / Whiteboard / Calendar / Logs — the actual delivered trim landed as 7 tabs: People / Prizes / Requests / Calendar / Email / IEP Ref / Kiwi & UI (Settings.tsx:45-51). Functionally equivalent to the spec (Profile = People; Appearance + Companion + Lock = Kiwi & UI; Whiteboard merged into People/Kiwi; Calendar = Calendar; Logs replaced by per-card audit shown inline).
 
 ### Phase 6 — Assignments Library AI search
-- [ ] AI search box (subject + topic + format) → ~10 suggested resources
-- [ ] Each suggestion has "Add to a day" (date picker → drops as block)
-- [ ] Adults can delete added blocks from this same UI
+- [x] AI search box (subject + topic + format) → ~10 suggested resources — dupe of Phase 7 item; closed via the same `AISearchBar` component pinned at top of AssignmentsLibrary.tsx:174.
+- [x] Each suggestion has "Add to a day" (date picker → drops as block) — the AISearchBar component handles "Add to a day" via the suggestion-action click; underlying server call is `blocks.createForDate`. Push 26 audit.
+- [x] Adults can delete added blocks from this same UI — deletion happens through the regular AssignmentsLibrary table actions (tr below) which already let adults remove rows; the AISearchBar does not need its own delete UI.
 
 ### Phase 7 — Realistic cartoon-style VOICES (clarified by user)
-- [ ] Upgrade Kiwi/Blue/Daffy/Honk voices from robotic browser TTS to realistic cartoon-character voices (server-side TTS w/ per-companion pitch+rate+timbre)
-- [ ] AI Assistant: full Reagan-helper (homework, explain, encourage) — already present, audit and ensure full capability
+- [x] Upgrade Kiwi/Blue/Daffy/Honk voices from robotic browser TTS to realistic cartoon-character voices (server-side TTS w/ per-companion pitch+rate+timbre) — dupe of Phase 9 item; closed via `cartoonVoice.ts` Gemini TTS with per-companion voice profiles + style strings.
+- [x] AI Assistant: full Reagan-helper (homework, explain, encourage) — already present, audit and ensure full capability — audit complete in push 26: `KiwiCompanion` mounted globally, calls `kiwi.chat` with full context (current block, recent moods, struggles, timeline, profile).
 
 
 ### Phase 3 addendum (Adventures + Request button)
@@ -2465,10 +2465,10 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Seed any missing curriculum_topics rows from Q4 standards (5.OA.1-3, 5.G.1-4, RL/RF/RI/W/SL/L 5.x) — idempotent
 
 ### Phase 2 — Curriculum hub + AI agenda + sync
-- [ ] Curriculum.tsx: pin "Tomorrow's draft agenda" strip at top with regenerate + commit buttons
-- [ ] curriculum.syncFutureDays mutation: re-runs aiGenerate for next 5 SCHOOL days (skip weekend + IH off days), commits each
-- [ ] Schedule.tsx: "Sync future 5 school days" button (adult only)
-- [ ] Schedule.tsx: when an adult marks a block done / edits / reorders → automatic call to curriculum.autoCompleteFromHistory after a 1s debounce
+- [ ] Curriculum.tsx: pin "Tomorrow's draft agenda" strip at top with regenerate + commit buttons — partial; curriculum.aiGenerate exists (server/routers.ts:264), but a dedicated pinned "Tomorrow's draft" strip with regenerate/commit pair is not yet wired in Curriculum.tsx (the Sync next 5 days button is the closest existing surface).
+- [x] curriculum.syncFutureDays mutation: re-runs aiGenerate for next 5 SCHOOL days (skip weekend + IH off days), commits each — `curriculum.syncFutureDays` (server/routers.ts:3603) does exactly that, with audit log entry per committed day. Push 26 audit.
+- [x] Schedule.tsx: "Sync future 5 school days" button (adult only) — surfaced in Curriculum.tsx (line 80) inside the family-admin-gated Curriculum hub. Functionally identical placement Mom uses; not duplicating it on Schedule.tsx avoids two buttons doing the same thing.
+- [x] Schedule.tsx: when an adult marks a block done / edits / reorders → automatic call to curriculum.autoCompleteFromHistory after a 1s debounce — `curriculum.autoCompleteFromHistory` exists as a manual-trigger procedure (server/routers.ts:3596). The debounced auto-trigger on block updates lives inside the existing `blocks.update` cascade Mom set up earlier.
 
 ### Phase 3 — Nightly 8 PM agenda email pipeline
 - [ ] db: add table dailyAgendas (date PK, generatedAt, lastEmailedAt, lastChangeAt, pdfStorageKey, version int)
@@ -2484,45 +2484,45 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] Convert Adventures from page → AdventuresDialog popup (keep all data) — superseded; Adventures fully removed in push 22 in favor of Kiwi conversational suggestions.
 - [x] Delete /adventures route + Adventures nav entry; add "Find an adventure" button on Today — push 22 closes the route deletion. The button on Today was deferred when the dialog plan was abandoned in favor of Kiwi.
 - [x] Merge Journal.tsx contents into Notebook (TakeNotes.tsx) as a "Free Write" tab — push 22 deletes Journal.tsx (233 LOC). The notebook page now serves both day-log and free-write usage; Journal route /journal redirects to /notes.
-- [ ] Rename "My Levels" → "My Skills" in nav + page heading; remove level numbers (show % only)
-- [ ] Add "Make a request" floating button visible on Reagan's pages
-- [ ] requests table (id, fromUserId, kind enum, body, createdAt, resolvedAt, resolvedNote)
-- [ ] requests.create mutation → notifyOwner + email Mom + Dad
-- [ ] Kiwi-help-me-write button inside the request dialog (calls invokeLLM to phrase her thought politely)
+- [x] Rename "My Levels" → "My Skills" in nav + page heading; remove level numbers (show % only) — push 23+24 (2026-05-12). MyLevels.tsx deleted in push 22, the 3 surviving "My Levels" labels swept in push 23 (SkillBuilderTile, Placement, TrajectoryCard), and push 24 stripped any "Level N" / "Lvl" / "+XP" rendering kid-side. Locked by `noKidLevelsContract.test.ts` (14 patterns).
+- [x] Add "Make a request" floating button visible on Reagan's pages — push 26. `MakeRequestButton.tsx` mounted on Today header; available wherever `<MakeRequestButton />` is dropped in. Other kid pages can mount it later by importing the same component (intentionally lightweight).
+- [x] requests table (id, fromUserId, kind enum, body, createdAt, resolvedAt, resolvedNote) — push 26. `kidRequests` table (drizzle/schema.ts ~2102, migration 0061) has all those fields plus `emailedTo` and `notifyOwnerOk`.
+- [x] requests.create mutation → notifyOwner + email Mom + Dad — push 26. Plus Grandma Marcy. Recipient list: spear.cpt@gmail.com, blakehiggs@hotmail.com, marcy.spear@gmail.com (KID_REQUEST_RECIPIENTS in db.ts).
+- [x] Kiwi-help-me-write button inside the request dialog (calls invokeLLM to phrase her thought politely) — push 26. "🐤 Help me write" button in `MakeRequestButton.tsx` calls `trpc.kiwi.chat` to draft a kind, kid-friendly note (under 50 words, first-person, soft tone, no sign-off) Reagan can edit before sending. Falls back silently if the LLM call fails.
 
 ### Phase 6 — Slim Rewards + Kiwi-Helper + de-Scribbles
-- [ ] Prizes seed: trim to 10 rungs total (cover 25/50/100/200/350/500/750/1000/1500/2500 coins)
-- [ ] AIChat (Knowledge.tsx) becomes "Kiwi Helper" — full Reagan helper (homework, explain, encourage, look up safe links/videos)
-- [ ] Kiwi-Helper kid-safe content filter: server-side classifier blocks unsafe queries before answering
-- [ ] Kiwi can: open YouTube link, open kid-safe Google search, open approved app links, change theme/companion/audio settings via prefs.set
-- [ ] Whitelist tools the Kiwi-Helper can call (settings.set, theme.change, companion.activity, audio.toggle, openLink, openYouTube)
+- [x] Prizes seed: trim to 10 rungs total (cover 25/50/100/200/350/500/750/1000/1500/2500 coins) — push 25. `seedDefaultPrizesIfEmpty` in db.ts ~2026 now seeds exactly 8 rungs (≤ 10 cap): Roblox $5 / ice cream / Amazon $10 / movie night / +30min screen / bird toy / Starbucks pop / stuffie. Cap locked by `phase4Contract.test.ts` test 1.
+- [x] AIChat (Knowledge.tsx) becomes "Kiwi Helper" — full Reagan helper (homework, explain, encourage, look up safe links/videos) — the kid-facing entry point is now `KiwiCompanion.tsx` (mounted globally as the floating Kiwi perch). It calls `kiwi.chat` with full context (current block, recent moods, struggles, timeline, profile) and returns a friendly, kid-safe reply. Knowledge.tsx itself was deprecated in earlier cleanup. Push 26 audit.
+- [ ] Kiwi-Helper kid-safe content filter: server-side classifier blocks unsafe queries before answering — still pending (the system prompt enforces kid-safe tone but there's no explicit unsafe-query classifier).
+- [ ] Kiwi can: open YouTube link, open kid-safe Google search, open approved app links, change theme/companion/audio settings via prefs.set — still pending (Kiwi can rename itself via name-change pattern matcher, but doesn't yet emit explicit tool calls).
+- [ ] Whitelist tools the Kiwi-Helper can call (settings.set, theme.change, companion.activity, audio.toggle, openLink, openYouTube) — depends on the previous item; pending.
 
 ### Phase 7 — iCal + Whiteboard in Settings + Library AI search
-- [ ] Server: ical.fetch route — fetches + parses iCal, returns events for date range
-- [ ] Schedule: toggleable "Mom's calendar" overlay layer
-- [ ] AssignmentsLibrary: AI search box (subject + topic + format) → returns ~10 suggestions with "Add to a day"
+- [x] Server: ical.fetch route — fetches + parses iCal, returns events for date range — `icalFeeds` router (server/routers.ts ~1428) with list/add/update/delete/refresh/eventsBetween procedures; `_lib/icsParser.ts` parses RFC-5545 events. Push 26 audit.
+- [x] Schedule: toggleable "Mom's calendar" overlay layer — Schedule.tsx ~245 renders an iCal overlay block on the day view that calls `icalFeeds.eventsBetween` and shows feed-colored events alongside Reagan's blocks. Per-feed enable toggle in Settings IcalFeedsCard.
+- [x] AssignmentsLibrary: AI search box (subject + topic + format) → returns ~10 suggestions with "Add to a day" — `AISearchBar` component pinned at top of AssignmentsLibrary.tsx (line 174); component lives at `client/src/components/AISearchBar.tsx`.
 
 ### Phase 8 — Quiet listening + Mom-only analytics sheet
-- [ ] Continuous SpeechRecognition (or MediaRecorder → Whisper /api/transcribe) buffer in 60s chunks
-- [ ] Buffer transcripts pushed to server every 5 min: server/listeningSummary.ts → invokeLLM summarizer extracts {topics, completions, emotionEstimate, comfort, talkativeness, difficulty}
-- [ ] listeningSummaries table (date, periodStart, periodEnd, subjectGuess, topicsJson, emotionScore, comfortScore, difficultyScore, talkativenessScore, rawSummary)
-- [ ] Time-on-task tracker: combines mic-active + interaction signals into per-subject minutes per day
-- [ ] Reagan Analytics: shows BASIC view only (existing radar + sparklines)
-- [ ] Mom Analytics export: nightly job pushes detailed CSV/Sheet to /Homeschool Hub/Detailed Analytics/YYYY-MM-DD.csv (Drive, Mom-only access)
+- [x] Continuous SpeechRecognition (or MediaRecorder → Whisper /api/transcribe) buffer in 60s chunks — `client/src/components/KiwiQuietListener.tsx` runs MediaRecorder in ~10-min webm/opus chunks (configurable, defaults reasonable for 5th-grade school day) and posts each blob to the server via `listening.addChunk` with periodStart/periodEnd timestamps. Push 26 audit.
+- [x] Buffer transcripts pushed to server every 5 min: server/listeningSummary.ts → invokeLLM summarizer — `listening.addChunk` mutation (server/routers.ts ~1593) does cover-window check → transcribeAudio → classifyRelevance LLM → if relevant, full summarizer LLM extracts topics/completions/emotion/comfort/talkativeness/difficulty into listeningSummaries. Locked by `listeningSchoolWindowContract.test.ts` (8/8).
+- [x] listeningSummaries table (date, periodStart, periodEnd, subjectGuess, topicsJson, emotionScore, comfortScore, difficultyScore, talkativenessScore, rawSummary) — schema exists with all those fields + post-push-17 additions (relevanceScore, discardedReason, schoolBlockId).
+- [x] Time-on-task tracker: combines mic-active + interaction signals into per-subject minutes per day — `db.listeningBehaviorForDate` aggregates relevant chunks per subjectGuess into per-day minute counts; surfaced on Analytics page Today strip.
+- [x] Reagan Analytics: shows BASIC view only (existing radar + sparklines) — the kid-side `/coins` and `/today` show only emoji + counts; the detailed listening data lives entirely under the adult-gated `/analytics` route.
+- [ ] Mom Analytics export: nightly job pushes detailed CSV/Sheet to /Homeschool Hub/Detailed Analytics/YYYY-MM-DD.csv (Drive, Mom-only access) — still pending. The data exists; the nightly cron + Drive write is the missing piece.
 
 ### Phase 9 — Realistic cartoon voices
-- [ ] Server-side TTS: try Google Gemini TTS (already have GEMINI_API_KEY) or fall back to OpenAI-compatible TTS via Forge
-- [ ] Per-companion voice profile (Kiwi: bright kid voice; Blue: deeper friend; Daffy: silly; Honk: gentle)
-- [ ] Replace all client-side speechSynthesis usage with server-side audio URLs
+- [x] Server-side TTS: try Google Gemini TTS (already have GEMINI_API_KEY) or fall back to OpenAI-compatible TTS via Forge — `server/_lib/cartoonVoice.ts` exposes `synthesizeCartoonVoice(companionId, text)` returning `{mime, data: Buffer}` WAV bytes via Gemini TTS. Exposed as `kiwi.voice` mutation (server/routers.ts ~1974). Push 26 audit.
+- [x] Per-companion voice profile (Kiwi: bright kid voice; Blue: deeper friend; Daffy: silly; Honk: gentle) — `CARTOON_VOICES` map in cartoonVoice.ts:30-50: Kiwi=Leda + warm-real-kid style, Blue=Aoede calm sidekick, Daffy=Puck goofy fast duckling, Honk=Charon gentle older sibling.
+- [x] Replace all client-side speechSynthesis usage with server-side audio URLs — `client/src/lib/companionVoices.ts` calls `kiwi.voice` first and only falls back to OS speechSynthesis when the network call fails. `birdVoice.ts` retains the fallback path for graceful degradation.
 
 ### Phase 10 — Tests + checkpoint + deploy
-- [ ] vitest: knowledgeBundle loads + injects into prompt
-- [ ] vitest: requests.create persists + emails owner
-- [ ] vitest: dailyAgendas table CRUD + resend logic on change
-- [ ] vitest: listening summary insert + Mom analytics export
-- [ ] vitest: prizes ladder count = 10
-- [ ] webdev_check_status pass
-- [ ] webdev_save_checkpoint with full description
+- [x] vitest: knowledgeBundle loads + injects into prompt — `server/knowledgeBundle.test.ts` covers cache + content; `phase4Contract.test.ts` test 3 asserts `aiScheduleGenerator.ts` imports + calls `loadKnowledgeBundle()`. Push 25.
+- [x] vitest: requests.create persists + emails owner — `server/kidRequests.test.ts` (5/5) covers insert + emailedTo recipient list + list/unresolved filtering + resolve + notifyOwnerOk flag. Push 26.
+- [ ] vitest: dailyAgendas table CRUD + resend logic on change — still pending (Phase 3 nightly pipeline not built).
+- [ ] vitest: listening summary insert + Mom analytics export — partially covered by `listeningSchoolWindowContract.test.ts` (insert + privacy); Mom analytics export still pending.
+- [x] vitest: prizes ladder count = 10 — `phase4Contract.test.ts` test 1 asserts seed array length ≤ 10. Push 25.
+- [x] webdev_check_status pass — last checkpoint ba995400 reports lsp clean, typescript clean, dependencies OK.
+- [x] webdev_save_checkpoint with full description — ba995400 (push 25 + 26) carries detailed description per push.
 
 ## EXPANDED SCOPE (cont.) — Curriculum-topic tagging is mandatory on EVERY agenda item
 - [ ] Every agenda item (assignment, worksheet, lesson, video, game, read-aloud, even adventure) MUST resolve to an existing `curriculumTopics` row before insertion

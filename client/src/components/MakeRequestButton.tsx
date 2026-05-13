@@ -59,9 +59,10 @@ export function MakeRequestButton() {
     try {
       const seed = body.trim() || `I want to send my mom a note about ${KIND_OPTIONS.find(k => k.kind === kind)?.label?.toLowerCase()}.`;
       const res: any = await draft.mutateAsync({
-        message: `Help me write a short, kind, kid-friendly note to my mom (and family) about: ${seed}\n\nKeep it under 50 words. First-person, soft tone. No sign-off.`,
+        userMessage: `Help me write a short, kind, kid-friendly note to my mom (and family) about: ${seed}\n\nKeep it under 50 words. First-person, soft tone. No sign-off.`,
+        adultPresent: false,
       } as any);
-      const text = (res?.reply ?? res?.text ?? "").toString().trim();
+      const text = (res?.reply ?? res?.text ?? res?.assistant ?? res?.answer ?? "").toString().trim();
       if (text) setBody(text);
     } catch {
       // Keep silent; Reagan can just type it herself.
