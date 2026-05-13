@@ -1,4 +1,5 @@
 import { trpc } from "@/lib/trpc";
+import { MakeRequestButton } from "@/components/MakeRequestButton";
 import { popConfettiFromElement } from "@/lib/confetti";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -293,18 +294,9 @@ export default function Today() {
             >
               Ask {companionName}
             </Button>
-            {/* Print today — opens the adult-gated DailyPacket page (full schedule + every
-                worksheet for the day) and any modern browser will let Mom hit Cmd/Ctrl+P
-                from there. We keep this lightweight so the homepage stays uncluttered. */}
-            <Button
-              onClick={() => { window.location.href = "/packet"; }}
-              size="lg"
-              variant="outline"
-              className="rounded-full bg-card font-display text-base px-5 py-6"
-              title="Open the printable Daily Packet (schedule + worksheets)"
-            >
-              🖨️ Print today
-            </Button>
+            {/* Make a request — push 26. Reagan can fire a kid-friendly note to
+                Mom + Dad + Grandma from any kid page. See MakeRequestButton.tsx. */}
+            <MakeRequestButton />
             {/* Practice for Coins — extra credit hub. Reagan can do short Khan/IXL/BrainPOP
                 drills outside school hours and earn capped Kiwi Coins. */}
             <Button

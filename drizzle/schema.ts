@@ -2099,3 +2099,33 @@ export const dailyRecapRequests = mysqlTable("dailyRecapRequests", {
 });
 export type DailyRecapRequest = typeof dailyRecapRequests.$inferSelect;
 export type InsertDailyRecapRequest = typeof dailyRecapRequests.$inferInsert;
+
+/* -------------------------------------------------------------------------- */
+/*  KID REQUESTS — Reagan can send a note to her adults from any kid page.    */
+/*  Push 26 (2026-05-12).                                                     */
+/* -------------------------------------------------------------------------- */
+/**
+ * A request Reagan sent to her adults via the "Make a request" floating
+ * button on Today. On insert the server emits notifyOwner + emails Mom,
+ * Dad, and Grandma so they can read it on the go. Adults can resolve the
+ * request from the Settings panel; resolvedNote is what they wrote back.
+ */
+export const kidRequests = mysqlTable("kidRequests", {
+  id: int("id").autoincrement().primaryKey(),
+  fromUserId: int("from_user_id"),                  // null if Reagan-as-default user
+  body: text("body").notNull(),
+  kind: mysqlEnum("kind", [
+    "general",       // anything Reagan wants
+    "schedule",      // something about today/tomorrow
+    "stuck",         // homework/help request
+    "feeling",       // emotional check-in
+  ]).notNull().default("general"),
+  createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  resolvedAt: bigint("resolved_at", { mode: "number" }),
+  resolvedByUserId: int("resolved_by_user_id"),
+  resolvedNote: text("resolved_note"),
+  emailedTo: varchar("emailed_to", { length: 480 }), // comma-joined recipient list
+  notifyOwnerOk: boolean("notify_owner_ok").notNull().default(false),
+});
+export type KidRequest = typeof kidRequests.$inferSelect;
+export type InsertKidRequest = typeof kidRequests.$inferInsert;

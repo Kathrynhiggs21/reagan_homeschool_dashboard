@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `kidRequests` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`from_user_id` int,\n\t`body` text NOT NULL,\n\t`kind` enum('general','schedule','stuck','feeling') NOT NULL DEFAULT 'general',\n\t`created_at` bigint NOT NULL,\n\t`resolved_at` bigint,\n\t`resolved_by_user_id` int,\n\t`resolved_note` text,\n\t`emailed_to` varchar(480),\n\t`notify_owner_ok` boolean NOT NULL DEFAULT false,\n\tCONSTRAINT `kidRequests_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute CREATE TABLE `kidRequests` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`from_user_id` int,\n\t`body` text NOT NULL,\n\t`kind` enum('general','schedule','stuck','feeling') NOT NULL DEFAULT 'general',\n\t`created_at` bigint NOT NULL,\n\t`resolved_at` bigint,\n\t`resolved_by_user_id` int,\n\t`resolved_note` text,\n\t`emailed_to` varchar(480),\n\t`notify_owner_ok` boolean NOT NULL DEFAULT false,\n\tCONSTRAINT `kidRequests_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 682
+}

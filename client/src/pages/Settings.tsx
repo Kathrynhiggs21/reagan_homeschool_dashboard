@@ -63,7 +63,8 @@ export default function Settings() {
           <RewardsManagerCard />
         </TabsContent>
 
-        <TabsContent value="requests">
+        <TabsContent value="requests" className="space-y-4">
+          <KidRequestsCard />
           <RequestsInboxCard />
         </TabsContent>
 
@@ -235,6 +236,67 @@ function AdultPasscodeCard() {
         >
           Update
         </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+/**
+ * KidRequestsCard — push 26 (2026-05-12)
+ * Inbox for the new "Make a request" button on Today. Shows unresolved
+ * requests Reagan sent. Adults can mark them resolved with an optional note.
+ */
+function KidRequestsCard() {
+  const list = (trpc as any).kidRequests?.list?.useQuery?.({ includeResolved: false, limit: 50 })
+    ?? { data: [], isLoading: false };
+  const utils = trpc.useUtils();
+  const resolve = (trpc as any).kidRequests?.resolve?.useMutation?.({
+    onSuccess: () => {
+      toast.success("Marked resolved.");
+      (utils as any).kidRequests?.list?.invalidate?.();
+      (utils as any).kidRequests?.unresolvedCount?.invalidate?.();
+    },
+  }) ?? { mutate: () => {} };
+  const items: Array<{ id: number; kind: string; body: string; createdAt: number; emailedTo?: string | null }> = list.data ?? [];
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Notes from Reagan {items.length > 0 && <Badge className="ml-2">{items.length}</Badge>}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {list.isLoading ? (
+          <div className="text-muted-foreground text-sm py-6 text-center">Loading…</div>
+        ) : items.length === 0 ? (
+          <div className="text-muted-foreground text-sm py-6 text-center">
+            Nothing right now — if Reagan presses "Make a request" on Today, it shows here.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {items.map((r) => (
+              <div key={r.id} className="border rounded-lg p-3 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <Badge variant="outline" className="capitalize">{r.kind}</Badge>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(r.createdAt).toLocaleString()}
+                  </span>
+                </div>
+                <div className="text-sm whitespace-pre-wrap">{r.body}</div>
+                {r.emailedTo && (
+                  <div className="text-[11px] text-muted-foreground">Sent to: {r.emailedTo}</div>
+                )}
+                <div className="flex justify-end">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => (resolve as any).mutate({ id: r.id })}
+                  >
+                    Mark resolved
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

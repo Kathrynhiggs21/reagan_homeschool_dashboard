@@ -23,6 +23,7 @@ import {
   actualAgendaEntries, type ActualAgendaEntry, type InsertActualAgendaEntry,
   topicsCoveredOffPlan, type InsertTopicCoveredOffPlan,
   dailyRecapRequests, type DailyRecapRequest, type InsertDailyRecapRequest,
+  kidRequests, type KidRequest,
 } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -6546,4 +6547,71 @@ export async function listPendingRecapRequests(limit = 50): Promise<DailyRecapRe
     .where(eq(dailyRecapRequests.status, "sent"))
     .orderBy(asc(dailyRecapRequests.sentAt))
     .limit(limit)) as DailyRecapRequest[];
+}
+
+
+/* -------------------------------------------------------------------------- */
+/*  KID REQUESTS — push 26 (2026-05-12)                                       */
+/* -------------------------------------------------------------------------- */
+/**
+ * Recipient list for any "Reagan made a request" email. Wired here as
+ * a single source of truth so future SMTP integration is one line.
+ * Mom, Dad, Grandma Marcy.
+ */
+export const KID_REQUEST_RECIPIENTS = [
+  "spear.cpt@gmail.com",     // Mom
+  "blakehiggs@hotmail.com",  // Dad
+  "marcy.spear@gmail.com",   // Grandma Marcy
+] as const;
+
+export async function createKidRequest(input: {
+  body: string;
+  kind: "general" | "schedule" | "stuck" | "feeling";
+  fromUserId: number | null;
+}): Promise<{ id: number; emailedTo: string; notifyOwnerOk: boolean }> {
+  const db = getDb();
+  const emailedTo = KID_REQUEST_RECIPIENTS.join(",");
+  const [res]: any = await db.insert(kidRequests).values({
+    fromUserId: input.fromUserId,
+    body: input.body,
+    kind: input.kind,
+    createdAt: Date.now(),
+    emailedTo,
+    notifyOwnerOk: false, // server flips this after notifyOwner returns true
+  } as any);
+  const id = (res as any)?.insertId as number;
+  return { id, emailedTo, notifyOwnerOk: false };
+}
+
+export async function listKidRequests(includeResolved = false, limit = 50): Promise<KidRequest[]> {
+  const db = getDb();
+  const rows: any = includeResolved
+    ? await db.select().from(kidRequests).orderBy(desc(kidRequests.createdAt)).limit(limit)
+    : await db.select().from(kidRequests).where(isNull(kidRequests.resolvedAt)).orderBy(desc(kidRequests.createdAt)).limit(limit);
+  return rows as KidRequest[];
+}
+
+export async function countUnresolvedKidRequests(): Promise<number> {
+  const db = getDb();
+  const rows: any = await db.select().from(kidRequests).where(isNull(kidRequests.resolvedAt));
+  return (rows as any[]).length;
+}
+
+export async function resolveKidRequest(
+  id: number,
+  resolvedByUserId: number | null,
+  note?: string
+): Promise<{ resolved: boolean }> {
+  const db = getDb();
+  await db.update(kidRequests).set({
+    resolvedAt: Date.now(),
+    resolvedByUserId,
+    resolvedNote: note ?? null,
+  } as any).where(eq(kidRequests.id, id));
+  return { resolved: true };
+}
+
+export async function markKidRequestNotified(id: number, ok: boolean): Promise<void> {
+  const db = getDb();
+  await db.update(kidRequests).set({ notifyOwnerOk: ok } as any).where(eq(kidRequests.id, id));
 }

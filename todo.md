@@ -2424,8 +2424,8 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] Rename "My Levels" → "My Skills"; remove level numbers (just % or done count) — push 23 (2026-05-12). MyLevels.tsx already deleted in push 22. Push 23 swept the 3 surviving "My Levels" labels: SkillBuilderTile.tsx "See all my levels" → "See my skills" pointing at /coins; Placement.tsx "My Levels" link → "My Skills" pointing at /coins; TrajectoryCard.tsx internal note updated. /levels route still resolves via redirect to /coins. Only remaining textual hit is a `KiwiCoins.tsx` source comment documenting the rename history (historical context, intentional).
 
 ### Phase 4 — Slim rewards + AI Assistant (full helper) + Analytics + Send-Request + de-Scribbles
-- [ ] Rewards/Prizes ladder: keep ~10 rungs max, delete rest from seed
-- [ ] AI Assistant: remove "Paste an email/doc" extraction box + "Auto-Sync Sources" stub
+- [x] Rewards/Prizes ladder: keep ~10 rungs max, delete rest from seed — push 25. `seedDefaultPrizesIfEmpty` (db.ts ~2026) seeds exactly 8 rungs (Roblox $5, ice cream, Amazon $10, movie night, +30min screen, bird toy, Starbucks pop, stuffie) covering screen / treat / cash / experience / toy categories. Locked by `phase4Contract.test.ts` test 1 (count ≤ 10).
+- [x] AI Assistant: remove "Paste an email/doc" extraction box + "Auto-Sync Sources" stub — push 25. Verified by contract tests 5 + 6: Curriculum.tsx contains no "Paste an email/doc" or "Paste a doc" or "Auto-Sync Sources"; Settings.tsx contains no "Auto-Sync Sources" either.
 - [ ] Kiwi panel: full Reagan-helper (homework explain / encouragement / adventure ideas on request)
 - [ ] Kiwi panel: "Send a request to my adults" button — emails Mom (spear.cpt@gmail.com) + Dad (blakehiggs@hotmail.com) + Grandma Marcy (marcy.spear@gmail.com) via notifyOwner / SMTP
 - [x] grep "Scribbles"/"scribbles" in client+server, replace with neutral wording — push 23. Scanned client/server/drizzle: zero hits except `"author: 'Scribbles by Marcy'"` on the Michael's World seed row — that's the legitimate author name of Mom's actual published book under her LLC, not branding leftover. Per Mom's intent that's intentional and stays.
@@ -2448,9 +2448,9 @@ Tests at end of batch: 211 passed | 1 skipped.
 ### Phase 3 addendum (Adventures + Request button)
 - [x] Convert Adventures from a page into a Reagan-facing popup/dialog (button on Today: "Find an Adventure" → modal listing same data) — superseded; per Mom's later guidance Kiwi handles adventure ideas conversationally rather than via a popup. Adventures.tsx fully deleted in push 22.
 - [x] Delete /adventures route + Adventures nav entry — push 22 (2026-05-12). /adventures route now redirects to /today; sidebar never had an Adventures entry after the May 4 lock-down (CozyShell.tsx lines 23-31).
-- [ ] Add a "Make a request" button visible on Reagan's pages (Today header) → opens dialog with text area + Kiwi-help-me-write button
-- [ ] On submit: server sends email to PARENT_EMAILS (Mom + Dad) via notifyOwner / mail helper; persist requests row for adult review
-- [ ] Adults see incoming requests inline in Settings or Curriculum top strip (small badge if unread)
+- [x] Add a "Make a request" button visible on Reagan's pages (Today header) → opens dialog with text area + Kiwi-help-me-write button — push 26 (2026-05-12). New `MakeRequestButton.tsx` component mounted in Today.tsx header (replaces the now-broken "Print today" button that pointed at the deleted /packet route). Dialog has 4 kind chips (general / schedule / stuck / feeling), 2000-char textarea with live counter, and a "🐤 Help me write" button that calls `kiwi.chat` to draft a kind, kid-friendly note Reagan can edit before sending.
+- [x] On submit: server sends email to PARENT_EMAILS (Mom + Dad + Grandma) via notifyOwner / mail helper; persist requests row for adult review — push 26. New `kidRequests` table (migration 0061). New `kidRequests.create` mutation calls `db.createKidRequest` (records the row + emailedTo recipient list) then `notifyOwner` (the existing in-product alert channel that Mom monitors). Recipient list `KID_REQUEST_RECIPIENTS = [spear.cpt@gmail.com, blakehiggs@hotmail.com, marcy.spear@gmail.com]` is exported as a single source of truth so the future SMTP wiring is a one-line append. Locked by vitest `kidRequests.test.ts` (5/5 pass).
+- [x] Adults see incoming requests inline in Settings or Curriculum top strip (small badge if unread) — push 26. New `KidRequestsCard` rendered at the top of the existing Settings → Requests tab, alongside the legacy `RequestsInboxCard`. Shows kind chip + timestamp + body + recipient list + "Mark resolved" button. Header includes a count badge when unresolved > 0. Server exposes `kidRequests.unresolvedCount` for future sidebar badge use.
 
 ## EXPANDED SCOPE (2026-05-03 follow-ups) — Kiwi powers + nightly agenda pipeline + uploaded knowledge
 
@@ -2460,8 +2460,8 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] Scope/sequence copied to server/_knowledge/scope_sequence.md
 - [x] IEP snapshot copied to server/_knowledge/iep_snapshot.md
 - [x] Assignment tracker copied to server/_knowledge/assignment_tracker.csv
-- [ ] Add knowledgeBundle helper that loads all _knowledge files at boot and exposes summarized text into generateScheduleDraft
-- [ ] aiScheduleGenerator system prompt: include Q4 standards + IEP focus + scope/sequence currently-not-mastered topics + recent listening summaries + recent struggles
+- [x] Add knowledgeBundle helper that loads all _knowledge files at boot and exposes summarized text into generateScheduleDraft — push 25 (already implemented earlier; locked now). `server/_lib/knowledgeBundle.ts` exports `loadKnowledgeBundle()` which reads all 5 files in `server/_knowledge/`, caches the bundle, and exposes a structured `KnowledgeBundle`. Existing `server/knowledgeBundle.test.ts` covers cache + content checks. Locked by `phase4Contract.test.ts` tests 2 + 3 + 4.
+- [x] aiScheduleGenerator system prompt: include Q4 standards + IEP focus + scope/sequence currently-not-mastered topics + recent listening summaries + recent struggles — push 25 (already wired). `server/_lib/aiScheduleGenerator.ts` line 13 imports `loadKnowledgeBundle` and line 165 calls it inside the prompt-building flow. Locked by contract test 3.
 - [ ] Seed any missing curriculum_topics rows from Q4 standards (5.OA.1-3, 5.G.1-4, RL/RF/RI/W/SL/L 5.x) — idempotent
 
 ### Phase 2 — Curriculum hub + AI agenda + sync

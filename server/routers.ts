@@ -2418,6 +2418,38 @@ export const appRouter = router({
     reparent: publicProcedure.input(z.object({ id: z.number(), parentId: z.number().nullable() })).mutation(({ input }) => db.updateNeedsWork(input.id, { parentId: input.parentId } as any)),
   }),
 
+  /* =================== KID REQUESTS — push 26 =================== */
+  /* Reagan can fire a small note to her adults from any kid page. The
+     server emits notifyOwner + emails Mom/Dad/Grandma so they can read it
+     on the go. Adults can mark resolved from Settings. */
+  kidRequests: router({
+    create: publicProcedure.input(z.object({
+      body: z.string().min(1).max(2000),
+      kind: z.enum(["general","schedule","stuck","feeling"]).default("general"),
+    })).mutation(async ({ input, ctx }) => {
+      const userId = (ctx as any).user?.id ?? null;
+      const { id, emailedTo, notifyOwnerOk } = await db.createKidRequest({
+        body: input.body,
+        kind: input.kind,
+        fromUserId: userId,
+      });
+      // Best-effort owner notification (notifyOwner already returns bool).
+      const title = `Reagan sent a request (${input.kind})`;
+      const content = input.body.length > 800 ? input.body.slice(0, 800) + "…" : input.body;
+      try { await notifyOwner({ title, content }); } catch {}
+      return { id, emailedTo, notifyOwnerOk };
+    }),
+    list: familyAdminProcedure.input(z.object({
+      includeResolved: z.boolean().default(false),
+      limit: z.number().min(1).max(200).default(50),
+    }).optional()).query(({ input }) => db.listKidRequests(input?.includeResolved ?? false, input?.limit ?? 50)),
+    unresolvedCount: familyAdminProcedure.query(() => db.countUnresolvedKidRequests()),
+    resolve: familyAdminProcedure.input(z.object({
+      id: z.number(),
+      note: z.string().max(2000).optional(),
+    })).mutation(({ input, ctx }) => db.resolveKidRequest(input.id, (ctx as any).user?.id ?? null, input.note)),
+  }),
+
   /* =================== BLOCK GRADES =================== */
   grades: router({
     get: publicProcedure.input(z.object({ blockId: z.number() })).query(({ input }) => db.getBlockGrade(input.blockId)),

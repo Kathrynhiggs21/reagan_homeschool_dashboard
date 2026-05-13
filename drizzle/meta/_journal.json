@@ -428,6 +428,13 @@
       "when": 1778623921699,
       "tag": "0060_good_squadron_sinister",
       "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "5",
+      "when": 1778644572200,
+      "tag": "0061_bumpy_zaran",
+      "breakpoints": true
     }
   ]
 }
