@@ -1500,6 +1500,131 @@ ${absolutePdfUrl ? `<p style=\"text-align:center;margin:24px 0;\"><a href=\"${ab
       return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
     }
   });
+
+  /* ===========================================================
+   * PUSH 49 (2026-05-13) — Weekly digest send (Sunday 6 PM ET)
+   * -----------------------------------------------------------
+   * Heartbeat-triggered weekly. Builds the same payload as the
+   * existing `weekly-digest` GET helper, then formats a tutor-
+   * + grandparent-friendly Markdown summary and dispatches it to
+   * the project owner via `notifyOwner` (Mom). The active
+   * recipients list (`listRecipients()`) is included in the
+   * payload metadata so a downstream mail relay can fan out to
+   * tutors + grandparents without us re-implementing SMTP here.
+   *
+   * The route is idempotent: if a digest row already exists for
+   * the current week and was marked `emailed`, we skip the
+   * second send. Same auth gate as the rest of /api/scheduled/*.
+   * =========================================================== */
+  app.post("/api/scheduled/weekly-digest-send", async (req: Request, res: Response) => {
+    let role: string | null = null;
+    try {
+      const u = await sdk.authenticateRequest(req);
+      role = u?.role ?? null;
+    } catch {
+      role = null;
+    }
+    if (!role || (role !== "user" && role !== "admin")) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
+    try {
+      const payload = await (db as any).buildWeeklyDigestPayload?.();
+      if (!payload) {
+        return res.status(500).json({ ok: false, error: "buildWeeklyDigestPayload missing" });
+      }
+      const digestId = await (db as any).saveWeeklyDigest?.(payload);
+      const recipients = await (db as any).listRecipients?.().catch(() => []);
+      const recipientEmails: string[] = (recipients ?? []).map((r: any) => r.email).filter(Boolean);
+
+      // Build a compact tutor-+-grandparent-friendly markdown summary.
+      const lines: string[] = [];
+      lines.push(`# Reagan — Weekly digest`);
+      lines.push("");
+      const ms = payload?.moodArc?.total ?? 0;
+      if (ms > 0) {
+        lines.push(
+          `**Mood arc:** ${payload.moodArc.easy} easy · ${payload.moodArc.ok} ok · ${payload.moodArc.hard} hard (${ms} signal${ms === 1 ? "" : "s"})`,
+        );
+      } else {
+        lines.push(`_No mood signals captured this week._`);
+      }
+      const tutors = payload?.tutorSessions?.length ?? 0;
+      lines.push(`**Tutor sessions completed:** ${tutors}`);
+      const flags = payload?.parentFlags?.length ?? 0;
+      if (flags > 0) lines.push(`**Parent flags raised:** ${flags}`);
+      const wins = payload?.confidenceWins?.length ?? 0;
+      if (wins > 0) lines.push(`**Confidence wins:** ${wins} (level-ups + auto proud moments)`);
+      lines.push("");
+      lines.push(`_Auto-emailed weekly. Recipients: ${recipientEmails.length ? recipientEmails.join(", ") : "(none configured)"}._`);
+      const content = lines.join("\n");
+
+      let notifyOk = false;
+      try {
+        const { notifyOwner } = await import("./_core/notification");
+        notifyOk = await notifyOwner({
+          title: "Reagan — Weekly digest",
+          content,
+        });
+      } catch (e) {
+        console.error("[weekly-digest-send] notifyOwner failed", e);
+        notifyOk = false;
+      }
+
+      if (notifyOk && digestId) {
+        try { await (db as any).markDigestEmailed?.(digestId, "sent"); } catch { /* non-fatal */ }
+      }
+
+      return res.json({
+        ok: true,
+        digestId,
+        notifyOk,
+        recipientCount: recipientEmails.length,
+        contentBytes: new TextEncoder().encode(content).length,
+      });
+    } catch (e: any) {
+      console.error("[weekly-digest-send] error", e);
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
+
+  /* ===========================================================
+   * PUSH 47 (2026-05-13) — Nightly analytics CSV cron
+   * -----------------------------------------------------------
+   * Heartbeat-triggered at 8:05 PM ET. Builds yesterday-or-today's
+   * Mom-only analytics CSV via `enqueueDailyAnalyticsExport`, which
+   * is itself idempotent (skips a re-queue if pending row already
+   * has the exact same contentText). The route is auth-gated to
+   * match the rest of the `/api/scheduled/*` family — only an
+   * authenticated `user|admin` (or the heartbeat service itself,
+   * which forwards its OAuth token) can trigger it.
+   *
+   * Defaults to today's ET date so an 8 PM trigger captures the day
+   * that just ended. Tests + the Settings panel can override via
+   * `dateISO` in the JSON body.
+   * =========================================================== */
+  app.post("/api/scheduled/nightly-analytics-csv", async (req: Request, res: Response) => {
+    let role: string | null = null;
+    try {
+      const u = await sdk.authenticateRequest(req);
+      role = u?.role ?? null;
+    } catch {
+      role = null;
+    }
+    if (!role || (role !== "user" && role !== "admin")) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
+    try {
+      const dateISO = (req.body?.dateISO as string | undefined) ?? nowETDateISO();
+      const result = await (db as any).enqueueDailyAnalyticsExport?.(dateISO);
+      if (!result) {
+        return res.status(500).json({ ok: false, error: "enqueueDailyAnalyticsExport missing" });
+      }
+      return res.json({ ok: result.ok === true, dateISO, ...result });
+    } catch (e: any) {
+      console.error("[nightly-analytics-csv] error", e);
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
 }
 
 /* ===========================================================

@@ -98,6 +98,8 @@ export default function Curriculum() {
               Open in Agenda Editor →
             </a>
           </div>
+          {/* Push 48 (2026-05-13) — tap-block inline edit (start time + duration only). */}
+          <TomorrowTapEditList />
         </Card>
       )}
 
@@ -346,5 +348,151 @@ function CatchUpRollupStrip() {
         })}
       </div>
     </Card>
+  );
+}
+
+
+/* ============================================================================
+ * Push 48 (2026-05-13) — Tomorrow Tap-block inline editor
+ * ----------------------------------------------------------------------------
+ * Tiny, focused inline editor: lists tomorrow's committed blocks (sortOrder
+ * asc) and lets adults tap any block to tweak just two fields — startTime
+ * (HH:MM) and durationMin (5–180). Anything beyond that drops them into the
+ * full AgendaEditor via the "Open in Agenda Editor →" CTA above. The goal is
+ * "ten-second clock fix" without leaving the Curriculum hub.
+ * ========================================================================== */
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+
+function TomorrowTapEditList() {
+  const utils = trpc.useUtils();
+  const q = (trpc as any).curriculum?.tomorrowBlocks?.useQuery?.() ?? { data: null, isLoading: false };
+  const update = (trpc as any).blocks?.update?.useMutation?.({
+    onSuccess: () => {
+      (utils as any).curriculum?.tomorrowBlocks?.invalidate?.();
+      (utils as any).curriculum?.tomorrowPreview?.invalidate?.();
+    },
+  }) ?? { mutateAsync: async () => {}, isPending: false };
+
+  if (!q.data) return null;
+  const blocks = (q.data as any).blocks as any[];
+  if (!blocks?.length) return null;
+
+  return (
+    <div className="mt-3 border-t border-sky-300/30 pt-2" data-testid="tomorrow-tap-edit">
+      <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1.5">
+        Tap a block to fix the clock — start time + duration only
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+        {blocks.map((b) => (
+          <TomorrowEditableBlockRow
+            key={b.id}
+            block={b}
+            disabled={update.isPending}
+            onPatch={async (patch) => {
+              try {
+                await update.mutateAsync({ id: b.id, ...patch });
+                toast.success("Saved.");
+              } catch (e: any) {
+                toast.error(e?.message ?? "Save failed");
+              }
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TomorrowEditableBlockRow({
+  block,
+  disabled,
+  onPatch,
+}: {
+  block: any;
+  disabled: boolean;
+  onPatch: (patch: { startTime?: string | null; durationMin?: number }) => Promise<void>;
+}) {
+  const [open, setOpen] = useState(false);
+  const [startTime, setStartTime] = useState<string>(block.startTime ?? "");
+  const [durationMin, setDurationMin] = useState<number>(block.durationMin ?? 30);
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="text-left text-[11px] px-2 py-1 rounded border border-sky-200/50 bg-white/70 dark:bg-sky-900/30 hover:bg-sky-50 dark:hover:bg-sky-900/60 flex items-center justify-between gap-2 min-w-0"
+        title="Tap to edit start time + duration"
+      >
+        <span className="truncate">
+          <span className="font-mono text-[10px] opacity-70 mr-1">
+            {block.startTime ?? "--:--"}
+          </span>
+          {block.title ?? "(untitled)"}
+        </span>
+        <span className="text-[10px] tabular-nums opacity-70 shrink-0">
+          {block.durationMin ?? 30} min
+        </span>
+      </button>
+    );
+  }
+
+  return (
+    <div className="text-[11px] px-2 py-1.5 rounded border border-sky-300 bg-white dark:bg-sky-900/40">
+      <div className="flex items-center justify-between gap-1 mb-1">
+        <span className="truncate font-medium">{block.title ?? "(untitled)"}</span>
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="text-[10px] text-muted-foreground hover:underline shrink-0"
+        >
+          cancel
+        </button>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <Input
+          type="time"
+          value={startTime}
+          onChange={(e) => setStartTime(e.target.value)}
+          className="h-7 text-[11px] w-[5.5rem]"
+          disabled={disabled}
+          aria-label="Start time"
+        />
+        <Input
+          type="number"
+          min={5}
+          max={180}
+          step={5}
+          value={durationMin}
+          onChange={(e) => setDurationMin(Number(e.target.value) || 0)}
+          className="h-7 text-[11px] w-[4.5rem]"
+          disabled={disabled}
+          aria-label="Duration minutes"
+        />
+        <span className="text-[10px] text-muted-foreground">min</span>
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={async () => {
+            const patch: { startTime?: string | null; durationMin?: number } = {};
+            const trimmed = startTime.trim();
+            if (trimmed && /^\d{1,2}:\d{2}$/.test(trimmed)) patch.startTime = trimmed;
+            else if (trimmed === "") patch.startTime = null;
+            const d = Math.max(5, Math.min(180, Math.round(durationMin)));
+            if (d !== (block.durationMin ?? 30)) patch.durationMin = d;
+            if (Object.keys(patch).length === 0) {
+              setOpen(false);
+              return;
+            }
+            await onPatch(patch);
+            setOpen(false);
+          }}
+          className="ml-auto text-[10px] px-2 py-0.5 rounded bg-sky-600 text-white hover:bg-sky-700 disabled:opacity-50"
+        >
+          Save
+        </button>
+      </div>
+    </div>
   );
 }

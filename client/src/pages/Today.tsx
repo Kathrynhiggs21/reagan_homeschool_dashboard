@@ -26,6 +26,8 @@ import CurriculumChip from "@/components/CurriculumChip";
 import TopicLabel from "@/components/TopicLabel";
 import GameBreakCard from "@/components/GameBreakCard";
 import HomeAnalyticsStrip from "@/components/HomeAnalyticsStrip";
+// Push 50 (2026-05-13) — Post-block feedback chips for Reagan.
+import FeedbackChips from "@/components/FeedbackChips";
 import AIScheduleGeneratorCard from "@/components/AIScheduleGeneratorCard";
 import BrainBreakTvBox from "@/components/BrainBreakTvBox";
 import MascotGreeting from "@/components/MascotGreeting";
@@ -100,6 +102,14 @@ export default function Today() {
   const struggleM = trpc.struggles.log.useMutation({ onSuccess: () => toast.success("Logged.") });
   const moodM = trpc.mood.log.useMutation({ onSuccess: () => toast.success("Got it.") });
   const completeM = trpc.blocks.complete.useMutation();
+  /**
+   * Push 50 (2026-05-13) — When Reagan self-completes a block, surface the
+   * FeedbackChips card in an inline dialog so she can tap easy/ok/hard,
+   * what helped, time felt, and "want a break" without leaving Today.
+   * Adults grading via the family-admin proc DON'T see chips (already in
+   * the GradeBlockDialog flow).
+   */
+  const [feedbackForBlockId, setFeedbackForBlockId] = useState<number | null>(null);
   // Push 43 (2026-05-13) — Reagan self-completes her own block.
   // Used when the adult area is locked; adult-unlocked sessions still use
   // blocks.complete so the audit log captures the grading adult.
@@ -757,7 +767,15 @@ export default function Today() {
                     // Push 43 — if adult is unlocked, use the family-admin
                     // procedure (records adult as completer for grading).
                     // Otherwise Reagan herself marks via selfComplete.
-                    const onDone = { onSuccess: () => { toast.success("Done!"); celebrateKiwi("Yay! 🎉 +1 sticker!"); utils.plans.today.invalidate(); } };
+                    const onDone = {
+                      onSuccess: () => {
+                        toast.success("Done!");
+                        celebrateKiwi("Yay! 🎉 +1 sticker!");
+                        utils.plans.today.invalidate();
+                        // Push 50 — only show chips to Reagan (not adults grading)
+                        if (!unlocked) setFeedbackForBlockId(b.id);
+                      },
+                    };
                     if (unlocked) {
                       completeM.mutate({ id: b.id }, onDone);
                     } else if (selfCompleteM) {
@@ -1027,6 +1045,22 @@ export default function Today() {
           setTourOpen(false);
         }}
       />
+      {/* Push 50 (2026-05-13) — Reagan post-block feedback chips dialog. */}
+      <Dialog
+        open={feedbackForBlockId !== null}
+        onOpenChange={(o) => { if (!o) setFeedbackForBlockId(null); }}
+      >
+        <DialogContent className="max-w-md p-0 bg-transparent border-0 shadow-none">
+          <DialogHeader className="sr-only">
+            <DialogTitle>How did that feel?</DialogTitle>
+          </DialogHeader>
+          {feedbackForBlockId !== null && (
+            <FeedbackChips
+              onDone={() => setFeedbackForBlockId(null)}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

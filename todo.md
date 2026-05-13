@@ -2744,3 +2744,7 @@ shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
 - [x] Push 44 — Kiwi-listened provenance badge on actual entries (Today chips, Today quick-entry recent list, Schedule day-view chips)
 - [x] Push 45 — Catch-up engine (db.getCatchUpRollup + catchUpTrafficLightForPct, curriculum.catchUp router, CatchUpRollupStrip card above the AI agenda sync strip)
 - [x] Push 46 — Settings → Daily Recap panel (db.getDailyRecapPrefs/setDailyRecapPrefs/formatDailyRecapHtml/previewDailyRecap, dailyRecap router with get/set/preview, Settings Recap tab + DailyRecapCard + live iframe preview)
+- [x] Push 47 — Nightly analytics CSV cron (POST /api/scheduled/nightly-analytics-csv at 8:05 PM ET via heartbeat task_uid icwsfujzs3L7gpWtRsCF2K → enqueueDailyAnalyticsExport)
+- [x] Push 48 — Curriculum hub Tap-block inline edit (curriculum.tomorrowBlocks query + TomorrowTapEditList with startTime + durationMin only, clamped 5..180)
+- [x] Push 49 — Weekly digest send endpoint (POST /api/scheduled/weekly-digest-send Sundays 6 PM ET via heartbeat task_uid 8uQSo9vBNbEiCDCpWhWFmu, builds payload + saves row + notifyOwner with recipient list)
+- [x] Push 50 — Reagan post-block feedback chips dialog (reuses existing FeedbackChips component; Today triggers it only on Reagan-side selfComplete, not adult grading; captures feltIt/whatHelped/timeFelt/wantedBreak via feedback.record)

@@ -60,7 +60,7 @@ describe("Reagan self-mark-complete — push 43", () => {
   it("Today checkmark routes to selfComplete when locked, complete when unlocked", () => {
     const idx = todaySrc.indexOf("Push 43 — if adult is unlocked");
     expect(idx).toBeGreaterThan(0);
-    const slice = todaySrc.slice(idx, idx + 800);
+    const slice = todaySrc.slice(idx, idx + 1800);
     expect(slice).toContain("if (unlocked) {");
     expect(slice).toContain("completeM.mutate({ id: b.id }, onDone);");
     expect(slice).toContain("selfCompleteM.mutate({ id: b.id }, onDone);");

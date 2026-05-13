@@ -3698,6 +3698,25 @@ export const appRouter = router({
      */
     tomorrowPreview: protectedProcedure.query(() => db.getTomorrowDraftPreview()),
     /**
+     * Push 48 (2026-05-13) — Tomorrow's full block list (sorted), used by
+     * the Curriculum hub's tap-block inline editor. Returns the same
+     * shape as `blocks.list` so we can reuse the patch payload for
+     * `blocks.update`. Read-only.
+     */
+    tomorrowBlocks: protectedProcedure.query(async () => {
+      const preview = await db.getTomorrowDraftPreview();
+      if (!preview.planExists || preview.blockCount === 0) {
+        return { dateISO: preview.dateISO, blocks: [] as any[] };
+      }
+      const plan = await db.getPlanByDate(preview.dateISO);
+      if (!plan) return { dateISO: preview.dateISO, blocks: [] as any[] };
+      const blocks = (await db.listBlocksForPlan((plan as any).id)) as any[];
+      const sorted = [...blocks].sort(
+        (a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0),
+      );
+      return { dateISO: preview.dateISO, blocks: sorted };
+    }),
+    /**
      * Push 45 (2026-05-13) — Catch-up engine rollup. Returns one row per
      * curriculum subject with lifetime mastery %, traffic-light bucket
      * (red/yellow/green), and the next 3 open topics (inProgress first,
