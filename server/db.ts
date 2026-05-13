@@ -4900,6 +4900,9 @@ const APP_SETTING_DEFAULTS: Record<string, string> = {
   "student.googleEmail": "reaganhiggs910@gmail.com",
   "parent.googleEmail": "spear.cpt@gmail.com",
   "grandma.googleEmail": "marcy.spear@gmail.com",
+  // Push 66 (2026-05-13) — Calendar foundation: the Google account the
+  // ICS feed is published under. Default mirrors student.googleEmail.
+  "calendar.ownerEmail": "reaganhiggs910@gmail.com",
   "classroom.studentDomain": "gmail.com",
   // Drive hub root (under spear.cpt@gmail.com) — established 2026-05-12.
   // The 9 canonical top-level folders below already exist as children of

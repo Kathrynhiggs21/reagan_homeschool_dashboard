@@ -28,6 +28,7 @@ import GameBreakCard from "@/components/GameBreakCard";
 import HomeAnalyticsStrip from "@/components/HomeAnalyticsStrip";
 // Push 59 (2026-05-13) — Kid-friendly micro strips at top of Today.
 import KidHeaderStrips from "@/components/KidHeaderStrips";
+import SummerModeBadge from "@/components/SummerModeBadge";
 // Push 50 (2026-05-13) — Post-block feedback chips for Reagan.
 import FeedbackChips from "@/components/FeedbackChips";
 import AIScheduleGeneratorCard from "@/components/AIScheduleGeneratorCard";
@@ -474,6 +475,11 @@ export default function Today() {
 
       {/* Kiwi intro — dismissible, plain-language */}
       <KiwiIntroStrip />
+
+      {/* Push 65 (2026-05-13) — Summer-mode badge: self-hides outside the
+          Jun 6 → Aug 15 window (or when Mom flips override off / declares
+          a vacation range). Reads existing public summer.* prefs. */}
+      <div className="mb-2"><SummerModeBadge /></div>
 
       {/* Push 59 (2026-05-13) — Kid-readable today strips:
           progress %, last 3 days of mood dots, resume-where-left-off card.

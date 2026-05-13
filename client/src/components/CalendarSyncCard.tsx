@@ -1,11 +1,20 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Copy, Check } from "lucide-react";
+import { Calendar, Copy, Check, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
 
 export default function CalendarSyncCard() {
   const [copied, setCopied] = useState(false);
+
+  // Push 66 (2026-05-13) — surface calendar owner email so Mom can
+  // confirm which account the ICS subscription is published under.
+  const ownerQ = (trpc as any).prefs?.get?.useQuery?.({ key: "calendar.ownerEmail" });
+  const studentQ = (trpc as any).prefs?.get?.useQuery?.({ key: "student.googleEmail" });
+  const ownerEmail =
+    (ownerQ?.data as string | null) || (studentQ?.data as string | null) || "reaganhiggs910@gmail.com";
+
   const feedUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}/api/calendar.ics`
@@ -41,6 +50,16 @@ export default function CalendarSyncCard() {
         <Button size="sm" variant="secondary" onClick={copy}>
           {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
         </Button>
+      </div>
+
+      {/* Push 66 (2026-05-13) — calendar identity row */}
+      <div
+        data-testid="calendar-owner-row"
+        className="flex items-center gap-2 text-xs text-muted-foreground"
+      >
+        <Mail className="w-3.5 h-3.5" />
+        <span>Owner email:</span>
+        <code className="px-2 py-0.5 rounded bg-muted/60">{ownerEmail}</code>
       </div>
 
       <div className="text-xs text-muted-foreground space-y-1">

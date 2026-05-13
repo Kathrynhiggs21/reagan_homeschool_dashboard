@@ -4018,6 +4018,13 @@ export const appRouter = router({
           "roblox.allowed",             // adult toggle: "1" shows the Roblox launcher tile, "0" hides it
           "ui.theme",                   // Reagan's chosen visual theme — server-persisted across devices
           "tutor.mode",                 // push 36 (2026-05-13): "1" => sidebar enters tutor focus, "0" / null => off
+          // push 65 (2026-05-13) — Slice 5 summer-mode foundation. These
+          // five keys describe a calendar mode and a Mom toggle; no PII.
+          "summer.autoFlipEnabled",     // "1" | "0" — Mom's auto-flip toggle
+          "summer.start",               // "MM-DD" — earliest school-out
+          "summer.end",                 // "MM-DD" — last summer day
+          "summer.override",            // "on" | "off" — manual override
+          "summer.vacationRanges",      // JSON array of {start,end} ISO dates
         ]);
         // absence:YYYY-MM-DD flags are non-sensitive and Reagan's UI needs to read them
         const isAbsenceFlag = /^absence:\d{4}-\d{2}-\d{2}$/.test(input.key);
