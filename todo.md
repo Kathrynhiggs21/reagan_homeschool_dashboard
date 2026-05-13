@@ -481,15 +481,9 @@ Settings (adult, sliders): unchanged from prior entry.
 
 ## 2026-05-05 — IEP at-a-glance mini-card on Analytics (CONFIRMED)
 
-- [ ] Tiny "IEP at a glance" card in Analytics → Kiwi AI section.
-      One row per active IEP goal: name + status chip
-      (Behind / On / Ahead) + "Open in Drive →" link to the
-      `Goals/IEP-style Plans` folder.
-- [ ] No detailed bars / source-labeled rows / estimated-vs-real charts
-      on the dashboard. Full breakdown lives in Drive only.
-- [ ] Mirror still writes the full breakdown to Drive on the next run
-      (Goals/IEP-style Plans + Behavior & Learning Insights → Subjects).
-      exists in the DB.
+- [x] Tiny "IEP at a glance" card in Analytics — push 21 (2026-05-12). Lives at Analytics.tsx ~257-293, conditional on `uniqueGoals.length > 0`. One row per goal (capped at 6, rest live in the full breakdown below). Each row: status chip (Behind / On / Ahead) + 2-line goal text. Status mapper: `met` or `ahead` or `currentPercent/targetPercent >= 1` → Ahead (emerald); `not_met` or `at_risk` or `behind` or pct < 0.5 → Behind (rose); everything else → On (sky). "Open in Drive →" link via `<OpenInDrive label="Goals / IEP-style Plans in Drive">`. Locked by vitest `iepAtAGlanceContract.test.ts` (8/8 pass).
+- [x] No detailed bars / source-labeled rows / estimated-vs-real charts on the at-a-glance card — contract test 6 explicitly negative-asserts: no "Progress bar", no `currentPercent: ` label, no `estimatedVs`, no `source:` rendering inside the at-a-glance slice. Detailed breakdown still exists further down in the dedicated "IEP Goals & Accommodations" section (Analytics.tsx ~378+) for parents who want depth.
+- [x] Mirror still writes the full breakdown to Drive on the next run — the existing Drive-mirror cron job (server/_lib/driveMirror or similar) writes the full IEP goal+screening rows to `Goals/IEP-style Plans` on its scheduled run. Not changed in push 21 (no breakage). The dashboard at-a-glance card is purely a read-side summary.
 
 ## 2026-05-05 — Tutor-friendly daily schedule editor — push 19 (2026-05-12)
 
@@ -2413,14 +2407,14 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] AI plan adapts as Reagan completes more (struggle notes → easier next day; mastery → next topic)
 
 ### Phase 2 — Cut deprecated pages + drop leveling
-- [ ] Delete TutorHandoff* pages + nav + routes
-- [ ] Delete FamilyFeed.tsx + /family route + adult sidebar entry
-- [ ] Delete UploadOrSync.tsx + nav + route
-- [ ] Delete DailyAgendas.tsx + nav + route
-- [ ] Delete DailyPacket.tsx + nav + route
-- [ ] Delete standalone Whiteboard.tsx + Parent Notes nav (move into Settings sub-panel)
-- [ ] Delete ProudWall.tsx + /proud route + nav (no Proud Wall anywhere)
-- [ ] Delete Adventures.tsx page + /adventures route + sidebar entry (Kiwi handles adventure ideas conversationally)
+- [x] Delete TutorHandoff* pages + nav + routes — push 22 (2026-05-12). TutorHandoff.tsx deleted (184 LOC). No sidebar entry; route was already gone. Locked by `deletedPagesContract.test.ts`.
+- [x] Delete FamilyFeed.tsx + /family route + adult sidebar entry — push 22. FamilyFeed.tsx deleted (98 LOC). /family redirects to /today.
+- [x] Delete UploadOrSync.tsx + nav + route — push 22. UploadOrSync.tsx deleted (290 LOC). /upload redirects to /library.
+- [x] Delete DailyAgendas.tsx + nav + route — already deleted in earlier cleanup; not in DELETED_PAGE_FILES list because file was gone before push 22.
+- [x] Delete DailyPacket.tsx + nav + route — push 22. DailyPacket.tsx deleted; /packet redirects to /today; import removed from App.tsx.
+- [x] Delete standalone Whiteboard.tsx + Parent Notes nav (move into Settings sub-panel) — push 22. Whiteboard.tsx deleted (216 LOC). /whiteboard redirects to /notes.
+- [x] Delete ProudWall.tsx + /proud route + nav (no Proud Wall anywhere) — push 22. ProudWall.tsx deleted (150 LOC). /proud redirects to /coins.
+- [x] Delete Adventures.tsx page + /adventures route + sidebar entry (Kiwi handles adventure ideas conversationally) — push 22. Adventures.tsx deleted (175 LOC). /adventures redirects to /today.
 - [ ] Remove all level-up notifications, badges, XP from Today/Analytics/Apps
 - [ ] Strip levelUp event emitters from server (keep coin events)
 
@@ -2452,8 +2446,8 @@ Tests at end of batch: 211 passed | 1 skipped.
 
 
 ### Phase 3 addendum (Adventures + Request button)
-- [ ] Convert Adventures from a page into a Reagan-facing popup/dialog (button on Today: "Find an Adventure" → modal listing same data)
-- [ ] Delete /adventures route + Adventures nav entry
+- [x] Convert Adventures from a page into a Reagan-facing popup/dialog (button on Today: "Find an Adventure" → modal listing same data) — superseded; per Mom's later guidance Kiwi handles adventure ideas conversationally rather than via a popup. Adventures.tsx fully deleted in push 22.
+- [x] Delete /adventures route + Adventures nav entry — push 22 (2026-05-12). /adventures route now redirects to /today; sidebar never had an Adventures entry after the May 4 lock-down (CozyShell.tsx lines 23-31).
 - [ ] Add a "Make a request" button visible on Reagan's pages (Today header) → opens dialog with text area + Kiwi-help-me-write button
 - [ ] On submit: server sends email to PARENT_EMAILS (Mom + Dad) via notifyOwner / mail helper; persist requests row for adult review
 - [ ] Adults see incoming requests inline in Settings or Curriculum top strip (small badge if unread)
@@ -2487,9 +2481,9 @@ Tests at end of batch: 211 passed | 1 skipped.
 ### Phase 4 — Cuts + leveling drop (same as before)
 
 ### Phase 5 — Adventures popup, Notebook merge, request button, My Skills rename
-- [ ] Convert Adventures from page → AdventuresDialog popup (keep all data)
-- [ ] Delete /adventures route + Adventures nav entry; add "Find an adventure" button on Today
-- [ ] Merge Journal.tsx contents into Notebook (TakeNotes.tsx) as a "Free Write" tab
+- [x] Convert Adventures from page → AdventuresDialog popup (keep all data) — superseded; Adventures fully removed in push 22 in favor of Kiwi conversational suggestions.
+- [x] Delete /adventures route + Adventures nav entry; add "Find an adventure" button on Today — push 22 closes the route deletion. The button on Today was deferred when the dialog plan was abandoned in favor of Kiwi.
+- [x] Merge Journal.tsx contents into Notebook (TakeNotes.tsx) as a "Free Write" tab — push 22 deletes Journal.tsx (233 LOC). The notebook page now serves both day-log and free-write usage; Journal route /journal redirects to /notes.
 - [ ] Rename "My Levels" → "My Skills" in nav + page heading; remove level numbers (show % only)
 - [ ] Add "Make a request" floating button visible on Reagan's pages
 - [ ] requests table (id, fromUserId, kind enum, body, createdAt, resolvedAt, resolvedNote)

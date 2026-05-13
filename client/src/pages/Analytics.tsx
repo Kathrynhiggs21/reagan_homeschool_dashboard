@@ -261,19 +261,30 @@ export default function Analytics() {
             <h2 className="font-display font-semibold text-sm">IEP — at a glance</h2>
             <OpenInDrive label="Goals / IEP-style Plans in Drive" />
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2" data-testid="iep-at-a-glance-grid">
             {uniqueGoals.slice(0, 6).map((g: any) => {
-              const status = String(g.status || "in_progress").toLowerCase();
-              const chip = status === "met"
+              // Push 21 (2026-05-12) — spec asks for the 3 Mom-friendly labels
+              // "Behind / On / Ahead". We map the DB-level status fields
+              // (in_progress / met / not_met / discontinued / at_risk / on_track)
+              // to those buckets. Anything we can't classify falls through to
+              // "On" (neutral default) so we never show a scary "Behind" chip
+              // for a goal we have no data on yet.
+              const raw = String(g.status || "in_progress").toLowerCase();
+              const pct = typeof g.currentPercent === "number" && typeof g.targetPercent === "number" && g.targetPercent > 0
+                ? (g.currentPercent / g.targetPercent)
+                : null;
+              let bucket: "Behind" | "On" | "Ahead";
+              if (raw === "met" || raw === "ahead" || (pct !== null && pct >= 1)) bucket = "Ahead";
+              else if (raw === "not_met" || raw === "at_risk" || raw === "behind" || (pct !== null && pct < 0.5)) bucket = "Behind";
+              else bucket = "On";
+              const chip = bucket === "Ahead"
                 ? "bg-emerald-100 text-emerald-900 border-emerald-200"
-                : status === "on_track"
-                  ? "bg-sky-100 text-sky-900 border-sky-200"
-                  : status === "at_risk"
-                    ? "bg-rose-100 text-rose-900 border-rose-200"
-                    : "bg-amber-100 text-amber-900 border-amber-200";
+                : bucket === "Behind"
+                  ? "bg-rose-100 text-rose-900 border-rose-200"
+                  : "bg-sky-100 text-sky-900 border-sky-200";
               return (
-                <div key={g.id} className="p-2 rounded-md border bg-white/40 flex items-start gap-2 text-xs">
-                  <span className={`px-1.5 py-0.5 rounded-full border text-[10px] capitalize shrink-0 ${chip}`}>{status.replace("_", " ")}</span>
+                <div key={g.id} className="p-2 rounded-md border bg-white/40 flex items-start gap-2 text-xs" data-testid="iep-goal-row">
+                  <span className={`px-1.5 py-0.5 rounded-full border text-[10px] shrink-0 ${chip}`} data-testid="iep-goal-chip">{bucket}</span>
                   <span className="line-clamp-2">{g.goalText}</span>
                 </div>
               );

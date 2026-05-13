@@ -39,10 +39,12 @@ describe("UI audit surface (Mom's pre-tomorrow checklist)", () => {
     expect(src.toLowerCase()).toContain("tutorofday");
   });
 
-  it("DailyPacket prints page references (e.g., pg 24-28) for every block that has them", () => {
-    const src = read(PACKET);
-    expect(src.length).toBeGreaterThan(500);
-    expect(src.toLowerCase()).toMatch(/pageref|pages?:/);
+  it("DailyPacket page is deleted (push 22 cleanup) — page-ref printing now lives on Today/AgendaEditor", () => {
+    // Mom approved removal in push 22 (2026-05-12). The standalone DailyPacket.tsx
+    // page is gone and /packet redirects to /today. Page-reference printing for
+    // owned books (Tuck Everlasting, Spectrum Science, etc.) lives in the agenda
+    // generator + Today block descriptions instead.
+    expect(existsSync(PACKET)).toBe(false);
   });
 
   it("TurnInDialog accepts initialMode and threads it through the open-reset effect", () => {

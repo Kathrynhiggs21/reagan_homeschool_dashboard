@@ -25,7 +25,6 @@ import Onboarding from "./pages/Onboarding";
 import TakeNotes from "./pages/TakeNotes";
 import Schedule from "./pages/Schedule";
 import Kiwi from "./pages/Kiwi";
-import DailyPacket from "./pages/DailyPacket";
 import AgendaEditor from "./pages/AgendaEditor";
 import Analytics from "./pages/Analytics";
 import { trpc } from "@/lib/trpc";
@@ -106,7 +105,7 @@ function Router() {
         <Route path="/review-library"><Redirect to="/library" /></Route>
         <Route path="/placement"><Redirect to="/curriculum" /></Route>
         <Route path="/upload"><Redirect to="/library" /></Route>
-        <Route path="/packet"><AdultGate><DailyPacket /></AdultGate></Route>
+        <Route path="/packet"><Redirect to="/today" /></Route>
         <Route path="/scratch"><Redirect to="/notes" /></Route>
 
         <Route path="/404" component={NotFound} />
