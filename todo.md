@@ -3048,3 +3048,11 @@ Order of work tonight:
 - [x] Push 161 — buildDailyMomBriefing pure helper + 12 vitests
 - [x] Wave-7 checkpoint — version a4443002
 - [x] Wave-7 Drive sync — folder ID 1LQrhQatDLWi6ZNlxdYs8_uiiTtdNjWRK
+
+
+## Wave-8 (overnight 2026-05-14, pushes 162-164)
+- [x] Push 162 — wire buildDailyMomBriefing into nightly-agenda-email handler (5 vitests)
+- [x] Push 163 — deterministicWorksheetGrader pure helper (14 vitests)
+- [x] Push 164 — reaganChoiceTimePicker pure helper (14 vitests)
+- [x] Wave-8 checkpoint — version 7d564d25
+- [x] Wave-8 Drive sync — folder ID 1y4jZtanObfPVjbrPJhqavQd4l3Ra2xxF (7 files via rclone)

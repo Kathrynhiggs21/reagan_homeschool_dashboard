@@ -4501,6 +4501,68 @@ export const appRouter = router({
         return buildAdultQuickEntryPayload(input.schoolDayISO, input.lines);
       }),
     /**
+     * Push 165 (2026-05-14) — deterministic worksheet grader.
+     * No LLM. Mom-readable, Reagan-friendly. Caller passes typed answers
+     * + an answer key; we return per-question scoring + total.
+     */
+    gradeWorksheetDeterministic: publicProcedure
+      .input(
+        z.object({
+          items: z.array(z.any()).max(200),
+          answers: z.array(
+            z.object({
+              itemId: z.string().min(1),
+              raw: z.string(),
+            }),
+          ).max(200),
+        }),
+      )
+      .mutation(async ({ input }) => {
+        const { gradeWorksheet } = await import(
+          "./_lib/deterministicWorksheetGrader"
+        );
+        return gradeWorksheet(input.items as any, input.answers);
+      }),
+    /**
+     * Push 165 (2026-05-14) — Reagan choice-time picks.
+     * Returns the day's deterministic 3-option set for Reagan to choose
+     * from for free-time blocks. Public so the kid-facing card can read it.
+     */
+    reaganChoiceTime: publicProcedure
+      .input(
+        z.object({
+          schoolDayISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          studentName: z.string().min(1).max(80).default("Reagan"),
+          availableMinutes: z.number().int().min(0).max(240),
+          weatherIsWet: z.boolean().optional(),
+          momIsHome: z.boolean().optional(),
+          carIsAvailable: z.boolean().optional(),
+          moodBand: z.enum(["great", "okay", "tired", "frustrated"]).optional(),
+          recentlyPickedIds: z.array(z.string()).max(30).optional(),
+          pickedYesterdayId: z.string().nullable().optional(),
+          pickedDayBeforeId: z.string().nullable().optional(),
+          pickCount: z.number().int().min(1).max(5).default(3),
+          pool: z.array(
+            z.object({
+              id: z.string().min(1),
+              label: z.string().min(1),
+              location: z.enum(["indoor", "outdoor", "either"]),
+              energy: z.enum(["low", "medium", "high"]),
+              durationMin: z.number().int().min(1).max(240),
+              tags: z.array(z.string()).optional(),
+              needsAdult: z.boolean().optional(),
+              needsCar: z.boolean().optional(),
+            }),
+          ).min(1).max(50),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { pickReaganChoiceTime } = await import(
+          "./_lib/reaganChoiceTimePicker"
+        );
+        return pickReaganChoiceTime(input as any);
+      }),
+    /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
      * + the active summer status. Reagan-callable (public). Self-empty
