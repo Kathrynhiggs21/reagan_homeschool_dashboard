@@ -4435,6 +4435,72 @@ export const appRouter = router({
         return guardAnalyticsStrip(input);
       }),
     /**
+     * Push 159 (2026-05-14) — wire Reagan's request button parser.
+     * Reagan-callable (public). Returns a typed adult-side request row
+     * the dashboard can show in Mom/Grandma's queue.
+     */
+    parseReaganRequest: publicProcedure
+      .input(z.object({ raw: z.string().min(1).max(2000) }))
+      .mutation(async ({ input }) => {
+        const { parseReaganRequest } = await import(
+          "./_lib/reaganRequestParser"
+        );
+        return parseReaganRequest(input.raw, new Date().toISOString());
+      }),
+    /**
+     * Push 159 (2026-05-14) — wire off-curriculum auto-classifier.
+     * Adult-callable. Returns either a matched curriculum topic or
+     * a Mom one-tap "add this new topic" candidate.
+     */
+    classifyOffCurriculum: familyAdminProcedure
+      .input(
+        z.object({
+          chunk: z.string().min(1).max(4000),
+          catalog: z
+            .array(
+              z.object({
+                id: z.string(),
+                label: z.string(),
+                subject: z.string(),
+                keywords: z.array(z.string()).optional(),
+              }),
+            )
+            .max(500)
+            .default([]),
+        }),
+      )
+      .mutation(async ({ input }) => {
+        const { classifyOffCurriculum } = await import(
+          "./_lib/offCurriculumClassifier"
+        );
+        return classifyOffCurriculum(input.chunk, input.catalog);
+      }),
+    /**
+     * Push 159 (2026-05-14) — wire adult quick-entry payload builder.
+     * Mom + Grandma callable. Returns the fully-typed payload the
+     * caller writes into actualAgendaEntries + drivePushQueue.
+     */
+    applyAdultQuickEntry: familyAdminProcedure
+      .input(
+        z.object({
+          schoolDayISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          lines: z
+            .array(
+              z.object({
+                rawLine: z.string().min(0).max(500),
+                plannedBlockId: z.string().optional(),
+              }),
+            )
+            .max(20),
+        }),
+      )
+      .mutation(async ({ input }) => {
+        const { buildAdultQuickEntryPayload } = await import(
+          "./_lib/adultQuickEntryPayload"
+        );
+        return buildAdultQuickEntryPayload(input.schoolDayISO, input.lines);
+      }),
+    /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
      * + the active summer status. Reagan-callable (public). Self-empty

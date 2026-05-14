@@ -3038,5 +3038,5 @@ Order of work tonight:
 - [x] Push 156 — Reagan request button parser (kid plain English → typed adult-side request, schedule changes need both Mom + Grandma) — 15/15
 - [x] Push 157 — Off-curriculum auto-classifier (transcript chunk → matched topic OR new-topic candidate) — 13/13
 - [x] Push 158 — Adult quick-entry payload builder (one-tap "what we actually did" → actualAgendaEntries + Drive day-log Markdown) — 12/12
-- [ ] Wave-6 checkpoint
-- [ ] Wave-6 Drive sync
+- [x] Wave-6 checkpoint — version 89a75307
+- [x] Wave-6 Drive sync — folder ID 16fW0jawNqQem5MNOuAfZjNkW_HkvE19g (7 files via rclone)
