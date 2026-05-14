@@ -2936,3 +2936,9 @@ shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
 - [x] Push 135 (2026-05-13) — Roblox reward-break gating: 2 coins/min, 30-min per-request cap, 60-min daily budget, 45-min cooldown; school-hours (Mon–Fri 09–15 ET) blocks unless coverage on-track; adult override bypasses caps but cost stays a hard floor. 14/14 vitest contract.
 
 - [x] Push 136 (2026-05-13) — Slay Charge ⚡ kid-tier copy variants: blocklist (whole-word), Flesch-Kincaid grade ≤ 6.5, kid-safe vs kid-friendly-stretch tier labels, no pool mutation, kind filter, all 40 current items pass safe filter. 13/13 vitest contract.
+
+- [x] Push 137 (2026-05-13) — Spelling-practice deeplink + coin reward helper (3 base / +1 perfect / 80% threshold / 30-min daily cap, single source of truth via Push 116, 10/10).
+
+- [x] Push 138 (2026-05-13) — Outdoor / real-world activity tag helper (whole-word case-insensitive title+description match, explicit labels override, badge label+emoji, audit-friendly matchedKeywords, 11/11).
+
+- [x] Push 139 (2026-05-13) — Printed-book page reference helper (4-book canonical shelf: Tuck Everlasting / Michaels World read; Spectrum Sci 5 / 180 Days Lang 5 complete; pg N vs pg X–Y formatting; day-paced workbook day-page picker; 4 distinct rejection reasons; 13/13).
