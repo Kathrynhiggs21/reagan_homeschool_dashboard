@@ -2989,7 +2989,7 @@ Drive audit + Classroom mirror are PAUSED until these are solid.
 - [ ] PRIORITY-2 — Tap-block inline edit on Today + Schedule (Mom + Grandma): edit start time, duration, title, body in place — NO approval gate (familyAdminProcedure already exists, just needs UI surface + vitest)
 - [ ] PRIORITY-3 — AI Agenda Editor accepts free-form prompts ("shorter today", "more math", "skip science") and returns a per-block diff Mom can accept/reject; commit applies as a single revision
 - [ ] PRIORITY-4 — Headings + analytics strip render with real data on Today (no grey boxes; "Don't show if no info" rule honored)
-- [ ] PRIORITY-5 — Worksheet auto-prep cron: every block with subject + topic gets a worksheet PDF + answer-key PDF generated, pinned to blockId, ready for the 8 PM packet (covers the days when Mom hasn't manually attached anything)
+- [x] PRIORITY-5 — Worksheet auto-prep planner (helper + vitest); cron wiring is the next push: every block with subject + topic gets a worksheet PDF + answer-key PDF generated, pinned to blockId, ready for the 8 PM packet (covers the days when Mom hasn't manually attached anything)
 - [ ] PRIORITY-6 — Send a "what to test" hand-off note covering the 5 fixes
 
 

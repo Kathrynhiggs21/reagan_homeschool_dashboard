@@ -4221,6 +4221,87 @@ export const appRouter = router({
      * procedure is a thin pass-through so the bookshelf UI / digest can
      * call into the same business logic from anywhere.
      */
+    /**
+     * Push 146 (2026-05-14) — Kiwi mood reading for the active block.
+     *
+     * Caller passes the current block's mic + activity signals (collected
+     * by the kid-side AIChatBox / Kiwi widget). Returns a kid-readable
+     * mood band + suggested adjustment that the Today header chip
+     * polls every 60s. Public so the kid session can read it.
+     */
+    kiwiMoodNow: publicProcedure
+      .input(
+        z.object({
+          blockSortOrder: z.number().int().min(1).max(20),
+          blockTitle: z.string().min(1).max(120),
+          subjectName: z.string().min(1).max(60).optional(),
+          micFocusFraction: z.number().min(0).max(1).optional(),
+          micDistressFraction: z.number().min(0).max(1).optional(),
+          onTaskEvents: z.number().int().min(0).max(1000).optional(),
+          scheduledMinutes: z.number().min(1).max(180),
+          elapsedMinutes: z.number().min(0).max(240),
+          kidFlaggedHard: z.boolean().optional(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { readKiwiMoodForBlock } = await import("./_lib/kiwiMoodTracker");
+        return readKiwiMoodForBlock({
+          blockSortOrder: input.blockSortOrder,
+          blockTitle: input.blockTitle,
+          subjectName: input.subjectName ?? null,
+          micFocusFraction: input.micFocusFraction ?? 0.5,
+          micDistressFraction: input.micDistressFraction ?? 0,
+          onTaskEvents: input.onTaskEvents ?? 0,
+          scheduledMinutes: input.scheduledMinutes,
+          elapsedMinutes: input.elapsedMinutes,
+          kidFlaggedHard: input.kidFlaggedHard ?? false,
+        });
+      }),
+    /**
+     * Push 147 (2026-05-14) — Self-rebalancing day timeline.
+     *
+     * Caller passes the morning's planned blocks + actual start time +
+     * any per-block actuals/mood adjustments; helper returns the new
+     * ordered list with adjusted start/end times, inserted movement
+     * breaks, and plain-English notes ready to render in Today.
+     * Public so the kid session can see the same shifted plan.
+     */
+    timelineRebalanced: publicProcedure
+      .input(
+        z.object({
+          actualStartHHmm: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+          hardEndHHmm: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+          minBlockMinutes: z.number().int().min(1).max(120).optional(),
+          maxBlockMinutes: z.number().int().min(1).max(180).optional(),
+          movementMinutes: z.number().int().min(3).max(20).optional(),
+          blocks: z.array(
+            z.object({
+              blockSortOrder: z.number().int().min(1).max(40),
+              blockTitle: z.string().min(1).max(120),
+              subjectName: z.string().min(1).max(60).optional().nullable(),
+              scheduledMinutes: z.number().int().min(1).max(180),
+              actualMinutes: z.number().int().min(1).max(240).optional().nullable(),
+              status: z.enum(["pending", "in_progress", "done"]).optional(),
+              moodAdjustment: z
+                .enum(["none", "shorten_next", "swap_to_movement", "end_block_now"])
+                .optional(),
+              locked: z.boolean().optional(),
+            }),
+          ),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { rebalanceDayTimeline } = await import(
+          "./_lib/dayTimelineRebalancer"
+        );
+        return rebalanceDayTimeline(input.blocks, {
+          actualStartHHmm: input.actualStartHHmm,
+          hardEndHHmm: input.hardEndHHmm,
+          minBlockMinutes: input.minBlockMinutes,
+          maxBlockMinutes: input.maxBlockMinutes,
+          movementMinutes: input.movementMinutes,
+        });
+      }),
     bookshelfRollup: publicProcedure
       .input(
         z

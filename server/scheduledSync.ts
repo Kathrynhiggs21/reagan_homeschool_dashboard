@@ -1077,9 +1077,33 @@ export function registerScheduledSync(app: Express) {
         ).join("");
         return `<div style=\"padding:8px 0;border-bottom:1px solid #eee;\">${head}<div style=\"margin:2px 0 0 14px;\">${b.title}</div>${desc}${books}</div>`;
       }).join("");
+      // Plain-English kid + Grandma summary line ("Reagan has 4 things to
+      // do tomorrow: Math, Reading, Science, and a Stretch break.").
+      let kidSummaryLine = "";
+      try {
+        const subjects = Array.from(
+          new Set(
+            (payload.blocks ?? [])
+              .map((b: any) => (b.subjectName ?? b.title ?? "").toString().trim())
+              .filter((s: string) => s.length > 0),
+          ),
+        );
+        if (subjects.length > 0) {
+          const list = subjects.length === 1
+            ? subjects[0]
+            : subjects.slice(0, -1).join(", ") + ", and " + subjects[subjects.length - 1];
+          kidSummaryLine =
+            `<div style=\"margin:14px 0;padding:12px 16px;background:#fff8e1;border-radius:8px;color:#5d4a00;font-size:15px;\">` +
+            `<b>What's coming up:</b> ${payload.studentName} has ${payload.blocks.length} block` +
+            `${payload.blocks.length === 1 ? "" : "s"} ` +
+            `tomorrow \u2014 ${list}.</div>`;
+        }
+      } catch { /* summary line is optional cosmetic */ }
+
       const html = `<!doctype html><html><body style=\"font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#222;max-width:680px;margin:0 auto;padding:20px;\">
 <div style=\"text-align:center;margin-bottom:8px;\"><div style=\"font-size:22px;font-weight:800;color:#1f3a2e;\">${payload.studentName}'s School Plan</div><div style=\"color:#666;font-size:14px;\">${payload.dayLabel}</div></div>
 ${tutorLine}
+${kidSummaryLine}
 <div style=\"margin:20px 0;padding:14px 16px;border-left:4px solid #1f3a2e;background:#fafafa;border-radius:8px;\">${blockListHtml || '<div style=\"color:#888;\">No blocks scheduled.</div>'}</div>
 ${absolutePdfUrl ? `<p style=\"text-align:center;margin:24px 0;\"><a href=\"${absolutePdfUrl}\" style=\"display:inline-block;padding:10px 20px;background:#1f3a2e;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;\">Download today's agenda PDF</a></p>` : ''}
 <p style=\"font-size:12px;color:#888;text-align:center;margin-top:24px;\">PDF agenda attached. If anything changes before school start, this email will be re-sent automatically.</p>
