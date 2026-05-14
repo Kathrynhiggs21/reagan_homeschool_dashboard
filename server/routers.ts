@@ -4724,6 +4724,98 @@ export const appRouter = router({
         return computeMultiDayMoodTrend(input as any);
       }),
     /**
+     * Push 180 (Wave-13/14, 2026-05-15) — Notebook Doodle prompt of the
+     * day. Deterministic per ISO + kid name; kid-readable, opt-in,
+     * never timed/graded.
+     */
+    notebookDoodleToday: publicProcedure
+      .input(
+        z.object({
+          isoDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          kidName: z.string().default("reagan"),
+          recentPromptKeys: z.array(z.string()).optional(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { pickNotebookDoodlePrompt } = await import(
+          "./_lib/notebookDoodlePrompt"
+        );
+        return pickNotebookDoodlePrompt(input as any);
+      }),
+    /**
+     * Push 180 (Wave-13/14, 2026-05-15) — Bookshelf milestone
+     * celebration. Returns at most one celebration per day; kid-readable
+     * and never comparative.
+     */
+    bookshelfMilestoneToday: publicProcedure
+      .input(
+        z.object({
+          isoDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          kidName: z.string().default("reagan"),
+          finishedBookToday: z.boolean().optional(),
+          quarterCrossedToday: z.boolean().optional(),
+          chaptersFinishedToday: z.number().int().nonnegative().optional(),
+          daysSinceLastReadingBlock: z.number().int().nonnegative().optional(),
+          alreadyCelebratedToday: z.boolean().optional(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { computeBookshelfMilestone } = await import(
+          "./_lib/bookshelfMilestoneCelebration"
+        );
+        return computeBookshelfMilestone(input as any);
+      }),
+    /**
+     * Push 182 (Wave-14, 2026-05-15) — Family screen-time fairness.
+     * Surfaces always-allowed activities first, never blocks, never
+     * uses punitive language. Mom or Grandma override is enough.
+     */
+    familyScreenTimeFairness: publicProcedure
+      .input(
+        z.object({
+          isoDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          viewerId: z.string(),
+          usageToday: z.array(
+            z.object({
+              memberId: z.string(),
+              minutes: z.number().nonnegative(),
+            }),
+          ),
+          reaganBaseAllowanceMin: z.number().int().nonnegative().optional(),
+          overrides: z
+            .array(
+              z.object({
+                grantedBy: z.enum(["mom", "grandma"]),
+                extraMinutes: z.number().int().nonnegative(),
+                reason: z.string().optional(),
+              }),
+            )
+            .optional(),
+          alwaysAllowed: z
+            .array(
+              z.object({
+                key: z.string(),
+                label: z.string(),
+                category: z.enum([
+                  "reading",
+                  "outdoor",
+                  "art",
+                  "building",
+                  "music",
+                ]),
+              }),
+            )
+            .optional(),
+          bankCarriedMin: z.number().int().nonnegative().optional(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { computeFamilyScreenTimeFairness } = await import(
+          "./_lib/familyScreenTimeFairness"
+        );
+        return computeFamilyScreenTimeFairness(input as any);
+      }),
+    /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
      * + the active summer status. Reagan-callable (public). Self-empty
