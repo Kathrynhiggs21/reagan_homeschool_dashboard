@@ -4137,6 +4137,36 @@ export const appRouter = router({
         });
       }),
     /**
+     * Push 119 (2026-05-13) — Slay Charge ⚡ daily pick.
+     *
+     * Returns today's pick from the curated joke/clip pool. Deterministic
+     * per (dateIso, rerollIndex) so Reagan can tap "🔄 give me another"
+     * and get a different item, while the *first* pick of the day is
+     * stable across refreshes. Public because the kid session reads it.
+     */
+    slayCharge: publicProcedure
+      .input(
+        z
+          .object({
+            dateIso: z
+              .string()
+              .regex(/^\d{4}-\d{2}-\d{2}$/)
+              .optional(),
+            rerollIndex: z.number().int().min(0).max(50).optional(),
+          })
+          .optional(),
+      )
+      .query(async ({ input }) => {
+        const { pickSlayChargeForDay } = await import("./_lib/slayChargeMorningVibe");
+        const dateIso =
+          input?.dateIso ?? new Date().toISOString().slice(0, 10);
+        const pick = pickSlayChargeForDay({
+          dateIso,
+          rerollIndex: input?.rerollIndex ?? 0,
+        });
+        return { dateIso, rerollIndex: input?.rerollIndex ?? 0, pick };
+      }),
+    /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
      * + the active summer status. Reagan-callable (public). Self-empty

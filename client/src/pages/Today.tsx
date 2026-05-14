@@ -29,6 +29,7 @@ import HomeAnalyticsStrip from "@/components/HomeAnalyticsStrip";
 // Push 59 (2026-05-13) — Kid-friendly micro strips at top of Today.
 import KidHeaderStrips from "@/components/KidHeaderStrips";
 import MoodTimelineStrip from "@/components/MoodTimelineStrip";
+import { SlayChargeCard } from "@/components/SlayChargeCard";
 import SummerModeBadge from "@/components/SummerModeBadge";
 import CatchUpNextDayCard from "@/components/CatchUpNextDayCard";
 import { TomorrowChoiceCard } from "@/components/TomorrowChoiceCard";
@@ -644,6 +645,13 @@ export default function Today() {
                   })()}
                   {b.description && (
                     <p className="mt-1 chalk-white/90" style={{ fontSize: "0.95rem", opacity: 0.82, lineHeight: 1.35 }}>{b.description}</p>
+                  )}
+                  {/* Push 119 (2026-05-13) — Slay Charge ⚡ daily mood-setter.
+                      Renders ONLY inside the morning_vibe block (i.e., the
+                      first block of the day). Joke or short clip + reroll.
+                      Never creates a submission, never counts as schoolwork. */}
+                  {(b.blockType === "morning_vibe" || b.blockType === "morning_warmup" || /slay charge/i.test(b.title || "")) && (
+                    <SlayChargeCard dateIso={todayDate} />
                   )}
                   {/* Push 75 (2026-05-13) — generated payload hint:
                       shows printable + operable line ONLY when there's no

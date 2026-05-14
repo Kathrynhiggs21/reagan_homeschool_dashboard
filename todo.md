@@ -2901,3 +2901,5 @@ shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
 - [ ] Push 118 (revised, 2026-05-13) — Vitest invariant: morning-warmup blocks never produce submissions/checklist items + tsc + checkpoint
 
 - [x] Push 118 (2026-05-13) — Slay Charge ⚡ morning-vibe block: rename morning_warmup→morning_vibe, 5 min, "Soft start" seed retired, Recent Submissions filter wired, curated joke/clip pool + deterministic daily pick + reroll, 14/14 vitest, tsc clean.
+
+- [x] Push 119 (2026-05-13) — Slay Charge ⚡ render card on Today: today.slayCharge tRPC procedure, SlayChargeCard component with 🔄 reroll button, mounted inside morning_vibe block only, never creates a submission, 10/10 wiring contract + 14/14 pure helper, tsc clean.
