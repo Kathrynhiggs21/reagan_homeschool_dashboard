@@ -2903,3 +2903,6 @@ shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
 - [x] Push 118 (2026-05-13) — Slay Charge ⚡ morning-vibe block: rename morning_warmup→morning_vibe, 5 min, "Soft start" seed retired, Recent Submissions filter wired, curated joke/clip pool + deterministic daily pick + reroll, 14/14 vitest, tsc clean.
 
 - [x] Push 119 (2026-05-13) — Slay Charge ⚡ render card on Today: today.slayCharge tRPC procedure, SlayChargeCard component with 🔄 reroll button, mounted inside morning_vibe block only, never creates a submission, 10/10 wiring contract + 14/14 pure helper, tsc clean.
+
+- [x] Push 120 (2026-05-13) — Worksheet-photo accept/reject helper already in tree; locked in by 11/11 vitest contract (mime, size, blur, blockId, kidId rejections; Reagan-safe + adult-tier messages).
+- [x] Push 121 (2026-05-13) — Calendar-week assignment summary helper: per-subject coverage, missing-school-day signals (Mon-Fri only), uncoveredSubjects, headline heuristic (balanced / subject-gap / narrow / light / quiet), drops out-of-week + unknown rows; 14/14 vitest contract.
