@@ -2828,6 +2828,52 @@ export const appRouter = router({
           kidDifficulty: input.kidDifficulty ?? null,
         });
       } catch { /* best-effort */ }
+
+      /* ----------------------------------------------------------------------
+       * 2026-05-14 overnight push ("automations are top priority"):
+       * Auto-trigger the existing autoGrade pipeline AND auto-mirror finished
+       * work to Drive on every new submission, so Mom never has to tap
+       * "grade this" or "upload to Drive". Both are fire-and-forget so the
+       * turn-in returns instantly to the kid.
+       * -------------------------------------------------------------------- */
+      const submissionId: number | undefined = (row as any)?.id;
+      const fileUrl: string | undefined = (row as any)?.fileUrl ?? input.fileUrl;
+      const fileKey: string | undefined = (row as any)?.fileKey ?? input.fileKey;
+      // Skip auto-grade for one-tap reading checkmarks.
+      if (submissionId && !input.readingCheckmark) {
+        // Fire-and-forget: in-process call so we don't pay the http hop.
+        void (async () => {
+          try {
+            await new Promise((r) => setTimeout(r, 50));
+            // Reuse the autoGrade procedure logic by calling the helper path:
+            // listAssignmentSubmissions → grade. Inline-friendly via dynamic import.
+            const mod = await import("./_lib/autoGradeRunner").catch(() => null);
+            if (mod && typeof (mod as any).runAutoGradeForSubmission === "function") {
+              await (mod as any).runAutoGradeForSubmission(submissionId);
+            }
+          } catch { /* best-effort */ }
+        })();
+      }
+      // Auto-Drive-mirror finished work (photo / drawn / file submissions).
+      if (submissionId && fileKey && fileUrl) {
+        void (async () => {
+          try {
+            const today = new Date().toISOString().slice(0, 10);
+            const ym = today.slice(0, 7);
+            const safeTitle = (input.title ?? `Block ${input.blockId}`)
+              .replace(/[^A-Za-z0-9]+/g, "_")
+              .slice(0, 60);
+            await (db as any).enqueueDrivePush?.({
+              fileKey,
+              fileUrl,
+              fileName: `${today} - ${safeTitle} - submission_${submissionId}`,
+              mimeType: null,
+              targetFolder: "finished_work" as any,
+              targetSubpath: ym,
+            } as any);
+          } catch { /* best-effort */ }
+        })();
+      }
       return row;
     }),
     upload: publicProcedure.input(z.object({ dataUrl: z.string(), fileName: z.string() })).mutation(async ({ input }) => {
@@ -4165,6 +4211,39 @@ export const appRouter = router({
           rerollIndex: input?.rerollIndex ?? 0,
         });
         return { dateIso, rerollIndex: input?.rerollIndex ?? 0, pick };
+      }),
+    /**
+     * Push 143 (2026-05-14) — Bookshelf rollup.
+     *
+     * Returns the canonical 4-book printed shelf with completion% per book
+     * after applying any caller-passed reading sessions on top of the
+     * stored prior-highest-page map. Pure helper does all the work; this
+     * procedure is a thin pass-through so the bookshelf UI / digest can
+     * call into the same business logic from anywhere.
+     */
+    bookshelfRollup: publicProcedure
+      .input(
+        z
+          .object({
+            prior: z.record(z.string(), z.number().nullable().optional()).optional(),
+            sessions: z
+              .array(
+                z.object({
+                  slug: z.string(),
+                  startPage: z.number().int().nullable().optional(),
+                  endPage: z.number().int().nullable().optional(),
+                  dayNumber: z.number().int().nullable().optional(),
+                }),
+              )
+              .optional(),
+          })
+          .optional(),
+      )
+      .query(async ({ input }) => {
+        const { rollupShelfProgress } = await import(
+          "./_lib/bookReadingProgress"
+        );
+        return rollupShelfProgress(input?.prior ?? {}, input?.sessions ?? []);
       }),
     /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.

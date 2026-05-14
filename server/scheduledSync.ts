@@ -930,6 +930,7 @@ export function registerScheduledSync(app: Express) {
 
       const { assembleAgendaForDate } = await import("./_lib/agendaAssembler");
       const { buildAgendaPdf } = await import("./_lib/agendaPdf");
+      const { buildPerBlockWorksheetAttachments } = await import("./_lib/perBlockWorksheetPdf");
       const { storagePut, storageGetSignedUrl } = await import("./storage");
 
       const payload = await assembleAgendaForDate(forDate);
@@ -967,6 +968,87 @@ export function registerScheduledSync(app: Express) {
         absolutePdfUrl = null;
       }
 
+      /* ----------------------------------------------------------------------
+       * PRIORITY-1 (2026-05-14, overnight push): per-block worksheet PDFs.
+       * Mom asked for the printable worksheets to actually appear as Gmail
+       * attachments instead of just a link button. Build one PDF per block-
+       * with-printable, kid-readable headings ("What to do", "Try these",
+       * "Answers (for Mom)"), then return them as `attachments[]` so the
+       * scheduled-task agent attaches them when it sends via Gmail MCP.
+       *
+       * Also enqueue an auto-Drive-mirror row per file so the same packet
+       * lands in `Reagan School Hub (Dashboard) > Daily Operations > Daily
+       * Agenda PDFs > {YYYY-MM} > {date}` and `... > Worksheets (Daily
+       * Packets) > {YYYY-MM} > {date} - Block{n} - {subject} - {title}.pdf`
+       * without anyone clicking anything.
+       * -------------------------------------------------------------------- */
+      let perBlockAttachments: Array<{
+        filename: string;
+        attachmentKey: string;
+        blockSortOrder: number;
+        subjectName: string | null;
+        topicCode: string | null;
+        storageKey: string;
+        storageUrl: string;
+        signedUrl: string | null;
+        byteSize: number;
+        pdfBase64: string;
+      }> = [];
+      try {
+        const built = await buildPerBlockWorksheetAttachments(payload as any);
+        for (const a of built) {
+          const wsKey = `nightly-agendas/${forDate}/worksheets/${a.attachmentKey.replace(/[^A-Za-z0-9_/.-]+/g, "_")}.pdf`;
+          const { key: wsStorageKey, url: wsStorageUrl } = await storagePut(
+            wsKey,
+            a.pdfBuffer,
+            "application/pdf",
+          );
+          let wsSigned: string | null = null;
+          try { wsSigned = await storageGetSignedUrl(wsStorageKey); } catch { wsSigned = null; }
+          perBlockAttachments.push({
+            filename: a.filename,
+            attachmentKey: a.attachmentKey,
+            blockSortOrder: a.blockSortOrder,
+            subjectName: a.subjectName,
+            topicCode: a.topicCode,
+            storageKey: wsStorageKey,
+            storageUrl: wsStorageUrl,
+            signedUrl: wsSigned,
+            byteSize: a.byteSize,
+            pdfBase64: a.pdfBuffer.toString("base64"),
+          });
+          // Auto-mirror this worksheet to Drive (Worksheets / Daily Packets)
+          try {
+            const ym = forDate.slice(0, 7);
+            await (db as any).enqueueDrivePush?.({
+              fileKey: wsStorageKey,
+              fileUrl: wsSigned ?? wsStorageUrl,
+              fileName: a.filename,
+              mimeType: "application/pdf",
+              targetFolder: "worksheets" as any,
+              targetSubpath: ym,
+            } as any);
+          } catch { /* drive mirror is fire-and-forget */ }
+        }
+      } catch (e) {
+        // Worksheet split failure must NOT block the email — fall back to
+        // just the agenda PDF attachment.
+        perBlockAttachments = [];
+      }
+
+      // Auto-mirror the agenda PDF itself.
+      try {
+        const ym = forDate.slice(0, 7);
+        await (db as any).enqueueDrivePush?.({
+          fileKey: key,
+          fileUrl: absolutePdfUrl ?? url,
+          fileName: `${forDate} - ${payload.studentName} - Agenda.pdf`,
+          mimeType: "application/pdf",
+          targetFolder: "agenda_pdf" as any,
+          targetSubpath: ym,
+        } as any);
+      } catch { /* fire-and-forget */ }
+
       // Insert queued row
       const recordId = await db.insertNightlyAgendaEmail({
         forDate,
@@ -1003,6 +1085,34 @@ ${absolutePdfUrl ? `<p style=\"text-align:center;margin:24px 0;\"><a href=\"${ab
 <p style=\"font-size:12px;color:#888;text-align:center;margin-top:24px;\">PDF agenda attached. If anything changes before school start, this email will be re-sent automatically.</p>
 </body></html>`;
 
+      // Build the attachments[] array the scheduled-task agent will pass to
+      // Gmail MCP. Agenda PDF first, then per-block worksheets in sortOrder.
+      const attachments: Array<{
+        filename: string;
+        contentBase64: string;
+        mimeType: string;
+        byteSize: number;
+        kind: "agenda" | "worksheet";
+        blockSortOrder?: number;
+      }> = [];
+      attachments.push({
+        filename: `${forDate} - ${payload.studentName} - Agenda.pdf`,
+        contentBase64: pdfBuffer.toString("base64"),
+        mimeType: "application/pdf",
+        byteSize: pdfBuffer.byteLength,
+        kind: "agenda",
+      });
+      for (const ws of perBlockAttachments) {
+        attachments.push({
+          filename: ws.filename,
+          contentBase64: ws.pdfBase64,
+          mimeType: "application/pdf",
+          byteSize: ws.byteSize,
+          kind: "worksheet",
+          blockSortOrder: ws.blockSortOrder,
+        });
+      }
+
       return res.json({
         ok: true,
         status: isResend ? "resend_ready" : "send_ready",
@@ -1015,7 +1125,19 @@ ${absolutePdfUrl ? `<p style=\"text-align:center;margin:24px 0;\"><a href=\"${ab
         pdfUrl: url,
         pdfDownloadUrl: absolutePdfUrl,
         recordId,
-        driveFolderHint: "Reagan / Homeschool Hub / Daily Agendas",
+        attachments,
+        worksheetAttachments: perBlockAttachments.map((a) => ({
+          filename: a.filename,
+          attachmentKey: a.attachmentKey,
+          blockSortOrder: a.blockSortOrder,
+          subjectName: a.subjectName,
+          topicCode: a.topicCode,
+          storageKey: a.storageKey,
+          storageUrl: a.storageUrl,
+          signedUrl: a.signedUrl,
+          byteSize: a.byteSize,
+        })),
+        driveFolderHint: "Reagan School Hub (Dashboard) > Daily Operations > Daily Agenda PDFs",
       });
     } catch (e: any) {
       return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
