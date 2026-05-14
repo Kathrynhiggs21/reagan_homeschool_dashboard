@@ -4563,6 +4563,48 @@ export const appRouter = router({
         return pickReaganChoiceTime(input as any);
       }),
     /**
+     * Push 168 (2026-05-15 overnight Wave-10) — tutor handoff brief.
+     * Builds a 5-bullet markdown brief + a kid-line for the next tutor
+     * session. Pure helper wiring; family-only.
+     */
+    tutorHandoffSummary: familyAdminProcedure
+      .input(
+        z.object({
+          forISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          tutorName: z.string().min(1),
+          subject: z.string().min(1),
+          recentBlocks: z.array(z.any()).default([]),
+          recentGrades: z.array(z.any()).default([]),
+          interests: z.array(z.string()).default([]),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { buildTutorHandoffSummary } = await import(
+          "./_lib/tutorHandoffSummary"
+        );
+        return buildTutorHandoffSummary(input as any);
+      }),
+    /**
+     * Push 168 (2026-05-15 overnight Wave-10) — subject-time-balance live alert.
+     * Computes per-subject pacing for the active week and surfaces a gentle
+     * adult-side notice + kid-friendly nudge. Family-only.
+     */
+    subjectTimeBalanceAlert: familyAdminProcedure
+      .input(
+        z.object({
+          weekStartISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          schoolDaysElapsedThisWeek: z.number().int().min(0).max(5),
+          actualMinByDay: z.record(z.string(), z.number()).default({}),
+          weeklyTargetMin: z.record(z.string(), z.number()).default({}),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { computeSubjectTimeBalanceAlert } = await import(
+          "./_lib/subjectTimeBalanceAlert"
+        );
+        return computeSubjectTimeBalanceAlert(input as any);
+      }),
+    /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
      * + the active summer status. Reagan-callable (public). Self-empty
