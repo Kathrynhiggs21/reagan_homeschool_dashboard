@@ -2942,3 +2942,6 @@ shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
 - [x] Push 138 (2026-05-13) — Outdoor / real-world activity tag helper (whole-word case-insensitive title+description match, explicit labels override, badge label+emoji, audit-friendly matchedKeywords, 11/11).
 
 - [x] Push 139 (2026-05-13) — Printed-book page reference helper (4-book canonical shelf: Tuck Everlasting / Michaels World read; Spectrum Sci 5 / 180 Days Lang 5 complete; pg N vs pg X–Y formatting; day-paced workbook day-page picker; 4 distinct rejection reasons; 13/13).
+- [x] Push 140 (2026-05-14) — Book-reading progress tracker pure helper (4-book canonical shelf, monotonic high-water mark, day-paced workbook dayNumber→page, 6 distinct rejection reasons, rollupShelfProgress for bookshelf UI; 13/13).
+- [x] Push 141 (2026-05-14) — Kiwi idle-nudge cooldown helper (8-min per-block cooldown, 3 per-block / 6 daily caps, school-hours 08–14:30 gating, suppressed on Slay Charge ⚡ + reset countdown + do-not-disturb, gentle→check-in→suggest-break escalation; 13/13).
+- [x] Push 142 (2026-05-14) — Weekly schedule balance scorer (outdoor vs desk minutes/share, 5-subject variety score, per-day desk-minute totals + 180-min cap warning, weekend detector, headline Empty/Light/Subject-narrow/Desk-heavy/Outdoor-rich/Balanced; excludes Slay Charge ⚡ morning_vibe blocks; 14/14).
