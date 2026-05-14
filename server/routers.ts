@@ -4327,6 +4327,46 @@ export const appRouter = router({
         return rollupShelfProgress(input?.prior ?? {}, input?.sessions ?? []);
       }),
     /**
+     * Push 155 (2026-05-14) — "Good Morning, Reagan!" daily greeter.
+     *
+     * Mom asked for a kid-friendly daily start-up that is engaging and
+     * mood-setting (joke / fun fact / riddle / silly thought / kind
+     * thought) instead of a traditional warm-up. The pure helper picks
+     * one deterministically per ISO date so the greeting stays the same
+     * if Reagan refreshes the page (no slot-machine feeling).
+     * Public so the kid Today page can render it without auth.
+     */
+    goodMorningGreeting: publicProcedure
+      .input(
+        z
+          .object({
+            dateISO: z
+              .string()
+              .regex(/^\d{4}-\d{2}-\d{2}$/)
+              .optional(),
+            forceKind: z
+              .enum([
+                "joke",
+                "fun_fact",
+                "riddle",
+                "silly_thought",
+                "kind_thought",
+              ])
+              .optional(),
+          })
+          .optional(),
+      )
+      .query(async ({ input }) => {
+        const { pickGoodMorningGreeting } = await import(
+          "./_lib/goodMorningReagan"
+        );
+        const dateISO =
+          input?.dateISO ?? new Date().toISOString().slice(0, 10);
+        return pickGoodMorningGreeting(dateISO, {
+          forceKind: input?.forceKind,
+        });
+      }),
+    /**
      * Push 154 (2026-05-14) — Free-form Agenda Editor parser.
      *
      * Mom or Grandma types plain English ("shorter today / more math /

@@ -3024,5 +3024,10 @@ Order of work tonight:
 
 ## Wave-4 (overnight 2026-05-14, after pushes 151-153)
 - [x] Push 154 — wired today.agendaEditorParse + today.applyInlineTapEdit + today.analyticsStrip tRPC procedures (familyAdminProcedure for the two adult ones, publicProcedure for analyticsStrip) + 4 vitest cases (all 22 green together with the helper tests)
-- [ ] Wave-4 checkpoint
-- [ ] Wave-4 Drive sync
+- [x] Wave-4 checkpoint — version 76239f33
+- [x] Wave-4 Drive sync — folder ID 1kIa74Qc8GRXdPlj3PgrMIcdHA7-MuY_6
+
+## Wave-5 (overnight 2026-05-14, after Wave-4)
+- [x] Push 155 — "Good Morning, Reagan!" daily greeter pure helper (joke / fun fact / riddle / silly thought / kind thought; 60-entry curated kid-safe pool; deterministic per ISO + name; trauma-safe rules: no warm-up framing, no test framing, single-bang greeting) + today.goodMorningGreeting tRPC procedure + 19 vitest cases (15 helper + 4 wiring), all green
+- [ ] Wave-5 checkpoint
+- [ ] Wave-5 Drive sync
