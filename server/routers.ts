@@ -4724,16 +4724,16 @@ export const appRouter = router({
         return computeMultiDayMoodTrend(input as any);
       }),
     /**
-     * Push 180 (2026-05-14, Wave-14) — Notebook Doodle prompt-of-the-day.
-     * Deterministic per ISO + name, kid-readable, opt-in phrasing,
-     * never timed/graded, day-to-day variety guard. Reagan-callable.
+     * Push 180 (Wave-13/14, 2026-05-15) — Notebook Doodle prompt of the
+     * day. Deterministic per ISO + kid name; kid-readable, opt-in,
+     * never timed/graded.
      */
     notebookDoodleToday: publicProcedure
       .input(
         z.object({
-          dateISO: z.string(),
-          name: z.string(),
-          recentISOs: z.array(z.string()).default([]),
+          isoDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          kidName: z.string().default("reagan"),
+          recentPromptKeys: z.array(z.string()).optional(),
         }),
       )
       .query(async ({ input }) => {
@@ -4743,18 +4743,20 @@ export const appRouter = router({
         return pickNotebookDoodlePrompt(input as any);
       }),
     /**
-     * Push 180 (2026-05-14, Wave-14) — Bookshelf milestone celebration.
-     * Returns the single highest-priority celebration for today
-     * (finished_book > quarter_crossed > three_today > returned_after_gap)
-     * with a kid-readable line + adult-side Drive log entry.
+     * Push 180 (Wave-13/14, 2026-05-15) — Bookshelf milestone
+     * celebration. Returns at most one celebration per day; kid-readable
+     * and never comparative.
      */
     bookshelfMilestoneToday: publicProcedure
       .input(
         z.object({
-          todayISO: z.string(),
-          todaySnapshot: z.array(z.any()),
-          yesterdaySnapshot: z.array(z.any()).optional(),
-          lastReadByBook: z.record(z.string(), z.string()).optional(),
+          isoDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          kidName: z.string().default("reagan"),
+          finishedBookToday: z.boolean().optional(),
+          quarterCrossedToday: z.boolean().optional(),
+          chaptersFinishedToday: z.number().int().nonnegative().optional(),
+          daysSinceLastReadingBlock: z.number().int().nonnegative().optional(),
+          alreadyCelebratedToday: z.boolean().optional(),
         }),
       )
       .query(async ({ input }) => {
@@ -4817,7 +4819,7 @@ export const appRouter = router({
      * Push 183 (Wave-15, 2026-05-15) — Pear Classes / Giant Steps Library
      * appLink chip on Today. Pure deterministic helper; never reads DB.
      * Reagan-callable (publicProcedure) so the kid-side rail can render
-     * the chip without an adult session.
+     * the chip without an adult session. Helper handles consent gating.
      */
     pearClassesAppLink: publicProcedure
       .input(

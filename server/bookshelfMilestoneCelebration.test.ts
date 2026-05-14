@@ -55,15 +55,16 @@ describe("Push 179 — Bookshelf milestone celebration", () => {
   });
 
   it("celebrates 3+ chapters today across the shelf", () => {
+    // Pick book sizes so no quarter is crossed today.
     const r = computeBookshelfMilestone({
       todayISO: today,
       todaySnapshot: [
-        { bookId: "tuck", title: "Tuck Everlasting", chaptersRead: 7, totalChapters: 25 },
-        { bookId: "michael", title: "Michael's World", chaptersRead: 5, totalChapters: 10 },
+        { bookId: "tuck", title: "Tuck Everlasting", chaptersRead: 9, totalChapters: 25 }, // 36%
+        { bookId: "michael", title: "Michael's World", chaptersRead: 7, totalChapters: 100 }, // 7%
       ],
       yesterdaySnapshot: [
-        { bookId: "tuck", title: "Tuck Everlasting", chaptersRead: 5, totalChapters: 25 },
-        { bookId: "michael", title: "Michael's World", chaptersRead: 4, totalChapters: 10 },
+        { bookId: "tuck", title: "Tuck Everlasting", chaptersRead: 7, totalChapters: 25 }, // 28%
+        { bookId: "michael", title: "Michael's World", chaptersRead: 6, totalChapters: 100 }, // 6%
       ],
     });
     expect(r.notice).toBe(true);
