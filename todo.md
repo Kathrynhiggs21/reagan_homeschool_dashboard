@@ -3056,3 +3056,12 @@ Order of work tonight:
 - [x] Push 164 — reaganChoiceTimePicker pure helper (14 vitests)
 - [x] Wave-8 checkpoint — version 7d564d25
 - [x] Wave-8 Drive sync — folder ID 1y4jZtanObfPVjbrPJhqavQd4l3Ra2xxF (7 files via rclone)
+
+
+## Wave-10 (overnight 2026-05-15 03:30-03:45 UTC)
+- [x] Push 168 — wire today.tutorHandoffSummary + today.subjectTimeBalanceAlert (5 vitests)
+- [x] Push 169 — kidStreakSummary helper, no kid-unfriendly framing (15 vitests)
+- [x] Push 170 — breakPlanner helper, no-timer rule, mood/weather/adult/pet veto (14 vitests)
+- [x] Wave-10 checkpoint — version 2197d138
+- [x] Wave-10 Drive sync — folder ID 1ZYRsmdrX2rUsvm0koENjv360MhOcIb3p (6 files via gws --upload)
+- [x] Switched Drive uploads from broken rclone to gws files create --upload (rclone token expired during night)

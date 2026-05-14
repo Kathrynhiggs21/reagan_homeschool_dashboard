@@ -4605,6 +4605,56 @@ export const appRouter = router({
         return computeSubjectTimeBalanceAlert(input as any);
       }),
     /**
+     * Push 171 (2026-05-15 Wave-11) — kid-readable streak headline + per-subject
+     * streak rows for the Today page. publicProcedure so Reagan's view can read it
+     * without family-admin context.
+     */
+    kidStreakSummary: publicProcedure
+      .input(
+        z.object({
+          todayISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          lookbackDays: z.number().int().min(1).max(60).optional(),
+          dailyByDate: z.record(z.string(), z.record(z.string(), z.number())).default({}),
+          subjects: z.array(z.string()).optional(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { computeKidStreaks } = await import("./_lib/kidStreakSummary");
+        return computeKidStreaks(input as any);
+      }),
+    /**
+     * Push 171 (2026-05-15 Wave-11) — Reagan break suggestion. Pure helper picks
+     * one of 8 break kinds deterministically per ISO+name. familyAdminProcedure
+     * because the suggestion uses adult-aware veto data (adultPresent, weather,
+     * pets, vetoKinds).
+     */
+    suggestBreak: familyAdminProcedure
+      .input(
+        z.object({
+          iso: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          name: z.string().min(1),
+          mood: z.enum(["great", "okay", "tired", "frustrated"]),
+          weather: z.enum([
+            "sunny-cool",
+            "sunny-warm",
+            "cloudy",
+            "rainy",
+            "cold",
+            "hot",
+            "unknown",
+          ]),
+          hourOfDay: z.number().int().min(0).max(23),
+          adultPresent: z.boolean(),
+          recentBreakKinds: z.array(z.string()).optional(),
+          pets: z.array(z.enum(["dog", "cat", "bird"])).optional(),
+          vetoKinds: z.array(z.string()).optional(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { pickReaganBreak } = await import("./_lib/breakPlanner");
+        return pickReaganBreak(input as any);
+      }),
+    /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
      * + the active summer status. Reagan-callable (public). Self-empty
