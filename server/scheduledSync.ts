@@ -885,7 +885,53 @@ export function registerScheduledSync(app: Express) {
         } catch (e) { console.warn("[nightly-lesson-gen] createBlock failed", e); }
       }
 
-      return res.json({ ok: true, dateStr, dayLabel, status: "created", blocksAdded: added, summary: draft.summary, warnings: draft.warnings });
+      // Push 148 (2026-05-14) — worksheet auto-prep planner.
+      // After committing the next school day's blocks, plan which of
+      // them need a worksheet generated for tomorrow's 8 PM packet.
+      // Pure planning only here — no LLM calls. The scheduled-task
+      // agent picks up `autoPrep.workItems` and feeds each through the
+      // existing answer-key + worksheet PDF pipeline.
+      let autoPrep: { workItems: any[]; skipped: any[] } = {
+        workItems: [],
+        skipped: [],
+      };
+      try {
+        const committed = await db.listBlocksForPlan(plan.id);
+        const slugById = new Map<number, { slug: string; name: string }>();
+        for (const s of subjects as any[]) {
+          slugById.set(s.id, { slug: s.slug, name: s.name });
+        }
+        const planned = (committed as any[]).map((b) => {
+          const subj = b.subjectId ? slugById.get(b.subjectId) ?? null : null;
+          return {
+            blockId: b.id as number,
+            blockTitle: (b.title ?? "") as string,
+            subjectSlug: subj?.slug ?? null,
+            subjectName: subj?.name ?? null,
+            details: (b.description ?? null) as string | null,
+            curriculumTopicCode: null,
+            kind: undefined,
+            hasAnswerKey: false,
+          };
+        });
+        const { planWorksheetAutoPrep } = await import(
+          "./_lib/worksheetAutoPrepPlanner"
+        );
+        autoPrep = planWorksheetAutoPrep(planned);
+      } catch (e) {
+        console.warn("[nightly-lesson-gen] worksheet auto-prep planning failed", e);
+      }
+
+      return res.json({
+        ok: true,
+        dateStr,
+        dayLabel,
+        status: "created",
+        blocksAdded: added,
+        summary: draft.summary,
+        warnings: draft.warnings,
+        autoPrep,
+      });
     } catch (e: any) {
       return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
     }
