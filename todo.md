@@ -3029,5 +3029,14 @@ Order of work tonight:
 
 ## Wave-5 (overnight 2026-05-14, after Wave-4)
 - [x] Push 155 — "Good Morning, Reagan!" daily greeter pure helper (joke / fun fact / riddle / silly thought / kind thought; 60-entry curated kid-safe pool; deterministic per ISO + name; trauma-safe rules: no warm-up framing, no test framing, single-bang greeting) + today.goodMorningGreeting tRPC procedure + 19 vitest cases (15 helper + 4 wiring), all green
-- [ ] Wave-5 checkpoint
-- [ ] Wave-5 Drive sync
+- [x] Wave-5 checkpoint — version 6d7f67c7
+- [x] Wave-5 Drive sync — folder ID 1stfu_nTgvF2pqnQ2G0woAL6ONRx-jrAG
+
+
+## Wave-6 (overnight 2026-05-14, pushes 156-158)
+
+- [x] Push 156 — Reagan request button parser (kid plain English → typed adult-side request, schedule changes need both Mom + Grandma) — 15/15
+- [x] Push 157 — Off-curriculum auto-classifier (transcript chunk → matched topic OR new-topic candidate) — 13/13
+- [x] Push 158 — Adult quick-entry payload builder (one-tap "what we actually did" → actualAgendaEntries + Drive day-log Markdown) — 12/12
+- [ ] Wave-6 checkpoint
+- [ ] Wave-6 Drive sync
