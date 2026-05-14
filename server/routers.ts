@@ -4838,6 +4838,38 @@ export const appRouter = router({
         return computePearClassesAppLink((input ?? {}) as any);
       }),
     /**
+     * Push 184 (Wave-15, 2026-05-15) — appLink sign-in-method tagger.
+     * Pure helper wrapper. Tags one or many appLink rows with their
+     * canonical signInMethod (google_sso | email_password | class_code),
+     * preferred Google account role, and a kid-readable badge. Used by
+     * the Apps Hub + Today rail to render the right opt-in chip without
+     * ever leaking the blocked reagan.higgs33@ihsd.us address.
+     */
+    appLinkSignInMethodTags: publicProcedure
+      .input(
+        z.object({
+          rows: z
+            .array(
+              z.object({
+                appKey: z.string(),
+                name: z.string().optional().nullable(),
+                url: z.string().optional().nullable(),
+              }),
+            )
+            .max(100),
+          isReaganView: z.boolean().optional(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { tagAppLinkSignInMethod } = await import(
+          "./_lib/appLinkSignInMethodTagger"
+        );
+        const isKid = input.isReaganView === true;
+        return input.rows.map((row) =>
+          tagAppLinkSignInMethod({ ...row, isReaganView: isKid }),
+        );
+      }),
+    /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
      * + the active summer status. Reagan-callable (public). Self-empty
