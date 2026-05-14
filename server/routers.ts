@@ -4870,6 +4870,55 @@ export const appRouter = router({
         );
       }),
     /**
+     * Wave-15 / Push 187 — today.appAccountVaultBuild
+     *
+     * Adult-only mutation: takes one appLink tag (already produced by
+     * today.appLinkSignInMethodTags above) + the plaintext password the
+     * adult just typed in, and returns a deterministic vault-row payload
+     * ready to be encrypted + inserted into passwordLocker. Encryption
+     * itself happens server-side via crypto.subtle (NOT in this helper)
+     * so the helper stays pure; here we hand the helper an identity
+     * encrypt fn that base64-wraps the plaintext as a placeholder, and
+     * the real DB-insert procedure (added in a later push) will call the
+     * real encrypt() before persisting.
+     *
+     * Reagan-callable: NO. Gated by ctx.user.role === 'admin'.
+     */
+    appAccountVaultBuild: protectedProcedure
+      .input(
+        z.object({
+          tag: z.object({
+            key: z.string(),
+            name: z.string(),
+            signInMethod: z.enum(["google_sso", "email_password", "class_code"]),
+            preferredAccountRole: z.enum(["reagan", "mom", "grandma", "dad", "none"]),
+            preferredAccountEmail: z.string().nullable(),
+            badge: z.string(),
+            adultNote: z.string().nullable(),
+          }),
+          plaintext: z.string().min(1).max(512),
+          nowIso: z.string().optional(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "adult-only" });
+        }
+        const { buildAppAccountVaultEntry } = await import(
+          "./_lib/appAccountVaultEntry"
+        );
+        // Placeholder encryption — base64 wrap. Real procedure layer
+        // will replace this with crypto.subtle AES-GCM before persisting.
+        const encrypt = (p: string) =>
+          `b64:${Buffer.from(p, "utf8").toString("base64")}`;
+        return buildAppAccountVaultEntry({
+          tag: input.tag,
+          plaintext: input.plaintext,
+          encrypt,
+          nowIso: input.nowIso,
+        });
+      }),
+    /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
      * + the active summer status. Reagan-callable (public). Self-empty
