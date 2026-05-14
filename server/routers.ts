@@ -4655,6 +4655,33 @@ export const appRouter = router({
         return pickReaganBreak(input as any);
       }),
     /**
+     * Push 174 (2026-05-15 Wave-12) — Listening-summary mood-timeline rollup.
+     * Returns 24 hour cells for the given ISO date with kid-safe mood +
+     * top-3 behavior tags + kid-readable one-liner per hour. Empty hours
+     * are flagged so the UI hides them. publicProcedure so the kid-side
+     * mood card on the Today page can read the rollup without a Mom session.
+     */
+    moodTimelineRollup: publicProcedure
+      .input(
+        z.object({
+          dateISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          chunks: z.array(
+            z.object({
+              atISO: z.string(),
+              reaganVoicePresent: z.boolean(),
+              moodEstimate: z.string(),
+              behaviorTags: z.array(z.string()),
+            }),
+          ),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { rollupListeningMoodTimeline } = await import(
+          "./_lib/listeningMoodTimelineRollup"
+        );
+        return rollupListeningMoodTimeline(input as any);
+      }),
+    /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
      * + the active summer status. Reagan-callable (public). Self-empty
