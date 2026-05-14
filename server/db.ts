@@ -4538,6 +4538,19 @@ export async function listCurriculumTopics(subject?: string) {
   `) as any)[0] ?? [];
 }
 
+/**
+ * Push 134 (2026-05-13) — Lower-cased title labels of every curriculum topic.
+ * Used by the off-plan auto-add proposer so the gating helper can reject
+ * already-known topics without each caller re-implementing the lookup.
+ */
+export async function listCurriculumTopicLabels(): Promise<string[]> {
+  const db = getDb();
+  const rows: any = (await db.execute(sql`SELECT title FROM curriculumTopics`) as any)[0] ?? [];
+  return rows
+    .map((r: any) => String(r.title ?? "").trim().toLowerCase())
+    .filter((s: string) => s.length > 0);
+}
+
 export async function toggleCurriculumTopic(id: number, nextStatus: "notStarted" | "inProgress" | "done") {
   const db = getDb();
   const completedAt = nextStatus === "done" ? new Date() : null;

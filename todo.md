@@ -2930,3 +2930,9 @@ shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
 - [x] Push 132 (2026-05-13) — Khan/IXL deeplink open-tracker pure helper: planDeeplinkOpen wraps Push 116's URL builder, decides coin earn (1 default for kid Mon–Fri school-time open; 0 weekend; 0 adult preview), emits deterministic openId keyed on (kid, date, provider, subject, topic, openSlot) for retry-safe audit; rejects bad date / missing user / non-positive reward / unknown subject or provider; never leaks "/undefined" when topic absent. 8/8 vitest contract; tsc clean.
 
 - [x] Push 133 (2026-05-13) — Grandma-muted-this-week alert helper: decideGrandmaMutedAlert hidden when Grandma still on this-week recipient list (case-insensitive, trim-tolerant) or audience is kid/tutor/grandma; severity escalates info (1 week) → warn (2 in a row) → critical (3+, IEP paper-trail framing); audit tag carries streak; copy never names Reagan or kid-tier. 9/9 vitest contract; tsc clean.
+
+- [x] Push 134 (2026-05-13) — Off-plan topic auto-add tRPC procedure wiring: today.proposeOffPlanTopicAutoAdd (protectedProcedure mutation) gated to admin/tutor/user, delegates to Push 107 helper, feeds existingLabels via new db.listCurriculumTopicLabels (lower-cased + trimmed + non-empty). 7/7 vitest contract.
+
+- [x] Push 135 (2026-05-13) — Roblox reward-break gating: 2 coins/min, 30-min per-request cap, 60-min daily budget, 45-min cooldown; school-hours (Mon–Fri 09–15 ET) blocks unless coverage on-track; adult override bypasses caps but cost stays a hard floor. 14/14 vitest contract.
+
+- [x] Push 136 (2026-05-13) — Slay Charge ⚡ kid-tier copy variants: blocklist (whole-word), Flesch-Kincaid grade ≤ 6.5, kid-safe vs kid-friendly-stretch tier labels, no pool mutation, kind filter, all 40 current items pass safe filter. 13/13 vitest contract.

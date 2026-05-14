@@ -4283,6 +4283,47 @@ export const appRouter = router({
         return { ...summary, allowed: true, date };
       }),
     /**
+     * Push 134 (2026-05-13) — Off-plan topic auto-add proposal.
+     * Adult-only (admin/tutor/user). Wraps the Push 107 pure helper so the
+     * UI can ask "should this off-plan topic be promoted into curriculum?"
+     * without re-implementing the gating rules. Returns the typed decision
+     * verbatim so the caller renders the right copy + audit reason.
+     */
+    proposeOffPlanTopicAutoAdd: protectedProcedure
+      .input(
+        z.object({
+          topicLabel: z.string().min(1).max(120),
+          subjectSlug: z.string().min(1).max(40),
+          confidence: z.number().min(0).max(1).optional(),
+          manualOverride: z.boolean().optional(),
+          recentHitCount: z.number().int().min(0).max(50).optional(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (
+          ctx.user.role !== "admin" &&
+          ctx.user.role !== "tutor" &&
+          ctx.user.role !== "user"
+        ) {
+          return { allowed: false as const };
+        }
+        const { decideOffPlanTopicAutoAdd } = await import(
+          "./_lib/offPlanTopicAutoAdd"
+        );
+        const existingLabels = await db.listCurriculumTopicLabels();
+        const decision = decideOffPlanTopicAutoAdd(
+          {
+            topicLabel: input.topicLabel,
+            subjectSlug: input.subjectSlug,
+            confidence: input.confidence,
+            manualOverride: input.manualOverride,
+            recentHitCount: input.recentHitCount,
+          },
+          { existingLabels },
+        );
+        return { allowed: true as const, decision };
+      }),
+    /**
      * refresh — rebuild today's plan blocks from the active template,
      * preserving completed/in-progress work. Available to Reagan (public)
      * because she sometimes wants a clean slate after a rough start.
