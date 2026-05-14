@@ -2906,3 +2906,9 @@ shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
 
 - [x] Push 120 (2026-05-13) — Worksheet-photo accept/reject helper already in tree; locked in by 11/11 vitest contract (mime, size, blur, blockId, kidId rejections; Reagan-safe + adult-tier messages).
 - [x] Push 121 (2026-05-13) — Calendar-week assignment summary helper: per-subject coverage, missing-school-day signals (Mon-Fri only), uncoveredSubjects, headline heuristic (balanced / subject-gap / narrow / light / quiet), drops out-of-week + unknown rows; 14/14 vitest contract.
+
+- [x] Push 122 (2026-05-13) — Kid-facing 5-minute reset countdown helper: pure phase machine (idle / running / finished), mm:ss label, calm vs mid Kiwi copy at the 60% mark, idle-on-future-start, finished sticky, custom durationMs override, kid-safe copy invariant. 10/10 vitest contract.
+
+- [x] Push 123 (2026-05-13) — Curriculum-coverage strip percent helper: 7-day rolling window, morning_vibe excluded, only completed/in-progress + minutes>0 cover, dedupes by topic, planned-weighted overall %, bands (red/amber/on-track/strong) shared with Sunday digest, zeroCoverageSubjects list, no-plan band when nothing planned. 12/12 vitest contract.
+
+- [x] Push 124 (2026-05-13) — Sunday digest send-plan orchestrator: glues gate (Push 108) + recipients toggle (Push 94) + dedupe (Push 78) + body composer (Push 109). One planSundayDigestSend() call returns ordered Mom-then-Grandma sends with audience-correct body, subject, and YYYY-MM-DD:email idempotency key. Outside window/already-sent/invalid skip cleanly; pre-queued keys drop one or both; extras append + dedupe; tutor extras get tutor audience. 16/16 vitest contract.
