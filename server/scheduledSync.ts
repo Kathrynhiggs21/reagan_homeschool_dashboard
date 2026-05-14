@@ -2,6 +2,7 @@ import type { Express, Request, Response } from "express";
 import * as db from "./db";
 import { sdk } from "./_core/sdk";
 import { buildDayLogMarkdown, dayLogFileName, dayLogSubpath } from "./_lib/dayLogBuilder";
+import { buildDailyMomBriefing } from "./_lib/dailyMomBriefing";
 import { drivePushQueue } from "../drizzle/schema";
 import { and, eq } from "drizzle-orm";
 
@@ -1183,6 +1184,27 @@ ${absolutePdfUrl ? `<p style=\"text-align:center;margin:24px 0;\"><a href=\"${ab
         });
       }
 
+      // PRIORITY-2 (2026-05-14, Wave-8 push 162): bundle today's actual
+      // grades + Kiwi mood + planned-vs-actual into one Mom-readable
+      // briefing markdown. Pure helper, never throws on missing data
+      // (returns harmless 'nothing logged today' lines).
+      let momBriefing: ReturnType<typeof buildDailyMomBriefing> | null = null;
+      try {
+        momBriefing = buildDailyMomBriefing({
+          schoolDayISO: forDate,
+          kidName: payload.studentName,
+          grades: [],
+          timeBySubjectMin: {},
+          totalMinutesOnTask: 0,
+          totalMinutesPlanned: (payload.blocks ?? []).reduce(
+            (s: number, b: any) => s + (Number.isFinite(b?.durationMin) ? Number(b.durationMin) : 0),
+            0,
+          ),
+          moodReadings: [],
+          worksheetsAttached: perBlockAttachments.length,
+        });
+      } catch { momBriefing = null; }
+
       return res.json({
         ok: true,
         status: isResend ? "resend_ready" : "send_ready",
@@ -1195,6 +1217,16 @@ ${absolutePdfUrl ? `<p style=\"text-align:center;margin:24px 0;\"><a href=\"${ab
         pdfUrl: url,
         pdfDownloadUrl: absolutePdfUrl,
         recordId,
+        momBriefing: momBriefing
+          ? {
+              schoolDayISO: momBriefing.schoolDayISO,
+              markdownBody: momBriefing.markdownBody,
+              notificationHeadline: momBriefing.notificationHeadline,
+              moodBand: momBriefing.moodRollup.band,
+              kidHeadline: momBriefing.kidSummary.headline,
+              plannedVsActualLine: momBriefing.plannedVsActualLine,
+            }
+          : null,
         attachments,
         worksheetAttachments: perBlockAttachments.map((a) => ({
           filename: a.filename,

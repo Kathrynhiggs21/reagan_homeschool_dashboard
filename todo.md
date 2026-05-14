@@ -3040,3 +3040,11 @@ Order of work tonight:
 - [x] Push 158 — Adult quick-entry payload builder (one-tap "what we actually did" → actualAgendaEntries + Drive day-log Markdown) — 12/12
 - [x] Wave-6 checkpoint — version 89a75307
 - [x] Wave-6 Drive sync — folder ID 16fW0jawNqQem5MNOuAfZjNkW_HkvE19g (7 files via rclone)
+
+
+## Wave-7 (overnight 2026-05-14, pushes 159-161)
+- [x] Push 159 — wire Wave-6 helpers into today router (parseReaganRequest + classifyOffCurriculum + applyAdultQuickEntry, 9 vitests)
+- [x] Push 160 — selfRebalanceTrigger pure helper + 13 vitests
+- [x] Push 161 — buildDailyMomBriefing pure helper + 12 vitests
+- [x] Wave-7 checkpoint — version a4443002
+- [x] Wave-7 Drive sync — folder ID 1LQrhQatDLWi6ZNlxdYs8_uiiTtdNjWRK
