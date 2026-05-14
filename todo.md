@@ -3013,3 +3013,11 @@ Order of work tonight:
 
 ## Apps & Tools backlog (added 2026-05-14 overnight)
 - [ ] Pear Classes / Giant Steps library — register as appAccount, login via Google (spear.cpt@gmail.com) at https://support.giantsteps.app/s/my-library; surface as appLink on Today; deferred until after overnight auto-push (needs one-time Google OAuth consent)
+
+
+## Wave-3 (overnight 2026-05-14, after pushes 148-150)
+- [x] Push 151 — agendaEditorParser pure helper + 17 vitest cases (free-form "shorter today / more math / skip science" → typed edits)
+- [x] Push 152 — inlineTapEditHandler pure helper + 18 vitest cases (start time / minutes / title with kid-readable validation + undo payload)
+- [x] Push 153 — analyticsEmptyStateGuard pure helper + 10 vitest cases (hide grey-box when no real data, never render placeholder zeroes)
+- [ ] Wave-3 checkpoint
+- [ ] Wave-3 Drive sync (Reagan Dashboard Backend Pushes / 2026-05-14 Wave-3)
