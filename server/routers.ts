@@ -4682,6 +4682,48 @@ export const appRouter = router({
         return rollupListeningMoodTimeline(input as any);
       }),
     /**
+     * Push 177 (2026-05-14, Wave-13) — wire end-of-day exit ticket builder.
+     * Public so Reagan-side can render her 3 short prompts without an adult session.
+     */
+    exitTicketBuild: publicProcedure
+      .input(
+        z.object({
+          dateISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          kidName: z.string().min(1).max(40).optional(),
+          completedSubjects: z.array(z.string()).optional(),
+          recentMood: z
+            .enum(["great", "okay", "tired", "frustrated"])
+            .optional(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { buildExitTicket } = await import("./_lib/exitTicketBuilder");
+        return buildExitTicket(input as any);
+      }),
+    /**
+     * Push 177 (2026-05-14, Wave-13) — wire multi-day mood trend.
+     * Adult-only: returns a respectful notice + suggestion when recent week
+     * has dipped vs the prior week. No clinical language ever.
+     */
+    multiDayMoodTrend: familyAdminProcedure
+      .input(
+        z.object({
+          todayISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+          records: z.array(
+            z.object({
+              iso: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+              mood: z.string(),
+            }),
+          ),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { computeMultiDayMoodTrend } = await import(
+          "./_lib/multiDayMoodTrend"
+        );
+        return computeMultiDayMoodTrend(input as any);
+      }),
+    /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
      * + the active summer status. Reagan-callable (public). Self-empty
