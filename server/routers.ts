@@ -4327,6 +4327,74 @@ export const appRouter = router({
         return rollupShelfProgress(input?.prior ?? {}, input?.sessions ?? []);
       }),
     /**
+     * Push 154 (2026-05-14) — Free-form Agenda Editor parser.
+     *
+     * Mom or Grandma types plain English ("shorter today / more math /
+     * skip science") and gets back a typed list of edits the UI shows on
+     * an Accept / Undo card. familyAdminProcedure means only Mom and
+     * Grandma reach this; Reagan's session never sees the input box.
+     */
+    agendaEditorParse: familyAdminProcedure
+      .input(z.object({ input: z.string().min(0).max(2000) }))
+      .mutation(async ({ input }) => {
+        const { parseAgendaEditorInput } = await import(
+          "./_lib/agendaEditorParser"
+        );
+        return parseAgendaEditorInput(input.input);
+      }),
+    /**
+     * Push 154 (2026-05-14) — Inline tap-edit handler.
+     *
+     * Mom or Grandma taps directly on a block field (start time, minutes,
+     * or title) on Today + Schedule and the popover sends the raw value
+     * here. Helper validates with kid-readable errors + returns an undo
+     * payload. The caller then writes the resulting `applyValue` via the
+     * existing `blocks.update` mutation.
+     */
+    applyInlineTapEdit: familyAdminProcedure
+      .input(
+        z.object({
+          blockId: z.number().int().positive(),
+          field: z.enum(["startTime", "durationMin", "title"]),
+          rawValue: z.string().min(0).max(120),
+          oldStartTime: z.string().nullish(),
+          oldDurationMin: z.number().int().nullish(),
+          oldTitle: z.string().nullish(),
+          isAcademic: z.boolean().optional(),
+        }),
+      )
+      .mutation(async ({ input }) => {
+        const { applyInlineTapEdit } = await import(
+          "./_lib/inlineTapEditHandler"
+        );
+        return applyInlineTapEdit(input);
+      }),
+    /**
+     * Push 154 (2026-05-14) — Analytics strip empty-state guard.
+     *
+     * Returns the filtered tile list + visibility flag for the Today
+     * page's analytics strip. Hides the strip entirely when no real data
+     * exists today, instead of rendering grey placeholder boxes.
+     * Public so the kid view can render the same empty state.
+     */
+    analyticsStrip: publicProcedure
+      .input(
+        z.object({
+          blocksDone: z.number().int().min(0).max(40),
+          blocksPlanned: z.number().int().min(0).max(40),
+          minutesOnTask: z.number().int().min(0).max(1440),
+          submissionsGraded: z.number().int().min(0).max(200),
+          currentStreakDays: z.number().int().min(0).max(3650),
+          subjectsTouched: z.number().int().min(0).max(20),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { guardAnalyticsStrip } = await import(
+          "./_lib/analyticsEmptyStateGuard"
+        );
+        return guardAnalyticsStrip(input);
+      }),
+    /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
      * + the active summer status. Reagan-callable (public). Self-empty

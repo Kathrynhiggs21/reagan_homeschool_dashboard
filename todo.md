@@ -3019,5 +3019,10 @@ Order of work tonight:
 - [x] Push 151 — agendaEditorParser pure helper + 17 vitest cases (free-form "shorter today / more math / skip science" → typed edits)
 - [x] Push 152 — inlineTapEditHandler pure helper + 18 vitest cases (start time / minutes / title with kid-readable validation + undo payload)
 - [x] Push 153 — analyticsEmptyStateGuard pure helper + 10 vitest cases (hide grey-box when no real data, never render placeholder zeroes)
-- [ ] Wave-3 checkpoint
-- [ ] Wave-3 Drive sync (Reagan Dashboard Backend Pushes / 2026-05-14 Wave-3)
+- [x] Wave-3 checkpoint — version 1ba60e95
+- [x] Wave-3 Drive sync (Reagan Dashboard Backend Pushes / 2026-05-14 Wave-3) — folder ID 1grmw96tbU4XiVhGYe7dxYQDANOV_OQc-
+
+## Wave-4 (overnight 2026-05-14, after pushes 151-153)
+- [x] Push 154 — wired today.agendaEditorParse + today.applyInlineTapEdit + today.analyticsStrip tRPC procedures (familyAdminProcedure for the two adult ones, publicProcedure for analyticsStrip) + 4 vitest cases (all 22 green together with the helper tests)
+- [ ] Wave-4 checkpoint
+- [ ] Wave-4 Drive sync

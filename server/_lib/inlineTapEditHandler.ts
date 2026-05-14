@@ -26,7 +26,7 @@ export interface InlineTapEditInput {
   /** Old block snapshot — for the undo toast + audit log. */
   oldStartTime?: string | null;
   oldDurationMin?: number | null;
-  oldTitle?: string;
+  oldTitle?: string | null;
   /** Defaults to true. Movement / break blocks have a smaller minutes range. */
   isAcademic?: boolean;
 }
