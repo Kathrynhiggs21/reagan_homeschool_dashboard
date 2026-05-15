@@ -4919,6 +4919,53 @@ export const appRouter = router({
         });
       }),
     /**
+     * Wave-15 / Push 189 — today.vaultRotationDue
+     *
+     * Adult-only query. Takes a list of AppAccountVaultEntry rows (the
+     * caller fetches them from the DB and passes them in for now; once
+     * Push 190 lands the procedure will fetch the rows itself) plus the
+     * current ISO timestamp, and returns the overdue/dueSoon/healthy
+     * buckets + adult-facing headline. Pure helper underneath, so this
+     * procedure is mostly an auth gate + a passthrough.
+     *
+     * Reagan-callable: NO. Gated by ctx.user.role === 'admin'.
+     */
+    vaultRotationDue: protectedProcedure
+      .input(
+        z.object({
+          rows: z
+            .array(
+              z.object({
+                appKey: z.string(),
+                appName: z.string(),
+                signInMethod: z.enum(["google_sso", "email_password", "class_code"]),
+                ownerRole: z.enum(["reagan", "mom", "grandma", "dad", "none"]),
+                ownerEmail: z.string().nullable(),
+                secretCiphertext: z.string(),
+                rotateDays: z.number().nullable(),
+                visibleToReagan: z.boolean(),
+                kidSafeLabel: z.string(),
+                createdAtIso: z.string(),
+                adultNote: z.string(),
+              }),
+            )
+            .max(500),
+          nowIso: z.string(),
+        }),
+      )
+      .query(async ({ ctx, input }) => {
+        if (ctx.user?.role !== "admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "adult-only" });
+        }
+        const { computeVaultRotationDue } = await import(
+          "./_lib/vaultRotationDue"
+        );
+        return computeVaultRotationDue({
+          rows: input.rows,
+          nowIso: input.nowIso,
+        });
+      }),
+    /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
      * + the active summer status. Reagan-callable (public). Self-empty
