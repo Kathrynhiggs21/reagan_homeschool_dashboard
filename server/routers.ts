@@ -5697,6 +5697,34 @@ export const appRouter = router({
         );
         return buildKiwiPreGenBundle({ panel: input.panel ?? null });
       }),
+
+    /**
+     * Wave-15 / Push 242 — today.kiwiFullRoundTripDryRun
+     *
+     * Adult dev tool: paste a candidate reply, pick a panel, see
+     * exactly what would happen — which profile gets picked, whether
+     * post-gen guards would flag it, and what the audit row would
+     * look like. Pure: NOTHING gets persisted by this call. Adult
+     * review page only. Never wire this into Reagan-facing surfaces.
+     */
+    kiwiFullRoundTripDryRun: publicProcedure
+      .input(
+        z.object({
+          panel: z.string().max(64).nullable().optional(),
+          candidate: z.string(),
+          timestampUtcMs: z.number().int().nonnegative(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { runKiwiFullRoundTrip } = await import(
+          "./_lib/kiwiFullRoundTrip"
+        );
+        return runKiwiFullRoundTrip({
+          panel: input.panel ?? null,
+          candidate: input.candidate,
+          timestampUtcMs: input.timestampUtcMs,
+        });
+      }),
     /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
