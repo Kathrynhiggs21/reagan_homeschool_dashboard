@@ -5678,6 +5678,25 @@ export const appRouter = router({
         );
         return resolveKiwiVoiceProfile(input.panel ?? null);
       }),
+
+    /**
+     * Wave-15 / Push 240 — today.kiwiPreGenBundle
+     *
+     * One-call pre-LLM bundle: panel → profile → voice settings
+     * (system prompt fragment + sentence cap + forbidden words) →
+     * TTS read-aloud pacing. Replaces three separate procedure
+     * round-trips with one. The older today.kiwiVoiceProfileResolve
+     * + today.kiwiVoiceSettings + today.kiwiReadAloudPacing stay
+     * wired for back-compat.
+     */
+    kiwiPreGenBundle: publicProcedure
+      .input(z.object({ panel: z.string().max(64).nullable().optional() }))
+      .query(async ({ input }) => {
+        const { buildKiwiPreGenBundle } = await import(
+          "./_lib/kiwiPreGenBundle"
+        );
+        return buildKiwiPreGenBundle({ panel: input.panel ?? null });
+      }),
     /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
