@@ -265,8 +265,8 @@ export default function KiwiCompanion() {
             {messages.data?.length === 0 && (
               <div className="text-center text-sm text-muted-foreground p-6">
                 <div className="flex justify-center mb-2"><KiwiSprite pose="chirp" size={80} /></div>
-                <div className="font-hand text-lg">Hi Reagan!</div>
-                <div className="text-xs mt-2">I'm here whenever. Ask me anything, or just say hi.</div>
+                <div className="font-hand text-lg">Ask me something.</div>
+                <div className="text-xs mt-2">Type a question or tap a request below. I won't talk back unless you do.</div>
               </div>
             )}
             {messages.data?.slice().reverse().map((m: any) => (

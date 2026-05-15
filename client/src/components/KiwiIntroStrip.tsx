@@ -7,11 +7,11 @@ const PLAYED_KEY = "kiwi-intro-played-v1";
 
 // 5-line timed script. Plays automatically the very first time, then on demand.
 const SCRIPT = [
-  { ms: 0,    text: "Hi! I'm Kiwi." },
-  { ms: 1800, text: "I'm here to help you feel smart." },
-  { ms: 3600, text: "I never test you. I never time you." },
-  { ms: 5400, text: "If something feels hard, just tell me — we'll try another way." },
-  { ms: 7800, text: "You're already doing great." },
+  { ms: 0,    text: "I'm Kiwi." },
+  { ms: 1800, text: "No tests. No timers. No wrong answers." },
+  { ms: 3600, text: "If something's hard, tell me. We'll try it a different way." },
+  { ms: 5400, text: "I won't pop up on my own." },
+  { ms: 7800, text: "Tap me when you want me." },
 ] as const;
 
 /**
@@ -70,7 +70,7 @@ export default function KiwiIntroStrip() {
       </div>
       <div className="flex-1 min-w-0">
         <div className="font-display font-semibold text-lg text-amber-900">
-          Hi! I'm {companionName || "Kiwi"}.
+          I'm {companionName || "Kiwi"}.
         </div>
         {playing ? (
           <div className="min-h-[68px] mt-1">
@@ -87,9 +87,8 @@ export default function KiwiIntroStrip() {
         ) : (
           <>
             <p className="text-[14px] leading-snug text-amber-950 mt-1">
-              I'm here to help you <strong>feel smart</strong> and figure stuff out. I never test you, never time you,
-              and never get the answer "wrong." If something feels too hard, just tell me — we'll try a different way
-              together. You're already doing great.
+              No tests. No timers. No wrong answers. If something's too hard, tell me and we'll
+              try it a different way. I won't pop up on my own — tap me when you want me.
             </p>
             <div className="mt-2 flex gap-2 flex-wrap text-[12px] font-semibold">
               <span className="px-2.5 py-1 rounded-full bg-amber-200 text-amber-900 border border-amber-400">No tests</span>
@@ -105,7 +104,7 @@ export default function KiwiIntroStrip() {
             disabled={playing}
             className="text-[12px] font-semibold underline text-amber-900 disabled:opacity-50"
           >
-            {playing ? "…Kiwi is talking" : "▶ Hear Kiwi say hi again"}
+            {playing ? "…playing" : "▶ Play again"}
           </button>
         </div>
       </div>
@@ -118,7 +117,7 @@ export default function KiwiIntroStrip() {
           setDismissed(true);
         }}
       >
-        Got it!
+        Got it
       </Button>
     </div>
   );

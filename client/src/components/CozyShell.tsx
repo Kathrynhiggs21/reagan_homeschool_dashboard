@@ -255,7 +255,7 @@ export default function CozyShell({ children }: { children: ReactNode }) {
         <div className="px-3 py-2 border-t border-sidebar-border space-y-2">
           <div className="text-xs p-2 rounded-md bg-sidebar-accent">
             <div className="font-semibold truncate">{companionName || "Helper"}</div>
-            <div className="text-muted-foreground text-[10px]">Tap the button on any page to talk.</div>
+            <div className="text-muted-foreground text-[10px]">Tap on any page to ask something.</div>
             <SummerCountdown />
           </div>
           {unlocked ? (
