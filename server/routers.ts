@@ -5022,6 +5022,46 @@ export const appRouter = router({
         return card;
       }),
     /**
+     * Wave-15 / Push 193 — today.appLinkPlacementHints
+     *
+     * Reagan-callable. Given the same AppLinkSignInTag rows the UI
+     * already has + the current subject focus, returns the deterministic
+     * Today-page rail order: pinned-for-subject first (per Push 192's
+     * SUBJECT_PINS map), then alphabetical by name, with rail position,
+     * badge color, hero strip (first 3), and overflow marker for
+     * anything past slot 8. Blocked IHSD-email apps are filtered out.
+     */
+    appLinkPlacementHints: publicProcedure
+      .input(
+        z.object({
+          tags: z
+            .array(
+              z.object({
+                key: z.string(),
+                name: z.string(),
+                signInMethod: z.enum(["google_sso", "email_password", "class_code"]),
+                preferredAccountRole: z.enum([
+                  "reagan", "mom", "grandma", "dad", "none",
+                ]),
+                preferredAccountEmail: z.string().nullable(),
+                badge: z.string(),
+                adultNote: z.string().nullable(),
+              }),
+            )
+            .max(60),
+          subject: z.enum([
+            "reading", "math", "writing", "science", "art",
+            "social_studies", "free_choice",
+          ]),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { computeAppLinkPlacement } = await import(
+          "./_lib/appLinkPlacementHints"
+        );
+        return computeAppLinkPlacement(input.tags, input.subject);
+      }),
+    /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
      * + the active summer status. Reagan-callable (public). Self-empty
