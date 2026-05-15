@@ -51,7 +51,7 @@ const KIDDY_TERMS = [
 const CREEPY_PATTERNS: Array<{ name: string; re: RegExp; weight: number }> = [
   { name: "trailing_tildes", re: /~{2,}/g, weight: 3 },
   { name: "long_ellipses", re: /\.{5,}/g, weight: 3 },
-  { name: "anthropomorphic_overshare", re: /\b(i'?m always (here|watching)|i feel you|i see you)\b/gi, weight: 3 },
+  { name: "anthropomorphic_overshare", re: /\b(i'?m always (here|watching)|i'?m watching\b|i feel you|i see you)/gi, weight: 3 },
   { name: "hehe", re: /\b(he){2,}\b/gi, weight: 3 },
 ];
 
