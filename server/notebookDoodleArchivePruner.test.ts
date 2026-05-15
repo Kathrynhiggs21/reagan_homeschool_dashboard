@@ -68,7 +68,7 @@ describe("Push 199 — notebookDoodleArchivePruner", () => {
       input({ entries: [e("a", { lastViewedIso: "2026-02-01" })] }),
     );
     expect(r.decisions[0].action).toBe("archive");
-    expect(r.decisions[0].reason).toMatch(/inactive .* >= 90d/);
+    expect(r.decisions[0].reason).toMatch(/inactive \d+d \(>= 90d\)/);
   });
 
   it("89-day-inactive doodle stays kept (boundary)", () => {
