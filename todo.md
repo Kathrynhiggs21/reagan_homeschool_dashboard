@@ -19,7 +19,7 @@
 ### AI Agenda Editor — fully Mom + Grandma editable (CANONICAL)
 - [ ] Mom + Grandma can edit EVERY field, EVERY block, EVERY day in the AI Agenda Editor — title, subject, start time, duration, body, materials, links, printables — with NO approval gate
 - [ ] AI Agenda Editor accepts free-form prompts ("short fun and easy", "more focused on math", "skip science today, double up tomorrow") and proposes a diff Mom can accept/reject per block
-- [ ] Tap-block inline edit (start time + duration only) on Today + Schedule — no need to open AI Agenda Editor for quick tweaks (Mom + Grandma + tutors)
+- [x] Tap-block inline edit (start time + duration only) on Today + Schedule — no need to open AI Agenda Editor for quick tweaks (Mom + Grandma + tutors). Today.tsx wired in Push 87 (2026-05-13); Schedule.tsx wired 2026-05-15 in both the day-card list and the DayPreview dialog. Defense-in-depth gate: client-side `blocks.canInlineEdit.useQuery()` hides the popover for Reagan; server-side `blocks.update` stays behind `familyAdminProcedure`. Vitest: `server/tapEditPopoverScheduleWiring.test.ts` (8/8 pass) — locks the 2 mount points, the 3-prop contract (blockId/startTime/durationMin only), and the absence of any direct `blocks.update.useMutation` in Schedule.tsx.
 - [ ] Vitest: free-form prompt → diff → commit; per-field edit; per-block start/duration tap-edit; Mom and Grandma both authorized
 
 ### Daily Agenda Email Packet (CANONICAL — supersedes all earlier daily-email items)
@@ -3112,3 +3112,35 @@ Pivoting to fix the visible surfaces directly.
 
 ### Loop-recovery note (May 15, 2026, ~2 AM)
 Earlier this session the helper-push cadence (Pushes 206–285+) drifted into a self-perpetuating loop building deterministic helpers in `server/_lib/*` that no UI surface consumes. User caught it with "how can you tell it's a loop?". Pivoted to the actual visible-voice fix above, which is what Reagan asked for in the original message. The ~70 unused helpers (kiwiToneDriftDetector, kiwiNicknameGuard, kiwiVoiceAuditLogger, etc.) remain in the codebase and pass their own vitests but are not wired into the live chat path; they can be deleted on the next cleanup pass or selectively wired in if a future signal warrants it. Documented here so a future session doesn't mistake them for active infrastructure.
+
+
+## AI Agenda Editor edits — May 15, 2026 (starting now)
+
+### Inventory pass (phase 1) — DONE 2026-05-15
+- [x] Existing surfaces inventoried: `blocks.update` (routers.ts L500–539), `db.updateBlock` (server/db.ts L334), `db.createBlock`, `db.deleteBlock`, `db.shiftBlocksByMinutes`, `db.swapBlockOrder`, plus existing `agendaEditor.generateAgendaEditPlan` LLM-driven editor. Today + Schedule UIs already wire `blocks.update` via the AgendaEditor dialog.
+- [x] `blocks.update` is already `familyAdminProcedure` — Mom (`spear.cpt@gmail.com`) + Grandma (`marcy.spear@gmail.com`) bypass approval; Reagan-ctx and unknown emails denied. No gap. (Confirmed L500: `update: familyAdminProcedure.input(...)`.) `aiGenerate` + `aiCommit` also moved to `familyAdminProcedure` per `aiGenerateWeekend.test.ts` (May 11 2026).
+
+**Implication for Phase 2:** no new server procedure needed — the existing `blocks.update` already accepts `{id, startTime, durationMin}`. Phase 2 is purely a frontend affordance (popover on tap) that calls `trpc.blocks.update.useMutation()`.
+
+### Tap-block inline start/duration edit (phase 2 — smallest visible win)
+- [ ] UI component `client/src/components/BlockQuickEditPopover.tsx`: two steppers (start time ±5 min, duration ±5 min) + Save/Cancel; calls `trpc.blocks.update.useMutation()` with `{id, startTime, durationMin}`. Hidden for non-familyAdmin users (the server gate will deny, but hide the affordance too).
+- [ ] Wire popover into `client/src/pages/Today.tsx` schedule block tile (tap to open). Family-admin only.
+- [ ] Wire popover into `client/src/pages/Schedule.tsx` block list row (tap to open). Family-admin only.
+- [ ] Optimistic update via tRPC `onMutate` (block strip re-orders instantly); rollback on error via `onError` (restore previous cache snapshot).
+
+### Full-field block editor (phase 3)
+- [ ] `today.scheduleBlockFieldEdit` mutation — accepts a partial block patch (title, subject, body, materials[], links[], printableKeys[]) with `familyAdminProcedure`
+- [ ] UI: existing AI Agenda Editor dialog gets editable inputs for every field (currently several are read-only)
+- [ ] Per-field validation: subject must be a known curriculum subject; links must be http(s)://; printableKeys must exist in `printables` table
+
+### Free-form prompt → diff flow (phase 4)
+- [ ] `today.scheduleFreeformPromptDiff` mutation — accepts `{dateISO, prompt}`, calls `invokeLLM` with the existing whatWorksPromptAddendum + structured `response_format` json_schema; returns proposed per-block patches (NO write)
+- [ ] `today.scheduleFreeformPromptCommit` mutation — accepts `{dateISO, acceptedPatches[]}` and applies them in one transaction (`familyAdminProcedure`)
+- [ ] UI: AI Agenda Editor gets a "Tell me how to change today's plan" text box → shows diff cards (one per affected block) with per-card Accept/Reject; bottom Commit button writes only accepted patches
+
+### Vitests (phase 5)
+- [ ] `scheduleBlockQuickEdit.test.ts` — Mom-ctx + Grandma-ctx both authorized; reagan-ctx denied; 5-min step enforced; out-of-window start rejected; optimistic-replay shape
+- [ ] `scheduleBlockFieldEdit.test.ts` — full-field patch applied; unknown subject rejected; bad link URL rejected; missing printableKey rejected; familyAdmin both
+- [ ] `scheduleFreeformPromptDiff.test.ts` — prompt → diff returns valid json_schema shape; no DB write occurred; whatWorksPromptAddendum included in system prompt
+- [ ] `scheduleFreeformPromptCommit.test.ts` — only accepted patches applied; rejected ignored; transaction rolls back on any single failure
+- [ ] All four added to `vitest.config.ts` includes (or auto-globbed) — full suite stays green

@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Calendar, ChevronLeft, ChevronRight, MapPin, Sun, ExternalLink } from "lucide-react";
 import TopicLabel from "@/components/TopicLabel";
 import ActivityOptionsPanel from "@/components/ActivityOptionsPanel";
+import { TapEditPopover } from "@/components/TapEditPopover";
 
 /**
  * Reagan-facing Schedule page.
@@ -245,6 +246,12 @@ function DayView({
                 >
                   {b.title}
                 </button>
+                {/* May 15 2026 — inline start/duration edit on Schedule page (mirrors Today). Adult-only via blocks.canInlineEdit gate. */}
+                <TapEditPopover
+                  blockId={b.id}
+                  startTime={b.startTime ?? null}
+                  durationMin={b.durationMin ?? 30}
+                />
                 <div className="ml-auto text-xs text-muted-foreground">
                   {b.status === "complete" ? "✓ done" : "to do"}
                 </div>
@@ -411,6 +418,12 @@ function AgendaDialog({ open, dateStr, offInfo, onClose }: {
                 <div className="flex items-center gap-3">
                   <Badge className="capitalize">{b.subjectSlug || b.kind || "block"}</Badge>
                   <div className="font-medium">{b.title}</div>
+                  {/* May 15 2026 — inline tap-edit in DayPreview dialog too. */}
+                  <TapEditPopover
+                    blockId={b.id}
+                    startTime={b.startTime ?? null}
+                    durationMin={b.durationMin ?? 30}
+                  />
                   <div className="ml-auto text-xs text-muted-foreground">{b.status === "complete" ? "✓ done" : "to do"}</div>
                 </div>
                 <TopicLabel subjectSlug={b.subjectSlug} topicName={b.curriculumTopicName ?? null} size="xs" />
