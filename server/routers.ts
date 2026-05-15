@@ -5339,6 +5339,24 @@ export const appRouter = router({
         );
         return tallyScheduleChangeApprovals({ votes: input.votes });
       }),
+
+    /**
+     * Wave-15 / Push 217 — today.kiwiToneDriftCheck
+     *
+     * Pre-send guard. The Kiwi UI passes the candidate reply through
+     * this procedure before showing it to Reagan; if flagged=true the
+     * UI shows the safeFallback line instead and (optionally) asks
+     * the LLM to regenerate. Keeps Kiwi's voice from drifting back
+     * to the "creepy / too kiddy" register Reagan called out.
+     */
+    kiwiToneDriftCheck: publicProcedure
+      .input(z.object({ message: z.string() }))
+      .query(async ({ input }) => {
+        const { detectKiwiToneDrift } = await import(
+          "./_lib/kiwiToneDriftDetector"
+        );
+        return detectKiwiToneDrift(input.message);
+      }),
     /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
