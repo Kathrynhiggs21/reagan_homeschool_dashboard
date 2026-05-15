@@ -5844,6 +5844,69 @@ export const appRouter = router({
      * back validated state, migration path, decayed panels, and
      * a ready-to-write re-export string.
      */
+    /**
+     * Wave-15 / Push 268 — today.kiwiSessionTrim
+     *
+     * Periodic maintenance hook. UI calls during quiet moments
+     * (e.g., after a non-major event lands clean) to drop
+     * dead-weight panel entries from the session state so the
+     * localStorage blob doesn't grow unboundedly over months
+     * of use. Live streaks, non-zero rotation counters, and
+     * recent timestamps are always preserved.
+     */
+    kiwiSessionTrim: publicProcedure
+      .input(
+        z.object({
+          priorState: z
+            .object({
+              streak: z
+                .object({
+                  streakByPanel: z
+                    .record(z.string(), z.number())
+                    .optional(),
+                  lastEventAtUtcMs: z
+                    .record(z.string(), z.number())
+                    .optional(),
+                })
+                .optional(),
+              rotation: z
+                .object({
+                  counterByPanel: z
+                    .record(z.string(), z.number())
+                    .optional(),
+                })
+                .optional(),
+            })
+            .nullable()
+            .optional(),
+          nowUtcMs: z.number().int().nonnegative(),
+          purgeOlderThanMs: z.number().int().nonnegative().optional(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { trimKiwiSessionState } = await import(
+          "./_lib/kiwiSessionTrimmer"
+        );
+        return trimKiwiSessionState(
+          input.priorState
+            ? {
+                streak: {
+                  streakByPanel:
+                    input.priorState.streak?.streakByPanel ?? {},
+                  lastEventAtUtcMs:
+                    input.priorState.streak?.lastEventAtUtcMs ?? {},
+                },
+                rotation: {
+                  counterByPanel:
+                    input.priorState.rotation?.counterByPanel ?? {},
+                },
+              }
+            : null,
+          input.nowUtcMs,
+          input.purgeOlderThanMs,
+        );
+      }),
+
     kiwiSessionBoot: publicProcedure
       .input(
         z.object({
