@@ -5509,6 +5509,31 @@ export const appRouter = router({
         );
         return guardKiwiNicknames(input.message);
       }),
+
+    /**
+     * Wave-15 / Push 231 — today.kiwiFullPostGenPipeline
+     *
+     * Recommended one-call for new UI code. Runs the full three-step
+     * post-gen pipeline: drift detector → nickname guard → length
+     * cap. The older today.kiwiPostGenPipeline (Push 223, drift + cap
+     * only) stays wired for back-compat.
+     */
+    kiwiFullPostGenPipeline: publicProcedure
+      .input(
+        z.object({
+          candidate: z.string(),
+          maxSentences: z.number().int().min(0).max(10),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { runKiwiFullPostGenPipeline } = await import(
+          "./_lib/kiwiFullPostGenPipeline"
+        );
+        return runKiwiFullPostGenPipeline({
+          candidate: input.candidate,
+          maxSentences: input.maxSentences,
+        });
+      }),
     /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
