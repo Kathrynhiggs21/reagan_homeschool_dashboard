@@ -5357,6 +5357,32 @@ export const appRouter = router({
         );
         return detectKiwiToneDrift(input.message);
       }),
+
+    /**
+     * Wave-15 / Push 219 — today.kiwiVoiceSettings
+     *
+     * Pre-generation voice steering. The Kiwi LLM call site calls
+     * this first to fetch the canonical voice profile + system-
+     * prompt fragment to prepend. Pairs with kiwiToneDriftCheck
+     * (post-generation guard) to keep Kiwi off the kiddy / creepy
+     * register that Reagan called out.
+     */
+    kiwiVoiceSettings: publicProcedure
+      .input(
+        z
+          .object({
+            profile: z
+              .enum(["older_cousin", "neutral_calm", "study_buddy"])
+              .optional(),
+          })
+          .optional(),
+      )
+      .query(async ({ input }) => {
+        const { resolveKiwiVoiceSettings } = await import(
+          "./_lib/kiwiVoiceSettings"
+        );
+        return resolveKiwiVoiceSettings(input);
+      }),
     /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
