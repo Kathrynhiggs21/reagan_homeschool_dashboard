@@ -24,6 +24,9 @@ import {
   topicsCoveredOffPlan, type InsertTopicCoveredOffPlan,
   dailyRecapRequests, type DailyRecapRequest, type InsertDailyRecapRequest,
   kidRequests, type KidRequest,
+  kiwiVoiceAuditEntries,
+  type KiwiVoiceAuditEntry as KiwiVoiceAuditEntryRow,
+  type InsertKiwiVoiceAuditEntry,
 } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -7904,4 +7907,76 @@ export async function autoAddRecapTopicToCurriculum(opts: {
     console.error("[autoAddRecapTopicToCurriculum] insert failed", e);
     return { topicId: null, created: false, subjectTitle };
   }
+}
+
+
+/* -------------------------------------------------------------------------- */
+/*  Wave-15 / Push 235 — KIWI VOICE AUDIT ENTRIES                              */
+/* -------------------------------------------------------------------------- */
+/**
+ * Persist an adult-review audit row for the Kiwi voice pipeline.
+ * Returns the inserted id. Caller is responsible for building the
+ * structured entry via buildKiwiVoiceAuditEntry (Push 232).
+ */
+export async function insertKiwiVoiceAuditEntry(input: {
+  timestampUtcMs: number;
+  originalCandidate: string;
+  finalText: string;
+  severity: "info" | "minor" | "major";
+  actionsJson: string;
+  sourcePanel?: string | null;
+}): Promise<{ id: number }> {
+  const db = getDb();
+  const row: InsertKiwiVoiceAuditEntry = {
+    timestampUtcMs: input.timestampUtcMs,
+    originalCandidate: input.originalCandidate,
+    finalText: input.finalText,
+    severity: input.severity,
+    actionsJson: input.actionsJson,
+    sourcePanel: input.sourcePanel ?? null,
+  };
+  const [res]: any = await db.insert(kiwiVoiceAuditEntries).values(row as any);
+  const id = (res as any)?.insertId as number;
+  return { id: Number(id ?? 0) };
+}
+
+/**
+ * List recent Kiwi voice audit entries, newest first. Used by the
+ * adult review page. Default page size 50; cap at 500.
+ */
+export async function listKiwiVoiceAuditEntries(opts?: {
+  limit?: number;
+  severity?: "info" | "minor" | "major";
+}): Promise<KiwiVoiceAuditEntryRow[]> {
+  const db = getDb();
+  const limit = Math.max(1, Math.min(500, Math.floor(opts?.limit ?? 50)));
+  let q: any = db.select().from(kiwiVoiceAuditEntries);
+  if (opts?.severity) {
+    q = q.where(eq(kiwiVoiceAuditEntries.severity, opts.severity));
+  }
+  const rows: any = await q
+    .orderBy(desc(kiwiVoiceAuditEntries.timestampUtcMs))
+    .limit(limit);
+  return rows as KiwiVoiceAuditEntryRow[];
+}
+
+/**
+ * Count of major (drift-fallback) entries in the last N days.
+ * Used by the adult review page's at-a-glance summary card.
+ */
+export async function countMajorKiwiVoiceAuditEntries(
+  lookbackDays: number = 7,
+): Promise<number> {
+  const db = getDb();
+  const cutoff = Date.now() - Math.max(1, Math.floor(lookbackDays)) * 86_400_000;
+  const rows: any = await db
+    .select({ id: kiwiVoiceAuditEntries.id })
+    .from(kiwiVoiceAuditEntries)
+    .where(
+      and(
+        eq(kiwiVoiceAuditEntries.severity, "major"),
+        gte(kiwiVoiceAuditEntries.timestampUtcMs, cutoff),
+      ),
+    );
+  return (rows as any[]).length;
 }
