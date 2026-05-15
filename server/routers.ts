@@ -5814,6 +5814,27 @@ export const appRouter = router({
      * Why a server procedure: gives the UI one canonical source
      * of truth for shape validation across deploys.
      */
+    /**
+     * Wave-15 / Push 262 — today.kiwiSessionMigrateAndReExport
+     *
+     * Forward-compat boot path for the chat UI. On first mount
+     * the UI reads the raw localStorage blob and calls this
+     * procedure to:
+     *   • detect bare-v0 (pre-envelope) state and upgrade it
+     *   • keep current-envelope state as-is
+     *   • discard malformed or unknown-version blobs
+     * Returns the validated state plus a re-exported current-
+     * envelope string ready to write back to localStorage.
+     */
+    kiwiSessionMigrateAndReExport: publicProcedure
+      .input(z.object({ raw: z.string().nullable() }))
+      .query(async ({ input }) => {
+        const { migrateKiwiSessionAndReExport } = await import(
+          "./_lib/kiwiSessionStateMigrator"
+        );
+        return migrateKiwiSessionAndReExport(input.raw);
+      }),
+
     kiwiSessionImport: publicProcedure
       .input(z.object({ raw: z.string().nullable() }))
       .query(async ({ input }) => {
