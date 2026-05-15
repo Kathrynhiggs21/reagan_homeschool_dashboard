@@ -83,15 +83,19 @@ function escapeRegex(s: string): string {
  */
 function buildVocativeRegex(): RegExp {
   const alts = NICKNAMES.map(escapeRegex).join("|");
-  // Cases (case-insensitive):
-  //   (A) leading: ^(nickname)\b[ ,!?]+
-  //   (B) middle:  [ ,]+(nickname)\b[ ,!?]+
-  //   (C) trailing:[ ,]+(nickname)\b\s*[.!?]?$
-  // Combined into a single alternation.
+  // Vocative position requires a COMMA on at least one side (or
+  // start/end of utterance). A bare space on both sides is not
+  // enough — that would catch "the kid sitting" as if "kid" were
+  // a vocative.
+  //   (A) leading:    ^(nickname),\s*
+  //   (B) middle:     ,\s*(nickname),\s*
+  //   (C) trailing-1: ,\s*(nickname)\s*[.!?]   ← mid-string sentence end
+  //   (D) trailing-2: ,\s*(nickname)\s*$        ← absolute end of string
   const pattern =
-    `(^(?:${alts})\\b[ ,!?]+)` +
-    `|([ ,]+(?:${alts})\\b[ ,!?]+)` +
-    `|([ ,]+(?:${alts})\\b[\\s]*[.!?]?$)`;
+    `(^(?:${alts})\\b,\\s*)` +
+    `|(,\\s*(?:${alts})\\b,\\s*)` +
+    `|(,\\s*(?:${alts})\\b\\s*[.!?])` +
+    `|(,\\s*(?:${alts})\\b\\s*$)`;
   return new RegExp(pattern, "gi");
 }
 
@@ -127,11 +131,17 @@ export function guardKiwiNicknames(message: string): NicknameGuardResult {
     return "";
   });
 
-  const collapsed = cleaned
+  let collapsed = cleaned
     .replace(/^\s+/, "")
     .replace(/\s{2,}/g, " ")
     .replace(/\s+([.!?,])/g, "$1")
     .trim();
+
+  // After leading redaction, the new first letter is often lowercase
+  // ("Sweetie, open page 47." → "open page 47."). Capitalize it back.
+  if (redactedSet.size > 0 && collapsed.length > 0) {
+    collapsed = collapsed[0].toUpperCase() + collapsed.slice(1);
+  }
 
   const redactedTerms = Array.from(redactedSet).sort();
   return {
