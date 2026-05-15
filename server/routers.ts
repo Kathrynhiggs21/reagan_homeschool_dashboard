@@ -5871,6 +5871,28 @@ export const appRouter = router({
      * state in a single round-trip so the caller writes the
      * fresh envelope to localStorage atomically.
      */
+    /**
+     * Wave-15 / Push 274 — today.kiwiMaintenanceDecide
+     *
+     * Cadence gate for the maintenance pass. UI calls this
+     * BEFORE today.kiwiSessionMaintenance so it doesn't spam
+     * trim+audit on every clean reply. Default cooldown: 5 min.
+     */
+    kiwiMaintenanceDecide: publicProcedure
+      .input(
+        z.object({
+          lastMaintenanceAtUtcMs: z.number().nullable().optional(),
+          nowUtcMs: z.number().int().nonnegative(),
+          cooldownMs: z.number().int().nonnegative().optional(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { decideKiwiMaintenance } = await import(
+          "./_lib/kiwiSessionMaintenanceScheduler"
+        );
+        return decideKiwiMaintenance(input);
+      }),
+
     kiwiSessionMaintenance: publicProcedure
       .input(
         z.object({
