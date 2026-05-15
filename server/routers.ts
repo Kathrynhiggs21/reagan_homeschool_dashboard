@@ -5795,6 +5795,68 @@ export const appRouter = router({
      * localStorage object instead of two. Server holds no
      * per-session memory.
      */
+    /**
+     * Wave-15 / Push 258 — today.kiwiSessionOrchestrate
+     *
+     * THE production chat-UI call. One state in, one state out,
+     * full pipeline + blessed-line fallback + audit entry in a
+     * single round-trip. UI keeps a single localStorage key.
+     */
+    kiwiSessionOrchestrate: publicProcedure
+      .input(
+        z.object({
+          panel: z.string().max(64).nullable().optional(),
+          candidate: z.string(),
+          priorSessionState: z
+            .object({
+              streak: z
+                .object({
+                  streakByPanel: z
+                    .record(z.string(), z.number())
+                    .optional(),
+                  lastEventAtUtcMs: z
+                    .record(z.string(), z.number())
+                    .optional(),
+                })
+                .optional(),
+              rotation: z
+                .object({
+                  counterByPanel: z
+                    .record(z.string(), z.number())
+                    .optional(),
+                })
+                .optional(),
+            })
+            .nullable()
+            .optional(),
+          timestampUtcMs: z.number().int().nonnegative(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { runKiwiSessionAwareOrchestrator } = await import(
+          "./_lib/kiwiSessionAwareOrchestrator"
+        );
+        return runKiwiSessionAwareOrchestrator({
+          panel: input.panel ?? null,
+          candidate: input.candidate,
+          priorSessionState: input.priorSessionState
+            ? {
+                streak: {
+                  streakByPanel:
+                    input.priorSessionState.streak?.streakByPanel ?? {},
+                  lastEventAtUtcMs:
+                    input.priorSessionState.streak?.lastEventAtUtcMs ?? {},
+                },
+                rotation: {
+                  counterByPanel:
+                    input.priorSessionState.rotation?.counterByPanel ?? {},
+                },
+              }
+            : null,
+          timestampUtcMs: input.timestampUtcMs,
+        });
+      }),
+
     kiwiChatSessionApply: publicProcedure
       .input(
         z.object({
