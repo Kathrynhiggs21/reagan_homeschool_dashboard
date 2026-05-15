@@ -5061,6 +5061,43 @@ export const appRouter = router({
         );
         return computeAppLinkPlacement(input.tags, input.subject);
       }),
+
+    /**
+     * Wave-15 / Push 205 — today.kidConsentSignals
+     *
+     * Reagan-callable. When the kid taps "I want to keep going" or
+     * "I'm done" or "switch subjects" on any in-app task, the UI fires
+     * this with the tap history + session start. Returns a deterministic
+     * recommendation the UI surfaces calmly. House rule: the dashboard
+     * NEVER imposes breaks; it only honors the ones Reagan asks for.
+     * Voice rules (per Reagan's feedback): no "buddy/friend/yay".
+     */
+    kidConsentSignals: publicProcedure
+      .input(
+        z.object({
+          taps: z
+            .array(
+              z.object({
+                signal: z.enum(["keep_going", "im_done", "switch_subject"]),
+                isoTimestamp: z.string(),
+                subject: z.string().optional(),
+              }),
+            )
+            .default([]),
+          sessionStartedAtIso: z.string(),
+          currentIsoTimestamp: z.string(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { decideKidConsent } = await import(
+          "./_lib/kidConsentSignals"
+        );
+        return decideKidConsent({
+          taps: input.taps,
+          sessionStartedAtIso: input.sessionStartedAtIso,
+          currentIsoTimestamp: input.currentIsoTimestamp,
+        });
+      }),
     /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
