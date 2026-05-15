@@ -5433,6 +5433,31 @@ export const appRouter = router({
           maxSentences: input.maxSentences,
         });
       }),
+
+    /**
+     * Wave-15 / Push 225 — today.kiwiReadAloudPacing
+     *
+     * TTS pacing hints for the "Read" speaker button on Kiwi cards.
+     * The text-side voice rewrite (less kiddy, less creepy) only
+     * fixed what we say; this controls how it's spoken. Returns
+     * rate / pitch / pause hints + a pre-built SSML payload for
+     * frontends that support it.
+     */
+    kiwiReadAloudPacing: publicProcedure
+      .input(
+        z.object({
+          profile: z
+            .enum(["older_cousin", "neutral_calm", "study_buddy"])
+            .default("older_cousin"),
+          text: z.string().default(""),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { getKiwiReadAloudPacing } = await import(
+          "./_lib/kiwiReadAloudPacing"
+        );
+        return getKiwiReadAloudPacing(input.profile, input.text);
+      }),
     /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
