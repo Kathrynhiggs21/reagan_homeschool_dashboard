@@ -5854,6 +5854,73 @@ export const appRouter = router({
      * of use. Live streaks, non-zero rotation counters, and
      * recent timestamps are always preserved.
      */
+    /**
+     * Wave-15 / Push 270 — today.kiwiSessionSizeAudit
+     *
+     * Diagnostic procedure. Adult review page calls this to
+     * surface the size of Reagan's localStorage Kiwi session
+     * blob and a recommendation about when to trim. UI calls
+     * the chat UI — not Reagan's surface — only.
+     */
+    kiwiSessionSizeAudit: publicProcedure
+      .input(
+        z.object({
+          priorState: z
+            .object({
+              streak: z
+                .object({
+                  streakByPanel: z
+                    .record(z.string(), z.number())
+                    .optional(),
+                  lastEventAtUtcMs: z
+                    .record(z.string(), z.number())
+                    .optional(),
+                })
+                .optional(),
+              rotation: z
+                .object({
+                  counterByPanel: z
+                    .record(z.string(), z.number())
+                    .optional(),
+                })
+                .optional(),
+            })
+            .nullable()
+            .optional(),
+          considerTrimBytes: z
+            .number()
+            .int()
+            .nonnegative()
+            .optional(),
+          trimNowBytes: z.number().int().nonnegative().optional(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { auditKiwiSessionSize } = await import(
+          "./_lib/kiwiSessionSizeAuditor"
+        );
+        return auditKiwiSessionSize(
+          input.priorState
+            ? {
+                streak: {
+                  streakByPanel:
+                    input.priorState.streak?.streakByPanel ?? {},
+                  lastEventAtUtcMs:
+                    input.priorState.streak?.lastEventAtUtcMs ?? {},
+                },
+                rotation: {
+                  counterByPanel:
+                    input.priorState.rotation?.counterByPanel ?? {},
+                },
+              }
+            : null,
+          {
+            considerTrimBytes: input.considerTrimBytes,
+            trimNowBytes: input.trimNowBytes,
+          },
+        );
+      }),
+
     kiwiSessionTrim: publicProcedure
       .input(
         z.object({
