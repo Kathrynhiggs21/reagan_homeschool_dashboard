@@ -5887,6 +5887,29 @@ export const appRouter = router({
      * maintenance result. This is the recommended call for
      * the chat UI's quiet-moment cadence.
      */
+    /**
+     * Wave-15 / Push 278 — today.kiwiGreeting
+     *
+     * Returns the calm one-liner greeting for Kiwi's first
+     * appearance per panel/day. UI passes panel + localHour
+     * (Reagan's local time) + dayIndex (epoch day) so the
+     * greeting is stable for the day but rotates across days.
+     */
+    kiwiGreeting: publicProcedure
+      .input(
+        z.object({
+          panel: z.string().min(1).max(32),
+          localHour: z.number().min(0).max(23),
+          dayIndex: z.number().int(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { composeKiwiGreeting } = await import(
+          "./_lib/kiwiGreetingComposer"
+        );
+        return composeKiwiGreeting(input);
+      }),
+
     kiwiGatedMaintenance: publicProcedure
       .input(
         z.object({
