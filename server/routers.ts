@@ -5383,6 +5383,29 @@ export const appRouter = router({
         );
         return resolveKiwiVoiceSettings(input);
       }),
+
+    /**
+     * Wave-15 / Push 221 — today.kiwiResponseLengthCap
+     *
+     * Post-generation "scissors". After the LLM produces a reply
+     * and after the drift detector (Push 216/217) has approved its
+     * tone, this helper trims the reply to the sentence cap from
+     * the active voice profile. Cuts at sentence boundaries only
+     * (never mid-word) and strips any emoji that slipped through.
+     */
+    kiwiResponseLengthCap: publicProcedure
+      .input(
+        z.object({
+          message: z.string(),
+          maxSentences: z.number().int().positive().max(10),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { capKiwiResponseLength } = await import(
+          "./_lib/kiwiResponseLengthCapper"
+        );
+        return capKiwiResponseLength(input.message, input.maxSentences);
+      }),
     /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
