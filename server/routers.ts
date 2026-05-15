@@ -5862,6 +5862,78 @@ export const appRouter = router({
      * blob and a recommendation about when to trim. UI calls
      * the chat UI — not Reagan's surface — only.
      */
+    /**
+     * Wave-15 / Push 272 — today.kiwiSessionMaintenance
+     *
+     * One-call periodic maintenance pass. UI calls this during
+     * quiet moments (e.g., after a clean reply). It trims dead
+     * weight, audits the resulting size, and re-exports the
+     * state in a single round-trip so the caller writes the
+     * fresh envelope to localStorage atomically.
+     */
+    kiwiSessionMaintenance: publicProcedure
+      .input(
+        z.object({
+          priorState: z
+            .object({
+              streak: z
+                .object({
+                  streakByPanel: z
+                    .record(z.string(), z.number())
+                    .optional(),
+                  lastEventAtUtcMs: z
+                    .record(z.string(), z.number())
+                    .optional(),
+                })
+                .optional(),
+              rotation: z
+                .object({
+                  counterByPanel: z
+                    .record(z.string(), z.number())
+                    .optional(),
+                })
+                .optional(),
+            })
+            .nullable()
+            .optional(),
+          nowUtcMs: z.number().int().nonnegative(),
+          purgeOlderThanMs: z.number().int().nonnegative().optional(),
+          considerTrimBytes: z
+            .number()
+            .int()
+            .nonnegative()
+            .optional(),
+          trimNowBytes: z.number().int().nonnegative().optional(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { runKiwiSessionMaintenance } = await import(
+          "./_lib/kiwiSessionMaintenanceBundle"
+        );
+        return runKiwiSessionMaintenance(
+          input.priorState
+            ? {
+                streak: {
+                  streakByPanel:
+                    input.priorState.streak?.streakByPanel ?? {},
+                  lastEventAtUtcMs:
+                    input.priorState.streak?.lastEventAtUtcMs ?? {},
+                },
+                rotation: {
+                  counterByPanel:
+                    input.priorState.rotation?.counterByPanel ?? {},
+                },
+              }
+            : null,
+          input.nowUtcMs,
+          {
+            purgeOlderThanMs: input.purgeOlderThanMs,
+            considerTrimBytes: input.considerTrimBytes,
+            trimNowBytes: input.trimNowBytes,
+          },
+        );
+      }),
+
     kiwiSessionSizeAudit: publicProcedure
       .input(
         z.object({
