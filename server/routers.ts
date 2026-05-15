@@ -5489,6 +5489,26 @@ export const appRouter = router({
         );
         return chooseKiwiTtsVoice(input.voices);
       }),
+
+    /**
+     * Wave-15 / Push 229 — today.kiwiNicknameGuard
+     *
+     * Post-gen pet-name redactor. Catches forms-of-address like
+     * "sweetie", "champ", "buddy", "little one" in vocative position
+     * (next to a comma at start, middle, or end of a sentence) and
+     * surgically removes them — preserving the rest of the reply.
+     * The drift detector flags whole-register failures; this just
+     * cleans nicknames so the older-cousin voice stays consistent
+     * sentence-by-sentence.
+     */
+    kiwiNicknameGuard: publicProcedure
+      .input(z.object({ message: z.string() }))
+      .query(async ({ input }) => {
+        const { guardKiwiNicknames } = await import(
+          "./_lib/kiwiNicknameGuard"
+        );
+        return guardKiwiNicknames(input.message);
+      }),
     /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
