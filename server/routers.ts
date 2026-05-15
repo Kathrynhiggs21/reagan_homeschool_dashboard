@@ -5406,6 +5406,33 @@ export const appRouter = router({
         );
         return capKiwiResponseLength(input.message, input.maxSentences);
       }),
+
+    /**
+     * Wave-15 / Push 223 — today.kiwiPostGenPipeline
+     *
+     * One-call bundle: drift check + length cap. The Kiwi UI calls
+     * this with the raw LLM output and the active voice profile's
+     * sentence cap, and gets back the final text to render plus
+     * full diagnostics. Order: drift detector → if flagged, return
+     * safeFallback (no cap applied); otherwise apply length cap to
+     * the cleanedPreview.
+     */
+    kiwiPostGenPipeline: publicProcedure
+      .input(
+        z.object({
+          candidate: z.string(),
+          maxSentences: z.number().int().min(0).max(10),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { runKiwiPostGenPipeline } = await import(
+          "./_lib/kiwiPipelineRunner"
+        );
+        return runKiwiPostGenPipeline({
+          candidate: input.candidate,
+          maxSentences: input.maxSentences,
+        });
+      }),
     /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
