@@ -5247,6 +5247,69 @@ export const appRouter = router({
           history: input.history,
         });
       }),
+
+    /**
+     * Wave-15 / Push 213 — today.scheduleChangeRequestBuild
+     *
+     * Reagan-callable. Builds the canonical schedule-change request
+     * payload (mom + grandma both required to approve, per house
+     * rule) and fires notifyOwner so the dashboard owner sees the
+     * request immediately. House rule: Reagan does NOT directly
+     * change the schedule — she requests via Kiwi, and the actual
+     * mutation happens only after both adults approve.
+     *
+     * The IHSD school email reagan.higgs33@ihsd.us is hard-blocked
+     * inside the helper; if the caller passes that email the request
+     * is returned with blocked=true and no notification fires.
+     */
+    scheduleChangeRequestBuild: publicProcedure
+      .input(
+        z.object({
+          isoDate: z.string(),
+          fromAccount: z.string(),
+          intent: z.object({
+            action: z.enum([
+              "swap",
+              "move_earlier",
+              "move_later",
+              "replace_block",
+              "add_block",
+              "skip_block",
+              "unknown",
+            ]),
+            targetBlockTitles: z.array(z.string()).optional(),
+            targetBlockIds: z.array(z.number()).optional(),
+            proposedTitle: z.string().optional(),
+            proposedSubjectSlug: z.string().optional(),
+            reasonFromKid: z.string().optional(),
+          }),
+        }),
+      )
+      .mutation(async ({ input }) => {
+        const { buildScheduleChangeRequest } = await import(
+          "./_lib/scheduleChangeRequestBuilder"
+        );
+        const payload = buildScheduleChangeRequest({
+          isoDate: input.isoDate,
+          intent: input.intent,
+          fromAccount: input.fromAccount,
+        });
+
+        if (!payload.blocked) {
+          // Best-effort owner notification — don't fail the request if
+          // the upstream notification service is briefly unavailable.
+          try {
+            await notifyOwner({
+              title: "Schedule change request from Reagan",
+              content: payload.adultBodyLine,
+            });
+          } catch {
+            // swallow — the request payload is still returned
+          }
+        }
+
+        return payload;
+      }),
     /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
