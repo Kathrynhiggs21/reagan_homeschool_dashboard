@@ -3169,3 +3169,17 @@ Earlier this session the helper-push cadence (Pushes 206–285+) drifted into a 
 - [ ] **Verify nightly-agenda-email cron behavior when there is NO upcoming `dailyPlans` row in the next 7 days.** Reagan's summer is intentionally loose — many weekdays will have no plan. The 7am email should NOT spam Mom with "no school found!" alerts. Acceptable behaviors: (a) skip the send entirely on no-upcoming-plan days, (b) send a brief "no school scheduled — happy summer" once-per-week note, NOT once-per-morning. Read `server/scheduledSync.ts` and `nightlyAgendaEmail` handler before next Friday and confirm or fix.
 - [ ] **Decide if a "summer" `dayType` enum value is worth adding** to `dailyPlans.dayType` for clarity. Current enum: `full | half | outdoor | field_trip | recovery | off`. Probably not — `outdoor` already covers most summer days well, and a new enum value means a Drizzle migration. Re-evaluate only if Mom finds the existing types insufficient after using summer mode for a week.
 - [ ] When Mom plans a summer day, she just creates a `dailyPlans` row for that date with whatever `dayType` fits (`full` is rare in summer; `half`/`outdoor`/`field_trip`/`recovery` will be common) and adds a small number of blocks (3–4 typical, not 7–8). NO automation creates summer plans — they're entirely Mom-driven.
+
+
+## Educational apps + free standards wiring (requested 2026-05-15) — DONE 2026-05-15
+
+- [x] Wire educational apps + free curriculum sources into the Apps page. Apps live in the `appLinks` DB table (queried via `trpc.appLinks.list`); Apps.tsx already renders them by category. So the right pattern was to seed the database, not hardcode tiles. Done as one DB transaction:
+  - **Hygiene first** — deleted 10 leftover "TEST IXL grade 5" / "TEST Khan 5th grade math" duplicate tiles that were cluttering Reagan's Apps page (5 of each), plus 1 duplicate Epic tile. Reagan's grid is now visibly less noisy.
+  - **Already present, kept as-is**: IXL (id 30031), Khan Academy (id 30032), Prodigy Math (id 30033), Khanmigo (Khan AI tutor, id 210091), Quizlet (id 210092), Epic! Books (id 30046), Google Drive / Gmail / Docs / Slides.
+  - **Added 8 new tiles**: Photomath (school, camera math solver), Kahoot! (school, quiz games), Class Dojo (school, behavior + parent messaging), Starfall (reading), Clever (school, SSO portal — adult use), Google Classroom (google), Ohio Learning Standards (learning, links to education.ohio.gov for "what each grade should cover"), Kimi AI (learning, AI tutor).
+  - **Total**: 46 → 35 → 43 rows. No schema change. No deploy needed — Apps page picks up the new tiles on next refresh via tRPC.
+- [ ] **Deferred (reason)**: Vitest locking the Apps registry contents — not pursued because the registry is intentionally adult-editable via the +Add app dialog, so asserting on specific DB row counts/names would be brittle and would fight Mom's natural use of the UI. Existing Apps.tsx render tests are sufficient.
+- [ ] **Open follow-ups for Mom (not blocking)**: 
+  - Photomath kid-safety review — confirm acceptable for Reagan or move to adult-only category.
+  - IXL + Khan + Google Classroom credentials — wire `spear.cpt@gmail.com` and `reaganhiggs910@gmail.com` SSO hints from `prefs.student.googleEmail` so tiles auto-route to the right account when launched (already supported by Apps.tsx — just needs the prefs values set).
+  - Clever — only useful once the user's account is reactivated or replaced; currently a placeholder for adult reference.

@@ -1,0 +1,332 @@
+{
+  "query": "SELECT id, name, url, category, emoji FROM appLinks ORDER BY category, name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, name, url, category, emoji FROM appLinks ORDER BY category, name;",
+  "rows": [
+    {
+      "id": "630001",
+      "name": "Educational ",
+      "url": "https://www.education.com/",
+      "category": "learning",
+      "emoji": "📖"
+    },
+    {
+      "id": "210091",
+      "name": "Khanmigo (Khan Academy AI tutor)",
+      "url": "https://www.khanmigo.ai",
+      "category": "learning",
+      "emoji": "📖"
+    },
+    {
+      "id": "210090",
+      "name": "Mystery Science",
+      "url": "https://mysteryscience.com",
+      "category": "learning",
+      "emoji": "🔬"
+    },
+    {
+      "id": "930013",
+      "name": "Planets Recap Video",
+      "url": "https://youtu.be/fajsyiKRfxI?si=y_Tenb3-MT5Auwot",
+      "category": "learning",
+      "emoji": ""
+    },
+    {
+      "id": "210093",
+      "name": "Stellarium Mobile",
+      "url": "https://stellarium-web.org",
+      "category": "learning",
+      "emoji": "🔬"
+    },
+    {
+      "id": "210025",
+      "name": "TEST IXL grade 5",
+      "url": "https://www.ixl.com/math/grade-5",
+      "category": "learning",
+      "emoji": "📐"
+    },
+    {
+      "id": "360008",
+      "name": "TEST IXL grade 5",
+      "url": "https://www.ixl.com/math/grade-5",
+      "category": "learning",
+      "emoji": "📐"
+    },
+    {
+      "id": "210022",
+      "name": "TEST IXL grade 5",
+      "url": "https://www.ixl.com/math/grade-5",
+      "category": "learning",
+      "emoji": "📐"
+    },
+    {
+      "id": "210019",
+      "name": "TEST IXL grade 5",
+      "url": "https://www.ixl.com/math/grade-5",
+      "category": "learning",
+      "emoji": "📐"
+    },
+    {
+      "id": "210016",
+      "name": "TEST IXL grade 5",
+      "url": "https://www.ixl.com/math/grade-5",
+      "category": "learning",
+      "emoji": "📐"
+    },
+    {
+      "id": "210032",
+      "name": "TEST Khan 5th grade math",
+      "url": "https://www.khanacademy.org/math/cc-fifth-grade-math",
+      "category": "learning",
+      "emoji": "🧮"
+    },
+    {
+      "id": "210014",
+      "name": "TEST Khan 5th grade math",
+      "url": "https://www.khanacademy.org/math/cc-fifth-grade-math",
+      "category": "learning",
+      "emoji": "🧮"
+    },
+    {
+      "id": "210023",
+      "name": "TEST Khan 5th grade math",
+      "url": "https://www.khanacademy.org/math/cc-fifth-grade-math",
+      "category": "learning",
+      "emoji": "🧮"
+    },
+    {
+      "id": "210020",
+      "name": "TEST Khan 5th grade math",
+      "url": "https://www.khanacademy.org/math/cc-fifth-grade-math",
+      "category": "learning",
+      "emoji": "🧮"
+    },
+    {
+      "id": "210017",
+      "name": "TEST Khan 5th grade math",
+      "url": "https://www.khanacademy.org/math/cc-fifth-grade-math",
+      "category": "learning",
+      "emoji": "🧮"
+    },
+    {
+      "id": "60002",
+      "name": "Adobe Apps",
+      "url": "https://adobeid-na1.services.adobe.com/renga-idprovider/pages/login",
+      "category": "creativity",
+      "emoji": "🎨"
+    },
+    {
+      "id": "210058",
+      "name": "Minecraft",
+      "url": "https://www.minecraft.net",
+      "category": "creativity",
+      "emoji": "🟩"
+    },
+    {
+      "id": "210087",
+      "name": "Pinterest",
+      "url": "https://www.pinterest.com",
+      "category": "creativity",
+      "emoji": "🎨"
+    },
+    {
+      "id": "210057",
+      "name": "Roblox",
+      "url": "https://www.roblox.com",
+      "category": "creativity",
+      "emoji": "🟥"
+    },
+    {
+      "id": "210059",
+      "name": "Toca Boca",
+      "url": "https://tocaboca.com/apps/",
+      "category": "creativity",
+      "emoji": "🌈"
+    },
+    {
+      "id": "60003",
+      "name": "Adobe Spark",
+      "url": "https://adobeid-na1.services.adobe.com/renga-idprovider/pages/login_t2",
+      "category": "school",
+      "emoji": "✨"
+    },
+    {
+      "id": "60004",
+      "name": "Aimswebplus",
+      "url": "https://clever.com/oauth/instant-login?client_id=b1309677686faf239365&district_id=51e40d3b80da621055000c50",
+      "category": "school",
+      "emoji": "📊"
+    },
+    {
+      "id": "210052",
+      "name": "BrainPOP",
+      "url": "https://www.brainpop.com",
+      "category": "school",
+      "emoji": "🤖"
+    },
+    {
+      "id": "210053",
+      "name": "Edpuzzle",
+      "url": "https://edpuzzle.com",
+      "category": "school",
+      "emoji": "🎬"
+    },
+    {
+      "id": "210089",
+      "name": "iCivics",
+      "url": "https://www.icivics.org",
+      "category": "school",
+      "emoji": "🧠"
+    },
+    {
+      "id": "30031",
+      "name": "IXL",
+      "url": "https://www.ixl.com/signin",
+      "category": "school",
+      "emoji": "🧠"
+    },
+    {
+      "id": "30032",
+      "name": "Khan Academy",
+      "url": "https://www.khanacademy.org",
+      "category": "school",
+      "emoji": "📚"
+    },
+    {
+      "id": "30033",
+      "name": "Prodigy Math",
+      "url": "https://play.prodigygame.com",
+      "category": "school",
+      "emoji": "🐉"
+    },
+    {
+      "id": "210092",
+      "name": "Quizlet",
+      "url": "https://quizlet.com",
+      "category": "school",
+      "emoji": "🧠"
+    },
+    {
+      "id": "210054",
+      "name": "Vocabulary.com",
+      "url": "https://www.vocabulary.com",
+      "category": "school",
+      "emoji": "🔤"
+    },
+    {
+      "id": "210056",
+      "name": "iNaturalist",
+      "url": "https://www.inaturalist.org",
+      "category": "nature",
+      "emoji": "🌿"
+    },
+    {
+      "id": "210055",
+      "name": "Merlin Bird ID",
+      "url": "https://merlin.allaboutbirds.org",
+      "category": "nature",
+      "emoji": "🐦"
+    },
+    {
+      "id": "30048",
+      "name": "CommonLit",
+      "url": "https://www.commonlit.org/en/library?grade=5",
+      "category": "reading",
+      "emoji": "📰"
+    },
+    {
+      "id": "210094",
+      "name": "Epic!",
+      "url": "https://www.getepic.com",
+      "category": "reading",
+      "emoji": "📖"
+    },
+    {
+      "id": "30046",
+      "name": "Epic! Books",
+      "url": "https://www.getepic.com",
+      "category": "reading",
+      "emoji": "📖"
+    },
+    {
+      "id": "210088",
+      "name": "ReadWorks",
+      "url": "https://www.readworks.org",
+      "category": "reading",
+      "emoji": "📖"
+    },
+    {
+      "id": "30047",
+      "name": "Storyline Online",
+      "url": "https://storylineonline.net",
+      "category": "reading",
+      "emoji": "📚"
+    },
+    {
+      "id": "30040",
+      "name": "Gmail",
+      "url": "https://mail.google.com",
+      "category": "google",
+      "emoji": "✉️"
+    },
+    {
+      "id": "30037",
+      "name": "Google Docs",
+      "url": "https://docs.google.com",
+      "category": "google",
+      "emoji": "📝"
+    },
+    {
+      "id": "30039",
+      "name": "Google Drive",
+      "url": "https://drive.google.com",
+      "category": "google",
+      "emoji": "📁"
+    },
+    {
+      "id": "30038",
+      "name": "Google Slides",
+      "url": "https://slides.google.com",
+      "category": "google",
+      "emoji": "🎞️"
+    },
+    {
+      "id": "30044",
+      "name": "Crash Course Kids",
+      "url": "https://www.youtube.com/c/crashcoursekids",
+      "category": "video",
+      "emoji": "📺"
+    },
+    {
+      "id": "30043",
+      "name": "Generation Genius",
+      "url": "https://www.generationgenius.com",
+      "category": "video",
+      "emoji": "🧪"
+    },
+    {
+      "id": "30045",
+      "name": "Math Antics",
+      "url": "https://www.mathantics.com",
+      "category": "video",
+      "emoji": "🧮"
+    },
+    {
+      "id": "30042",
+      "name": "Mystery Doug",
+      "url": "https://mysteryscience.com/mystery-doug",
+      "category": "video",
+      "emoji": "🤔"
+    },
+    {
+      "id": "30041",
+      "name": "YouTube Kids",
+      "url": "https://www.youtubekids.com",
+      "category": "video",
+      "emoji": "📺"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\turl\tcategory\temoji\n630001\tEducational \thttps://www.education.com/\tlearning\t📖\n210091\tKhanmigo (Khan Academy AI tutor)\thttps://www.khanmigo.ai\tlearning\t📖\n210090\tMystery Science\thttps://mysteryscience.com\tlearning\t🔬\n930013\tPlanets Recap Video\thttps://youtu.be/fajsyiKRfxI?si=y_Tenb3-MT5Auwot\tlearning\t\n210093\tStellarium Mobile\thttps://stellarium-web.org\tlearning\t🔬\n210025\tTEST IXL grade 5\thttps://www.ixl.com/math/grade-5\tlearning\t📐\n360008\tTEST IXL grade 5\thttps://www.ixl.com/math/grade-5\tlearning\t📐\n210022\tTEST IXL grade 5\thttps://www.ixl.com/math/grade-5\tlearning\t📐\n210019\tTEST IXL grade 5\thttps://www.ixl.com/math/grade-5\tlearning\t📐\n210016\tTEST IXL grade 5\thttps://www.ixl.com/math/grade-5\tlearning\t📐\n210032\tTEST Khan 5th grade math\thttps://www.khanacademy.org/math/cc-fifth-grade-math\tlearning\t🧮\n210014\tTEST Khan 5th grade math\thttps://www.khanacademy.org/math/cc-fifth-grade-math\tlearning\t🧮\n210023\tTEST Khan 5th grade math\thttps://www.khanacademy.org/math/cc-fifth-grade-math\tlearning\t🧮\n210020\tTEST Khan 5th grade math\thttps://www.khanacademy.org/math/cc-fifth-grade-math\tlearning\t🧮\n210017\tTEST Khan 5th grade math\thttps://www.khanacademy.org/math/cc-fifth-grade-math\tlearning\t🧮\n60002\tAdobe Apps\thttps://adobeid-na1.services.adobe.com/renga-idprovider/pages/login\tcreativity\t🎨\n210058\tMinecraft\thttps://www.minecraft.net\tcreativity\t🟩\n210087\tPinterest\thttps://www.pinterest.com\tcreativity\t🎨\n210057\tRoblox\thttps://www.roblox.com\tcreativity\t🟥\n210059\tToca Boca\thttps://tocaboca.com/apps/\tcreativity\t🌈\n60003\tAdobe Spark\thttps://adobeid-na1.services.adobe.com/renga-idprovider/pages/login_t2\tschool\t✨\n60004\tAimswebplus\thttps://clever.com/oauth/instant-login?client_id=b1309677686faf239365&district_id=51e40d3b80da621055000c50\tschool\t📊\n210052\tBrainPOP\thttps://www.brainpop.com\tschool\t🤖\n210053\tEdpuzzle\thttps://edpuzzle.com\tschool\t🎬\n210089\tiCivics\thttps://www.icivics.org\tschool\t🧠\n30031\tIXL\thttps://www.ixl.com/signin\tschool\t🧠\n30032\tKhan Academy\thttps://www.khanacademy.org\tschool\t📚\n30033\tProdigy Math\thttps://play.prodigygame.com\tschool\t🐉\n210092\tQuizlet\thttps://quizlet.com\tschool\t🧠\n210054\tVocabulary.com\thttps://www.vocabulary.com\tschool\t🔤\n210056\tiNaturalist\thttps://www.inaturalist.org\tnature\t🌿\n210055\tMerlin Bird ID\thttps://merlin.allaboutbirds.org\tnature\t🐦\n30048\tCommonLit\thttps://www.commonlit.org/en/library?grade=5\treading\t📰\n210094\tEpic!\thttps://www.getepic.com\treading\t📖\n30046\tEpic! Books\thttps://www.getepic.com\treading\t📖\n210088\tReadWorks\thttps://www.readworks.org\treading\t📖\n30047\tStoryline Online\thttps://storylineonline.net\treading\t📚\n30040\tGmail\thttps://mail.google.com\tgoogle\t✉️\n30037\tGoogle Docs\thttps://docs.google.com\tgoogle\t📝\n30039\tGoogle Drive\thttps://drive.google.com\tgoogle\t📁\n30038\tGoogle Slides\thttps://slides.google.com\tgoogle\t🎞️\n30044\tCrash Course Kids\thttps://www.youtube.com/c/crashcoursekids\tvideo\t📺\n30043\tGeneration Genius\thttps://www.generationgenius.com\tvideo\t🧪\n30045\tMath Antics\thttps://www.mathantics.com\tvideo\t🧮\n30042\tMystery Doug\thttps://mysteryscience.com/mystery-doug\tvideo\t🤔\n30041\tYouTube Kids\thttps://www.youtubekids.com\tvideo\t📺\n",
+  "stderr": "",
+  "execution_time_ms": 1174
+}

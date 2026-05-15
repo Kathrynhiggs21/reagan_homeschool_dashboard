@@ -1,0 +1,46 @@
+{
+  "query": "SELECT id, name, url, category FROM appLinks WHERE id IN (SELECT id FROM appLinks ORDER BY category, name LIMIT 50 OFFSET 40); SELECT name FROM appLinks WHERE LOWER(name) REGEXP 'photomath|kahoot|class.?dojo|starfall|clever|kimi|google classroom|ohio';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, name, url, category FROM appLinks WHERE id IN (SELECT id FROM appLinks ORDER BY category, name LIMIT 50 OFFSET 40); SELECT name FROM appLinks WHERE LOWER(name) REGEXP 'photomath|kahoot|class.?dojo|starfall|clever|kimi|google classroom|ohio';",
+  "rows": [
+    {
+      "id": "30038",
+      "name": "Google Slides",
+      "url": "https://slides.google.com",
+      "category": "google"
+    },
+    {
+      "id": "30041",
+      "name": "YouTube Kids",
+      "url": "https://www.youtubekids.com",
+      "category": "video"
+    },
+    {
+      "id": "30042",
+      "name": "Mystery Doug",
+      "url": "https://mysteryscience.com/mystery-doug",
+      "category": "video"
+    },
+    {
+      "id": "30043",
+      "name": "Generation Genius",
+      "url": "https://www.generationgenius.com",
+      "category": "video"
+    },
+    {
+      "id": "30044",
+      "name": "Crash Course Kids",
+      "url": "https://www.youtube.com/c/crashcoursekids",
+      "category": "video"
+    },
+    {
+      "id": "30045",
+      "name": "Math Antics",
+      "url": "https://www.mathantics.com",
+      "category": "video"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\turl\tcategory\n30038\tGoogle Slides\thttps://slides.google.com\tgoogle\n30041\tYouTube Kids\thttps://www.youtubekids.com\tvideo\n30042\tMystery Doug\thttps://mysteryscience.com/mystery-doug\tvideo\n30043\tGeneration Genius\thttps://www.generationgenius.com\tvideo\n30044\tCrash Course Kids\thttps://www.youtube.com/c/crashcoursekids\tvideo\n30045\tMath Antics\thttps://www.mathantics.com\tvideo\n",
+  "stderr": "",
+  "execution_time_ms": 638
+}

@@ -1,0 +1,13 @@
+{
+  "query": "\nINSERT INTO appLinks (name, url, category, emoji, description) VALUES\n  ('Photomath', 'https://photomath.com', 'school', '📷', 'Camera-based math problem solver'),\n  ('Kahoot!', 'https://kahoot.com', 'school', '🎯', 'Quiz games'),\n  ('Class Dojo', 'https://www.classdojo.com', 'school', '👋', 'Behavior tracking + parent messaging'),\n  ('Starfall', 'https://www.starfall.com', 'reading', '⭐', 'Reading, phonics, and math'),\n  ('Clever', 'https://clever.com', 'school', '🍀', 'School SSO portal (adult use)'),\n  ('Google Classroom', 'https://classroom.google.com', 'google', '🏫', 'Assignment hub'),\n  ('Ohio Learning Standards', 'https://education.ohio.gov/Topics/Learning-in-Ohio/Learning-Standards', 'learning', '🏛️', 'Ohio Department of Education — what each grade is supposed to cover'),\n  ('Kimi AI', 'https://kimi.com', 'learning', '🤖', 'AI tutor + chat assistant');\n\nSELECT COUNT(*) AS total FROM appLinks;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \nINSERT INTO appLinks (name, url, category, emoji, description) VALUES\n  ('Photomath', 'https://photomath.com', 'school', '📷', 'Camera-based math problem solver'),\n  ('Kahoot!', 'https://kahoot.com', 'school', '🎯', 'Quiz games'),\n  ('Class Dojo', 'https://www.classdojo.com', 'school', '👋', 'Behavior tracking + parent messaging'),\n  ('Starfall', 'https://www.starfall.com', 'reading', '⭐', 'Reading, phonics, and math'),\n  ('Clever', 'https://clever.com', 'school', '🍀', 'School SSO portal (adult use)'),\n  ('Google Classroom', 'https://classroom.google.com', 'google', '🏫', 'Assignment hub'),\n  ('Ohio Learning Standards', 'https://education.ohio.gov/Topics/Learning-in-Ohio/Learning-Standards', 'learning', '🏛️', 'Ohio Department of Education — what each grade is supposed to cover'),\n  ('Kimi AI', 'https://kimi.com', 'learning', '🤖', 'AI tutor + chat assistant');\n\nSELECT COUNT(*) AS total FROM appLinks;\n",
+  "rows": [
+    {
+      "total": "43"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\n43\n",
+  "stderr": "",
+  "execution_time_ms": 656
+}

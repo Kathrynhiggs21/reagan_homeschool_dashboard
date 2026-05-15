@@ -1,0 +1,166 @@
+{
+  "query": "SELECT id, name, url, category FROM appLinks WHERE category NOT IN ('learning','creativity') ORDER BY category, name LIMIT 30;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, name, url, category FROM appLinks WHERE category NOT IN ('learning','creativity') ORDER BY category, name LIMIT 30;",
+  "rows": [
+    {
+      "id": "60003",
+      "name": "Adobe Spark",
+      "url": "https://adobeid-na1.services.adobe.com/renga-idprovider/pages/login_t2",
+      "category": "school"
+    },
+    {
+      "id": "60004",
+      "name": "Aimswebplus",
+      "url": "https://clever.com/oauth/instant-login?client_id=b1309677686faf239365&district_id=51e40d3b80da621055000c50",
+      "category": "school"
+    },
+    {
+      "id": "210052",
+      "name": "BrainPOP",
+      "url": "https://www.brainpop.com",
+      "category": "school"
+    },
+    {
+      "id": "210053",
+      "name": "Edpuzzle",
+      "url": "https://edpuzzle.com",
+      "category": "school"
+    },
+    {
+      "id": "210089",
+      "name": "iCivics",
+      "url": "https://www.icivics.org",
+      "category": "school"
+    },
+    {
+      "id": "30031",
+      "name": "IXL",
+      "url": "https://www.ixl.com/signin",
+      "category": "school"
+    },
+    {
+      "id": "30032",
+      "name": "Khan Academy",
+      "url": "https://www.khanacademy.org",
+      "category": "school"
+    },
+    {
+      "id": "30033",
+      "name": "Prodigy Math",
+      "url": "https://play.prodigygame.com",
+      "category": "school"
+    },
+    {
+      "id": "210092",
+      "name": "Quizlet",
+      "url": "https://quizlet.com",
+      "category": "school"
+    },
+    {
+      "id": "210054",
+      "name": "Vocabulary.com",
+      "url": "https://www.vocabulary.com",
+      "category": "school"
+    },
+    {
+      "id": "210056",
+      "name": "iNaturalist",
+      "url": "https://www.inaturalist.org",
+      "category": "nature"
+    },
+    {
+      "id": "210055",
+      "name": "Merlin Bird ID",
+      "url": "https://merlin.allaboutbirds.org",
+      "category": "nature"
+    },
+    {
+      "id": "30048",
+      "name": "CommonLit",
+      "url": "https://www.commonlit.org/en/library?grade=5",
+      "category": "reading"
+    },
+    {
+      "id": "210094",
+      "name": "Epic!",
+      "url": "https://www.getepic.com",
+      "category": "reading"
+    },
+    {
+      "id": "30046",
+      "name": "Epic! Books",
+      "url": "https://www.getepic.com",
+      "category": "reading"
+    },
+    {
+      "id": "210088",
+      "name": "ReadWorks",
+      "url": "https://www.readworks.org",
+      "category": "reading"
+    },
+    {
+      "id": "30047",
+      "name": "Storyline Online",
+      "url": "https://storylineonline.net",
+      "category": "reading"
+    },
+    {
+      "id": "30040",
+      "name": "Gmail",
+      "url": "https://mail.google.com",
+      "category": "google"
+    },
+    {
+      "id": "30037",
+      "name": "Google Docs",
+      "url": "https://docs.google.com",
+      "category": "google"
+    },
+    {
+      "id": "30039",
+      "name": "Google Drive",
+      "url": "https://drive.google.com",
+      "category": "google"
+    },
+    {
+      "id": "30038",
+      "name": "Google Slides",
+      "url": "https://slides.google.com",
+      "category": "google"
+    },
+    {
+      "id": "30044",
+      "name": "Crash Course Kids",
+      "url": "https://www.youtube.com/c/crashcoursekids",
+      "category": "video"
+    },
+    {
+      "id": "30043",
+      "name": "Generation Genius",
+      "url": "https://www.generationgenius.com",
+      "category": "video"
+    },
+    {
+      "id": "30045",
+      "name": "Math Antics",
+      "url": "https://www.mathantics.com",
+      "category": "video"
+    },
+    {
+      "id": "30042",
+      "name": "Mystery Doug",
+      "url": "https://mysteryscience.com/mystery-doug",
+      "category": "video"
+    },
+    {
+      "id": "30041",
+      "name": "YouTube Kids",
+      "url": "https://www.youtubekids.com",
+      "category": "video"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\turl\tcategory\n60003\tAdobe Spark\thttps://adobeid-na1.services.adobe.com/renga-idprovider/pages/login_t2\tschool\n60004\tAimswebplus\thttps://clever.com/oauth/instant-login?client_id=b1309677686faf239365&district_id=51e40d3b80da621055000c50\tschool\n210052\tBrainPOP\thttps://www.brainpop.com\tschool\n210053\tEdpuzzle\thttps://edpuzzle.com\tschool\n210089\tiCivics\thttps://www.icivics.org\tschool\n30031\tIXL\thttps://www.ixl.com/signin\tschool\n30032\tKhan Academy\thttps://www.khanacademy.org\tschool\n30033\tProdigy Math\thttps://play.prodigygame.com\tschool\n210092\tQuizlet\thttps://quizlet.com\tschool\n210054\tVocabulary.com\thttps://www.vocabulary.com\tschool\n210056\tiNaturalist\thttps://www.inaturalist.org\tnature\n210055\tMerlin Bird ID\thttps://merlin.allaboutbirds.org\tnature\n30048\tCommonLit\thttps://www.commonlit.org/en/library?grade=5\treading\n210094\tEpic!\thttps://www.getepic.com\treading\n30046\tEpic! Books\thttps://www.getepic.com\treading\n210088\tReadWorks\thttps://www.readworks.org\treading\n30047\tStoryline Online\thttps://storylineonline.net\treading\n30040\tGmail\thttps://mail.google.com\tgoogle\n30037\tGoogle Docs\thttps://docs.google.com\tgoogle\n30039\tGoogle Drive\thttps://drive.google.com\tgoogle\n30038\tGoogle Slides\thttps://slides.google.com\tgoogle\n30044\tCrash Course Kids\thttps://www.youtube.com/c/crashcoursekids\tvideo\n30043\tGeneration Genius\thttps://www.generationgenius.com\tvideo\n30045\tMath Antics\thttps://www.mathantics.com\tvideo\n30042\tMystery Doug\thttps://mysteryscience.com/mystery-doug\tvideo\n30041\tYouTube Kids\thttps://www.youtubekids.com\tvideo\n",
+  "stderr": "",
+  "execution_time_ms": 638
+}
