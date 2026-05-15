@@ -51,7 +51,8 @@ export interface KiwiPipelineResult {
 
 export function runKiwiPostGenPipeline(input: KiwiPipelineInput): KiwiPipelineResult {
   const candidate = typeof input.candidate === "string" ? input.candidate : "";
-  const cap = Math.max(1, Math.floor(input.maxSentences || 3));
+  const requested = Math.floor(Number(input.maxSentences));
+  const cap = !Number.isFinite(requested) || requested <= 0 ? 3 : requested;
 
   const drift = detectKiwiToneDrift(candidate);
 
