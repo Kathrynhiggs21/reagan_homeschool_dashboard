@@ -91,7 +91,7 @@ export function unlockBadges(input: UnlockerInput): UnlockerResult {
     if (total >= tier.count && !already.has(tier.key)) {
       unlocked.push({
         badge: { key: tier.key, label: tier.label, emoji: "📚", category: "milestone" },
-        kidHeadline: `Whoa — ${tier.label}! You're growing into a real reader.`,
+        kidHeadline: `${tier.label}.`,
         notifyPayload: {
           category: "bookshelf_milestone",
           title: `Reagan unlocked: ${tier.label}`,
@@ -111,7 +111,7 @@ export function unlockBadges(input: UnlockerInput): UnlockerResult {
     if (streak >= tier.days && !already.has(tier.key)) {
       unlocked.push({
         badge: { key: tier.key, label: tier.label, emoji: "🔥", category: "streak" },
-        kidHeadline: `${tier.days} days of reading in a row — you're on fire!`,
+        kidHeadline: `${tier.days} days of reading in a row.`,
         notifyPayload: null,
       });
     }
@@ -127,7 +127,7 @@ export function unlockBadges(input: UnlockerInput): UnlockerResult {
     if (chapters >= tier.count && !already.has(tier.key)) {
       unlocked.push({
         badge: { key: tier.key, label: tier.label, emoji: "📖", category: "chapter" },
-        kidHeadline: `${tier.label}! Big-kid books for the win.`,
+        kidHeadline: `${tier.label}.`,
         notifyPayload:
           tier.count === 1
             ? {
@@ -156,7 +156,7 @@ export function unlockBadges(input: UnlockerInput): UnlockerResult {
             emoji: "🏅",
             category: "series",
           },
-          kidHeadline: `${tier.count} books from the same series — you found your people!`,
+          kidHeadline: `${tier.count} books from the same series.`,
           notifyPayload: null,
         });
       }
