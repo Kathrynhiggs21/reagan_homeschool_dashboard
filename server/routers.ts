@@ -5895,6 +5895,40 @@ export const appRouter = router({
      * (Reagan's local time) + dayIndex (epoch day) so the
      * greeting is stable for the day but rotates across days.
      */
+    /**
+     * Wave-15 / Push 280 — today.kiwiGreetingFromUtc
+     *
+     * One-call greeting: pass UTC ms + IANA timezone; server
+     * derives localHour + dayIndex and composes the greeting.
+     * UI doesn't write date math.
+     */
+    kiwiGreetingFromUtc: publicProcedure
+      .input(
+        z.object({
+          panel: z.string().min(1).max(32),
+          nowUtcMs: z.number().int().nonnegative(),
+          timeZone: z.string().min(1).max(64).optional(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { deriveKiwiClockParts } = await import(
+          "./_lib/kiwiClockHelpers"
+        );
+        const { composeKiwiGreeting } = await import(
+          "./_lib/kiwiGreetingComposer"
+        );
+        const parts = deriveKiwiClockParts(
+          input.nowUtcMs,
+          input.timeZone,
+        );
+        const greeting = composeKiwiGreeting({
+          panel: input.panel,
+          localHour: parts.localHour,
+          dayIndex: parts.dayIndex,
+        });
+        return { ...greeting, clock: parts };
+      }),
+
     kiwiGreeting: publicProcedure
       .input(
         z.object({
