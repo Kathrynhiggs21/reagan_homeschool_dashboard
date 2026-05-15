@@ -5134,6 +5134,68 @@ export const appRouter = router({
           availableSubjects: input.availableSubjects,
         });
       }),
+
+    /**
+     * Wave-15 / Push 209 — today.printableDailyPack
+     *
+     * Reagan + adult callable. Given today's already-resolved agenda
+     * blocks (the UI already has them), returns a structured printable
+     * pack the homepage "Printable" button can render to PDF or print-
+     * HTML. Pack includes the schedule, worksheet list (with printed-
+     * book page refs preserved), lesson list, and a calm tutor handoff.
+     * Voice rules + non-punitive language enforced in the helper.
+     */
+    printableDailyPack: publicProcedure
+      .input(
+        z.object({
+          isoDate: z.string(),
+          tutorName: z.string().nullish(),
+          blocks: z.array(
+            z.object({
+              id: z.number(),
+              title: z.string(),
+              subjectSlug: z.string().nullish(),
+              status: z.enum([
+                "not_started",
+                "in_progress",
+                "complete",
+                "skipped",
+              ]),
+              estimatedMinutes: z.number().nullish(),
+              worksheetPdfUrl: z.string().nullish(),
+              worksheetPdfName: z.string().nullish(),
+              lessonPdfUrl: z.string().nullish(),
+              lessonPdfName: z.string().nullish(),
+              printedBookRef: z
+                .object({ book: z.string(), pages: z.string() })
+                .nullish(),
+              notes: z.string().nullish(),
+            }),
+          ),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { buildPrintableDailyPack } = await import(
+          "./_lib/printableDailyPackBuilder"
+        );
+        return buildPrintableDailyPack({
+          isoDate: input.isoDate,
+          tutorName: input.tutorName ?? null,
+          blocks: input.blocks.map((b) => ({
+            id: b.id,
+            title: b.title,
+            subjectSlug: b.subjectSlug ?? null,
+            status: b.status,
+            estimatedMinutes: b.estimatedMinutes ?? null,
+            worksheetPdfUrl: b.worksheetPdfUrl ?? null,
+            worksheetPdfName: b.worksheetPdfName ?? null,
+            lessonPdfUrl: b.lessonPdfUrl ?? null,
+            lessonPdfName: b.lessonPdfName ?? null,
+            printedBookRef: b.printedBookRef ?? null,
+            notes: b.notes ?? null,
+          })),
+        });
+      }),
     /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
