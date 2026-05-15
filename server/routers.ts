@@ -5534,6 +5534,42 @@ export const appRouter = router({
           maxSentences: input.maxSentences,
         });
       }),
+
+    /**
+     * Wave-15 / Push 233 — today.kiwiVoiceAuditEntryBuild
+     *
+     * Adult-review audit row: takes the LLM's original candidate +
+     * the full pipeline result + a caller-supplied timestamp and
+     * returns the structured audit entry (severity + ordered
+     * actions + verbatim originalCandidate / finalText). Persisting
+     * the row is the caller's responsibility — this helper is pure.
+     */
+    kiwiVoiceAuditEntryBuild: publicProcedure
+      .input(
+        z.object({
+          originalCandidate: z.string(),
+          candidate: z.string(),
+          maxSentences: z.number().int().min(0).max(10),
+          timestampUtcMs: z.number().int().nonnegative(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { runKiwiFullPostGenPipeline } = await import(
+          "./_lib/kiwiFullPostGenPipeline"
+        );
+        const { buildKiwiVoiceAuditEntry } = await import(
+          "./_lib/kiwiVoiceAuditLogger"
+        );
+        const result = runKiwiFullPostGenPipeline({
+          candidate: input.candidate,
+          maxSentences: input.maxSentences,
+        });
+        return buildKiwiVoiceAuditEntry({
+          originalCandidate: input.originalCandidate,
+          result,
+          timestampUtcMs: input.timestampUtcMs,
+        });
+      }),
     /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
