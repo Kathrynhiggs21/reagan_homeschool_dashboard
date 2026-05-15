@@ -5098,6 +5098,42 @@ export const appRouter = router({
           currentIsoTimestamp: input.currentIsoTimestamp,
         });
       }),
+
+    /**
+     * Wave-15 / Push 207 — today.subjectFocusRotation
+     *
+     * Reagan-callable. Returns the suggested morning-focus subject for
+     * today (with calm kidLine + adultLine + alternates) so the Today
+     * page can render something like "Today's first block: Math" without
+     * Reagan landing on the same subject every morning. Read-only — this
+     * never *changes* the schedule; real schedule changes still flow
+     * through Mom + Grandma approval per house rules.
+     */
+    subjectFocusRotation: publicProcedure
+      .input(
+        z.object({
+          isoDate: z.string(),
+          recentHistory: z
+            .array(
+              z.object({
+                isoDate: z.string(),
+                subject: z.string(),
+              }),
+            )
+            .optional(),
+          availableSubjects: z.array(z.string()).optional(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { decideSubjectFocus } = await import(
+          "./_lib/subjectFocusRotation"
+        );
+        return decideSubjectFocus({
+          isoDate: input.isoDate,
+          recentHistory: input.recentHistory,
+          availableSubjects: input.availableSubjects,
+        });
+      }),
     /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
