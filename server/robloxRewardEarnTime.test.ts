@@ -9,7 +9,7 @@ describe("Push 181 — Roblox reward earn-time helper", () => {
     expect(r.capAppliedMin).toBe(0);
     expect(r.bankAfterMin).toBe(0);
     expect(r.kidLine.toLowerCase()).not.toMatch(/lose|lost|punish|fail|bad/);
-    expect(r.kidLine).toMatch(/okay/i);
+    expect(r.kidLine.toLowerCase()).toMatch(/no roblox minutes earned/);
   });
 
   it("each completed worksheet earns 5 min, capped at 4/day", () => {

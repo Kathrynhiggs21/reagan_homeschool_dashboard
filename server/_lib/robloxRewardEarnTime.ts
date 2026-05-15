@@ -132,11 +132,11 @@ export function computeRobloxEarn(input: RobloxEarnInput): RobloxEarnResult {
   const totalToday = capAppliedMin;
   let kidLine: string;
   if (totalToday <= 0 && carryInMin <= 0) {
-    kidLine = "No Roblox minutes earned yet today — that's okay.";
+    kidLine = "No Roblox minutes earned yet today.";
   } else if (totalToday <= 0) {
-    kidLine = `You have ${bankAfterMin} Roblox minutes saved up.`;
+    kidLine = `${bankAfterMin} Roblox minutes saved up.`;
   } else {
-    kidLine = `Nice work! You earned ${totalToday} Roblox minutes today.`;
+    kidLine = `You earned ${totalToday} Roblox minutes today.`;
   }
   const adultLine =
     `Roblox earn ${input.isoDate}: today ${capAppliedMin}m (cap ${dailyCapMin}m) + carry ${carryInMin}m -> bank ${bankAfterMin}m (ceiling ${BANK_CEILING}m).`;
