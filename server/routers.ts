@@ -5725,6 +5725,56 @@ export const appRouter = router({
           timestampUtcMs: input.timestampUtcMs,
         });
       }),
+
+    /**
+     * Wave-15 / Push 244 — today.kiwiVoiceAuditWeeklySummary
+     *
+     * Adult-review at-a-glance card. Pulls audit rows from the last
+     * N days (default 7, cap 90), runs the pure summary helper, and
+     * returns a compact rollup: severity totals, % major, action
+     * counts, top redacted nicknames, last 3 major samples, and a
+     * single adult-tone headline line.
+     */
+    kiwiVoiceAuditWeeklySummary: publicProcedure
+      .input(
+        z
+          .object({
+            lookbackDays: z.number().int().min(1).max(90).optional(),
+          })
+          .optional(),
+      )
+      .query(async ({ input }) => {
+        const days = input?.lookbackDays ?? 7;
+        const { listKiwiVoiceAuditEntries } = await import("./db");
+        const { summarizeKiwiVoiceAuditWindow } = await import(
+          "./_lib/kiwiVoiceAuditWeeklySummary"
+        );
+        const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+        // Pull at most 500 recent rows then filter to window in-memory
+        // — our list helper sorts newest-first.
+        const rows = await listKiwiVoiceAuditEntries({ limit: 500 });
+        // Map DB rows (actionsJson string) to KiwiVoiceAuditEntry shape.
+        const entries = rows
+          .filter((r) => r.timestampUtcMs >= cutoff)
+          .map((r) => ({
+            timestampUtcMs: r.timestampUtcMs,
+            originalCandidate: r.originalCandidate,
+            finalText: r.finalText,
+            severity: r.severity as "info" | "minor" | "major",
+            actions: ((): { kind: "drift_fallback" | "nickname_redact" | "length_cap"; summary: string }[] => {
+              try {
+                const parsed = JSON.parse(r.actionsJson ?? "[]");
+                return Array.isArray(parsed) ? parsed : [];
+              } catch {
+                return [];
+              }
+            })(),
+          }));
+        return {
+          lookbackDays: days,
+          ...summarizeKiwiVoiceAuditWindow(entries),
+        };
+      }),
     /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
