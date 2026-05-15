@@ -5310,6 +5310,35 @@ export const appRouter = router({
 
         return payload;
       }),
+
+    /**
+     * Wave-15 / Push 215 — today.scheduleChangeApprovalTally
+     *
+     * Adult + Reagan callable (read-only). Given the votes recorded
+     * for a request, returns the canonical tally: pending / approved /
+     * declined, plus kidLine + adultLine for the UI. Only Mom and
+     * Grandma decisions count; reagan.higgs33@ihsd.us is hard-blocked
+     * from voting. The UI uses shouldApplyChange to decide whether
+     * to surface the "apply now" affordance.
+     */
+    scheduleChangeApprovalTally: publicProcedure
+      .input(
+        z.object({
+          votes: z.array(
+            z.object({
+              voterEmail: z.string(),
+              decision: z.enum(["approve", "decline"]),
+              votedAtIso: z.string(),
+            }),
+          ),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { tallyScheduleChangeApprovals } = await import(
+          "./_lib/scheduleChangeApprovalTally"
+        );
+        return tallyScheduleChangeApprovals({ votes: input.votes });
+      }),
     /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
