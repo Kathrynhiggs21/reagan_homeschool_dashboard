@@ -5826,6 +5826,66 @@ export const appRouter = router({
      * Returns the validated state plus a re-exported current-
      * envelope string ready to write back to localStorage.
      */
+    /**
+     * Wave-15 / Push 264 — today.kiwiSessionDecay
+     *
+     * Stateless mutation. UI calls this on chat-page mount AFTER
+     * migrate-and-import to age out stale streaks before the
+     * first orchestrator call of the session. Pure: rotation
+     * counters are never touched, only behaviorally-meaningful
+     * streaks decay.
+     */
+    kiwiSessionDecay: publicProcedure
+      .input(
+        z.object({
+          priorState: z
+            .object({
+              streak: z
+                .object({
+                  streakByPanel: z
+                    .record(z.string(), z.number())
+                    .optional(),
+                  lastEventAtUtcMs: z
+                    .record(z.string(), z.number())
+                    .optional(),
+                })
+                .optional(),
+              rotation: z
+                .object({
+                  counterByPanel: z
+                    .record(z.string(), z.number())
+                    .optional(),
+                })
+                .optional(),
+            })
+            .nullable()
+            .optional(),
+          nowUtcMs: z.number().int().nonnegative(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { decayKiwiSessionState } = await import(
+          "./_lib/kiwiSessionDecay"
+        );
+        return decayKiwiSessionState(
+          input.priorState
+            ? {
+                streak: {
+                  streakByPanel:
+                    input.priorState.streak?.streakByPanel ?? {},
+                  lastEventAtUtcMs:
+                    input.priorState.streak?.lastEventAtUtcMs ?? {},
+                },
+                rotation: {
+                  counterByPanel:
+                    input.priorState.rotation?.counterByPanel ?? {},
+                },
+              }
+            : null,
+          input.nowUtcMs,
+        );
+      }),
+
     kiwiSessionMigrateAndReExport: publicProcedure
       .input(z.object({ raw: z.string().nullable() }))
       .query(async ({ input }) => {
