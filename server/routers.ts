@@ -5196,6 +5196,57 @@ export const appRouter = router({
           })),
         });
       }),
+
+    /**
+     * Wave-15 / Push 211 — today.adventureLibrarySuggest
+     *
+     * Reagan-callable. Given the Adventure Library entries the caller
+     * already has + her recent adventure history, returns a primary
+     * Adventure of the Day plus 2 alternates. Weights toward birds /
+     * animals / plants / water / swimming / outdoors per project
+     * description. Never imposes — the UI surfaces the suggestion and
+     * Reagan picks or asks Kiwi for something else.
+     */
+    adventureLibrarySuggest: publicProcedure
+      .input(
+        z.object({
+          todayIso: z.string(),
+          targetGrade: z.number().optional(),
+          library: z.array(
+            z.object({
+              id: z.number(),
+              title: z.string(),
+              shortDescription: z.string(),
+              gradeLevel: z.number(),
+              tags: z.array(z.string()),
+              outdoor: z.boolean(),
+              estimatedMinutes: z.number().nullish(),
+            }),
+          ),
+          history: z
+            .array(
+              z.object({
+                adventureId: z.number(),
+                isoDate: z.string(),
+              }),
+            )
+            .optional(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { suggestAdventures } = await import(
+          "./_lib/adventureLibrarySuggester"
+        );
+        return suggestAdventures({
+          todayIso: input.todayIso,
+          targetGrade: input.targetGrade,
+          library: input.library.map((e) => ({
+            ...e,
+            estimatedMinutes: e.estimatedMinutes ?? null,
+          })),
+          history: input.history,
+        });
+      }),
     /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
