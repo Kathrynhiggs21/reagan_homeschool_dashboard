@@ -113,9 +113,16 @@ export function selectRepairLine(input: RepairInput): RepairLine {
   return { text, severity: chosen.severity };
 }
 
+function containsAlarmWord(lower: string, word: string): boolean {
+  // Match the word as a substring but NOT when preceded by "not "
+  // (so "not urgent" / "not broken" is fine; bare "urgent" / "broken" is not).
+  const pattern = new RegExp(`(?<!not )\\b${word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`);
+  return pattern.test(lower);
+}
+
 export function isLineSafeForAdult(text: string): boolean {
   const lower = text.toLowerCase();
-  if (FORBIDDEN.some((w) => lower.includes(w))) return false;
+  if (FORBIDDEN.some((w) => containsAlarmWord(lower, w))) return false;
   if (BLAMES_KID.some((w) => lower.includes(w))) return false;
   return true;
 }
