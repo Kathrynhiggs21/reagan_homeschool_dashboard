@@ -5735,6 +5735,22 @@ export const appRouter = router({
      * counts, top redacted nicknames, last 3 major samples, and a
      * single adult-tone headline line.
      */
+    /**
+     * Wave-15 / Push 246 — today.kiwiVoicePolicyManifest
+     *
+     * Returns the declarative manifest of every active Kiwi
+     * voice / guard push. Adult review page's policy tab calls
+     * this so Mom and Grandma can verify which guards are
+     * running and trace any change in behavior to a specific
+     * push number.
+     */
+    kiwiVoicePolicyManifest: publicProcedure.query(async () => {
+      const { getKiwiVoicePolicyManifest } = await import(
+        "./_lib/kiwiVoicePolicyVersion"
+      );
+      return getKiwiVoicePolicyManifest();
+    }),
+
     kiwiVoiceAuditWeeklySummary: publicProcedure
       .input(
         z
