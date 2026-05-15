@@ -713,10 +713,10 @@ function CartoonVoiceCard() {
     );
   }
   const samples: Array<{ id: "kiwi" | "blue" | "daffy" | "honk"; label: string; line: string }> = [
-    { id: "kiwi",  label: "Kiwi (parakeet)",  line: "Hi Reagan! Ready for math? You've got this." },
-    { id: "blue",  label: "Blue (sidekick)",  line: "Take a breath. We can do one little step at a time." },
-    { id: "daffy", label: "Daffy (duckling)", line: "Quack-quack! Snack time? Let's go!" },
-    { id: "honk",  label: "Honk (gosling)",   line: "Big honk! Great job sticking with it today." },
+    { id: "kiwi",  label: "Kiwi (parakeet)",  line: "Math's up next. Tap when you're ready." },
+    { id: "blue",  label: "Blue (sidekick)",  line: "One step. Then the next. No rush." },
+    { id: "daffy", label: "Daffy (duckling)", line: "Snack break. Back to it after." },
+    { id: "honk",  label: "Honk (gosling)",   line: "You stuck with it today. That's the thing." },
   ];
   return (
     <Card>
