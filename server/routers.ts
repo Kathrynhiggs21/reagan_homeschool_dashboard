@@ -5767,6 +5767,51 @@ export const appRouter = router({
      * event, gets back the new state + whether to switch to the
      * blessed-line fallback. Server holds no per-session memory.
      */
+    /**
+     * Wave-15 / Push 252 — today.kiwiReplyOrchestrate
+     *
+     * The single procedure the chat UI calls per LLM completion.
+     * Composes profile resolution + post-gen pipeline + drift
+     * streak tracking + blessed-line fallback + audit entry build
+     * in one round-trip. Pure: no DB writes; UI still calls
+     * today.kiwiVoiceAuditPersist with the returned auditEntry to
+     * persist the row.
+     */
+    kiwiReplyOrchestrate: publicProcedure
+      .input(
+        z.object({
+          panel: z.string().max(64).nullable().optional(),
+          candidate: z.string(),
+          priorStreakState: z
+            .object({
+              streakByPanel: z.record(z.string(), z.number()).optional(),
+              lastEventAtUtcMs: z.record(z.string(), z.number()).optional(),
+            })
+            .nullable()
+            .optional(),
+          timestampUtcMs: z.number().int().nonnegative(),
+          rotationSeed: z.number().int().nonnegative(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { runKiwiReplyOrchestrator } = await import(
+          "./_lib/kiwiReplyOrchestrator"
+        );
+        return runKiwiReplyOrchestrator({
+          panel: input.panel ?? null,
+          candidate: input.candidate,
+          priorStreakState: input.priorStreakState
+            ? {
+                streakByPanel: input.priorStreakState.streakByPanel ?? {},
+                lastEventAtUtcMs:
+                  input.priorStreakState.lastEventAtUtcMs ?? {},
+              }
+            : null,
+          timestampUtcMs: input.timestampUtcMs,
+          rotationSeed: input.rotationSeed,
+        });
+      }),
+
     kiwiDriftStreakApply: publicProcedure
       .input(
         z.object({
