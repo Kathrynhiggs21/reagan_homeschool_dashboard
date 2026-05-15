@@ -4966,6 +4966,62 @@ export const appRouter = router({
         });
       }),
     /**
+     * Wave-15 / Push 191 — today.kidLoginTroubleshoot
+     *
+     * Reagan-callable. When the kid taps the in-app "I can't sign in"
+     * button on an appLink card, the UI fires this with the symptom +
+     * her current account email. The pure helper produces the repair
+     * card; the wiring layer here additionally fires notifyOwner when
+     * the helper decides escalation is needed, so Mom or Grandma gets a
+     * phone ping. Failures to notify are swallowed — the repair card
+     * still goes back to the kid either way.
+     */
+    kidLoginTroubleshoot: publicProcedure
+      .input(
+        z.object({
+          tag: z.object({
+            key: z.string(),
+            name: z.string(),
+            signInMethod: z.enum(["google_sso", "email_password", "class_code"]),
+            preferredAccountRole: z.enum(["reagan", "mom", "grandma", "dad", "none"]),
+            preferredAccountEmail: z.string().nullable(),
+            badge: z.string(),
+            adultNote: z.string().nullable(),
+          }),
+          symptom: z.enum([
+            "page won't load",
+            "wrong password",
+            "says I'm not allowed",
+            "blank screen",
+            "asks for grown-up",
+            "other",
+          ]),
+          kidEmail: z.string().nullable(),
+        }),
+      )
+      .mutation(async ({ input }) => {
+        const { diagnoseKidLogin } = await import(
+          "./_lib/kidLoginTroubleshooter"
+        );
+        const card = diagnoseKidLogin({
+          tag: input.tag,
+          symptom: input.symptom,
+          kidEmail: input.kidEmail,
+        });
+        if (card.escalateToGrownup) {
+          try {
+            const { notifyOwner } = await import("./_core/notification");
+            await notifyOwner({
+              title: card.notifyOwnerPayload.title,
+              content: card.notifyOwnerPayload.content,
+            });
+          } catch {
+            // Swallow — the kid still gets the repair card.
+          }
+        }
+        return card;
+      }),
+    /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
      * + the active summer status. Reagan-callable (public). Self-empty
