@@ -99,7 +99,11 @@ export function decideSubjectFocus(input: {
   history.sort((a, b) => (a.isoDate < b.isoDate ? 1 : -1));
 
   if (history.length === 0) {
-    const fallback = DEFAULT_WEEKDAY_FOCUS[dow] ?? pool[0];
+    const dayFallback = DEFAULT_WEEKDAY_FOCUS[dow] ?? pool[0];
+    // Honor custom pool: if the day-default subject isn't in the active
+    // pool (e.g., a summer "Birding/Swimming/Plants" rotation), drop to
+    // the first pool entry instead of returning an out-of-pool subject.
+    const fallback = pool.includes(dayFallback) ? dayFallback : pool[0];
     return {
       focusSubject: fallback,
       reason: "history_empty",
@@ -119,7 +123,8 @@ export function decideSubjectFocus(input: {
     }
   }
 
-  const dayDefault = DEFAULT_WEEKDAY_FOCUS[dow] ?? pool[0];
+  const rawDayDefault = DEFAULT_WEEKDAY_FOCUS[dow] ?? pool[0];
+  const dayDefault = pool.includes(rawDayDefault) ? rawDayDefault : pool[0];
   const minCount = Math.min(...Array.from(counts.values()));
   const leastDone = pool.filter((s) => counts.get(s) === minCount);
 
