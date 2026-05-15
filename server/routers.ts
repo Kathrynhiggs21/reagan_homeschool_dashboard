@@ -5878,6 +5878,80 @@ export const appRouter = router({
      * BEFORE today.kiwiSessionMaintenance so it doesn't spam
      * trim+audit on every clean reply. Default cooldown: 5 min.
      */
+    /**
+     * Wave-15 / Push 276 — today.kiwiGatedMaintenance
+     *
+     * One-call decide-then-maybe-run wrapper. UI passes the
+     * prior state + last-maintenance ts + now, and gets back
+     * either a skip with schedule diagnostics or a full
+     * maintenance result. This is the recommended call for
+     * the chat UI's quiet-moment cadence.
+     */
+    kiwiGatedMaintenance: publicProcedure
+      .input(
+        z.object({
+          priorState: z
+            .object({
+              streak: z
+                .object({
+                  streakByPanel: z
+                    .record(z.string(), z.number())
+                    .optional(),
+                  lastEventAtUtcMs: z
+                    .record(z.string(), z.number())
+                    .optional(),
+                })
+                .optional(),
+              rotation: z
+                .object({
+                  counterByPanel: z
+                    .record(z.string(), z.number())
+                    .optional(),
+                })
+                .optional(),
+            })
+            .nullable()
+            .optional(),
+          nowUtcMs: z.number().int().nonnegative(),
+          lastMaintenanceAtUtcMs: z.number().nullable().optional(),
+          cooldownMs: z.number().int().nonnegative().optional(),
+          purgeOlderThanMs: z.number().int().nonnegative().optional(),
+          considerTrimBytes: z
+            .number()
+            .int()
+            .nonnegative()
+            .optional(),
+          trimNowBytes: z.number().int().nonnegative().optional(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { runKiwiGatedMaintenance } = await import(
+          "./_lib/kiwiSessionGatedMaintenance"
+        );
+        return runKiwiGatedMaintenance({
+          priorState: input.priorState
+            ? {
+                streak: {
+                  streakByPanel:
+                    input.priorState.streak?.streakByPanel ?? {},
+                  lastEventAtUtcMs:
+                    input.priorState.streak?.lastEventAtUtcMs ?? {},
+                },
+                rotation: {
+                  counterByPanel:
+                    input.priorState.rotation?.counterByPanel ?? {},
+                },
+              }
+            : null,
+          nowUtcMs: input.nowUtcMs,
+          lastMaintenanceAtUtcMs: input.lastMaintenanceAtUtcMs,
+          cooldownMs: input.cooldownMs,
+          purgeOlderThanMs: input.purgeOlderThanMs,
+          considerTrimBytes: input.considerTrimBytes,
+          trimNowBytes: input.trimNowBytes,
+        });
+      }),
+
     kiwiMaintenanceDecide: publicProcedure
       .input(
         z.object({
