@@ -35,15 +35,15 @@ const STEPS: TourStep[] = [
     emoji: "🐤",
     title: "I'm Kiwi.",
     body:
-      "I run on this dashboard. Eight quick screens, then you're done. You can skip ahead or stop whenever. None of this is a test.",
+      "I run on this dashboard. Eight quick screens. Skip ahead or stop whenever — this isn't a test.",
     kiwiLine:
-      "I'm Kiwi. Eight quick screens, then you're done. Skip ahead whenever.",
+      "I'm Kiwi. Eight quick screens. Skip ahead whenever.",
   },
   {
     emoji: "📋",
     title: "Today.",
     body:
-      "This page is where every day starts. The blocks are what's planned — math, reading, science, whatever's on for today. Tap one to open it.",
+      "Every day starts here. Blocks are what's planned — math, reading, science, whatever's on for the day. Tap one to open it.",
     kiwiLine:
       "Today is where every day starts. Tap a block to open it.",
   },
@@ -51,23 +51,23 @@ const STEPS: TourStep[] = [
     emoji: "🪙",
     title: "Coins.",
     body:
-      "You earn coins for finishing blocks or doing extra practice. Spend them in the Coin Shop on stuff Mom set up. That's it. No catch.",
+      "Finishing blocks earns coins. Extra practice earns more. Spend them in the Coin Shop on things Mom set up.",
     kiwiLine:
-      "Coins come from finishing blocks or extra practice. Spend them in the Coin Shop.",
+      "Coins come from finishing blocks and extra practice. Spend them in the Coin Shop.",
   },
   {
     emoji: "✨",
     title: "Practice for Coins.",
     body:
-      "Extra spelling, math, or science outside school hours earns bonus coins. It's optional. Practice button on Today opens it.",
+      "Extra spelling, math, or science outside school hours adds bonus coins. Optional. The Practice button on Today opens it.",
     kiwiLine:
-      "Practice for Coins is extra credit outside school hours. Optional.",
+      "Practice for Coins is optional extra outside school hours.",
   },
   {
     emoji: "🖨️",
     title: "Print today.",
     body:
-      "If you want a worksheet on paper instead of on the screen, tap Print today. Snap a photo when you're done to turn it in.",
+      "Want a worksheet on paper instead of on screen? Tap Print today. Snap a photo when you're done to turn it in.",
     kiwiLine:
       "Print today gives you a paper worksheet. Photo of it when you're done.",
   },
@@ -75,25 +75,25 @@ const STEPS: TourStep[] = [
     emoji: "📱",
     title: "Apps & Tools.",
     body:
-      "Khan, IXL, BrainPOP, Roblox — they all live in Apps & Tools. One tap opens the right account so you don't have to sign in every time.",
+      "Khan, IXL, BrainPOP, Roblox — all in Apps & Tools. One tap opens the right account, already signed in.",
     kiwiLine:
       "Apps and Tools — Khan, IXL, BrainPOP, Roblox. One tap, signed in.",
   },
   {
-    emoji: "💛",
-    title: "Tell me if something's hard.",
+    emoji: "🔖",
+    title: "Mark a block tough.",
     body:
-      "Tap the heart on a block if it's too much. Mom and your tutor see that and adjust tomorrow. You don't have to explain.",
+      "If something's too much, mark the block tough. Mom and your tutor see it and adjust tomorrow. No explanation needed.",
     kiwiLine:
-      "Tap the heart on a block if it's too much. Mom adjusts tomorrow.",
+      "Mark a block tough and Mom adjusts tomorrow. No explanation needed.",
   },
   {
     emoji: "💬",
-    title: "Talk to me.",
+    title: "Asking & requests.",
     body:
-      "Tap the green bird on any page to ask something or send a request — snack, supplies, schedule change. I won't pop up on my own.",
+      "Tap me on any page to ask something or send a request — snack, supplies, schedule change. I stay quiet until you tap.",
     kiwiLine:
-      "Tap the green bird on any page to ask something or send a request.",
+      "Tap me on any page to ask something or send a request.",
   },
 ];
 

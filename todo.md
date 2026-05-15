@@ -3074,3 +3074,16 @@ Order of work tonight:
 - [ ] Keep Make-a-request CTA + Kiwi animations (perch, fly-around, occasional pop-in) untouched
 - [ ] Vitest: voice-rewrite assertions — forbidden cute words list grows (no "buddy", "friend", "yay", "woohoo", "let's go!"), forbidden third-person Kiwi self-references blocked
 - [ ] Checkpoint + screenshot updated tour for Reagan to approve before broader rollout
+
+
+## Kiwi voice fix — pivot (less kiddy, less creepy) — 2026-05-15
+
+User flagged: "Reagan thinks Kiwi's voice is creepy. maybe less kiddy."
+The overnight pushes built ~70 server helpers but never changed what Reagan actually sees.
+Pivoting to fix the visible surfaces directly.
+
+- [ ] Inventory every user-facing Kiwi string in client/src (onboarding tour, speech bubbles, chat prompts, button copy)
+- [ ] Rewrite onboarding tour 8-step copy: drop exclamations, drop "buddy/friend/pal/champ", keep chick emoji but no squeals
+- [ ] Rewrite Kiwi speech bubbles on Today / Schedule / Kiwi / Bookshelf / Notebook / Apps pages
+- [ ] Rewrite chat prompt placeholder text ("Tap on any page to ask something." card)
+- [ ] Verify in live preview that all visible Kiwi text reads as older-cousin

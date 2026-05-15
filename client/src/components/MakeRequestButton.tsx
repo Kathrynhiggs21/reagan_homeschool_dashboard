@@ -59,7 +59,7 @@ export function MakeRequestButton() {
     try {
       const seed = body.trim() || `I want to send my mom a note about ${KIND_OPTIONS.find(k => k.kind === kind)?.label?.toLowerCase()}.`;
       const res: any = await draft.mutateAsync({
-        userMessage: `Help me write a short, kind, kid-friendly note to my mom (and family) about: ${seed}\n\nKeep it under 50 words. First-person, soft tone. No sign-off.`,
+        userMessage: `Help Reagan (age 11) draft a short, plain note to her mom and grandma about: ${seed}\n\nKeep it under 50 words. First-person, calm and matter-of-fact — not chirpy, not babyish, no exclamation marks, no pet names. No sign-off.`,
         adultPresent: false,
       } as any);
       const text = (res?.reply ?? res?.text ?? res?.assistant ?? res?.answer ?? "").toString().trim();
@@ -90,7 +90,7 @@ export function MakeRequestButton() {
               Make a request
             </DialogTitle>
             <p className="text-sm text-foreground/70">
-              This goes to Mom, Dad, and Grandma — so any of them can help.
+              Goes to Mom, Dad, and Grandma. Any of them can answer.
             </p>
           </DialogHeader>
 
@@ -116,7 +116,7 @@ export function MakeRequestButton() {
             <Textarea
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              placeholder="Type what you want to say…"
+              placeholder="Type what you want to say. Plain words are fine."
               rows={5}
               className="resize-none"
               maxLength={2000}

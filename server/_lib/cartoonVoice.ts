@@ -30,14 +30,16 @@ export interface CartoonVoiceConfig {
 
 export const CARTOON_VOICES: Record<CartoonVoiceId, CartoonVoiceConfig> = {
   kiwi: {
-    // May 2026 retune — Mom feedback: previous Kiwi (Leda + tiny-plush hint)
-    // was too high and chipmunk-y. Goal: a warm REAL-kid voice with a soft
-    // cartoon edge, like a friendly 7-year-old buddy. We keep Leda (it's the
-    // most natural-sounding young Gemini prebuilt) and change the style hint
-    // so the model lands lower in pitch and steadier in cadence.
+    // May 15, 2026 retune — Reagan feedback (age 11): the previous voice
+    // (7-year-old buddy) read as creepy and kiddy to her. New target: a
+    // calm older-cousin voice, like a thoughtful 14- or 15-year-old talking
+    // to her at the kitchen table. Plain, steady, never chirpy. No giggles,
+    // no cartoon-bird sparkle, no cute affectations. Keeping the Leda voice
+    // because it's the most natural-sounding young Gemini prebuilt, and the
+    // style hint pulls the prosody down and slower.
     voiceName: "Leda",
     style:
-      "Voice: a warm, friendly real-kid voice, like a 7-year-old best friend. NOT squeaky or high-pitched. NOT a baby or chipmunk. Sounds like a real human kid speaking calmly with a small cartoon-bird sparkle. Pitch is slightly above neutral, never strained. Cadence is steady and clear, like talking to a friend at lunch. A tiny giggle once in a while is okay; no exaggerated cuteness. Always kind and gentle.",
+      "Voice: a calm, plain older-cousin voice, like a thoughtful 14-year-old talking to an 11-year-old at the kitchen table. NOT high-pitched. NOT chirpy. NOT cutesy. No giggles. No baby talk. No cartoon-bird sparkle. Pitch sits at neutral or slightly below — the lowest the voice can comfortably go. Cadence is unhurried and steady, with short natural pauses between sentences. Tone is matter-of-fact and kind, like reading aloud to a younger sibling who's had a long day. Read each sentence as a complete unit; don't rush.",
   },
   blue: {
     voiceName: "Aoede",

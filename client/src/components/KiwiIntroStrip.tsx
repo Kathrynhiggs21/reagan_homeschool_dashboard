@@ -8,10 +8,10 @@ const PLAYED_KEY = "kiwi-intro-played-v1";
 // 5-line timed script. Plays automatically the very first time, then on demand.
 const SCRIPT = [
   { ms: 0,    text: "I'm Kiwi." },
-  { ms: 1800, text: "No tests. No timers. No wrong answers." },
-  { ms: 3600, text: "If something's hard, tell me. We'll try it a different way." },
-  { ms: 5400, text: "I won't pop up on my own." },
-  { ms: 7800, text: "Tap me when you want me." },
+  { ms: 1800, text: "No tests, no timers, no wrong answers here." },
+  { ms: 3600, text: "If something's hard, mark it tough. Mom adjusts tomorrow." },
+  { ms: 5400, text: "I stay quiet until you tap me." },
+  { ms: 7800, text: "That's it. Carry on." },
 ] as const;
 
 /**
@@ -87,13 +87,12 @@ export default function KiwiIntroStrip() {
         ) : (
           <>
             <p className="text-[14px] leading-snug text-amber-950 mt-1">
-              No tests. No timers. No wrong answers. If something's too hard, tell me and we'll
-              try it a different way. I won't pop up on my own — tap me when you want me.
+              No tests, no timers, no wrong answers here. If something's too much, mark the block tough — Mom adjusts tomorrow. I stay quiet until you tap me.
             </p>
             <div className="mt-2 flex gap-2 flex-wrap text-[12px] font-semibold">
               <span className="px-2.5 py-1 rounded-full bg-amber-200 text-amber-900 border border-amber-400">No tests</span>
               <span className="px-2.5 py-1 rounded-full bg-amber-200 text-amber-900 border border-amber-400">No timers</span>
-              <span className="px-2.5 py-1 rounded-full bg-amber-200 text-amber-900 border border-amber-400">You pick how to learn it</span>
+              <span className="px-2.5 py-1 rounded-full bg-amber-200 text-amber-900 border border-amber-400">You pick how to learn</span>
             </div>
           </>
         )}
