@@ -5759,6 +5759,46 @@ export const appRouter = router({
      * stops trying to regenerate and shows a hand-written blessed
      * line picked deterministically by panel + rotation seed.
      */
+    /**
+     * Wave-15 / Push 250 — today.kiwiDriftStreakApply
+     *
+     * Pure stateless mutation. Client posts the prior streak state
+     * (kept in browser memory or localStorage) plus the latest drift
+     * event, gets back the new state + whether to switch to the
+     * blessed-line fallback. Server holds no per-session memory.
+     */
+    kiwiDriftStreakApply: publicProcedure
+      .input(
+        z.object({
+          priorState: z
+            .object({
+              streakByPanel: z.record(z.string(), z.number()).optional(),
+              lastEventAtUtcMs: z.record(z.string(), z.number()).optional(),
+            })
+            .nullable()
+            .optional(),
+          event: z.object({
+            panel: z.string().max(64),
+            severity: z.enum(["info", "minor", "major"]),
+            timestampUtcMs: z.number().int().nonnegative(),
+          }),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { applyKiwiDriftEvent } = await import(
+          "./_lib/kiwiDriftStreakTracker"
+        );
+        return applyKiwiDriftEvent(
+          input.priorState
+            ? {
+                streakByPanel: input.priorState.streakByPanel ?? {},
+                lastEventAtUtcMs: input.priorState.lastEventAtUtcMs ?? {},
+              }
+            : null,
+          input.event,
+        );
+      }),
+
     kiwiBlessedLinePick: publicProcedure
       .input(
         z.object({
