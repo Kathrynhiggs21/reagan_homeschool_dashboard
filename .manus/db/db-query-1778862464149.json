@@ -1,0 +1,17 @@
+{
+  "query": "\n-- Today in America/New_York\nSELECT\n  (SELECT COUNT(*) FROM scheduleBlocks\n     WHERE DATE(CONVERT_TZ(FROM_UNIXTIME(startTime/1000), '+00:00', 'America/New_York'))\n         = DATE(CONVERT_TZ(NOW(), '+00:00', 'America/New_York'))) AS blocks_today,\n  (SELECT MIN(FROM_UNIXTIME(startTime/1000)) FROM scheduleBlocks\n     WHERE DATE(CONVERT_TZ(FROM_UNIXTIME(startTime/1000), '+00:00', 'America/New_York'))\n         = DATE(CONVERT_TZ(NOW(), '+00:00', 'America/New_York'))) AS first_block_today_utc,\n  (SELECT COUNT(*) FROM scheduleBlocks\n     WHERE startTime >= UNIX_TIMESTAMP(NOW())*1000\n       AND startTime <  UNIX_TIMESTAMP(NOW())*1000 + 7*86400*1000) AS blocks_next_7d,\n  (SELECT MAX(FROM_UNIXTIME(startTime/1000)) FROM scheduleBlocks) AS latest_scheduled_block_utc,\n  (SELECT COUNT(*) FROM scheduleBlocks) AS total_blocks_all_time;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \n-- Today in America/New_York\nSELECT\n  (SELECT COUNT(*) FROM scheduleBlocks\n     WHERE DATE(CONVERT_TZ(FROM_UNIXTIME(startTime/1000), '+00:00', 'America/New_York'))\n         = DATE(CONVERT_TZ(NOW(), '+00:00', 'America/New_York'))) AS blocks_today,\n  (SELECT MIN(FROM_UNIXTIME(startTime/1000)) FROM scheduleBlocks\n     WHERE DATE(CONVERT_TZ(FROM_UNIXTIME(startTime/1000), '+00:00', 'America/New_York'))\n         = DATE(CONVERT_TZ(NOW(), '+00:00', 'America/New_York'))) AS first_block_today_utc,\n  (SELECT COUNT(*) FROM scheduleBlocks\n     WHERE startTime >= UNIX_TIMESTAMP(NOW())*1000\n       AND startTime <  UNIX_TIMESTAMP(NOW())*1000 + 7*86400*1000) AS blocks_next_7d,\n  (SELECT MAX(FROM_UNIXTIME(startTime/1000)) FROM scheduleBlocks) AS latest_scheduled_block_utc,\n  (SELECT COUNT(*) FROM scheduleBlocks) AS total_blocks_all_time;\n",
+  "rows": [
+    {
+      "blocks_today": "0",
+      "first_block_today_utc": "NULL",
+      "blocks_next_7d": "0",
+      "latest_scheduled_block_utc": "1970-01-01 00:00:00.023000",
+      "total_blocks_all_time": "982"
+    }
+  ],
+  "messages": [],
+  "stdout": "blocks_today\tfirst_block_today_utc\tblocks_next_7d\tlatest_scheduled_block_utc\ttotal_blocks_all_time\n0\tNULL\t0\t1970-01-01 00:00:00.023000\t982\n",
+  "stderr": "",
+  "execution_time_ms": 613
+}

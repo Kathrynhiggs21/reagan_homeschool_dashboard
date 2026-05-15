@@ -1,0 +1,41 @@
+{
+  "query": "\nSELECT subjectSlug, COUNT(*) AS skills,\n       SUM(CASE WHEN gradeLevel='4' THEN 1 ELSE 0 END) AS below,\n       SUM(CASE WHEN gradeLevel='5' THEN 1 ELSE 0 END) AS on_grade,\n       SUM(CASE WHEN gradeLevel='6' THEN 1 ELSE 0 END) AS stretch\nFROM skillLadder\nWHERE active = 1\nGROUP BY subjectSlug;\n\nSELECT\n  (SELECT COUNT(*) FROM placementTasks WHERE active=1) AS active_placement_tasks,\n  (SELECT COUNT(DISTINCT skillLadderId) FROM placementTasks WHERE active=1) AS skills_with_at_least_one_task,\n  (SELECT COUNT(*) FROM placementResponses) AS responses_recorded,\n  (SELECT COUNT(*) FROM placementResults) AS results_recorded;\n\nSELECT subjectSlug, gradeEquivalent, LEFT(strengthsNote,100) AS strengths, LEFT(gapsNote,100) AS gaps, assessedAt\nFROM placementResults\nORDER BY assessedAt DESC\nLIMIT 10;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \nSELECT subjectSlug, COUNT(*) AS skills,\n       SUM(CASE WHEN gradeLevel='4' THEN 1 ELSE 0 END) AS below,\n       SUM(CASE WHEN gradeLevel='5' THEN 1 ELSE 0 END) AS on_grade,\n       SUM(CASE WHEN gradeLevel='6' THEN 1 ELSE 0 END) AS stretch\nFROM skillLadder\nWHERE active = 1\nGROUP BY subjectSlug;\n\nSELECT\n  (SELECT COUNT(*) FROM placementTasks WHERE active=1) AS active_placement_tasks,\n  (SELECT COUNT(DISTINCT skillLadderId) FROM placementTasks WHERE active=1) AS skills_with_at_least_one_task,\n  (SELECT COUNT(*) FROM placementResponses) AS responses_recorded,\n  (SELECT COUNT(*) FROM placementResults) AS results_recorded;\n\nSELECT subjectSlug, gradeEquivalent, LEFT(strengthsNote,100) AS strengths, LEFT(gapsNote,100) AS gaps, assessedAt\nFROM placementResults\nORDER BY assessedAt DESC\nLIMIT 10;\n",
+  "rows": [
+    {
+      "subjectSlug": "science",
+      "skills": "6",
+      "below": "0",
+      "on_grade": "6",
+      "stretch": "0"
+    },
+    {
+      "subjectSlug": "math",
+      "skills": "14",
+      "below": "0",
+      "on_grade": "14",
+      "stretch": "0"
+    },
+    {
+      "subjectSlug": "ela",
+      "skills": "13",
+      "below": "0",
+      "on_grade": "13",
+      "stretch": "0"
+    },
+    {
+      "subjectSlug": "ss",
+      "skills": "4",
+      "below": "0",
+      "on_grade": "4",
+      "stretch": "0"
+    }
+  ],
+  "messages": [
+    "active_placement_tasks\tskills_with_at_least_one_task\tresponses_recorded\tresults_recorded",
+    "108\t36\t0\t0"
+  ],
+  "stdout": "subjectSlug\tskills\tbelow\ton_grade\tstretch\nscience\t6\t0\t6\t0\nmath\t14\t0\t14\t0\nela\t13\t0\t13\t0\nss\t4\t0\t4\t0\nactive_placement_tasks\tskills_with_at_least_one_task\tresponses_recorded\tresults_recorded\n108\t36\t0\t0\n",
+  "stderr": "",
+  "execution_time_ms": 703
+}

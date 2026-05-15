@@ -1,0 +1,34 @@
+{
+  "query": "\nSELECT id, date, dayType, status, isTemplate\nFROM dailyPlans\nWHERE date BETWEEN\n      DATE(CONVERT_TZ(NOW(), '+00:00', 'America/New_York'))\n  AND DATE(CONVERT_TZ(NOW(), '+00:00', 'America/New_York')) + INTERVAL 7 DAY\nORDER BY date;\n\nSELECT\n  (SELECT COUNT(*) FROM scheduleBlocks sb\n     JOIN dailyPlans dp ON sb.planId = dp.id\n    WHERE dp.date = DATE(CONVERT_TZ(NOW(), '+00:00', 'America/New_York'))\n      AND dp.isTemplate = 0) AS blocks_for_today,\n  (SELECT MAX(date) FROM dailyPlans WHERE isTemplate = 0) AS latest_plan_date,\n  (SELECT MIN(date) FROM dailyPlans WHERE isTemplate = 0 AND date >= DATE(CONVERT_TZ(NOW(), '+00:00', 'America/New_York'))) AS next_plan_date;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \nSELECT id, date, dayType, status, isTemplate\nFROM dailyPlans\nWHERE date BETWEEN\n      DATE(CONVERT_TZ(NOW(), '+00:00', 'America/New_York'))\n  AND DATE(CONVERT_TZ(NOW(), '+00:00', 'America/New_York')) + INTERVAL 7 DAY\nORDER BY date;\n\nSELECT\n  (SELECT COUNT(*) FROM scheduleBlocks sb\n     JOIN dailyPlans dp ON sb.planId = dp.id\n    WHERE dp.date = DATE(CONVERT_TZ(NOW(), '+00:00', 'America/New_York'))\n      AND dp.isTemplate = 0) AS blocks_for_today,\n  (SELECT MAX(date) FROM dailyPlans WHERE isTemplate = 0) AS latest_plan_date,\n  (SELECT MIN(date) FROM dailyPlans WHERE isTemplate = 0 AND date >= DATE(CONVERT_TZ(NOW(), '+00:00', 'America/New_York'))) AS next_plan_date;\n",
+  "rows": [
+    {
+      "id": "990001",
+      "date": "2026-05-15",
+      "dayType": "full",
+      "status": "planned",
+      "isTemplate": "0"
+    },
+    {
+      "id": "780001",
+      "date": "2026-05-19",
+      "dayType": "full",
+      "status": "planned",
+      "isTemplate": "0"
+    },
+    {
+      "id": "870002",
+      "date": "2026-05-20",
+      "dayType": "half",
+      "status": "planned",
+      "isTemplate": "0"
+    }
+  ],
+  "messages": [
+    "blocks_for_today\tlatest_plan_date\tnext_plan_date",
+    "0\t2099-12-31\t2026-05-15"
+  ],
+  "stdout": "id\tdate\tdayType\tstatus\tisTemplate\n990001\t2026-05-15\tfull\tplanned\t0\n780001\t2026-05-19\tfull\tplanned\t0\n870002\t2026-05-20\thalf\tplanned\t0\nblocks_for_today\tlatest_plan_date\tnext_plan_date\n0\t2099-12-31\t2026-05-15\n",
+  "stderr": "",
+  "execution_time_ms": 622
+}

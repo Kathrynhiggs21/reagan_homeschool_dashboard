@@ -1,0 +1,66 @@
+{
+  "query": "\n-- 1. Reword May 25+ roster row as \"summer break\"\nUPDATE tutorRosterOverride\n   SET note = 'Summer break — Indian Hill 2025–26 school year ended Thu May 21, 2026. No school. (Reagan''s homeschool follows the Indian Hill calendar.)'\n WHERE week_start_date = '2026-05-25';\n\n-- 2. Insert empty Thu May 21 plan (last day of school year). Idempotent via ON DUPLICATE KEY on date.\nINSERT INTO dailyPlans (date, dayType, status, notes, isTemplate, createdAt, updatedAt)\nVALUES ('2026-05-21', 'full', 'planned',\n        'Last day of Indian Hill 2025–26 school year. Mom + Grandma teaching (Sophie''s last day was Tue May 19). Plan blocks before this morning.',\n        0, NOW(), NOW())\nON DUPLICATE KEY UPDATE\n  notes = VALUES(notes);\n\n-- 3. Confirm\nSELECT id, date, dayType, status, LEFT(notes, 200) AS notes\nFROM dailyPlans\nWHERE date BETWEEN '2026-05-15' AND '2026-05-22'\nORDER BY date;\n\nSELECT id, week_start_date, active_tutor_names_json, helper_names_json, LEFT(note, 250) AS note\nFROM tutorRosterOverride\nWHERE week_start_date >= '2026-05-11'\nORDER BY week_start_date;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \n-- 1. Reword May 25+ roster row as \"summer break\"\nUPDATE tutorRosterOverride\n   SET note = 'Summer break — Indian Hill 2025–26 school year ended Thu May 21, 2026. No school. (Reagan''s homeschool follows the Indian Hill calendar.)'\n WHERE week_start_date = '2026-05-25';\n\n-- 2. Insert empty Thu May 21 plan (last day of school year). Idempotent via ON DUPLICATE KEY on date.\nINSERT INTO dailyPlans (date, dayType, status, notes, isTemplate, createdAt, updatedAt)\nVALUES ('2026-05-21', 'full', 'planned',\n        'Last day of Indian Hill 2025–26 school year. Mom + Grandma teaching (Sophie''s last day was Tue May 19). Plan blocks before this morning.',\n        0, NOW(), NOW())\nON DUPLICATE KEY UPDATE\n  notes = VALUES(notes);\n\n-- 3. Confirm\nSELECT id, date, dayType, status, LEFT(notes, 200) AS notes\nFROM dailyPlans\nWHERE date BETWEEN '2026-05-15' AND '2026-05-22'\nORDER BY date;\n\nSELECT id, week_start_date, active_tutor_names_json, helper_names_json, LEFT(note, 250) AS note\nFROM tutorRosterOverride\nWHERE week_start_date >= '2026-05-11'\nORDER BY week_start_date;\n",
+  "rows": [
+    {
+      "id": "990001",
+      "date": "2026-05-15",
+      "dayType": "full",
+      "status": "skipped",
+      "notes": "2026-05-15: marked skipped — no blocks were added for today, fresh start Monday."
+    },
+    {
+      "id": "780001",
+      "date": "2026-05-19",
+      "dayType": "full",
+      "status": "planned",
+      "notes": "NULL"
+    },
+    {
+      "id": "870002",
+      "date": "2026-05-20",
+      "dayType": "half",
+      "status": "planned",
+      "notes": "NULL"
+    },
+    {
+      "id": "1050001",
+      "date": "2026-05-21",
+      "dayType": "full",
+      "status": "planned",
+      "notes": "Last day of Indian Hill 2025–26 school year. Mom + Grandma teaching (Sophie's last day was Tue May 19). Plan blocks before this morning."
+    },
+    {
+      "id": "id",
+      "date": "week_start_date",
+      "dayType": "active_tutor_names_json",
+      "status": "helper_names_json",
+      "notes": "note"
+    },
+    {
+      "id": "1",
+      "date": "2026-05-11",
+      "dayType": "[\"Sophie\"]",
+      "status": "[\"Mom\", \"Grandma\"]",
+      "notes": "Sophie is the only tutor. This is her last week. Standing hours Mon/Thu/Fri 10–3, Tue May 19 shortened 10–1 (her final session). Wed off. Mom + Grandma take over Wed May 20 onward."
+    },
+    {
+      "id": "30001",
+      "date": "2026-05-18",
+      "dayType": "[\"Sophie\"]",
+      "status": "[\"Mom\", \"Grandma\"]",
+      "notes": "Sophie Mon May 18 10–3, Tue May 19 10–1 (final session). Starting Wed May 20: NO tutors — Mom + Grandma run school for the rest of the year."
+    },
+    {
+      "id": "30002",
+      "date": "2026-05-25",
+      "dayType": "[]",
+      "status": "[\"Mom\", \"Grandma\"]",
+      "notes": "Summer break — Indian Hill 2025–26 school year ended Thu May 21, 2026. No school. (Reagan's homeschool follows the Indian Hill calendar.)"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tdate\tdayType\tstatus\tnotes\n990001\t2026-05-15\tfull\tskipped\t2026-05-15: marked skipped — no blocks were added for today, fresh start Monday.\n780001\t2026-05-19\tfull\tplanned\tNULL\n870002\t2026-05-20\thalf\tplanned\tNULL\n1050001\t2026-05-21\tfull\tplanned\tLast day of Indian Hill 2025–26 school year. Mom + Grandma teaching (Sophie's last day was Tue May 19). Plan blocks before this morning.\nid\tweek_start_date\tactive_tutor_names_json\thelper_names_json\tnote\n1\t2026-05-11\t[\"Sophie\"]\t[\"Mom\", \"Grandma\"]\tSophie is the only tutor. This is her last week. Standing hours Mon/Thu/Fri 10–3, Tue May 19 shortened 10–1 (her final session). Wed off. Mom + Grandma take over Wed May 20 onward.\n30001\t2026-05-18\t[\"Sophie\"]\t[\"Mom\", \"Grandma\"]\tSophie Mon May 18 10–3, Tue May 19 10–1 (final session). Starting Wed May 20: NO tutors — Mom + Grandma run school for the rest of the year.\n30002\t2026-05-25\t[]\t[\"Mom\", \"Grandma\"]\tSummer break — Indian Hill 2025–26 school year ended Thu May 21, 2026. No school. (Reagan's homeschool follows the Indian Hill calendar.)\n",
+  "stderr": "",
+  "execution_time_ms": 1363
+}

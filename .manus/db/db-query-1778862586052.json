@@ -1,0 +1,21 @@
+{
+  "query": "\n-- 1. Mark today's empty plan as skipped (reversible — set status back to 'planned' anytime)\nUPDATE dailyPlans\nSET status = 'skipped',\n    notes  = CONCAT(COALESCE(notes,''),\n                    CASE WHEN notes IS NULL OR notes='' THEN '' ELSE ' | ' END,\n                    '2026-05-15: marked skipped — no blocks were added for today, fresh start Monday.')\nWHERE id = 990001 AND date = '2026-05-15';\n\n-- 2. Show the result so I can confirm\nSELECT id, date, dayType, status, LEFT(notes, 200) AS notes_preview\nFROM dailyPlans\nWHERE id = 990001;\n\n-- 3. Show what next week (May 18-22) looks like, with block counts\nSELECT dp.id, dp.date,\n       DAYNAME(dp.date) AS day,\n       dp.dayType, dp.status,\n       (SELECT COUNT(*) FROM scheduleBlocks sb WHERE sb.planId = dp.id) AS block_count\nFROM dailyPlans dp\nWHERE dp.date BETWEEN '2026-05-18' AND '2026-05-22'\n  AND dp.isTemplate = 0\nORDER BY dp.date;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \n-- 1. Mark today's empty plan as skipped (reversible — set status back to 'planned' anytime)\nUPDATE dailyPlans\nSET status = 'skipped',\n    notes  = CONCAT(COALESCE(notes,''),\n                    CASE WHEN notes IS NULL OR notes='' THEN '' ELSE ' | ' END,\n                    '2026-05-15: marked skipped — no blocks were added for today, fresh start Monday.')\nWHERE id = 990001 AND date = '2026-05-15';\n\n-- 2. Show the result so I can confirm\nSELECT id, date, dayType, status, LEFT(notes, 200) AS notes_preview\nFROM dailyPlans\nWHERE id = 990001;\n\n-- 3. Show what next week (May 18-22) looks like, with block counts\nSELECT dp.id, dp.date,\n       DAYNAME(dp.date) AS day,\n       dp.dayType, dp.status,\n       (SELECT COUNT(*) FROM scheduleBlocks sb WHERE sb.planId = dp.id) AS block_count\nFROM dailyPlans dp\nWHERE dp.date BETWEEN '2026-05-18' AND '2026-05-22'\n  AND dp.isTemplate = 0\nORDER BY dp.date;\n",
+  "rows": [
+    {
+      "id": "990001",
+      "date": "2026-05-15",
+      "dayType": "full",
+      "status": "skipped",
+      "notes_preview": "2026-05-15: marked skipped — no blocks were added for today, fresh start Monday."
+    }
+  ],
+  "messages": [
+    "id\tdate\tday\tdayType\tstatus\tblock_count",
+    "780001\t2026-05-19\tTuesday\tfull\tplanned\t8",
+    "870002\t2026-05-20\tWednesday\thalf\tplanned\t7"
+  ],
+  "stdout": "id\tdate\tdayType\tstatus\tnotes_preview\n990001\t2026-05-15\tfull\tskipped\t2026-05-15: marked skipped — no blocks were added for today, fresh start Monday.\nid\tdate\tday\tdayType\tstatus\tblock_count\n780001\t2026-05-19\tTuesday\tfull\tplanned\t8\n870002\t2026-05-20\tWednesday\thalf\tplanned\t7\n",
+  "stderr": "",
+  "execution_time_ms": 691
+}

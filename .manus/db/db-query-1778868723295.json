@@ -1,0 +1,13 @@
+{
+  "query": "\nUPDATE tutorRosterOverride\n   SET note = 'Summer schooling — lighter pace, NOT every weekday. Mom + Grandma decide which days have school each week. Fewer blocks per day. More adventures / read-aloud / choice / outdoor. Indian Hill 2025–26 ended Thu May 21; Reagan continues at her own summer rhythm. No tutors.'\n WHERE week_start_date = '2026-05-25';\nSELECT note FROM tutorRosterOverride WHERE week_start_date = '2026-05-25';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \nUPDATE tutorRosterOverride\n   SET note = 'Summer schooling — lighter pace, NOT every weekday. Mom + Grandma decide which days have school each week. Fewer blocks per day. More adventures / read-aloud / choice / outdoor. Indian Hill 2025–26 ended Thu May 21; Reagan continues at her own summer rhythm. No tutors.'\n WHERE week_start_date = '2026-05-25';\nSELECT note FROM tutorRosterOverride WHERE week_start_date = '2026-05-25';\n",
+  "rows": [
+    {
+      "note": "Summer schooling — lighter pace, NOT every weekday. Mom + Grandma decide which days have school each week. Fewer blocks per day. More adventures / read-aloud / choice / outdoor. Indian Hill 2025–26 ended Thu May 21; Reagan continues at her own summer rhythm. No tutors."
+    }
+  ],
+  "messages": [],
+  "stdout": "note\nSummer schooling — lighter pace, NOT every weekday. Mom + Grandma decide which days have school each week. Fewer blocks per day. More adventures / read-aloud / choice / outdoor. Indian Hill 2025–26 ended Thu May 21; Reagan continues at her own summer rhythm. No tutors.\n",
+  "stderr": "",
+  "execution_time_ms": 639
+}

@@ -1,0 +1,30 @@
+{
+  "query": "\nSELECT\n  SUM(CASE WHEN startTime = 0 OR startTime IS NULL THEN 1 ELSE 0 END) AS zero_or_null_startTime,\n  SUM(CASE WHEN startTime > 0 THEN 1 ELSE 0 END) AS real_startTime,\n  MIN(CASE WHEN startTime > 0 THEN FROM_UNIXTIME(startTime/1000) END) AS earliest_real,\n  MAX(CASE WHEN startTime > 0 THEN FROM_UNIXTIME(startTime/1000) END) AS latest_real\nFROM scheduleBlocks;\n\nSELECT id, planId, title, status,\n       FROM_UNIXTIME(startTime/1000) AS startUtc,\n       durationMin\nFROM scheduleBlocks\nWHERE startTime > 0\nORDER BY startTime DESC\nLIMIT 15;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \nSELECT\n  SUM(CASE WHEN startTime = 0 OR startTime IS NULL THEN 1 ELSE 0 END) AS zero_or_null_startTime,\n  SUM(CASE WHEN startTime > 0 THEN 1 ELSE 0 END) AS real_startTime,\n  MIN(CASE WHEN startTime > 0 THEN FROM_UNIXTIME(startTime/1000) END) AS earliest_real,\n  MAX(CASE WHEN startTime > 0 THEN FROM_UNIXTIME(startTime/1000) END) AS latest_real\nFROM scheduleBlocks;\n\nSELECT id, planId, title, status,\n       FROM_UNIXTIME(startTime/1000) AS startUtc,\n       durationMin\nFROM scheduleBlocks\nWHERE startTime > 0\nORDER BY startTime DESC\nLIMIT 15;\n",
+  "rows": [
+    {
+      "zero_or_null_startTime": "970",
+      "real_startTime": "12",
+      "earliest_real": "1970-01-01 00:00:00.008000",
+      "latest_real": "1970-01-01 00:00:00.023000"
+    }
+  ],
+  "messages": [
+    "id\tplanId\ttitle\tstatus\tstartUtc\tdurationMin",
+    "690010\t360001\t👵 Grandma's Lesson — recap of today's topics (45 min)\tcomplete\t1970-01-01 00:00:00.023000\t45",
+    "690018\t390001\t🥪 Lunch with Mom\tnot_started\t1970-01-01 00:00:00.022000\t30",
+    "690016\t390001\t🍕 Pizza-Wheel Angle Spinner\tnot_started\t1970-01-01 00:00:00.021000\t20",
+    "690015\t390001\t📄 Spectrum pg 148 review (Pretest Ch 8) — use with flashcards\tnot_started\t1970-01-01 00:00:00.021000\t15",
+    "690013\t390001\t☀️ Warm-Up — Degrees Recap\tnot_started\t1970-01-01 00:00:00.021000\t10",
+    "690011\t390001\t🧭 Build Your Own Compass + Degrees Video\tnot_started\t1970-01-01 00:00:00.016000\t30",
+    "690012\t360001\t🎬 Planets Recap — rewatch Earth's Movements video\tcomplete\t1970-01-01 00:00:00.015000\t15",
+    "690294\t360001\tLunch\tcomplete\t1970-01-01 00:00:00.014000\t30",
+    "690075\t360001\tSpectrum Science, Grade 5-  pg 168 to 169\tcomplete\t1970-01-01 00:00:00.013000\t30",
+    "690009\t360001\t📘 Spectrum Math Grade 5 — pg 146 to 148\tcomplete\t1970-01-01 00:00:00.012000\t30",
+    "1170038\t480001\tVitest add block\tnot_started\t1970-01-01 00:00:00.009000\t25",
+    "720001\t360001\t📝 Writing — \"Fake Blood Spider\" (Reagan's story)\tcomplete\t1970-01-01 00:00:00.008000\t30"
+  ],
+  "stdout": "zero_or_null_startTime\treal_startTime\tearliest_real\tlatest_real\n970\t12\t1970-01-01 00:00:00.008000\t1970-01-01 00:00:00.023000\nid\tplanId\ttitle\tstatus\tstartUtc\tdurationMin\n690010\t360001\t👵 Grandma's Lesson — recap of today's topics (45 min)\tcomplete\t1970-01-01 00:00:00.023000\t45\n690018\t390001\t🥪 Lunch with Mom\tnot_started\t1970-01-01 00:00:00.022000\t30\n690016\t390001\t🍕 Pizza-Wheel Angle Spinner\tnot_started\t1970-01-01 00:00:00.021000\t20\n690015\t390001\t📄 Spectrum pg 148 review (Pretest Ch 8) — use with flashcards\tnot_started\t1970-01-01 00:00:00.021000\t15\n690013\t390001\t☀️ Warm-Up — Degrees Recap\tnot_started\t1970-01-01 00:00:00.021000\t10\n690011\t390001\t🧭 Build Your Own Compass + Degrees Video\tnot_started\t1970-01-01 00:00:00.016000\t30\n690012\t360001\t🎬 Planets Recap — rewatch Earth's Movements video\tcomplete\t1970-01-01 00:00:00.015000\t15\n690294\t360001\tLunch\tcomplete\t1970-01-01 00:00:00.014000\t30\n690075\t360001\tSpectrum Science, Grade 5-  pg 168 to 169\tcomplete\t1970-01-01 00:00:00.013000\t30\n690009\t360001\t📘 Spectrum Math Grade 5 — pg 146 to 148\tcomplete\t1970-01-01 00:00:00.012000\t30\n1170038\t480001\tVitest add block\tnot_started\t1970-01-01 00:00:00.009000\t25\n720001\t360001\t📝 Writing — \"Fake Blood Spider\" (Reagan's story)\tcomplete\t1970-01-01 00:00:00.008000\t30\n",
+  "stderr": "",
+  "execution_time_ms": 623
+}

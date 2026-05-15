@@ -1,0 +1,35 @@
+{
+  "query": "\n-- Today's plan should show status=skipped now\nSELECT id, date, dayType, status, LEFT(notes, 200) AS notes\nFROM dailyPlans\nWHERE date = '2026-05-15';\n\n-- Tuesday May 19's queued blocks\nSELECT id, blockType, title, durationMin, startTime, status\nFROM scheduleBlocks\nWHERE planId = 780001\nORDER BY sortOrder, id;\n\n-- Wednesday May 20's queued blocks\nSELECT id, blockType, title, durationMin, startTime, status\nFROM scheduleBlocks\nWHERE planId = 870002\nORDER BY sortOrder, id;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \n-- Today's plan should show status=skipped now\nSELECT id, date, dayType, status, LEFT(notes, 200) AS notes\nFROM dailyPlans\nWHERE date = '2026-05-15';\n\n-- Tuesday May 19's queued blocks\nSELECT id, blockType, title, durationMin, startTime, status\nFROM scheduleBlocks\nWHERE planId = 780001\nORDER BY sortOrder, id;\n\n-- Wednesday May 20's queued blocks\nSELECT id, blockType, title, durationMin, startTime, status\nFROM scheduleBlocks\nWHERE planId = 870002\nORDER BY sortOrder, id;\n",
+  "rows": [
+    {
+      "id": "990001",
+      "date": "2026-05-15",
+      "dayType": "full",
+      "status": "skipped",
+      "notes": "2026-05-15: marked skipped — no blocks were added for today, fresh start Monday."
+    }
+  ],
+  "messages": [
+    "id\tblockType\ttitle\tdurationMin\tstartTime\tstatus",
+    "990001\tmorning_warmup\tSoft start\t25\tNULL\tnot_started",
+    "990002\tmath\tMath warm-up\t30\tNULL\tnot_started",
+    "990003\tchoice\tChoice block\t30\tNULL\tnot_started",
+    "990004\tcustom\tBrain break\t15\tNULL\tnot_started",
+    "990005\tread_aloud\tReading + writing\t30\tNULL\tnot_started",
+    "990006\tcustom\tLunch\t30\tNULL\tnot_started",
+    "990007\tadventure\tScience adventure\t35\tNULL\tnot_started",
+    "990008\tcatch_up\tCozy wrap-up\t15\tNULL\tnot_started",
+    "id\tblockType\ttitle\tdurationMin\tstartTime\tstatus",
+    "1080014\tmorning_warmup\tSoft start\t30\tNULL\tnot_started",
+    "1080015\tmath\tEasy math warm-up\t25\tNULL\tnot_started",
+    "1080016\tchoice\tChoice block\t30\tNULL\tnot_started",
+    "1080017\tappointment\tTherapy with Ali\t90\tNULL\tnot_started",
+    "1080018\tcustom\tLunch + reset\t30\tNULL\tnot_started",
+    "1080019\tread_aloud\tRead-aloud\t25\tNULL\tnot_started",
+    "1080020\tadventure\tAdventure of the day\t35\tNULL\tnot_started"
+  ],
+  "stdout": "id\tdate\tdayType\tstatus\tnotes\n990001\t2026-05-15\tfull\tskipped\t2026-05-15: marked skipped — no blocks were added for today, fresh start Monday.\nid\tblockType\ttitle\tdurationMin\tstartTime\tstatus\n990001\tmorning_warmup\tSoft start\t25\tNULL\tnot_started\n990002\tmath\tMath warm-up\t30\tNULL\tnot_started\n990003\tchoice\tChoice block\t30\tNULL\tnot_started\n990004\tcustom\tBrain break\t15\tNULL\tnot_started\n990005\tread_aloud\tReading + writing\t30\tNULL\tnot_started\n990006\tcustom\tLunch\t30\tNULL\tnot_started\n990007\tadventure\tScience adventure\t35\tNULL\tnot_started\n990008\tcatch_up\tCozy wrap-up\t15\tNULL\tnot_started\nid\tblockType\ttitle\tdurationMin\tstartTime\tstatus\n1080014\tmorning_warmup\tSoft start\t30\tNULL\tnot_started\n1080015\tmath\tEasy math warm-up\t25\tNULL\tnot_started\n1080016\tchoice\tChoice block\t30\tNULL\tnot_started\n1080017\tappointment\tTherapy with Ali\t90\tNULL\tnot_started\n1080018\tcustom\tLunch + reset\t30\tNULL\tnot_started\n1080019\tread_aloud\tRead-aloud\t25\tNULL\tnot_started\n1080020\tadventure\tAdventure of the day\t35\tNULL\tnot_started\n",
+  "stderr": "",
+  "execution_time_ms": 1730
+}

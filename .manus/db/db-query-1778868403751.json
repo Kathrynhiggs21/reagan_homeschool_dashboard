@@ -1,0 +1,93 @@
+{
+  "query": "\nSELECT id, name, role, email, active, LEFT(notes,120) AS notes_preview\nFROM tutors\nORDER BY active DESC, name;\n\n-- Also show any existing tutorRosterOverride rows so I don't stomp on what's there\nSELECT id, week_start_date, active_tutor_names_json, helper_names_json, note\nFROM tutorRosterOverride\nORDER BY week_start_date DESC\nLIMIT 10;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \nSELECT id, name, role, email, active, LEFT(notes,120) AS notes_preview\nFROM tutors\nORDER BY active DESC, name;\n\n-- Also show any existing tutorRosterOverride rows so I don't stomp on what's there\nSELECT id, week_start_date, active_tutor_names_json, helper_names_json, note\nFROM tutorRosterOverride\nORDER BY week_start_date DESC\nLIMIT 10;\n",
+  "rows": [
+    {
+      "id": "510002",
+      "name": "Keith",
+      "role": "tutor",
+      "email": "keith@tbd.local",
+      "active": "1",
+      "notes_preview": "Thu 11:00–14:00. Email TBD."
+    },
+    {
+      "id": "510001",
+      "name": "Madison",
+      "role": "tutor",
+      "email": "madison@tbd.local",
+      "active": "1",
+      "notes_preview": "Mon + Wed 10:00–15:00. Email TBD."
+    },
+    {
+      "id": "60009",
+      "name": "Sophie",
+      "role": "tutor",
+      "email": "sophie@tbd.local",
+      "active": "1",
+      "notes_preview": "Tue + Fri 10:00–15:00. Email TBD."
+    },
+    {
+      "id": "1050008",
+      "name": "__strayTutor_1778827598702",
+      "role": "tutor",
+      "email": "NULL",
+      "active": "0",
+      "notes_preview": "NULL"
+    },
+    {
+      "id": "510003",
+      "name": "Grandma Marcy",
+      "role": "editor",
+      "email": "marcy.spear@gmail.com",
+      "active": "0",
+      "notes_preview": "Editor tier — same edit power as tutors, no billing/secrets."
+    },
+    {
+      "id": "750010",
+      "name": "Kathryn Higgs",
+      "role": "Mom",
+      "email": "spear.cpt@gmail.com",
+      "active": "0",
+      "notes_preview": "NULL"
+    },
+    {
+      "id": "1",
+      "name": "Tutor",
+      "role": "tutor",
+      "email": "NULL",
+      "active": "0",
+      "notes_preview": "NULL"
+    },
+    {
+      "id": "870002",
+      "name": "Tutor A",
+      "role": "tutor",
+      "email": "NULL",
+      "active": "0",
+      "notes_preview": "NULL"
+    },
+    {
+      "id": "870003",
+      "name": "Tutor B",
+      "role": "tutor",
+      "email": "NULL",
+      "active": "0",
+      "notes_preview": "NULL"
+    },
+    {
+      "id": "870004",
+      "name": "Tutor C",
+      "role": "tutor",
+      "email": "NULL",
+      "active": "0",
+      "notes_preview": "NULL"
+    }
+  ],
+  "messages": [
+    "id\tweek_start_date\tactive_tutor_names_json\thelper_names_json\tnote",
+    "1\t2026-05-11\t[\"Keith\"]\t[\"Mom\",\"Grandma\"]\tNo tutors this week except Keith. Mom and Grandma help only."
+  ],
+  "stdout": "id\tname\trole\temail\tactive\tnotes_preview\n510002\tKeith\ttutor\tkeith@tbd.local\t1\tThu 11:00–14:00. Email TBD.\n510001\tMadison\ttutor\tmadison@tbd.local\t1\tMon + Wed 10:00–15:00. Email TBD.\n60009\tSophie\ttutor\tsophie@tbd.local\t1\tTue + Fri 10:00–15:00. Email TBD.\n1050008\t__strayTutor_1778827598702\ttutor\tNULL\t0\tNULL\n510003\tGrandma Marcy\teditor\tmarcy.spear@gmail.com\t0\tEditor tier — same edit power as tutors, no billing/secrets.\n750010\tKathryn Higgs\tMom\tspear.cpt@gmail.com\t0\tNULL\n1\tTutor\ttutor\tNULL\t0\tNULL\n870002\tTutor A\ttutor\tNULL\t0\tNULL\n870003\tTutor B\ttutor\tNULL\t0\tNULL\n870004\tTutor C\ttutor\tNULL\t0\tNULL\nid\tweek_start_date\tactive_tutor_names_json\thelper_names_json\tnote\n1\t2026-05-11\t[\"Keith\"]\t[\"Mom\",\"Grandma\"]\tNo tutors this week except Keith. Mom and Grandma help only.\n",
+  "stderr": "",
+  "execution_time_ms": 1682
+}

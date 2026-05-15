@@ -3150,3 +3150,22 @@ Earlier this session the helper-push cadence (Pushes 206–285+) drifted into a 
 - [ ] `scheduleFreeformPromptDiff.test.ts` — prompt → diff returns valid json_schema shape; no DB write occurred; whatWorksPromptAddendum included in system prompt
 - [ ] `scheduleFreeformPromptCommit.test.ts` — only accepted patches applied; rejected ignored; transaction rolls back on any single failure
 - [ ] All four added to `vitest.config.ts` includes (or auto-globbed) — full suite stays green
+
+
+## Roster handoff — Sophie out, Mom + Grandma take over (added 2026-05-15)
+
+- [ ] **Wed May 20, 2026** — flip Sophie (`tutors.id = 60009`) to `active = 0`. Her last session was Tue May 19, 10am–1pm. After that, Mom + Grandma run school. (Roster overrides for May 25+ already say "no tutors", so the dashboard will read correctly either way; this is just data hygiene.)
+- [ ] **Mon May 18, 2026** — Sophie's 10am–3pm Monday session has no `dailyPlans` row yet (no blocks scheduled). Mom should build Monday's plan (or run the AI agenda generator for May 18) before that morning. NOT auto-copying from Tuesday — Tuesday is only 8 blocks (~3.5 hrs) and Reagan shouldn't repeat Tuesday's content on Monday anyway.
+- [ ] **Thu May 21 + Fri May 22, 2026** — also have no `dailyPlans` rows. These would be Mom + Grandma days (post-Sophie). Plan as needed.
+- [x] Madison (`tutors.id = 510001`) deactivated 2026-05-15 with reason note.
+- [x] Keith (`tutors.id = 510002`) deactivated 2026-05-15 with reason note.
+- [x] `tutorRosterOverride` rows in place for weeks of May 11, May 18, and May 25 — last one explicitly says "no tutors, Mom + Grandma run school."
+- [x] Today (Fri May 15) `dailyPlans.id = 990001` marked `status = 'skipped'` — empty plan, fresh start Monday. Reversible.
+
+
+## Summer schooling mode (added 2026-05-15)
+
+- [x] May 25 `tutorRosterOverride` note updated: "Summer schooling — lighter pace, NOT every weekday. Mom + Grandma decide which days have school each week."
+- [ ] **Verify nightly-agenda-email cron behavior when there is NO upcoming `dailyPlans` row in the next 7 days.** Reagan's summer is intentionally loose — many weekdays will have no plan. The 7am email should NOT spam Mom with "no school found!" alerts. Acceptable behaviors: (a) skip the send entirely on no-upcoming-plan days, (b) send a brief "no school scheduled — happy summer" once-per-week note, NOT once-per-morning. Read `server/scheduledSync.ts` and `nightlyAgendaEmail` handler before next Friday and confirm or fix.
+- [ ] **Decide if a "summer" `dayType` enum value is worth adding** to `dailyPlans.dayType` for clarity. Current enum: `full | half | outdoor | field_trip | recovery | off`. Probably not — `outdoor` already covers most summer days well, and a new enum value means a Drizzle migration. Re-evaluate only if Mom finds the existing types insufficient after using summer mode for a week.
+- [ ] When Mom plans a summer day, she just creates a `dailyPlans` row for that date with whatever `dayType` fits (`full` is rare in summer; `half`/`outdoor`/`field_trip`/`recovery` will be common) and adds a small number of blocks (3–4 typical, not 7–8). NO automation creates summer plans — they're entirely Mom-driven.

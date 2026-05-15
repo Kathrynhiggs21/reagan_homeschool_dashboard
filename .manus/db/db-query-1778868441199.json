@@ -1,0 +1,52 @@
+{
+  "query": "\n-- 1. Deactivate Madison + Keith. Append a dated reason to notes (preserves history).\nUPDATE tutors\n   SET active = 0,\n       notes  = CONCAT(COALESCE(notes,''),\n                       CASE WHEN notes IS NULL OR notes='' THEN '' ELSE ' | ' END,\n                       '2026-05-15: deactivated — Sophie is the only tutor going forward; Mom + Grandma take over after school year ends.')\n WHERE id IN (510001, 510002)        -- Madison, Keith\n   AND active = 1;\n\n-- 2. Confirm tutor table state (Sophie should be the only active tutor now)\nSELECT id, name, role, active, LEFT(notes, 200) AS notes_preview\nFROM tutors\nWHERE active = 1 OR id IN (510001, 510002, 60009)\nORDER BY active DESC, name;\n\n-- 3. Update this-week (May 11) override to reflect Sophie-only + Mom/Grandma helpers\nUPDATE tutorRosterOverride\n   SET active_tutor_names_json = JSON_ARRAY('Sophie'),\n       helper_names_json       = JSON_ARRAY('Mom','Grandma'),\n       note = 'Sophie is the only tutor for the rest of the school year. Standing schedule: Mon/Thu/Fri 10–3, Tue 10–3 (Tue May 19 is shortened to 10–1, one-time), Wed off. Mom + Grandma help on Wed and after school year ends.'\n WHERE week_start_date = '2026-05-11';\n\n-- 4. Create next week's (May 18) override row. Use INSERT ... ON DUPLICATE so this is idempotent if I ever rerun it.\nINSERT INTO tutorRosterOverride\n  (week_start_date, active_tutor_names_json, helper_names_json, note, created_at)\nVALUES\n  ('2026-05-18',\n   JSON_ARRAY('Sophie'),\n   JSON_ARRAY('Mom','Grandma'),\n   'Sophie 10–3 Mon, 10–1 Tue (shortened, one-time), Wed off, 10–3 Thu, 10–3 Fri. Mom + Grandma help on Wed.',\n   UNIX_TIMESTAMP(NOW())*1000)\nON DUPLICATE KEY UPDATE\n  active_tutor_names_json = VALUES(active_tutor_names_json),\n  helper_names_json       = VALUES(helper_names_json),\n  note                    = VALUES(note);\n\n-- 5. Confirm both override rows\nSELECT id, week_start_date, active_tutor_names_json, helper_names_json, LEFT(note, 300) AS note_preview\nFROM tutorRosterOverride\nWHERE week_start_date IN ('2026-05-11','2026-05-18')\nORDER BY week_start_date;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \n-- 1. Deactivate Madison + Keith. Append a dated reason to notes (preserves history).\nUPDATE tutors\n   SET active = 0,\n       notes  = CONCAT(COALESCE(notes,''),\n                       CASE WHEN notes IS NULL OR notes='' THEN '' ELSE ' | ' END,\n                       '2026-05-15: deactivated — Sophie is the only tutor going forward; Mom + Grandma take over after school year ends.')\n WHERE id IN (510001, 510002)        -- Madison, Keith\n   AND active = 1;\n\n-- 2. Confirm tutor table state (Sophie should be the only active tutor now)\nSELECT id, name, role, active, LEFT(notes, 200) AS notes_preview\nFROM tutors\nWHERE active = 1 OR id IN (510001, 510002, 60009)\nORDER BY active DESC, name;\n\n-- 3. Update this-week (May 11) override to reflect Sophie-only + Mom/Grandma helpers\nUPDATE tutorRosterOverride\n   SET active_tutor_names_json = JSON_ARRAY('Sophie'),\n       helper_names_json       = JSON_ARRAY('Mom','Grandma'),\n       note = 'Sophie is the only tutor for the rest of the school year. Standing schedule: Mon/Thu/Fri 10–3, Tue 10–3 (Tue May 19 is shortened to 10–1, one-time), Wed off. Mom + Grandma help on Wed and after school year ends.'\n WHERE week_start_date = '2026-05-11';\n\n-- 4. Create next week's (May 18) override row. Use INSERT ... ON DUPLICATE so this is idempotent if I ever rerun it.\nINSERT INTO tutorRosterOverride\n  (week_start_date, active_tutor_names_json, helper_names_json, note, created_at)\nVALUES\n  ('2026-05-18',\n   JSON_ARRAY('Sophie'),\n   JSON_ARRAY('Mom','Grandma'),\n   'Sophie 10–3 Mon, 10–1 Tue (shortened, one-time), Wed off, 10–3 Thu, 10–3 Fri. Mom + Grandma help on Wed.',\n   UNIX_TIMESTAMP(NOW())*1000)\nON DUPLICATE KEY UPDATE\n  active_tutor_names_json = VALUES(active_tutor_names_json),\n  helper_names_json       = VALUES(helper_names_json),\n  note                    = VALUES(note);\n\n-- 5. Confirm both override rows\nSELECT id, week_start_date, active_tutor_names_json, helper_names_json, LEFT(note, 300) AS note_preview\nFROM tutorRosterOverride\nWHERE week_start_date IN ('2026-05-11','2026-05-18')\nORDER BY week_start_date;\n",
+  "rows": [
+    {
+      "id": "60009",
+      "name": "Sophie",
+      "role": "tutor",
+      "active": "1",
+      "notes_preview": "Tue + Fri 10:00–15:00. Email TBD."
+    },
+    {
+      "id": "510002",
+      "name": "Keith",
+      "role": "tutor",
+      "active": "0",
+      "notes_preview": "Thu 11:00–14:00. Email TBD. | 2026-05-15: deactivated — Sophie is the only tutor going forward; Mom + Grandma take over after school year ends."
+    },
+    {
+      "id": "510001",
+      "name": "Madison",
+      "role": "tutor",
+      "active": "0",
+      "notes_preview": "Mon + Wed 10:00–15:00. Email TBD. | 2026-05-15: deactivated — Sophie is the only tutor going forward; Mom + Grandma take over after school year ends."
+    },
+    {
+      "id": "id",
+      "name": "week_start_date",
+      "role": "active_tutor_names_json",
+      "active": "helper_names_json",
+      "notes_preview": "note_preview"
+    },
+    {
+      "id": "1",
+      "name": "2026-05-11",
+      "role": "[\"Sophie\"]",
+      "active": "[\"Mom\", \"Grandma\"]",
+      "notes_preview": "Sophie is the only tutor for the rest of the school year. Standing schedule: Mon/Thu/Fri 10–3, Tue 10–3 (Tue May 19 is shortened to 10–1, one-time), Wed off. Mom + Grandma help on Wed and after school year ends."
+    },
+    {
+      "id": "30001",
+      "name": "2026-05-18",
+      "role": "[\"Sophie\"]",
+      "active": "[\"Mom\", \"Grandma\"]",
+      "notes_preview": "Sophie 10–3 Mon, 10–1 Tue (shortened, one-time), Wed off, 10–3 Thu, 10–3 Fri. Mom + Grandma help on Wed."
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\trole\tactive\tnotes_preview\n60009\tSophie\ttutor\t1\tTue + Fri 10:00–15:00. Email TBD.\n510002\tKeith\ttutor\t0\tThu 11:00–14:00. Email TBD. | 2026-05-15: deactivated — Sophie is the only tutor going forward; Mom + Grandma take over after school year ends.\n510001\tMadison\ttutor\t0\tMon + Wed 10:00–15:00. Email TBD. | 2026-05-15: deactivated — Sophie is the only tutor going forward; Mom + Grandma take over after school year ends.\nid\tweek_start_date\tactive_tutor_names_json\thelper_names_json\tnote_preview\n1\t2026-05-11\t[\"Sophie\"]\t[\"Mom\", \"Grandma\"]\tSophie is the only tutor for the rest of the school year. Standing schedule: Mon/Thu/Fri 10–3, Tue 10–3 (Tue May 19 is shortened to 10–1, one-time), Wed off. Mom + Grandma help on Wed and after school year ends.\n30001\t2026-05-18\t[\"Sophie\"]\t[\"Mom\", \"Grandma\"]\tSophie 10–3 Mon, 10–1 Tue (shortened, one-time), Wed off, 10–3 Thu, 10–3 Fri. Mom + Grandma help on Wed.\n",
+  "stderr": "",
+  "execution_time_ms": 835
+}
