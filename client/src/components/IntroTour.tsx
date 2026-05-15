@@ -33,67 +33,67 @@ interface TourStep {
 const STEPS: TourStep[] = [
   {
     emoji: "🐤",
-    title: "Hi Reagan! I'm Kiwi.",
+    title: "I'm Kiwi.",
     body:
-      "I'm your buddy on this dashboard. I'll show you how everything works in just 8 quick steps. You can stop any time.",
+      "I run on this dashboard. Eight quick screens, then you're done. You can skip ahead or stop whenever. None of this is a test.",
     kiwiLine:
-      "Hi Reagan! I'm Kiwi. I'm your buddy on this dashboard. Let's take a quick tour together!",
+      "I'm Kiwi. Eight quick screens, then you're done. Skip ahead whenever.",
   },
   {
     emoji: "📋",
-    title: "Today is your home base.",
+    title: "Today.",
     body:
-      "Every day starts here. You'll see your blocks for today — math, reading, science, all of it. Tap a block to see what's inside.",
+      "This page is where every day starts. The blocks are what's planned — math, reading, science, whatever's on for today. Tap one to open it.",
     kiwiLine:
-      "Today is your home base. You'll see all your blocks here. Tap any block to see what's inside.",
+      "Today is where every day starts. Tap a block to open it.",
   },
   {
     emoji: "🪙",
-    title: "Coins are how you earn fun stuff.",
+    title: "Coins.",
     body:
-      "Finish blocks, log a green mood, or do extra Practice — you earn Kiwi Coins. Spend them in the Coin Shop on rewards Mom set up.",
+      "You earn coins for finishing blocks or doing extra practice. Spend them in the Coin Shop on stuff Mom set up. That's it. No catch.",
     kiwiLine:
-      "Coins are how you earn fun stuff. Finish a block, do extra practice, or log a green mood, and you'll earn coins.",
+      "Coins come from finishing blocks or extra practice. Spend them in the Coin Shop.",
   },
   {
     emoji: "✨",
-    title: "Practice for Coins is for extra credit.",
+    title: "Practice for Coins.",
     body:
-      "Outside school hours, you can do extra spelling, math, or science to earn bonus coins. The Practice button on the homepage takes you there.",
+      "Extra spelling, math, or science outside school hours earns bonus coins. It's optional. Practice button on Today opens it.",
     kiwiLine:
-      "Want extra coins? Tap Practice for Coins! It's only open before school, after school, or on weekends, so it stays a treat.",
+      "Practice for Coins is extra credit outside school hours. Optional.",
   },
   {
     emoji: "🖨️",
-    title: "Print today does paper worksheets.",
+    title: "Print today.",
     body:
-      "If you'd rather do a worksheet on paper, tap Print today. Each worksheet has lines or boxes. When you finish, snap a photo and turn it in!",
+      "If you want a worksheet on paper instead of on the screen, tap Print today. Snap a photo when you're done to turn it in.",
     kiwiLine:
-      "If you like working on paper, tap Print today. Then snap a picture when you're done to turn it in.",
+      "Print today gives you a paper worksheet. Photo of it when you're done.",
   },
   {
     emoji: "📱",
-    title: "Apps & Tools is your launcher.",
+    title: "Apps & Tools.",
     body:
-      "Khan Academy, IXL, BrainPOP, Roblox — they're all in Apps & Tools. One tap opens the right account.",
+      "Khan, IXL, BrainPOP, Roblox — they all live in Apps & Tools. One tap opens the right account so you don't have to sign in every time.",
     kiwiLine:
-      "Apps and Tools is where Khan, IXL, BrainPOP, and Roblox live. One tap and you're in.",
+      "Apps and Tools — Khan, IXL, BrainPOP, Roblox. One tap, signed in.",
   },
   {
     emoji: "💛",
-    title: "Tell me how you feel.",
+    title: "Tell me if something's hard.",
     body:
-      "If something feels hard or yucky, tap the heart on a block to log it. That helps Mom and your tutor make tomorrow gentler.",
+      "Tap the heart on a block if it's too much. Mom and your tutor see that and adjust tomorrow. You don't have to explain.",
     kiwiLine:
-      "If something feels hard, tap the little heart on a block. That tells Mom what to soften tomorrow.",
+      "Tap the heart on a block if it's too much. Mom adjusts tomorrow.",
   },
   {
     emoji: "💬",
-    title: "Talk to me any time.",
+    title: "Talk to me.",
     body:
-      "Tap me (the green bird) on any page to ask a question. You can type it or use the Make-a-Request buttons for snacks, supplies, or schedule changes.",
+      "Tap the green bird on any page to ask something or send a request — snack, supplies, schedule change. I won't pop up on my own.",
     kiwiLine:
-      "Tap me, the green bird, on any page to ask a question or make a request. I'm always here.",
+      "Tap the green bird on any page to ask something or send a request.",
   },
 ];
 
@@ -240,7 +240,7 @@ export function IntroTour({
                 onClose();
               }}
             >
-              I'm ready! 🎉
+              Done
             </Button>
           ) : (
             <Button
