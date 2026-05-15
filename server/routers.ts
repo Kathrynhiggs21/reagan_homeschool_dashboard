@@ -5458,6 +5458,37 @@ export const appRouter = router({
         );
         return getKiwiReadAloudPacing(input.profile, input.text);
       }),
+
+    /**
+     * Wave-15 / Push 227 — today.kiwiTtsVoiceChoose
+     *
+     * The frontend reads window.speechSynthesis.getVoices() and posts
+     * the list (name + lang + voiceURI + default). We pick the most
+     * neutral English voice, rejecting any "kids / cartoon / novelty"
+     * preset that would undo the calm voice rewrite. Returns a
+     * voiceURI to use, or null to let the browser pick its default.
+     */
+    kiwiTtsVoiceChoose: publicProcedure
+      .input(
+        z.object({
+          voices: z
+            .array(
+              z.object({
+                voiceURI: z.string(),
+                name: z.string(),
+                lang: z.string(),
+                default: z.boolean().optional(),
+              }),
+            )
+            .max(200),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { chooseKiwiTtsVoice } = await import(
+          "./_lib/kiwiTtsVoiceChooser"
+        );
+        return chooseKiwiTtsVoice(input.voices);
+      }),
     /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
