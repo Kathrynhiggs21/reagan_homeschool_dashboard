@@ -5660,6 +5660,24 @@ export const appRouter = router({
         const count = await countMajorKiwiVoiceAuditEntries(days);
         return { lookbackDays: days, count };
       }),
+
+    /**
+     * Wave-15 / Push 238 — today.kiwiVoiceProfileResolve
+     *
+     * Routes the current panel id to the right voice profile.
+     * UI calls this BEFORE the LLM call so the system-prompt
+     * fragment is correct for the surface. Returns {profile,
+     * rationale} — rationale is surfaced in the audit log so
+     * adults can see why a given profile was chosen.
+     */
+    kiwiVoiceProfileResolve: publicProcedure
+      .input(z.object({ panel: z.string().max(64).nullable().optional() }))
+      .query(async ({ input }) => {
+        const { resolveKiwiVoiceProfile } = await import(
+          "./_lib/kiwiVoiceProfileResolver"
+        );
+        return resolveKiwiVoiceProfile(input.panel ?? null);
+      }),
     /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
