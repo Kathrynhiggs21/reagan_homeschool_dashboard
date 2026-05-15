@@ -5835,6 +5835,29 @@ export const appRouter = router({
      * counters are never touched, only behaviorally-meaningful
      * streaks decay.
      */
+    /**
+     * Wave-15 / Push 266 — today.kiwiSessionBoot
+     *
+     * One-call mount-time boot path. Replaces the
+     * migrateAndReExport → decay chain with a single round-trip.
+     * UI passes raw localStorage blob + current UTC ms, gets
+     * back validated state, migration path, decayed panels, and
+     * a ready-to-write re-export string.
+     */
+    kiwiSessionBoot: publicProcedure
+      .input(
+        z.object({
+          raw: z.string().nullable(),
+          nowUtcMs: z.number().int().nonnegative(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { bootKiwiSession } = await import(
+          "./_lib/kiwiSessionBootBundle"
+        );
+        return bootKiwiSession(input.raw, input.nowUtcMs);
+      }),
+
     kiwiSessionDecay: publicProcedure
       .input(
         z.object({
