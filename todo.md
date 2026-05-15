@@ -3065,3 +3065,12 @@ Order of work tonight:
 - [x] Wave-10 checkpoint — version 2197d138
 - [x] Wave-10 Drive sync — folder ID 1ZYRsmdrX2rUsvm0koENjv360MhOcIb3p (6 files via gws --upload)
 - [x] Switched Drive uploads from broken rclone to gws files create --upload (rclone token expired during night)
+
+## Kiwi voice rewrite (2026-05-14) — Reagan said current voice is creepy
+- [ ] Rewrite onboarding tour copy ("Hi Reagan! I'm Kiwi.", "I'm your buddy on this dashboard...") to calm, dry, respectful older-cousin tone — drop forced cheer, baby talk, exclamation-point spam, third-person cutesy
+- [ ] Audit all Kiwi mascot dialogue bubbles + sidebar tagline ("Tap the button on any page to talk") for the same tone shift
+- [ ] Audit kidHeadline strings in Wave-14/15 helpers (kidPraiseLineSelector, kidLoginTroubleshooter, todayHeroStripBuilder, todayMoodPulseAggregator, familyScreenTimeFairness, pearClassesAppLink, screenTimeOverageWatchdog, bookshelfBadgeUnlocker) for same tone
+- [ ] Keep house safety rules intact: never punitive, never blames kid, never auto-opens, never asks for mic
+- [ ] Keep Make-a-request CTA + Kiwi animations (perch, fly-around, occasional pop-in) untouched
+- [ ] Vitest: voice-rewrite assertions — forbidden cute words list grows (no "buddy", "friend", "yay", "woohoo", "let's go!"), forbidden third-person Kiwi self-references blocked
+- [ ] Checkpoint + screenshot updated tour for Reagan to approve before broader rollout
