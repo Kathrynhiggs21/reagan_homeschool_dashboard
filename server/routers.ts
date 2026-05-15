@@ -5802,6 +5802,27 @@ export const appRouter = router({
      * full pipeline + blessed-line fallback + audit entry in a
      * single round-trip. UI keeps a single localStorage key.
      */
+    /**
+     * Wave-15 / Push 260 — today.kiwiSessionImport
+     *
+     * Takes a raw serialized envelope string (what the UI read
+     * from localStorage) and returns the validated, sanitized
+     * KiwiChatSessionState. On any failure — malformed JSON,
+     * wrong schema version, sanitized-away inner values — returns
+     * a fresh empty state. Never throws.
+     *
+     * Why a server procedure: gives the UI one canonical source
+     * of truth for shape validation across deploys.
+     */
+    kiwiSessionImport: publicProcedure
+      .input(z.object({ raw: z.string().nullable() }))
+      .query(async ({ input }) => {
+        const { importKiwiSessionState } = await import(
+          "./_lib/kiwiSessionExportSerializer"
+        );
+        return { state: importKiwiSessionState(input.raw) };
+      }),
+
     kiwiSessionOrchestrate: publicProcedure
       .input(
         z.object({
