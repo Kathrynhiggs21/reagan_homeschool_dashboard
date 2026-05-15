@@ -5570,6 +5570,96 @@ export const appRouter = router({
           timestampUtcMs: input.timestampUtcMs,
         });
       }),
+
+    /**
+     * Wave-15 / Push 236 — today.kiwiVoiceAuditPersist
+     *
+     * Mutation: runs the pipeline + builder, then persists the audit
+     * row. Used by the chat UI right after the LLM returns. The
+     * mutation returns BOTH the inserted id and the finalText so the
+     * UI can render Kiwi's reply in the same round-trip.
+     */
+    kiwiVoiceAuditPersist: publicProcedure
+      .input(
+        z.object({
+          originalCandidate: z.string(),
+          candidate: z.string(),
+          maxSentences: z.number().int().min(0).max(10),
+          timestampUtcMs: z.number().int().nonnegative(),
+          sourcePanel: z.string().max(64).optional(),
+        }),
+      )
+      .mutation(async ({ input }) => {
+        const { runKiwiFullPostGenPipeline } = await import(
+          "./_lib/kiwiFullPostGenPipeline"
+        );
+        const { buildKiwiVoiceAuditEntry } = await import(
+          "./_lib/kiwiVoiceAuditLogger"
+        );
+        const { insertKiwiVoiceAuditEntry } = await import("./db");
+        const result = runKiwiFullPostGenPipeline({
+          candidate: input.candidate,
+          maxSentences: input.maxSentences,
+        });
+        const entry = buildKiwiVoiceAuditEntry({
+          originalCandidate: input.originalCandidate,
+          result,
+          timestampUtcMs: input.timestampUtcMs,
+        });
+        const { id } = await insertKiwiVoiceAuditEntry({
+          timestampUtcMs: entry.timestampUtcMs,
+          originalCandidate: entry.originalCandidate,
+          finalText: entry.finalText,
+          severity: entry.severity,
+          actionsJson: JSON.stringify(entry.actions),
+          sourcePanel: input.sourcePanel ?? null,
+        });
+        return { id, entry };
+      }),
+
+    /**
+     * Wave-15 / Push 236 — today.kiwiVoiceAuditList
+     *
+     * Adult-review page query. Returns rows newest-first. Optional
+     * severity filter for "show me only the major flags".
+     */
+    kiwiVoiceAuditList: publicProcedure
+      .input(
+        z
+          .object({
+            limit: z.number().int().min(1).max(500).optional(),
+            severity: z.enum(["info", "minor", "major"]).optional(),
+          })
+          .optional(),
+      )
+      .query(async ({ input }) => {
+        const { listKiwiVoiceAuditEntries } = await import("./db");
+        return listKiwiVoiceAuditEntries({
+          limit: input?.limit,
+          severity: input?.severity,
+        });
+      }),
+
+    /**
+     * Wave-15 / Push 236 — today.kiwiVoiceAuditMajorCount
+     *
+     * Count of major (drift-fallback) audit rows in the last N days.
+     * Powers the at-a-glance card on the adult review page.
+     */
+    kiwiVoiceAuditMajorCount: publicProcedure
+      .input(
+        z
+          .object({
+            lookbackDays: z.number().int().min(1).max(90).optional(),
+          })
+          .optional(),
+      )
+      .query(async ({ input }) => {
+        const { countMajorKiwiVoiceAuditEntries } = await import("./db");
+        const days = input?.lookbackDays ?? 7;
+        const count = await countMajorKiwiVoiceAuditEntries(days);
+        return { lookbackDays: days, count };
+      }),
     /**
      * Push 82 (2026-05-13) — tomorrow's summer-choice chooser.
      * Returns the deterministic 3-option set for tomorrow's choice block
