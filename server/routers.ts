@@ -5910,6 +5910,43 @@ export const appRouter = router({
      * UI persists to localStorage. Suppresses re-greeting on
      * quick back-and-forth navigation (default 10 min window).
      */
+    /**
+     * Wave-15 / Push 284 — today.kiwiPanelEntry
+     *
+     * One-call panel-mount bundle: visit tracker + clock derive +
+     * greeting composer in one round-trip. Returns the new tracker
+     * state plus (when shouldGreet) the calm greeting and clock
+     * parts. Suppressed paths return null greeting/clock so audit
+     * log stays clean (no greeting synthesized).
+     */
+    kiwiPanelEntry: publicProcedure
+      .input(
+        z.object({
+          prior: z
+            .object({
+              panels: z.record(z.string(), z.number()),
+            })
+            .nullable()
+            .optional(),
+          panel: z.string().min(1).max(32),
+          nowUtcMs: z.number().int().nonnegative(),
+          timeZone: z.string().min(1).max(64).nullable().optional(),
+          suppressWindowMs: z.number().int().positive().optional(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { runKiwiPanelEntry } = await import(
+          "./_lib/kiwiPanelEntryBundle"
+        );
+        return runKiwiPanelEntry({
+          prior: input.prior ?? null,
+          panel: input.panel,
+          nowUtcMs: input.nowUtcMs,
+          timeZone: input.timeZone ?? null,
+          suppressWindowMs: input.suppressWindowMs,
+        });
+      }),
+
     kiwiPanelVisitApply: publicProcedure
       .input(
         z.object({
