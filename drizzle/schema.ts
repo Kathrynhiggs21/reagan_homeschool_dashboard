@@ -2129,3 +2129,30 @@ export const kidRequests = mysqlTable("kidRequests", {
 });
 export type KidRequest = typeof kidRequests.$inferSelect;
 export type InsertKidRequest = typeof kidRequests.$inferInsert;
+
+/**
+ * Wave-15 / Push 234 — kiwiVoiceAuditEntries
+ *
+ * Adult-review audit log for the Kiwi voice pipeline. One row per
+ * Kiwi reply that the post-gen guards either left alone, cleaned,
+ * or replaced with the safe fallback. Mom + Grandma read these
+ * on the adult review page. Reagan never sees them.
+ *
+ * severity: "info" (no change), "minor" (cleaned), "major" (fallback fired)
+ * actionsJson: JSON-encoded KiwiAuditAction[] from kiwiVoiceAuditLogger
+ *   (kept as text/JSON, not normalized into a child table, so the
+ *   audit row is a single self-contained record.)
+ */
+export const kiwiVoiceAuditEntries = mysqlTable("kiwiVoiceAuditEntries", {
+  id: int("id").autoincrement().primaryKey(),
+  timestampUtcMs: bigint("timestamp_utc_ms", { mode: "number" }).notNull(),
+  originalCandidate: text("original_candidate").notNull(),
+  finalText: text("final_text").notNull(),
+  severity: mysqlEnum("severity", ["info", "minor", "major"]).notNull(),
+  actionsJson: text("actions_json").notNull(),
+  // Audit metadata: which Reagan-session / panel triggered the generation.
+  // Optional; nullable for pre-existing entries.
+  sourcePanel: varchar("source_panel", { length: 64 }),
+});
+export type KiwiVoiceAuditEntry = typeof kiwiVoiceAuditEntries.$inferSelect;
+export type InsertKiwiVoiceAuditEntry = typeof kiwiVoiceAuditEntries.$inferInsert;

@@ -435,6 +435,13 @@
       "when": 1778644572200,
       "tag": "0061_bumpy_zaran",
       "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "5",
+      "when": 1778819616937,
+      "tag": "0062_wide_shinko_yamashiro",
+      "breakpoints": true
     }
   ]
 }
