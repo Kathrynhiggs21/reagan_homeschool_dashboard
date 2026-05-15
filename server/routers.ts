@@ -5777,6 +5777,42 @@ export const appRouter = router({
      * today.kiwiVoiceAuditPersist with the returned auditEntry to
      * persist the row.
      */
+    /**
+     * Wave-15 / Push 254 — today.kiwiBlessedRotationAdvance
+     *
+     * Stateless mutation. Client posts the prior rotation-counter
+     * state (kept in browser localStorage alongside the streak
+     * state) + the panel that just fired a blessed-line fallback;
+     * gets back the new state + the next seed to feed into the
+     * orchestrator on the next round-trip. Server holds no
+     * per-session memory.
+     */
+    kiwiBlessedRotationAdvance: publicProcedure
+      .input(
+        z.object({
+          priorState: z
+            .object({
+              counterByPanel: z.record(z.string(), z.number()).optional(),
+            })
+            .nullable()
+            .optional(),
+          panel: z.string().max(64),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { advanceKiwiRotationCounter } = await import(
+          "./_lib/kiwiBlessedLineRotationCounter"
+        );
+        return advanceKiwiRotationCounter(
+          input.priorState
+            ? {
+                counterByPanel: input.priorState.counterByPanel ?? {},
+              }
+            : null,
+          input.panel,
+        );
+      }),
+
     kiwiReplyOrchestrate: publicProcedure
       .input(
         z.object({
