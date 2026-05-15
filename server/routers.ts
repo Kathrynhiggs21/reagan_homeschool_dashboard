@@ -5751,6 +5751,33 @@ export const appRouter = router({
       return getKiwiVoicePolicyManifest();
     }),
 
+    /**
+     * Wave-15 / Push 248 — today.kiwiBlessedLinePick
+     *
+     * Last-resort fallback for the chat UI. When the LLM has been
+     * drift-flagged twice in a row for the same panel, the UI
+     * stops trying to regenerate and shows a hand-written blessed
+     * line picked deterministically by panel + rotation seed.
+     */
+    kiwiBlessedLinePick: publicProcedure
+      .input(
+        z.object({
+          panel: z.string().max(64).nullable().optional(),
+          rotationSeed: z.number().int().nonnegative(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { pickKiwiBlessedLine } = await import(
+          "./_lib/kiwiVoiceSampleBlessings"
+        );
+        return {
+          line: pickKiwiBlessedLine({
+            panel: input.panel ?? null,
+            rotationSeed: input.rotationSeed,
+          }),
+        };
+      }),
+
     kiwiVoiceAuditWeeklySummary: publicProcedure
       .input(
         z
