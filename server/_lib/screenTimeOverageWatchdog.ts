@@ -78,9 +78,9 @@ const ADULT_TEXT: Record<OverageTier, { title: string; content: string }> = {
 };
 
 const KID_TEXT: Record<OverageTier, string> = {
-  cap_reached: "You hit your screen goal for today — nice focus!",
-  plus_30: "Big screen day so far. Want to try a sticker or a book break?",
-  plus_60: "You've been on screens a while. Let's stretch — pick anything outside!",
+  cap_reached: "You hit today's screen goal.",
+  plus_30: "That's a big screen day so far. Step away whenever you want.",
+  plus_60: "Long screen day. Worth a real break.",
 };
 
 export function decideScreenTimeOverage(input: WatchdogInput): WatchdogDecision {

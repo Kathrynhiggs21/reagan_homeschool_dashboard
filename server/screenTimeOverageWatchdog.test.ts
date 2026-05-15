@@ -94,7 +94,7 @@ describe("Push 197 — screenTimeOverageWatchdog", () => {
     expect(r.tier).toBe("cap_reached");
     expect(r.shouldNotify).toBe(false);
     expect(r.suppressedReason).toContain("already notified");
-    expect(r.kidHeadline).toMatch(/nice focus/i);
+    expect(r.kidHeadline).toMatch(/screen goal/i);
     expect(r.adultHeadline).toBeTruthy();
     expect(r.notifyPayload).toBeNull();
   });
