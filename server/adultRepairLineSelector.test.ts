@@ -101,7 +101,9 @@ describe("Push 201 — adultRepairLineSelector", () => {
   it("isLineSafeForAdult flags kid-blame phrases", () => {
     expect(isLineSafeForAdult("Reagan can't sign in to IXL")).toBe(false);
     expect(isLineSafeForAdult("Reagan forgot her password")).toBe(false);
+    expect(isLineSafeForAdult("Reagan didn't try her chapter book")).toBe(false);
     expect(isLineSafeForAdult("The IXL sign-in needs a fresh password")).toBe(true);
+    expect(isLineSafeForAdult("Reagan didn't see anything")).toBe(true);
   });
 
   it("isLineSafeForAdult is case-insensitive", () => {
@@ -140,6 +142,7 @@ describe("Push 201 — adultRepairLineSelector", () => {
     const list = __FOR_TEST__.BLAMES_KID;
     expect(list).toContain("reagan can't");
     expect(list).toContain("reagan forgot");
+    expect(list.some((s) => s.startsWith("reagan didn't"))).toBe(true);
   });
 
   it("hashSeed mirrors Push 200 (FNV-1a 32-bit)", () => {

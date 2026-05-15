@@ -95,7 +95,9 @@ const FORBIDDEN = [
 
 const BLAMES_KID = [
   "reagan can't", "reagan failed", "reagan broke",
-  "reagan didn't", "reagan forgot", "reagan messed",
+  "reagan didn't try", "reagan didn't do", "reagan didn't finish",
+  "reagan didn't bother", "reagan didn't read", "reagan didn't write",
+  "reagan forgot", "reagan messed",
 ];
 
 export function selectRepairLine(input: RepairInput): RepairLine {
