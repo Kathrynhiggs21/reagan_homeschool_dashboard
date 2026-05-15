@@ -5787,6 +5787,69 @@ export const appRouter = router({
      * orchestrator on the next round-trip. Server holds no
      * per-session memory.
      */
+    /**
+     * Wave-15 / Push 256 — today.kiwiChatSessionApply
+     *
+     * Unified stateless mutation. Bundles the streak update +
+     * rotation advance into one call so the chat UI keeps a single
+     * localStorage object instead of two. Server holds no
+     * per-session memory.
+     */
+    kiwiChatSessionApply: publicProcedure
+      .input(
+        z.object({
+          priorState: z
+            .object({
+              streak: z
+                .object({
+                  streakByPanel: z
+                    .record(z.string(), z.number())
+                    .optional(),
+                  lastEventAtUtcMs: z
+                    .record(z.string(), z.number())
+                    .optional(),
+                })
+                .optional(),
+              rotation: z
+                .object({
+                  counterByPanel: z
+                    .record(z.string(), z.number())
+                    .optional(),
+                })
+                .optional(),
+            })
+            .nullable()
+            .optional(),
+          event: z.object({
+            panel: z.string().max(64),
+            severity: z.enum(["info", "minor", "major"]),
+            timestampUtcMs: z.number().int().nonnegative(),
+          }),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { applyKiwiChatSessionEvent } = await import(
+          "./_lib/kiwiChatSessionState"
+        );
+        return applyKiwiChatSessionEvent(
+          input.priorState
+            ? {
+                streak: {
+                  streakByPanel:
+                    input.priorState.streak?.streakByPanel ?? {},
+                  lastEventAtUtcMs:
+                    input.priorState.streak?.lastEventAtUtcMs ?? {},
+                },
+                rotation: {
+                  counterByPanel:
+                    input.priorState.rotation?.counterByPanel ?? {},
+                },
+              }
+            : null,
+          input.event,
+        );
+      }),
+
     kiwiBlessedRotationAdvance: publicProcedure
       .input(
         z.object({
