@@ -1,8 +1,15 @@
 /**
  * BlockEditor — adult-only modal for creating or editing a scheduleBlock.
+ *
  * Usage:
  *   <BlockEditor open={o} onOpenChange={setO} planId={planId} block={existing} />
  * If `block` is undefined it becomes a "create" form, otherwise it edits in place.
+ *
+ * 2026-05-15 fix: previous save() silently dropped startTime / blockType /
+ * subjectSlug when editing an existing block — Mom/Grandma would change the
+ * field, hit Save, and the change never persisted. The update path now
+ * forwards every editable field that the user can actually change on screen.
+ * Adds a Subject Select so subject can be changed from the editor too.
  */
 import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -35,6 +42,10 @@ const BLOCK_TYPES: { value: BlockType; label: string }[] = [
   { value: "custom",         label: "Custom" },
 ];
 
+// Sentinel value for the "no subject" Select option — empty string is forbidden
+// by Radix Select.Item.
+const NO_SUBJECT_VALUE = "__none__";
+
 export interface ExistingBlock {
   id: number;
   title?: string | null;
@@ -44,6 +55,7 @@ export interface ExistingBlock {
   startTime?: string | null;
   sortOrder?: number | null;
   subjectId?: number | null;
+  subjectSlug?: string | null;
 }
 
 export interface BlockEditorProps {
@@ -63,12 +75,16 @@ export default function BlockEditor({ open, onOpenChange, planId, block, onSaved
   // re-parents the block to tomorrow's plan and stamps an audit note.
   const postponeM = (trpc as any).adultAi?.postponeBlock?.useMutation?.();
 
+  // Subjects list for the Subject Select.
+  const subjectsQ = trpc.subjects.list.useQuery(undefined, { staleTime: 60_000 });
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [blockType, setBlockType] = useState<BlockType>("custom");
   const [durationMin, setDurationMin] = useState(30);
   const [startTime, setStartTime] = useState("");
   const [sortOrder, setSortOrder] = useState(0);
+  const [subjectSlug, setSubjectSlug] = useState<string>(NO_SUBJECT_VALUE);
 
   useEffect(() => {
     if (open) {
@@ -78,21 +94,40 @@ export default function BlockEditor({ open, onOpenChange, planId, block, onSaved
       setDurationMin(block?.durationMin ?? 30);
       setStartTime(block?.startTime || "");
       setSortOrder(block?.sortOrder ?? 0);
+      // Resolve subjectSlug from the prop directly, or by id lookup against
+      // the loaded subjects list.
+      let resolvedSlug = block?.subjectSlug ?? null;
+      if (!resolvedSlug && block?.subjectId != null && subjectsQ.data) {
+        const match = (subjectsQ.data as Array<{ id: number; slug: string }>).find(
+          (s) => s.id === block.subjectId,
+        );
+        if (match) resolvedSlug = match.slug;
+      }
+      setSubjectSlug(resolvedSlug || NO_SUBJECT_VALUE);
     }
-  }, [open, block?.id]);
+  }, [open, block?.id, subjectsQ.data]);
 
   const isEdit = !!block?.id;
 
   async function save() {
     if (!title.trim()) { toast.error("Title is required."); return; }
     try {
+      const normalizedSubject =
+        subjectSlug === NO_SUBJECT_VALUE ? null : subjectSlug;
+      const normalizedStartTime = startTime.trim() ? startTime.trim() : null;
       if (isEdit && block) {
+        // Forward EVERY field the form can edit. Previously this object
+        // dropped startTime, blockType, and subjectSlug — Mom would change
+        // the start time and it would silently vanish on save.
         await updateM.mutateAsync({
           id: block.id,
           title,
-          description: description || undefined,
+          description: description || null,
+          blockType,
           durationMin,
+          startTime: normalizedStartTime,
           sortOrder,
+          subjectSlug: normalizedSubject,
         });
         toast.success("Block updated.");
       } else {
@@ -105,11 +140,14 @@ export default function BlockEditor({ open, onOpenChange, planId, block, onSaved
           durationMin,
           startTime: startTime || undefined,
           sortOrder,
-        });
+          // create procedure accepts subjectSlug too; passing null/undefined is fine.
+          subjectSlug: normalizedSubject ?? undefined,
+        } as any);
         toast.success("Block added.");
       }
       utils.plans.today.invalidate();
       utils.plans.byDate.invalidate();
+      utils.blocks.list.invalidate();
       onOpenChange(false);
       onSaved?.();
     } catch (e: any) {
@@ -153,6 +191,8 @@ export default function BlockEditor({ open, onOpenChange, planId, block, onSaved
     }
   }
 
+  const subjectsList = (subjectsQ.data as Array<{ slug: string; name: string; emoji?: string | null }>) || [];
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
@@ -179,6 +219,20 @@ export default function BlockEditor({ open, onOpenChange, planId, block, onSaved
                 <SelectContent>
                   {BLOCK_TYPES.map((t) => (
                     <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label>Subject</Label>
+              <Select value={subjectSlug} onValueChange={(v) => setSubjectSlug(v)}>
+                <SelectTrigger><SelectValue placeholder="No subject" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_SUBJECT_VALUE}>No subject</SelectItem>
+                  {subjectsList.map((s) => (
+                    <SelectItem key={s.slug} value={s.slug}>
+                      {s.emoji ? `${s.emoji} ${s.name}` : s.name}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
