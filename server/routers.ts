@@ -5902,6 +5902,40 @@ export const appRouter = router({
      * derives localHour + dayIndex and composes the greeting.
      * UI doesn't write date math.
      */
+    /**
+     * Wave-15 / Push 282 — today.kiwiPanelVisitApply
+     *
+     * Per-panel last-visit tracker. Returns whether the calm
+     * greeting should fire this visit + a new state object the
+     * UI persists to localStorage. Suppresses re-greeting on
+     * quick back-and-forth navigation (default 10 min window).
+     */
+    kiwiPanelVisitApply: publicProcedure
+      .input(
+        z.object({
+          prior: z
+            .object({
+              panels: z.record(z.string(), z.number()),
+            })
+            .nullable()
+            .optional(),
+          panel: z.string().min(1).max(32),
+          nowUtcMs: z.number().int().nonnegative(),
+          suppressWindowMs: z.number().int().positive().optional(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { applyKiwiPanelVisit } = await import(
+          "./_lib/kiwiPanelLastVisitTracker"
+        );
+        return applyKiwiPanelVisit({
+          prior: input.prior ?? null,
+          panel: input.panel,
+          nowUtcMs: input.nowUtcMs,
+          suppressWindowMs: input.suppressWindowMs,
+        });
+      }),
+
     kiwiGreetingFromUtc: publicProcedure
       .input(
         z.object({
