@@ -1,0 +1,20 @@
+{
+  "query": "SELECT id, date, status FROM dailyPlans WHERE date='2099-12-31' OR date='2028-03-06';\nSELECT id, planId, sortOrder, blockType, title FROM scheduleBlocks WHERE planId IN (SELECT id FROM dailyPlans WHERE date='2028-03-06') ORDER BY sortOrder;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, date, status FROM dailyPlans WHERE date='2099-12-31' OR date='2028-03-06';\nSELECT id, planId, sortOrder, blockType, title FROM scheduleBlocks WHERE planId IN (SELECT id FROM dailyPlans WHERE date='2028-03-06') ORDER BY sortOrder;",
+  "rows": [
+    {
+      "id": "1140003",
+      "date": "2028-03-06",
+      "status": "planned"
+    },
+    {
+      "id": "90001",
+      "date": "2099-12-31",
+      "status": "planned"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tdate\tstatus\n1140003\t2028-03-06\tplanned\n90001\t2099-12-31\tplanned\n",
+  "stderr": "",
+  "execution_time_ms": 632
+}
