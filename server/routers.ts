@@ -7083,6 +7083,21 @@ export const appRouter = router({
           windowDays: input?.windowDays ?? 7,
           limit: input?.limit ?? 12,
         })),
+      /**
+       * Adult-only feed: recently-graded Classroom assignments. Reagan
+       * never sees grades — Mom + Grandma do. Gated behind
+       * familyAdminProcedure so this can be safely dropped on a kid-
+       * shared layout if needed (no client request from the kid path
+       * will resolve). Pre-OAuth and pre-applyGradeReturn the table has
+       * no graded rows, so [] is the steady state and the widget hides.
+       */
+      recentlyGraded: familyAdminProcedure
+        .input(z.object({
+          limit: z.number().int().min(1).max(100).default(20),
+        }).optional())
+        .query(({ input }) => db.listClassroomAssignmentsRecentlyGraded({
+          limit: input?.limit ?? 20,
+        })),
       updateStatus: familyAdminProcedure
         .input(z.object({
           assignmentId: z.number().int().positive(),

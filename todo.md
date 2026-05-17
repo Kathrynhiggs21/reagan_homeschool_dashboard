@@ -3395,3 +3395,15 @@ Carry-forward (still NOT this push):
 - [x] Loosened over-coupled `classroomSchemaScaffold` "globally empty" assertion to "tables exist + queryable" — the old contract was order-dependent across the suite once other tests started writing audit rows.
 
 Test totals after this push: 9 classroom test files, **77/77 passing in 3.82 s**.
+
+
+## Classroom integration v2.6 — adult Recently-Graded card (2026-05-17)
+
+- [x] DB helper `listClassroomAssignmentsRecentlyGraded` (lifecycle='graded' ordered by COALESCE(gradedAt, updatedAt) DESC, id DESC tiebreaker; limit clamped to 1..100, default 20).
+- [x] tRPC `gclassroom.assignments.recentlyGraded` (familyAdmin gate — Reagan's client request fails closed).
+- [x] Real-DB integration vitest `classroomRecentlyGraded.test.ts` (4/4): graded-only filtering, gradedAt-desc ordering with id tiebreaker, limit clamp, default-input call shape.
+- [x] New component `client/src/components/TodayClassroomGradedCard.tsx`: hides itself on loading + empty (no grey-box noise), shows title + grade pill + course + graded-on date for up to 10 rows, refetches on focus so Mom always sees the freshest grade.
+- [x] Mounted on `Today.tsx` as `{unlocked && <TodayClassroomGradedCard />}` adjacent to the kid-facing `<TodayClassroomCard />` — defense-in-depth: adult-lock gate at the mount point AND familyAdmin gate at the procedure.
+- [x] Source-pattern vitest `todayClassroomGradedWiring.test.ts` (7/7): one mount, gated under `unlocked &&`, kid card stays ungated, component calls `recentlyGraded` (not `activeForToday`), empty-state hides via `return null`, grade pill testids present.
+
+Test totals after this push: 11 classroom test files, **88/88 passing in 3.94 s**.

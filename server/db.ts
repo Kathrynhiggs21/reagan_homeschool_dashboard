@@ -5144,6 +5144,30 @@ export async function listClassroomAssignmentsByLifecycle(
  * Pre-OAuth this returns []. That's the whole point of being safe to drop
  * onto the kid-facing Today page today.
  */
+/* ----- Adult-only: recently-graded Classroom assignments -----------
+ * The kid never sees grades; Mom + Grandma do. Returns the most
+ * recently-graded items (lifecycle='graded') ordered by gradedAt desc,
+ * then id desc as a stable tiebreaker. Pre-OAuth and pre-applyGradeReturn
+ * the table has no graded rows, so the result is [] and the adult
+ * widget can hide cleanly.
+ */
+export async function listClassroomAssignmentsRecentlyGraded(
+  opts: { limit?: number } = {}
+) {
+  const d = getDb();
+  const limit = Math.max(1, Math.min(100, opts.limit ?? 20));
+  const rows: any[] = await d
+    .select()
+    .from(classroomAssignments)
+    .where(sql`${classroomAssignments.lifecycleStatus} = 'graded'`)
+    .orderBy(
+      sql`COALESCE(${classroomAssignments.gradedAt}, ${classroomAssignments.updatedAt}) DESC`,
+      sql`${classroomAssignments.id} DESC`,
+    )
+    .limit(limit);
+  return rows;
+}
+
 export async function listClassroomAssignmentsActiveForToday(
   opts: { now?: Date; windowDays?: number; limit?: number } = {}
 ) {
