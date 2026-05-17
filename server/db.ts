@@ -406,20 +406,38 @@ export async function getPlanByDate(dateStr: string) {
 export async function ensurePlanForDate(
   dateStr: string,
   dayType: any = "full",
-  opts: { allowWeekendAutoBuild?: boolean } = {},
+  opts: { allowWeekendAutoBuild?: boolean; allowOffDayAutoBuild?: boolean } = {},
 ) {
   const existing = await getPlanByDate(dateStr);
   if (existing) return existing;
   const db = getDb();
   const dow = new Date(dateStr + "T00:00:00").getDay();
   const isWeekend = dow === 0 || dow === 6;
-  // Weekend = "off" by default. Adults can still manually add blocks afterward.
-  const finalDayType = isWeekend ? "off" : dow === 3 ? "half" : dayType;
+
+  // v2.22 (2026-05-17): Consult schoolCalendar for explicit off-days
+  // (federal holidays, district breaks, Indian Hill 25-26 staff days).
+  // If the date is flagged isOff=true, treat it like a weekend: create
+  // the plan row with dayType="off" so the UI can render "no school
+  // today" and the nightly packet skips, but DO NOT auto-build any
+  // blocks unless the caller explicitly opts in. Adults can still add
+  // blocks manually for special enrichment days.
+  let isCalendarOff = false;
+  try {
+    isCalendarOff = await isSchoolOff(dateStr);
+  } catch {
+    isCalendarOff = false; // graceful degrade if calendar query fails
+  }
+
+  const isOff = isWeekend || isCalendarOff;
+  // Weekend OR calendar-off = "off" by default. Adults can still manually add blocks afterward.
+  const finalDayType = isOff ? "off" : dow === 3 ? "half" : dayType;
   await db.insert(dailyPlans).values({ date: dateStr as any, dayType: finalDayType });
   const plan = await getPlanByDate(dateStr);
   if (!plan) return plan;
   // Skip auto-build for weekends unless caller explicitly opted in.
   if (isWeekend && !opts.allowWeekendAutoBuild) return plan;
+  // Skip auto-build for explicit calendar off-days unless caller explicitly opted in.
+  if (isCalendarOff && !opts.allowOffDayAutoBuild) return plan;
   const buildKind = isWeekend ? "weekend" : dow === 3 ? "therapy" : dayType;
   await autoBuildBlocksForPlan(plan.id, buildKind, dow);
   return plan;
