@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { parseTime12h, formatTime12h } from "@/lib/time12h";
 import { useTutorMode } from "@/hooks/useTutorMode";
 import { BlockResourcesPanel } from "@/components/BlockResourcesPanel";
+import { FreeFormPromptPanel } from "@/components/FreeFormPromptPanel";
 
 type Snapshot = {
   id: number;
@@ -502,6 +503,13 @@ export default function AgendaEditor() {
           </div>
         </CardContent>
       </Card>
+
+      {/* v2.16 (2026-05-17) — Free-form prompt panel with per-decision
+          Accept/Reject. Sits between the wholesale-diff AI box and the
+          old-style preview card. Defense-in-depth: this whole page is
+          already gated to adults, and `plans.aiPropose` /
+          `plans.aiApplyProposal` are familyAdminProcedure on the server. */}
+      <FreeFormPromptPanel date={date} />
 
       {/* DIFF PREVIEW */}
       {editPlan && beforeBlocks && afterBlocks && (
