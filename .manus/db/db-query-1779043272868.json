@@ -1,0 +1,18 @@
+{
+  "query": "ALTER TABLE daily_printables ADD COLUMN block_id VARCHAR(64) NULL;\nSHOW COLUMNS FROM daily_printables LIKE 'block_id';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute ALTER TABLE daily_printables ADD COLUMN block_id VARCHAR(64) NULL;\nSHOW COLUMNS FROM daily_printables LIKE 'block_id';",
+  "rows": [
+    {
+      "Field": "block_id",
+      "Type": "varchar(64)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nblock_id\tvarchar(64)\tYES\t\tNULL\t\n",
+  "stderr": "",
+  "execution_time_ms": 868
+}

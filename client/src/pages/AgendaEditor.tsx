@@ -21,6 +21,7 @@ import { parseTime12h, formatTime12h } from "@/lib/time12h";
 import { useTutorMode } from "@/hooks/useTutorMode";
 import { BlockResourcesPanel } from "@/components/BlockResourcesPanel";
 import { BlockAdventurePanel } from "@/components/BlockAdventurePanel";
+import { BlockPrintablesPanel } from "@/components/BlockPrintablesPanel";
 import { FreeFormPromptPanel } from "@/components/FreeFormPromptPanel";
 
 type Snapshot = {
@@ -633,6 +634,7 @@ export default function AgendaEditor() {
               {liveBlocks.map((b) => (
                 <ManualBlockRow
                   key={b.id}
+                  date={date}
                   block={b}
                   subjects={subjects}
                   topicCatalog={topicCatalog}
@@ -786,9 +788,11 @@ function QuickAttachWorksheets({ date, liveBlocks }: { date: string; liveBlocks:
 }
 
 function ManualBlockRow({
-  block, subjects, topicCatalog, onPatch, onDelete, onMoveToTomorrow,
+  date, block, subjects, topicCatalog, onPatch, onDelete, onMoveToTomorrow,
   isDragging, isDragOver, onDragStart, onDragEnter, onDragEnd,
 }: {
+  /** v2.19 — forwarded so the printables sub-panel can scope per-day. */
+  date: string;
   block: Snapshot;
   subjects: Array<{ slug: string; name: string }>;
   topicCatalog: Array<{ code: string; title: string; subjectSlug: string }>;
@@ -954,6 +958,14 @@ function ManualBlockRow({
           adventureId. Spans full row. */}
       <div style={{ gridColumn: "1 / -1" }}>
         <BlockAdventurePanel adventureId={(block as any).adventureId ?? null} />
+      </div>
+      {/* v2.19 (2026-05-17) — BlockPrintablesPanel: per-block worksheet
+          attachments (have-to-do / optional / extra). Mom adds the URL
+          + title; Reagan sees the row in her day and earns coins on
+          completion. Always visible because every block has a date +
+          id, even ones not tied to a topic or adventure. Spans full row. */}
+      <div style={{ gridColumn: "1 / -1" }}>
+        <BlockPrintablesPanel date={date} blockId={String(block.id)} />
       </div>
     </div>
   );

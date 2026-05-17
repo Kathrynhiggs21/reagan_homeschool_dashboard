@@ -1668,6 +1668,16 @@ export const dailyPrintables = mysqlTable("daily_printables", {
   autoGrade: text("auto_grade"),
   /** Drive file id once filed */
   driveFileId: varchar("drive_file_id", { length: 128 }),
+  /**
+   * v2.19 (2026-05-17) — Optional FK to `dailySchedule.blocks[].id`
+   * (which lives in plans.blocks JSON, not its own table). When set,
+   * this printable is attached to a *specific* block of the day rather
+   * than just the day. Nullable for backward compat: existing rows
+   * stay block-agnostic, new rows from the AgendaEditor sub-panel
+   * will set this. Stored as varchar because plan block ids are
+   * UUID-shaped strings, not bigints.
+   */
+  blockId: varchar("block_id", { length: 64 }),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),
 });

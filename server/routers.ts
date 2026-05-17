@@ -3553,6 +3553,65 @@ export const appRouter = router({
     listFavorites: publicProcedure.query(() => db.listPrintableFavorites()),
     addFavorite: publicProcedure.input(z.object({ sourceId: z.number(), title: z.string(), url: z.string(), subjectSlug: z.string().optional(), note: z.string().optional() })).mutation(({ input }) => db.addPrintableFavorite(input)),
     removeFavorite: publicProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deletePrintableFavorite(input.id)),
+    /**
+     * v2.19 (2026-05-17) — List printables attached to a specific
+     * block of a specific day. Used by BlockPrintablesPanel inside the
+     * AgendaEditor block row. Public-read (matches the rest of the
+     * printables router) since these are reference attachments.
+     */
+    forBlock: publicProcedure
+      .input(z.object({
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        blockId: z.string().min(1).max(64),
+      }))
+      .query(({ input }) => db.listDailyPrintablesForBlock(input.date, input.blockId)),
+    /**
+     * v2.19 — Attach a printable to a specific block. familyAdmin-only
+     * because Reagan must not be able to add or remove worksheets to
+     * her own day. Server enforces a 200-char title cap; everything
+     * else falls back to sane defaults so the UI form stays simple.
+     */
+    attachToBlock: familyAdminProcedure
+      .input(z.object({
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        blockId: z.string().min(1).max(64),
+        title: z.string().min(1).max(200),
+        sourceUrl: z.string().url().optional(),
+        bucket: z.enum(["have_to_do", "optional", "extra"]).default("have_to_do"),
+        description: z.string().max(2000).optional(),
+        subjectSlug: z.string().max(64).optional(),
+        estMinutes: z.number().int().min(1).max(240).optional(),
+        coinReward: z.number().int().min(0).max(50).optional(),
+      }))
+      .mutation(({ input }) =>
+        db.attachPrintableToBlock({
+          forDate: input.date,
+          blockId: input.blockId,
+          bucket: input.bucket,
+          title: input.title,
+          sourceUrl: input.sourceUrl ?? null,
+          description: input.description ?? null,
+          subjectSlug: input.subjectSlug ?? null,
+          estMinutes: input.estMinutes ?? null,
+          coinReward: input.coinReward,
+        }),
+      ),
+    /**
+     * v2.19 — Soft-detach: nulls out block_id but keeps the printable
+     * row + any earned coins. Use when Mom moves a worksheet out of a
+     * block but still wants Reagan to do it today.
+     */
+    detachFromBlock: familyAdminProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(({ input }) => db.detachPrintableFromBlock(input.id)),
+    /**
+     * v2.19 — Hard delete from the AgendaEditor sub-panel. Used when
+     * Mom decides the worksheet shouldn't exist at all. Coin ledger
+     * entries (if any) stay put on purpose.
+     */
+    remove: familyAdminProcedure
+      .input(z.object({ id: z.number().int().positive() }))
+      .mutation(({ input }) => db.deletePrintable(input.id)),
     /** Today's daily printables grouped by bucket (have_to_do / optional / extra). */
     today: protectedProcedure
       .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() }).optional())

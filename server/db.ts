@@ -5832,6 +5832,94 @@ export async function listDailyPrintables(forDate: string) {
   return { date: forDate, ...byBucket };
 }
 
+/**
+ * v2.19 (2026-05-17) — Per-block printables (AgendaEditor sub-panel).
+ *
+ * `dailyPrintables` rows are scoped by date. After v2.19 they can also
+ * carry an optional `block_id` so a worksheet is "for this block of
+ * this day" rather than "for this day." Block-anchored rows still show
+ * up in `listDailyPrintables(forDate)` (full-day view); the helpers
+ * below are the targeted lookups + writes used by the new
+ * BlockPrintablesPanel.
+ */
+export async function listDailyPrintablesForBlock(forDate: string, blockId: string) {
+  const d = getDb();
+  return d
+    .select()
+    .from(dailyPrintables)
+    .where(
+      and(
+        eq(dailyPrintables.forDate, forDate),
+        eq(dailyPrintables.blockId as any, blockId),
+      ),
+    )
+    .orderBy(asc(dailyPrintables.bucket as any), asc(dailyPrintables.id));
+}
+
+export async function attachPrintableToBlock(input: {
+  forDate: string;
+  blockId: string;
+  bucket?: "have_to_do" | "optional" | "extra";
+  title: string;
+  source?: string;
+  sourceUrl?: string | null;
+  description?: string | null;
+  subjectSlug?: string | null;
+  estMinutes?: number | null;
+  coinReward?: number;
+}) {
+  const d = getDb();
+  // Title is the only truly required field beyond the keys; everything
+  // else falls back to sane defaults so the AgendaEditor can post a
+  // single-input "add link" form without cargo-culting the full schema.
+  const row = {
+    forDate: input.forDate,
+    blockId: input.blockId,
+    bucket: input.bucket ?? "have_to_do",
+    title: String(input.title).slice(0, 255),
+    description: input.description ?? null,
+    subjectSlug: input.subjectSlug ?? null,
+    source: input.source ?? "manual",
+    sourceUrl: input.sourceUrl ?? null,
+    estMinutes: input.estMinutes ?? null,
+    coinReward: input.coinReward ?? 5,
+  } as any;
+  await d.insert(dailyPrintables).values(row);
+  // Return the freshly-inserted row by re-reading the latest match;
+  // simpler than wiring `lastInsertId` for the typical happy path.
+  const rows = await d
+    .select()
+    .from(dailyPrintables)
+    .where(
+      and(
+        eq(dailyPrintables.forDate, input.forDate),
+        eq(dailyPrintables.blockId as any, input.blockId),
+      ),
+    )
+    .orderBy(desc(dailyPrintables.id))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+export async function detachPrintableFromBlock(id: number) {
+  // Soft-detach: keep the printable row (it might already be marked
+  // done with a coin reward issued), just null out the block link so
+  // it falls back to the full-day view.
+  const d = getDb();
+  await d
+    .update(dailyPrintables)
+    .set({ blockId: null } as any)
+    .where(eq(dailyPrintables.id, id));
+}
+
+export async function deletePrintable(id: number) {
+  // Hard delete — used when Mom decides the worksheet shouldn't exist
+  // at all. We do NOT claw back any coin reward: if Reagan already
+  // earned the coins, that's hers; the ledger entry stays put.
+  const d = getDb();
+  await d.delete(dailyPrintables).where(eq(dailyPrintables.id, id));
+}
+
 export async function markPrintableDone(id: number, opts: { photoKey?: string | null; autoGrade?: string | null; driveFileId?: string | null }) {
   const d = getDb();
   await d
