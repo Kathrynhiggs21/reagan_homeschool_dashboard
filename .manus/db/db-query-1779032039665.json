@@ -1,0 +1,33 @@
+{
+  "query": "\nSELECT id, date, dayType, status, notes FROM dailyPlans WHERE date IN ('2026-05-20','2026-05-21','2026-05-22') ORDER BY date;\nSELECT id, planId, sortOrder, title, blockType, durationMin FROM scheduleBlocks WHERE planId IN (SELECT id FROM dailyPlans WHERE date IN ('2026-05-20','2026-05-21','2026-05-22')) ORDER BY planId, sortOrder;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \nSELECT id, date, dayType, status, notes FROM dailyPlans WHERE date IN ('2026-05-20','2026-05-21','2026-05-22') ORDER BY date;\nSELECT id, planId, sortOrder, title, blockType, durationMin FROM scheduleBlocks WHERE planId IN (SELECT id FROM dailyPlans WHERE date IN ('2026-05-20','2026-05-21','2026-05-22')) ORDER BY planId, sortOrder;\n",
+  "rows": [
+    {
+      "id": "870002",
+      "date": "2026-05-20",
+      "dayType": "half",
+      "status": "planned",
+      "notes": "NULL"
+    },
+    {
+      "id": "1050001",
+      "date": "2026-05-21",
+      "dayType": "full",
+      "status": "planned",
+      "notes": "Last day of Indian Hill 2025–26 school year. Mom + Grandma teaching (Sophie's last day was Tue May 19). Plan blocks before this morning."
+    }
+  ],
+  "messages": [
+    "id\tplanId\tsortOrder\ttitle\tblockType\tdurationMin",
+    "1080014\t870002\t0\tSoft start\tmorning_warmup\t30",
+    "1080015\t870002\t1\tEasy math warm-up\tmath\t25",
+    "1080016\t870002\t2\tChoice block\tchoice\t30",
+    "1080017\t870002\t3\tTherapy with Ali\tappointment\t90",
+    "1080018\t870002\t4\tLunch + reset\tcustom\t30",
+    "1080019\t870002\t5\tRead-aloud\tread_aloud\t25",
+    "1080020\t870002\t6\tAdventure of the day\tadventure\t35"
+  ],
+  "stdout": "id\tdate\tdayType\tstatus\tnotes\n870002\t2026-05-20\thalf\tplanned\tNULL\n1050001\t2026-05-21\tfull\tplanned\tLast day of Indian Hill 2025–26 school year. Mom + Grandma teaching (Sophie's last day was Tue May 19). Plan blocks before this morning.\nid\tplanId\tsortOrder\ttitle\tblockType\tdurationMin\n1080014\t870002\t0\tSoft start\tmorning_warmup\t30\n1080015\t870002\t1\tEasy math warm-up\tmath\t25\n1080016\t870002\t2\tChoice block\tchoice\t30\n1080017\t870002\t3\tTherapy with Ali\tappointment\t90\n1080018\t870002\t4\tLunch + reset\tcustom\t30\n1080019\t870002\t5\tRead-aloud\tread_aloud\t25\n1080020\t870002\t6\tAdventure of the day\tadventure\t35\n",
+  "stderr": "",
+  "execution_time_ms": 630
+}

@@ -1,0 +1,34 @@
+{
+  "query": "\nINSERT INTO scheduleBlocks (planId, blockType, subjectId, title, description, durationMin, sortOrder) VALUES\n(1110002, 'morning_warmup', NULL,  'Good morning',            'Slower start. Summer pace. No rush.', 20, 0),\n(1110002, 'custom',         NULL,  'Try the placement page',  'Open /placement. Try a few things. Skip is a real button. We are not testing you — we are checking what feels easy and what feels hard so summer is the right shape for you.', 25, 1),\n(1110002, 'read_aloud',     30013, 'Reading — your pick',     'Tuck Everlasting OR Michael''s World — your call.', 25, 2),\n(1110002, 'adventure',      30014, 'Outdoor / nature',        'Long version. Yard, ducks, creek edge if Mom or Grandma can.', 40, 3),\n(1110002, 'choice',         NULL,  'Choice block',            'Whatever you want.', 30, 4),\n(1110002, 'catch_up',       NULL,  'Cozy wrap-up',            'Optional. Skip if you are done.', 10, 5);\n\nSELECT dp.date, dp.id AS planId, dp.dayType, dp.status, COUNT(b.id) AS block_count, SUM(b.durationMin) AS total_min\nFROM dailyPlans dp LEFT JOIN scheduleBlocks b ON b.planId = dp.id\nWHERE dp.date IN ('2026-05-18','2026-05-21','2026-05-22')\nGROUP BY dp.id, dp.date, dp.dayType, dp.status ORDER BY dp.date;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \nINSERT INTO scheduleBlocks (planId, blockType, subjectId, title, description, durationMin, sortOrder) VALUES\n(1110002, 'morning_warmup', NULL,  'Good morning',            'Slower start. Summer pace. No rush.', 20, 0),\n(1110002, 'custom',         NULL,  'Try the placement page',  'Open /placement. Try a few things. Skip is a real button. We are not testing you — we are checking what feels easy and what feels hard so summer is the right shape for you.', 25, 1),\n(1110002, 'read_aloud',     30013, 'Reading — your pick',     'Tuck Everlasting OR Michael''s World — your call.', 25, 2),\n(1110002, 'adventure',      30014, 'Outdoor / nature',        'Long version. Yard, ducks, creek edge if Mom or Grandma can.', 40, 3),\n(1110002, 'choice',         NULL,  'Choice block',            'Whatever you want.', 30, 4),\n(1110002, 'catch_up',       NULL,  'Cozy wrap-up',            'Optional. Skip if you are done.', 10, 5);\n\nSELECT dp.date, dp.id AS planId, dp.dayType, dp.status, COUNT(b.id) AS block_count, SUM(b.durationMin) AS total_min\nFROM dailyPlans dp LEFT JOIN scheduleBlocks b ON b.planId = dp.id\nWHERE dp.date IN ('2026-05-18','2026-05-21','2026-05-22')\nGROUP BY dp.id, dp.date, dp.dayType, dp.status ORDER BY dp.date;\n",
+  "rows": [
+    {
+      "date": "2026-05-18",
+      "planId": "1110001",
+      "dayType": "full",
+      "status": "planned",
+      "block_count": "10",
+      "total_min": "225"
+    },
+    {
+      "date": "2026-05-21",
+      "planId": "1050001",
+      "dayType": "full",
+      "status": "planned",
+      "block_count": "9",
+      "total_min": "210"
+    },
+    {
+      "date": "2026-05-22",
+      "planId": "1110002",
+      "dayType": "half",
+      "status": "planned",
+      "block_count": "6",
+      "total_min": "150"
+    }
+  ],
+  "messages": [],
+  "stdout": "date\tplanId\tdayType\tstatus\tblock_count\ttotal_min\n2026-05-18\t1110001\tfull\tplanned\t10\t225\n2026-05-21\t1050001\tfull\tplanned\t9\t210\n2026-05-22\t1110002\thalf\tplanned\t6\t150\n",
+  "stderr": "",
+  "execution_time_ms": 656
+}

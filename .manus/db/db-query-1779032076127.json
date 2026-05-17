@@ -1,0 +1,20 @@
+{
+  "query": "\nSELECT dp.date, dp.id AS planId, COUNT(b.id) AS block_count\nFROM dailyPlans dp LEFT JOIN scheduleBlocks b ON b.planId = dp.id\nWHERE dp.date IN ('2026-05-21','2026-05-22')\nGROUP BY dp.id, dp.date ORDER BY dp.date;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \nSELECT dp.date, dp.id AS planId, COUNT(b.id) AS block_count\nFROM dailyPlans dp LEFT JOIN scheduleBlocks b ON b.planId = dp.id\nWHERE dp.date IN ('2026-05-21','2026-05-22')\nGROUP BY dp.id, dp.date ORDER BY dp.date;\n",
+  "rows": [
+    {
+      "date": "2026-05-21",
+      "planId": "1050001",
+      "block_count": "9"
+    },
+    {
+      "date": "2026-05-22",
+      "planId": "1110002",
+      "block_count": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "date\tplanId\tblock_count\n2026-05-21\t1050001\t9\n2026-05-22\t1110002\t0\n",
+  "stderr": "",
+  "execution_time_ms": 599
+}
