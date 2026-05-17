@@ -7610,7 +7610,11 @@ export const appRouter = router({
     get: protectedProcedure
       .input(z.object({ key: z.string().min(1).max(64) }))
       .query(({ input }) => db.getAppSetting(input.key)),
-    set: protectedProcedure
+    // v2.28 (2026-05-17): tightened from protectedProcedure to familyAdminProcedure.
+    // Reagan should never be able to flip Summer Mode, the nightly-email toggle,
+    // her own coin balance, or any other KV setting via the prefs router. Mom +
+    // Grandma + tutors retain write access via familyAdminProcedure.
+    set: familyAdminProcedure
       .input(z.object({ key: z.string().min(1).max(64), value: z.string().nullable() }))
       .mutation(({ input }) => db.setAppSetting(input.key, input.value)),
     list: protectedProcedure
