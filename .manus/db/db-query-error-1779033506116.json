@@ -1,0 +1,8 @@
+{
+  "query": "SELECT id, slug, name, displayOrder, isActive FROM subjects ORDER BY displayOrder, id;\nSELECT subjectId, COUNT(*) AS blockCount FROM scheduleBlocks WHERE subjectId IS NOT NULL GROUP BY subjectId;\nSELECT TABLE_NAME, COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND COLUMN_NAME LIKE '%ubjectId%' ORDER BY TABLE_NAME;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, slug, name, displayOrder, isActive FROM subjects ORDER BY displayOrder, id;\nSELECT subjectId, COUNT(*) AS blockCount FROM scheduleBlocks WHERE subjectId IS NOT NULL GROUP BY subjectId;\nSELECT TABLE_NAME, COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND COLUMN_NAME LIKE '%ubjectId%' ORDER BY TABLE_NAME;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'displayorder' in 'field list'"
+  ]
+}

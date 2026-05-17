@@ -1,0 +1,74 @@
+{
+  "query": "-- 1. Detach the 3 mis-tagged \"specials\" blocks (they were morning_warmup test rows, not specials).\nUPDATE scheduleBlocks SET subjectId = NULL WHERE subjectId = 60002;\n\n-- 2. Rename ELA to canonical \"Reading and Language Arts (ELA)\".\nUPDATE subjects SET name = 'Reading and Language Arts (ELA)' WHERE slug = 'ela';\n\n-- 3. Add the two missing canonical subjects.\nINSERT INTO subjects (slug, name, color, emoji, sortOrder)\nVALUES ('health-pe', 'Health and PE', '#22c55e', '🏃', 5)\nON DUPLICATE KEY UPDATE name=VALUES(name), color=VALUES(color), emoji=VALUES(emoji), sortOrder=VALUES(sortOrder);\n\nINSERT INTO subjects (slug, name, color, emoji, sortOrder)\nVALUES ('art-music', 'Art and Music', '#14b8a6', '🎨', 6)\nON DUPLICATE KEY UPDATE name=VALUES(name), color=VALUES(color), emoji=VALUES(emoji), sortOrder=VALUES(sortOrder);\n\n-- 4. Reorder the existing rows to match Mom's canonical list\n--    (Social Studies, Science, ELA, Math, Health and PE, Art and Music, Other).\nUPDATE subjects SET sortOrder = 1 WHERE slug = 'social';\nUPDATE subjects SET sortOrder = 2 WHERE slug = 'science';\nUPDATE subjects SET sortOrder = 3 WHERE slug = 'ela';\nUPDATE subjects SET sortOrder = 4 WHERE slug = 'math';\nUPDATE subjects SET sortOrder = 5 WHERE slug = 'health-pe';\nUPDATE subjects SET sortOrder = 6 WHERE slug = 'art-music';\nUPDATE subjects SET sortOrder = 7 WHERE slug = 'other';\n\n-- 5. Retire 'specials' by renaming the slug + name (keeps row-level FK history but hides it from pickers).\nUPDATE subjects SET slug = '_deprecated_specials', name = '(deprecated) Specials', sortOrder = 999 WHERE slug = 'specials';\n\n-- Verify final state.\nSELECT id, slug, name, color, emoji, sortOrder FROM subjects ORDER BY sortOrder, id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute -- 1. Detach the 3 mis-tagged \"specials\" blocks (they were morning_warmup test rows, not specials).\nUPDATE scheduleBlocks SET subjectId = NULL WHERE subjectId = 60002;\n\n-- 2. Rename ELA to canonical \"Reading and Language Arts (ELA)\".\nUPDATE subjects SET name = 'Reading and Language Arts (ELA)' WHERE slug = 'ela';\n\n-- 3. Add the two missing canonical subjects.\nINSERT INTO subjects (slug, name, color, emoji, sortOrder)\nVALUES ('health-pe', 'Health and PE', '#22c55e', '🏃', 5)\nON DUPLICATE KEY UPDATE name=VALUES(name), color=VALUES(color), emoji=VALUES(emoji), sortOrder=VALUES(sortOrder);\n\nINSERT INTO subjects (slug, name, color, emoji, sortOrder)\nVALUES ('art-music', 'Art and Music', '#14b8a6', '🎨', 6)\nON DUPLICATE KEY UPDATE name=VALUES(name), color=VALUES(color), emoji=VALUES(emoji), sortOrder=VALUES(sortOrder);\n\n-- 4. Reorder the existing rows to match Mom's canonical list\n--    (Social Studies, Science, ELA, Math, Health and PE, Art and Music, Other).\nUPDATE subjects SET sortOrder = 1 WHERE slug = 'social';\nUPDATE subjects SET sortOrder = 2 WHERE slug = 'science';\nUPDATE subjects SET sortOrder = 3 WHERE slug = 'ela';\nUPDATE subjects SET sortOrder = 4 WHERE slug = 'math';\nUPDATE subjects SET sortOrder = 5 WHERE slug = 'health-pe';\nUPDATE subjects SET sortOrder = 6 WHERE slug = 'art-music';\nUPDATE subjects SET sortOrder = 7 WHERE slug = 'other';\n\n-- 5. Retire 'specials' by renaming the slug + name (keeps row-level FK history but hides it from pickers).\nUPDATE subjects SET slug = '_deprecated_specials', name = '(deprecated) Specials', sortOrder = 999 WHERE slug = 'specials';\n\n-- Verify final state.\nSELECT id, slug, name, color, emoji, sortOrder FROM subjects ORDER BY sortOrder, id;",
+  "rows": [
+    {
+      "id": "60001",
+      "slug": "social",
+      "name": "Social Studies",
+      "color": "#8b5cf6",
+      "emoji": "🌍",
+      "sortOrder": "1"
+    },
+    {
+      "id": "30014",
+      "slug": "science",
+      "name": "Science",
+      "color": "#1db954",
+      "emoji": "🔬",
+      "sortOrder": "2"
+    },
+    {
+      "id": "30013",
+      "slug": "ela",
+      "name": "Reading and Language Arts (ELA)",
+      "color": "#ec3b6b",
+      "emoji": "📖",
+      "sortOrder": "3"
+    },
+    {
+      "id": "30012",
+      "slug": "math",
+      "name": "Math",
+      "color": "#ff8c00",
+      "emoji": "🔢",
+      "sortOrder": "4"
+    },
+    {
+      "id": "90001",
+      "slug": "health-pe",
+      "name": "Health and PE",
+      "color": "#22c55e",
+      "emoji": "🏃",
+      "sortOrder": "5"
+    },
+    {
+      "id": "90002",
+      "slug": "art-music",
+      "name": "Art and Music",
+      "color": "#14b8a6",
+      "emoji": "🎨",
+      "sortOrder": "6"
+    },
+    {
+      "id": "60003",
+      "slug": "other",
+      "name": "Other",
+      "color": "#eab308",
+      "emoji": "📌",
+      "sortOrder": "7"
+    },
+    {
+      "id": "60002",
+      "slug": "_deprecated_specials",
+      "name": "(deprecated) Specials",
+      "color": "#14b8a6",
+      "emoji": "🎨",
+      "sortOrder": "999"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tslug\tname\tcolor\temoji\tsortOrder\n60001\tsocial\tSocial Studies\t#8b5cf6\t🌍\t1\n30014\tscience\tScience\t#1db954\t🔬\t2\n30013\tela\tReading and Language Arts (ELA)\t#ec3b6b\t📖\t3\n30012\tmath\tMath\t#ff8c00\t🔢\t4\n90001\thealth-pe\tHealth and PE\t#22c55e\t🏃\t5\n90002\tart-music\tArt and Music\t#14b8a6\t🎨\t6\n60003\tother\tOther\t#eab308\t📌\t7\n60002\t_deprecated_specials\t(deprecated) Specials\t#14b8a6\t🎨\t999\n",
+  "stderr": "",
+  "execution_time_ms": 1219
+}

@@ -3201,3 +3201,24 @@ Earlier this session the helper-push cadence (Pushes 206–285+) drifted into a 
 - [x] Schema constraint surfaced: `scheduleBlocks.blockType` enum is currently only morning_warmup/math/adventure/read_aloud/choice/catch_up/appointment/custom. Used `adventure`+subject=Science for science work and `custom`+subject=ELA for the language page. The wider enum referenced in old session notes (science/ela/outdoor/free_time/etc.) does NOT exist in the actual DB.
 - [x] Verify Mon May 18 plan + blocks render. Confirmed via `listBlocksForPlan` join: 10 blocks resolve correctly (subjects/durations/sortOrder/descriptions intact). Today.tsx and Schedule.tsx both call the same path (`plans.today` / `plans.byDate` → `listBlocksForPlan`). Same verification covers Thu May 21 (9 blocks) + Fri May 22 (6 blocks) — total 25 blocks across the three new plans, all clean.
 - [ ] Verify `/api/scheduled/nightly-agenda-email` with `forDate: 2026-05-18` returns `status: "send_ready"` (not `"no_plan"`) and a real presigned `pdfDownloadUrl`.
+
+
+## Canonical 7-subject taxonomy (locked 2026-05-17)
+
+Mom set the master subject list for Classroom + Drive + assignment records. The 4 core planning subjects drive the daily schedule and "did you do everything?" rollups; the 3 optional subjects are catalog-only — available for assignment categorization but DO NOT generate scheduled blocks or trigger missing-subject nudges.
+
+| sortOrder | slug | name | core/optional |
+|---|---|---|---|
+| 1 | social | Social Studies | core |
+| 2 | science | Science | core |
+| 3 | ela | Reading and Language Arts (ELA) | core |
+| 4 | math | Math | core |
+| 5 | health-pe | Health and PE | optional (catalog-only) |
+| 6 | art-music | Art and Music | optional (catalog-only) |
+| 7 | other | Other | optional (catalog-only) |
+
+- [x] **DB migration applied (DONE 2026-05-17):** Renamed `ela.name` to "Reading and Language Arts (ELA)" (slug stays `ela` to keep the 41 tables that reference `subjectSlug` working). Added `health-pe` and `art-music` rows. Reordered all 7 visible subjects by Mom's canonical sequence. Retired the old `specials` slug → `_deprecated_specials` with sortOrder 999 (kept the row for FK history; pickers filter sortOrder < 999). Detached 3 mis-tagged `morning_warmup` "Soft start" test blocks (planIds 6/7/8, all far-future 2030 dates) from the deprecated specials row by NULLing their subjectId.
+- [x] **isCorePlanning column added (DONE 2026-05-17):** New boolean column on `subjects` (default true). Set to FALSE for `health-pe`, `art-music`, `other`, and `_deprecated_specials`. Drizzle schema updated to match (`drizzle/schema.ts`). Future code paths doing "loop core subjects" should filter by `isCorePlanning=true`; assignment-categorization pickers should show all rows where `sortOrder < 999`.
+- [x] **Vitest lock (DONE 2026-05-17):** `server/canonicalSubjectsTaxonomy.test.ts` (4/4 pass) — locks the canonical 7 visible subjects in the right order with the right names, the exact 4-core / 3-optional split, and the absence of the legacy `specials` slug from the visible set. Catches future seed-script regressions.
+- [ ] **UI/codebase audit:** Walk every place that hardcodes the old subject list (zod enums in routers, default subject filters, picker `<Select>` options, AI-generator system prompts, Drive folder templates, Classroom routing) and replace with `isCorePlanning` filter or full-7-subject list as appropriate. Not blocking for tonight's cron; safe to do across the next several pushes.
+- [ ] **Subtopics for ELA (Reading + Spelling) — DEFERRED:** No current consumer needs the subtopic distinction. When Drive folder layout or Classroom routing wants it, add a `parentSubjectSlug` column to `subjects` and insert `reading` + `spelling` rows with `parentSubjectSlug='ela'`. Lower-cost than a separate `subjectSubtopics` table.

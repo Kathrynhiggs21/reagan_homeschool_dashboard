@@ -1,0 +1,103 @@
+{
+  "query": "SELECT * FROM subjects ORDER BY id;\nSELECT subjectId, COUNT(*) AS blockCount FROM scheduleBlocks WHERE subjectId IS NOT NULL GROUP BY subjectId;\nSELECT TABLE_NAME, COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND COLUMN_NAME LIKE '%ubject%' ORDER BY TABLE_NAME;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT * FROM subjects ORDER BY id;\nSELECT subjectId, COUNT(*) AS blockCount FROM scheduleBlocks WHERE subjectId IS NOT NULL GROUP BY subjectId;\nSELECT TABLE_NAME, COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND COLUMN_NAME LIKE '%ubject%' ORDER BY TABLE_NAME;",
+  "rows": [
+    {
+      "id": "30012",
+      "slug": "math",
+      "name": "Math",
+      "color": "#ff8c00",
+      "emoji": "🔢",
+      "sortOrder": "1"
+    },
+    {
+      "id": "30013",
+      "slug": "ela",
+      "name": "ELA",
+      "color": "#ec3b6b",
+      "emoji": "📖",
+      "sortOrder": "4"
+    },
+    {
+      "id": "30014",
+      "slug": "science",
+      "name": "Science",
+      "color": "#1db954",
+      "emoji": "🔬",
+      "sortOrder": "2"
+    },
+    {
+      "id": "60001",
+      "slug": "social",
+      "name": "Social Studies",
+      "color": "#8b5cf6",
+      "emoji": "🌍",
+      "sortOrder": "3"
+    },
+    {
+      "id": "60002",
+      "slug": "specials",
+      "name": "Specials",
+      "color": "#14b8a6",
+      "emoji": "🎨",
+      "sortOrder": "5"
+    },
+    {
+      "id": "60003",
+      "slug": "other",
+      "name": "Other",
+      "color": "#eab308",
+      "emoji": "📌",
+      "sortOrder": "6"
+    }
+  ],
+  "messages": [
+    "subjectId\tblockCount",
+    "60002\t3",
+    "60003\t14",
+    "30013\t123",
+    "30012\t126",
+    "30014\t135",
+    "TABLE_NAME\tCOLUMN_NAME",
+    "academicRecords\tsubjectSlug",
+    "actualAgendaEntries\tsubject_slug",
+    "adventures\tsubjectSlugs",
+    "assignmentBacklog\tsubjectSlug",
+    "assignmentSubmissions\tsubjectSlug",
+    "assignment_bundles\tsubject_slug",
+    "assignments_library\tsubject_slug",
+    "blockGrades\tsubjectSlug",
+    "books\tsubjectSlug",
+    "classroomAgendas\tsubjectSlug",
+    "curriculumAdjustments\tsubjectSlug",
+    "curriculumTopics\tsubject",
+    "daily_printables\tsubject_slug",
+    "emotionalStruggles\tsubjectSlug",
+    "helpList\tsubjectSlug",
+    "iepAccommodations\tsubjectSlug",
+    "iepGoals\tsubjectSlug",
+    "listeningSummaries\tsubjectGuess",
+    "moodSignals\tsubjectSlug",
+    "needsWorkItems\tsubjectSlug",
+    "ownedBooks\tsubject_slug",
+    "parentFlags\tsubjectSlug",
+    "placementResults\tsubjectSlug",
+    "printableFavorites\tsubjectSlug",
+    "printableSources\tsubjects",
+    "reviewResources\tsubjectSlug",
+    "scheduleBlocks\tsubjectId",
+    "skillFeedback\tsubjectSlug",
+    "skillLadder\tsubjectSlug",
+    "skillsMastery\tsubjectSlug",
+    "takeNotes\tsubjectSlug",
+    "timelineEvents\tsubjectSlug",
+    "topicsCoveredOffPlan\tsubject_slug",
+    "tutors\tsubjects",
+    "weeklyTopics\tsubjectSlug",
+    "yearPlan\tsubject_slug",
+    "yearPlanCursor\tsubject_slug"
+  ],
+  "stdout": "id\tslug\tname\tcolor\temoji\tsortOrder\n30012\tmath\tMath\t#ff8c00\t🔢\t1\n30013\tela\tELA\t#ec3b6b\t📖\t4\n30014\tscience\tScience\t#1db954\t🔬\t2\n60001\tsocial\tSocial Studies\t#8b5cf6\t🌍\t3\n60002\tspecials\tSpecials\t#14b8a6\t🎨\t5\n60003\tother\tOther\t#eab308\t📌\t6\nsubjectId\tblockCount\n60002\t3\n60003\t14\n30013\t123\n30012\t126\n30014\t135\nTABLE_NAME\tCOLUMN_NAME\nacademicRecords\tsubjectSlug\nactualAgendaEntries\tsubject_slug\nadventures\tsubjectSlugs\nassignmentBacklog\tsubjectSlug\nassignmentSubmissions\tsubjectSlug\nassignment_bundles\tsubject_slug\nassignments_library\tsubject_slug\nblockGrades\tsubjectSlug\nbooks\tsubjectSlug\nclassroomAgendas\tsubjectSlug\ncurriculumAdjustments\tsubjectSlug\ncurriculumTopics\tsubject\ndaily_printables\tsubject_slug\nemotionalStruggles\tsubjectSlug\nhelpList\tsubjectSlug\niepAccommodations\tsubjectSlug\niepGoals\tsubjectSlug\nlisteningSummaries\tsubjectGuess\nmoodSignals\tsubjectSlug\nneedsWorkItems\tsubjectSlug\nownedBooks\tsubject_slug\nparentFlags\tsubjectSlug\nplacementResults\tsubjectSlug\nprintableFavorites\tsubjectSlug\nprintableSources\tsubjects\nreviewResources\tsubjectSlug\nscheduleBlocks\tsubjectId\nskillFeedback\tsubjectSlug\nskillLadder\tsubjectSlug\nskillsMastery\tsubjectSlug\ntakeNotes\tsubjectSlug\ntimelineEvents\tsubjectSlug\ntopicsCoveredOffPlan\tsubject_slug\ntutors\tsubjects\nweeklyTopics\tsubjectSlug\nyearPlan\tsubject_slug\nyearPlanCursor\tsubject_slug\n",
+  "stderr": "",
+  "execution_time_ms": 694
+}

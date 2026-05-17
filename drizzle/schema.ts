@@ -37,11 +37,17 @@ export type InsertUser = typeof users.$inferInsert;
 /* -------------------------------------------------------------------------- */
 export const subjects = mysqlTable("subjects", {
   id: int("id").autoincrement().primaryKey(),
-  slug: varchar("slug", { length: 32 }).notNull().unique(), // math, ela, science, ss, adventure, choice, catch_up, reading
+  slug: varchar("slug", { length: 32 }).notNull().unique(), // social, science, ela, math, health-pe, art-music, other
   name: varchar("name", { length: 64 }).notNull(),
   color: varchar("color", { length: 16 }).notNull(), // hex
   emoji: varchar("emoji", { length: 8 }).notNull(),
   sortOrder: int("sortOrder").default(0).notNull(),
+  // Core planning subjects drive the daily schedule and "did you do everything?"
+  // rollups (Social Studies, Science, ELA, Math). Optional subjects (Health & PE,
+  // Art & Music, Other) are available for assignment categorization but do NOT
+  // generate scheduled blocks or trigger missing-subject nudges. Mom set this
+  // contract on 2026-05-17 — Health/PE and Art/Music are catalog-only.
+  isCorePlanning: boolean("isCorePlanning").notNull().default(true),
 });
 
 /* -------------------------------------------------------------------------- */

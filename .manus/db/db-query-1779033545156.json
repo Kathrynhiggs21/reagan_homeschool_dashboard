@@ -1,0 +1,37 @@
+{
+  "query": "SELECT sb.id, sb.planId, dp.date, sb.blockType, sb.title, sb.description, sb.durationMin\nFROM scheduleBlocks sb\nJOIN dailyPlans dp ON dp.id = sb.planId\nWHERE sb.subjectId = 60002\nORDER BY dp.date, sb.sortOrder;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT sb.id, sb.planId, dp.date, sb.blockType, sb.title, sb.description, sb.durationMin\nFROM scheduleBlocks sb\nJOIN dailyPlans dp ON dp.id = sb.planId\nWHERE sb.subjectId = 60002\nORDER BY dp.date, sb.sortOrder;",
+  "rows": [
+    {
+      "id": "33",
+      "planId": "6",
+      "date": "2030-01-01",
+      "blockType": "morning_warmup",
+      "title": "Soft start",
+      "description": "Time with the parakeets and ducklings. Just be.",
+      "durationMin": "25"
+    },
+    {
+      "id": "41",
+      "planId": "7",
+      "date": "2030-02-15",
+      "blockType": "morning_warmup",
+      "title": "Soft start",
+      "description": "Time with the parakeets and ducklings. Just be.",
+      "durationMin": "25"
+    },
+    {
+      "id": "49",
+      "planId": "8",
+      "date": "2030-02-20",
+      "blockType": "morning_warmup",
+      "title": "Soft start",
+      "description": "Time with the parakeets and ducklings. Just be.",
+      "durationMin": "30"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tplanId\tdate\tblockType\ttitle\tdescription\tdurationMin\n33\t6\t2030-01-01\tmorning_warmup\tSoft start\tTime with the parakeets and ducklings. Just be.\t25\n41\t7\t2030-02-15\tmorning_warmup\tSoft start\tTime with the parakeets and ducklings. Just be.\t25\n49\t8\t2030-02-20\tmorning_warmup\tSoft start\tTime with the parakeets and ducklings. Just be.\t30\n",
+  "stderr": "",
+  "execution_time_ms": 579
+}
