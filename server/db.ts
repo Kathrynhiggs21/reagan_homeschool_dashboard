@@ -428,9 +428,38 @@ export async function ensurePlanForDate(
     isCalendarOff = false; // graceful degrade if calendar query fails
   }
 
+  // v2.27 (2026-05-17) — Summer Mode auto-flip. Calendar off-days and
+  // weekends still take precedence (Memorial Day stays "off" even in
+  // summer; Saturday stays "off"). For an ordinary weekday inside the
+  // summer window, switch the auto-build template to a soft summer one.
+  let isSummerActive = false;
+  try {
+    const [autoFlip, sStart, sEnd, sOverride, sVacJson] = await Promise.all([
+      getAppSetting("summer.autoFlipEnabled"),
+      getAppSetting("summer.start"),
+      getAppSetting("summer.end"),
+      getAppSetting("summer.override"),
+      getAppSetting("summer.vacationRanges"),
+    ]);
+    const { summerSettingsFromKv, effectiveSummerActive } = await import("./summerMode");
+    const settings = summerSettingsFromKv({
+      "summer.autoFlipEnabled": autoFlip,
+      "summer.start": sStart,
+      "summer.end": sEnd,
+      "summer.override": sOverride,
+      "summer.vacationRanges": sVacJson,
+    });
+    isSummerActive = effectiveSummerActive(dateStr, settings).active;
+  } catch {
+    isSummerActive = false; // graceful degrade if settings query fails
+  }
+
   const isOff = isWeekend || isCalendarOff;
   // Weekend OR calendar-off = "off" by default. Adults can still manually add blocks afterward.
-  const finalDayType = isOff ? "off" : dow === 3 ? "half" : dayType;
+  // dailyPlans.dayType enum is [full, half, outdoor, field_trip, recovery, off].
+  // Summer mode reuses "outdoor" semantically (no schema change needed); the
+  // build template still keys off the explicit `summer` build kind below.
+  const finalDayType = isOff ? "off" : dow === 3 ? "half" : isSummerActive ? "outdoor" : dayType;
   await db.insert(dailyPlans).values({ date: dateStr as any, dayType: finalDayType });
   const plan = await getPlanByDate(dateStr);
   if (!plan) return plan;
@@ -438,7 +467,14 @@ export async function ensurePlanForDate(
   if (isWeekend && !opts.allowWeekendAutoBuild) return plan;
   // Skip auto-build for explicit calendar off-days unless caller explicitly opted in.
   if (isCalendarOff && !opts.allowOffDayAutoBuild) return plan;
-  const buildKind = isWeekend ? "weekend" : dow === 3 ? "therapy" : dayType;
+  // Summer beats therapy/full on a regular weekday inside the window.
+  const buildKind = isWeekend
+    ? "weekend"
+    : isSummerActive
+      ? "summer"
+      : dow === 3
+        ? "therapy"
+        : dayType;
   await autoBuildBlocksForPlan(plan.id, buildKind, dow);
   return plan;
 }
@@ -454,9 +490,24 @@ async function autoBuildBlocksForPlan(planId: number, dayType: string, dow: numb
   const subjs = await db.select().from(subjects);
   const findSlug = (slug: string) => subjs.find(s => s.slug === slug);
   const isTherapy = dayType === "therapy";
+  // v2.27 (2026-05-17) — summer build kind. Soft, choice-heavy, outdoor-leaning,
+  // with no academic-pressure language. Reagan can still pick into structured
+  // work via the choice block (the 3-of-4 chooser uses summerChoiceOptions),
+  // but the spine is summer-friendly variants. Calendar off-days and weekends
+  // are filtered out before this function is called — summer never overrides
+  // them.
+  const isSummer = dayType === "summer";
 
   const isWeekend = dayType === "weekend";
-  const template: Array<{ title: string; description: string; slug?: string; type: string; minutes: number }> = isWeekend ? [
+  const summerTemplate: Array<{ title: string; description: string; slug?: string; type: string; minutes: number }> = [
+    { title: "Summer charge ☀\ufe0f", description: "Tiny daily mood-setter — pick the silliest joke or the prettiest cloud. Not schoolwork.", slug: "animal-care", type: "morning_warmup", minutes: 5 },
+    { title: "Summer adventure", description: "Outdoor / library / hands-on / game variants — see the chooser. No ‘school’ pressure.", slug: "science", type: "adventure", minutes: 60 },
+    { title: "Summer choice 🌞", description: "Pick 1 of 3 surprises today. Refresh = same 3, no rerolling away the option you don’t want.", slug: "choice", type: "choice", minutes: 45 },
+    { title: "Cozy reading", description: "Hammock, library beanbag, blanket fort — 30 min of free-choice reading.", slug: "ela", type: "read_aloud", minutes: 30 },
+    { title: "Tiny practice", description: "5–10 minutes of light math or spelling, gamified. Streak boost is on — stack those summer coins.", slug: "math", type: "math", minutes: 10 },
+    { title: "One little win", description: "Pick ONE tiny thing to log: a bird seen, a meal helped with, a kindness done.", slug: undefined, type: "catch_up", minutes: 10 },
+  ];
+  const template: Array<{ title: string; description: string; slug?: string; type: string; minutes: number }> = isSummer ? summerTemplate : isWeekend ? [
     // Weekend = soft, optional, no "school" pressure. Just connection + curiosity.
     { title: "Slay Charge ⚡", description: "Tiny daily mood-setter — a joke or a short funny clip. Not schoolwork.", slug: "animal-care", type: "morning_warmup", minutes: 5 },
     { title: "Pick-your-path adventure", description: "Creek, garden, art, baking, Lego \u2014 your call. Outdoors counts double.", slug: "science", type: "adventure", minutes: 60 },
