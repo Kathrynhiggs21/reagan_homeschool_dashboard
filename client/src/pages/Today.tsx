@@ -42,6 +42,7 @@ import TodayAdultQuickEntryCard from "@/components/TodayAdultQuickEntryCard";
 // Push 84 (2026-05-13) — Adult Today recap: off-plan capture summary.
 import { OffPlanCaptureCard } from "@/components/OffPlanCaptureCard";
 import NoSchoolBanner from "@/components/NoSchoolBanner";
+import ActualVsPlannedStrip from "@/components/ActualVsPlannedStrip";
 import { TapEditPopover } from "@/components/TapEditPopover";
 import GeneratedBlockHint from "@/components/GeneratedBlockHint";
 // Push 50 (2026-05-13) — Post-block feedback chips for Reagan.
@@ -563,6 +564,12 @@ export default function Today() {
           parses + previews via today.applyAdultQuickEntry, then persists
           accepted lines via actuals.quickAdd (which auto-enqueues a
           Drive day-log rebuild). */}
+      {/* v2.24 (2026-05-17) — Per-block Actual-vs-Planned strip for adults.
+          Surfaces existing `actuals.vsPlanned` payload as one row per planned
+          block with “✓ actual” chip or “○ Log it” button. Off-plan section
+          beneath. Adult-gated by the same `unlocked` flag the quick-entry
+          card already uses (familyAdminProcedure on the server). */}
+      {unlocked && <ActualVsPlannedStrip />}
       {unlocked && <TodayAdultQuickEntryCard />}
 
       {/* Push 2.9 (2026-05-17) — Kid-facing celebration card.
