@@ -38,6 +38,7 @@ import TodayClassroomGradedCard from "@/components/TodayClassroomGradedCard";
 import TodayMomVoiceMemoCard from "@/components/TodayMomVoiceMemoCard";
 import TodayCoveredRecapCard from "@/components/TodayCoveredRecapCard";
 import TodayForwardPlanCard from "@/components/TodayForwardPlanCard";
+import TodayAdultQuickEntryCard from "@/components/TodayAdultQuickEntryCard";
 // Push 84 (2026-05-13) — Adult Today recap: off-plan capture summary.
 import { OffPlanCaptureCard } from "@/components/OffPlanCaptureCard";
 import { TapEditPopover } from "@/components/TapEditPopover";
@@ -551,6 +552,12 @@ export default function Today() {
       {/* Push 2.10 (2026-05-17) — Forward calendar planner.
           Adult-only. Hides itself if no rows are proposed. */}
       {unlocked && <TodayForwardPlanCard />}
+      {/* Push 2.14 (2026-05-17) — Adult quick-entry "What we actually did".
+          Adult-only. Mom + Grandma type one line per block; the card
+          parses + previews via today.applyAdultQuickEntry, then persists
+          accepted lines via actuals.quickAdd (which auto-enqueues a
+          Drive day-log rebuild). */}
+      {unlocked && <TodayAdultQuickEntryCard />}
 
       {/* Push 2.9 (2026-05-17) — Kid-facing celebration card.
           Server-side returns only {id, subject, code, title} for done rows,

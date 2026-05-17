@@ -48,7 +48,8 @@
 - [x] Bug fix from triage 2026-05-12 (shared task iPcHx9de76R5UjfLq8xZrH): nightly-agenda-email PDF link now uses `storageGetSignedUrl(key)` for an absolute presigned S3 URL embedded in the HTML body + returned as `pdfDownloadUrl`. Vitest `nightlyAgendaEmailPdfLink.test.ts` 6/6 pass. (DONE 2026-05-12)
 
 ### Session 2026-05-12 deferrals (acknowledged this session, scheduled for next focused session)
-- [ ] Slice 4.5 UI build: adult quick-entry card on Today, Actual-vs-Planned strip, mood timeline strip (deferred 2026-05-12 — needs user available to test)
+- [x] Slice 4.5 — Actual-vs-Planned strip + mood timeline strip mounted on Today.tsx (`HomeAnalyticsStrip` line 432, adult-only `TodayMoodTimelineStrip` line 450, `KidHeaderStrips` + `MoodTimelineStrip` lines 515/520).
+- [x] Slice 4.5 — Adult quick-entry card on Today MOUNTED in v2.14 (2026-05-17). `client/src/components/TodayAdultQuickEntryCard.tsx` wired adult-only on Today.tsx (`{unlocked && <TodayAdultQuickEntryCard />}`). Parses via `today.applyAdultQuickEntry`, persists per accepted line via `actuals.quickAdd` (source: "mom-input"), each persistence call auto-enqueues a Drive day-log rebuild. Wiring vitest `server/todayAdultQuickEntryCardWiring.test.ts` 9/9 green; full Today-card regression suite 49/49 green.
 - [ ] Draft + upload the 12 reference Markdown docs to canonical Drive subfolders (deferred 2026-05-12 — needs explicit list of which 12 docs)
 - [x] Map every `DRIVE_FOLDER_NAMES` routable target to one of the 9 canonical top-level parents (DONE 2026-05-12):
   - Added `DRIVE_TARGET_TO_CANONICAL_PARENT` constant + `getCanonicalParentForRoutable()` helper in `server/db.ts`
