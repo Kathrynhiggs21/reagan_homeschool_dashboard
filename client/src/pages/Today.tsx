@@ -41,6 +41,7 @@ import TodayForwardPlanCard from "@/components/TodayForwardPlanCard";
 import TodayAdultQuickEntryCard from "@/components/TodayAdultQuickEntryCard";
 // Push 84 (2026-05-13) — Adult Today recap: off-plan capture summary.
 import { OffPlanCaptureCard } from "@/components/OffPlanCaptureCard";
+import NoSchoolBanner from "@/components/NoSchoolBanner";
 import { TapEditPopover } from "@/components/TapEditPopover";
 import GeneratedBlockHint from "@/components/GeneratedBlockHint";
 // Push 50 (2026-05-13) — Post-block feedback chips for Reagan.
@@ -378,6 +379,11 @@ export default function Today() {
           </div>
         </div>
       </header>
+      {/* v2.23 (2026-05-17) — IH off-day banner. Renders nothing on a regular school
+          day, so the layout is unchanged 95% of the time. On a Labor-Day / Spring-Break
+          / staff-day this surfaces "🍂 <label> · No school today" right above the tutor
+          strip so Reagan understands why her schedule is empty instead of guessing. */}
+      <NoSchoolBanner className="mb-1" />
       {/* Tutor of the day strip — "With Reagan today: <Name> · <arrival>–<departure>".
           Mom-only days quietly say "Mom-only day today" so Reagan still gets a clear cue. */}
       <TutorOfDayStrip />
