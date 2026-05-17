@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import { parseTime12h, formatTime12h } from "@/lib/time12h";
 import { useTutorMode } from "@/hooks/useTutorMode";
 import { BlockResourcesPanel } from "@/components/BlockResourcesPanel";
+import { BlockAdventurePanel } from "@/components/BlockAdventurePanel";
 import { FreeFormPromptPanel } from "@/components/FreeFormPromptPanel";
 
 type Snapshot = {
@@ -946,6 +947,13 @@ function ManualBlockRow({
           block points at. Hidden when no topic is set. Spans full row. */}
       <div style={{ gridColumn: "1 / -1" }}>
         <BlockResourcesPanel topicCode={block.curriculumTopicCode ?? null} />
+      </div>
+      {/* v2.18 (2026-05-17) — BlockAdventurePanel: when this block is
+          tied to an adventure, surface its materials list inline so Mom
+          can edit (familyAdmin-gated server-side). Hidden when no
+          adventureId. Spans full row. */}
+      <div style={{ gridColumn: "1 / -1" }}>
+        <BlockAdventurePanel adventureId={(block as any).adventureId ?? null} />
       </div>
     </div>
   );
