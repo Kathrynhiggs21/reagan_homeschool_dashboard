@@ -1,0 +1,30 @@
+{
+  "query": "SELECT subject, COUNT(*) AS n FROM curriculumTopics GROUP BY subject ORDER BY n DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT subject, COUNT(*) AS n FROM curriculumTopics GROUP BY subject ORDER BY n DESC;",
+  "rows": [
+    {
+      "subject": "Math",
+      "n": "59"
+    },
+    {
+      "subject": "ELA",
+      "n": "17"
+    },
+    {
+      "subject": "Science",
+      "n": "12"
+    },
+    {
+      "subject": "Social",
+      "n": "12"
+    },
+    {
+      "subject": "Specials",
+      "n": "11"
+    }
+  ],
+  "messages": [],
+  "stdout": "subject\tn\nMath\t59\nELA\t17\nScience\t12\nSocial\t12\nSpecials\t11\n",
+  "stderr": "",
+  "execution_time_ms": 598
+}

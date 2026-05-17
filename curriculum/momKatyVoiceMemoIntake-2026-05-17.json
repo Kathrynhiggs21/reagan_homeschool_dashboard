@@ -1,0 +1,217 @@
+{
+  "$schema": "./momKatyVoiceMemoIntake.schema.json",
+  "source": "mom_katy_voice_memo_2026-05-17",
+  "sourceFile": "/home/ubuntu/upload/Note",
+  "recordedBy": "Katy Higgs (Mom)",
+  "subject": "Reagan",
+  "ingestedOn": "2026-05-17",
+  "items": [
+    {
+      "subject": "Math",
+      "matchByCode": "Math 1",
+      "title": "Topic 1 — Understand Place Value",
+      "newStatus": "done",
+      "evidence": "Spectrum Math Grade 5 — expanded form of decimals and whole numbers (transcript ~1:02)",
+      "alreadyDone": true
+    },
+    {
+      "subject": "Math",
+      "matchByCode": "Math 3",
+      "title": "Topic 3 — Fluently Multiply Multi-Digit Whole Numbers",
+      "newStatus": "inProgress",
+      "evidence": "Spectrum Math Grade 5 — \"still needs to do some more multiplying four digits by one and by two\" (~3:36)",
+      "alreadyDone": true,
+      "notes": "Reagan has practiced 4-digit × 1-digit and 4-digit × 2-digit but transcript flags she needs more reps. Demoting from done → inProgress per Mom."
+    },
+    {
+      "subject": "Math",
+      "matchByCode": "Math 5",
+      "title": "Topic 5 — Use Models and Strategies to Divide Whole Numbers",
+      "newStatus": "done",
+      "evidence": "Long division covered (~7:15)",
+      "alreadyDone": true
+    },
+    {
+      "subject": "Math",
+      "matchByCode": "Math 7",
+      "title": "Topic 7 — Use Equivalent Fractions to Add and Subtract Fractions",
+      "newStatus": "done",
+      "evidence": "Spectrum Math Grade 5 chapters 1–4 fractions: numerator, denominator, reciprocal (~3:07)",
+      "alreadyDone": true
+    },
+    {
+      "subject": "Math",
+      "matchByCode": "Math 14",
+      "title": "Topic 14 — Graph Points on the Coordinate Plane",
+      "newStatus": "done",
+      "evidence": "Analyzing patterns and relationships when it comes to ordered pairs (~2:21)",
+      "alreadyDone": false
+    },
+    {
+      "subject": "Math",
+      "matchByCode": "Math 14-1",
+      "title": "Identify Ordered Pairs",
+      "newStatus": "done",
+      "evidence": "Same — ordered pairs work (~2:21)",
+      "alreadyDone": false
+    },
+    {
+      "subject": "Math",
+      "matchByCode": "Math 14-2",
+      "title": "Solve Problems Using Ordered Pairs",
+      "newStatus": "done",
+      "evidence": "Same — ordered pairs work (~2:21)",
+      "alreadyDone": false
+    },
+    {
+      "subject": "Math",
+      "matchByCode": "Math 15",
+      "title": "Topic 15 — Algebra: Analyze Patterns and Relationships",
+      "newStatus": "done",
+      "evidence": "\"analyzing patterns and relationships\" (~2:21)",
+      "alreadyDone": false
+    },
+    {
+      "subject": "Math",
+      "matchByCode": "Math 16",
+      "title": "Topic 16 — Classify Two-Dimensional Figures",
+      "newStatus": "done",
+      "evidence": "Quadrilateral angles, classifying them, hierarchy of figures, categories and subcategories (~2:21–2:55)",
+      "alreadyDone": false
+    },
+    {
+      "subject": "Math",
+      "matchByCode": "Math 17",
+      "title": "Topic 17 — Cumulative / End-of-Year Practice",
+      "newStatus": "inProgress",
+      "evidence": "Spectrum Math final test for chapters 5–8 — \"finished but not graded yet\" (~1:39, ~2:06)",
+      "alreadyDone": false,
+      "createIfMissing": true,
+      "ord": 99
+    },
+    {
+      "subject": "Math",
+      "matchByCode": "Math PS-1",
+      "title": "Story Problems / Problem Solving (mixed practice)",
+      "newStatus": "inProgress",
+      "evidence": "\"Hasn't done enough story problems\" + ongoing problem-solving reps (~0:34–0:55, ~3:36)",
+      "alreadyDone": false,
+      "createIfMissing": true,
+      "ord": 100
+    },
+    {
+      "subject": "Science",
+      "matchByCode": "Sci 4",
+      "title": "Unit 4 — Matter and Its Interactions",
+      "newStatus": "inProgress",
+      "evidence": "Spectrum Science Grade 5 — Anatomy of an Atom pp.22–25; pp.10–17; pp.68–69; properties of expansion (water + gas) (~1:16–4:53)",
+      "alreadyDone": false
+    },
+    {
+      "subject": "Science",
+      "matchByCode": "Sci 4-1",
+      "title": "Matter is made of particles too small to see",
+      "newStatus": "done",
+      "evidence": "Anatomy of an Atom pp.22–25 in Spectrum Science Grade 5 (~3:54)",
+      "alreadyDone": false
+    },
+    {
+      "subject": "Science",
+      "matchByCode": "Sci 4-EXP",
+      "title": "Crystal experiment (hands-on)",
+      "newStatus": "done",
+      "evidence": "Reagan completed the crystal experiment as a hands-on activity (~1:16)",
+      "alreadyDone": false,
+      "createIfMissing": true,
+      "ord": 91
+    },
+    {
+      "subject": "Science",
+      "matchByCode": "Sci 4-COMP",
+      "title": "Making a compass (hands-on)",
+      "newStatus": "done",
+      "evidence": "Reagan made a compass as an activity (~5:03)",
+      "alreadyDone": false,
+      "createIfMissing": true,
+      "ord": 92
+    },
+    {
+      "subject": "Science",
+      "matchByCode": "Sci 4-EXP2",
+      "title": "Properties of expansion: water + gas",
+      "newStatus": "done",
+      "evidence": "Spectrum Science Grade 5 — properties of expansion, water + gas (~1:31)",
+      "alreadyDone": false,
+      "createIfMissing": true,
+      "ord": 93
+    },
+    {
+      "subject": "ELA",
+      "matchByCode": "ELA M2-L1",
+      "title": "Figurative language and word choice",
+      "newStatus": "done",
+      "evidence": "Simile vs metaphor work (~6:47)",
+      "alreadyDone": true
+    },
+    {
+      "subject": "ELA",
+      "matchByCode": "ELA M5",
+      "title": "Module 5 — Poetry",
+      "newStatus": "done",
+      "evidence": "Reagan worked on poetry, including haikus (~0:16, ~1:39)",
+      "alreadyDone": false,
+      "createIfMissing": true,
+      "ord": 200
+    },
+    {
+      "subject": "ELA",
+      "matchByCode": "ELA M5-L1",
+      "title": "Write a haiku",
+      "newStatus": "done",
+      "evidence": "Worked on haikus (~1:39)",
+      "alreadyDone": false,
+      "createIfMissing": true,
+      "ord": 201
+    },
+    {
+      "subject": "ELA",
+      "matchByCode": "ELA M6-L1",
+      "title": "Parts of speech: nouns, verbs, adjectives (180 Days of Language pp.14–19)",
+      "newStatus": "done",
+      "evidence": "180 Days of Language for 5th Grade pp.14, 15, 16, 17, 18, 19 — nouns, verbs, adjectives (~5:23–6:15)",
+      "alreadyDone": false,
+      "createIfMissing": true,
+      "ord": 210
+    },
+    {
+      "subject": "ELA",
+      "matchByCode": "ELA M6-L2",
+      "title": "Write an essay on a topic of choice",
+      "newStatus": "inProgress",
+      "evidence": "Assigned: write an essay on topic of choice (~7:09)",
+      "alreadyDone": false,
+      "createIfMissing": true,
+      "ord": 211
+    },
+    {
+      "subject": "ELA",
+      "matchByCode": "ELA M7-L1",
+      "title": "Read 'Michael's World' (independent reading)",
+      "newStatus": "inProgress",
+      "evidence": "\"She's read almost all of Michael's world\" (~5:10)",
+      "alreadyDone": false,
+      "createIfMissing": true,
+      "ord": 220
+    },
+    {
+      "subject": "Specials",
+      "matchByCode": "SEL-AX-1",
+      "title": "Anxiety triggers — info worksheet",
+      "newStatus": "inProgress",
+      "evidence": "Flagged as a to-do in transcript: \"to do an anxiety triggers info\" (~7:37)",
+      "alreadyDone": false,
+      "createIfMissing": true,
+      "ord": 300
+    }
+  ]
+}

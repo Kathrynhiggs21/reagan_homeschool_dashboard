@@ -1,0 +1,316 @@
+{
+  "query": "SELECT id, subject, code, title, status, last_covered_source, last_covered_at FROM curriculumTopics WHERE subject IN ('Math','ELA','Science') AND (LOWER(title) LIKE '%fraction%' OR LOWER(title) LIKE '%division%' OR LOWER(title) LIKE '%multipl%' OR LOWER(title) LIKE '%expanded%' OR LOWER(title) LIKE '%order%' OR LOWER(title) LIKE '%angle%' OR LOWER(title) LIKE '%quadrilat%' OR LOWER(title) LIKE '%hierarchy%' OR LOWER(title) LIKE '%pattern%' OR LOWER(title) LIKE '%poetry%' OR LOWER(title) LIKE '%haiku%' OR LOWER(title) LIKE '%simile%' OR LOWER(title) LIKE '%metaphor%' OR LOWER(title) LIKE '%essay%' OR LOWER(title) LIKE '%noun%' OR LOWER(title) LIKE '%verb%' OR LOWER(title) LIKE '%adject%' OR LOWER(title) LIKE '%atom%' OR LOWER(title) LIKE '%crystal%' OR LOWER(title) LIKE '%compass%' OR LOWER(title) LIKE '%solar%' OR LOWER(title) LIKE '%planet%' OR LOWER(title) LIKE '%expan%' OR LOWER(title) LIKE '%gas%' OR LOWER(title) LIKE '%matter%' OR LOWER(title) LIKE '%problem solv%' OR LOWER(title) LIKE '%story problem%' OR LOWER(title) LIKE '%word problem%') ORDER BY subject, ord LIMIT 80;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, subject, code, title, status, last_covered_source, last_covered_at FROM curriculumTopics WHERE subject IN ('Math','ELA','Science') AND (LOWER(title) LIKE '%fraction%' OR LOWER(title) LIKE '%division%' OR LOWER(title) LIKE '%multipl%' OR LOWER(title) LIKE '%expanded%' OR LOWER(title) LIKE '%order%' OR LOWER(title) LIKE '%angle%' OR LOWER(title) LIKE '%quadrilat%' OR LOWER(title) LIKE '%hierarchy%' OR LOWER(title) LIKE '%pattern%' OR LOWER(title) LIKE '%poetry%' OR LOWER(title) LIKE '%haiku%' OR LOWER(title) LIKE '%simile%' OR LOWER(title) LIKE '%metaphor%' OR LOWER(title) LIKE '%essay%' OR LOWER(title) LIKE '%noun%' OR LOWER(title) LIKE '%verb%' OR LOWER(title) LIKE '%adject%' OR LOWER(title) LIKE '%atom%' OR LOWER(title) LIKE '%crystal%' OR LOWER(title) LIKE '%compass%' OR LOWER(title) LIKE '%solar%' OR LOWER(title) LIKE '%planet%' OR LOWER(title) LIKE '%expan%' OR LOWER(title) LIKE '%gas%' OR LOWER(title) LIKE '%matter%' OR LOWER(title) LIKE '%problem solv%' OR LOWER(title) LIKE '%story problem%' OR LOWER(title) LIKE '%word problem%') ORDER BY subject, ord LIMIT 80;",
+  "rows": [
+    {
+      "id": "77",
+      "subject": "ELA",
+      "code": "ELA M4-L2",
+      "title": "Research project using multiple sources",
+      "status": "notStarted",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "2",
+      "subject": "Math",
+      "code": "Math 1-1",
+      "title": "Patterns with Exponents and Powers of 10",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "10",
+      "subject": "Math",
+      "code": "Math 3",
+      "title": "Topic 3 — Fluently Multiply Multi-Digit Whole Numbers",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "11",
+      "subject": "Math",
+      "code": "Math 3-1",
+      "title": "Multiply Greater Numbers by Powers of 10",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "13",
+      "subject": "Math",
+      "code": "Math 3-3",
+      "title": "Multiply 2- by 2-Digit Numbers",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "14",
+      "subject": "Math",
+      "code": "Math 3-4",
+      "title": "Multiply 3- by 2-Digit Numbers",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "15",
+      "subject": "Math",
+      "code": "Math 3-5",
+      "title": "Multiply by Multi-Digit Numbers",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "16",
+      "subject": "Math",
+      "code": "Math 4",
+      "title": "Topic 4 — Use Models and Strategies to Multiply Decimals",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "17",
+      "subject": "Math",
+      "code": "Math 4-1",
+      "title": "Multiply Decimals by Powers of 10",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "19",
+      "subject": "Math",
+      "code": "Math 4-3",
+      "title": "Multiply a Decimal by a Whole Number",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "20",
+      "subject": "Math",
+      "code": "Math 4-4",
+      "title": "Multiply a Decimal by a Decimal",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "22",
+      "subject": "Math",
+      "code": "Math 5-1",
+      "title": "Use Patterns to Divide",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "24",
+      "subject": "Math",
+      "code": "Math 5-3",
+      "title": "Divide by Multiples of 10",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "27",
+      "subject": "Math",
+      "code": "Math 6-1",
+      "title": "Patterns for Dividing with Decimals",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "31",
+      "subject": "Math",
+      "code": "Math 7",
+      "title": "Topic 7 — Use Equivalent Fractions to Add and Subtract Fractions",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "32",
+      "subject": "Math",
+      "code": "Math 7-1",
+      "title": "Estimate Sums and Differences of Fractions",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "34",
+      "subject": "Math",
+      "code": "Math 7-3",
+      "title": "Add Fractions with Unlike Denominators",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "35",
+      "subject": "Math",
+      "code": "Math 7-4",
+      "title": "Subtract Fractions with Unlike Denominators",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "37",
+      "subject": "Math",
+      "code": "Math 8",
+      "title": "Topic 8 — Apply Understanding of Multiplication to Multiply Fractions",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "38",
+      "subject": "Math",
+      "code": "Math 8-1",
+      "title": "Multiply a Fraction by a Whole Number",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "39",
+      "subject": "Math",
+      "code": "Math 8-2",
+      "title": "Multiply a Whole Number by a Fraction",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "40",
+      "subject": "Math",
+      "code": "Math 8-3",
+      "title": "Multiply Fractions",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "41",
+      "subject": "Math",
+      "code": "Math 8-4",
+      "title": "Area of Rectangles with Fractional Side Lengths",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "42",
+      "subject": "Math",
+      "code": "Math 9",
+      "title": "Topic 9 — Apply Understanding of Division to Divide Fractions",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "43",
+      "subject": "Math",
+      "code": "Math 9-1",
+      "title": "Divide a Whole Number by a Unit Fraction",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "44",
+      "subject": "Math",
+      "code": "Math 9-2",
+      "title": "Divide a Unit Fraction by a Whole Number",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "58",
+      "subject": "Math",
+      "code": "Math 14-1",
+      "title": "Identify Ordered Pairs",
+      "status": "notStarted",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "59",
+      "subject": "Math",
+      "code": "Math 14-2",
+      "title": "Solve Problems Using Ordered Pairs",
+      "status": "notStarted",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "60",
+      "subject": "Math",
+      "code": "Math 15",
+      "title": "Topic 15 — Algebra: Analyze Patterns and Relationships",
+      "status": "notStarted",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "79",
+      "subject": "Science",
+      "code": "Sci 1",
+      "title": "Unit 1 — Cycles and Patterns in the Solar System",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "82",
+      "subject": "Science",
+      "code": "Sci 2",
+      "title": "Unit 2 — Cycles of Matter and Flow of Energy",
+      "status": "done",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "88",
+      "subject": "Science",
+      "code": "Sci 4",
+      "title": "Unit 4 — Matter and Its Interactions",
+      "status": "notStarted",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "89",
+      "subject": "Science",
+      "code": "Sci 4-1",
+      "title": "Matter is made of particles too small to see",
+      "status": "notStarted",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    },
+    {
+      "id": "90",
+      "subject": "Science",
+      "code": "Sci 4-2",
+      "title": "Conservation of matter in physical and chemical change",
+      "status": "notStarted",
+      "last_covered_source": "NULL",
+      "last_covered_at": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsubject\tcode\ttitle\tstatus\tlast_covered_source\tlast_covered_at\n77\tELA\tELA M4-L2\tResearch project using multiple sources\tnotStarted\tNULL\tNULL\n2\tMath\tMath 1-1\tPatterns with Exponents and Powers of 10\tdone\tNULL\tNULL\n10\tMath\tMath 3\tTopic 3 — Fluently Multiply Multi-Digit Whole Numbers\tdone\tNULL\tNULL\n11\tMath\tMath 3-1\tMultiply Greater Numbers by Powers of 10\tdone\tNULL\tNULL\n13\tMath\tMath 3-3\tMultiply 2- by 2-Digit Numbers\tdone\tNULL\tNULL\n14\tMath\tMath 3-4\tMultiply 3- by 2-Digit Numbers\tdone\tNULL\tNULL\n15\tMath\tMath 3-5\tMultiply by Multi-Digit Numbers\tdone\tNULL\tNULL\n16\tMath\tMath 4\tTopic 4 — Use Models and Strategies to Multiply Decimals\tdone\tNULL\tNULL\n17\tMath\tMath 4-1\tMultiply Decimals by Powers of 10\tdone\tNULL\tNULL\n19\tMath\tMath 4-3\tMultiply a Decimal by a Whole Number\tdone\tNULL\tNULL\n20\tMath\tMath 4-4\tMultiply a Decimal by a Decimal\tdone\tNULL\tNULL\n22\tMath\tMath 5-1\tUse Patterns to Divide\tdone\tNULL\tNULL\n24\tMath\tMath 5-3\tDivide by Multiples of 10\tdone\tNULL\tNULL\n27\tMath\tMath 6-1\tPatterns for Dividing with Decimals\tdone\tNULL\tNULL\n31\tMath\tMath 7\tTopic 7 — Use Equivalent Fractions to Add and Subtract Fractions\tdone\tNULL\tNULL\n32\tMath\tMath 7-1\tEstimate Sums and Differences of Fractions\tdone\tNULL\tNULL\n34\tMath\tMath 7-3\tAdd Fractions with Unlike Denominators\tdone\tNULL\tNULL\n35\tMath\tMath 7-4\tSubtract Fractions with Unlike Denominators\tdone\tNULL\tNULL\n37\tMath\tMath 8\tTopic 8 — Apply Understanding of Multiplication to Multiply Fractions\tdone\tNULL\tNULL\n38\tMath\tMath 8-1\tMultiply a Fraction by a Whole Number\tdone\tNULL\tNULL\n39\tMath\tMath 8-2\tMultiply a Whole Number by a Fraction\tdone\tNULL\tNULL\n40\tMath\tMath 8-3\tMultiply Fractions\tdone\tNULL\tNULL\n41\tMath\tMath 8-4\tArea of Rectangles with Fractional Side Lengths\tdone\tNULL\tNULL\n42\tMath\tMath 9\tTopic 9 — Apply Understanding of Division to Divide Fractions\tdone\tNULL\tNULL\n43\tMath\tMath 9-1\tDivide a Whole Number by a Unit Fraction\tdone\tNULL\tNULL\n44\tMath\tMath 9-2\tDivide a Unit Fraction by a Whole Number\tdone\tNULL\tNULL\n58\tMath\tMath 14-1\tIdentify Ordered Pairs\tnotStarted\tNULL\tNULL\n59\tMath\tMath 14-2\tSolve Problems Using Ordered Pairs\tnotStarted\tNULL\tNULL\n60\tMath\tMath 15\tTopic 15 — Algebra: Analyze Patterns and Relationships\tnotStarted\tNULL\tNULL\n79\tScience\tSci 1\tUnit 1 — Cycles and Patterns in the Solar System\tdone\tNULL\tNULL\n82\tScience\tSci 2\tUnit 2 — Cycles of Matter and Flow of Energy\tdone\tNULL\tNULL\n88\tScience\tSci 4\tUnit 4 — Matter and Its Interactions\tnotStarted\tNULL\tNULL\n89\tScience\tSci 4-1\tMatter is made of particles too small to see\tnotStarted\tNULL\tNULL\n90\tScience\tSci 4-2\tConservation of matter in physical and chemical change\tnotStarted\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 563
+}

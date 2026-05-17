@@ -1,0 +1,217 @@
+{
+  "query": "SELECT subject, code, title, status, notes, last_covered_source, FROM_UNIXTIME(last_covered_at/1000) AS covered FROM curriculumTopics WHERE last_covered_source = 'mom_katy_voice_memo_2026-05-17' ORDER BY subject, ord;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT subject, code, title, status, notes, last_covered_source, FROM_UNIXTIME(last_covered_at/1000) AS covered FROM curriculumTopics WHERE last_covered_source = 'mom_katy_voice_memo_2026-05-17' ORDER BY subject, ord;",
+  "rows": [
+    {
+      "subject": "ELA",
+      "code": "ELA M2-L1",
+      "title": "Figurative language and word choice",
+      "status": "done",
+      "notes": "Simile vs metaphor work (~6:47)",
+      "last_covered_source": "mom_katy_voice_memo_2026-05-17",
+      "covered": "2026-05-17 17:21:02.4280"
+    },
+    {
+      "subject": "ELA",
+      "code": "ELA M5",
+      "title": "Module 5 — Poetry",
+      "status": "done",
+      "notes": "Reagan worked on poetry, including haikus (~0:16, ~1:39)",
+      "last_covered_source": "mom_katy_voice_memo_2026-05-17",
+      "covered": "2026-05-17 17:21:02.4280"
+    },
+    {
+      "subject": "ELA",
+      "code": "ELA M5-L1",
+      "title": "Write a haiku",
+      "status": "done",
+      "notes": "Worked on haikus (~1:39)",
+      "last_covered_source": "mom_katy_voice_memo_2026-05-17",
+      "covered": "2026-05-17 17:21:02.4280"
+    },
+    {
+      "subject": "ELA",
+      "code": "ELA M6-L1",
+      "title": "Parts of speech: nouns, verbs, adjectives (180 Days of Language pp.14–19)",
+      "status": "done",
+      "notes": "180 Days of Language for 5th Grade pp.14, 15, 16, 17, 18, 19 — nouns, verbs, adjectives (~5:23–6:15)",
+      "last_covered_source": "mom_katy_voice_memo_2026-05-17",
+      "covered": "2026-05-17 17:21:02.4280"
+    },
+    {
+      "subject": "ELA",
+      "code": "ELA M6-L2",
+      "title": "Write an essay on a topic of choice",
+      "status": "inProgress",
+      "notes": "Assigned: write an essay on topic of choice (~7:09)",
+      "last_covered_source": "mom_katy_voice_memo_2026-05-17",
+      "covered": "2026-05-17 17:21:02.4280"
+    },
+    {
+      "subject": "ELA",
+      "code": "ELA M7-L1",
+      "title": "Read 'Michael's World' (independent reading)",
+      "status": "inProgress",
+      "notes": "\"She's read almost all of Michael's world\" (~5:10)",
+      "last_covered_source": "mom_katy_voice_memo_2026-05-17",
+      "covered": "2026-05-17 17:21:02.4280"
+    },
+    {
+      "subject": "Math",
+      "code": "Math 1",
+      "title": "Topic 1 — Understand Place Value",
+      "status": "done",
+      "notes": "Spectrum Math Grade 5 — expanded form of decimals and whole numbers (transcript ~1:02)",
+      "last_covered_source": "mom_katy_voice_memo_2026-05-17",
+      "covered": "2026-05-17 17:21:02.4280"
+    },
+    {
+      "subject": "Math",
+      "code": "Math 3",
+      "title": "Topic 3 — Fluently Multiply Multi-Digit Whole Numbers",
+      "status": "done",
+      "notes": "Spectrum Math Grade 5 — \"still needs to do some more multiplying four digits by one and by two\" (~3:36)",
+      "last_covered_source": "mom_katy_voice_memo_2026-05-17",
+      "covered": "2026-05-17 17:21:02.4280"
+    },
+    {
+      "subject": "Math",
+      "code": "Math 5",
+      "title": "Topic 5 — Use Models and Strategies to Divide Whole Numbers",
+      "status": "done",
+      "notes": "Long division covered (~7:15)",
+      "last_covered_source": "mom_katy_voice_memo_2026-05-17",
+      "covered": "2026-05-17 17:21:02.4280"
+    },
+    {
+      "subject": "Math",
+      "code": "Math 7",
+      "title": "Topic 7 — Use Equivalent Fractions to Add and Subtract Fractions",
+      "status": "done",
+      "notes": "Spectrum Math Grade 5 chapters 1–4 fractions: numerator, denominator, reciprocal (~3:07)",
+      "last_covered_source": "mom_katy_voice_memo_2026-05-17",
+      "covered": "2026-05-17 17:21:02.4280"
+    },
+    {
+      "subject": "Math",
+      "code": "Math 14",
+      "title": "Topic 14 — Graph Points on the Coordinate Plane",
+      "status": "done",
+      "notes": "Analyzing patterns and relationships when it comes to ordered pairs (~2:21)",
+      "last_covered_source": "mom_katy_voice_memo_2026-05-17",
+      "covered": "2026-05-17 17:21:02.4280"
+    },
+    {
+      "subject": "Math",
+      "code": "Math 14-1",
+      "title": "Identify Ordered Pairs",
+      "status": "done",
+      "notes": "Same — ordered pairs work (~2:21)",
+      "last_covered_source": "mom_katy_voice_memo_2026-05-17",
+      "covered": "2026-05-17 17:21:02.4280"
+    },
+    {
+      "subject": "Math",
+      "code": "Math 14-2",
+      "title": "Solve Problems Using Ordered Pairs",
+      "status": "done",
+      "notes": "Same — ordered pairs work (~2:21)",
+      "last_covered_source": "mom_katy_voice_memo_2026-05-17",
+      "covered": "2026-05-17 17:21:02.4280"
+    },
+    {
+      "subject": "Math",
+      "code": "Math 15",
+      "title": "Topic 15 — Algebra: Analyze Patterns and Relationships",
+      "status": "done",
+      "notes": "\"analyzing patterns and relationships\" (~2:21)",
+      "last_covered_source": "mom_katy_voice_memo_2026-05-17",
+      "covered": "2026-05-17 17:21:02.4280"
+    },
+    {
+      "subject": "Math",
+      "code": "Math 16",
+      "title": "Topic 16 — Classify Two-Dimensional Figures",
+      "status": "done",
+      "notes": "Quadrilateral angles, classifying them, hierarchy of figures, categories and subcategories (~2:21–2:55)",
+      "last_covered_source": "mom_katy_voice_memo_2026-05-17",
+      "covered": "2026-05-17 17:21:02.4280"
+    },
+    {
+      "subject": "Math",
+      "code": "Math 17",
+      "title": "Topic 17 — Cumulative / End-of-Year Practice",
+      "status": "inProgress",
+      "notes": "Spectrum Math final test for chapters 5–8 — \"finished but not graded yet\" (~1:39, ~2:06)",
+      "last_covered_source": "mom_katy_voice_memo_2026-05-17",
+      "covered": "2026-05-17 17:21:02.4280"
+    },
+    {
+      "subject": "Math",
+      "code": "Math PS-1",
+      "title": "Story Problems / Problem Solving (mixed practice)",
+      "status": "inProgress",
+      "notes": "\"Hasn't done enough story problems\" + ongoing problem-solving reps (~0:34–0:55, ~3:36)",
+      "last_covered_source": "mom_katy_voice_memo_2026-05-17",
+      "covered": "2026-05-17 17:21:02.4280"
+    },
+    {
+      "subject": "Science",
+      "code": "Sci 4",
+      "title": "Unit 4 — Matter and Its Interactions",
+      "status": "inProgress",
+      "notes": "Spectrum Science Grade 5 — Anatomy of an Atom pp.22–25; pp.10–17; pp.68–69; properties of expansion (water + gas) (~1:16–4:53)",
+      "last_covered_source": "mom_katy_voice_memo_2026-05-17",
+      "covered": "2026-05-17 17:21:02.4280"
+    },
+    {
+      "subject": "Science",
+      "code": "Sci 4-1",
+      "title": "Matter is made of particles too small to see",
+      "status": "done",
+      "notes": "Anatomy of an Atom pp.22–25 in Spectrum Science Grade 5 (~3:54)",
+      "last_covered_source": "mom_katy_voice_memo_2026-05-17",
+      "covered": "2026-05-17 17:21:02.4280"
+    },
+    {
+      "subject": "Science",
+      "code": "Sci 4-EXP",
+      "title": "Crystal experiment (hands-on)",
+      "status": "done",
+      "notes": "Reagan completed the crystal experiment as a hands-on activity (~1:16)",
+      "last_covered_source": "mom_katy_voice_memo_2026-05-17",
+      "covered": "2026-05-17 17:21:02.4280"
+    },
+    {
+      "subject": "Science",
+      "code": "Sci 4-COMP",
+      "title": "Making a compass (hands-on)",
+      "status": "done",
+      "notes": "Reagan made a compass as an activity (~5:03)",
+      "last_covered_source": "mom_katy_voice_memo_2026-05-17",
+      "covered": "2026-05-17 17:21:02.4280"
+    },
+    {
+      "subject": "Science",
+      "code": "Sci 4-EXP2",
+      "title": "Properties of expansion: water + gas",
+      "status": "done",
+      "notes": "Spectrum Science Grade 5 — properties of expansion, water + gas (~1:31)",
+      "last_covered_source": "mom_katy_voice_memo_2026-05-17",
+      "covered": "2026-05-17 17:21:02.4280"
+    },
+    {
+      "subject": "Specials",
+      "code": "SEL-AX-1",
+      "title": "Anxiety triggers — info worksheet",
+      "status": "inProgress",
+      "notes": "Flagged as a to-do in transcript: \"to do an anxiety triggers info\" (~7:37)",
+      "last_covered_source": "mom_katy_voice_memo_2026-05-17",
+      "covered": "2026-05-17 17:21:02.4280"
+    }
+  ],
+  "messages": [],
+  "stdout": "subject\tcode\ttitle\tstatus\tnotes\tlast_covered_source\tcovered\nELA\tELA M2-L1\tFigurative language and word choice\tdone\tSimile vs metaphor work (~6:47)\tmom_katy_voice_memo_2026-05-17\t2026-05-17 17:21:02.4280\nELA\tELA M5\tModule 5 — Poetry\tdone\tReagan worked on poetry, including haikus (~0:16, ~1:39)\tmom_katy_voice_memo_2026-05-17\t2026-05-17 17:21:02.4280\nELA\tELA M5-L1\tWrite a haiku\tdone\tWorked on haikus (~1:39)\tmom_katy_voice_memo_2026-05-17\t2026-05-17 17:21:02.4280\nELA\tELA M6-L1\tParts of speech: nouns, verbs, adjectives (180 Days of Language pp.14–19)\tdone\t180 Days of Language for 5th Grade pp.14, 15, 16, 17, 18, 19 — nouns, verbs, adjectives (~5:23–6:15)\tmom_katy_voice_memo_2026-05-17\t2026-05-17 17:21:02.4280\nELA\tELA M6-L2\tWrite an essay on a topic of choice\tinProgress\tAssigned: write an essay on topic of choice (~7:09)\tmom_katy_voice_memo_2026-05-17\t2026-05-17 17:21:02.4280\nELA\tELA M7-L1\tRead 'Michael's World' (independent reading)\tinProgress\t\"She's read almost all of Michael's world\" (~5:10)\tmom_katy_voice_memo_2026-05-17\t2026-05-17 17:21:02.4280\nMath\tMath 1\tTopic 1 — Understand Place Value\tdone\tSpectrum Math Grade 5 — expanded form of decimals and whole numbers (transcript ~1:02)\tmom_katy_voice_memo_2026-05-17\t2026-05-17 17:21:02.4280\nMath\tMath 3\tTopic 3 — Fluently Multiply Multi-Digit Whole Numbers\tdone\tSpectrum Math Grade 5 — \"still needs to do some more multiplying four digits by one and by two\" (~3:36)\tmom_katy_voice_memo_2026-05-17\t2026-05-17 17:21:02.4280\nMath\tMath 5\tTopic 5 — Use Models and Strategies to Divide Whole Numbers\tdone\tLong division covered (~7:15)\tmom_katy_voice_memo_2026-05-17\t2026-05-17 17:21:02.4280\nMath\tMath 7\tTopic 7 — Use Equivalent Fractions to Add and Subtract Fractions\tdone\tSpectrum Math Grade 5 chapters 1–4 fractions: numerator, denominator, reciprocal (~3:07)\tmom_katy_voice_memo_2026-05-17\t2026-05-17 17:21:02.4280\nMath\tMath 14\tTopic 14 — Graph Points on the Coordinate Plane\tdone\tAnalyzing patterns and relationships when it comes to ordered pairs (~2:21)\tmom_katy_voice_memo_2026-05-17\t2026-05-17 17:21:02.4280\nMath\tMath 14-1\tIdentify Ordered Pairs\tdone\tSame — ordered pairs work (~2:21)\tmom_katy_voice_memo_2026-05-17\t2026-05-17 17:21:02.4280\nMath\tMath 14-2\tSolve Problems Using Ordered Pairs\tdone\tSame — ordered pairs work (~2:21)\tmom_katy_voice_memo_2026-05-17\t2026-05-17 17:21:02.4280\nMath\tMath 15\tTopic 15 — Algebra: Analyze Patterns and Relationships\tdone\t\"analyzing patterns and relationships\" (~2:21)\tmom_katy_voice_memo_2026-05-17\t2026-05-17 17:21:02.4280\nMath\tMath 16\tTopic 16 — Classify Two-Dimensional Figures\tdone\tQuadrilateral angles, classifying them, hierarchy of figures, categories and subcategories (~2:21–2:55)\tmom_katy_voice_memo_2026-05-17\t2026-05-17 17:21:02.4280\nMath\tMath 17\tTopic 17 — Cumulative / End-of-Year Practice\tinProgress\tSpectrum Math final test for chapters 5–8 — \"finished but not graded yet\" (~1:39, ~2:06)\tmom_katy_voice_memo_2026-05-17\t2026-05-17 17:21:02.4280\nMath\tMath PS-1\tStory Problems / Problem Solving (mixed practice)\tinProgress\t\"Hasn't done enough story problems\" + ongoing problem-solving reps (~0:34–0:55, ~3:36)\tmom_katy_voice_memo_2026-05-17\t2026-05-17 17:21:02.4280\nScience\tSci 4\tUnit 4 — Matter and Its Interactions\tinProgress\tSpectrum Science Grade 5 — Anatomy of an Atom pp.22–25; pp.10–17; pp.68–69; properties of expansion (water + gas) (~1:16–4:53)\tmom_katy_voice_memo_2026-05-17\t2026-05-17 17:21:02.4280\nScience\tSci 4-1\tMatter is made of particles too small to see\tdone\tAnatomy of an Atom pp.22–25 in Spectrum Science Grade 5 (~3:54)\tmom_katy_voice_memo_2026-05-17\t2026-05-17 17:21:02.4280\nScience\tSci 4-EXP\tCrystal experiment (hands-on)\tdone\tReagan completed the crystal experiment as a hands-on activity (~1:16)\tmom_katy_voice_memo_2026-05-17\t2026-05-17 17:21:02.4280\nScience\tSci 4-COMP\tMaking a compass (hands-on)\tdone\tReagan made a compass as an activity (~5:03)\tmom_katy_voice_memo_2026-05-17\t2026-05-17 17:21:02.4280\nScience\tSci 4-EXP2\tProperties of expansion: water + gas\tdone\tSpectrum Science Grade 5 — properties of expansion, water + gas (~1:31)\tmom_katy_voice_memo_2026-05-17\t2026-05-17 17:21:02.4280\nSpecials\tSEL-AX-1\tAnxiety triggers — info worksheet\tinProgress\tFlagged as a to-do in transcript: \"to do an anxiety triggers info\" (~7:37)\tmom_katy_voice_memo_2026-05-17\t2026-05-17 17:21:02.4280\n",
+  "stderr": "",
+  "execution_time_ms": 572
+}

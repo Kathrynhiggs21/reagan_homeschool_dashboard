@@ -1,0 +1,164 @@
+{
+  "query": "SELECT id, subject, code, title, status FROM curriculumTopics WHERE (subject='Math' AND (code LIKE 'Math 14%' OR code LIKE 'Math 15%' OR code LIKE 'Math 16%' OR code LIKE 'Math 17%')) OR (subject='ELA') ORDER BY subject, ord LIMIT 40;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, subject, code, title, status FROM curriculumTopics WHERE (subject='Math' AND (code LIKE 'Math 14%' OR code LIKE 'Math 15%' OR code LIKE 'Math 16%' OR code LIKE 'Math 17%')) OR (subject='ELA') ORDER BY subject, ord LIMIT 40;",
+  "rows": [
+    {
+      "id": "62",
+      "subject": "ELA",
+      "code": "ELA M1",
+      "title": "Module 1 — Cultures in Conflict",
+      "status": "done"
+    },
+    {
+      "id": "63",
+      "subject": "ELA",
+      "code": "ELA M1-L1",
+      "title": "Determine a theme from text details",
+      "status": "done"
+    },
+    {
+      "id": "64",
+      "subject": "ELA",
+      "code": "ELA M1-L2",
+      "title": "Quote accurately to support inferences",
+      "status": "done"
+    },
+    {
+      "id": "65",
+      "subject": "ELA",
+      "code": "ELA M1-L3",
+      "title": "Compare two characters' points of view",
+      "status": "done"
+    },
+    {
+      "id": "66",
+      "subject": "ELA",
+      "code": "ELA M1-L4",
+      "title": "Write an opinion piece with reasons",
+      "status": "done"
+    },
+    {
+      "id": "67",
+      "subject": "ELA",
+      "code": "ELA M2",
+      "title": "Module 2 — Word Play",
+      "status": "done"
+    },
+    {
+      "id": "68",
+      "subject": "ELA",
+      "code": "ELA M2-L1",
+      "title": "Figurative language and word choice",
+      "status": "done"
+    },
+    {
+      "id": "69",
+      "subject": "ELA",
+      "code": "ELA M2-L2",
+      "title": "Summarize the text",
+      "status": "done"
+    },
+    {
+      "id": "70",
+      "subject": "ELA",
+      "code": "ELA M2-L3",
+      "title": "Informative / explanatory writing",
+      "status": "done"
+    },
+    {
+      "id": "71",
+      "subject": "ELA",
+      "code": "ELA M3",
+      "title": "Module 3 — A War Between Us",
+      "status": "done"
+    },
+    {
+      "id": "72",
+      "subject": "ELA",
+      "code": "ELA M3-L1",
+      "title": "Integrate information from several texts",
+      "status": "done"
+    },
+    {
+      "id": "73",
+      "subject": "ELA",
+      "code": "ELA M3-L2",
+      "title": "Draw evidence from texts to support analysis",
+      "status": "done"
+    },
+    {
+      "id": "74",
+      "subject": "ELA",
+      "code": "ELA M3-L3",
+      "title": "Write a narrative with dialogue and description",
+      "status": "done"
+    },
+    {
+      "id": "75",
+      "subject": "ELA",
+      "code": "ELA M4",
+      "title": "Module 4 — Breaking Barriers",
+      "status": "notStarted"
+    },
+    {
+      "id": "76",
+      "subject": "ELA",
+      "code": "ELA M4-L1",
+      "title": "Use context to determine word meaning",
+      "status": "notStarted"
+    },
+    {
+      "id": "77",
+      "subject": "ELA",
+      "code": "ELA M4-L2",
+      "title": "Research project using multiple sources",
+      "status": "notStarted"
+    },
+    {
+      "id": "78",
+      "subject": "ELA",
+      "code": "ELA M4-L3",
+      "title": "Speaking and listening: present findings",
+      "status": "notStarted"
+    },
+    {
+      "id": "57",
+      "subject": "Math",
+      "code": "Math 14",
+      "title": "Topic 14 — Graph Points on the Coordinate Plane",
+      "status": "notStarted"
+    },
+    {
+      "id": "58",
+      "subject": "Math",
+      "code": "Math 14-1",
+      "title": "Identify Ordered Pairs",
+      "status": "notStarted"
+    },
+    {
+      "id": "59",
+      "subject": "Math",
+      "code": "Math 14-2",
+      "title": "Solve Problems Using Ordered Pairs",
+      "status": "notStarted"
+    },
+    {
+      "id": "60",
+      "subject": "Math",
+      "code": "Math 15",
+      "title": "Topic 15 — Algebra: Analyze Patterns and Relationships",
+      "status": "notStarted"
+    },
+    {
+      "id": "61",
+      "subject": "Math",
+      "code": "Math 16",
+      "title": "Topic 16 — Classify Two-Dimensional Figures",
+      "status": "notStarted"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsubject\tcode\ttitle\tstatus\n62\tELA\tELA M1\tModule 1 — Cultures in Conflict\tdone\n63\tELA\tELA M1-L1\tDetermine a theme from text details\tdone\n64\tELA\tELA M1-L2\tQuote accurately to support inferences\tdone\n65\tELA\tELA M1-L3\tCompare two characters' points of view\tdone\n66\tELA\tELA M1-L4\tWrite an opinion piece with reasons\tdone\n67\tELA\tELA M2\tModule 2 — Word Play\tdone\n68\tELA\tELA M2-L1\tFigurative language and word choice\tdone\n69\tELA\tELA M2-L2\tSummarize the text\tdone\n70\tELA\tELA M2-L3\tInformative / explanatory writing\tdone\n71\tELA\tELA M3\tModule 3 — A War Between Us\tdone\n72\tELA\tELA M3-L1\tIntegrate information from several texts\tdone\n73\tELA\tELA M3-L2\tDraw evidence from texts to support analysis\tdone\n74\tELA\tELA M3-L3\tWrite a narrative with dialogue and description\tdone\n75\tELA\tELA M4\tModule 4 — Breaking Barriers\tnotStarted\n76\tELA\tELA M4-L1\tUse context to determine word meaning\tnotStarted\n77\tELA\tELA M4-L2\tResearch project using multiple sources\tnotStarted\n78\tELA\tELA M4-L3\tSpeaking and listening: present findings\tnotStarted\n57\tMath\tMath 14\tTopic 14 — Graph Points on the Coordinate Plane\tnotStarted\n58\tMath\tMath 14-1\tIdentify Ordered Pairs\tnotStarted\n59\tMath\tMath 14-2\tSolve Problems Using Ordered Pairs\tnotStarted\n60\tMath\tMath 15\tTopic 15 — Algebra: Analyze Patterns and Relationships\tnotStarted\n61\tMath\tMath 16\tTopic 16 — Classify Two-Dimensional Figures\tnotStarted\n",
+  "stderr": "",
+  "execution_time_ms": 568
+}

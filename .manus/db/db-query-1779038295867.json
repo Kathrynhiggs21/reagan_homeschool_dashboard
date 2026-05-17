@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, code, title, status FROM curriculumTopics WHERE subject='Math' AND (code LIKE 'Math 14%' OR code LIKE 'Math 15%' OR code LIKE 'Math 16%') ORDER BY ord;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, code, title, status FROM curriculumTopics WHERE subject='Math' AND (code LIKE 'Math 14%' OR code LIKE 'Math 15%' OR code LIKE 'Math 16%') ORDER BY ord;",
+  "rows": [
+    {
+      "id": "57",
+      "code": "Math 14",
+      "title": "Topic 14 — Graph Points on the Coordinate Plane",
+      "status": "notStarted"
+    },
+    {
+      "id": "58",
+      "code": "Math 14-1",
+      "title": "Identify Ordered Pairs",
+      "status": "notStarted"
+    },
+    {
+      "id": "59",
+      "code": "Math 14-2",
+      "title": "Solve Problems Using Ordered Pairs",
+      "status": "notStarted"
+    },
+    {
+      "id": "60",
+      "code": "Math 15",
+      "title": "Topic 15 — Algebra: Analyze Patterns and Relationships",
+      "status": "notStarted"
+    },
+    {
+      "id": "61",
+      "code": "Math 16",
+      "title": "Topic 16 — Classify Two-Dimensional Figures",
+      "status": "notStarted"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcode\ttitle\tstatus\n57\tMath 14\tTopic 14 — Graph Points on the Coordinate Plane\tnotStarted\n58\tMath 14-1\tIdentify Ordered Pairs\tnotStarted\n59\tMath 14-2\tSolve Problems Using Ordered Pairs\tnotStarted\n60\tMath 15\tTopic 15 — Algebra: Analyze Patterns and Relationships\tnotStarted\n61\tMath 16\tTopic 16 — Classify Two-Dimensional Figures\tnotStarted\n",
+  "stderr": "",
+  "execution_time_ms": 582
+}

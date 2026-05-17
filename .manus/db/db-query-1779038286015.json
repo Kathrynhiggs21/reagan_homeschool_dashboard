@@ -1,0 +1,106 @@
+{
+  "query": "SELECT id, subject, code, title, status, last_covered_source FROM curriculumTopics WHERE LOWER(title) LIKE '%angle%' OR LOWER(title) LIKE '%hierarchy%' OR LOWER(title) LIKE '%pattern%' OR LOWER(title) LIKE '%expand%' OR LOWER(title) LIKE '%simile%' OR LOWER(title) LIKE '%metaphor%' OR LOWER(title) LIKE '%haiku%' OR LOWER(title) LIKE '%poetry%' OR LOWER(title) LIKE '%atom%' OR LOWER(title) LIKE '%solar%' OR LOWER(title) LIKE '%planet%' OR LOWER(title) LIKE '%crystal%' OR LOWER(title) LIKE '%compass%' OR LOWER(title) LIKE '%matter%' OR LOWER(title) LIKE '%essay%' OR LOWER(title) LIKE '%adject%' OR LOWER(title) LIKE '%verb%' OR LOWER(title) LIKE '%noun%' OR LOWER(title) LIKE '%ordered pair%' OR LOWER(title) LIKE '%relationship%' OR LOWER(title) LIKE '%quadrilat%' ORDER BY subject, ord LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, subject, code, title, status, last_covered_source FROM curriculumTopics WHERE LOWER(title) LIKE '%angle%' OR LOWER(title) LIKE '%hierarchy%' OR LOWER(title) LIKE '%pattern%' OR LOWER(title) LIKE '%expand%' OR LOWER(title) LIKE '%simile%' OR LOWER(title) LIKE '%metaphor%' OR LOWER(title) LIKE '%haiku%' OR LOWER(title) LIKE '%poetry%' OR LOWER(title) LIKE '%atom%' OR LOWER(title) LIKE '%solar%' OR LOWER(title) LIKE '%planet%' OR LOWER(title) LIKE '%crystal%' OR LOWER(title) LIKE '%compass%' OR LOWER(title) LIKE '%matter%' OR LOWER(title) LIKE '%essay%' OR LOWER(title) LIKE '%adject%' OR LOWER(title) LIKE '%verb%' OR LOWER(title) LIKE '%noun%' OR LOWER(title) LIKE '%ordered pair%' OR LOWER(title) LIKE '%relationship%' OR LOWER(title) LIKE '%quadrilat%' ORDER BY subject, ord LIMIT 20;",
+  "rows": [
+    {
+      "id": "2",
+      "subject": "Math",
+      "code": "Math 1-1",
+      "title": "Patterns with Exponents and Powers of 10",
+      "status": "done",
+      "last_covered_source": "NULL"
+    },
+    {
+      "id": "22",
+      "subject": "Math",
+      "code": "Math 5-1",
+      "title": "Use Patterns to Divide",
+      "status": "done",
+      "last_covered_source": "NULL"
+    },
+    {
+      "id": "27",
+      "subject": "Math",
+      "code": "Math 6-1",
+      "title": "Patterns for Dividing with Decimals",
+      "status": "done",
+      "last_covered_source": "NULL"
+    },
+    {
+      "id": "41",
+      "subject": "Math",
+      "code": "Math 8-4",
+      "title": "Area of Rectangles with Fractional Side Lengths",
+      "status": "done",
+      "last_covered_source": "NULL"
+    },
+    {
+      "id": "58",
+      "subject": "Math",
+      "code": "Math 14-1",
+      "title": "Identify Ordered Pairs",
+      "status": "notStarted",
+      "last_covered_source": "NULL"
+    },
+    {
+      "id": "59",
+      "subject": "Math",
+      "code": "Math 14-2",
+      "title": "Solve Problems Using Ordered Pairs",
+      "status": "notStarted",
+      "last_covered_source": "NULL"
+    },
+    {
+      "id": "60",
+      "subject": "Math",
+      "code": "Math 15",
+      "title": "Topic 15 — Algebra: Analyze Patterns and Relationships",
+      "status": "notStarted",
+      "last_covered_source": "NULL"
+    },
+    {
+      "id": "79",
+      "subject": "Science",
+      "code": "Sci 1",
+      "title": "Unit 1 — Cycles and Patterns in the Solar System",
+      "status": "done",
+      "last_covered_source": "NULL"
+    },
+    {
+      "id": "82",
+      "subject": "Science",
+      "code": "Sci 2",
+      "title": "Unit 2 — Cycles of Matter and Flow of Energy",
+      "status": "done",
+      "last_covered_source": "NULL"
+    },
+    {
+      "id": "88",
+      "subject": "Science",
+      "code": "Sci 4",
+      "title": "Unit 4 — Matter and Its Interactions",
+      "status": "notStarted",
+      "last_covered_source": "NULL"
+    },
+    {
+      "id": "89",
+      "subject": "Science",
+      "code": "Sci 4-1",
+      "title": "Matter is made of particles too small to see",
+      "status": "notStarted",
+      "last_covered_source": "NULL"
+    },
+    {
+      "id": "90",
+      "subject": "Science",
+      "code": "Sci 4-2",
+      "title": "Conservation of matter in physical and chemical change",
+      "status": "notStarted",
+      "last_covered_source": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsubject\tcode\ttitle\tstatus\tlast_covered_source\n2\tMath\tMath 1-1\tPatterns with Exponents and Powers of 10\tdone\tNULL\n22\tMath\tMath 5-1\tUse Patterns to Divide\tdone\tNULL\n27\tMath\tMath 6-1\tPatterns for Dividing with Decimals\tdone\tNULL\n41\tMath\tMath 8-4\tArea of Rectangles with Fractional Side Lengths\tdone\tNULL\n58\tMath\tMath 14-1\tIdentify Ordered Pairs\tnotStarted\tNULL\n59\tMath\tMath 14-2\tSolve Problems Using Ordered Pairs\tnotStarted\tNULL\n60\tMath\tMath 15\tTopic 15 — Algebra: Analyze Patterns and Relationships\tnotStarted\tNULL\n79\tScience\tSci 1\tUnit 1 — Cycles and Patterns in the Solar System\tdone\tNULL\n82\tScience\tSci 2\tUnit 2 — Cycles of Matter and Flow of Energy\tdone\tNULL\n88\tScience\tSci 4\tUnit 4 — Matter and Its Interactions\tnotStarted\tNULL\n89\tScience\tSci 4-1\tMatter is made of particles too small to see\tnotStarted\tNULL\n90\tScience\tSci 4-2\tConservation of matter in physical and chemical change\tnotStarted\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 568
+}

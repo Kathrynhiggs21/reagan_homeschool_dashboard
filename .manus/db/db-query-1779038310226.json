@@ -1,0 +1,82 @@
+{
+  "query": "SELECT id, code, title, status FROM curriculumTopics WHERE (subject='Math' AND code LIKE 'Math 16-%') OR (subject='Science') ORDER BY subject, ord;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, code, title, status FROM curriculumTopics WHERE (subject='Math' AND code LIKE 'Math 16-%') OR (subject='Science') ORDER BY subject, ord;",
+  "rows": [
+    {
+      "id": "79",
+      "code": "Sci 1",
+      "title": "Unit 1 — Cycles and Patterns in the Solar System",
+      "status": "done"
+    },
+    {
+      "id": "80",
+      "code": "Sci 1-1",
+      "title": "Sun, Earth, Moon system and day/night",
+      "status": "done"
+    },
+    {
+      "id": "81",
+      "code": "Sci 1-2",
+      "title": "Gravity pulls objects toward Earth's center",
+      "status": "done"
+    },
+    {
+      "id": "82",
+      "code": "Sci 2",
+      "title": "Unit 2 — Cycles of Matter and Flow of Energy",
+      "status": "done"
+    },
+    {
+      "id": "83",
+      "code": "Sci 2-1",
+      "title": "Plants get most of their material from the air + water",
+      "status": "done"
+    },
+    {
+      "id": "84",
+      "code": "Sci 2-2",
+      "title": "Food webs: producers, consumers, decomposers",
+      "status": "done"
+    },
+    {
+      "id": "85",
+      "code": "Sci 3",
+      "title": "Unit 3 — Earth's Systems and Water",
+      "status": "done"
+    },
+    {
+      "id": "86",
+      "code": "Sci 3-1",
+      "title": "Geosphere / hydrosphere / atmosphere / biosphere",
+      "status": "done"
+    },
+    {
+      "id": "87",
+      "code": "Sci 3-2",
+      "title": "Distribution of water on Earth",
+      "status": "done"
+    },
+    {
+      "id": "88",
+      "code": "Sci 4",
+      "title": "Unit 4 — Matter and Its Interactions",
+      "status": "notStarted"
+    },
+    {
+      "id": "89",
+      "code": "Sci 4-1",
+      "title": "Matter is made of particles too small to see",
+      "status": "notStarted"
+    },
+    {
+      "id": "90",
+      "code": "Sci 4-2",
+      "title": "Conservation of matter in physical and chemical change",
+      "status": "notStarted"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcode\ttitle\tstatus\n79\tSci 1\tUnit 1 — Cycles and Patterns in the Solar System\tdone\n80\tSci 1-1\tSun, Earth, Moon system and day/night\tdone\n81\tSci 1-2\tGravity pulls objects toward Earth's center\tdone\n82\tSci 2\tUnit 2 — Cycles of Matter and Flow of Energy\tdone\n83\tSci 2-1\tPlants get most of their material from the air + water\tdone\n84\tSci 2-2\tFood webs: producers, consumers, decomposers\tdone\n85\tSci 3\tUnit 3 — Earth's Systems and Water\tdone\n86\tSci 3-1\tGeosphere / hydrosphere / atmosphere / biosphere\tdone\n87\tSci 3-2\tDistribution of water on Earth\tdone\n88\tSci 4\tUnit 4 — Matter and Its Interactions\tnotStarted\n89\tSci 4-1\tMatter is made of particles too small to see\tnotStarted\n90\tSci 4-2\tConservation of matter in physical and chemical change\tnotStarted\n",
+  "stderr": "",
+  "execution_time_ms": 571
+}

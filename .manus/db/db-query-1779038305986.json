@@ -1,0 +1,154 @@
+{
+  "query": "SELECT id, code, title, status FROM curriculumTopics WHERE subject='Math' AND (code LIKE 'Math 16-%' OR code LIKE 'Math 1%' OR code LIKE 'Math 2%') ORDER BY ord LIMIT 30;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, code, title, status FROM curriculumTopics WHERE subject='Math' AND (code LIKE 'Math 16-%' OR code LIKE 'Math 1%' OR code LIKE 'Math 2%') ORDER BY ord LIMIT 30;",
+  "rows": [
+    {
+      "id": "1",
+      "code": "Math 1",
+      "title": "Topic 1 — Understand Place Value",
+      "status": "done"
+    },
+    {
+      "id": "2",
+      "code": "Math 1-1",
+      "title": "Patterns with Exponents and Powers of 10",
+      "status": "done"
+    },
+    {
+      "id": "3",
+      "code": "Math 1-2",
+      "title": "Read and Write Decimals to Thousandths",
+      "status": "done"
+    },
+    {
+      "id": "4",
+      "code": "Math 1-3",
+      "title": "Compare Decimals to Thousandths",
+      "status": "done"
+    },
+    {
+      "id": "5",
+      "code": "Math 1-4",
+      "title": "Round Decimals to Any Place",
+      "status": "done"
+    },
+    {
+      "id": "6",
+      "code": "Math 2",
+      "title": "Topic 2 — Use Models and Strategies to Add and Subtract Decimals",
+      "status": "done"
+    },
+    {
+      "id": "7",
+      "code": "Math 2-1",
+      "title": "Mental Math with Decimals",
+      "status": "done"
+    },
+    {
+      "id": "8",
+      "code": "Math 2-2",
+      "title": "Estimate Sums and Differences of Decimals",
+      "status": "done"
+    },
+    {
+      "id": "9",
+      "code": "Math 2-3",
+      "title": "Add and Subtract Decimals (standard algorithm)",
+      "status": "done"
+    },
+    {
+      "id": "45",
+      "code": "Math 10",
+      "title": "Topic 10 — Represent and Interpret Data",
+      "status": "inProgress"
+    },
+    {
+      "id": "46",
+      "code": "Math 10-1",
+      "title": "Analyze Line Plots",
+      "status": "notStarted"
+    },
+    {
+      "id": "47",
+      "code": "Math 10-2",
+      "title": "Make Line Plots",
+      "status": "notStarted"
+    },
+    {
+      "id": "48",
+      "code": "Math 11",
+      "title": "Topic 11 — Understand Volume Concepts",
+      "status": "notStarted"
+    },
+    {
+      "id": "49",
+      "code": "Math 11-1",
+      "title": "Volume Using Unit Cubes",
+      "status": "notStarted"
+    },
+    {
+      "id": "51",
+      "code": "Math 12",
+      "title": "Topic 12 — Convert Measurements",
+      "status": "notStarted"
+    },
+    {
+      "id": "52",
+      "code": "Math 12-1",
+      "title": "Convert Customary Units of Length / Capacity / Weight",
+      "status": "notStarted"
+    },
+    {
+      "id": "53",
+      "code": "Math 12-2",
+      "title": "Convert Metric Units of Length / Capacity / Mass",
+      "status": "notStarted"
+    },
+    {
+      "id": "54",
+      "code": "Math 13",
+      "title": "Topic 13 — Write and Interpret Numerical Expressions",
+      "status": "notStarted"
+    },
+    {
+      "id": "56",
+      "code": "Math 13-2",
+      "title": "Evaluate Expressions",
+      "status": "notStarted"
+    },
+    {
+      "id": "57",
+      "code": "Math 14",
+      "title": "Topic 14 — Graph Points on the Coordinate Plane",
+      "status": "notStarted"
+    },
+    {
+      "id": "58",
+      "code": "Math 14-1",
+      "title": "Identify Ordered Pairs",
+      "status": "notStarted"
+    },
+    {
+      "id": "59",
+      "code": "Math 14-2",
+      "title": "Solve Problems Using Ordered Pairs",
+      "status": "notStarted"
+    },
+    {
+      "id": "60",
+      "code": "Math 15",
+      "title": "Topic 15 — Algebra: Analyze Patterns and Relationships",
+      "status": "notStarted"
+    },
+    {
+      "id": "61",
+      "code": "Math 16",
+      "title": "Topic 16 — Classify Two-Dimensional Figures",
+      "status": "notStarted"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tcode\ttitle\tstatus\n1\tMath 1\tTopic 1 — Understand Place Value\tdone\n2\tMath 1-1\tPatterns with Exponents and Powers of 10\tdone\n3\tMath 1-2\tRead and Write Decimals to Thousandths\tdone\n4\tMath 1-3\tCompare Decimals to Thousandths\tdone\n5\tMath 1-4\tRound Decimals to Any Place\tdone\n6\tMath 2\tTopic 2 — Use Models and Strategies to Add and Subtract Decimals\tdone\n7\tMath 2-1\tMental Math with Decimals\tdone\n8\tMath 2-2\tEstimate Sums and Differences of Decimals\tdone\n9\tMath 2-3\tAdd and Subtract Decimals (standard algorithm)\tdone\n45\tMath 10\tTopic 10 — Represent and Interpret Data\tinProgress\n46\tMath 10-1\tAnalyze Line Plots\tnotStarted\n47\tMath 10-2\tMake Line Plots\tnotStarted\n48\tMath 11\tTopic 11 — Understand Volume Concepts\tnotStarted\n49\tMath 11-1\tVolume Using Unit Cubes\tnotStarted\n51\tMath 12\tTopic 12 — Convert Measurements\tnotStarted\n52\tMath 12-1\tConvert Customary Units of Length / Capacity / Weight\tnotStarted\n53\tMath 12-2\tConvert Metric Units of Length / Capacity / Mass\tnotStarted\n54\tMath 13\tTopic 13 — Write and Interpret Numerical Expressions\tnotStarted\n56\tMath 13-2\tEvaluate Expressions\tnotStarted\n57\tMath 14\tTopic 14 — Graph Points on the Coordinate Plane\tnotStarted\n58\tMath 14-1\tIdentify Ordered Pairs\tnotStarted\n59\tMath 14-2\tSolve Problems Using Ordered Pairs\tnotStarted\n60\tMath 15\tTopic 15 — Algebra: Analyze Patterns and Relationships\tnotStarted\n61\tMath 16\tTopic 16 — Classify Two-Dimensional Figures\tnotStarted\n",
+  "stderr": "",
+  "execution_time_ms": 602
+}

@@ -1,0 +1,88 @@
+{
+  "query": "SELECT id, slug, name FROM subjects ORDER BY id; SELECT DISTINCT subject FROM curriculumTopics ORDER BY subject; SELECT id, subject, code, title, status, last_covered_source, last_covered_at FROM curriculumTopics WHERE subject IN ('math','science','reading','language_arts','poetry','sel') OR title LIKE '%fraction%' OR title LIKE '%simile%' OR title LIKE '%haiku%' ORDER BY subject, ord LIMIT 30;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, slug, name FROM subjects ORDER BY id; SELECT DISTINCT subject FROM curriculumTopics ORDER BY subject; SELECT id, subject, code, title, status, last_covered_source, last_covered_at FROM curriculumTopics WHERE subject IN ('math','science','reading','language_arts','poetry','sel') OR title LIKE '%fraction%' OR title LIKE '%simile%' OR title LIKE '%haiku%' ORDER BY subject, ord LIMIT 30;",
+  "rows": [
+    {
+      "id": "30012",
+      "slug": "math",
+      "name": "Math"
+    },
+    {
+      "id": "30013",
+      "slug": "ela",
+      "name": "Reading and Language Arts (ELA)"
+    },
+    {
+      "id": "30014",
+      "slug": "science",
+      "name": "Science"
+    },
+    {
+      "id": "60001",
+      "slug": "social",
+      "name": "Social Studies"
+    },
+    {
+      "id": "60002",
+      "slug": "_deprecated_specials",
+      "name": "(deprecated) Specials"
+    },
+    {
+      "id": "60003",
+      "slug": "other",
+      "name": "Other"
+    },
+    {
+      "id": "90001",
+      "slug": "health-pe",
+      "name": "Health and PE"
+    },
+    {
+      "id": "90002",
+      "slug": "art-music",
+      "name": "Art and Music"
+    }
+  ],
+  "messages": [
+    "subject",
+    "ELA",
+    "Math",
+    "Science",
+    "Social",
+    "Specials",
+    "id\tsubject\tcode\ttitle\tstatus\tlast_covered_source\tlast_covered_at",
+    "1\tMath\tMath 1\tTopic 1 — Understand Place Value\tdone\tNULL\tNULL",
+    "2\tMath\tMath 1-1\tPatterns with Exponents and Powers of 10\tdone\tNULL\tNULL",
+    "3\tMath\tMath 1-2\tRead and Write Decimals to Thousandths\tdone\tNULL\tNULL",
+    "4\tMath\tMath 1-3\tCompare Decimals to Thousandths\tdone\tNULL\tNULL",
+    "5\tMath\tMath 1-4\tRound Decimals to Any Place\tdone\tNULL\tNULL",
+    "6\tMath\tMath 2\tTopic 2 — Use Models and Strategies to Add and Subtract Decimals\tdone\tNULL\tNULL",
+    "7\tMath\tMath 2-1\tMental Math with Decimals\tdone\tNULL\tNULL",
+    "8\tMath\tMath 2-2\tEstimate Sums and Differences of Decimals\tdone\tNULL\tNULL",
+    "9\tMath\tMath 2-3\tAdd and Subtract Decimals (standard algorithm)\tdone\tNULL\tNULL",
+    "10\tMath\tMath 3\tTopic 3 — Fluently Multiply Multi-Digit Whole Numbers\tdone\tNULL\tNULL",
+    "11\tMath\tMath 3-1\tMultiply Greater Numbers by Powers of 10\tdone\tNULL\tNULL",
+    "12\tMath\tMath 3-2\tEstimate Products\tdone\tNULL\tNULL",
+    "13\tMath\tMath 3-3\tMultiply 2- by 2-Digit Numbers\tdone\tNULL\tNULL",
+    "14\tMath\tMath 3-4\tMultiply 3- by 2-Digit Numbers\tdone\tNULL\tNULL",
+    "15\tMath\tMath 3-5\tMultiply by Multi-Digit Numbers\tdone\tNULL\tNULL",
+    "16\tMath\tMath 4\tTopic 4 — Use Models and Strategies to Multiply Decimals\tdone\tNULL\tNULL",
+    "17\tMath\tMath 4-1\tMultiply Decimals by Powers of 10\tdone\tNULL\tNULL",
+    "18\tMath\tMath 4-2\tEstimate the Product of a Decimal and a Whole Number\tdone\tNULL\tNULL",
+    "19\tMath\tMath 4-3\tMultiply a Decimal by a Whole Number\tdone\tNULL\tNULL",
+    "20\tMath\tMath 4-4\tMultiply a Decimal by a Decimal\tdone\tNULL\tNULL",
+    "21\tMath\tMath 5\tTopic 5 — Use Models and Strategies to Divide Whole Numbers\tdone\tNULL\tNULL",
+    "22\tMath\tMath 5-1\tUse Patterns to Divide\tdone\tNULL\tNULL",
+    "23\tMath\tMath 5-2\tEstimate Quotients with 2-Digit Divisors\tdone\tNULL\tNULL",
+    "24\tMath\tMath 5-3\tDivide by Multiples of 10\tdone\tNULL\tNULL",
+    "25\tMath\tMath 5-4\tDivide by 2-Digit Divisors\tdone\tNULL\tNULL",
+    "26\tMath\tMath 6\tTopic 6 — Use Models and Strategies to Divide Decimals\tdone\tNULL\tNULL",
+    "27\tMath\tMath 6-1\tPatterns for Dividing with Decimals\tdone\tNULL\tNULL",
+    "28\tMath\tMath 6-2\tEstimate Decimal Quotients\tdone\tNULL\tNULL",
+    "29\tMath\tMath 6-3\tDivide a Decimal by a Whole Number\tdone\tNULL\tNULL",
+    "30\tMath\tMath 6-4\tDivide by a Decimal\tdone\tNULL\tNULL"
+  ],
+  "stdout": "id\tslug\tname\n30012\tmath\tMath\n30013\tela\tReading and Language Arts (ELA)\n30014\tscience\tScience\n60001\tsocial\tSocial Studies\n60002\t_deprecated_specials\t(deprecated) Specials\n60003\tother\tOther\n90001\thealth-pe\tHealth and PE\n90002\tart-music\tArt and Music\nsubject\nELA\nMath\nScience\nSocial\nSpecials\nid\tsubject\tcode\ttitle\tstatus\tlast_covered_source\tlast_covered_at\n1\tMath\tMath 1\tTopic 1 — Understand Place Value\tdone\tNULL\tNULL\n2\tMath\tMath 1-1\tPatterns with Exponents and Powers of 10\tdone\tNULL\tNULL\n3\tMath\tMath 1-2\tRead and Write Decimals to Thousandths\tdone\tNULL\tNULL\n4\tMath\tMath 1-3\tCompare Decimals to Thousandths\tdone\tNULL\tNULL\n5\tMath\tMath 1-4\tRound Decimals to Any Place\tdone\tNULL\tNULL\n6\tMath\tMath 2\tTopic 2 — Use Models and Strategies to Add and Subtract Decimals\tdone\tNULL\tNULL\n7\tMath\tMath 2-1\tMental Math with Decimals\tdone\tNULL\tNULL\n8\tMath\tMath 2-2\tEstimate Sums and Differences of Decimals\tdone\tNULL\tNULL\n9\tMath\tMath 2-3\tAdd and Subtract Decimals (standard algorithm)\tdone\tNULL\tNULL\n10\tMath\tMath 3\tTopic 3 — Fluently Multiply Multi-Digit Whole Numbers\tdone\tNULL\tNULL\n11\tMath\tMath 3-1\tMultiply Greater Numbers by Powers of 10\tdone\tNULL\tNULL\n12\tMath\tMath 3-2\tEstimate Products\tdone\tNULL\tNULL\n13\tMath\tMath 3-3\tMultiply 2- by 2-Digit Numbers\tdone\tNULL\tNULL\n14\tMath\tMath 3-4\tMultiply 3- by 2-Digit Numbers\tdone\tNULL\tNULL\n15\tMath\tMath 3-5\tMultiply by Multi-Digit Numbers\tdone\tNULL\tNULL\n16\tMath\tMath 4\tTopic 4 — Use Models and Strategies to Multiply Decimals\tdone\tNULL\tNULL\n17\tMath\tMath 4-1\tMultiply Decimals by Powers of 10\tdone\tNULL\tNULL\n18\tMath\tMath 4-2\tEstimate the Product of a Decimal and a Whole Number\tdone\tNULL\tNULL\n19\tMath\tMath 4-3\tMultiply a Decimal by a Whole Number\tdone\tNULL\tNULL\n20\tMath\tMath 4-4\tMultiply a Decimal by a Decimal\tdone\tNULL\tNULL\n21\tMath\tMath 5\tTopic 5 — Use Models and Strategies to Divide Whole Numbers\tdone\tNULL\tNULL\n22\tMath\tMath 5-1\tUse Patterns to Divide\tdone\tNULL\tNULL\n23\tMath\tMath 5-2\tEstimate Quotients with 2-Digit Divisors\tdone\tNULL\tNULL\n24\tMath\tMath 5-3\tDivide by Multiples of 10\tdone\tNULL\tNULL\n25\tMath\tMath 5-4\tDivide by 2-Digit Divisors\tdone\tNULL\tNULL\n26\tMath\tMath 6\tTopic 6 — Use Models and Strategies to Divide Decimals\tdone\tNULL\tNULL\n27\tMath\tMath 6-1\tPatterns for Dividing with Decimals\tdone\tNULL\tNULL\n28\tMath\tMath 6-2\tEstimate Decimal Quotients\tdone\tNULL\tNULL\n29\tMath\tMath 6-3\tDivide a Decimal by a Whole Number\tdone\tNULL\tNULL\n30\tMath\tMath 6-4\tDivide by a Decimal\tdone\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 686
+}

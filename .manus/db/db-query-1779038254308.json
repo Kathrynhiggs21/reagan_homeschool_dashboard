@@ -1,0 +1,50 @@
+{
+  "query": "SELECT id, slug, name FROM subjects ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, slug, name FROM subjects ORDER BY id;",
+  "rows": [
+    {
+      "id": "30012",
+      "slug": "math",
+      "name": "Math"
+    },
+    {
+      "id": "30013",
+      "slug": "ela",
+      "name": "Reading and Language Arts (ELA)"
+    },
+    {
+      "id": "30014",
+      "slug": "science",
+      "name": "Science"
+    },
+    {
+      "id": "60001",
+      "slug": "social",
+      "name": "Social Studies"
+    },
+    {
+      "id": "60002",
+      "slug": "_deprecated_specials",
+      "name": "(deprecated) Specials"
+    },
+    {
+      "id": "60003",
+      "slug": "other",
+      "name": "Other"
+    },
+    {
+      "id": "90001",
+      "slug": "health-pe",
+      "name": "Health and PE"
+    },
+    {
+      "id": "90002",
+      "slug": "art-music",
+      "name": "Art and Music"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tslug\tname\n30012\tmath\tMath\n30013\tela\tReading and Language Arts (ELA)\n30014\tscience\tScience\n60001\tsocial\tSocial Studies\n60002\t_deprecated_specials\t(deprecated) Specials\n60003\tother\tOther\n90001\thealth-pe\tHealth and PE\n90002\tart-music\tArt and Music\n",
+  "stderr": "",
+  "execution_time_ms": 665
+}

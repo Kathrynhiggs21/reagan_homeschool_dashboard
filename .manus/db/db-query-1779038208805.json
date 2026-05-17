@@ -1,0 +1,241 @@
+{
+  "query": "SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('subjects','curriculumTopics','curriculumProgress','curriculumResources','curriculum_topics','curriculum_progress','curriculum_resources','topic_progress','topicProgress') ORDER BY TABLE_NAME, ORDINAL_POSITION;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMN_DEFAULT FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('subjects','curriculumTopics','curriculumProgress','curriculumResources','curriculum_topics','curriculum_progress','curriculum_resources','topic_progress','topicProgress') ORDER BY TABLE_NAME, ORDINAL_POSITION;",
+  "rows": [
+    {
+      "TABLE_NAME": "curriculumResources",
+      "COLUMN_NAME": "id",
+      "DATA_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "curriculumResources",
+      "COLUMN_NAME": "topic_id",
+      "DATA_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "curriculumResources",
+      "COLUMN_NAME": "kind",
+      "DATA_TYPE": "varchar",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "curriculumResources",
+      "COLUMN_NAME": "title",
+      "DATA_TYPE": "varchar",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "curriculumResources",
+      "COLUMN_NAME": "url",
+      "DATA_TYPE": "varchar",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "curriculumResources",
+      "COLUMN_NAME": "source",
+      "DATA_TYPE": "varchar",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "curriculumResources",
+      "COLUMN_NAME": "notes",
+      "DATA_TYPE": "text",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "curriculumResources",
+      "COLUMN_NAME": "added_by_user_id",
+      "DATA_TYPE": "int",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "curriculumResources",
+      "COLUMN_NAME": "created_at",
+      "DATA_TYPE": "timestamp",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "id",
+      "DATA_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "subject",
+      "DATA_TYPE": "varchar",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "code",
+      "DATA_TYPE": "varchar",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "title",
+      "DATA_TYPE": "varchar",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "standard_ref",
+      "DATA_TYPE": "varchar",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "parent_id",
+      "DATA_TYPE": "int",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "ord",
+      "DATA_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "0"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "status",
+      "DATA_TYPE": "varchar",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "notStarted"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "completed_at",
+      "DATA_TYPE": "timestamp",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "quarter",
+      "DATA_TYPE": "varchar",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "notes",
+      "DATA_TYPE": "text",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "updated_at",
+      "DATA_TYPE": "timestamp",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "created_at",
+      "DATA_TYPE": "timestamp",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "CURRENT_TIMESTAMP"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "khan_url",
+      "DATA_TYPE": "varchar",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "ixl_url",
+      "DATA_TYPE": "varchar",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "last_covered_source",
+      "DATA_TYPE": "varchar",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "last_covered_at",
+      "DATA_TYPE": "bigint",
+      "IS_NULLABLE": "YES",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "subjects",
+      "COLUMN_NAME": "id",
+      "DATA_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "subjects",
+      "COLUMN_NAME": "slug",
+      "DATA_TYPE": "varchar",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "subjects",
+      "COLUMN_NAME": "name",
+      "DATA_TYPE": "varchar",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "subjects",
+      "COLUMN_NAME": "color",
+      "DATA_TYPE": "varchar",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "subjects",
+      "COLUMN_NAME": "emoji",
+      "DATA_TYPE": "varchar",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "NULL"
+    },
+    {
+      "TABLE_NAME": "subjects",
+      "COLUMN_NAME": "sortOrder",
+      "DATA_TYPE": "int",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "0"
+    },
+    {
+      "TABLE_NAME": "subjects",
+      "COLUMN_NAME": "isCorePlanning",
+      "DATA_TYPE": "tinyint",
+      "IS_NULLABLE": "NO",
+      "COLUMN_DEFAULT": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "TABLE_NAME\tCOLUMN_NAME\tDATA_TYPE\tIS_NULLABLE\tCOLUMN_DEFAULT\ncurriculumResources\tid\tint\tNO\tNULL\ncurriculumResources\ttopic_id\tint\tNO\tNULL\ncurriculumResources\tkind\tvarchar\tNO\tNULL\ncurriculumResources\ttitle\tvarchar\tNO\tNULL\ncurriculumResources\turl\tvarchar\tYES\tNULL\ncurriculumResources\tsource\tvarchar\tYES\tNULL\ncurriculumResources\tnotes\ttext\tYES\tNULL\ncurriculumResources\tadded_by_user_id\tint\tYES\tNULL\ncurriculumResources\tcreated_at\ttimestamp\tNO\tCURRENT_TIMESTAMP\ncurriculumTopics\tid\tint\tNO\tNULL\ncurriculumTopics\tsubject\tvarchar\tNO\tNULL\ncurriculumTopics\tcode\tvarchar\tNO\tNULL\ncurriculumTopics\ttitle\tvarchar\tNO\tNULL\ncurriculumTopics\tstandard_ref\tvarchar\tYES\tNULL\ncurriculumTopics\tparent_id\tint\tYES\tNULL\ncurriculumTopics\tord\tint\tNO\t0\ncurriculumTopics\tstatus\tvarchar\tNO\tnotStarted\ncurriculumTopics\tcompleted_at\ttimestamp\tYES\tNULL\ncurriculumTopics\tquarter\tvarchar\tYES\tNULL\ncurriculumTopics\tnotes\ttext\tYES\tNULL\ncurriculumTopics\tupdated_at\ttimestamp\tNO\tCURRENT_TIMESTAMP\ncurriculumTopics\tcreated_at\ttimestamp\tNO\tCURRENT_TIMESTAMP\ncurriculumTopics\tkhan_url\tvarchar\tYES\tNULL\ncurriculumTopics\tixl_url\tvarchar\tYES\tNULL\ncurriculumTopics\tlast_covered_source\tvarchar\tYES\tNULL\ncurriculumTopics\tlast_covered_at\tbigint\tYES\tNULL\nsubjects\tid\tint\tNO\tNULL\nsubjects\tslug\tvarchar\tNO\tNULL\nsubjects\tname\tvarchar\tNO\tNULL\nsubjects\tcolor\tvarchar\tNO\tNULL\nsubjects\temoji\tvarchar\tNO\tNULL\nsubjects\tsortOrder\tint\tNO\t0\nsubjects\tisCorePlanning\ttinyint\tNO\t1\n",
+  "stderr": "",
+  "execution_time_ms": 673
+}

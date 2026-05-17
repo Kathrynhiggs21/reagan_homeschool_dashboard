@@ -3407,3 +3407,24 @@ Test totals after this push: 9 classroom test files, **77/77 passing in 3.82 s**
 - [x] Source-pattern vitest `todayClassroomGradedWiring.test.ts` (7/7): one mount, gated under `unlocked &&`, kid card stays ungated, component calls `recentlyGraded` (not `activeForToday`), empty-state hides via `return null`, grade pill testids present.
 
 Test totals after this push: 11 classroom test files, **88/88 passing in 3.94 s**.
+
+
+## Mom (Katy Higgs) voice-memo intake — completed-work backfill (2026-05-17)
+
+Context: Mom (Katy Higgs) recorded an Otter.ai voice memo with Reagan walking through every topic Reagan has actually completed in homeschool so far. (Earlier the memo was mis-attributed to Tatiana — corrected 2026-05-17.) Source file at `/home/ubuntu/upload/Note`. We need this to land in the curriculum tracker so the dashboard reflects reality, not a blank slate.
+
+Concrete completed items extracted from the transcript:
+
+- [x] **Math (Spectrum Math Grade 5):** chapter 5–8 final test (ungraded yet); chapters 1–4 fractions (numerator, denominator, reciprocal); long division; expanded form (decimals + whole numbers); multiplying 4-digit × 1-digit and × 2-digit (still needs more); story / problem-solving; analyzing patterns and relationships with ordered pairs; measuring angles; classifying quadrilateral angles; hierarchy of figures (categories + subcategories).
+- [x] **Science (Spectrum Science Grade 5):** Anatomy of an Atom pages 22–25; pages 10–17; pages 68–69; properties of expansion (water + gas); crystal experiment (hands-on); making a compass (hands-on activity).
+- [x] **Reading:** read almost all of *Michael's World*.
+- [x] **Language Arts (180 Days of Language for 5th Grade):** pages 14, 15, 16, 17, 18, 19; nouns + adjectives + verbs; simile vs. metaphor; write an essay on topic of choice.
+- [x] **Poetry:** haikus.
+- [x] **Earth/Space science:** solar system + planets unit; "didn't measure" → noted as covered conceptually.
+- [x] **SEL / Self-knowledge:** anxiety triggers info worksheet ingested as `inProgress`.
+
+Implementation steps:
+- [x] Built `curriculum/momKatyVoiceMemoIntake-2026-05-17.json` with `{subjectSlug, topicTitle, source: "mom_katy_voice_memo_2026-05-17", evidence, lifecycle}` rows.
+- [x] Built ingest helper `server/_lib/ingestMomKatyVoiceMemo20260517.ts`: idempotent — looks up topic by `(subjectSlug,title)`, inserts if missing under the right subject, then writes a curriculum-progress row marking it `completed` (or `assigned_in_progress` for the one to-do item) with the cite-back source string.
+- [x] Real-DB vitest `ingestMomKatyVoiceMemo20260517.test.ts` green (4/4): runs the ingest twice on a clean tagged namespace and asserts (a) all expected topic titles exist exactly once, (b) each has a progress row with `source = mom_katy_voice_memo_2026-05-17`, (c) re-ingest is a no-op.
+- [x] Ingest applied against the live DB. 23 rows now carry `last_covered_source = mom_katy_voice_memo_2026-05-17`. Per-subject roll-up: Math 9 done + 2 in-progress, ELA 4 done + 2 in-progress, Science 4 done + 1 in-progress, Specials 1 in-progress.

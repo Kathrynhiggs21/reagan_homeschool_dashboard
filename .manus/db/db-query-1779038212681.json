@@ -1,0 +1,130 @@
+{
+  "query": "SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('subjects','curriculumTopics') ORDER BY TABLE_NAME, ORDINAL_POSITION;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT TABLE_NAME, COLUMN_NAME, DATA_TYPE FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('subjects','curriculumTopics') ORDER BY TABLE_NAME, ORDINAL_POSITION;",
+  "rows": [
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "id",
+      "DATA_TYPE": "int"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "subject",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "code",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "title",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "standard_ref",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "parent_id",
+      "DATA_TYPE": "int"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "ord",
+      "DATA_TYPE": "int"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "status",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "completed_at",
+      "DATA_TYPE": "timestamp"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "quarter",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "notes",
+      "DATA_TYPE": "text"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "updated_at",
+      "DATA_TYPE": "timestamp"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "created_at",
+      "DATA_TYPE": "timestamp"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "khan_url",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "ixl_url",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "last_covered_source",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "TABLE_NAME": "curriculumTopics",
+      "COLUMN_NAME": "last_covered_at",
+      "DATA_TYPE": "bigint"
+    },
+    {
+      "TABLE_NAME": "subjects",
+      "COLUMN_NAME": "id",
+      "DATA_TYPE": "int"
+    },
+    {
+      "TABLE_NAME": "subjects",
+      "COLUMN_NAME": "slug",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "TABLE_NAME": "subjects",
+      "COLUMN_NAME": "name",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "TABLE_NAME": "subjects",
+      "COLUMN_NAME": "color",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "TABLE_NAME": "subjects",
+      "COLUMN_NAME": "emoji",
+      "DATA_TYPE": "varchar"
+    },
+    {
+      "TABLE_NAME": "subjects",
+      "COLUMN_NAME": "sortOrder",
+      "DATA_TYPE": "int"
+    },
+    {
+      "TABLE_NAME": "subjects",
+      "COLUMN_NAME": "isCorePlanning",
+      "DATA_TYPE": "tinyint"
+    }
+  ],
+  "messages": [],
+  "stdout": "TABLE_NAME\tCOLUMN_NAME\tDATA_TYPE\ncurriculumTopics\tid\tint\ncurriculumTopics\tsubject\tvarchar\ncurriculumTopics\tcode\tvarchar\ncurriculumTopics\ttitle\tvarchar\ncurriculumTopics\tstandard_ref\tvarchar\ncurriculumTopics\tparent_id\tint\ncurriculumTopics\tord\tint\ncurriculumTopics\tstatus\tvarchar\ncurriculumTopics\tcompleted_at\ttimestamp\ncurriculumTopics\tquarter\tvarchar\ncurriculumTopics\tnotes\ttext\ncurriculumTopics\tupdated_at\ttimestamp\ncurriculumTopics\tcreated_at\ttimestamp\ncurriculumTopics\tkhan_url\tvarchar\ncurriculumTopics\tixl_url\tvarchar\ncurriculumTopics\tlast_covered_source\tvarchar\ncurriculumTopics\tlast_covered_at\tbigint\nsubjects\tid\tint\nsubjects\tslug\tvarchar\nsubjects\tname\tvarchar\nsubjects\tcolor\tvarchar\nsubjects\temoji\tvarchar\nsubjects\tsortOrder\tint\nsubjects\tisCorePlanning\ttinyint\n",
+  "stderr": "",
+  "execution_time_ms": 565
+}
