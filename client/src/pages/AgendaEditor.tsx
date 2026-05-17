@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { parseTime12h, formatTime12h } from "@/lib/time12h";
 import { useTutorMode } from "@/hooks/useTutorMode";
+import { BlockResourcesPanel } from "@/components/BlockResourcesPanel";
 
 type Snapshot = {
   id: number;
@@ -931,6 +932,12 @@ function ManualBlockRow({
           }}
           data-testid={`block-description-input-${block.id}`}
         />
+      </div>
+      {/* v2.15 (2026-05-17) — BlockResourcesPanel: lets Mom + Grandma
+          attach materials/links/printables to the curriculum topic this
+          block points at. Hidden when no topic is set. Spans full row. */}
+      <div style={{ gridColumn: "1 / -1" }}>
+        <BlockResourcesPanel topicCode={block.curriculumTopicCode ?? null} />
       </div>
     </div>
   );

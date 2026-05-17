@@ -4485,8 +4485,26 @@ export const appRouter = router({
     rollup: protectedProcedure
       .input(z.object({ topicId: z.number().int().positive() }))
       .query(({ input }) => db.getTopicRollup(input.topicId)),
-    /** Add a manual resource (worksheet/video/lesson/reading/printable/link) to a topic. */
-    addResource: protectedProcedure
+    /**
+     * v2.15 (2026-05-17) — Resolve a curriculum topic code (e.g. "M.5.A.1")
+     * to its numeric topicId. Used by AgendaEditor's BlockResourcesPanel
+     * to bridge the catalog (code-only) into the rollup/addResource/
+     * removeResource calls (which need topicId).
+     */
+    topicByCode: protectedProcedure
+      .input(z.object({ code: z.string().min(1).max(64) }))
+      .query(async ({ input }) => {
+        const { resolveTopicId } = await import("./_lib/topicCatalog");
+        const id = await resolveTopicId(input.code);
+        return { id };
+      }),
+    /**
+     * Add a manual resource (worksheet/video/lesson/reading/printable/link)
+     * to a topic. v2.15 (2026-05-17) tightened to familyAdminProcedure so
+     * Reagan can never write to the resource list, even if she's signed in.
+     * Mom + Grandma only.
+     */
+    addResource: familyAdminProcedure
       .input(z.object({
         topicId: z.number().int().positive(),
         kind: z.enum(["worksheet", "video", "lesson", "reading", "printable", "link"]),
@@ -4501,8 +4519,11 @@ export const appRouter = router({
         const addedByUserId = Number.isFinite(num) ? num : null;
         return db.addTopicResource({ ...input, addedByUserId });
       }),
-    /** Remove a manually-added resource by id. */
-    removeResource: protectedProcedure
+    /**
+     * Remove a manually-added resource by id. v2.15 tightened to
+     * familyAdminProcedure (adult-only).
+     */
+    removeResource: familyAdminProcedure
       .input(z.object({ id: z.number().int().positive() }))
       .mutation(({ input }) => db.removeTopicResource(input.id)),
     /** Find free, no-login external resources for a topic (Khan/IXL/ReadWorks/etc.). */
