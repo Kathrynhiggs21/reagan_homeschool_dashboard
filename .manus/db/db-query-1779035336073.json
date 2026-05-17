@@ -1,0 +1,40 @@
+{
+  "query": "SHOW TABLES LIKE '%plan%';\nSHOW TABLES LIKE '%block%';\nSHOW TABLES LIKE '%subject%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SHOW TABLES LIKE '%plan%';\nSHOW TABLES LIKE '%block%';\nSHOW TABLES LIKE '%subject%';",
+  "rows": [
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%plan%)": "dailyPlans"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%plan%)": "topicsCoveredOffPlan"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%plan%)": "yearPlan"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%plan%)": "yearPlanCursor"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%plan%)": "Tables_in_mm3swGictQLHDWKPJCGiHp (%block%)"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%plan%)": "blockGrades"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%plan%)": "blockedEmails"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%plan%)": "scheduleBlocks"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%plan%)": "Tables_in_mm3swGictQLHDWKPJCGiHp (%subject%)"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%plan%)": "subjects"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_mm3swGictQLHDWKPJCGiHp (%plan%)\ndailyPlans\ntopicsCoveredOffPlan\nyearPlan\nyearPlanCursor\nTables_in_mm3swGictQLHDWKPJCGiHp (%block%)\nblockGrades\nblockedEmails\nscheduleBlocks\nTables_in_mm3swGictQLHDWKPJCGiHp (%subject%)\nsubjects\n",
+  "stderr": "",
+  "execution_time_ms": 696
+}
