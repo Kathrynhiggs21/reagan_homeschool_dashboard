@@ -19,6 +19,7 @@
 import * as React from "react";
 import { speakAs } from "@/lib/companionVoices";
 import { Button } from "@/components/ui/button";
+import { trpc } from "@/lib/trpc";
 
 const STORAGE_KEY = "kiwiTourSeen";
 
@@ -129,6 +130,27 @@ export function IntroTour({
   onClose: () => void;
 }) {
   const [stepIdx, setStepIdx] = React.useState(0);
+  // Push 2.13 (2026-05-17): mirror dismissal to learnerProfile.onboardingCompleted
+  // so the tour stays dismissed cross-device, not just in this localStorage.
+  const utils = trpc.useUtils();
+  const profileUpdate = trpc.profile.update.useMutation({
+    onSuccess: () => {
+      try {
+        utils.profile.get.invalidate();
+      } catch {
+        /* no-op */
+      }
+    },
+  });
+  const dismissForever = React.useCallback(() => {
+    markTourSeen();
+    try {
+      profileUpdate.mutate({ onboardingCompleted: true });
+    } catch {
+      /* no-op */
+    }
+    onClose();
+  }, [onClose, profileUpdate]);
 
   React.useEffect(() => {
     if (!open) return;
@@ -153,8 +175,7 @@ export function IntroTour({
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        markTourSeen();
-        onClose();
+        dismissForever();
       } else if (e.key === "ArrowRight") {
         setStepIdx((i) => Math.min(i + 1, STEPS.length - 1));
       } else if (e.key === "ArrowLeft") {
@@ -163,7 +184,7 @@ export function IntroTour({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
+  }, [open, dismissForever]);
 
   if (!open) return null;
 
@@ -177,8 +198,7 @@ export function IntroTour({
       aria-label="Kiwi's intro tour"
       className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/60 p-4"
       onClick={() => {
-        markTourSeen();
-        onClose();
+        dismissForever();
       }}
     >
       <div
@@ -194,8 +214,7 @@ export function IntroTour({
             aria-label="Skip tour"
             className="rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-900 hover:bg-amber-200"
             onClick={() => {
-              markTourSeen();
-              onClose();
+              dismissForever();
             }}
           >
             Skip
@@ -236,8 +255,7 @@ export function IntroTour({
             <Button
               className="bg-emerald-600 text-white hover:bg-emerald-700"
               onClick={() => {
-                markTourSeen();
-                onClose();
+                dismissForever();
               }}
             >
               Done

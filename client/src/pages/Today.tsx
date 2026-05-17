@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { useKiwi } from "@/contexts/KiwiContext";
 import { useAdultLock } from "@/contexts/AdultLockContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import BlockEditor, { type ExistingBlock } from "@/components/BlockEditor";
 import GradeBlockDialog from "@/components/GradeBlockDialog";
@@ -105,6 +105,8 @@ export default function Today() {
   const { companionAvatar, companionName, setOpen } = useKiwi();
   // Kiwi-led intro tour — auto-shows once for new visitors. Mom-requested
   // May 2026; the "🐤 Tour" button below the hero re-opens it any time.
+  // Initial state respects localStorage; server profile flag is then checked
+  // below in a useEffect so the tour also stays dismissed cross-device.
   const [tourOpen, setTourOpen] = useState<boolean>(() => {
     try {
       return window.localStorage?.getItem("kiwiTourSeen") !== "1";
@@ -114,6 +116,19 @@ export default function Today() {
   });
   const { unlocked } = useAdultLock();
   const profile = trpc.profile.get.useQuery();
+  // Push 2.13 (2026-05-17): when the server profile says onboarding is done,
+  // close any auto-mounted tour and pin localStorage so it stays closed.
+  useEffect(() => {
+    const done = (profile.data as any)?.onboardingCompleted;
+    if (done) {
+      try {
+        window.localStorage?.setItem("kiwiTourSeen", "1");
+      } catch {
+        /* no-op */
+      }
+      setTourOpen(false);
+    }
+  }, [profile.data]);
   const today = trpc.plans.today.useQuery();
   const struggleM = trpc.struggles.log.useMutation({ onSuccess: () => toast.success("Logged.") });
   const moodM = trpc.mood.log.useMutation({ onSuccess: () => toast.success("Got it.") });

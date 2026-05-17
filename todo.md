@@ -3494,3 +3494,13 @@ Mom's documented preference is a printable daily schedule + worksheet view she c
 - [x] `TodayForwardPlanCard` gains a Print button next to Apply that opens `/print/forward-plan?from=<first day>&days=10` in a new tab. Adult-lock-gated mount stays unchanged; familyAdmin gate at the procedure is the security boundary, not an `<AdultGate>` wrapper.
 - [x] Source-pattern wiring vitest `printForwardPlanWiring.test.ts` covers all four invariants (route registered + page calls printable proc + Print button opens print URL + no AdultGate wraps the route line). (4/4 cases.)
 - [x] Full v2.10 + v2.11 + v2.12 forward-plan suite re-run together: **54/54 green in 5.10 s** across 10 test files (planner pure 12, getNextSchoolDays 7, gap snapshot 8, apply 3, router 3, printable router 4, print model 7, three wiring tests 3+3+4).
+
+
+## Onboarding cross-device dismissal v2.13 (2026-05-17)
+
+- [x] Diagnosed: localStorage-only `kiwiTourSeen` doesn't survive new browser sessions or other devices.
+- [x] Mirrored Skip/Done/Esc/backdrop dismissals to server-side `learnerProfile.onboardingCompleted` via `trpc.profile.update`.
+- [x] Today.tsx auto-mount guard now also short-circuits on the server flag and back-fills localStorage.
+- [x] No new column / no new procedure — reused the existing `profile.update` surface from v1.x.
+- [x] Source-pattern wiring vitest `server/onboardingDismissalWiring.test.ts` (8 cases) green; existing `server/profile.onboarding.test.ts` (3 cases) still green. Combined: 11/11 in 1.71 s.
+- [x] Manual smoke: Today renders with no Kiwi modal blocking — header reads "Sunday, May 17 / Good Morning, Reagan!" and the Tour button now opens it on demand.
