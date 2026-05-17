@@ -1,0 +1,15 @@
+{
+  "query": "SELECT COUNT(*) AS row_count, MIN(date) AS earliest, MAX(date) AS latest FROM schoolCalendar;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT COUNT(*) AS row_count, MIN(date) AS earliest, MAX(date) AS latest FROM schoolCalendar;",
+  "rows": [
+    {
+      "row_count": "0",
+      "earliest": "NULL",
+      "latest": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "row_count\tearliest\tlatest\n0\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 651
+}
