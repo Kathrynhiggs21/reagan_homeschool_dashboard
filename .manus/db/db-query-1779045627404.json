@@ -1,0 +1,16 @@
+{
+  "query": "SELECT id, blockId, submissionType, contentText, rubricPick, rubricScore, adultNotes, submittedAt FROM assignmentSubmissions WHERE id IN (1140008, 1140009, 1140010) ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, blockId, submissionType, contentText, rubricPick, rubricScore, adultNotes, submittedAt FROM assignmentSubmissions WHERE id IN (1140008, 1140009, 1140010) ORDER BY id;",
+  "rows": [],
+  "messages": [
+    "1140008\t1080014\ttext\tColumbus",
+    "4\tNULL\tNULL\t[archived=1]\t2026-05-13 01:37:44",
+    "1140009\t1080014\ttext\tColumbus",
+    "4\tNULL\tNULL\t[archived=1]\t2026-05-13 01:44:31",
+    "1140010\t1080014\ttext\tColumbus",
+    "4\tNULL\tNULL\t[archived=1]\t2026-05-13 01:45:25"
+  ],
+  "stdout": "id\tblockId\tsubmissionType\tcontentText\trubricPick\trubricScore\tadultNotes\tsubmittedAt\n1140008\t1080014\ttext\tColumbus\n4\tNULL\tNULL\t[archived=1]\t2026-05-13 01:37:44\n1140009\t1080014\ttext\tColumbus\n4\tNULL\tNULL\t[archived=1]\t2026-05-13 01:44:31\n1140010\t1080014\ttext\tColumbus\n4\tNULL\tNULL\t[archived=1]\t2026-05-13 01:45:25\n",
+  "stderr": "",
+  "execution_time_ms": 570
+}

@@ -1,0 +1,13 @@
+{
+  "query": "SELECT COUNT(*) AS exact_columbus_newline_4 FROM assignmentSubmissions WHERE contentText = 'Columbus\\n4';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT COUNT(*) AS exact_columbus_newline_4 FROM assignmentSubmissions WHERE contentText = 'Columbus\\n4';",
+  "rows": [
+    {
+      "exact_columbus_newline_4": "238"
+    }
+  ],
+  "messages": [],
+  "stdout": "exact_columbus_newline_4\n238\n",
+  "stderr": "",
+  "execution_time_ms": 620
+}

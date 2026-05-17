@@ -1,0 +1,26 @@
+{
+  "query": "SELECT id, blockId, subjectSlug, title, submissionType, LEFT(COALESCE(contentText,''), 60) AS preview, reviewStatus, adultNotes, submittedAt\nFROM assignmentSubmissions\nWHERE adultNotes LIKE '%archived%'\nORDER BY submittedAt DESC\nLIMIT 8;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, blockId, subjectSlug, title, submissionType, LEFT(COALESCE(contentText,''), 60) AS preview, reviewStatus, adultNotes, submittedAt\nFROM assignmentSubmissions\nWHERE adultNotes LIKE '%archived%'\nORDER BY submittedAt DESC\nLIMIT 8;",
+  "rows": [],
+  "messages": [
+    "1200001\t990001\tNULL\tNULL\ttext\tColumbus",
+    "4\tpending\t[archived=1]\t2026-05-13 06:41:43",
+    "1170002\t990001\tNULL\tNULL\ttext\tColumbus",
+    "4\tpending\t[archived=1]\t2026-05-13 04:02:13",
+    "1170001\t1080014\tNULL\tNULL\ttext\tColumbus",
+    "4\tpending\t[archived=1]\t2026-05-13 03:52:55",
+    "1140012\t1080014\tNULL\tNULL\ttext\tColumbus",
+    "4\tpending\t[archived=1]\t2026-05-13 01:52:27",
+    "1140011\t1080014\tNULL\tNULL\ttext\tColumbus",
+    "4\tpending\t[archived=1]\t2026-05-13 01:51:32",
+    "1140010\t1080014\tNULL\tNULL\ttext\tColumbus",
+    "4\tpending\t[archived=1]\t2026-05-13 01:45:25",
+    "1140009\t1080014\tNULL\tNULL\ttext\tColumbus",
+    "4\tpending\t[archived=1]\t2026-05-13 01:44:31",
+    "1140008\t1080014\tNULL\tNULL\ttext\tColumbus",
+    "4\tpending\t[archived=1]\t2026-05-13 01:37:44"
+  ],
+  "stdout": "id\tblockId\tsubjectSlug\ttitle\tsubmissionType\tpreview\treviewStatus\tadultNotes\tsubmittedAt\n1200001\t990001\tNULL\tNULL\ttext\tColumbus\n4\tpending\t[archived=1]\t2026-05-13 06:41:43\n1170002\t990001\tNULL\tNULL\ttext\tColumbus\n4\tpending\t[archived=1]\t2026-05-13 04:02:13\n1170001\t1080014\tNULL\tNULL\ttext\tColumbus\n4\tpending\t[archived=1]\t2026-05-13 03:52:55\n1140012\t1080014\tNULL\tNULL\ttext\tColumbus\n4\tpending\t[archived=1]\t2026-05-13 01:52:27\n1140011\t1080014\tNULL\tNULL\ttext\tColumbus\n4\tpending\t[archived=1]\t2026-05-13 01:51:32\n1140010\t1080014\tNULL\tNULL\ttext\tColumbus\n4\tpending\t[archived=1]\t2026-05-13 01:45:25\n1140009\t1080014\tNULL\tNULL\ttext\tColumbus\n4\tpending\t[archived=1]\t2026-05-13 01:44:31\n1140008\t1080014\tNULL\tNULL\ttext\tColumbus\n4\tpending\t[archived=1]\t2026-05-13 01:37:44\n",
+  "stderr": "",
+  "execution_time_ms": 598
+}

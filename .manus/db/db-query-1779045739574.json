@@ -1,0 +1,16 @@
+{
+  "query": "SELECT\n  (SELECT COUNT(*) FROM assignmentSubmissions WHERE contentText = 'Columbus\\n4') AS leaked_subs,\n  (SELECT COUNT(*) FROM assignmentSubmissions) AS total_subs,\n  (SELECT COUNT(*) FROM books WHERE author = 'probe') AS leaked_books,\n  (SELECT COUNT(*) FROM books) AS total_books;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT\n  (SELECT COUNT(*) FROM assignmentSubmissions WHERE contentText = 'Columbus\\n4') AS leaked_subs,\n  (SELECT COUNT(*) FROM assignmentSubmissions) AS total_subs,\n  (SELECT COUNT(*) FROM books WHERE author = 'probe') AS leaked_books,\n  (SELECT COUNT(*) FROM books) AS total_books;",
+  "rows": [
+    {
+      "leaked_subs": "0",
+      "total_subs": "3",
+      "leaked_books": "0",
+      "total_books": "12"
+    }
+  ],
+  "messages": [],
+  "stdout": "leaked_subs\ttotal_subs\tleaked_books\ttotal_books\n0\t3\t0\t12\n",
+  "stderr": "",
+  "execution_time_ms": 574
+}

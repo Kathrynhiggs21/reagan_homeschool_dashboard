@@ -1,0 +1,58 @@
+{
+  "query": "SELECT TABLE_NAME, TABLE_ROWS FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('moodLogs','moodSignals','timelineEvents','icalEvents','assignmentSubmissions','blockGrades','parentFlags','emotionalStruggles','listeningSummaries','books','ownedBooks','bookAssignments') ORDER BY TABLE_ROWS DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT TABLE_NAME, TABLE_ROWS FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('moodLogs','moodSignals','timelineEvents','icalEvents','assignmentSubmissions','blockGrades','parentFlags','emotionalStruggles','listeningSummaries','books','ownedBooks','bookAssignments') ORDER BY TABLE_ROWS DESC;",
+  "rows": [
+    {
+      "TABLE_NAME": "assignmentSubmissions",
+      "TABLE_ROWS": "241"
+    },
+    {
+      "TABLE_NAME": "moodSignals",
+      "TABLE_ROWS": "66"
+    },
+    {
+      "TABLE_NAME": "books",
+      "TABLE_ROWS": "22"
+    },
+    {
+      "TABLE_NAME": "ownedBooks",
+      "TABLE_ROWS": "5"
+    },
+    {
+      "TABLE_NAME": "timelineEvents",
+      "TABLE_ROWS": "1"
+    },
+    {
+      "TABLE_NAME": "blockGrades",
+      "TABLE_ROWS": "0"
+    },
+    {
+      "TABLE_NAME": "bookAssignments",
+      "TABLE_ROWS": "0"
+    },
+    {
+      "TABLE_NAME": "emotionalStruggles",
+      "TABLE_ROWS": "0"
+    },
+    {
+      "TABLE_NAME": "icalEvents",
+      "TABLE_ROWS": "0"
+    },
+    {
+      "TABLE_NAME": "listeningSummaries",
+      "TABLE_ROWS": "0"
+    },
+    {
+      "TABLE_NAME": "moodLogs",
+      "TABLE_ROWS": "0"
+    },
+    {
+      "TABLE_NAME": "parentFlags",
+      "TABLE_ROWS": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "TABLE_NAME\tTABLE_ROWS\nassignmentSubmissions\t241\nmoodSignals\t66\nbooks\t22\nownedBooks\t5\ntimelineEvents\t1\nblockGrades\t0\nbookAssignments\t0\nemotionalStruggles\t0\nicalEvents\t0\nlisteningSummaries\t0\nmoodLogs\t0\nparentFlags\t0\n",
+  "stderr": "",
+  "execution_time_ms": 577
+}

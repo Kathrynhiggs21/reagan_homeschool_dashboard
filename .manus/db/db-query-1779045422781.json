@@ -1,0 +1,120 @@
+{
+  "query": "SELECT id, title, author FROM books ORDER BY title LIMIT 25;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, title, author FROM books ORDER BY title LIMIT 25;",
+  "rows": [
+    {
+      "id": "1230001",
+      "title": "__vitest_filter_probe_1778659802437",
+      "author": "probe"
+    },
+    {
+      "id": "1260002",
+      "title": "__vitest_filter_probe_1778827538787",
+      "author": "probe"
+    },
+    {
+      "id": "1260004",
+      "title": "__vitest_filter_probe_1778827601338",
+      "author": "probe"
+    },
+    {
+      "id": "1290002",
+      "title": "__vitest_filter_probe_1779039720362",
+      "author": "probe"
+    },
+    {
+      "id": "1320002",
+      "title": "__vitest_filter_probe_1779042057161",
+      "author": "probe"
+    },
+    {
+      "id": "1320004",
+      "title": "__vitest_filter_probe_1779042129611",
+      "author": "probe"
+    },
+    {
+      "id": "1350002",
+      "title": "__vitest_filter_probe_1779043591518",
+      "author": "probe"
+    },
+    {
+      "id": "1350004",
+      "title": "__vitest_filter_probe_1779043672120",
+      "author": "probe"
+    },
+    {
+      "id": "1350006",
+      "title": "__vitest_filter_probe_1779043759689",
+      "author": "probe"
+    },
+    {
+      "id": "1380002",
+      "title": "__vitest_filter_probe_1779044154794",
+      "author": "probe"
+    },
+    {
+      "id": "780003",
+      "title": "180 Days of Language for 5th Grade",
+      "author": "Shell Education"
+    },
+    {
+      "id": "390003",
+      "title": "Because of Winn-Dixie",
+      "author": "Kate DiCamillo"
+    },
+    {
+      "id": "390002",
+      "title": "Charlotte's Web",
+      "author": "E. B. White"
+    },
+    {
+      "id": "390006",
+      "title": "Fractions, Decimals, and Percents",
+      "author": "David A. Adler"
+    },
+    {
+      "id": "780001",
+      "title": "Michael's World",
+      "author": "NULL"
+    },
+    {
+      "id": "390007",
+      "title": "National Geographic Kids Almanac 2026",
+      "author": "National Geographic Kids"
+    },
+    {
+      "id": "780002",
+      "title": "Spectrum Science Grade 5",
+      "author": "Spectrum"
+    },
+    {
+      "id": "390009",
+      "title": "The Milli Adventures",
+      "author": "Marcy Nyerges"
+    },
+    {
+      "id": "390004",
+      "title": "The One and Only Ivan",
+      "author": "Katherine Applegate"
+    },
+    {
+      "id": "390001",
+      "title": "Tuck Everlasting",
+      "author": "Natalie Babbitt"
+    },
+    {
+      "id": "390008",
+      "title": "Who Was Jane Goodall?",
+      "author": "Roberta Edwards"
+    },
+    {
+      "id": "390005",
+      "title": "Wonder",
+      "author": "R. J. Palacio"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tauthor\n1230001\t__vitest_filter_probe_1778659802437\tprobe\n1260002\t__vitest_filter_probe_1778827538787\tprobe\n1260004\t__vitest_filter_probe_1778827601338\tprobe\n1290002\t__vitest_filter_probe_1779039720362\tprobe\n1320002\t__vitest_filter_probe_1779042057161\tprobe\n1320004\t__vitest_filter_probe_1779042129611\tprobe\n1350002\t__vitest_filter_probe_1779043591518\tprobe\n1350004\t__vitest_filter_probe_1779043672120\tprobe\n1350006\t__vitest_filter_probe_1779043759689\tprobe\n1380002\t__vitest_filter_probe_1779044154794\tprobe\n780003\t180 Days of Language for 5th Grade\tShell Education\n390003\tBecause of Winn-Dixie\tKate DiCamillo\n390002\tCharlotte's Web\tE. B. White\n390006\tFractions, Decimals, and Percents\tDavid A. Adler\n780001\tMichael's World\tNULL\n390007\tNational Geographic Kids Almanac 2026\tNational Geographic Kids\n780002\tSpectrum Science Grade 5\tSpectrum\n390009\tThe Milli Adventures\tMarcy Nyerges\n390004\tThe One and Only Ivan\tKatherine Applegate\n390001\tTuck Everlasting\tNatalie Babbitt\n390008\tWho Was Jane Goodall?\tRoberta Edwards\n390005\tWonder\tR. J. Palacio\n",
+  "stderr": "",
+  "execution_time_ms": 581
+}

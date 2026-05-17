@@ -934,6 +934,19 @@ export async function getBook(id: number) {
   const rows = await getDb().select().from(books).where(eq(books.id, id)).limit(1);
   return rows[0] || null;
 }
+/**
+ * v2.26 (2026-05-17) — raw, unfiltered list of book rows.
+ *
+ * `listBooks()` intentionally hides vitest-tainted rows from the UI. That
+ * shield is correct for production read paths, but it makes test cleanup
+ * impossible because the suite-level `afterAll` hook in
+ * `listBooksFilter.test.ts` cannot see the rows it needs to delete. This
+ * helper exposes the un-filtered view ONLY for cleanup. Treat it as test
+ * infrastructure: do not use in product code.
+ */
+export async function listBooksRaw() {
+  return getDb().select().from(books).orderBy(books.title);
+}
 export async function insertBook(b: typeof books.$inferInsert) {
   await getDb().insert(books).values(b);
 }

@@ -1,0 +1,14 @@
+{
+  "query": "SELECT 'moodLogs' AS tbl, COUNT(*) AS rows FROM moodLogs\nUNION ALL SELECT 'moodSignals', COUNT(*) FROM moodSignals\nUNION ALL SELECT 'timelineEvents', COUNT(*) FROM timelineEvents\nUNION ALL SELECT 'icalEvents', COUNT(*) FROM icalEvents\nUNION ALL SELECT 'assignmentSubmissions', COUNT(*) FROM assignmentSubmissions\nUNION ALL SELECT 'blockGrades', COUNT(*) FROM blockGrades\nUNION ALL SELECT 'parentFlags', COUNT(*) FROM parentFlags\nUNION ALL SELECT 'emotionalStruggles', COUNT(*) FROM emotionalStruggles\nUNION ALL SELECT 'listeningSummaries', COUNT(*) FROM listeningSummaries\nUNION ALL SELECT 'books', COUNT(*) FROM books\nUNION ALL SELECT 'ownedBooks', COUNT(*) FROM ownedBooks\nUNION ALL SELECT 'bookAssignments', COUNT(*) FROM bookAssignments;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT 'moodLogs' AS tbl, COUNT(*) AS rows FROM moodLogs\nUNION ALL SELECT 'moodSignals', COUNT(*) FROM moodSignals\nUNION ALL SELECT 'timelineEvents', COUNT(*) FROM timelineEvents\nUNION ALL SELECT 'icalEvents', COUNT(*) FROM icalEvents\nUNION ALL SELECT 'assignmentSubmissions', COUNT(*) FROM assignmentSubmissions\nUNION ALL SELECT 'blockGrades', COUNT(*) FROM blockGrades\nUNION ALL SELECT 'parentFlags', COUNT(*) FROM parentFlags\nUNION ALL SELECT 'emotionalStruggles', COUNT(*) FROM emotionalStruggles\nUNION ALL SELECT 'listeningSummaries', COUNT(*) FROM listeningSummaries\nUNION ALL SELECT 'books', COUNT(*) FROM books\nUNION ALL SELECT 'ownedBooks', COUNT(*) FROM ownedBooks\nUNION ALL SELECT 'bookAssignments', COUNT(*) FROM bookAssignments;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1064 (42000) at line 1: You have an error in your SQL syntax; check the manual that corresponds to your TiDB version for the right syntax to use line 1 column 42 near \"rows FROM moodLogs",
+    "UNION ALL SELECT 'moodSignals', COUNT(*) FROM moodSignals",
+    "UNION ALL SELECT 'timelineEvents', COUNT(*) FROM timelineEvents",
+    "UNION ALL SELECT 'icalEvents', COUNT(*) FROM icalEvents",
+    "UNION ALL SELECT 'assignmentSubmissions', COUNT(*) FROM assignmentSubmissions",
+    "UNION ALL SELECT 'blockGrades', COUNT(*) FROM blockGrades",
+    "UNION ALL SELECT 'parentFlags', CO"
+  ]
+}

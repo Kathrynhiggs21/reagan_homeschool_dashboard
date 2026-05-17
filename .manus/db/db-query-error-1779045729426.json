@@ -1,0 +1,8 @@
+{
+  "query": "SELECT\n  (SELECT COUNT(*) FROM assignmentSubmissions WHERE contentText = 'Columbus\\n4') AS leaked_subs,\n  (SELECT COUNT(*) FROM assignmentSubmissions) AS total_subs,\n  (SELECT COUNT(*) FROM books WHERE title LIKE '\\\\_\\\\_vitest%' ESCAPE '\\\\\\\\') AS leaked_books,\n  (SELECT COUNT(*) FROM books) AS total_books;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT\n  (SELECT COUNT(*) FROM assignmentSubmissions WHERE contentText = 'Columbus\\n4') AS leaked_subs,\n  (SELECT COUNT(*) FROM assignmentSubmissions) AS total_subs,\n  (SELECT COUNT(*) FROM books WHERE title LIKE '\\\\_\\\\_vitest%' ESCAPE '\\\\\\\\') AS leaked_books,\n  (SELECT COUNT(*) FROM books) AS total_books;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1210 (HY000) at line 1: Incorrect arguments to ESCAPE"
+  ]
+}

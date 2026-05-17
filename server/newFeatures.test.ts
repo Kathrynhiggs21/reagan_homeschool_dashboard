@@ -3,9 +3,33 @@
  * create/complete/reopen, grades upsert+letter, printables sources listing.
  * Uses the live DB + live tRPC caller (same pattern as other tests in this repo).
  */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterAll } from "vitest";
 import { appRouter } from "./routers";
 import { ensurePlanForDate } from "./db";
+import { getDb } from "./db";
+import { sql } from "drizzle-orm";
+
+/**
+ * v2.26 (2026-05-17) — belt-and-suspenders cleanup for the auto-grading
+ * test below.
+ *
+ * Audit on 2026-05-17 found 238 leaked `Columbus\n4` rows in
+ * `assignmentSubmissions` — every test run since 2026-04-28 had been
+ * inserting one new submission per run with no cleanup. The test below
+ * now wraps the create+grade in try/finally to delete the row it just
+ * created, and this suite-level `afterAll` scrubs any leftovers if the
+ * per-test cleanup is bypassed (worker SIGTERM, OOM, unhandled
+ * rejection). Reagan's 3 real submissions (handwritten 'fake blood'
+ * story originals + photo) are NEVER touched because they have
+ * different contentText.
+ */
+afterAll(async () => {
+  try {
+    await getDb().execute(sql`DELETE FROM assignmentSubmissions WHERE contentText = ${"Columbus\n4"}`);
+  } catch {
+    // best-effort
+  }
+});
 
 function makeCaller() {
   // Mirror the pattern used by auth.logout.test.ts: instantiate caller with a
@@ -108,16 +132,31 @@ describe("submissions + auto-grading", () => {
     });
 
     // Submit typed answers
-    const sub: any = await caller.submissions.create({
-      blockId: block.id,
-      mode: "typed",
-      answersText: "Columbus\n4",
-    });
-    expect(sub.id).toBeGreaterThan(0);
+    let sub: any = null;
+    try {
+      sub = await caller.submissions.create({
+        blockId: block.id,
+        mode: "typed",
+        answersText: "Columbus\n4",
+      });
+      expect(sub.id).toBeGreaterThan(0);
 
-    const graded: any = await caller.submissions.autoGrade({ submissionId: sub.id });
-    expect(graded.autoScore).toBe(100);
-    expect(graded.letter).toBe("A");
+      const graded: any = await caller.submissions.autoGrade({ submissionId: sub.id });
+      expect(graded.autoScore).toBe(100);
+      expect(graded.letter).toBe("A");
+    } finally {
+      // v2.26 (2026-05-17) — always clean up the submission this test
+      // creates so the assignmentSubmissions table doesn't accumulate one
+      // leaked row per test run. The suite-level afterAll above is the
+      // backup if a worker crash bypasses this finally.
+      if (sub?.id) {
+        try {
+          await getDb().execute(sql`DELETE FROM assignmentSubmissions WHERE id = ${sub.id}`);
+        } catch {
+          // ignore
+        }
+      }
+    }
   }, 30000);
 });
 

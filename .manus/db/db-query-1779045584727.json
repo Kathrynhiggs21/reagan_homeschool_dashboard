@@ -1,0 +1,70 @@
+{
+  "query": "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'assignmentSubmissions' ORDER BY ORDINAL_POSITION;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'assignmentSubmissions' ORDER BY ORDINAL_POSITION;",
+  "rows": [
+    {
+      "COLUMN_NAME": "id"
+    },
+    {
+      "COLUMN_NAME": "blockId"
+    },
+    {
+      "COLUMN_NAME": "subjectSlug"
+    },
+    {
+      "COLUMN_NAME": "title"
+    },
+    {
+      "COLUMN_NAME": "submissionType"
+    },
+    {
+      "COLUMN_NAME": "contentText"
+    },
+    {
+      "COLUMN_NAME": "fileKey"
+    },
+    {
+      "COLUMN_NAME": "fileUrl"
+    },
+    {
+      "COLUMN_NAME": "fileMimeType"
+    },
+    {
+      "COLUMN_NAME": "driveFileId"
+    },
+    {
+      "COLUMN_NAME": "driveFileUrl"
+    },
+    {
+      "COLUMN_NAME": "reviewStatus"
+    },
+    {
+      "COLUMN_NAME": "rubricPick"
+    },
+    {
+      "COLUMN_NAME": "rubricScore"
+    },
+    {
+      "COLUMN_NAME": "adultNotes"
+    },
+    {
+      "COLUMN_NAME": "reviewedAt"
+    },
+    {
+      "COLUMN_NAME": "reviewedByUserId"
+    },
+    {
+      "COLUMN_NAME": "submittedAt"
+    },
+    {
+      "COLUMN_NAME": "kidDifficulty"
+    },
+    {
+      "COLUMN_NAME": "readingOnly"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_NAME\nid\nblockId\nsubjectSlug\ntitle\nsubmissionType\ncontentText\nfileKey\nfileUrl\nfileMimeType\ndriveFileId\ndriveFileUrl\nreviewStatus\nrubricPick\nrubricScore\nadultNotes\nreviewedAt\nreviewedByUserId\nsubmittedAt\nkidDifficulty\nreadingOnly\n",
+  "stderr": "",
+  "execution_time_ms": 568
+}

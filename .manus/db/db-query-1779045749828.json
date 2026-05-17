@@ -1,0 +1,60 @@
+{
+  "query": "SELECT * FROM moodSignals ORDER BY id DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT * FROM moodSignals ORDER BY id DESC LIMIT 5;",
+  "rows": [
+    {
+      "id": "1200011",
+      "source": "skillPractice",
+      "subjectSlug": "math",
+      "skillLadderId": "1170007",
+      "selfRating": "5",
+      "feltIt": "easy",
+      "note": "NULL",
+      "createdAt": "2026-05-17 18:55:23"
+    },
+    {
+      "id": "1200010",
+      "source": "skillPractice",
+      "subjectSlug": "math",
+      "skillLadderId": "1170007",
+      "selfRating": "4",
+      "feltIt": "ok",
+      "note": "NULL",
+      "createdAt": "2026-05-17 18:55:23"
+    },
+    {
+      "id": "1110011",
+      "source": "skillPractice",
+      "subjectSlug": "math",
+      "skillLadderId": "1080007",
+      "selfRating": "5",
+      "feltIt": "easy",
+      "note": "NULL",
+      "createdAt": "2026-05-17 17:41:28"
+    },
+    {
+      "id": "1110010",
+      "source": "skillPractice",
+      "subjectSlug": "math",
+      "skillLadderId": "1080007",
+      "selfRating": "4",
+      "feltIt": "ok",
+      "note": "NULL",
+      "createdAt": "2026-05-17 17:41:28"
+    },
+    {
+      "id": "1080029",
+      "source": "skillPractice",
+      "subjectSlug": "math",
+      "skillLadderId": "1050016",
+      "selfRating": "5",
+      "feltIt": "easy",
+      "note": "NULL",
+      "createdAt": "2026-05-15 06:46:15"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsource\tsubjectSlug\tskillLadderId\tselfRating\tfeltIt\tnote\tcreatedAt\n1200011\tskillPractice\tmath\t1170007\t5\teasy\tNULL\t2026-05-17 18:55:23\n1200010\tskillPractice\tmath\t1170007\t4\tok\tNULL\t2026-05-17 18:55:23\n1110011\tskillPractice\tmath\t1080007\t5\teasy\tNULL\t2026-05-17 17:41:28\n1110010\tskillPractice\tmath\t1080007\t4\tok\tNULL\t2026-05-17 17:41:28\n1080029\tskillPractice\tmath\t1050016\t5\teasy\tNULL\t2026-05-15 06:46:15\n",
+  "stderr": "",
+  "execution_time_ms": 584
+}

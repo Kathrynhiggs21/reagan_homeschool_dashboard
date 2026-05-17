@@ -1,0 +1,17 @@
+{
+  "query": "SELECT\n  SUM(CASE WHEN title LIKE '%vitest%' OR title LIKE '%probe%' OR contentText LIKE '%vitest%' THEN 1 ELSE 0 END) AS suspicious,\n  SUM(CASE WHEN adultNotes LIKE '%archived%' THEN 1 ELSE 0 END) AS archived,\n  COUNT(*) AS total,\n  MIN(submittedAt) AS earliest,\n  MAX(submittedAt) AS latest\nFROM assignmentSubmissions;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT\n  SUM(CASE WHEN title LIKE '%vitest%' OR title LIKE '%probe%' OR contentText LIKE '%vitest%' THEN 1 ELSE 0 END) AS suspicious,\n  SUM(CASE WHEN adultNotes LIKE '%archived%' THEN 1 ELSE 0 END) AS archived,\n  COUNT(*) AS total,\n  MIN(submittedAt) AS earliest,\n  MAX(submittedAt) AS latest\nFROM assignmentSubmissions;",
+  "rows": [
+    {
+      "suspicious": "0",
+      "archived": "231",
+      "total": "241",
+      "earliest": "2026-04-28 04:18:26",
+      "latest": "2026-05-17 19:02:34"
+    }
+  ],
+  "messages": [],
+  "stdout": "suspicious\tarchived\ttotal\tearliest\tlatest\n0\t231\t241\t2026-04-28 04:18:26\t2026-05-17 19:02:34\n",
+  "stderr": "",
+  "execution_time_ms": 612
+}

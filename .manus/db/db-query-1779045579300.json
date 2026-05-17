@@ -1,0 +1,12 @@
+{
+  "query": "SELECT * FROM assignmentSubmissions LIMIT 1;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT * FROM assignmentSubmissions LIMIT 1;",
+  "rows": [],
+  "messages": [
+    "1\t9\tNULL\tNULL\ttext\tColumbus",
+    "4\tNULL\tNULL\tNULL\tNULL\tNULL\tpending\tNULL\tNULL\t[archived=1]\tNULL\tNULL\t2026-04-28 04:18:26\tNULL\t0"
+  ],
+  "stdout": "id\tblockId\tsubjectSlug\ttitle\tsubmissionType\tcontentText\tfileKey\tfileUrl\tfileMimeType\tdriveFileId\tdriveFileUrl\treviewStatus\trubricPick\trubricScore\tadultNotes\treviewedAt\treviewedByUserId\tsubmittedAt\tkidDifficulty\treadingOnly\n1\t9\tNULL\tNULL\ttext\tColumbus\n4\tNULL\tNULL\tNULL\tNULL\tNULL\tpending\tNULL\tNULL\t[archived=1]\tNULL\tNULL\t2026-04-28 04:18:26\tNULL\t0\n",
+  "stderr": "",
+  "execution_time_ms": 586
+}

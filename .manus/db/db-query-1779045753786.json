@@ -1,0 +1,16 @@
+{
+  "query": "SELECT source, COUNT(*) AS n, MIN(createdAt) AS earliest, MAX(createdAt) AS latest\nFROM moodSignals\nGROUP BY source\nORDER BY n DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT source, COUNT(*) AS n, MIN(createdAt) AS earliest, MAX(createdAt) AS latest\nFROM moodSignals\nGROUP BY source\nORDER BY n DESC;",
+  "rows": [
+    {
+      "source": "skillPractice",
+      "n": "66",
+      "earliest": "2026-04-30 11:54:15",
+      "latest": "2026-05-17 18:55:23"
+    }
+  ],
+  "messages": [],
+  "stdout": "source\tn\tearliest\tlatest\nskillPractice\t66\t2026-04-30 11:54:15\t2026-05-17 18:55:23\n",
+  "stderr": "",
+  "execution_time_ms": 607
+}

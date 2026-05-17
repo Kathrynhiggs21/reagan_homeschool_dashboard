@@ -1,0 +1,8 @@
+{
+  "query": "SELECT submittedBy, COUNT(*) AS n, MIN(submittedAt) AS earliest, MAX(submittedAt) AS latest FROM assignmentSubmissions GROUP BY submittedBy ORDER BY n DESC LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT submittedBy, COUNT(*) AS n, MIN(submittedAt) AS earliest, MAX(submittedAt) AS latest FROM assignmentSubmissions GROUP BY submittedBy ORDER BY n DESC LIMIT 20;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'submittedby' in 'group statement'"
+  ]
+}

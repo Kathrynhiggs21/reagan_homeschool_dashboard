@@ -1,0 +1,14 @@
+{
+  "query": "SELECT COUNT(*) AS total, SUM(CASE WHEN author='probe' OR title LIKE '\\_\\_vitest%' ESCAPE '\\\\' THEN 1 ELSE 0 END) AS leaked FROM books;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT COUNT(*) AS total, SUM(CASE WHEN author='probe' OR title LIKE '\\_\\_vitest%' ESCAPE '\\\\' THEN 1 ELSE 0 END) AS leaked FROM books;",
+  "rows": [
+    {
+      "total": "12",
+      "leaked": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\tleaked\n12\t0\n",
+  "stderr": "",
+  "execution_time_ms": 609
+}

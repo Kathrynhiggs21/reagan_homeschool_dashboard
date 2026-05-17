@@ -1,0 +1,60 @@
+{
+  "query": "SELECT id, title, author FROM books WHERE title LIKE '\\_\\_vitest\\_filter\\_probe\\_%' ESCAPE '\\\\';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, title, author FROM books WHERE title LIKE '\\_\\_vitest\\_filter\\_probe\\_%' ESCAPE '\\\\';",
+  "rows": [
+    {
+      "id": "1230001",
+      "title": "__vitest_filter_probe_1778659802437",
+      "author": "probe"
+    },
+    {
+      "id": "1260002",
+      "title": "__vitest_filter_probe_1778827538787",
+      "author": "probe"
+    },
+    {
+      "id": "1260004",
+      "title": "__vitest_filter_probe_1778827601338",
+      "author": "probe"
+    },
+    {
+      "id": "1290002",
+      "title": "__vitest_filter_probe_1779039720362",
+      "author": "probe"
+    },
+    {
+      "id": "1320002",
+      "title": "__vitest_filter_probe_1779042057161",
+      "author": "probe"
+    },
+    {
+      "id": "1320004",
+      "title": "__vitest_filter_probe_1779042129611",
+      "author": "probe"
+    },
+    {
+      "id": "1350002",
+      "title": "__vitest_filter_probe_1779043591518",
+      "author": "probe"
+    },
+    {
+      "id": "1350004",
+      "title": "__vitest_filter_probe_1779043672120",
+      "author": "probe"
+    },
+    {
+      "id": "1350006",
+      "title": "__vitest_filter_probe_1779043759689",
+      "author": "probe"
+    },
+    {
+      "id": "1380002",
+      "title": "__vitest_filter_probe_1779044154794",
+      "author": "probe"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tauthor\n1230001\t__vitest_filter_probe_1778659802437\tprobe\n1260002\t__vitest_filter_probe_1778827538787\tprobe\n1260004\t__vitest_filter_probe_1778827601338\tprobe\n1290002\t__vitest_filter_probe_1779039720362\tprobe\n1320002\t__vitest_filter_probe_1779042057161\tprobe\n1320004\t__vitest_filter_probe_1779042129611\tprobe\n1350002\t__vitest_filter_probe_1779043591518\tprobe\n1350004\t__vitest_filter_probe_1779043672120\tprobe\n1350006\t__vitest_filter_probe_1779043759689\tprobe\n1380002\t__vitest_filter_probe_1779044154794\tprobe\n",
+  "stderr": "",
+  "execution_time_ms": 596
+}

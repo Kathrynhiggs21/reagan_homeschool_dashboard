@@ -1,0 +1,46 @@
+{
+  "query": "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('moodLogs','moodSignals','timelineEvents','icalEvents','assignmentSubmissions','blockGrades','parentFlags','emotionalStruggles','listeningSummaries','books','ownedBooks','bookAssignments') ORDER BY TABLE_NAME;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME IN ('moodLogs','moodSignals','timelineEvents','icalEvents','assignmentSubmissions','blockGrades','parentFlags','emotionalStruggles','listeningSummaries','books','ownedBooks','bookAssignments') ORDER BY TABLE_NAME;",
+  "rows": [
+    {
+      "TABLE_NAME": "assignmentSubmissions"
+    },
+    {
+      "TABLE_NAME": "blockGrades"
+    },
+    {
+      "TABLE_NAME": "bookAssignments"
+    },
+    {
+      "TABLE_NAME": "books"
+    },
+    {
+      "TABLE_NAME": "emotionalStruggles"
+    },
+    {
+      "TABLE_NAME": "icalEvents"
+    },
+    {
+      "TABLE_NAME": "listeningSummaries"
+    },
+    {
+      "TABLE_NAME": "moodLogs"
+    },
+    {
+      "TABLE_NAME": "moodSignals"
+    },
+    {
+      "TABLE_NAME": "ownedBooks"
+    },
+    {
+      "TABLE_NAME": "parentFlags"
+    },
+    {
+      "TABLE_NAME": "timelineEvents"
+    }
+  ],
+  "messages": [],
+  "stdout": "TABLE_NAME\nassignmentSubmissions\nblockGrades\nbookAssignments\nbooks\nemotionalStruggles\nicalEvents\nlisteningSummaries\nmoodLogs\nmoodSignals\nownedBooks\nparentFlags\ntimelineEvents\n",
+  "stderr": "",
+  "execution_time_ms": 607
+}

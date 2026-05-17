@@ -1,0 +1,15 @@
+{
+  "query": "SELECT 'moods' AS tbl, COUNT(*) AS rows FROM moods\nUNION ALL SELECT 'events', COUNT(*) FROM events\nUNION ALL SELECT 'uploads', COUNT(*) FROM uploads\nUNION ALL SELECT 'submissions', COUNT(*) FROM submissions\nUNION ALL SELECT 'grades', COUNT(*) FROM grades\nUNION ALL SELECT 'summaries', COUNT(*) FROM summaries\nUNION ALL SELECT 'parentFlags', COUNT(*) FROM parentFlags\nUNION ALL SELECT 'struggles', COUNT(*) FROM struggles\nUNION ALL SELECT 'gradesByDay', COUNT(*) FROM gradesByDay\nUNION ALL SELECT 'bookshelf', COUNT(*) FROM bookshelf;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT 'moods' AS tbl, COUNT(*) AS rows FROM moods\nUNION ALL SELECT 'events', COUNT(*) FROM events\nUNION ALL SELECT 'uploads', COUNT(*) FROM uploads\nUNION ALL SELECT 'submissions', COUNT(*) FROM submissions\nUNION ALL SELECT 'grades', COUNT(*) FROM grades\nUNION ALL SELECT 'summaries', COUNT(*) FROM summaries\nUNION ALL SELECT 'parentFlags', COUNT(*) FROM parentFlags\nUNION ALL SELECT 'struggles', COUNT(*) FROM struggles\nUNION ALL SELECT 'gradesByDay', COUNT(*) FROM gradesByDay\nUNION ALL SELECT 'bookshelf', COUNT(*) FROM bookshelf;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1064 (42000) at line 1: You have an error in your SQL syntax; check the manual that corresponds to your TiDB version for the right syntax to use line 1 column 39 near \"rows FROM moods",
+    "UNION ALL SELECT 'events', COUNT(*) FROM events",
+    "UNION ALL SELECT 'uploads', COUNT(*) FROM uploads",
+    "UNION ALL SELECT 'submissions', COUNT(*) FROM submissions",
+    "UNION ALL SELECT 'grades', COUNT(*) FROM grades",
+    "UNION ALL SELECT 'summaries', COUNT(*) FROM summaries",
+    "UNION ALL SELECT 'parentFlags', COUNT(*) FROM parentFlags",
+    "UNION ALL SELECT 'struggles', COUNT"
+  ]
+}
