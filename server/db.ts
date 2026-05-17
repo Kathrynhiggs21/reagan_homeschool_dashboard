@@ -78,6 +78,37 @@ export async function listSubjects() {
   return getDb().select().from(subjects).orderBy(subjects.sortOrder);
 }
 
+/**
+ * Push 2.8 (2026-05-17) — Adult-only adapter: list curriculumTopics that were
+ * stamped by a parent voice-memo intake (the `last_covered_source` column).
+ * Used by the Today adult widget so Mom + Grandma can verify what the system
+ * recorded from a voice memo.
+ */
+export async function listCurriculumTopicsBySource(
+  source: string,
+  opts?: { limit?: number },
+) {
+  const limit = Math.max(1, Math.min(opts?.limit ?? 50, 100));
+  const [rows] = (await getDb().execute(sql`
+    SELECT id, subject, code, title, status, notes, last_covered_source, last_covered_at, completed_at
+    FROM curriculumTopics
+    WHERE last_covered_source = ${source}
+    ORDER BY subject ASC, ord ASC, id ASC
+    LIMIT ${limit}
+  `)) as any;
+  return (rows || []) as Array<{
+    id: number;
+    subject: string;
+    code: string;
+    title: string;
+    status: string;
+    notes: string | null;
+    last_covered_source: string;
+    last_covered_at: number | null;
+    completed_at: Date | null;
+  }>;
+}
+
 export async function upsertSubject(s: typeof subjects.$inferInsert) {
   const db = getDb();
   await db.insert(subjects).values(s).onDuplicateKeyUpdate({

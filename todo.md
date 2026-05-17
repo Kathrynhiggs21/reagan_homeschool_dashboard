@@ -3428,3 +3428,14 @@ Implementation steps:
 - [x] Built ingest helper `server/_lib/ingestMomKatyVoiceMemo20260517.ts`: idempotent — looks up topic by `(subjectSlug,title)`, inserts if missing under the right subject, then writes a curriculum-progress row marking it `completed` (or `assigned_in_progress` for the one to-do item) with the cite-back source string.
 - [x] Real-DB vitest `ingestMomKatyVoiceMemo20260517.test.ts` green (4/4): runs the ingest twice on a clean tagged namespace and asserts (a) all expected topic titles exist exactly once, (b) each has a progress row with `source = mom_katy_voice_memo_2026-05-17`, (c) re-ingest is a no-op.
 - [x] Ingest applied against the live DB. 23 rows now carry `last_covered_source = mom_katy_voice_memo_2026-05-17`. Per-subject roll-up: Math 9 done + 2 in-progress, ELA 4 done + 2 in-progress, Science 4 done + 1 in-progress, Specials 1 in-progress.
+
+
+## Classroom integration v2.8 — Mom-recap surface in Today (2026-05-17)
+
+- [x] db: `listCurriculumTopicsBySource(source, opts)` — read-side adapter for any voice-memo intake; clamps limit 1..100; ordered by subject ASC then ord ASC.
+- [x] tRPC: `curriculum.voiceMemoBackfill` — `familyAdminProcedure`, `{source, limit}` input.
+- [x] Real-DB vitest `voiceMemoBackfillList.test.ts` (5/5): rows present for Mom Katy source, exact source tag on every row, ordered by subject, honors small limit, clamps oversized limit.
+- [x] Adult-only widget `client/src/components/TodayMomVoiceMemoCard.tsx` — groups by subject, shows code · title · Done/InProgress badge · evidence note (line-clamp-2). Self-hides when zero rows.
+- [x] Mounted under `{unlocked && <TodayMomVoiceMemoCard />}` in Today.tsx, beside `TodayClassroomGradedCard`.
+- [x] Source-pattern wiring vitest `todayMomVoiceMemoWiring.test.ts` (7/7): import is correct, mount is adult-locked, kid Classroom card stays kid-visible, source string pinned, hides-on-empty preserved.
+- [x] Full suite green: 14 test files, **104/104 in 5.83 s**.

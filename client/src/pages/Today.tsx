@@ -35,6 +35,7 @@ import CatchUpNextDayCard from "@/components/CatchUpNextDayCard";
 import { TomorrowChoiceCard } from "@/components/TomorrowChoiceCard";
 import TodayClassroomCard from "@/components/TodayClassroomCard";
 import TodayClassroomGradedCard from "@/components/TodayClassroomGradedCard";
+import TodayMomVoiceMemoCard from "@/components/TodayMomVoiceMemoCard";
 // Push 84 (2026-05-13) — Adult Today recap: off-plan capture summary.
 import { OffPlanCaptureCard } from "@/components/OffPlanCaptureCard";
 import { TapEditPopover } from "@/components/TapEditPopover";
@@ -529,6 +530,7 @@ export default function Today() {
           Hidden when the adult panel is locked, hidden when the list is
           empty (pre-OAuth and pre-applyGradeReturn). */}
       {unlocked && <TodayClassroomGradedCard />}
+      {unlocked && <TodayMomVoiceMemoCard />}
 
       {/* Today's Schedule sits near the top so it's always visible quickly */}
       <section>

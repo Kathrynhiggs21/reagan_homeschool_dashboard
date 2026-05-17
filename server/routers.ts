@@ -4159,6 +4159,18 @@ export const appRouter = router({
      */
     catchUp: protectedProcedure.query(() => db.getCatchUpRollup()),
     /**
+     * Push 2.8 (2026-05-17) — Adult-only listing of curriculumTopics that
+     * were stamped by a parent voice-memo intake. Lets Mom + Grandma
+     * verify what the system recorded from a memo. familyAdmin gate
+     * because the data is teacher-facing context, not kid-facing.
+     */
+    voiceMemoBackfill: familyAdminProcedure
+      .input(z.object({
+        source: z.string().min(4).max(120),
+        limit: z.number().int().min(1).max(100).default(50),
+      }))
+      .query(({ input }) => db.listCurriculumTopicsBySource(input.source, { limit: input.limit })),
+    /**
      * Push 73 (2026-05-13) — "From yesterday" nudges for Today.
      * Hydrates the pure catchUpQueueFor() helper from real plan data.
      * Self-hides when empty (the UI renders nothing if items.length === 0).
