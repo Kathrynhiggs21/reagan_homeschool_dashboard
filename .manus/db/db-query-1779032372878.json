@@ -1,0 +1,18 @@
+{
+  "query": "\nSELECT dp.id AS planId, dp.date, dp.dayType, dp.status, COUNT(b.id) AS block_count, SUM(b.durationMin) AS total_min\nFROM dailyPlans dp\nLEFT JOIN scheduleBlocks b ON b.planId = dp.id\nWHERE dp.date = '2026-05-18'\nGROUP BY dp.id, dp.date, dp.dayType, dp.status;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \nSELECT dp.id AS planId, dp.date, dp.dayType, dp.status, COUNT(b.id) AS block_count, SUM(b.durationMin) AS total_min\nFROM dailyPlans dp\nLEFT JOIN scheduleBlocks b ON b.planId = dp.id\nWHERE dp.date = '2026-05-18'\nGROUP BY dp.id, dp.date, dp.dayType, dp.status;\n",
+  "rows": [
+    {
+      "planId": "1110001",
+      "date": "2026-05-18",
+      "dayType": "full",
+      "status": "planned",
+      "block_count": "10",
+      "total_min": "225"
+    }
+  ],
+  "messages": [],
+  "stdout": "planId\tdate\tdayType\tstatus\tblock_count\ttotal_min\n1110001\t2026-05-18\tfull\tplanned\t10\t225\n",
+  "stderr": "",
+  "execution_time_ms": 582
+}

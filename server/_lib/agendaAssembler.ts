@@ -32,7 +32,14 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
   const plan = await db.getPlanByDate(dateStr);
   if (!plan) return null;
 
+  // Summer-mode skip rule (added 2026-05-17):
+  // Treat plans Mom/Grandma have explicitly skipped, OR plans with no blocks
+  // attached, as "no school day" — return null so the nightly cron emits
+  // status='no_plan' and stays silent (no empty email, no spammy alert).
+  if ((plan as any).status === "skipped") return null;
+
   const blocksRaw = (await db.listBlocksForPlan(plan.id)) as any[];
+  if (blocksRaw.length === 0) return null;
 
   // Resolve curriculum topic codes for blocks anchored to a topic
   const topicIds = Array.from(new Set(blocksRaw.map((b) => b.curriculumTopicId).filter(Boolean)));

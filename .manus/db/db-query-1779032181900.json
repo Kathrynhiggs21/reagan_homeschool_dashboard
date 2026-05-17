@@ -1,0 +1,235 @@
+{
+  "query": "\nSELECT dp.date,\n       b.sortOrder,\n       b.title,\n       b.blockType,\n       b.durationMin,\n       s.name AS subject,\n       LEFT(b.description, 80) AS description_preview\nFROM dailyPlans dp\nJOIN scheduleBlocks b ON b.planId = dp.id\nLEFT JOIN subjects s ON s.id = b.subjectId\nWHERE dp.date IN ('2026-05-18', '2026-05-21', '2026-05-22')\nORDER BY dp.date, b.sortOrder;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \nSELECT dp.date,\n       b.sortOrder,\n       b.title,\n       b.blockType,\n       b.durationMin,\n       s.name AS subject,\n       LEFT(b.description, 80) AS description_preview\nFROM dailyPlans dp\nJOIN scheduleBlocks b ON b.planId = dp.id\nLEFT JOIN subjects s ON s.id = b.subjectId\nWHERE dp.date IN ('2026-05-18', '2026-05-21', '2026-05-22')\nORDER BY dp.date, b.sortOrder;\n",
+  "rows": [
+    {
+      "date": "2026-05-18",
+      "sortOrder": "0",
+      "title": "Good morning",
+      "blockType": "morning_warmup",
+      "durationMin": "20",
+      "subject": "NULL",
+      "description_preview": "Tea, hello to Sophie, sit with the ducks who are still here. No agenda."
+    },
+    {
+      "date": "2026-05-18",
+      "sortOrder": "1",
+      "title": "Duck check-in",
+      "blockType": "adventure",
+      "durationMin": "25",
+      "subject": "Science",
+      "description_preview": "Sit by the run with Sophie. What happened, who is still with us, what raccoons d"
+    },
+    {
+      "date": "2026-05-18",
+      "sortOrder": "2",
+      "title": "Tuck Everlasting",
+      "blockType": "read_aloud",
+      "durationMin": "25",
+      "subject": "ELA",
+      "description_preview": "Continue from where you left off. Sophie can read aloud or trade pages — your ca"
+    },
+    {
+      "date": "2026-05-18",
+      "sortOrder": "3",
+      "title": "Brain break",
+      "blockType": "custom",
+      "durationMin": "15",
+      "subject": "NULL",
+      "description_preview": "Outside if you want. Snack, water, parakeets, sit-spot."
+    },
+    {
+      "date": "2026-05-18",
+      "sortOrder": "4",
+      "title": "Backyard nature walk",
+      "blockType": "adventure",
+      "durationMin": "30",
+      "subject": "Science",
+      "description_preview": "Walk the yard and the run with Sophie. Notice what is there. Bring a notebook on"
+    },
+    {
+      "date": "2026-05-18",
+      "sortOrder": "5",
+      "title": "Lunch",
+      "blockType": "custom",
+      "durationMin": "30",
+      "subject": "NULL",
+      "description_preview": "Eat something good. No school talk."
+    },
+    {
+      "date": "2026-05-18",
+      "sortOrder": "6",
+      "title": "Spectrum Science Gr 5",
+      "blockType": "adventure",
+      "durationMin": "25",
+      "subject": "Science",
+      "description_preview": "One short lesson plus the matching reading. Sophie scaffolds — she is good at th"
+    },
+    {
+      "date": "2026-05-18",
+      "sortOrder": "7",
+      "title": "180 Days of Language Gr 5",
+      "blockType": "custom",
+      "durationMin": "15",
+      "subject": "ELA",
+      "description_preview": "One page. That is it."
+    },
+    {
+      "date": "2026-05-18",
+      "sortOrder": "8",
+      "title": "Uno with Sophie",
+      "blockType": "choice",
+      "durationMin": "30",
+      "subject": "NULL",
+      "description_preview": "The actual game. Your tradition. Best of three or whatever you both want."
+    },
+    {
+      "date": "2026-05-18",
+      "sortOrder": "9",
+      "title": "Cozy wrap-up",
+      "blockType": "catch_up",
+      "durationMin": "10",
+      "subject": "NULL",
+      "description_preview": "What stuck with you today? Anything to write down? Or just done."
+    },
+    {
+      "date": "2026-05-21",
+      "sortOrder": "0",
+      "title": "Good morning",
+      "blockType": "morning_warmup",
+      "durationMin": "20",
+      "subject": "NULL",
+      "description_preview": "Tea, parakeets, ducks. Just settle in."
+    },
+    {
+      "date": "2026-05-21",
+      "sortOrder": "1",
+      "title": "Spectrum Math Gr 5",
+      "blockType": "math",
+      "durationMin": "20",
+      "subject": "Math",
+      "description_preview": "One short page. Mom or Grandma will pick where you are. Last \"real\" Indian Hill "
+    },
+    {
+      "date": "2026-05-21",
+      "sortOrder": "2",
+      "title": "Tuck Everlasting",
+      "blockType": "read_aloud",
+      "durationMin": "30",
+      "subject": "ELA",
+      "description_preview": "Continue from where you left off. Try to finish the chapter."
+    },
+    {
+      "date": "2026-05-21",
+      "sortOrder": "3",
+      "title": "Brain break",
+      "blockType": "custom",
+      "durationMin": "15",
+      "subject": "NULL",
+      "description_preview": "Outside or sit-spot. Snack, water."
+    },
+    {
+      "date": "2026-05-21",
+      "sortOrder": "4",
+      "title": "Year-end reflection",
+      "blockType": "catch_up",
+      "durationMin": "25",
+      "subject": "NULL",
+      "description_preview": "What you want from this year — what to keep, what to change, what to try in summ"
+    },
+    {
+      "date": "2026-05-21",
+      "sortOrder": "5",
+      "title": "Lunch",
+      "blockType": "custom",
+      "durationMin": "30",
+      "subject": "NULL",
+      "description_preview": "Eat something good."
+    },
+    {
+      "date": "2026-05-21",
+      "sortOrder": "6",
+      "title": "Duck care + nature",
+      "blockType": "adventure",
+      "durationMin": "35",
+      "subject": "Science",
+      "description_preview": "Run check, water, the surviving three. Notice what is growing in the yard. Sit w"
+    },
+    {
+      "date": "2026-05-21",
+      "sortOrder": "7",
+      "title": "Choice block",
+      "blockType": "choice",
+      "durationMin": "25",
+      "subject": "NULL",
+      "description_preview": "Your pick. Art, makeup, drawing, music, animals."
+    },
+    {
+      "date": "2026-05-21",
+      "sortOrder": "8",
+      "title": "Cozy wrap-up",
+      "blockType": "catch_up",
+      "durationMin": "10",
+      "subject": "NULL",
+      "description_preview": "School year, done. Anything you want to write down? Or just done."
+    },
+    {
+      "date": "2026-05-22",
+      "sortOrder": "0",
+      "title": "Good morning",
+      "blockType": "morning_warmup",
+      "durationMin": "20",
+      "subject": "NULL",
+      "description_preview": "Slower start. Summer pace. No rush."
+    },
+    {
+      "date": "2026-05-22",
+      "sortOrder": "1",
+      "title": "Try the placement page",
+      "blockType": "custom",
+      "durationMin": "25",
+      "subject": "NULL",
+      "description_preview": "Open /placement. Try a few things. Skip is a real button. We are not testing you"
+    },
+    {
+      "date": "2026-05-22",
+      "sortOrder": "2",
+      "title": "Reading — your pick",
+      "blockType": "read_aloud",
+      "durationMin": "25",
+      "subject": "ELA",
+      "description_preview": "Tuck Everlasting OR Michael's World — your call."
+    },
+    {
+      "date": "2026-05-22",
+      "sortOrder": "3",
+      "title": "Outdoor / nature",
+      "blockType": "adventure",
+      "durationMin": "40",
+      "subject": "Science",
+      "description_preview": "Long version. Yard, ducks, creek edge if Mom or Grandma can."
+    },
+    {
+      "date": "2026-05-22",
+      "sortOrder": "4",
+      "title": "Choice block",
+      "blockType": "choice",
+      "durationMin": "30",
+      "subject": "NULL",
+      "description_preview": "Whatever you want."
+    },
+    {
+      "date": "2026-05-22",
+      "sortOrder": "5",
+      "title": "Cozy wrap-up",
+      "blockType": "catch_up",
+      "durationMin": "10",
+      "subject": "NULL",
+      "description_preview": "Optional. Skip if you are done."
+    }
+  ],
+  "messages": [],
+  "stdout": "date\tsortOrder\ttitle\tblockType\tdurationMin\tsubject\tdescription_preview\n2026-05-18\t0\tGood morning\tmorning_warmup\t20\tNULL\tTea, hello to Sophie, sit with the ducks who are still here. No agenda.\n2026-05-18\t1\tDuck check-in\tadventure\t25\tScience\tSit by the run with Sophie. What happened, who is still with us, what raccoons d\n2026-05-18\t2\tTuck Everlasting\tread_aloud\t25\tELA\tContinue from where you left off. Sophie can read aloud or trade pages — your ca\n2026-05-18\t3\tBrain break\tcustom\t15\tNULL\tOutside if you want. Snack, water, parakeets, sit-spot.\n2026-05-18\t4\tBackyard nature walk\tadventure\t30\tScience\tWalk the yard and the run with Sophie. Notice what is there. Bring a notebook on\n2026-05-18\t5\tLunch\tcustom\t30\tNULL\tEat something good. No school talk.\n2026-05-18\t6\tSpectrum Science Gr 5\tadventure\t25\tScience\tOne short lesson plus the matching reading. Sophie scaffolds — she is good at th\n2026-05-18\t7\t180 Days of Language Gr 5\tcustom\t15\tELA\tOne page. That is it.\n2026-05-18\t8\tUno with Sophie\tchoice\t30\tNULL\tThe actual game. Your tradition. Best of three or whatever you both want.\n2026-05-18\t9\tCozy wrap-up\tcatch_up\t10\tNULL\tWhat stuck with you today? Anything to write down? Or just done.\n2026-05-21\t0\tGood morning\tmorning_warmup\t20\tNULL\tTea, parakeets, ducks. Just settle in.\n2026-05-21\t1\tSpectrum Math Gr 5\tmath\t20\tMath\tOne short page. Mom or Grandma will pick where you are. Last \"real\" Indian Hill \n2026-05-21\t2\tTuck Everlasting\tread_aloud\t30\tELA\tContinue from where you left off. Try to finish the chapter.\n2026-05-21\t3\tBrain break\tcustom\t15\tNULL\tOutside or sit-spot. Snack, water.\n2026-05-21\t4\tYear-end reflection\tcatch_up\t25\tNULL\tWhat you want from this year — what to keep, what to change, what to try in summ\n2026-05-21\t5\tLunch\tcustom\t30\tNULL\tEat something good.\n2026-05-21\t6\tDuck care + nature\tadventure\t35\tScience\tRun check, water, the surviving three. Notice what is growing in the yard. Sit w\n2026-05-21\t7\tChoice block\tchoice\t25\tNULL\tYour pick. Art, makeup, drawing, music, animals.\n2026-05-21\t8\tCozy wrap-up\tcatch_up\t10\tNULL\tSchool year, done. Anything you want to write down? Or just done.\n2026-05-22\t0\tGood morning\tmorning_warmup\t20\tNULL\tSlower start. Summer pace. No rush.\n2026-05-22\t1\tTry the placement page\tcustom\t25\tNULL\tOpen /placement. Try a few things. Skip is a real button. We are not testing you\n2026-05-22\t2\tReading — your pick\tread_aloud\t25\tELA\tTuck Everlasting OR Michael's World — your call.\n2026-05-22\t3\tOutdoor / nature\tadventure\t40\tScience\tLong version. Yard, ducks, creek edge if Mom or Grandma can.\n2026-05-22\t4\tChoice block\tchoice\t30\tNULL\tWhatever you want.\n2026-05-22\t5\tCozy wrap-up\tcatch_up\t10\tNULL\tOptional. Skip if you are done.\n",
+  "stderr": "",
+  "execution_time_ms": 603
+}
