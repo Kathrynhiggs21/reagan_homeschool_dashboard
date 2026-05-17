@@ -7068,6 +7068,20 @@ export const appRouter = router({
           input?.lifecycleStatus ?? null,
           { subjectId: input?.subjectId ?? null, limit: input?.limit ?? 200 },
         )),
+      /**
+       * Reagan's Today-page feed of Classroom work. Lifecycle in
+       * (to_do, in_progress) AND (no due date OR due within windowDays).
+       * Returns [] pre-OAuth, so it's safe to render unconditionally.
+       */
+      activeForToday: publicProcedure
+        .input(z.object({
+          windowDays: z.number().int().min(0).max(60).default(7),
+          limit: z.number().int().min(1).max(50).default(12),
+        }).optional())
+        .query(({ input }) => db.listClassroomAssignmentsActiveForToday({
+          windowDays: input?.windowDays ?? 7,
+          limit: input?.limit ?? 12,
+        })),
       updateStatus: familyAdminProcedure
         .input(z.object({
           assignmentId: z.number().int().positive(),

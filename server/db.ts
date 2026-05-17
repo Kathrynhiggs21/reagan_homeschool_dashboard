@@ -5132,6 +5132,41 @@ export async function listClassroomAssignmentsByLifecycle(
     .limit(limit);
 }
 
+/**
+ * "What does Reagan need to act on right now?" feed for the Today page.
+ *
+ * Rules:
+ *  - Only lifecycle in (to_do, in_progress) — turned_in/graded already moved on.
+ *  - Either no due date (open-ended), or due within `windowDays` (default 7) of `now`.
+ *  - Sorted by due ascending, then most-recently-updated first as tiebreak.
+ *  - Capped at `limit` (default 12) so the Today card never blows up.
+ *
+ * Pre-OAuth this returns []. That's the whole point of being safe to drop
+ * onto the kid-facing Today page today.
+ */
+export async function listClassroomAssignmentsActiveForToday(
+  opts: { now?: Date; windowDays?: number; limit?: number } = {}
+) {
+  const d = getDb();
+  const now = opts.now ?? new Date();
+  const windowDays = Math.max(0, opts.windowDays ?? 7);
+  const horizon = new Date(now.getTime() + windowDays * 24 * 60 * 60 * 1000);
+  const limit = opts.limit ?? 12;
+  // due IS NULL OR (due >= now AND due <= horizon)
+  const rows: any[] = await d
+    .select()
+    .from(classroomAssignments)
+    .where(
+      and(
+        sql`${classroomAssignments.lifecycleStatus} IN ('to_do','in_progress')`,
+        sql`(${classroomAssignments.dueAt} IS NULL OR (${classroomAssignments.dueAt} >= ${now} AND ${classroomAssignments.dueAt} <= ${horizon}))`,
+      ) as any,
+    )
+    .orderBy(asc(classroomAssignments.dueAt as any))
+    .limit(limit);
+  return rows;
+}
+
 /* ----- Update lifecycle status with audit log ------------------------
  * Atomic-ish: we set the new status (and timestamp) on classroomAssignments,
  * then write an audit row to classroomSubmissions.

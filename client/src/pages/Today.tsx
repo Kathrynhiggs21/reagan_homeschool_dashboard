@@ -33,6 +33,7 @@ import { SlayChargeCard } from "@/components/SlayChargeCard";
 import SummerModeBadge from "@/components/SummerModeBadge";
 import CatchUpNextDayCard from "@/components/CatchUpNextDayCard";
 import { TomorrowChoiceCard } from "@/components/TomorrowChoiceCard";
+import TodayClassroomCard from "@/components/TodayClassroomCard";
 // Push 84 (2026-05-13) — Adult Today recap: off-plan capture summary.
 import { OffPlanCaptureCard } from "@/components/OffPlanCaptureCard";
 import { TapEditPopover } from "@/components/TapEditPopover";
@@ -517,6 +518,11 @@ export default function Today() {
 
       {/* Diagnostic Placement invite — gentle, optional, dismisses at 100% */}
       <PlacementInviteCard />
+
+      {/* Google Classroom assignments due this week — hides itself when empty
+          (which is the entire pre-OAuth state). Wires the reusable
+          LifecycleChip so Reagan can move work without leaving Today. */}
+      <TodayClassroomCard />
 
       {/* Today's Schedule sits near the top so it's always visible quickly */}
       <section>

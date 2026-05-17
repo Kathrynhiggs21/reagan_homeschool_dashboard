@@ -3371,3 +3371,17 @@ Carry-forward (still NOT this push):
 - [ ] OAuth scope expansion + `/api/scheduled/classroom-sync` endpoint that actually pulls courses + coursework from Google.
 - [ ] Drive subfolder auto-creation per class when a course is first synced.
 - [ ] Pull grade-back when teacher returns work in Classroom (sync sets status=graded + stores score).
+
+## Classroom integration v2.4 — TodayClassroomCard (DONE 2026-05-17)
+
+- [x] **`gclassroom.assignments.activeForToday` query (DONE):** Server-side adds `db.listClassroomAssignmentsActiveForToday({ now, windowDays, limit })` (lifecycle in to_do/in_progress AND (no due OR due within windowDays)) and a matching `publicProcedure` so kid-side rendering is fine. Defaults: 7-day window, 12-row cap. Pre-OAuth returns [].
+- [x] **`TodayClassroomCard` mounted on /today (DONE):** New `client/src/components/TodayClassroomCard.tsx`. Shows Reagan a tight 1- or 2-col grid of pending Classroom work with `LifecycleChip` per item; status moves call `gclassroom.assignments.updateStatus` (which already auto-enqueues Drive moves). Card hides itself entirely when the query returns [] (the entire pre-OAuth state) — strictly additive on the kid-facing Today page.
+- [x] **`classroomActiveForToday.test.ts` (DONE):** 3 tests, real DB. Inserts 6 synthetic rows (todo no-due, todo +3d, ip +3d, todo -5d, todo +40d, graded +3d), asserts: only the to_do/in_progress + (no-due OR within 7d) rows are returned, ordering is dueAt-asc, `windowDays=60` includes the +40d row, `windowDays=1` excludes the +3d row but always keeps the no-due row. Cleans up tagged rows + audit on tearDown.
+
+Aggregate after v2.4: **7 classroom test files green together — 63/63 in 3.85 s** (`schemaScaffold` 4 + `router` 8 + `drivePathPlanner` 13 + `lifecycleTransitions` 15 + `driveEnqueue` 6 + `lifecycleUI` 14 + `activeForToday` 3).
+
+Carry-forward (still NOT this push):
+- [ ] Mount LifecycleChip on Schedule page once it surfaces Classroom assignments inline.
+- [ ] OAuth scope expansion + `/api/scheduled/classroom-sync` endpoint that actually pulls courses + coursework from Google.
+- [ ] Drive subfolder auto-creation per class when a course is first synced.
+- [ ] Pull grade-back when teacher returns work in Classroom (sync sets status=graded + stores score).
