@@ -46,8 +46,18 @@ describe("plans router — aiPropose + aiApplyProposal wiring", () => {
     expect(addIdx).toBeGreaterThan(modifyIdx);
   });
 
-  it("aiApplyProposal returns counts: { added, modified, removed }", () => {
-    expect(src).toMatch(/return \{ planId: plan\.id, added, modified, removed \}/);
+  it("aiApplyProposal returns counts plus per-decision results: { planId, added, modified, removed, results }", () => {
+    // The contract widened on 2026-05-17 to include a per-decision `results`
+    // array so callers can see which individual decisions failed without
+    // dropping successful ones. Lock both the counts and the results field.
+    expect(src).toMatch(/return \{ planId: plan\.id, added, modified, removed, results \}/);
+  });
+
+  it("aiApplyProposal records per-decision ok/error so the UI can show partial failures", () => {
+    expect(src).toMatch(/recordOk\(/);
+    expect(src).toMatch(/recordFail\(/);
+    // Failed decisions carry an error string
+    expect(src).toMatch(/results\.push\(\{ kind, existingBlockId, ok: false, error: msg \}\)/);
   });
 
   it("aiApplyProposal logs an audit row with the +/~/- summary line", () => {

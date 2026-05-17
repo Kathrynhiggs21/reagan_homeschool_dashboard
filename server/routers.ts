@@ -472,11 +472,42 @@ export const appRouter = router({
       let removed = 0;
       let modified = 0;
       let added = 0;
+      // Per-decision results. The contract is partial-apply: each decision
+      // succeeds or fails independently, and the caller sees exactly which
+      // ones failed (with the error message) so the UI can surface them
+      // without dropping the successful ones on the floor.
+      const results: Array<{
+        kind: "keep" | "modify" | "remove" | "add";
+        existingBlockId?: number;
+        ok: boolean;
+        error?: string;
+      }> = [];
+
+      const recordOk = (kind: any, existingBlockId?: number) =>
+        results.push({ kind, existingBlockId, ok: true });
+      const recordFail = (kind: any, e: unknown, existingBlockId?: number) => {
+        const msg = e instanceof Error ? e.message : String(e);
+        results.push({ kind, existingBlockId, ok: false, error: msg });
+      };
+
+      // Keep decisions are no-ops by definition. Recording them keeps the
+      // results array shape identical to the input array so the UI can
+      // map 1:1.
+      for (const d of input.decisions) {
+        if (d.kind === "keep") recordOk("keep", d.existingBlockId);
+      }
 
       // Apply removes first so sortOrder gaps don't shift mid-add.
       for (const d of input.decisions) {
         if (d.kind === "remove") {
-          try { await db.deleteBlock(d.existingBlockId); removed++; } catch (e) { console.warn("[aiApplyProposal] delete failed", e); }
+          try {
+            await db.deleteBlock(d.existingBlockId);
+            removed++;
+            recordOk("remove", d.existingBlockId);
+          } catch (e) {
+            console.warn("[aiApplyProposal] delete failed", e);
+            recordFail("remove", e, d.existingBlockId);
+          }
         }
       }
 
@@ -493,7 +524,11 @@ export const appRouter = router({
               subjectId,
             } as any);
             modified++;
-          } catch (e) { console.warn("[aiApplyProposal] update failed", e); }
+            recordOk("modify", d.existingBlockId);
+          } catch (e) {
+            console.warn("[aiApplyProposal] update failed", e);
+            recordFail("modify", e, d.existingBlockId);
+          }
         }
       }
 
@@ -520,20 +555,25 @@ export const appRouter = router({
               status: "not_started" as any,
             } as any);
             added++;
-          } catch (e) { console.warn("[aiApplyProposal] create failed", e); }
+            recordOk("add");
+          } catch (e) {
+            console.warn("[aiApplyProposal] create failed", e);
+            recordFail("add", e);
+          }
         }
       }
 
+      const failedCount = results.filter((r) => !r.ok).length;
       await db.logAudit({
         actorOpenId: ctx.user?.openId,
         actorName: ctx.user?.name,
         entityType: "block",
         entityId: plan.id,
         action: "update",
-        summary: `AI-edit applied for ${input.date}: +${added} ~${modified} -${removed}`,
+        summary: `AI-edit applied for ${input.date}: +${added} ~${modified} -${removed}${failedCount > 0 ? ` (failed: ${failedCount})` : ""}`,
       });
 
-      return { planId: plan.id, added, modified, removed };
+      return { planId: plan.id, added, modified, removed, results };
     }),
   }),
 
