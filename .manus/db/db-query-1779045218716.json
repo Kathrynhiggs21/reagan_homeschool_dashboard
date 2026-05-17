@@ -1,0 +1,22 @@
+{
+  "query": "SELECT `key`, value FROM appSettings WHERE `key` IN ('student.googleEmail','classroom.studentDomain','calendar.ownerEmail');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT `key`, value FROM appSettings WHERE `key` IN ('student.googleEmail','classroom.studentDomain','calendar.ownerEmail');",
+  "rows": [
+    {
+      "key": "student.googleEmail",
+      "value": "reaganhiggs910@gmail.com"
+    },
+    {
+      "key": "classroom.studentDomain",
+      "value": "gmail.com"
+    },
+    {
+      "key": "calendar.ownerEmail",
+      "value": "reaganhiggs910@gmail.com"
+    }
+  ],
+  "messages": [],
+  "stdout": "key\tvalue\nstudent.googleEmail\treaganhiggs910@gmail.com\nclassroom.studentDomain\tgmail.com\ncalendar.ownerEmail\treaganhiggs910@gmail.com\n",
+  "stderr": "",
+  "execution_time_ms": 575
+}
