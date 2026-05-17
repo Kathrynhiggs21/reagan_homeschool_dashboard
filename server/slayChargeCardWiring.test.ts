@@ -78,7 +78,9 @@ describe("Push 119 — Slay Charge ⚡ Today-card wiring", () => {
 
   it("Analytics Recent Submissions still filters morning-vibe rows", () => {
     const src = read("client/src/pages/Analytics.tsx");
-    expect(src).toMatch(/morning_vibe/);
+    // morning_vibe was an interim alias; the canonical type is
+    // `morning_warmup`. Both names are tolerated server-side, but
+    // the seeds always use the canonical one.
     expect(src).toMatch(/morning_warmup/);
     expect(src).toMatch(/slay charge/i);
   });
@@ -93,9 +95,13 @@ describe("Push 119 — Slay Charge ⚡ Today-card wiring", () => {
     expect(seedSlice).not.toMatch(/title:\s*"Slow morning"/);
   });
 
-  it("server/db.ts seeds use the new 'Slay Charge ⚡' title + morning_vibe type", () => {
+  it("server/db.ts seeds use the new 'Slay Charge ⚡' title + morning_warmup type", () => {
+    // v2.20 (2026-05-17): Originally Push 119 seeded these with
+    // `type: "morning_vibe"` but the canonical block-type slug is
+    // "morning_warmup" (matches blockTypes table + Today renderer).
+    // The vibe-vs-warmup naming was harmonized; the title is unchanged.
     const src = read("server/db.ts");
     expect(src).toMatch(/Slay Charge ⚡/);
-    expect(src).toMatch(/type:\s*"morning_vibe"/);
+    expect(src).toMatch(/type:\s*"morning_warmup"/);
   });
 });

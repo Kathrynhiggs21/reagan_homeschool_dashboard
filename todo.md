@@ -3507,3 +3507,18 @@ Mom's documented preference is a printable daily schedule + worksheet view she c
 - [x] No new column / no new procedure — reused the existing `profile.update` surface from v1.x.
 - [x] Source-pattern wiring vitest `server/onboardingDismissalWiring.test.ts` (8 cases) green; existing `server/profile.onboarding.test.ts` (3 cases) still green. Combined: 11/11 in 1.71 s.
 - [x] Manual smoke: Today renders with no Kiwi modal blocking — header reads "Sunday, May 17 / Good Morning, Reagan!" and the Tour button now opens it on demand.
+
+
+## v2.20 (2026-05-17) — Stale source-pattern test failures cleanup
+
+- [x] Fix the 11 stale vitests that had been masking real regressions (DONE 2026-05-17, push v2.20). Triage:
+  - Deleted `server/stickersCurrencyLabel.test.ts` — `Stickers.tsx` no longer exists (kid coins were rolled into the Kiwi page in Push 61).
+  - Updated `deletedPagesContract.test.ts` to remove `Placement.tsx` from the deleted-pages list and remove `/placement` from the redirect-or-none list — the page was reinstated as a real route after Push 61, so the contract was lying. The other 30+ Push-61 entries still hold.
+  - Updated `noKidLevelsContract.test.ts` Placement headline assertion: the page was rebuilt as "Skill Check-up" with the subline "no grades, no right-or-wrong"; the older "feels easy and what feels new" copy is gone but the level-free contract still holds.
+  - Updated `slayChargeCardWiring.test.ts` to assert the canonical block type slug `morning_warmup` instead of `morning_vibe` (the `morning_vibe` alias was dropped in the same fix that resolved the `Data truncated for column 'blockType'` bug surfaced by `aiApplyProposalIntegration.test.ts`).
+  - Updated `digestUiMount.test.ts` so the recipient-subline test now asserts that recipients come from `previewHtml.data.recipients` (server-driven) rather than the hard-coded `spear.cpt@gmail.com` / `marcy.spear@gmail.com` strings. Decoupling the card from the email allowlist is the right architecture; the test was lagging.
+  - Updated `resetTutorRoster.test.ts` to assert the new canonical roster `Madison`, `Sophie`, `Keith` (Push 79 rename from `Tutor A/B/C`) and the deliberately-seeded `*@tbd.local` placeholder emails (so `permissions.roleForEmail` treats those rows as Editor-tier on first real Google sign-in). The legacy assertion that emails should be empty was never quite right.
+  - Updated `cartoonVoice.test.ts` to assert the rewritten Kiwi-voice prompt key phrase `older-cousin` instead of the original Phase-14 wording `real-kid`. The behavioral contract — style is embedded in the request body, utterance is appended, voiceName matches the prebuilt config — is unchanged.
+  - Updated `topicRollup.test.ts` to seed `role:"admin"` (path-a of `familyAdminProcedure`) instead of `role:"owner"` which neither path accepts. The gate was rightly tightened to `familyAdminProcedure` in v2.15; the test was correct in spirit but wasn't updated.
+  - Updated `aiApplyProposalIntegration.test.ts` "throws when no plan exists" test: the procedure now auto-creates an empty plan for unknown dates and returns a partial-apply result, so the test pivots to assert the new shape (planId allocated, results-length=1, keep is ok=true no-op). Rationale: the AI flow proposes against an empty day all the time; an unconditional throw broke that path.
+- [x] Full vitest suite green after cleanup (DONE 2026-05-17, push v2.20): 430 files, 3686 tests passed, 1 skipped, 0 failed. Confirms zero regressions across v2.15→v2.20 and that the 11 fixes are stable.

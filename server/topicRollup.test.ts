@@ -4,7 +4,15 @@ import { getDb } from "./db";
 import { curriculumTopics, curriculumResources } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
 
-const ctxOwner = { user: { id: "owner-1", role: "owner" as const, name: "Owner", openId: "x" } };
+// v2.20 (2026-05-17): writes were tightened from `protectedProcedure` to
+// `familyAdminProcedure` in v2.15. The latter accepts either:
+//   (a) ctx.user.role === "admin" or "tutor" (DB role check), OR
+//   (b) roleForEmail(ctx.user.email) === parent | editor | tutor.
+// The original test seeded role="owner" which satisfies neither, so the
+// gate rightly threw FORBIDDEN. We now seed role="admin" (path a) which
+// represents the same "this caller is allowed to write" intent without
+// depending on the email allowlist staying in sync with test fixtures.
+const ctxOwner = { user: { id: "owner-1", role: "admin" as const, name: "Owner", openId: "x" } };
 const callerOwner = appRouter.createCaller(ctxOwner as any);
 const callerPub = appRouter.createCaller({ user: undefined } as any);
 

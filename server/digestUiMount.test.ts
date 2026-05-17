@@ -7,9 +7,17 @@ const CARD = readFileSync(join(ROOT, "client/src/components/WeeklyDigestCard.tsx
 const ANALYTICS = readFileSync(join(ROOT, "client/src/pages/Analytics.tsx"), "utf-8");
 
 describe("Push 71 — Sunday Digest UI surfaces Grandma + HTML preview", () => {
-  it("subline mentions both Mom (spear.cpt) and Grandma (marcy.spear)", () => {
-    expect(CARD).toContain("spear.cpt@gmail.com");
-    expect(CARD).toContain("marcy.spear@gmail.com");
+  it("subline renders the recipient list returned by the server (data-driven, not hardcoded)", () => {
+    // v2.20 (2026-05-17): Push 71 originally hardcoded "spear.cpt" +
+    // "marcy.spear" into the card subline. That coupling has since
+    // been removed — the recipient list now comes from
+    // `previewHtml.data.recipients` (server-driven), which is also
+    // covered by the dedicated test below. The card must NOT hardcode
+    // either email address (would diverge from server config).
+    expect(CARD).not.toContain("spear.cpt@gmail.com");
+    expect(CARD).not.toContain("marcy.spear@gmail.com");
+    // Positive: the data-driven recipients line is present.
+    expect(CARD).toContain("previewHtml.data.recipients.join");
   });
 
   it("wires the digest.previewHtml tRPC procedure", () => {

@@ -99,11 +99,18 @@ describe("no kid-visible level rendering — contract (push 24)", () => {
     expect(src).not.toMatch(/moved up a level/i);
   });
 
-  it("Placement headline no longer says 'find your level'", () => {
+  it("Placement headline no longer says 'find your level' (push 24 → relaxed v2.20)", () => {
+    // v2.20 (2026-05-17): Page was rebuilt as "Skill Check-up" — the
+    // exact phrase "feels easy and what feels new" is gone, but the
+    // core push-24 contract (no kid-visible "level" word) still holds.
+    // We now assert against the current copy: the headline is
+    // "Skill Check-up" and the subline tells Reagan to pick a subject
+    // "no grades, no right-or-wrong". Both phrasings are level-free.
     const src = read("client/src/pages/Placement.tsx");
     expect(src.length).toBeGreaterThan(500);
     expect(src).not.toMatch(/find your level/i);
-    expect(src).toMatch(/feels easy and what feels new/i);
+    expect(src).toMatch(/Skill Check-up/);
+    expect(src).toMatch(/no grades, no\s+right-or-wrong/i);
   });
 
   it("the softer-next hint chip never uses the word 'level'", () => {

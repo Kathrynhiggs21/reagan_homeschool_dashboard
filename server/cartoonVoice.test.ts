@@ -15,9 +15,15 @@ describe("Phase 14 — cartoonVoice", () => {
   });
 
   it("buildGeminiTtsBody embeds style + uses prebuilt voice", () => {
+    // v2.20 (2026-05-17): The Kiwi voice prompt was rewritten away
+    // from the original "real-kid" wording (Phase 14) to a calmer
+    // "older-cousin" framing (no baby talk, no cartoon-bird sparkle).
+    // The contract that mattered — the kiwi style is embedded into
+    // the request body and the supplied utterance is appended —
+    // is unchanged. Pin the assertion to the new style key phrase.
     const body: any = buildGeminiTtsBody("kiwi", "Hi Reagan, ready for math?");
     const text = body.contents[0].parts[0].text;
-    expect(text).toContain("real-kid");
+    expect(text).toContain("older-cousin");
     expect(text).toContain("Hi Reagan");
     expect(body.generationConfig.responseModalities).toEqual(["AUDIO"]);
     expect(body.generationConfig.speechConfig.voiceConfig.prebuiltVoiceConfig.voiceName)

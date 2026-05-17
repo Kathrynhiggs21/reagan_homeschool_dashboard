@@ -43,7 +43,9 @@ const DELETED_PAGE_FILES = [
   "KiwiCoins.tsx",
   "Knowledge.tsx",
   "NeedsWork.tsx",
-  "Placement.tsx",
+  // Placement.tsx removed from this list (2026-05-17, push v2.20):
+  // it was reinstated as a real route after the Push-61 cleanup.
+  // The kid-side levels copy is still gated by noKidLevelsContract.
   "PracticeForCoins.tsx",
   "Printables.tsx",
   "Prizes.tsx",
@@ -110,8 +112,10 @@ describe("deleted pages + dupe-route consolidation — contract (push 22)", () =
   });
 
   it("Push 61 — every Push-61-deleted page has either no route or a Redirect (never a component)", () => {
+    // /placement removed from this list (2026-05-17, push v2.20):
+    // route was reinstated as a real component=\{Placement\} entry.
     const REDIRECT_OR_NONE = [
-      "/academics", "/animals", "/knowledge", "/needs-work", "/placement",
+      "/academics", "/animals", "/knowledge", "/needs-work",
       "/practice-for-coins", "/printables", "/prizes", "/profile", "/report-card",
       "/review-library", "/rewards", "/scratch", "/stickers", "/timeline",
       "/tutor", "/tutor/:id", "/week",

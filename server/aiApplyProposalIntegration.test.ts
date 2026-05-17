@@ -183,13 +183,37 @@ describe("plans.aiApplyProposal — real DB integration", () => {
     ).rejects.toThrow();
   });
 
-  it("throws when no plan exists for the date", async () => {
-    await expect(
-      caller.plans.aiApplyProposal({
-        date: "2099-12-31",
-        decisions: [{ kind: "keep", existingBlockId: 1 } as any],
-      })
-    ).rejects.toThrow(/no plan/i);
+  it("auto-creates an empty plan for an unknown date instead of throwing (v2.20: was originally a hard reject)", async () => {
+    // v2.20 (2026-05-17): The original Push contract was "reject if no
+    // plan exists for the target date" — since rewritten so that the
+    // procedure ensures a plan row exists for the date and returns a
+    // partial-apply result. Rationale: the AI flow proposes against an
+    // empty day all the time (Mom asks Kiwi to plan a fresh date that
+    // has no rows yet), so an unconditional throw broke that path.
+    //
+    // We now assert the new contract: the call resolves, the response
+    // shape is the standard `{ planId, added, modified, removed, results }`,
+    // a brand-new planId is allocated, no rows are written for a `keep`
+    // decision, and any decision pointing at a missing block id surfaces
+    // as ok=false in `results` (NOT as a thrown error).
+    const FUTURE_DATE = "2099-12-31";
+    const res: any = await caller.plans.aiApplyProposal({
+      date: FUTURE_DATE,
+      decisions: [{ kind: "keep", existingBlockId: 999_999_999 } as any],
+    });
+    expect(typeof res.planId).toBe("number");
+    expect(res.added).toBe(0);
+    expect(res.modified).toBe(0);
+    expect(res.removed).toBe(0);
+    expect(Array.isArray(res.results)).toBe(true);
+    expect(res.results.length).toBe(1);
+    // `keep` is a no-op so it's reported as ok=true even when the block
+    // id doesn't exist on this day's plan — the procedure literally
+    // does nothing for keep decisions, so there's nothing to fail.
+    // (If a future push tightens this so missing-block keeps fail, this
+    // line is the one to update.)
+    expect(res.results[0].kind).toBe("keep");
+    expect(res.results[0].ok).toBe(true);
   });
 });
 

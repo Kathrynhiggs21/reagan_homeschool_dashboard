@@ -11,22 +11,43 @@ describe("resetTutorRoster", () => {
     await db.listTutors(false);
   });
 
-  it("returns exactly the three canonical tutors (Tutor A, Tutor B, Tutor C)", async () => {
-    const res = await db.resetTutorRoster();
-    expect(res.count).toBeGreaterThanOrEqual(3);
-    expect(res.roster).toEqual(expect.arrayContaining(["Tutor A", "Tutor B", "Tutor C"]));
+  // v2.20 (2026-05-17): The canonical roster was renamed (push 79):
+  //   "Tutor A/B/C" → "Madison", "Sophie", "Keith". The reset helper
+  // also seeds *@tbd.local placeholder emails so permissions.ts can
+  // treat the rows as Editor-tier the moment real Google sign-ins
+  // land. Tests below reflect that current truth.
+  const CANONICAL = ["Madison", "Sophie", "Keith"] as const;
+
+  it("returns exactly the three canonical tutors (Madison, Sophie, Keith)", async () => {
+    const res: any = await db.resetTutorRoster();
+    // resetTutorRoster's return shape varies by version; tolerate either
+    // { count, roster } or just an inserted-count number, then verify by
+    // re-listing.
+    if (typeof res === "object" && res !== null) {
+      if (typeof res.count === "number") {
+        expect(res.count).toBeGreaterThanOrEqual(3);
+      }
+      if (Array.isArray(res.roster)) {
+        expect(res.roster).toEqual(expect.arrayContaining([...CANONICAL]));
+      }
+    }
+    const active = await db.listTutors(true);
+    const names = active.map((t: any) => t.name);
+    expect(names).toEqual(expect.arrayContaining([...CANONICAL]));
   });
 
-  it("leaves each canonical tutor active with no fake contact info", async () => {
+  it("leaves each canonical tutor active with the seeded *@tbd.local placeholder", async () => {
     await db.resetTutorRoster();
     const active = await db.listTutors(true);
     const byName = Object.fromEntries(active.map((t: any) => [t.name, t]));
-    for (const n of ["Tutor A", "Tutor B", "Tutor C"]) {
+    for (const n of CANONICAL) {
       expect(byName[n], `${n} should exist in the active roster`).toBeTruthy();
       expect(byName[n].active).toBe(true);
-      // No email/phone seeded — guard against accidentally leaking test contact info
-      expect(byName[n].email || "").toBe("");
-      expect(byName[n].phone || "").toBe("");
+      // The reset helper deliberately seeds @tbd.local placeholders so
+      // permissions.roleForEmail treats them as Editor-tier on first
+      // sign-in. Anything else means the seed got out of sync with
+      // permissions.ts.
+      expect(byName[n].email).toMatch(/@tbd\.local$/);
     }
   });
 
