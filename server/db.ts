@@ -180,6 +180,56 @@ export async function getCurriculumGapBySubject(opts?: {
 }
 
 /**
+ * Push 2.11 (2026-05-17) — School-day generator.
+ *
+ * Returns the next `count` school days starting at `start` (inclusive),
+ * skipping weekends and any date present in `schoolCalendar` with
+ * `isOff = true`. If schoolCalendar is empty, falls back to weekday-only
+ * — graceful default so the planner works before Mom seeds the IH calendar.
+ *
+ *   getNextSchoolDays("2026-05-18", 10) // -> 10 ISO date strings
+ *
+ * Dates are returned ISO 'YYYY-MM-DD'.
+ */
+export async function getNextSchoolDays(
+  start: string,
+  count: number,
+): Promise<string[]> {
+  if (count <= 0) return [];
+  const db = getDb();
+  // Pull all schoolCalendar off-days within the next ~120 days from start so
+  // we don't over-fetch.  120 days covers a 60-school-day horizon worst-case.
+  const startD = new Date(start + "T00:00:00");
+  const horizon = new Date(startD.getTime());
+  horizon.setUTCDate(horizon.getUTCDate() + 120);
+  const horizonIso = horizon.toISOString().slice(0, 10);
+  const offRows = (await db.execute(sql`
+    SELECT date FROM schoolCalendar
+     WHERE isOff = TRUE AND date >= ${start} AND date <= ${horizonIso}
+  `)) as any;
+  const offSet = new Set<string>();
+  for (const r of (offRows[0] || [])) {
+    const d = r.date;
+    // Drizzle returns either a Date or a string here — normalize.
+    const iso =
+      d instanceof Date ? d.toISOString().slice(0, 10) : String(d).slice(0, 10);
+    offSet.add(iso);
+  }
+  const out: string[] = [];
+  const cursor = new Date(startD.getTime());
+  // Hard cap: 200 candidate days even if we somehow can't fill `count`.
+  for (let i = 0; i < 200 && out.length < count; i++) {
+    const dow = cursor.getUTCDay(); // 0 = Sun, 6 = Sat
+    const iso = cursor.toISOString().slice(0, 10);
+    const isWeekend = dow === 0 || dow === 6;
+    const isOff = offSet.has(iso);
+    if (!isWeekend && !isOff) out.push(iso);
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  return out;
+}
+
+/**
  * Push 2.10 (2026-05-17) — Forward-planner write path.
  *
  * Idempotent. Given a list of plan rows from `planForward(...)`, ensure a

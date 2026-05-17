@@ -105,6 +105,14 @@ export function planForward(input: {
   startDate: string;
   transcriptBlockerTopicIds?: number[];
   excludeWeekends?: boolean;
+  /**
+   * Push 2.11 (2026-05-17): caller-supplied list of real school days,
+   * pre-filtered by schoolCalendar.isOff via `getNextSchoolDays()`. When
+   * present, this overrides the naive weekday-only loop and lets the router
+   * honor IH holidays, summer break, etc., without coupling the planner to
+   * the DB. Each entry must be a yyyy-mm-dd ISO string.
+   */
+  schoolDays?: string[];
 }): PlanRow[] {
   const horizonDays = Math.max(1, Math.min(input.horizonDays ?? 10, 60));
   const excludeWeekends = input.excludeWeekends ?? true;
@@ -117,19 +125,29 @@ export function planForward(input: {
     };
   }
 
-  // Walk forward day-by-day until we have `horizonDays` school days.
+  // Build the list of school days. If caller injected one, honor it; else
+  // fall back to weekday-only walk.
   const schoolDays: { date: string; weekday: number }[] = [];
-  let cursor = parseIso(input.startDate);
-  let safety = 0;
-  while (schoolDays.length < horizonDays && safety < 120) {
-    const wd = cursor.getUTCDay();
-    const isWeekend = wd === 0 || wd === 6;
-    const allow = !excludeWeekends || !isWeekend;
-    if (allow && (input.weeklyShape[wd]?.length ?? 0) > 0) {
-      schoolDays.push({ date: toIso(cursor), weekday: wd });
+  if (input.schoolDays && input.schoolDays.length > 0) {
+    for (const iso of input.schoolDays.slice(0, horizonDays)) {
+      const wd = parseIso(iso).getUTCDay();
+      if ((input.weeklyShape[wd]?.length ?? 0) > 0) {
+        schoolDays.push({ date: iso, weekday: wd });
+      }
     }
-    cursor = addDays(cursor, 1);
-    safety++;
+  } else {
+    let cursor = parseIso(input.startDate);
+    let safety = 0;
+    while (schoolDays.length < horizonDays && safety < 120) {
+      const wd = cursor.getUTCDay();
+      const isWeekend = wd === 0 || wd === 6;
+      const allow = !excludeWeekends || !isWeekend;
+      if (allow && (input.weeklyShape[wd]?.length ?? 0) > 0) {
+        schoolDays.push({ date: toIso(cursor), weekday: wd });
+      }
+      cursor = addDays(cursor, 1);
+      safety++;
+    }
   }
 
   const out: PlanRow[] = [];

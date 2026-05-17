@@ -4233,12 +4233,18 @@ export const appRouter = router({
             4: ["Math", "ELA", "Science", "Social", "Specials"],
             5: ["Math", "ELA", "Science", "Social", "Specials"],
           };
+          // Push 2.11 (2026-05-17): pre-resolve the real school days from
+          // schoolCalendar (skipping weekends + IH off-days). Pass them in so
+          // the planner stays pure but the schedule honors holidays/breaks.
+          const horizon = input?.horizonDays ?? 10;
+          const schoolDays = await db.getNextSchoolDays(startDate, horizon);
           const rows = planForward({
             gap,
             weeklyShape,
-            horizonDays: input?.horizonDays ?? 10,
+            horizonDays: horizon,
             startDate,
             transcriptBlockerTopicIds: input?.transcriptBlockerTopicIds,
+            schoolDays,
           });
           const perSubject: Record<string, number> = {};
           for (const r of rows)

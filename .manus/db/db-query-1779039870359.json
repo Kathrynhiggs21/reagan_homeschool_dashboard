@@ -1,0 +1,16 @@
+{
+  "query": "SELECT COUNT(*) AS total, MIN(date) AS earliest, MAX(date) AS latest, SUM(CASE WHEN isOff THEN 1 ELSE 0 END) AS off_count FROM schoolCalendar;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT COUNT(*) AS total, MIN(date) AS earliest, MAX(date) AS latest, SUM(CASE WHEN isOff THEN 1 ELSE 0 END) AS off_count FROM schoolCalendar;",
+  "rows": [
+    {
+      "total": "0",
+      "earliest": "NULL",
+      "latest": "NULL",
+      "off_count": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "total\tearliest\tlatest\toff_count\n0\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 567
+}

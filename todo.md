@@ -3471,3 +3471,14 @@ Mom (Katy)'s voice-memo intake revealed 23 unfinished curriculum topics; v2.10 t
 - [x] tRPC familyAdmin: `curriculum.forwardPlan.preview` + `curriculum.forwardPlan.applyPlan` (renamed from `apply` because tRPC reserves that key). Adult-gated; kid ctx is rejected. (3/3 real-DB vitest cases.)
 - [x] Adult UI: `TodayForwardPlanCard.tsx` mounted on Today behind `{unlocked && …}`. Shows per-subject totals at top, then groups by date with sparkle badge on blockers. Apply button calls `applyPlan` and toasts created/skipped counts. Hides itself when zero rows are proposed. (3/3 wiring vitest cases.)
 - [x] All 20 v2.x test files run together green: **135/135 in 6.88 s.**
+
+
+## Forward calendar planner v2.11 (2026-05-17) — DONE
+
+Tightens the v2.10 planner so it never proposes a date that's a weekend, IH holiday, or summer break — and surfaces the same Preview/Apply card on the Schedule page (not just Today).
+
+- [x] DB helper `getNextSchoolDays(start, count)` walks forward from `start`, skipping weekends + any `schoolCalendar` row with `isOff=true`. Treats absence of calendar rows as "every weekday is a school day" so it works pre-seeding. (7/7 real-DB vitest cases.)
+- [x] Pure planner `planForward()` now accepts an optional `schoolDays?: string[]` injection. When passed (by the router) it honors that exact list; when omitted it falls back to the legacy weekday-only loop. Stays a pure function — no DB import. (12/12 pure vitest cases including 3 new schoolDays cases.)
+- [x] Wiring: `curriculum.forwardPlan.preview` now pre-resolves real school days via `db.getNextSchoolDays(startDate, horizon)` and passes them into `planForward`. So the same horizon (default 10) honors IH off-days the moment Mom seeds them in `schoolCalendar`. (3/3 router vitest cases unchanged + green.)
+- [x] Adult Schedule surface: `Schedule.tsx` imports `TodayForwardPlanCard` and mounts it gated by `{unlocked && …}` — so Mom + Grandma get the same Preview/Apply shortcut from the Schedule page header without any duplicate component. Reagan never sees it. Source-pattern wiring vitest covers all three invariants (import path, unlocked gate, useAdultLock source). (3/3 wiring vitest cases.)
+- [x] All v2.10 + v2.11 tests run together green: **39/39 in 5.18 s** across 7 test files (planner, planner schoolDays, school-day generator, gap snapshot, apply, router, both wiring tests).

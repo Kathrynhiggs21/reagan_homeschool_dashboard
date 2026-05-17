@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAdultLock } from "@/contexts/AdultLockContext";
+import TodayForwardPlanCard from "@/components/TodayForwardPlanCard";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -68,6 +69,9 @@ const SUMMER_START = new Date(2026, 4, 22); // May 22 2026
 // --- main page --------------------------------------------------------------
 
 export default function Schedule() {
+  // Push 2.11 (2026-05-17): adult-lock gate so the forward-plan card stays
+  // out of Reagan's view even if she opens this page herself.
+  const { unlocked } = useAdultLock();
   // 2026-05-05 — weekly is the default kid view (per Mom). Day view stays
   // available via the segmented control at the top of the page.
   const [view, setView] = useState<View>("week");
@@ -150,6 +154,8 @@ export default function Schedule() {
           Next <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
+
+      {unlocked && <TodayForwardPlanCard />}
 
       {view === "day" && (
         <DayView

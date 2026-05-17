@@ -194,3 +194,57 @@ describe("planForward (pure)", () => {
     expect(unique.size).toBe(ids.length);
   });
 });
+
+
+describe("planForward — Push 2.11 schoolDays injection", () => {
+  it("honors injected schoolDays exactly (skipping any holiday or break) and never inventing dates of its own", () => {
+    // Force the planner to schedule into ONLY 2027-09-13 (Mon) and 2027-09-15 (Wed)
+    // simulating IH being off on Tuesday 2027-09-14.
+    const rows = planForward({
+      gap: fullGap(),
+      weeklyShape: FIVE_DAY_SHAPE,
+      horizonDays: 2,
+      startDate: "2027-09-13",
+      schoolDays: ["2027-09-13", "2027-09-15"],
+    });
+    const dates = Array.from(new Set(rows.map((r) => r.date)));
+    expect(dates.sort()).toEqual(["2027-09-13", "2027-09-15"]);
+    // No row should land on the simulated holiday.
+    expect(rows.find((r) => r.date === "2027-09-14")).toBeUndefined();
+  });
+
+  it("falls back to weekday-only loop when schoolDays is omitted (legacy behavior)", () => {
+    const rows = planForward({
+      gap: fullGap(),
+      weeklyShape: FIVE_DAY_SHAPE,
+      horizonDays: 5,
+      startDate: "2027-09-13",
+    });
+    const dates = Array.from(new Set(rows.map((r) => r.date))).sort();
+    expect(dates).toEqual([
+      "2027-09-13",
+      "2027-09-14",
+      "2027-09-15",
+      "2027-09-16",
+      "2027-09-17",
+    ]);
+  });
+
+  it("trims injected schoolDays beyond horizonDays", () => {
+    const rows = planForward({
+      gap: fullGap(),
+      weeklyShape: FIVE_DAY_SHAPE,
+      horizonDays: 2,
+      startDate: "2027-09-13",
+      schoolDays: [
+        "2027-09-13",
+        "2027-09-15",
+        "2027-09-16",
+        "2027-09-17",
+        "2027-09-20",
+      ],
+    });
+    const dates = Array.from(new Set(rows.map((r) => r.date))).sort();
+    expect(dates).toEqual(["2027-09-13", "2027-09-15"]);
+  });
+});
