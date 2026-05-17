@@ -1,0 +1,23 @@
+{
+  "query": "\n-- Tue May 19's existing 8 blocks so Monday's plan complements\nSELECT b.sortOrder, b.title, b.blockType, b.durationMin, b.startTime,\n       s.name AS subject, ct.code AS topicCode, ct.title AS topicTitle\nFROM scheduleBlocks b\nLEFT JOIN dailyPlans dp ON dp.id = b.planId\nLEFT JOIN subjects s ON s.id = b.subjectId\nLEFT JOIN curriculumTopics ct ON ct.id = b.curriculumTopicId\nWHERE dp.date = '2026-05-19'\nORDER BY b.sortOrder;\n\n-- What subjects + recent topic codes have been used recently (last 30 days of plans)\nSELECT s.name AS subject, COUNT(*) AS block_count,\n       MAX(dp.date) AS most_recent_use\nFROM scheduleBlocks b\nJOIN dailyPlans dp ON dp.id = b.planId\nLEFT JOIN subjects s ON s.id = b.subjectId\nWHERE dp.date BETWEEN '2026-04-15' AND '2026-05-15'\nGROUP BY s.name\nORDER BY block_count DESC;\n\n-- Open / in-progress assignments from assignmentsLibrary that could anchor Monday blocks\nSELECT id, title, subjectSlug, gradeLevel, source, isActive\nFROM assignmentsLibrary\nWHERE isActive = 1\nORDER BY id DESC\nLIMIT 20;\n\n-- Confirm Mon May 18 plan really is missing\nSELECT id, date, status, dayType, notes\nFROM dailyPlans\nWHERE date IN ('2026-05-18', '2026-05-19', '2026-05-20', '2026-05-21')\nORDER BY date;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \n-- Tue May 19's existing 8 blocks so Monday's plan complements\nSELECT b.sortOrder, b.title, b.blockType, b.durationMin, b.startTime,\n       s.name AS subject, ct.code AS topicCode, ct.title AS topicTitle\nFROM scheduleBlocks b\nLEFT JOIN dailyPlans dp ON dp.id = b.planId\nLEFT JOIN subjects s ON s.id = b.subjectId\nLEFT JOIN curriculumTopics ct ON ct.id = b.curriculumTopicId\nWHERE dp.date = '2026-05-19'\nORDER BY b.sortOrder;\n\n-- What subjects + recent topic codes have been used recently (last 30 days of plans)\nSELECT s.name AS subject, COUNT(*) AS block_count,\n       MAX(dp.date) AS most_recent_use\nFROM scheduleBlocks b\nJOIN dailyPlans dp ON dp.id = b.planId\nLEFT JOIN subjects s ON s.id = b.subjectId\nWHERE dp.date BETWEEN '2026-04-15' AND '2026-05-15'\nGROUP BY s.name\nORDER BY block_count DESC;\n\n-- Open / in-progress assignments from assignmentsLibrary that could anchor Monday blocks\nSELECT id, title, subjectSlug, gradeLevel, source, isActive\nFROM assignmentsLibrary\nWHERE isActive = 1\nORDER BY id DESC\nLIMIT 20;\n\n-- Confirm Mon May 18 plan really is missing\nSELECT id, date, status, dayType, notes\nFROM dailyPlans\nWHERE date IN ('2026-05-18', '2026-05-19', '2026-05-20', '2026-05-21')\nORDER BY date;\n",
+  "returncode": 1,
+  "logs": [
+    "sortOrder\ttitle\tblockType\tdurationMin\tstartTime\tsubject\ttopicCode\ttopicTitle",
+    "0\tSoft start\tmorning_warmup\t25\tNULL\tNULL\tNULL\tNULL",
+    "1\tMath warm-up\tmath\t30\tNULL\tMath\tNULL\tNULL",
+    "2\tChoice block\tchoice\t30\tNULL\tNULL\tNULL\tNULL",
+    "3\tBrain break\tcustom\t15\tNULL\tNULL\tNULL\tNULL",
+    "4\tReading + writing\tread_aloud\t30\tNULL\tELA\tNULL\tNULL",
+    "5\tLunch\tcustom\t30\tNULL\tNULL\tNULL\tNULL",
+    "6\tScience adventure\tadventure\t35\tNULL\tScience\tNULL\tNULL",
+    "7\tCozy wrap-up\tcatch_up\t15\tNULL\tNULL\tNULL\tNULL",
+    "subject\tblock_count\tmost_recent_use",
+    "NULL\t48\t2026-05-13",
+    "Science\t19\t2026-05-13",
+    "Math\t13\t2026-05-13",
+    "ELA\t10\t2026-05-13",
+    "Other\t7\t2026-05-04",
+    "ERROR 1146 (42S02) at line 23: Table 'mm3swgictqlhdwkpjcgihp.assignmentsLibrary' doesn't exist"
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "query": "\nSHOW TABLES LIKE '%ssignment%';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \nSHOW TABLES LIKE '%ssignment%';\n",
+  "rows": [
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%ssignment%)": "assignmentAnswerKeys"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%ssignment%)": "assignmentBacklog"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%ssignment%)": "assignmentSubmissions"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%ssignment%)": "assignmentSubmissionsAutoGrade"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%ssignment%)": "assignment_bundles"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%ssignment%)": "assignments_library"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%ssignment%)": "bookAssignments"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%ssignment%)": "classroomAssignments"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%ssignment%)": "ihAssignments"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%ssignment%)": "powerschool_assignments"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_mm3swGictQLHDWKPJCGiHp (%ssignment%)\nassignmentAnswerKeys\nassignmentBacklog\nassignmentSubmissions\nassignmentSubmissionsAutoGrade\nassignment_bundles\nassignments_library\nbookAssignments\nclassroomAssignments\nihAssignments\npowerschool_assignments\n",
+  "stderr": "",
+  "execution_time_ms": 571
+}

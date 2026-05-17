@@ -3155,7 +3155,7 @@ Earlier this session the helper-push cadence (Pushes 206–285+) drifted into a 
 ## Roster handoff — Sophie out, Mom + Grandma take over (added 2026-05-15)
 
 - [ ] **Wed May 20, 2026** — flip Sophie (`tutors.id = 60009`) to `active = 0`. Her last session was Tue May 19, 10am–1pm. After that, Mom + Grandma run school. (Roster overrides for May 25+ already say "no tutors", so the dashboard will read correctly either way; this is just data hygiene.)
-- [ ] **Mon May 18, 2026** — Sophie's 10am–3pm Monday session has no `dailyPlans` row yet (no blocks scheduled). Mom should build Monday's plan (or run the AI agenda generator for May 18) before that morning. NOT auto-copying from Tuesday — Tuesday is only 8 blocks (~3.5 hrs) and Reagan shouldn't repeat Tuesday's content on Monday anyway.
+- [x] **Mon May 18, 2026** — `dailyPlans.id = 1110001` inserted 2026-05-17 with 10 scheduleBlocks (~225 min, 3h45m). Grief-aware build after the raccoon attack on Sun May 17 (lost 4 Swedish blacks → 1, 5 mallards → 2). Stack: Good morning / Duck check-in (science) / Tuck Everlasting / Brain break / Backyard nature walk (science) / Lunch / Spectrum Science / 180 Days of Language (1 page) / Uno with Sophie / Cozy wrap-up. No formal math today (Mom: less math + more activity + more science). Sophie's second-to-last day.
 - [ ] **Thu May 21 + Fri May 22, 2026** — also have no `dailyPlans` rows. These would be Mom + Grandma days (post-Sophie). Plan as needed.
 - [x] Madison (`tutors.id = 510001`) deactivated 2026-05-15 with reason note.
 - [x] Keith (`tutors.id = 510002`) deactivated 2026-05-15 with reason note.
@@ -3183,3 +3183,14 @@ Earlier this session the helper-push cadence (Pushes 206–285+) drifted into a 
   - Photomath kid-safety review — confirm acceptable for Reagan or move to adult-only category.
   - IXL + Khan + Google Classroom credentials — wire `spear.cpt@gmail.com` and `reaganhiggs910@gmail.com` SSO hints from `prefs.student.googleEmail` so tiles auto-route to the right account when launched (already supported by Apps.tsx — just needs the prefs values set).
   - Clever — only useful once the user's account is reactivated or replaced; currently a placeholder for adult reference.
+
+
+## Mon May 18 agenda build (requested 2026-05-17 by Mom — DONE)
+
+- [x] Build Mon May 18 school day plan + blocks. `dailyPlans.id = 1110001`, 10 scheduleBlocks, total 225 min. Mom's modifications all applied: less than 5 hrs (3h45m), less math (zero math), more activity (50 min outdoor), more science (3 science blocks, 80 min total), softer block names + descriptions in older-cousin register, Uno with Sophie included as a real 30-min block.
+- [x] Grief-aware: Sun May 17 raccoon attack acknowledged, surviving ducks centered (Duck check-in block sits with the ducks who are still here, processes loss through a science lens — raccoon behavior, run safety, what to change). Not avoided, not over-emphasized.
+- [x] Sophie context: Sophie's second-to-last day. Uno is their tradition — given its own block, especially meaningful this week.
+- [x] Owned books referenced: Tuck Everlasting (read_aloud), Spectrum Science Grade 5 (science), 180 Days of Language Gr 5 (one page).
+- [x] Schema constraint surfaced: `scheduleBlocks.blockType` enum is currently only morning_warmup/math/adventure/read_aloud/choice/catch_up/appointment/custom. Used `adventure`+subject=Science for science work and `custom`+subject=ELA for the language page. The wider enum referenced in old session notes (science/ela/outdoor/free_time/etc.) does NOT exist in the actual DB.
+- [ ] Verify Mon May 18 plan + blocks render on the deployed Today page.
+- [ ] Verify `/api/scheduled/nightly-agenda-email` with `forDate: 2026-05-18` returns `status: "send_ready"` (not `"no_plan"`) and a real presigned `pdfDownloadUrl`.

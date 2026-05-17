@@ -1,0 +1,10 @@
+{
+  "query": "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND (TABLE_NAME LIKE '%drive%' OR TABLE_NAME LIKE '%push%' OR TABLE_NAME LIKE '%mirror%'); SELECT (SELECT COUNT(*) FROM dailyPlans WHERE planDate = '2026-05-18') AS mon_may_18_plan, (SELECT COUNT(*) FROM scheduleBlocks sb JOIN dailyPlans dp ON sb.planId = dp.id WHERE dp.planDate = '2026-05-18') AS mon_may_18_blocks, (SELECT COUNT(*) FROM scheduleBlocks sb JOIN dailyPlans dp ON sb.planId = dp.id WHERE dp.planDate = '2026-05-19') AS tue_may_19_blocks;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND (TABLE_NAME LIKE '%drive%' OR TABLE_NAME LIKE '%push%' OR TABLE_NAME LIKE '%mirror%'); SELECT (SELECT COUNT(*) FROM dailyPlans WHERE planDate = '2026-05-18') AS mon_may_18_plan, (SELECT COUNT(*) FROM scheduleBlocks sb JOIN dailyPlans dp ON sb.planId = dp.id WHERE dp.planDate = '2026-05-18') AS mon_may_18_blocks, (SELECT COUNT(*) FROM scheduleBlocks sb JOIN dailyPlans dp ON sb.planId = dp.id WHERE dp.planDate = '2026-05-19') AS tue_may_19_blocks;",
+  "returncode": 1,
+  "logs": [
+    "TABLE_NAME",
+    "drive_push_queue",
+    "ERROR 1054 (42S22) at line 1: Unknown column 'plandate' in 'where clause'"
+  ]
+}

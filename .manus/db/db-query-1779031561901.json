@@ -1,0 +1,98 @@
+{
+  "query": "\n-- Tue May 19's existing 8 blocks\nSELECT b.sortOrder, b.title, b.blockType, b.durationMin, b.startTime, b.description,\n       s.name AS subject, ct.code AS topicCode, ct.title AS topicTitle\nFROM scheduleBlocks b\nLEFT JOIN dailyPlans dp ON dp.id = b.planId\nLEFT JOIN subjects s ON s.id = b.subjectId\nLEFT JOIN curriculumTopics ct ON ct.id = b.curriculumTopicId\nWHERE dp.date = '2026-05-19'\nORDER BY b.sortOrder;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \n-- Tue May 19's existing 8 blocks\nSELECT b.sortOrder, b.title, b.blockType, b.durationMin, b.startTime, b.description,\n       s.name AS subject, ct.code AS topicCode, ct.title AS topicTitle\nFROM scheduleBlocks b\nLEFT JOIN dailyPlans dp ON dp.id = b.planId\nLEFT JOIN subjects s ON s.id = b.subjectId\nLEFT JOIN curriculumTopics ct ON ct.id = b.curriculumTopicId\nWHERE dp.date = '2026-05-19'\nORDER BY b.sortOrder;\n",
+  "rows": [
+    {
+      "sortOrder": "0",
+      "title": "Soft start",
+      "blockType": "morning_warmup",
+      "durationMin": "25",
+      "startTime": "NULL",
+      "description": "Time with the parakeets and ducklings. Just be.",
+      "subject": "NULL",
+      "topicCode": "NULL",
+      "topicTitle": "NULL"
+    },
+    {
+      "sortOrder": "1",
+      "title": "Math warm-up",
+      "blockType": "math",
+      "durationMin": "30",
+      "startTime": "NULL",
+      "description": "A few problems to wake up your math brain. You've got this.",
+      "subject": "Math",
+      "topicCode": "NULL",
+      "topicTitle": "NULL"
+    },
+    {
+      "sortOrder": "2",
+      "title": "Choice block",
+      "blockType": "choice",
+      "durationMin": "30",
+      "startTime": "NULL",
+      "description": "What you want today. Art, makeup, drawing, anything.",
+      "subject": "NULL",
+      "topicCode": "NULL",
+      "topicTitle": "NULL"
+    },
+    {
+      "sortOrder": "3",
+      "title": "Brain break",
+      "blockType": "custom",
+      "durationMin": "15",
+      "startTime": "NULL",
+      "description": "Move, stretch, snack, sit-spot. Your call.",
+      "subject": "NULL",
+      "topicCode": "NULL",
+      "topicTitle": "NULL"
+    },
+    {
+      "sortOrder": "4",
+      "title": "Reading + writing",
+      "blockType": "read_aloud",
+      "durationMin": "30",
+      "startTime": "NULL",
+      "description": "Read a chapter, journal one thing. Voice-to-text totally fine.",
+      "subject": "ELA",
+      "topicCode": "NULL",
+      "topicTitle": "NULL"
+    },
+    {
+      "sortOrder": "5",
+      "title": "Lunch",
+      "blockType": "custom",
+      "durationMin": "30",
+      "startTime": "NULL",
+      "description": "Eat something good.",
+      "subject": "NULL",
+      "topicCode": "NULL",
+      "topicTitle": "NULL"
+    },
+    {
+      "sortOrder": "6",
+      "title": "Science adventure",
+      "blockType": "adventure",
+      "durationMin": "35",
+      "startTime": "NULL",
+      "description": "Animals, creek, weather, plants — pick your path.",
+      "subject": "Science",
+      "topicCode": "NULL",
+      "topicTitle": "NULL"
+    },
+    {
+      "sortOrder": "7",
+      "title": "Cozy wrap-up",
+      "blockType": "catch_up",
+      "durationMin": "15",
+      "startTime": "NULL",
+      "description": "What did today teach you? Anything to log? Or just done.",
+      "subject": "NULL",
+      "topicCode": "NULL",
+      "topicTitle": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "sortOrder\ttitle\tblockType\tdurationMin\tstartTime\tdescription\tsubject\ttopicCode\ttopicTitle\n0\tSoft start\tmorning_warmup\t25\tNULL\tTime with the parakeets and ducklings. Just be.\tNULL\tNULL\tNULL\n1\tMath warm-up\tmath\t30\tNULL\tA few problems to wake up your math brain. You've got this.\tMath\tNULL\tNULL\n2\tChoice block\tchoice\t30\tNULL\tWhat you want today. Art, makeup, drawing, anything.\tNULL\tNULL\tNULL\n3\tBrain break\tcustom\t15\tNULL\tMove, stretch, snack, sit-spot. Your call.\tNULL\tNULL\tNULL\n4\tReading + writing\tread_aloud\t30\tNULL\tRead a chapter, journal one thing. Voice-to-text totally fine.\tELA\tNULL\tNULL\n5\tLunch\tcustom\t30\tNULL\tEat something good.\tNULL\tNULL\tNULL\n6\tScience adventure\tadventure\t35\tNULL\tAnimals, creek, weather, plants — pick your path.\tScience\tNULL\tNULL\n7\tCozy wrap-up\tcatch_up\t15\tNULL\tWhat did today teach you? Anything to log? Or just done.\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 593
+}

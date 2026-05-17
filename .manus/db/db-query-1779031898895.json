@@ -1,0 +1,14 @@
+{
+  "query": "\nINSERT INTO dailyPlans (date, dayType, status, notes)\nVALUES (\n  '2026-05-18',\n  'full',\n  'planned',\n  'Sophie''s second-to-last day. Mon 10–3, but planned for ~3h45m of school time, not the full 5 hrs. Reagan lost most of her ducks Sunday morning to a raccoon — went from 4 Swedish blacks + 5 mallards down to 2 mallards + 1 Swedish black. Today is gentle: outdoor + science (duck-loss processed through a science lens), one short ELA, and Uno with Sophie. No formal math today.'\n);\n\nSELECT id, date FROM dailyPlans WHERE date = '2026-05-18';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \nINSERT INTO dailyPlans (date, dayType, status, notes)\nVALUES (\n  '2026-05-18',\n  'full',\n  'planned',\n  'Sophie''s second-to-last day. Mon 10–3, but planned for ~3h45m of school time, not the full 5 hrs. Reagan lost most of her ducks Sunday morning to a raccoon — went from 4 Swedish blacks + 5 mallards down to 2 mallards + 1 Swedish black. Today is gentle: outdoor + science (duck-loss processed through a science lens), one short ELA, and Uno with Sophie. No formal math today.'\n);\n\nSELECT id, date FROM dailyPlans WHERE date = '2026-05-18';\n",
+  "rows": [
+    {
+      "id": "1110001",
+      "date": "2026-05-18"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tdate\n1110001\t2026-05-18\n",
+  "stderr": "",
+  "execution_time_ms": 630
+}

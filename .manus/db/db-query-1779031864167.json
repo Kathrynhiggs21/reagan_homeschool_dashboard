@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, name, slug FROM subjects ORDER BY name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, name, slug FROM subjects ORDER BY name;",
+  "rows": [
+    {
+      "id": "30013",
+      "name": "ELA",
+      "slug": "ela"
+    },
+    {
+      "id": "30012",
+      "name": "Math",
+      "slug": "math"
+    },
+    {
+      "id": "60003",
+      "name": "Other",
+      "slug": "other"
+    },
+    {
+      "id": "30014",
+      "name": "Science",
+      "slug": "science"
+    },
+    {
+      "id": "60001",
+      "name": "Social Studies",
+      "slug": "social"
+    },
+    {
+      "id": "60002",
+      "name": "Specials",
+      "slug": "specials"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tslug\n30013\tELA\tela\n30012\tMath\tmath\n60003\tOther\tother\n30014\tScience\tscience\n60001\tSocial Studies\tsocial\n60002\tSpecials\tspecials\n",
+  "stderr": "",
+  "execution_time_ms": 571
+}

@@ -1,0 +1,242 @@
+{
+  "query": "\nDESCRIBE dailyPlans;\nDESCRIBE scheduleBlocks;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \nDESCRIBE dailyPlans;\nDESCRIBE scheduleBlocks;\n",
+  "rows": [
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "date",
+      "Type": "date",
+      "Null": "NO",
+      "Key": "UNI",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "dayType",
+      "Type": "enum('full','half','outdoor','field_trip','recovery','off')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "full",
+      "Extra": ""
+    },
+    {
+      "Field": "status",
+      "Type": "enum('planned','in_progress','complete','skipped')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "planned",
+      "Extra": ""
+    },
+    {
+      "Field": "notes",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "isTemplate",
+      "Type": "tinyint(1)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "templateName",
+      "Type": "varchar(128)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "parentPlanId",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "createdAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": ""
+    },
+    {
+      "Field": "updatedAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": "DEFAULT_GENERATED on update CURRENT_TIMESTAMP"
+    },
+    {
+      "Field": "Field",
+      "Type": "Type",
+      "Null": "Null",
+      "Key": "Key",
+      "Default": "Default",
+      "Extra": "Extra"
+    },
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "planId",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "blockType",
+      "Type": "enum('morning_warmup','math','adventure','read_aloud','choice','catch_up','appointment','custom')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "subjectId",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "title",
+      "Type": "varchar(200)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "description",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "durationMin",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "30",
+      "Extra": ""
+    },
+    {
+      "Field": "startTime",
+      "Type": "varchar(8)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "sortOrder",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "status",
+      "Type": "enum('not_started','in_progress','complete','skipped')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "not_started",
+      "Extra": ""
+    },
+    {
+      "Field": "completedAt",
+      "Type": "timestamp",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "completedByUserId",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "grade",
+      "Type": "varchar(16)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "notes",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "ihAssignmentId",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "adventureId",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "appointmentId",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "curriculumTopicId",
+      "Type": "int",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\ndate\tdate\tNO\tUNI\tNULL\t\ndayType\tenum('full','half','outdoor','field_trip','recovery','off')\tNO\t\tfull\t\nstatus\tenum('planned','in_progress','complete','skipped')\tNO\t\tplanned\t\nnotes\ttext\tYES\t\tNULL\t\nisTemplate\ttinyint(1)\tNO\t\t0\t\ntemplateName\tvarchar(128)\tYES\t\tNULL\t\nparentPlanId\tint\tYES\t\tNULL\t\ncreatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nupdatedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\tDEFAULT_GENERATED on update CURRENT_TIMESTAMP\nField\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\nplanId\tint\tNO\t\tNULL\t\nblockType\tenum('morning_warmup','math','adventure','read_aloud','choice','catch_up','appointment','custom')\tNO\t\tNULL\t\nsubjectId\tint\tYES\t\tNULL\t\ntitle\tvarchar(200)\tNO\t\tNULL\t\ndescription\ttext\tYES\t\tNULL\t\ndurationMin\tint\tNO\t\t30\t\nstartTime\tvarchar(8)\tYES\t\tNULL\t\nsortOrder\tint\tNO\t\t0\t\nstatus\tenum('not_started','in_progress','complete','skipped')\tNO\t\tnot_started\t\ncompletedAt\ttimestamp\tYES\t\tNULL\t\ncompletedByUserId\tint\tYES\t\tNULL\t\ngrade\tvarchar(16)\tYES\t\tNULL\t\nnotes\ttext\tYES\t\tNULL\t\nihAssignmentId\tint\tYES\t\tNULL\t\nadventureId\tint\tYES\t\tNULL\t\nappointmentId\tint\tYES\t\tNULL\t\ncurriculumTopicId\tint\tYES\t\tNULL\t\n",
+  "stderr": "",
+  "execution_time_ms": 616
+}

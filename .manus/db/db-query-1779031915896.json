@@ -1,0 +1,80 @@
+{
+  "query": "\nINSERT INTO scheduleBlocks (planId, blockType, subjectId, title, description, durationMin, sortOrder) VALUES\n(1110001, 'morning_warmup', NULL,  'Good morning',                     'Tea, hello to Sophie, sit with the ducks who are still here. No agenda.', 20, 0),\n(1110001, 'adventure',      30014, 'Duck check-in',                    'Sit by the run with Sophie. What happened, who is still with us, what raccoons do, what we want to change about the run. Drawing or voice-to-text both fine. No right answers.', 25, 1),\n(1110001, 'read_aloud',     30013, 'Tuck Everlasting',                 'Continue from where you left off. Sophie can read aloud or trade pages — your call.', 25, 2),\n(1110001, 'custom',         NULL,  'Brain break',                      'Outside if you want. Snack, water, parakeets, sit-spot.', 15, 3),\n(1110001, 'adventure',      30014, 'Backyard nature walk',             'Walk the yard and the run with Sophie. Notice what is there. Bring a notebook only if you feel like it.', 30, 4),\n(1110001, 'custom',         NULL,  'Lunch',                            'Eat something good. No school talk.', 30, 5),\n(1110001, 'adventure',      30014, 'Spectrum Science Gr 5',            'One short lesson plus the matching reading. Sophie scaffolds — she is good at this.', 25, 6),\n(1110001, 'custom',         30013, '180 Days of Language Gr 5',        'One page. That is it.', 15, 7),\n(1110001, 'choice',         NULL,  'Uno with Sophie',                  'The actual game. Your tradition. Best of three or whatever you both want.', 30, 8),\n(1110001, 'catch_up',       NULL,  'Cozy wrap-up',                     'What stuck with you today? Anything to write down? Or just done.', 10, 9);\n\nSELECT id, sortOrder, title, blockType, durationMin FROM scheduleBlocks WHERE planId = 1110001 ORDER BY sortOrder;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \nINSERT INTO scheduleBlocks (planId, blockType, subjectId, title, description, durationMin, sortOrder) VALUES\n(1110001, 'morning_warmup', NULL,  'Good morning',                     'Tea, hello to Sophie, sit with the ducks who are still here. No agenda.', 20, 0),\n(1110001, 'adventure',      30014, 'Duck check-in',                    'Sit by the run with Sophie. What happened, who is still with us, what raccoons do, what we want to change about the run. Drawing or voice-to-text both fine. No right answers.', 25, 1),\n(1110001, 'read_aloud',     30013, 'Tuck Everlasting',                 'Continue from where you left off. Sophie can read aloud or trade pages — your call.', 25, 2),\n(1110001, 'custom',         NULL,  'Brain break',                      'Outside if you want. Snack, water, parakeets, sit-spot.', 15, 3),\n(1110001, 'adventure',      30014, 'Backyard nature walk',             'Walk the yard and the run with Sophie. Notice what is there. Bring a notebook only if you feel like it.', 30, 4),\n(1110001, 'custom',         NULL,  'Lunch',                            'Eat something good. No school talk.', 30, 5),\n(1110001, 'adventure',      30014, 'Spectrum Science Gr 5',            'One short lesson plus the matching reading. Sophie scaffolds — she is good at this.', 25, 6),\n(1110001, 'custom',         30013, '180 Days of Language Gr 5',        'One page. That is it.', 15, 7),\n(1110001, 'choice',         NULL,  'Uno with Sophie',                  'The actual game. Your tradition. Best of three or whatever you both want.', 30, 8),\n(1110001, 'catch_up',       NULL,  'Cozy wrap-up',                     'What stuck with you today? Anything to write down? Or just done.', 10, 9);\n\nSELECT id, sortOrder, title, blockType, durationMin FROM scheduleBlocks WHERE planId = 1110001 ORDER BY sortOrder;\n",
+  "rows": [
+    {
+      "id": "1200001",
+      "sortOrder": "0",
+      "title": "Good morning",
+      "blockType": "morning_warmup",
+      "durationMin": "20"
+    },
+    {
+      "id": "1200002",
+      "sortOrder": "1",
+      "title": "Duck check-in",
+      "blockType": "adventure",
+      "durationMin": "25"
+    },
+    {
+      "id": "1200003",
+      "sortOrder": "2",
+      "title": "Tuck Everlasting",
+      "blockType": "read_aloud",
+      "durationMin": "25"
+    },
+    {
+      "id": "1200004",
+      "sortOrder": "3",
+      "title": "Brain break",
+      "blockType": "custom",
+      "durationMin": "15"
+    },
+    {
+      "id": "1200005",
+      "sortOrder": "4",
+      "title": "Backyard nature walk",
+      "blockType": "adventure",
+      "durationMin": "30"
+    },
+    {
+      "id": "1200006",
+      "sortOrder": "5",
+      "title": "Lunch",
+      "blockType": "custom",
+      "durationMin": "30"
+    },
+    {
+      "id": "1200007",
+      "sortOrder": "6",
+      "title": "Spectrum Science Gr 5",
+      "blockType": "adventure",
+      "durationMin": "25"
+    },
+    {
+      "id": "1200008",
+      "sortOrder": "7",
+      "title": "180 Days of Language Gr 5",
+      "blockType": "custom",
+      "durationMin": "15"
+    },
+    {
+      "id": "1200009",
+      "sortOrder": "8",
+      "title": "Uno with Sophie",
+      "blockType": "choice",
+      "durationMin": "30"
+    },
+    {
+      "id": "1200010",
+      "sortOrder": "9",
+      "title": "Cozy wrap-up",
+      "blockType": "catch_up",
+      "durationMin": "10"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tsortOrder\ttitle\tblockType\tdurationMin\n1200001\t0\tGood morning\tmorning_warmup\t20\n1200002\t1\tDuck check-in\tadventure\t25\n1200003\t2\tTuck Everlasting\tread_aloud\t25\n1200004\t3\tBrain break\tcustom\t15\n1200005\t4\tBackyard nature walk\tadventure\t30\n1200006\t5\tLunch\tcustom\t30\n1200007\t6\tSpectrum Science Gr 5\tadventure\t25\n1200008\t7\t180 Days of Language Gr 5\tcustom\t15\n1200009\t8\tUno with Sophie\tchoice\t30\n1200010\t9\tCozy wrap-up\tcatch_up\t10\n",
+  "stderr": "",
+  "execution_time_ms": 656
+}

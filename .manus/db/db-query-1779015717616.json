@@ -1,0 +1,19 @@
+{
+  "query": "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND (TABLE_NAME LIKE '%drive%' OR TABLE_NAME LIKE '%push%' OR TABLE_NAME LIKE '%mirror%' OR TABLE_NAME LIKE '%snapshot%'); SELECT (SELECT COUNT(*) FROM dailyPlans WHERE date = '2026-05-18') AS mon_may_18_plan, (SELECT COUNT(*) FROM scheduleBlocks sb JOIN dailyPlans dp ON sb.planId = dp.id WHERE dp.date = '2026-05-18') AS mon_may_18_blocks, (SELECT COUNT(*) FROM scheduleBlocks sb JOIN dailyPlans dp ON sb.planId = dp.id WHERE dp.date = '2026-05-19') AS tue_may_19_blocks;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = DATABASE() AND (TABLE_NAME LIKE '%drive%' OR TABLE_NAME LIKE '%push%' OR TABLE_NAME LIKE '%mirror%' OR TABLE_NAME LIKE '%snapshot%'); SELECT (SELECT COUNT(*) FROM dailyPlans WHERE date = '2026-05-18') AS mon_may_18_plan, (SELECT COUNT(*) FROM scheduleBlocks sb JOIN dailyPlans dp ON sb.planId = dp.id WHERE dp.date = '2026-05-18') AS mon_may_18_blocks, (SELECT COUNT(*) FROM scheduleBlocks sb JOIN dailyPlans dp ON sb.planId = dp.id WHERE dp.date = '2026-05-19') AS tue_may_19_blocks;",
+  "rows": [
+    {
+      "TABLE_NAME": "drive_push_queue"
+    },
+    {
+      "TABLE_NAME": "mon_may_18_plan\tmon_may_18_blocks\ttue_may_19_blocks"
+    },
+    {
+      "TABLE_NAME": "0\t0\t8"
+    }
+  ],
+  "messages": [],
+  "stdout": "TABLE_NAME\ndrive_push_queue\nmon_may_18_plan\tmon_may_18_blocks\ttue_may_19_blocks\n0\t0\t8\n",
+  "stderr": "",
+  "execution_time_ms": 640
+}
