@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { LifecycleChip } from "@/components/LifecycleChip";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
@@ -211,9 +212,7 @@ function AssignmentChip({
   onUpdate: (args: { assignmentId: number; toStatus: Lifecycle }) => void;
   busy: boolean;
 }) {
-  const [open, setOpen] = useState(false);
-  const next = NEXT_STATUS[assignment.lifecycleStatus as Lifecycle];
-
+  const status = (assignment.lifecycleStatus ?? "to_do") as Lifecycle;
   return (
     <div className="rounded border bg-card p-2 text-sm">
       <div className="font-medium leading-snug truncate" title={assignment.title}>
@@ -227,36 +226,16 @@ function AssignmentChip({
       {assignment.grade ? (
         <Badge variant="secondary" className="mt-1">grade: {assignment.grade}</Badge>
       ) : null}
-      <div className="mt-2 flex items-center gap-1 flex-wrap">
-        {next ? (
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={busy}
-            onClick={() => onUpdate({ assignmentId: assignment.id, toStatus: next })}
-          >
-            Move to {LIFECYCLE_COLUMNS.find((c) => c.key === next)!.label}
-          </Button>
-        ) : null}
-        <Button size="sm" variant="ghost" onClick={() => setOpen((v) => !v)}>
-          More
-        </Button>
+      <div className="mt-2">
+        <LifecycleChip
+          status={status}
+          disabled={busy}
+          testId={`lifecycle-chip-classes-${assignment.id}`}
+          onChange={(target) =>
+            onUpdate({ assignmentId: assignment.id, toStatus: target })
+          }
+        />
       </div>
-      {open ? (
-        <div className="mt-2 flex items-center gap-1 flex-wrap">
-          {LIFECYCLE_COLUMNS.filter((c) => c.key !== assignment.lifecycleStatus).map((c) => (
-            <Button
-              key={c.key}
-              size="sm"
-              variant="secondary"
-              disabled={busy}
-              onClick={() => onUpdate({ assignmentId: assignment.id, toStatus: c.key })}
-            >
-              → {c.label}
-            </Button>
-          ))}
-        </div>
-      ) : null}
     </div>
   );
 }

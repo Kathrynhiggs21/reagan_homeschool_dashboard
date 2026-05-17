@@ -3342,3 +3342,19 @@ Open follow-ups (carried forward from v2 — still NOT this push):
 - [ ] Status-picker chips on the Today + Schedule block cards so an assignment block can be moved through the lifecycle without leaving the daily view.
 - [ ] Wire `gclassroom.assignments.updateStatus` to call `enqueueClassroomLifecycleDriveMove` once assignments have a `driveFolderId` populated.
 - [ ] Pull grade-back when teacher returns work in Classroom (sync sets status=graded + stores score).
+
+## Classroom integration v2.2 — Reusable LifecycleChip (added & DONE 2026-05-17)
+
+- [x] **Shared lifecycle UI catalog (DONE):** `shared/classroomLifecycleUI.ts` is the single source of truth for kid-facing lifecycle strings: `LIFECYCLE_META` (label, nextActionLabel, tone, emoji), `LIFECYCLE_ORDER`, `nextLifecycleStep()`, `otherLifecycleSteps()`, `pickPrimaryTarget()`, and `nextLabelFor(current, target)`. Pure module — zero imports beyond a type alias — so the same labels render the same way on Today, Schedule, Classes, and on server-side weekly digests.
+- [x] **Reusable LifecycleChip component (DONE):** `client/src/components/LifecycleChip.tsx` — a kid-friendly pill+button pair: status pill opens a `DropdownMenu` listing all other states (with smart "Reopen to" / "Jump to" verbs), primary button moves forward (or `"Reopen to To Do"` when current is `graded`). Headless w.r.t. data fetching — fires `onChange(target)` so the parent owns invalidation/optimistic updates. `compact` variant trims the action label to its emoji for tight rows.
+- [x] **Classes page now uses LifecycleChip (DONE):** Replaced the hand-rolled "Move to ... / More" Button cluster on `/classes` AssignmentChip with a single `<LifecycleChip>`. Behavior preserved (still calls the same `gclassroom.assignments.updateStatus` mutation, same busy-state handling).
+- [x] **Vitest `classroomLifecycleUI.test.ts` (DONE):** 14/14 passing — locks the kid-facing labels (`To Do`/`Working`/`Turned In`/`Graded`), the canonical forward chain, terminal `graded` reopen behavior, `otherLifecycleSteps` ordering, `nextLabelFor` (forward-canonical / backward-Reopen / forward-skip-Jump), and `pickPrimaryTarget` falls back to `to_do` from `graded`.
+
+Aggregate after v2.2: **6 classroom test files all green together — 59/59 passing in 3.24 s** (`schemaScaffold` 4 + `router` 7 + `drivePathPlanner` 13 + `lifecycleTransitions` 15 + `driveEnqueue` 6 + `lifecycleUI` 14).
+
+Carry-forward (still NOT this push):
+- [ ] Mount LifecycleChip on Today + Schedule pages once the assignment cards there expose lifecycle status (currently those pages only render schedule blocks, not Classroom assignments yet).
+- [ ] Wire `gclassroom.assignments.updateStatus` to call `enqueueClassroomLifecycleDriveMove` once assignments have a `driveFolderId` populated.
+- [ ] OAuth scope expansion + `/api/scheduled/classroom-sync` endpoint that actually pulls courses + coursework from Google.
+- [ ] Drive subfolder auto-creation per class when a course is first synced.
+- [ ] Pull grade-back when teacher returns work in Classroom (sync sets status=graded + stores score).
