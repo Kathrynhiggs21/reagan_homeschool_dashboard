@@ -3222,3 +3222,89 @@ Mom set the master subject list for Classroom + Drive + assignment records. The 
 - [x] **Vitest lock (DONE 2026-05-17):** `server/canonicalSubjectsTaxonomy.test.ts` (4/4 pass) — locks the canonical 7 visible subjects in the right order with the right names, the exact 4-core / 3-optional split, and the absence of the legacy `specials` slug from the visible set. Catches future seed-script regressions.
 - [ ] **UI/codebase audit:** Walk every place that hardcodes the old subject list (zod enums in routers, default subject filters, picker `<Select>` options, AI-generator system prompts, Drive folder templates, Classroom routing) and replace with `isCorePlanning` filter or full-7-subject list as appropriate. Not blocking for tonight's cron; safe to do across the next several pushes.
 - [ ] **Subtopics for ELA (Reading + Spelling) — DEFERRED:** No current consumer needs the subtopic distinction. When Drive folder layout or Classroom routing wants it, add a `parentSubjectSlug` column to `subjects` and insert `reading` + `spelling` rows with `parentSubjectSlug='ela'`. Lower-cost than a separate `subjectSubtopics` table.
+
+
+## Drive Hub simplification (requested 2026-05-17 by Mom)
+
+- [ ] Audit the current Reagan School Hub folder (`1r3bJacPLJN7VHI8y72rcx1-GRxspqo1r`) \u2014 count folders, depth, redundancy. Mom's feedback: too many folders, simplify.
+- [ ] Propose a simplified folder map (target: <= 6 top-level subfolders + at most one nesting level under each) and confirm with Mom before moving files.
+- [ ] Apply the simplification: create the new structure, move files into their new homes, archive (do not delete) the old empty folders into a single `_old-structure-2026-05/` folder so nothing is lost.
+- [ ] Re-locate the 4 mis-placed folders Mom flagged (`1BoXyDOEBcl8v-qun7OjE2In7s_l7TLfx`, `1NGztVZb0bKckpu-A0gmmpfsm4Rum9yKG`, `1mbd71OFHUCAJxy1-_VpLfA04laFpcvH7`, `1k1Tb1l32NzogodkJkZwgbl8uOFeFRisj`) into their correct positions in the new simplified structure.
+- [ ] Update README.md at the Hub root to reflect the new structure + last-refreshed line.
+- [ ] After Drive simplification: also update `driveFolderHint` strings in the dashboard (server/scheduledSync.ts and any related code) so the Drive-mirror cron writes to the new canonical paths instead of the old ones.
+
+
+## Assignment lifecycle + Google Classroom integration (requested 2026-05-17 by Mom)
+
+Mom's canonical assignment lifecycle: **To Do → In Progress → Turned In → Graded**. These four statuses are the contract for both the dashboard tables AND the Drive folder mirror. Assignments physically move between status subfolders inside their class folder.
+
+Drive layout (per class):
+
+```
+Reagan School Hub /
+  Classes /                            (NEW top-level subfolder, currently empty)
+    [Class Name] /                     (one per Google Classroom course)
+      To Do /
+      In Progress /
+      Turned In /
+      Graded /
+```
+
+Tonight's slice (concrete, working code):
+
+- [ ] Add `assignmentStatus` enum `["to_do","in_progress","turned_in","graded"]` to drizzle schema. Migrate existing `assignments.status` column with backfill so currently-tracked rows land on the right value (likely `to_do` for active rows, no destructive change to historic rows).
+- [ ] Lock the canonical 4-status enum + transition order in a vitest (`assignmentLifecycle.test.ts`).
+- [ ] Create the empty `Classes/` folder under the Hub Drive root + capture its Drive ID in the dashboard config.
+- [ ] Drizzle tables for Google Classroom: `classroomCourses` (id, name, externalCourseId, ownerEmail, driveFolderId, syncedAt) + `classroomCoursework` (id, courseId, externalCourseworkId, title, dueAtMs, assignmentId nullable for join with our `assignments` table). NO REST CALLS YET — schema only, ready for the sync endpoint.
+- [ ] tRPC procedure `classroom.listMyCourses` reading from the new `classroomCourses` table (returns empty array until sync runs — that's fine).
+- [ ] Source-pattern vitest locking the schema + procedure surface.
+
+Follow-up (next session, NOT tonight):
+
+- [ ] Google OAuth scope expansion: add `classroom.courses.readonly` + `classroom.coursework.me.readonly` to the Manus OAuth manifest. Re-auth consent flow.
+- [ ] `/api/scheduled/classroom-sync` endpoint that pulls `courses.list` + `courseWork.list` for each course, upserts into our tables, and creates a placeholder `assignments` row in status `to_do` for new coursework.
+- [ ] Pre-class cron schedule: run classroom-sync at 6 AM (before any school day starts) AND on-demand from a "Sync now" button on the Classes page.
+- [ ] Drive auto-mirror: when an `assignment.status` transitions, the heartbeat job moves the file in Drive from one status subfolder to the next (e.g., `Math/To Do/worksheet.pdf` → `Math/In Progress/worksheet.pdf`).
+- [ ] UI: new `Classes` page (per-class assignment list, filterable by status), status picker on each assignment card on Today + Schedule + Notebook, and "Due today" badge on the matching block card.
+- [ ] When a Classroom course is added, create the four status subfolders inside the Drive class folder automatically (no manual setup).
+- [ ] When a teacher returns a grade in Classroom, sync pulls the grade in, sets status to `graded`, and stores the score on the assignment row.
+
+
+## Hub Drive simplification (2026-05-17 — Mom-shaped layout)
+
+Final agreed structure (9 user-facing + 2 system):
+
+1. Daily Operations  (absorbs Adventures and Enrichment)
+2. Assignments and Work
+3. Curriculum and Resources  (absorbs Curriculum and Standards + Printables and Resources + Worksheets (Daily Packets))
+4. **Behavior Analytics** *(NEW — Kiwi-anchored. Mood, regulation, behavior history, Kiwi Coins, reflection journals, anxiety timeline, sensory data. Mom-facing pillar.)*
+5. Progress and Reports  (academic only — Term Summaries, Weekly Digests, Report Cards, Analytics CSV)
+6. Admin and Records  (Admin and Homeschool Records — records-only)
+7. Apps & Tools  (kept as-is per Mom)
+8. Inbox (Unsorted)
+9. **Classes** *(NEW — empty, ready for Google Classroom integration; per-class subfolders with To Do / In Progress / Turned In / Graded)*
+
+System (separate, not user-facing):
+- Snapshots  (cron-managed daily DB snapshots)
+- **_archive-engineering-2026-05** *(NEW — Backend Pushes + the 4 mis-placed engineering leak folders + old Todo + old Classroom 2021 folder)*
+
+The 4 mis-placed folders Mom flagged are all engineering leak (cron sync misbehavior — file IDs `1BoXyDOEBcl8v...`, `1NGztVZb0bKckpu...`, `1mbd71OFHUCAJxy...`, `1k1Tb1l32Nzogod...`). They contain duplicates of dashboard source files already in Backend Pushes. Quarantine, don't delete.
+
+Tonight's slice (concrete):
+- [ ] Create Behavior Analytics + Curriculum and Resources + Admin and Records + Classes + _archive-engineering-2026-05 folders
+- [ ] Move Behavior + Mood Timeline, Kiwi Coins, Reflection and Growth from Progress and Reports → Behavior Analytics
+- [ ] Move Field Trip Photos, Reagan Artwork, Adventures, Reading Journal from Adventures and Enrichment → Daily Operations
+- [ ] Move all subfolders from Curriculum and Standards + Printables and Resources + Worksheets (Daily Packets) → Curriculum and Resources, then archive the empties
+- [ ] Move Backend Pushes + 4 mis-placed engineering folders + Todo + old Classroom 2021 → _archive-engineering-2026-05
+- [ ] Update Hub README.md with the new 9-folder map
+
+
+## Open follow-up — Mom's audio/listening question (2026-05-17)
+
+Mom asked: "Can the behavior of the full class be listened to?" — interpretation not yet locked. Four possible meanings:
+- **A.** Audio recording of the whole class (mic captures Reagan + tutor + others; needs Ohio consent + explicit tutor + minor consent)
+- **B.** Live transcript / behavior streaming (real-time speech-to-text + behavior cues)
+- **C.** Whole-class behavior aggregate (tutor tone, peer dynamics, room mood — not just Reagan)
+- **D.** Audio playback (TTS) of existing text-based behavior logs (no recording, just listen-instead-of-read)
+
+Need clarification from Mom before scoping. Captured here so we don't lose it. (D) is by far the lowest legal/effort cost; (A/B/C) all require consent infrastructure.

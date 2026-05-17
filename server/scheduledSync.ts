@@ -1205,6 +1205,30 @@ ${absolutePdfUrl ? `<p style=\"text-align:center;margin:24px 0;\"><a href=\"${ab
         });
       } catch { momBriefing = null; }
 
+      // ============================================================
+      // CRON-AGENT CONTRACT (read this before changing the response):
+      //
+      //   * `pdfDownloadUrl`  → ABSOLUTE presigned S3 GET URL. This is the
+      //                        ONLY field the scheduled-task cron agent
+      //                        should fetch the PDF from. No cookies, no
+      //                        OAuth. Works from any HTTP client.
+      //
+      //   * `pdfUrl`         → RELATIVE `/manus-storage/...` path. Gated
+      //                        on the dashboard's user OAuth cookie via
+      //                        a 307 redirect to the same presigned URL.
+      //                        Useful for an authenticated browser tab
+      //                        (Mom + Grandma) but **NOT cron-safe**.
+      //                        DEPRECATED for cron use; will stay in the
+      //                        response for backward compatibility.
+      //
+      //   * `pdfStorageKey`  → The raw storage key. Cron agents that have
+      //                        a way to mint their own presigned URLs may
+      //                        prefer this over the (~7-day TTL) link.
+      //
+      // The agendaAssemblerSummerSkip + nightlyAgendaCronContract test
+      // suites lock the contract. Do not drop pdfDownloadUrl from the
+      // response shape without updating the cron agent in the same push.
+      // ============================================================
       return res.json({
         ok: true,
         status: isResend ? "resend_ready" : "send_ready",
@@ -1214,8 +1238,8 @@ ${absolutePdfUrl ? `<p style=\"text-align:center;margin:24px 0;\"><a href=\"${ab
         subject,
         htmlBody: html,
         pdfStorageKey: key,
-        pdfUrl: url,
-        pdfDownloadUrl: absolutePdfUrl,
+        pdfUrl: url,                    // DEPRECATED for cron; cookie-gated
+        pdfDownloadUrl: absolutePdfUrl, // CRON USES THIS — absolute presigned S3
         recordId,
         momBriefing: momBriefing
           ? {
