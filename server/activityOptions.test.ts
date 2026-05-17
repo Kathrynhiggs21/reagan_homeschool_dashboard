@@ -61,11 +61,18 @@ describe("Activity Options weighted picker", () => {
     expect(partOfDay(new Date(2026, 0, 1, 20))).toBe("evening");
   });
 
-  it("pool covers all 5 subjects + has at least 12 candidates", () => {
+  it("pool covers the 4 core planning subjects + has at least 12 candidates", () => {
+    // After 2026-05-17 canonical 7-subject taxonomy migration. The pool's
+    // existing entries map cleanly to the 4 core subjects (social, science,
+    // ela, math). The optional subjects (health-pe, art-music, other) are
+    // valid in the type but the activity pool doesn't have entries in those
+    // categories yet — they're catalog-only for assignment categorization.
+    // "specials" was retired entirely.
     const subjects = new Set(ACTIVITY_POOL.map((c) => c.subject));
-    for (const s of ["math", "science", "social", "ela", "specials"] as const) {
+    for (const s of ["social", "science", "ela", "math"] as const) {
       expect(subjects.has(s)).toBe(true);
     }
+    expect(subjects.has("specials" as any)).toBe(false);
     expect(ACTIVITY_POOL.length).toBeGreaterThanOrEqual(12);
   });
 });

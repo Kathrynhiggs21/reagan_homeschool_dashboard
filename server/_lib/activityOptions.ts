@@ -12,8 +12,9 @@ export interface ActivityCandidate {
   id: string;
   title: string;
   emoji: string;
-  /** Subject slug used by the dashboard's color system. */
-  subject: "math" | "science" | "social" | "ela" | "specials" | "other";
+  /** Subject slug used by the dashboard's color system. Canonical 7-subject
+   *  taxonomy locked 2026-05-17 (see canonicalSubjectsTaxonomy.test.ts). */
+  subject: "social" | "science" | "ela" | "math" | "health-pe" | "art-music" | "other";
   minutes: number;
   /** Tags this candidate cares about. The picker scores against the context. */
   interests?: string[];
@@ -91,7 +92,9 @@ export const ACTIVITY_POOL: ActivityCandidate[] = [
     id: "budgie-trick",
     title: "Teach Mango a new trick",
     emoji: "🦜",
-    subject: "specials",
+    // Animal training fits Science (animal behavior / care). Was "specials"
+    // before the canonical 7-subject taxonomy migration on 2026-05-17.
+    subject: "science",
     minutes: 20,
     interests: ["budgie", "birds", "animals", "mango"],
     setting: "indoor",
