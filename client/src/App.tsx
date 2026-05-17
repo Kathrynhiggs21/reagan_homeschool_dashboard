@@ -29,6 +29,7 @@ import Kiwi from "./pages/Kiwi";
 import AgendaEditor from "./pages/AgendaEditor";
 import Analytics from "./pages/Analytics";
 import Placement from "./pages/Placement";
+import Classes from "./pages/Classes";
 import { trpc } from "@/lib/trpc";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
@@ -64,6 +65,7 @@ function Router() {
         <Route path="/notes" component={TakeNotes} />
         <Route path="/apps" component={Apps} />
         <Route path="/placement" component={Placement} />
+        <Route path="/classes" component={Classes} />
 
         {/* === ADULT ROUTES (4 total, all gated) === */}
         <Route path="/curriculum">

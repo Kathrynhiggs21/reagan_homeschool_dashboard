@@ -1,0 +1,22 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS classroomCourses (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  externalId VARCHAR(64) NOT NULL UNIQUE,\n  name VARCHAR(256) NOT NULL,\n  section VARCHAR(128),\n  description TEXT,\n  room VARCHAR(64),\n  ownerName VARCHAR(128),\n  enrollmentCode VARCHAR(32),\n  courseState VARCHAR(32),\n  alternateLink TEXT,\n  subjectId INT,\n  syncedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP\n);\n\nALTER TABLE classroomAssignments ADD COLUMN lifecycleStatus ENUM('to_do','in_progress','turned_in','graded') NOT NULL DEFAULT 'to_do';\nALTER TABLE classroomAssignments ADD COLUMN subjectId INT;\nALTER TABLE classroomAssignments ADD COLUMN startedAt TIMESTAMP NULL;\nALTER TABLE classroomAssignments ADD COLUMN turnedInAt TIMESTAMP NULL;\nALTER TABLE classroomAssignments ADD COLUMN gradedAt TIMESTAMP NULL;\nALTER TABLE classroomAssignments ADD COLUMN grade VARCHAR(32);\nALTER TABLE classroomAssignments ADD COLUMN gradeNumeric DECIMAL(6,2);\nALTER TABLE classroomAssignments ADD COLUMN driveFolderId VARCHAR(64);\n\nCREATE TABLE IF NOT EXISTS classroomSubmissions (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  assignmentId INT NOT NULL,\n  fromStatus ENUM('to_do','in_progress','turned_in','graded'),\n  toStatus ENUM('to_do','in_progress','turned_in','graded') NOT NULL,\n  changedBy VARCHAR(64),\n  note TEXT,\n  driveFileId VARCHAR(64),\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n  INDEX idx_assignment (assignmentId),\n  INDEX idx_status (toStatus)\n);\n\nSELECT 'classroomCourses' AS tbl, COUNT(*) AS rows_present FROM classroomCourses\nUNION ALL SELECT 'classroomAssignments', COUNT(*) FROM classroomAssignments\nUNION ALL SELECT 'classroomSubmissions', COUNT(*) FROM classroomSubmissions;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute CREATE TABLE IF NOT EXISTS classroomCourses (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  externalId VARCHAR(64) NOT NULL UNIQUE,\n  name VARCHAR(256) NOT NULL,\n  section VARCHAR(128),\n  description TEXT,\n  room VARCHAR(64),\n  ownerName VARCHAR(128),\n  enrollmentCode VARCHAR(32),\n  courseState VARCHAR(32),\n  alternateLink TEXT,\n  subjectId INT,\n  syncedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP\n);\n\nALTER TABLE classroomAssignments ADD COLUMN lifecycleStatus ENUM('to_do','in_progress','turned_in','graded') NOT NULL DEFAULT 'to_do';\nALTER TABLE classroomAssignments ADD COLUMN subjectId INT;\nALTER TABLE classroomAssignments ADD COLUMN startedAt TIMESTAMP NULL;\nALTER TABLE classroomAssignments ADD COLUMN turnedInAt TIMESTAMP NULL;\nALTER TABLE classroomAssignments ADD COLUMN gradedAt TIMESTAMP NULL;\nALTER TABLE classroomAssignments ADD COLUMN grade VARCHAR(32);\nALTER TABLE classroomAssignments ADD COLUMN gradeNumeric DECIMAL(6,2);\nALTER TABLE classroomAssignments ADD COLUMN driveFolderId VARCHAR(64);\n\nCREATE TABLE IF NOT EXISTS classroomSubmissions (\n  id INT AUTO_INCREMENT PRIMARY KEY,\n  assignmentId INT NOT NULL,\n  fromStatus ENUM('to_do','in_progress','turned_in','graded'),\n  toStatus ENUM('to_do','in_progress','turned_in','graded') NOT NULL,\n  changedBy VARCHAR(64),\n  note TEXT,\n  driveFileId VARCHAR(64),\n  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,\n  INDEX idx_assignment (assignmentId),\n  INDEX idx_status (toStatus)\n);\n\nSELECT 'classroomCourses' AS tbl, COUNT(*) AS rows_present FROM classroomCourses\nUNION ALL SELECT 'classroomAssignments', COUNT(*) FROM classroomAssignments\nUNION ALL SELECT 'classroomSubmissions', COUNT(*) FROM classroomSubmissions;",
+  "rows": [
+    {
+      "tbl": "classroomCourses",
+      "rows_present": "0"
+    },
+    {
+      "tbl": "classroomSubmissions",
+      "rows_present": "0"
+    },
+    {
+      "tbl": "classroomAssignments",
+      "rows_present": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "tbl\trows_present\nclassroomCourses\t0\nclassroomSubmissions\t0\nclassroomAssignments\t0\n",
+  "stderr": "",
+  "execution_time_ms": 2722
+}

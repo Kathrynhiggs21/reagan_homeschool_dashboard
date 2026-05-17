@@ -5030,8 +5030,8 @@ export async function listAppSettings(prefix?: string): Promise<Array<{ key: str
 }
 
 
-// ----- GOOGLE CLASSROOM (REFERENCE-ONLY) -----
-import { classroomAssignments } from "../drizzle/schema";
+// ----- GOOGLE CLASSROOM (REFERENCE-ONLY + LIFECYCLE) -----
+import { classroomAssignments, classroomCourses, classroomSubmissions } from "../drizzle/schema";
 
 export type ClassroomSyncInput = {
   externalId: string;
@@ -5097,6 +5097,115 @@ export async function listClassroomAssignments(limit = 50) {
     .orderBy(desc(classroomAssignments.dueAt as any))
     .limit(limit);
   return rows;
+}
+
+/* ----- Classroom courses -----------------------------------------------
+ * Mirror of Google Classroom courses. Empty until OAuth scope is granted
+ * and a sync runs. listClassroomCourses() powers the /classes page.
+ */
+export async function listClassroomCourses() {
+  const d = getDb();
+  return await d
+    .select()
+    .from(classroomCourses)
+    .orderBy(asc(classroomCourses.name as any));
+}
+
+/* ----- Classroom assignments by lifecycle -----------------------------
+ * Filtered list. lifecycleStatus is one of to_do | in_progress | turned_in | graded.
+ * Pass null/undefined to get every assignment (pending sync).
+ */
+export async function listClassroomAssignmentsByLifecycle(
+  lifecycleStatus: "to_do" | "in_progress" | "turned_in" | "graded" | null | undefined,
+  opts: { subjectId?: number | null; limit?: number } = {}
+) {
+  const d = getDb();
+  const limit = opts.limit ?? 200;
+  const where: any[] = [];
+  if (lifecycleStatus) where.push(eq(classroomAssignments.lifecycleStatus as any, lifecycleStatus));
+  if (typeof opts.subjectId === "number") where.push(eq(classroomAssignments.subjectId as any, opts.subjectId));
+  let q: any = d.select().from(classroomAssignments);
+  if (where.length === 1) q = q.where(where[0]);
+  else if (where.length > 1) q = q.where(and(...where));
+  return await q
+    .orderBy(asc(classroomAssignments.dueAt as any))
+    .limit(limit);
+}
+
+/* ----- Update lifecycle status with audit log ------------------------
+ * Atomic-ish: we set the new status (and timestamp) on classroomAssignments,
+ * then write an audit row to classroomSubmissions.
+ *
+ * Returns the updated assignment + the new audit row.
+ */
+export async function updateClassroomAssignmentStatus(input: {
+  assignmentId: number;
+  toStatus: "to_do" | "in_progress" | "turned_in" | "graded";
+  changedBy?: string | null;
+  note?: string | null;
+  driveFileId?: string | null;
+  grade?: string | null;
+  gradeNumeric?: string | null; // decimal as string per drizzle/mysql convention
+}) {
+  const d = getDb();
+  const existing: any[] = await d
+    .select()
+    .from(classroomAssignments)
+    .where(eq(classroomAssignments.id as any, input.assignmentId));
+  if (existing.length === 0) {
+    throw new Error(`classroomAssignment id=${input.assignmentId} not found`);
+  }
+  const prev = existing[0];
+  const fromStatus: "to_do" | "in_progress" | "turned_in" | "graded" = prev.lifecycleStatus;
+
+  // Build the patch — set lifecycle stamps when transitioning into a state.
+  const now = new Date();
+  const patch: any = { lifecycleStatus: input.toStatus };
+  if (input.toStatus === "in_progress" && !prev.startedAt) patch.startedAt = now;
+  if (input.toStatus === "turned_in" && !prev.turnedInAt) patch.turnedInAt = now;
+  if (input.toStatus === "graded") {
+    if (!prev.gradedAt) patch.gradedAt = now;
+    if (typeof input.grade === "string") patch.grade = input.grade;
+    if (input.gradeNumeric != null) patch.gradeNumeric = input.gradeNumeric;
+  }
+
+  await d
+    .update(classroomAssignments)
+    .set(patch)
+    .where(eq(classroomAssignments.id as any, input.assignmentId));
+
+  await d.insert(classroomSubmissions).values({
+    assignmentId: input.assignmentId,
+    fromStatus: fromStatus,
+    toStatus: input.toStatus,
+    changedBy: input.changedBy ?? null,
+    note: input.note ?? null,
+    driveFileId: input.driveFileId ?? null,
+  } as any);
+
+  const updated: any[] = await d
+    .select()
+    .from(classroomAssignments)
+    .where(eq(classroomAssignments.id as any, input.assignmentId));
+  return {
+    assignment: updated[0],
+    fromStatus,
+    toStatus: input.toStatus,
+  };
+}
+
+/* ----- Audit log read access -----------------------------------------
+ * Most-recent transitions for one assignment. Used by the Classes page to
+ * render "who moved this when".
+ */
+export async function listClassroomSubmissionsForAssignment(assignmentId: number, limit = 30) {
+  const d = getDb();
+  return await d
+    .select()
+    .from(classroomSubmissions)
+    .where(eq(classroomSubmissions.assignmentId as any, assignmentId))
+    .orderBy(desc(classroomSubmissions.createdAt as any))
+    .limit(limit);
 }
 
 

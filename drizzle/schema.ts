@@ -2,6 +2,7 @@ import {
   bigint,
   boolean,
   date,
+  decimal,
   int,
   json,
   mysqlEnum,
@@ -1576,9 +1577,58 @@ export const classroomAssignments = mysqlTable("classroomAssignments", {
   dueAt: timestamp("dueAt"),                      // null if no due date
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   syncedAt: timestamp("syncedAt").defaultNow().notNull(),
+  // Lifecycle tracking added 2026-05-17 for canonical assignment status flow.
+  lifecycleStatus: mysqlEnum("lifecycleStatus", ["to_do", "in_progress", "turned_in", "graded"]).notNull().default("to_do"),
+  subjectId: int("subjectId"),                    // FK → subjects.id (canonical taxonomy)
+  startedAt: timestamp("startedAt"),               // when Reagan opened it
+  turnedInAt: timestamp("turnedInAt"),             // when submitted to Classroom
+  gradedAt: timestamp("gradedAt"),                 // when teacher returned a grade
+  grade: varchar("grade", { length: 32 }),         // letter or text grade
+  gradeNumeric: decimal("gradeNumeric", { precision: 6, scale: 2 }),
+  driveFolderId: varchar("driveFolderId", { length: 64 }), // current Drive lifecycle folder
 });
 export type ClassroomAssignment = typeof classroomAssignments.$inferSelect;
 export type InsertClassroomAssignment = typeof classroomAssignments.$inferInsert;
+
+/**
+ * classroomCourses — Mirror of Google Classroom courses. Populated by the
+ * Classroom REST sync. Empty until OAuth scope is granted + sync runs.
+ */
+export const classroomCourses = mysqlTable("classroomCourses", {
+  id: int("id").autoincrement().primaryKey(),
+  externalId: varchar("externalId", { length: 64 }).notNull().unique(), // Google's courseId
+  name: varchar("name", { length: 256 }).notNull(),
+  section: varchar("section", { length: 128 }),
+  description: text("description"),
+  room: varchar("room", { length: 64 }),
+  ownerName: varchar("ownerName", { length: 128 }),
+  enrollmentCode: varchar("enrollmentCode", { length: 32 }),
+  courseState: varchar("courseState", { length: 32 }),  // ACTIVE | ARCHIVED | PROVISIONED | DECLINED | SUSPENDED
+  alternateLink: text("alternateLink"),
+  subjectId: int("subjectId"),                          // FK → subjects.id (canonical taxonomy)
+  syncedAt: timestamp("syncedAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type ClassroomCourse = typeof classroomCourses.$inferSelect;
+export type InsertClassroomCourse = typeof classroomCourses.$inferInsert;
+
+/**
+ * classroomSubmissions — Audit log of lifecycle transitions per assignment.
+ * One row per status change. Powers the "who moved this and when" view.
+ */
+export const classroomSubmissions = mysqlTable("classroomSubmissions", {
+  id: int("id").autoincrement().primaryKey(),
+  assignmentId: int("assignmentId").notNull(),
+  fromStatus: mysqlEnum("fromStatus", ["to_do", "in_progress", "turned_in", "graded"]),
+  toStatus: mysqlEnum("toStatus", ["to_do", "in_progress", "turned_in", "graded"]).notNull(),
+  changedBy: varchar("changedBy", { length: 64 }),       // 'reagan' | 'mom' | 'grandma' | 'classroom_sync' | 'auto'
+  note: text("note"),
+  driveFileId: varchar("driveFileId", { length: 64 }),   // if a Drive file move triggered this
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ClassroomSubmission = typeof classroomSubmissions.$inferSelect;
+export type InsertClassroomSubmission = typeof classroomSubmissions.$inferInsert;
 
 
 /**

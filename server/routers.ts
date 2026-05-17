@@ -7036,6 +7036,76 @@ export const appRouter = router({
         if (ctx.user.role !== "admin" && ctx.user.role !== "tutor" && ctx.user.role !== "user") return [];
         return db.listClassroomAssignments(input?.limit ?? 50);
       }),
+
+    /* ============================================================
+     * Classroom integration v2 (added 2026-05-17)
+     *
+     * The Classes page consumes these procedures to render per-subject
+     * assignment columns and let Mom/Grandma move work through the
+     * canonical lifecycle: to_do → in_progress → turned_in → graded.
+     *
+     * Auth model:
+     *   - courses.list / assignments.byLifecycle: publicProcedure so
+     *     Reagan's kid-side view can see her own work. Both procedures
+     *     return empty arrays until Mom grants the OAuth scope.
+     *   - assignments.updateStatus: familyAdminProcedure — only Mom and
+     *     Grandma may move an assignment through the lifecycle.
+     *   - audit.forAssignment: protectedProcedure (any signed-in user).
+     *   - sync: familyAdminProcedure (placeholder; returns
+     *     not_yet_authenticated until Mom grants the scope).
+     * ============================================================ */
+    courses: router({
+      list: publicProcedure.query(() => db.listClassroomCourses()),
+    }),
+    assignments: router({
+      byLifecycle: publicProcedure
+        .input(z.object({
+          lifecycleStatus: z.enum(["to_do", "in_progress", "turned_in", "graded"]).optional(),
+          subjectId: z.number().int().positive().optional(),
+          limit: z.number().int().min(1).max(500).default(200),
+        }).optional())
+        .query(({ input }) => db.listClassroomAssignmentsByLifecycle(
+          input?.lifecycleStatus ?? null,
+          { subjectId: input?.subjectId ?? null, limit: input?.limit ?? 200 },
+        )),
+      updateStatus: familyAdminProcedure
+        .input(z.object({
+          assignmentId: z.number().int().positive(),
+          toStatus: z.enum(["to_do", "in_progress", "turned_in", "graded"]),
+          note: z.string().max(2000).optional(),
+          driveFileId: z.string().max(64).optional(),
+          grade: z.string().max(32).optional(),
+          gradeNumeric: z.number().optional(),
+          changedBy: z.enum(["mom", "grandma", "reagan", "classroom_sync", "auto"]).optional(),
+        }))
+        .mutation(({ input }) => db.updateClassroomAssignmentStatus({
+          assignmentId: input.assignmentId,
+          toStatus: input.toStatus,
+          note: input.note ?? null,
+          driveFileId: input.driveFileId ?? null,
+          grade: input.grade ?? null,
+          gradeNumeric: typeof input.gradeNumeric === "number" ? String(input.gradeNumeric) : null,
+          changedBy: input.changedBy ?? null,
+        })),
+    }),
+    audit: router({
+      forAssignment: protectedProcedure
+        .input(z.object({
+          assignmentId: z.number().int().positive(),
+          limit: z.number().int().min(1).max(200).default(30),
+        }))
+        .query(({ input }) => db.listClassroomSubmissionsForAssignment(input.assignmentId, input.limit)),
+    }),
+    /* Sync stub. Wires up later once OAuth scope is granted by Mom on
+     * spear.cpt@gmail.com. Returning a typed status keeps the UI button
+     * functional without surfacing a server error. */
+    sync: familyAdminProcedure
+      .mutation(async () => ({
+        status: "not_yet_authenticated" as const,
+        coursesSynced: 0,
+        assignmentsSynced: 0,
+        message: "Google Classroom OAuth scope not yet granted. Mom needs to authorize spear.cpt@gmail.com before sync runs.",
+      })),
   }),
   prefs: router({
     /** Public-safe key allowlist Reagan's UI may read (no secrets, no creds). */
