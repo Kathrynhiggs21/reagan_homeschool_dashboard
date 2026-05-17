@@ -1,0 +1,13 @@
+{
+  "query": "SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='drive_push_queue' AND COLUMN_NAME='target_folder';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT COLUMN_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='drive_push_queue' AND COLUMN_NAME='target_folder';",
+  "rows": [
+    {
+      "COLUMN_TYPE": "enum('reagan','reagan_ihes','reagan_tutor','reagan_artwork','reagan_assignments','finished_work','daily_schedule','worksheets','printables','report_cards','journal','analytics','adult_notes','kiwi_coins','tutor','apps_tools','bookshelf','adventures','practice','notebook','curriculum_checklist','day_log','recap_reply','topics_covered','agenda_pdf')"
+    }
+  ],
+  "messages": [],
+  "stdout": "COLUMN_TYPE\nenum('reagan','reagan_ihes','reagan_tutor','reagan_artwork','reagan_assignments','finished_work','daily_schedule','worksheets','printables','report_cards','journal','analytics','adult_notes','kiwi_coins','tutor','apps_tools','bookshelf','adventures','practice','notebook','curriculum_checklist','day_log','recap_reply','topics_covered','agenda_pdf')\n",
+  "stderr": "",
+  "execution_time_ms": 1272
+}

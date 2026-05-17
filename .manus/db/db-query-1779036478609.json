@@ -1,0 +1,28 @@
+{
+  "query": "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME IN ('classroomCourses','classroomSubmissions','classroomAssignments','subjects'); SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='subjects' AND COLUMN_NAME='isCorePlanning';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME IN ('classroomCourses','classroomSubmissions','classroomAssignments','subjects'); SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='subjects' AND COLUMN_NAME='isCorePlanning';",
+  "rows": [
+    {
+      "TABLE_NAME": "classroomAssignments"
+    },
+    {
+      "TABLE_NAME": "classroomCourses"
+    },
+    {
+      "TABLE_NAME": "classroomSubmissions"
+    },
+    {
+      "TABLE_NAME": "subjects"
+    },
+    {
+      "TABLE_NAME": "COLUMN_NAME"
+    },
+    {
+      "TABLE_NAME": "isCorePlanning"
+    }
+  ],
+  "messages": [],
+  "stdout": "TABLE_NAME\nclassroomAssignments\nclassroomCourses\nclassroomSubmissions\nsubjects\nCOLUMN_NAME\nisCorePlanning\n",
+  "stderr": "",
+  "execution_time_ms": 607
+}

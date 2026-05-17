@@ -5208,6 +5208,88 @@ export async function listClassroomSubmissionsForAssignment(assignmentId: number
     .limit(limit);
 }
 
+/* ----- Classroom drive-push enqueue ----------------------------------
+ * Queue a drive_push_queue row that the heartbeat worker will consume to
+ * MOVE the existing Drive file from the old lifecycle subfolder to the
+ * new one when an assignment transitions states. Pure DB write — no
+ * Drive API calls happen here. Returns the queue row id.
+ *
+ * Idempotent: if a pending row already exists for the same
+ * (assignmentId, fromStatus, toStatus, driveFileId) tuple, we reuse it
+ * instead of stacking duplicates. Same-state transitions are a no-op
+ * and return { id: 0, skipped: "noop" }.
+ */
+export async function enqueueClassroomLifecycleDriveMove(args: {
+  assignmentId: number;
+  courseName: string;
+  fromStatus: "to_do" | "in_progress" | "turned_in" | "graded";
+  toStatus: "to_do" | "in_progress" | "turned_in" | "graded";
+  driveFileId: string | null;
+  fileName: string;
+}): Promise<{ id: number; skipped?: "noop" | "no_file" | "empty_course" | "already_pending" }> {
+  // Lazy import keeps these helpers tree-shakeable from the worker side.
+  const {
+    sanitizeClassFolderName,
+    LIFECYCLE_FOLDER_NAME,
+  } = await import("./_lib/classroomDrivePathPlanner");
+
+  // No file to move → the worker would have nothing to do. Skip cleanly.
+  if (!args.driveFileId) return { id: 0, skipped: "no_file" };
+  if (args.fromStatus === args.toStatus) return { id: 0, skipped: "noop" };
+
+  const safeClass = sanitizeClassFolderName(args.courseName);
+  if (!safeClass) return { id: 0, skipped: "empty_course" };
+  const subFolder = LIFECYCLE_FOLDER_NAME[args.toStatus];
+  const targetSubpath = `${safeClass}/${subFolder}`;
+  const fileName = args.fileName.length > 0 ? args.fileName : `assignment-${args.assignmentId}.bin`;
+
+  const d = getDb();
+  // Idempotency check: same assignment + driveFile + destination already pending?
+  const existing: any[] = await d
+    .select()
+    .from(drivePushQueue)
+    .where(
+      and(
+        eq(drivePushQueue.targetFolder as any, "classes" as any),
+        eq(drivePushQueue.targetSubpath as any, targetSubpath as any),
+        eq(drivePushQueue.driveFileId as any, args.driveFileId as any),
+        eq(drivePushQueue.status as any, "pending" as any),
+      ),
+    );
+  if (existing.length > 0) {
+    return { id: existing[0].id ?? 0, skipped: "already_pending" };
+  }
+
+  const r: any = await d.insert(drivePushQueue).values({
+    targetFolder: "classes" as any,
+    targetSubpath,
+    fileName,
+    mimeType: null,
+    // Carry the existing Drive file id forward so the worker knows this
+    // is a MOVE (not a fresh upload) and can patch parents in-place.
+    driveFileId: args.driveFileId,
+    status: "pending" as any,
+  } as any);
+
+  let id = Number(r?.[0]?.insertId ?? r?.insertId ?? 0);
+  if (!id) {
+    const [row] = (await d
+      .select()
+      .from(drivePushQueue)
+      .where(
+        and(
+          eq(drivePushQueue.targetFolder as any, "classes" as any),
+          eq(drivePushQueue.targetSubpath as any, targetSubpath as any),
+          eq(drivePushQueue.driveFileId as any, args.driveFileId as any),
+        ),
+      )
+      .orderBy(desc(drivePushQueue.id))
+      .limit(1)) as any[];
+    id = row?.id ?? 0;
+  }
+  return { id };
+}
+
 
 /* ===================== REAGAN PROFILE MODEL =====================
  *

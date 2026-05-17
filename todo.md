@@ -3323,3 +3323,22 @@ Open follow-ups for the next session (NOT this push):
 - [ ] Status-picker chips on the Today + Schedule block cards so an assignment block can be moved through the lifecycle without leaving the daily view.
 - [ ] Auto-move the Drive file when status changes (heartbeat job consuming `classroomSubmissions` rows where `driveFileId IS NOT NULL`).
 - [ ] Pull grade-back when teacher returns work in Classroom (sync sets status=graded + stores score).
+
+## Classroom integration v2.1 — Drive lifecycle plumbing (added & DONE 2026-05-17)
+
+- [x] **Pure helper `classroomDrivePathPlanner` (DONE):** `server/_lib/classroomDrivePathPlanner.ts` owns the canonical Drive layout `Classes/{Class Name}/{To Do|In Progress|Turned In|Graded}/`. Sanitizes course names (strips slashes/control chars, collapses whitespace, caps at 80), exposes `planClassroomDrivePath`, `planAllLifecycleSubfolders`, and `planClassroomDriveMove` (returns `{from, to, isNoop}`). 13/13 vitests in `server/classroomDrivePathPlanner.test.ts`.
+- [x] **Pure helper `classroomLifecycleTransitions` (DONE):** `server/_lib/classroomLifecycleTransitions.ts` is the state machine. `decideTransition(from, to)` returns `{ok, isNoop, isReopen, stampColumn, auditVerb}` — no DB calls. Backward moves are flagged as reopens and intentionally do NOT overwrite existing timestamps. `buildAuditRowDraft` produces a row shape safe to insert into `classroomSubmissions`. 15/15 vitests in `server/classroomLifecycleTransitions.test.ts`.
+- [x] **Schema: `drive_push_queue.target_folder` now includes `'classes'` (DONE):** Migration `0063_soft_iron_monger.sql` widens the enum and re-states the classroom tables/columns + `subjects.isCorePlanning` (already live from v2). Live DB confirmed.
+- [x] **db helper `enqueueClassroomLifecycleDriveMove` (DONE):** Inserts a single `drive_push_queue` row tagged `target_folder='classes'`, `target_subpath='{Class Name}/{Lifecycle Folder}'`, carrying the existing `driveFileId` so the heartbeat worker treats it as a MOVE. Idempotent: returns `skipped='already_pending'` on duplicate enqueues; returns `skipped='noop'` on same-state; returns `skipped='no_file'` when there's nothing to move; returns `skipped='empty_course'` when the class name sanitizes to nothing. Implemented in `server/db.ts` immediately after `listClassroomSubmissionsForAssignment`.
+- [x] **Vitest `classroomDriveEnqueue.test.ts` (DONE):** 6/6 pass against the live MySQL — covers happy-path enqueue, idempotent re-enqueue (count stays at 1), no-op same-state, no_file null path, empty_course path, and path-injection sanitization (`Math / Lab` becomes `Math - Lab/In Progress`, exactly two segments).
+
+Aggregate: all 5 classroom test files green together — `45/45` passing in 3.13s (`classroomSchemaScaffold` 4 + `classroomRouter` 7 + `classroomDrivePathPlanner` 13 + `classroomLifecycleTransitions` 15 + `classroomDriveEnqueue` 6).
+
+Wired-but-not-yet-firing: the new `enqueueClassroomLifecycleDriveMove` is a standalone helper. The `gclassroom.assignments.updateStatus` procedure does NOT yet call it — that's intentional this push (no Drive file id is stored on assignments until the OAuth-gated sync actually pulls coursework). Next push will add the call site once `assignment.driveFolderId` starts getting populated by the real sync.
+
+Open follow-ups (carried forward from v2 — still NOT this push):
+- [ ] OAuth scope expansion + `/api/scheduled/classroom-sync` endpoint that actually pulls courses + coursework from Google.
+- [ ] Drive subfolder auto-creation per class (To Do / In Progress / Turned In / Graded under `Classes/{className}/`) when a course is first synced.
+- [ ] Status-picker chips on the Today + Schedule block cards so an assignment block can be moved through the lifecycle without leaving the daily view.
+- [ ] Wire `gclassroom.assignments.updateStatus` to call `enqueueClassroomLifecycleDriveMove` once assignments have a `driveFolderId` populated.
+- [ ] Pull grade-back when teacher returns work in Classroom (sync sets status=graded + stores score).

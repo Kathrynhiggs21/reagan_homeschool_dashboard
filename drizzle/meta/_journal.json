@@ -442,6 +442,13 @@
       "when": 1778819616937,
       "tag": "0062_wide_shinko_yamashiro",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "5",
+      "when": 1779036468524,
+      "tag": "0063_soft_iron_monger",
+      "breakpoints": true
     }
   ]
 }

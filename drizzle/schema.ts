@@ -1409,6 +1409,9 @@ export const drivePushQueue = mysqlTable("drive_push_queue", {
     "recap_reply",      // Daily Operations / Recap Replies / {YYYY-MM} / {date} - {sender} - Recap.md
     "topics_covered",   // Curriculum and Standards / Topics Covered / {YYYY-MM} / {date} - {subject} - {topic}.md
     "agenda_pdf",       // Daily Operations / Daily Agenda PDFs / {YYYY-MM} / {date} - Agenda.pdf
+    // Classroom integration v2 (2026-05-17) — per-class lifecycle subfolders.
+    // Path under this bucket: {Class Name}/{To Do|In Progress|Turned In|Graded}/...
+    "classes",
   ]).default("reagan").notNull(),
   status: mysqlEnum("status", ["pending", "pushed", "skipped", "failed"]).default("pending").notNull(),
   driveFileId: varchar("drive_file_id", { length: 200 }),
