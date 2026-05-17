@@ -7078,15 +7078,34 @@ export const appRouter = router({
           gradeNumeric: z.number().optional(),
           changedBy: z.enum(["mom", "grandma", "reagan", "classroom_sync", "auto"]).optional(),
         }))
-        .mutation(({ input }) => db.updateClassroomAssignmentStatus({
-          assignmentId: input.assignmentId,
-          toStatus: input.toStatus,
-          note: input.note ?? null,
-          driveFileId: input.driveFileId ?? null,
-          grade: input.grade ?? null,
-          gradeNumeric: typeof input.gradeNumeric === "number" ? String(input.gradeNumeric) : null,
-          changedBy: input.changedBy ?? null,
-        })),
+        .mutation(async ({ input }) => {
+          const result = await db.updateClassroomAssignmentStatus({
+            assignmentId: input.assignmentId,
+            toStatus: input.toStatus,
+            note: input.note ?? null,
+            driveFileId: input.driveFileId ?? null,
+            grade: input.grade ?? null,
+            gradeNumeric: typeof input.gradeNumeric === "number" ? String(input.gradeNumeric) : null,
+            changedBy: input.changedBy ?? null,
+          });
+          // After the lifecycle change is recorded in the DB, enqueue a
+          // Drive file MOVE so the heartbeat worker can shuttle the
+          // assignment file from the old lifecycle subfolder to the new
+          // one. The helper is idempotent and returns skipped=no_file
+          // pre-OAuth (when assignment.driveFolderId is null), so this
+          // call is safe to make on every status change — it's a no-op
+          // when there's nothing to move.
+          const a: any = result.assignment;
+          const driveQueue = await db.enqueueClassroomLifecycleDriveMove({
+            assignmentId: input.assignmentId,
+            courseName: a?.courseName ?? "",
+            fromStatus: result.fromStatus,
+            toStatus: result.toStatus,
+            driveFileId: a?.driveFolderId ?? null,
+            fileName: a?.title ?? `assignment-${input.assignmentId}`,
+          });
+          return { ...result, driveQueue };
+        }),
     }),
     audit: router({
       forAssignment: protectedProcedure

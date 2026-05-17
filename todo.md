@@ -3358,3 +3358,16 @@ Carry-forward (still NOT this push):
 - [ ] OAuth scope expansion + `/api/scheduled/classroom-sync` endpoint that actually pulls courses + coursework from Google.
 - [ ] Drive subfolder auto-creation per class when a course is first synced.
 - [ ] Pull grade-back when teacher returns work in Classroom (sync sets status=graded + stores score).
+
+## Classroom integration v2.3 — updateStatus → Drive enqueue wired (DONE 2026-05-17)
+
+- [x] **Wired `enqueueClassroomLifecycleDriveMove` into `gclassroom.assignments.updateStatus` (DONE):** The mutation now (a) updates the lifecycle row + writes the audit row, then (b) calls the enqueue helper using the just-updated assignment's `driveFolderId` + `courseName` + `title`. The result shape gains a `driveQueue` field (`{id, skipped?}`) so the UI can surface "queued for Drive move" later if we want. Pre-OAuth, `driveFolderId` is null → helper short-circuits with `skipped="no_file"`, queue stays empty, no errors.
+- [x] **Test coverage extended (DONE):** `classroomRouter.test.ts` now has 8 tests: existing pre-OAuth path asserts `driveQueue.skipped === "no_file"`; new test inserts a post-OAuth-style row with a synthetic `driveFolderId`, calls `updateStatus`, asserts the helper actually wrote a queue row (id > 0, no `skipped`), then re-fires the same call and asserts `skipped === "noop"` (same-state idempotency). Cleans up the queue row + assignment + audit at the end.
+
+Aggregate after v2.3: **6 classroom test files green together — 60/60 in 3.71 s** (`schemaScaffold` 4 + `router` 8 + `drivePathPlanner` 13 + `lifecycleTransitions` 15 + `driveEnqueue` 6 + `lifecycleUI` 14).
+
+Carry-forward (still NOT this push):
+- [ ] Mount LifecycleChip on Today + Schedule pages once the assignment cards there expose lifecycle status (currently those pages only render schedule blocks, not Classroom assignments yet).
+- [ ] OAuth scope expansion + `/api/scheduled/classroom-sync` endpoint that actually pulls courses + coursework from Google.
+- [ ] Drive subfolder auto-creation per class when a course is first synced.
+- [ ] Pull grade-back when teacher returns work in Classroom (sync sets status=graded + stores score).

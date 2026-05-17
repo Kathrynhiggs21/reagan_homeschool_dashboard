@@ -103,6 +103,14 @@ describe("gclassroom router", () => {
     expect(out.assignment.lifecycleStatus).toBe("in_progress");
     expect(new Date(out.assignment.startedAt).getTime()).toBeGreaterThanOrEqual(before - 5_000);
 
+    // Pre-OAuth (driveFolderId is null on our test row) the wired enqueue
+    // helper must be a no-op — driveQueue.skipped === "no_file" and the
+    // queue id stays at 0. This is the exact path Reagan's chip taps
+    // travel today, so it must NOT throw or stack rows.
+    expect((out as any).driveQueue).toBeDefined();
+    expect((out as any).driveQueue.skipped).toBe("no_file");
+    expect((out as any).driveQueue.id).toBe(0);
+
     const audit = await caller.gclassroom.audit.forAssignment({ assignmentId });
     expect(audit.length).toBe(1);
     expect((audit[0] as any).fromStatus).toBe("to_do");
@@ -151,6 +159,62 @@ describe("gclassroom router", () => {
     const todo = await caller.gclassroom.assignments.byLifecycle({ lifecycleStatus: "to_do", limit: 500 });
     const inToDo = (todo as any[]).find((r) => r.id === assignmentId);
     expect(inToDo, "should NOT appear in to_do bucket anymore").toBeFalsy();
+  });
+
+  it("updateStatus enqueues a Drive move when driveFolderId is set", async () => {
+    // Set up a fresh post-OAuth-style assignment row that DOES carry a
+    // driveFolderId, so the enqueue helper actually fires.
+    const d = getDb();
+    const TAG2 = `${TAG}-driveful`;
+    const drvFileId = `${TAG2}-drv`;
+    const ext2 = `${TAG2}-ext`;
+    await d.insert(classroomAssignments).values({
+      externalId: ext2,
+      courseId: `${TAG2}-course`,
+      courseName: `${TAG2} Math`,
+      title: `${TAG2} HW`,
+      workType: "ASSIGNMENT",
+      state: "PUBLISHED",
+      lifecycleStatus: "to_do",
+      driveFolderId: drvFileId,
+    } as any);
+    const inserted: any[] = await d
+      .select()
+      .from(classroomAssignments)
+      .where(eq(classroomAssignments.externalId as any, ext2));
+    const aId = Number(inserted[0].id);
+    expect(aId).toBeGreaterThan(0);
+
+    try {
+      const out = await caller.gclassroom.assignments.updateStatus({
+        assignmentId: aId,
+        toStatus: "in_progress",
+        changedBy: "mom",
+      });
+      expect((out as any).driveQueue).toBeDefined();
+      // No skipped flag means the helper actually wrote a queue row.
+      expect((out as any).driveQueue.skipped).toBeUndefined();
+      expect((out as any).driveQueue.id).toBeGreaterThan(0);
+
+      // And re-firing the same move must be idempotent — the helper
+      // is supposed to return already_pending, not stack duplicates.
+      const out2 = await caller.gclassroom.assignments.updateStatus({
+        assignmentId: aId,
+        toStatus: "in_progress",
+        changedBy: "mom",
+      });
+      // Same-state self-move — helper short-circuits with "noop" because
+      // fromStatus === toStatus on the second call.
+      expect((out2 as any).driveQueue.skipped).toBe("noop");
+    } finally {
+      // Cleanup the drive_push_queue rows + audit + assignment for this case.
+      await d.execute(
+        // eslint-disable-next-line @typescript-eslint/no-var-requires
+        (await import("drizzle-orm")).sql`DELETE FROM drive_push_queue WHERE drive_file_id = ${drvFileId}`,
+      );
+      await d.delete(classroomSubmissions).where(eq(classroomSubmissions.assignmentId as any, aId));
+      await d.delete(classroomAssignments).where(eq(classroomAssignments.id as any, aId));
+    }
   });
 
   it("sync returns the not_yet_authenticated stub shape", async () => {
