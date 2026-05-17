@@ -12,6 +12,7 @@ import { notifyOwner } from "./_core/notification";
 import { findFreeLinks } from "./freeLinkFinder";
 import { storagePut } from "./storage";
 import { generateScheduleDraft, type AIBlockDraft } from "./_lib/aiScheduleGenerator";
+import { proposeScheduleEdit, type ExistingBlockSnapshot } from "./_lib/aiScheduleProposer";
 import { describeUser, roleForEmail, capabilitiesFor, type HomeRole } from "./_lib/permissions";
 import { loadTopicHintsForPrompt, resolveTopicId, resolveTopicIds } from "./_lib/topicCatalog";
 import { resolveTutorOfDay, tutorOfDayLabel } from "./_lib/tutorOfDay";
@@ -363,6 +364,176 @@ export const appRouter = router({
       }
       await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: created[0] ?? plan.id, action: "create", summary: `AI-generated ${input.blocks.length} blocks for ${input.date}` });
       return { planId: plan.id, blockCount: created.length };
+    }),
+
+    /* ----- AI Schedule PROPOSER (free-form prompt → diff against existing) ----- */
+    /**
+     * 2026-05-17 — Mom or Grandma types something like "make today shorter" or
+     * "swap math for art" while looking at a day that already has blocks. We
+     * don't want a destructive regenerate; we want a per-block diff they can
+     * review and accept. This procedure is read-only: it returns a proposal,
+     * NEVER touches the DB. The companion `aiApplyProposal` mutation commits
+     * only the decisions the adult explicitly accepts.
+     */
+    aiPropose: familyAdminProcedure.input(z.object({
+      date: z.string(),
+      adultPrompt: z.string().min(1).max(2000),
+    })).mutation(async ({ input }) => {
+      const plan = await db.getPlanByDate(input.date);
+      if (!plan) {
+        return {
+          summary: "No plan for that date yet — use AI Generate first.",
+          decisions: [],
+          warnings: ["no plan row for date"],
+          existingBlockCount: 0,
+        };
+      }
+      const blocksRaw = (await db.listBlocksForPlan(plan.id)) as any[];
+      const subjects = (await db.listSubjects()).map((s: any) => ({ slug: s.slug, name: s.name }));
+      const slugById = new Map<number, string>(
+        (await db.listSubjects()).map((s: any) => [s.id, s.slug]),
+      );
+      const profile: any = await db.getProfile().catch(() => null);
+      const dt = new Date(input.date + "T12:00:00");
+      const dayLabel = dt.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+
+      const existingBlocks: ExistingBlockSnapshot[] = blocksRaw.map((b) => ({
+        id: b.id as number,
+        blockType: b.blockType as any,
+        title: b.title || "",
+        description: b.description ?? null,
+        durationMin: b.durationMin ?? 30,
+        startTime: b.startTime ?? null,
+        subjectSlug: b.subjectId ? (slugById.get(b.subjectId) ?? null) : null,
+        curriculumTopicCode: null, // not surfaced to the proposer; preserve as-is on commit
+        sortOrder: b.sortOrder ?? 0,
+      }));
+
+      const result = await proposeScheduleEdit({
+        dateStr: input.date,
+        dayLabel,
+        studentName: profile?.studentName || "Reagan",
+        gradeLevel: profile?.gradeLevel || null,
+        adultPrompt: input.adultPrompt,
+        subjects,
+        existingBlocks,
+      });
+
+      return {
+        ...result,
+        planId: plan.id,
+        existingBlockCount: existingBlocks.length,
+      };
+    }),
+
+    /**
+     * Commit accepted decisions from a previous `aiPropose` call. The UI
+     * filters the decisions array down to just the ones Mom said yes to and
+     * sends them back. We apply add / modify / remove individually — unmentioned
+     * existing blocks stay untouched (this is NOT a wholesale replace like
+     * aiCommit). Returns counts so the UI can confirm.
+     */
+    aiApplyProposal: familyAdminProcedure.input(z.object({
+      date: z.string(),
+      decisions: z.array(z.discriminatedUnion("kind", [
+        z.object({ kind: z.literal("keep"), existingBlockId: z.number().int().positive() }),
+        z.object({
+          kind: z.literal("modify"),
+          existingBlockId: z.number().int().positive(),
+          after: z.object({
+            blockType: z.enum(["morning_warmup","math","adventure","read_aloud","choice","catch_up","appointment","custom"]),
+            title: z.string().min(1).max(200),
+            description: z.string().max(4000).optional(),
+            durationMin: z.number().min(1).max(180),
+            startTime: z.string().regex(/^\d{1,2}:\d{2}$/).optional(),
+            subjectSlug: z.string().nullable().optional(),
+          }),
+        }),
+        z.object({ kind: z.literal("remove"), existingBlockId: z.number().int().positive() }),
+        z.object({
+          kind: z.literal("add"),
+          insertAfterSortOrder: z.number().int().nullable().optional(),
+          after: z.object({
+            blockType: z.enum(["morning_warmup","math","adventure","read_aloud","choice","catch_up","appointment","custom"]),
+            title: z.string().min(1).max(200),
+            description: z.string().max(4000).optional(),
+            durationMin: z.number().min(1).max(180),
+            startTime: z.string().regex(/^\d{1,2}:\d{2}$/).optional(),
+            subjectSlug: z.string().nullable().optional(),
+          }),
+        }),
+      ])).min(1),
+    })).mutation(async ({ input, ctx }) => {
+      const plan = await db.getPlanByDate(input.date);
+      if (!plan) throw new Error("no plan for that date");
+      const subjects = await db.listSubjects();
+      const slugToId = new Map<string, number>(subjects.map((s: any) => [s.slug, s.id as number]));
+
+      let removed = 0;
+      let modified = 0;
+      let added = 0;
+
+      // Apply removes first so sortOrder gaps don't shift mid-add.
+      for (const d of input.decisions) {
+        if (d.kind === "remove") {
+          try { await db.deleteBlock(d.existingBlockId); removed++; } catch (e) { console.warn("[aiApplyProposal] delete failed", e); }
+        }
+      }
+
+      for (const d of input.decisions) {
+        if (d.kind === "modify") {
+          const subjectId = d.after.subjectSlug ? (slugToId.get(d.after.subjectSlug) ?? null) : null;
+          try {
+            await db.updateBlock(d.existingBlockId, {
+              blockType: d.after.blockType as any,
+              title: d.after.title,
+              description: d.after.description ?? null,
+              durationMin: d.after.durationMin,
+              startTime: d.after.startTime ?? null,
+              subjectId,
+            } as any);
+            modified++;
+          } catch (e) { console.warn("[aiApplyProposal] update failed", e); }
+        }
+      }
+
+      // Adds: append after the existing tail (simple, predictable). Refining
+      // sortOrder placement is a future polish; for now appending preserves
+      // existing order and avoids a renumber cascade.
+      const surviving = (await db.listBlocksForPlan(plan.id)) as any[];
+      let nextSortOrder = surviving.length > 0
+        ? Math.max(...surviving.map((b: any) => b.sortOrder ?? 0)) + 1
+        : 0;
+      for (const d of input.decisions) {
+        if (d.kind === "add") {
+          const subjectId = d.after.subjectSlug ? (slugToId.get(d.after.subjectSlug) ?? null) : null;
+          try {
+            await db.createBlock({
+              planId: plan.id,
+              blockType: d.after.blockType as any,
+              subjectId,
+              title: d.after.title,
+              description: d.after.description ?? null,
+              durationMin: d.after.durationMin,
+              startTime: d.after.startTime ?? null,
+              sortOrder: nextSortOrder++,
+              status: "not_started" as any,
+            } as any);
+            added++;
+          } catch (e) { console.warn("[aiApplyProposal] create failed", e); }
+        }
+      }
+
+      await db.logAudit({
+        actorOpenId: ctx.user?.openId,
+        actorName: ctx.user?.name,
+        entityType: "block",
+        entityId: plan.id,
+        action: "update",
+        summary: `AI-edit applied for ${input.date}: +${added} ~${modified} -${removed}`,
+      });
+
+      return { planId: plan.id, added, modified, removed };
     }),
   }),
 
