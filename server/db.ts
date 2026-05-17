@@ -109,6 +109,224 @@ export async function listCurriculumTopicsBySource(
   }>;
 }
 
+/**
+ * Push 2.9 (2026-05-17) — Kid-safe celebration view of voice-memo-stamped
+ * topics. ONLY returns rows that are `status='done'` and DROPS the
+ * teacher-facing `notes` evidence string + the source name + the source
+ * timestamp. The kid sees only what she actually completed; she does not
+ * see Mom's transcript timecodes or in-progress nags.
+ *
+ * Source-prefix is configurable so future memos with a different tag
+ * (e.g. `mom_katy_voice_memo_2026-09-12`) light up the same widget
+ * automatically. Default prefix matches our family voice-memo naming.
+ */
+/**
+ * Push 2.10 (2026-05-17) — Forward-planner gap snapshot.
+ *
+ * Returns a map of subject -> { inProgress, notStarted } where each list
+ * is ordered by `ord ASC, id ASC`. We deliberately keep `notes` in the
+ * payload because the planner front-loads transcript-quoted blockers
+ * (e.g. "Spectrum Math final test — ungraded") using that text.
+ *
+ * Excluded by default:
+ *   - status = 'done' / 'covered' (already finished)
+ *   - subjects with zero unfinished rows (caller can iterate keys safely)
+ *
+ * Caller can pass `excludeSubjects` to drop e.g. Specials when the parent
+ * doesn't want them auto-scheduled.
+ */
+export async function getCurriculumGapBySubject(opts?: {
+  excludeSubjects?: string[];
+  limitPerBucket?: number;
+}) {
+  const exclude = (opts?.excludeSubjects ?? []).map((s) => String(s));
+  const cap = Math.max(1, Math.min(opts?.limitPerBucket ?? 25, 100));
+  const [rows] = (await getDb().execute(sql`
+    SELECT id, subject, code, title, status, notes, ord,
+           last_covered_source, last_covered_at
+    FROM curriculumTopics
+    WHERE status IN ('inProgress', 'notStarted')
+    ORDER BY subject ASC, ord ASC, id ASC
+  `)) as any;
+
+  type GapRow = {
+    id: number;
+    subject: string;
+    code: string;
+    title: string;
+    status: "inProgress" | "notStarted";
+    notes: string | null;
+    ord: number | null;
+    last_covered_source: string | null;
+    last_covered_at: number | null;
+  };
+
+  const out: Record<string, { inProgress: GapRow[]; notStarted: GapRow[] }> = {};
+  for (const r of (rows || []) as GapRow[]) {
+    if (exclude.includes(r.subject)) continue;
+    const bucket = (out[r.subject] ||= { inProgress: [], notStarted: [] });
+    if (r.status === "inProgress" && bucket.inProgress.length < cap) {
+      bucket.inProgress.push(r);
+    } else if (r.status === "notStarted" && bucket.notStarted.length < cap) {
+      bucket.notStarted.push(r);
+    }
+  }
+  // Drop subjects with no unfinished rows after exclusions.
+  for (const subj of Object.keys(out)) {
+    const b = out[subj];
+    if (b.inProgress.length === 0 && b.notStarted.length === 0) delete out[subj];
+  }
+  return out;
+}
+
+/**
+ * Push 2.10 (2026-05-17) — Forward-planner write path.
+ *
+ * Idempotent. Given a list of plan rows from `planForward(...)`, ensure a
+ * dailyPlans row exists for each date and create one scheduleBlocks row
+ * per (date, topicId) that doesn't already have one. Never modifies
+ * existing blocks. Never duplicates a topic on the same day.
+ *
+ * Each created block:
+ *   - blockType = mapped from subject (Math -> math, ELA -> read_aloud,
+ *     Science/Social/Specials -> adventure or custom).
+ *   - title = `<emoji> <code>` so kid view shows the workbook code.
+ *   - description = transcript-quoted evidence + `Forward planner: <source>`.
+ *   - notes = source tag for full audit trail.
+ *   - curriculumTopicId = topic.id (binds the block to the topic).
+ */
+export async function applyForwardPlan(
+  rows: Array<{
+    date: string;
+    weekday: number;
+    slotIndex: number;
+    subject: string;
+    topicId: number;
+    code: string;
+    title: string;
+    evidence: string | null;
+    isBlockerFrontload: boolean;
+  }>,
+  opts: { source: string },
+): Promise<{ created: number; skipped: number; perDate: Record<string, number> }> {
+  const source = opts.source || "forward_planner";
+  let created = 0;
+  let skipped = 0;
+  const perDate: Record<string, number> = {};
+
+  // Map the curriculumTopics.subject (TitleCase) to a scheduleBlocks blockType.
+  const blockTypeFor = (subject: string): string => {
+    const s = subject.toLowerCase();
+    if (s === "math") return "math";
+    if (s === "ela") return "read_aloud";
+    if (s === "science") return "adventure";
+    if (s === "social" || s === "social studies") return "custom";
+    if (s === "specials") return "choice";
+    return "custom";
+  };
+  // Same for subject slug lookup.
+  const slugFor = (subject: string): string | null => {
+    const s = subject.toLowerCase();
+    if (s === "math") return "math";
+    if (s === "ela") return "ela";
+    if (s === "science") return "science";
+    if (s === "social" || s === "social studies") return "social-studies";
+    return null;
+  };
+
+  for (const r of rows) {
+    // Step 1: ensure dailyPlans exists (no auto-build to avoid clobbering).
+    const plan = await ensurePlanForDate(r.date);
+    if (!plan) {
+      skipped++;
+      continue;
+    }
+    // Step 2: idempotency — skip if a block already binds this topic to this plan.
+    const existing = await getDb()
+      .select({ id: scheduleBlocks.id })
+      .from(scheduleBlocks)
+      .where(
+        and(
+          eq(scheduleBlocks.planId, plan.id),
+          eq(scheduleBlocks.curriculumTopicId, r.topicId),
+        ),
+      )
+      .limit(1);
+    if ((existing as any[]).length > 0) {
+      skipped++;
+      continue;
+    }
+    // Step 3: pick subject id if a known slug.
+    const slug = slugFor(r.subject);
+    let subjectId: number | null = null;
+    if (slug) {
+      const sRow = await getDb()
+        .select({ id: subjects.id })
+        .from(subjects)
+        .where(eq(subjects.slug, slug))
+        .limit(1);
+      subjectId = (sRow as any[])[0]?.id ?? null;
+    }
+    // Step 4: append to the day in the next sortOrder slot.
+    const allBlocks = await getDb()
+      .select({ sortOrder: scheduleBlocks.sortOrder })
+      .from(scheduleBlocks)
+      .where(eq(scheduleBlocks.planId, plan.id));
+    const maxOrd = (allBlocks as any[]).reduce(
+      (m, b) => Math.max(m, b.sortOrder ?? 0),
+      -1,
+    );
+    const titlePrefix = r.isBlockerFrontload ? "✨ " : "✏️ ";
+    const evidence = r.evidence ? `${r.evidence}` : "";
+    const desc = [
+      r.title,
+      evidence,
+      `Forward planner (${source})`,
+    ]
+      .filter(Boolean)
+      .join(" — ");
+    await getDb()
+      .insert(scheduleBlocks)
+      .values({
+        planId: plan.id,
+        blockType: blockTypeFor(r.subject) as any,
+        subjectId: subjectId ?? undefined,
+        title: `${titlePrefix}${r.code} — ${r.title}`.slice(0, 200),
+        description: desc,
+        durationMin: r.subject === "Math" ? 30 : 25,
+        sortOrder: maxOrd + 1,
+        curriculumTopicId: r.topicId,
+        notes: `forward_planner_source=${source}; isBlocker=${r.isBlockerFrontload ? 1 : 0}`,
+      });
+    created++;
+    perDate[r.date] = (perDate[r.date] ?? 0) + 1;
+  }
+  return { created, skipped, perDate };
+}
+
+export async function listKidCoveredTopicsFromVoiceMemos(opts?: {
+  sourcePrefix?: string;
+  limit?: number;
+}) {
+  const prefix = (opts?.sourcePrefix ?? "mom_katy_voice_memo_").replace(/%/g, "");
+  const limit = Math.max(1, Math.min(opts?.limit ?? 50, 100));
+  const like = `${prefix}%`;
+  const [rows] = (await getDb().execute(sql`
+    SELECT id, subject, code, title
+    FROM curriculumTopics
+    WHERE status = 'done'
+      AND last_covered_source LIKE ${like}
+    ORDER BY subject ASC, ord ASC, id ASC
+    LIMIT ${limit}
+  `)) as any;
+  return (rows || []) as Array<{
+    id: number;
+    subject: string;
+    code: string;
+    title: string;
+  }>;
+}
+
 export async function upsertSubject(s: typeof subjects.$inferInsert) {
   const db = getDb();
   await db.insert(subjects).values(s).onDuplicateKeyUpdate({

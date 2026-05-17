@@ -3439,3 +3439,35 @@ Implementation steps:
 - [x] Mounted under `{unlocked && <TodayMomVoiceMemoCard />}` in Today.tsx, beside `TodayClassroomGradedCard`.
 - [x] Source-pattern wiring vitest `todayMomVoiceMemoWiring.test.ts` (7/7): import is correct, mount is adult-locked, kid Classroom card stays kid-visible, source string pinned, hides-on-empty preserved.
 - [x] Full suite green: 14 test files, **104/104 in 5.83 s**.
+
+
+## Forward calendar planner — drive the next 2 weeks from curriculum gaps (2026-05-17)
+
+Context: Mom Katy's voice-memo intake just stamped 23 topics. Roll-up shows real gaps: Math final test (ungraded), more multiplying practice, Spectrum Science Unit 4 Matter, finish *Michael's World*, SEL anxiety-triggers worksheet. Goal: turn that gap into a deterministic 10-school-day schedule the adults can preview before applying.
+
+- [ ] db: `getCurriculumGapBySubject({excludeSubjects?, limit?})` — returns `{ subject -> { inProgress: [...], notStarted: [...] } }` ranked by ord, with `notes` evidence preserved.
+- [ ] vitest `curriculumGapSnapshot.test.ts` (real DB): asserts the Mom Katy stamps surface in the right buckets (Math final test under Math.inProgress, Science U4 Matter under Science.notStarted, etc.); no done rows leak in.
+- [ ] Pure planner `server/_lib/curriculumForwardPlanner.ts`:
+  - input: `{ gap, weeklyShape, horizonDays, transcriptBlockers, startDate }`
+  - output: `Array<{ date, subject, topicId, code, title, evidence }>`
+  - rules: (a) front-load `transcriptBlockers` into days 1–3, (b) within a subject prefer `inProgress` then `notStarted` lowest ord, (c) skip weekends from `weeklyShape`, (d) deterministic ordering (sort by `date ASC, subjectSlot ASC`).
+- [ ] vitest `curriculumForwardPlanner.test.ts` (pure): blocker front-loading; weekend skip; deterministic ordering; hides subjects with empty gap; respects `excludeSubjects`.
+- [ ] db write: `applyForwardPlan(rows, {source})` — idempotent upsert keyed on `(date, subject)`, no destructive overwrites of any existing teacher-set entry.
+- [ ] vitest `curriculumForwardPlanApply.test.ts` (real DB): first apply inserts, second apply is no-op, manually-overridden row is NOT clobbered.
+- [ ] tRPC: `curriculum.forwardPlan.preview` (familyAdmin, read-only) returns proposed rows. `curriculum.forwardPlan.apply` (familyAdmin) writes. Both with horizon param (default 10).
+- [ ] vitest `curriculumForwardPlanRouter.test.ts` (real DB) covering preview + apply gates.
+- [ ] Adult-only Today widget `TodayForwardPlanCard.tsx` with Preview list + Apply button. Hides when gap is empty. Toast on apply.
+- [ ] Source-pattern wiring vitest for the new card.
+- [ ] Save checkpoint, summarize per-subject what was scheduled.
+
+
+## Forward calendar planner v2.10 (2026-05-17) — DONE
+
+Mom (Katy)'s voice-memo intake revealed 23 unfinished curriculum topics; v2.10 turns that into a clickable 2-week plan.
+
+- [x] DB: `getCurriculumGapBySubject({ excludeSubjects? })` returns `{ Math:{inProgress[], notStarted[]}, ELA:{...}, ... }` ranked by `ord` with evidence notes carried from the voice-memo ingest. (8/8 vitest cases.)
+- [x] Pure helper: `server/_lib/curriculumForwardPlanner.ts` — given gap + weeklyShape + horizon, emits deterministic per-day rows. Front-loads transcript blockers (Math final test, more multiplying, SEL anxiety triggers, finish *Michael's World*, Science Unit 4 Matter) into the first 3 school days. (9/9 pure vitest cases.)
+- [x] Write path: `applyForwardPlan(rows, { source })` — idempotent. Ensures `dailyPlans` row exists, creates one `scheduleBlocks` per (planId, topicId), tags `curriculumTopicId` + `notes='forward_planner_source=…'`, sparkle prefix on blocker rows. (3/3 real-DB vitest cases.)
+- [x] tRPC familyAdmin: `curriculum.forwardPlan.preview` + `curriculum.forwardPlan.applyPlan` (renamed from `apply` because tRPC reserves that key). Adult-gated; kid ctx is rejected. (3/3 real-DB vitest cases.)
+- [x] Adult UI: `TodayForwardPlanCard.tsx` mounted on Today behind `{unlocked && …}`. Shows per-subject totals at top, then groups by date with sparkle badge on blockers. Apply button calls `applyPlan` and toasts created/skipped counts. Hides itself when zero rows are proposed. (3/3 wiring vitest cases.)
+- [x] All 20 v2.x test files run together green: **135/135 in 6.88 s.**

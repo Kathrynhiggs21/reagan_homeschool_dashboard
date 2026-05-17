@@ -1,0 +1,80 @@
+{
+  "query": "SELECT subject, status, COUNT(*) AS n\nFROM curriculumTopics\nGROUP BY subject, status\nORDER BY subject, status;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT subject, status, COUNT(*) AS n\nFROM curriculumTopics\nGROUP BY subject, status\nORDER BY subject, status;",
+  "rows": [
+    {
+      "subject": "ELA",
+      "status": "done",
+      "n": "16"
+    },
+    {
+      "subject": "ELA",
+      "status": "inProgress",
+      "n": "2"
+    },
+    {
+      "subject": "ELA",
+      "status": "notStarted",
+      "n": "4"
+    },
+    {
+      "subject": "Math",
+      "status": "done",
+      "n": "49"
+    },
+    {
+      "subject": "Math",
+      "status": "inProgress",
+      "n": "3"
+    },
+    {
+      "subject": "Math",
+      "status": "notStarted",
+      "n": "9"
+    },
+    {
+      "subject": "Science",
+      "status": "done",
+      "n": "13"
+    },
+    {
+      "subject": "Science",
+      "status": "inProgress",
+      "n": "1"
+    },
+    {
+      "subject": "Science",
+      "status": "notStarted",
+      "n": "1"
+    },
+    {
+      "subject": "Social",
+      "status": "done",
+      "n": "9"
+    },
+    {
+      "subject": "Social",
+      "status": "notStarted",
+      "n": "3"
+    },
+    {
+      "subject": "Specials",
+      "status": "covered",
+      "n": "1"
+    },
+    {
+      "subject": "Specials",
+      "status": "done",
+      "n": "10"
+    },
+    {
+      "subject": "Specials",
+      "status": "inProgress",
+      "n": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "subject\tstatus\tn\nELA\tdone\t16\nELA\tinProgress\t2\nELA\tnotStarted\t4\nMath\tdone\t49\nMath\tinProgress\t3\nMath\tnotStarted\t9\nScience\tdone\t13\nScience\tinProgress\t1\nScience\tnotStarted\t1\nSocial\tdone\t9\nSocial\tnotStarted\t3\nSpecials\tcovered\t1\nSpecials\tdone\t10\nSpecials\tinProgress\t1\n",
+  "stderr": "",
+  "execution_time_ms": 619
+}

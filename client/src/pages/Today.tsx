@@ -36,6 +36,8 @@ import { TomorrowChoiceCard } from "@/components/TomorrowChoiceCard";
 import TodayClassroomCard from "@/components/TodayClassroomCard";
 import TodayClassroomGradedCard from "@/components/TodayClassroomGradedCard";
 import TodayMomVoiceMemoCard from "@/components/TodayMomVoiceMemoCard";
+import TodayCoveredRecapCard from "@/components/TodayCoveredRecapCard";
+import TodayForwardPlanCard from "@/components/TodayForwardPlanCard";
 // Push 84 (2026-05-13) — Adult Today recap: off-plan capture summary.
 import { OffPlanCaptureCard } from "@/components/OffPlanCaptureCard";
 import { TapEditPopover } from "@/components/TapEditPopover";
@@ -531,6 +533,14 @@ export default function Today() {
           empty (pre-OAuth and pre-applyGradeReturn). */}
       {unlocked && <TodayClassroomGradedCard />}
       {unlocked && <TodayMomVoiceMemoCard />}
+      {/* Push 2.10 (2026-05-17) — Forward calendar planner.
+          Adult-only. Hides itself if no rows are proposed. */}
+      {unlocked && <TodayForwardPlanCard />}
+
+      {/* Push 2.9 (2026-05-17) — Kid-facing celebration card.
+          Server-side returns only {id, subject, code, title} for done rows,
+          so it's safe to mount unconditionally. */}
+      <TodayCoveredRecapCard />
 
       {/* Today's Schedule sits near the top so it's always visible quickly */}
       <section>

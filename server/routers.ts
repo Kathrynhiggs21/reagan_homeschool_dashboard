@@ -4171,6 +4171,113 @@ export const appRouter = router({
       }))
       .query(({ input }) => db.listCurriculumTopicsBySource(input.source, { limit: input.limit })),
     /**
+     * Push 2.9 (2026-05-17) — Kid-safe celebration view of voice-memo-stamped
+     * topics. ONLY returns `status='done'` rows and ONLY {id, subject, code,
+     * title}. No notes/grades/in-progress flags ever reach the kid client.
+     * `protectedProcedure` (any signed-in user) so Reagan can render it from
+     * her own session.
+     */
+    kidCoveredFromVoiceMemos: protectedProcedure
+      .input(
+        z
+          .object({
+            sourcePrefix: z.string().min(4).max(120).optional(),
+            limit: z.number().int().min(1).max(100).default(50),
+          })
+          .optional(),
+      )
+      .query(({ input }) =>
+        db.listKidCoveredTopicsFromVoiceMemos({
+          sourcePrefix: input?.sourcePrefix,
+          limit: input?.limit ?? 50,
+        }),
+      ),
+    /**
+     * Push 2.10 (2026-05-17) — Forward calendar planner.
+     *
+     * Takes the curriculum gap (everything still inProgress / notStarted)
+     * and proposes which topic to slot into which day over the horizon.
+     * Mom (Katy) reviews the preview, then can hit Apply to actually create
+     * the scheduleBlocks. familyAdmin-gated so Reagan never sees this.
+     */
+    forwardPlan: router({
+      preview: familyAdminProcedure
+        .input(
+          z
+            .object({
+              startDate: z
+                .string()
+                .regex(/^\d{4}-\d{2}-\d{2}$/)
+                .optional(),
+              horizonDays: z.number().int().min(1).max(30).default(10),
+              excludeSubjects: z.array(z.string()).optional(),
+              transcriptBlockerTopicIds: z
+                .array(z.number().int())
+                .optional(),
+            })
+            .optional(),
+        )
+        .query(async ({ input }) => {
+          const { planForward } = await import("./_lib/curriculumForwardPlanner");
+          const startDate =
+            input?.startDate ?? new Date().toISOString().slice(0, 10);
+          const gap = await db.getCurriculumGapBySubject({
+            excludeSubjects: input?.excludeSubjects,
+          });
+          // Default weekly shape: Mon–Fri, [Math, ELA, Science, Social, Specials].
+          // Wed is therapy-light (skip Specials) per the autobuilder convention.
+          const weeklyShape: Record<number, string[]> = {
+            1: ["Math", "ELA", "Science", "Social", "Specials"],
+            2: ["Math", "ELA", "Science", "Social", "Specials"],
+            3: ["Math", "ELA", "Science"],
+            4: ["Math", "ELA", "Science", "Social", "Specials"],
+            5: ["Math", "ELA", "Science", "Social", "Specials"],
+          };
+          const rows = planForward({
+            gap,
+            weeklyShape,
+            horizonDays: input?.horizonDays ?? 10,
+            startDate,
+            transcriptBlockerTopicIds: input?.transcriptBlockerTopicIds,
+          });
+          const perSubject: Record<string, number> = {};
+          for (const r of rows)
+            perSubject[r.subject] = (perSubject[r.subject] ?? 0) + 1;
+          return {
+            startDate,
+            horizonDays: input?.horizonDays ?? 10,
+            rows,
+            perSubject,
+          };
+        }),
+      applyPlan: familyAdminProcedure
+        .input(
+          z.object({
+            rows: z.array(
+              z.object({
+                date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+                weekday: z.number().int().min(0).max(6),
+                slotIndex: z.number().int().min(0).max(20),
+                subject: z.string().min(1).max(64),
+                topicId: z.number().int(),
+                code: z.string().min(1).max(64),
+                title: z.string().min(1).max(255),
+                evidence: z.string().nullable(),
+                isBlockerFrontload: z.boolean(),
+              }),
+            ),
+            source: z
+              .string()
+              .min(4)
+              .max(120)
+              .default("forward_planner_2026-05-17"),
+          }),
+        )
+        .mutation(async ({ input }) => {
+          return db.applyForwardPlan(input.rows, { source: input.source });
+        }),
+    }),
+    /**
      * Push 73 (2026-05-13) — "From yesterday" nudges for Today.
      * Hydrates the pure catchUpQueueFor() helper from real plan data.
      * Self-hides when empty (the UI renders nothing if items.length === 0).
