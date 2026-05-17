@@ -3482,3 +3482,15 @@ Tightens the v2.10 planner so it never proposes a date that's a weekend, IH holi
 - [x] Wiring: `curriculum.forwardPlan.preview` now pre-resolves real school days via `db.getNextSchoolDays(startDate, horizon)` and passes them into `planForward`. So the same horizon (default 10) honors IH off-days the moment Mom seeds them in `schoolCalendar`. (3/3 router vitest cases unchanged + green.)
 - [x] Adult Schedule surface: `Schedule.tsx` imports `TodayForwardPlanCard` and mounts it gated by `{unlocked && …}` — so Mom + Grandma get the same Preview/Apply shortcut from the Schedule page header without any duplicate component. Reagan never sees it. Source-pattern wiring vitest covers all three invariants (import path, unlocked gate, useAdultLock source). (3/3 wiring vitest cases.)
 - [x] All v2.10 + v2.11 tests run together green: **39/39 in 5.18 s** across 7 test files (planner, planner schoolDays, school-day generator, gap snapshot, apply, router, both wiring tests).
+
+
+## Forward calendar planner v2.12 (2026-05-17) — DONE
+
+Mom's documented preference is a printable daily schedule + worksheet view she can take offline. v2.12 closes that loop on the planner side: the same gap-aware 2-week plan from v2.10/v2.11 now has a one-click Print path that opens a clean letter-paged HTML view with checkboxes for offline ticking.
+
+- [x] Pure helper `server/_lib/forwardPlanToPrintModel.ts` folds the planner's flat row list into a `{title, dateRange, totals, days[]}` shape, sorted (date asc, slotIndex asc), timezone-stable. Pure function — DOM-free. (7/7 vitest cases.)
+- [x] tRPC familyAdmin `curriculum.forwardPlan.printable` (sibling of `preview`) re-uses `getCurriculumGapBySubject` + `getNextSchoolDays` + `planForward` then funnels through the print model. Same school-calendar awareness as v2.11 carries through. (4/4 router vitest cases incl. anon-rejection + horizon-zero zod rejection.)
+- [x] New page `client/src/pages/PrintForwardPlan.tsx` mounted at `/print/forward-plan` (in `App.tsx`). Reads `?from=`, `?days=`, `?title=`, `?auto=` from the URL; auto-pops the browser print dialog 200ms after load (suppress with `?auto=0`). Letter-page CSS, ink-friendly, per-day section break-inside avoid, every topic has a checkbox so Reagan can tick it offline.
+- [x] `TodayForwardPlanCard` gains a Print button next to Apply that opens `/print/forward-plan?from=<first day>&days=10` in a new tab. Adult-lock-gated mount stays unchanged; familyAdmin gate at the procedure is the security boundary, not an `<AdultGate>` wrapper.
+- [x] Source-pattern wiring vitest `printForwardPlanWiring.test.ts` covers all four invariants (route registered + page calls printable proc + Print button opens print URL + no AdultGate wraps the route line). (4/4 cases.)
+- [x] Full v2.10 + v2.11 + v2.12 forward-plan suite re-run together: **54/54 green in 5.10 s** across 10 test files (planner pure 12, getNextSchoolDays 7, gap snapshot 8, apply 3, router 3, printable router 4, print model 7, three wiring tests 3+3+4).

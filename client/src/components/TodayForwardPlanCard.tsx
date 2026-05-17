@@ -108,14 +108,28 @@ export default function TodayForwardPlanCard() {
             blocker (front-loaded into the first 3 school days).
           </p>
         </div>
-        <Button
-          size="sm"
-          onClick={() => apply.mutate({ rows, source: "forward_planner_2026-05-17" })}
-          disabled={apply.isPending}
-          data-testid="today-forward-plan-apply"
-        >
-          {apply.isPending ? "Applying…" : `Apply (${rows.length} blocks)`}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              const start = rows[0]?.date;
+              const url = `/print/forward-plan?days=${horizon}` + (start ? `&from=${start}` : "");
+              window.open(url, "_blank", "noopener");
+            }}
+            data-testid="today-forward-plan-print"
+          >
+            Print
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => apply.mutate({ rows, source: "forward_planner_2026-05-17" })}
+            disabled={apply.isPending}
+            data-testid="today-forward-plan-apply"
+          >
+            {apply.isPending ? "Applying…" : `Apply (${rows.length} blocks)`}
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-1.5 mb-3">

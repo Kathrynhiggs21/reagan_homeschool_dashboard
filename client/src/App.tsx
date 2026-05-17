@@ -1,6 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
+import PrintForwardPlan from "@/pages/PrintForwardPlan";
 import { Route, Switch, Redirect } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
@@ -66,6 +67,9 @@ function Router() {
         <Route path="/apps" component={Apps} />
         <Route path="/placement" component={Placement} />
         <Route path="/classes" component={Classes} />
+
+        {/* === ADULT PRINT ROUTE (familyAdmin gate at the procedure level) === */}
+        <Route path="/print/forward-plan" component={PrintForwardPlan} />
 
         {/* === ADULT ROUTES (4 total, all gated) === */}
         <Route path="/curriculum">

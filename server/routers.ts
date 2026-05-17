@@ -4256,6 +4256,55 @@ export const appRouter = router({
             perSubject,
           };
         }),
+      printable: familyAdminProcedure
+        .input(
+          z
+            .object({
+              startDate: z
+                .string()
+                .regex(/^\d{4}-\d{2}-\d{2}$/)
+                .optional(),
+              horizonDays: z.number().int().min(1).max(30).default(10),
+              excludeSubjects: z.array(z.string()).optional(),
+              transcriptBlockerTopicIds: z
+                .array(z.number().int())
+                .optional(),
+              title: z.string().min(1).max(120).optional(),
+            })
+            .optional(),
+        )
+        .query(async ({ input }) => {
+          // Push 2.12 (2026-05-17): same forward plan as preview, then folded
+          // through forwardPlanToPrintModel so the print page can render a
+          // self-contained per-day model without re-doing the planner work.
+          const [{ planForward }, { forwardPlanToPrintModel }] = await Promise.all([
+            import("./_lib/curriculumForwardPlanner"),
+            import("./_lib/forwardPlanToPrintModel"),
+          ]);
+          const startDate =
+            input?.startDate ?? new Date().toISOString().slice(0, 10);
+          const gap = await db.getCurriculumGapBySubject({
+            excludeSubjects: input?.excludeSubjects,
+          });
+          const weeklyShape: Record<number, string[]> = {
+            1: ["Math", "ELA", "Science", "Social", "Specials"],
+            2: ["Math", "ELA", "Science", "Social", "Specials"],
+            3: ["Math", "ELA", "Science"],
+            4: ["Math", "ELA", "Science", "Social", "Specials"],
+            5: ["Math", "ELA", "Science", "Social", "Specials"],
+          };
+          const horizon = input?.horizonDays ?? 10;
+          const schoolDays = await db.getNextSchoolDays(startDate, horizon);
+          const rows = planForward({
+            gap,
+            weeklyShape,
+            horizonDays: horizon,
+            startDate,
+            transcriptBlockerTopicIds: input?.transcriptBlockerTopicIds,
+            schoolDays,
+          });
+          return forwardPlanToPrintModel(rows, { title: input?.title });
+        }),
       applyPlan: familyAdminProcedure
         .input(
           z.object({
