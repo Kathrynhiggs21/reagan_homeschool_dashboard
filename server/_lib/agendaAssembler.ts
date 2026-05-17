@@ -80,7 +80,9 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
         // ignore
       }
       try {
-        const lesson = await hydrateLessonForBlock(b.id);
+        // v2.21: pass dateStr so per-block printables for this date
+        // are merged into the lesson's worksheet list.
+        const lesson = await hydrateLessonForBlock(b.id, dateStr);
         if (lesson) lessonByBlockId.set(b.id, lesson);
       } catch {
         // ignore

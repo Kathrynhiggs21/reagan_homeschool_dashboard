@@ -21,16 +21,48 @@ import type { AgendaPdfBlock } from "./agendaPdf";
 
 type LessonPayload = NonNullable<AgendaPdfBlock["lesson"]>;
 
+/**
+ * v2.21 (2026-05-17): The hydrator now also pulls per-block printables
+ * (the block_id-anchored daily_printables rows added in v2.19) for the
+ * given date, so anything Mom attaches via `BlockPrintablesPanel` lands
+ * in tomorrow's nightly packet PDF as a worksheet.
+ *
+ * `forDate` is optional for backward compatibility — if not supplied,
+ * the hydrator behaves exactly as before (assignmentsLibrary only).
+ * The agenda assembler now passes the plan date so the merge happens.
+ */
 export async function hydrateLessonForBlock(
   blockId: number,
+  forDate?: string,
 ): Promise<LessonPayload | null> {
   let rows: any[] = [];
   try {
     rows = await db.listAssignmentsLibrary({ blockId, limit: 100 });
   } catch {
+    rows = [];
+  }
+
+  // Pull per-block printables (v2.19) for this date, if we know the date.
+  // These get appended to lesson.worksheets[] alongside any
+  // assignmentsLibrary worksheet rows.
+  let blockPrintables: any[] = [];
+  if (forDate) {
+    try {
+      blockPrintables = (await db.listDailyPrintablesForBlock(
+        forDate,
+        String(blockId),
+      )) as any[];
+    } catch {
+      blockPrintables = [];
+    }
+  }
+
+  if (
+    (!Array.isArray(rows) || rows.length === 0) &&
+    (!Array.isArray(blockPrintables) || blockPrintables.length === 0)
+  ) {
     return null;
   }
-  if (!Array.isArray(rows) || rows.length === 0) return null;
 
   const lesson: LessonPayload = {
     instructions: null,
@@ -88,6 +120,30 @@ export async function hydrateLessonForBlock(
       default:
         break;
     }
+  }
+
+  // Append per-block printables as worksheets so they print in tomorrow's
+  // packet alongside any assignmentsLibrary worksheets. We dedupe by URL
+  // so a printable that's ALSO an assignmentsLibrary row doesn't get
+  // double-rendered.
+  const seenUrls = new Set<string>(
+    (lesson.worksheets ?? [])
+      .map((w) => (w.printableUrl || "").trim())
+      .filter(Boolean),
+  );
+  for (const p of blockPrintables) {
+    const url: string | null =
+      p.sourceUrl || p.source_url || p.fileLink || p.url || null;
+    if (url && seenUrls.has(url.trim())) continue;
+    const title = String(p.title ?? "").trim() || "Printable";
+    const desc = p.description ? String(p.description).trim() : null;
+    lesson.worksheets!.push({
+      title,
+      description: desc,
+      questions: null,
+      printableUrl: url,
+    });
+    if (url) seenUrls.add(url.trim());
   }
 
   if (instructionsParts.length > 0) {
