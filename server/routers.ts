@@ -18,6 +18,7 @@ import { loadTopicHintsForPrompt, resolveTopicId, resolveTopicIds } from "./_lib
 import { resolveTutorOfDay, tutorOfDayLabel } from "./_lib/tutorOfDay";
 import { loadOwnedBooksForAgenda } from "./_lib/ownedBooksHints";
 import { decideApproval, type ApprovalContext } from "./_lib/approvalDecider";
+import { classroomGradeReturnReducer } from "./_lib/classroomGradeReturnReducer";
 import {
   generateAgendaEditPlan,
   validateEditPlan,
@@ -7119,6 +7120,73 @@ export const appRouter = router({
             fileName: a?.title ?? `assignment-${input.assignmentId}`,
           });
           return { ...result, driveQueue };
+        }),
+      /**
+       * Apply a Classroom "returned to student" event. Mom (or a future
+       * scheduled sync job) calls this when the teacher has graded
+       * Reagan's work in Classroom. Pure reducer decides; this proc is
+       * just plumbing:
+       *   - returnedAt=null  -> skipped="not_returned_yet" (no DB write)
+       *   - already-applied   -> skipped="already_applied" (idempotent)
+       *   - otherwise         -> flips lifecycle to "graded" via
+       *                          updateClassroomAssignmentStatus, which
+       *                          stamps gradedAt + writes audit row +
+       *                          enqueues a Drive lifecycle move (no-op
+       *                          if assignment has no driveFolderId).
+       *
+       * Pre-OAuth this proc still works: callers can pass returnedAt
+       * null and it'll skip cleanly. familyAdmin gated so only Mom and
+       * Grandma can write graded marks.
+       */
+      applyGradeReturn: familyAdminProcedure
+        .input(z.object({
+          assignmentId: z.number().int().positive(),
+          returnedAt: z.date().nullable(),
+          grade: z.string().max(32).nullish(),
+          assignedGrade: z.number().nullish(),
+          maxPoints: z.number().nullish(),
+          changedBy: z.enum(["mom", "grandma", "classroom_sync", "auto"]).default("classroom_sync"),
+        }))
+        .mutation(async ({ input }) => {
+          // Load current assignment state so the reducer can decide.
+          // We pull the row via the existing lifecycle-list helper so we
+          // don't have to add a single-id getter just for this path.
+          const all: any[] = await db.listClassroomAssignmentsByLifecycle(null, { limit: 1000 });
+          const current: any = all.find((r) => r.id === input.assignmentId);
+          if (!current) {
+            throw new Error(`classroomAssignment id=${input.assignmentId} not found`);
+          }
+          const decision = classroomGradeReturnReducer({
+            currentLifecycle: current.lifecycleStatus,
+            currentGrade: current.grade ?? null,
+            currentGradeNumeric: current.gradeNumeric ?? null,
+            currentGradedAt: current.gradedAt ?? null,
+            returnedAt: input.returnedAt,
+            grade: input.grade ?? null,
+            assignedGrade: input.assignedGrade ?? null,
+            maxPoints: input.maxPoints ?? null,
+          });
+          if (decision.action === "skip") {
+            return { skipped: decision.reason as "not_returned_yet" | "already_applied" } as const;
+          }
+          const result = await db.updateClassroomAssignmentStatus({
+            assignmentId: input.assignmentId,
+            toStatus: decision.toStatus,
+            note: decision.note,
+            grade: decision.grade,
+            gradeNumeric: decision.gradeNumeric,
+            changedBy: input.changedBy,
+          });
+          const a: any = result.assignment;
+          const driveQueue = await db.enqueueClassroomLifecycleDriveMove({
+            assignmentId: input.assignmentId,
+            courseName: a?.courseName ?? "",
+            fromStatus: result.fromStatus,
+            toStatus: result.toStatus,
+            driveFileId: a?.driveFolderId ?? null,
+            fileName: a?.title ?? `assignment-${input.assignmentId}`,
+          });
+          return { applied: true as const, ...result, driveQueue };
         }),
     }),
     audit: router({
