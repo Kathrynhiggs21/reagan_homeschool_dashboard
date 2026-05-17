@@ -778,6 +778,51 @@ export async function updateAdventureCover(id: number, coverImageUrl: string) {
   return getAdventure(id);
 }
 
+/**
+ * v2.18 (2026-05-17) — Generic adventure update helper.
+ *
+ * Lets Mom rename / re-describe / change theme of any existing
+ * adventure without raw SQL. Every column except `id` and `createdAt`
+ * is patchable; the caller passes only the fields they're changing.
+ * Returns the fresh row so the UI can confirm the update.
+ */
+export async function updateAdventure(
+  id: number,
+  patch: Partial<typeof adventures.$inferInsert>,
+) {
+  // Strip undefined keys so Drizzle doesn't try to overwrite columns
+  // the caller didn't intend to touch (Drizzle's `.set()` treats
+  // explicit `undefined` as "set to NULL" for some column types).
+  const cleaned: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(patch)) {
+    if (v !== undefined) cleaned[k] = v;
+  }
+  if (Object.keys(cleaned).length === 0) {
+    return getAdventure(id);
+  }
+  await getDb().update(adventures).set(cleaned as any).where(eq(adventures.id, id));
+  return getAdventure(id);
+}
+
+/**
+ * v2.18 — Targeted helper for the AgendaEditor adventure-materials
+ * sub-panel. Replaces the entire `materials` array atomically so the
+ * UI can hand us the post-edit list directly without diffing.
+ */
+export async function updateAdventureMaterials(id: number, materials: string[]) {
+  await getDb().update(adventures).set({ materials }).where(eq(adventures.id, id));
+  return getAdventure(id);
+}
+
+/**
+ * v2.18 — Soft-coupled delete. We keep this gated to familyAdmin in
+ * routers.ts; here we just remove the row. Adventures are reference
+ * data, not journal data, so a hard delete is appropriate.
+ */
+export async function deleteAdventure(id: number) {
+  await getDb().delete(adventures).where(eq(adventures.id, id));
+}
+
 /* ============================== APPS ====================================== */
 export async function listAppLinks() {
   return getDb().select().from(appLinks).orderBy(appLinks.sortOrder);

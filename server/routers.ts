@@ -1324,6 +1324,59 @@ export const appRouter = router({
     })).mutation(({ input }) => db.insertAdventure(input as any)),
     toggleFavorite: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.toggleAdventureFavorite(input.id)),
     updateCoverUrl: protectedProcedure.input(z.object({ id: z.number(), coverImageUrl: z.string().url() })).mutation(({ input }) => db.updateAdventureCover(input.id, input.coverImageUrl)),
+    /**
+     * v2.18 (2026-05-17) — Generic adventure update. Adult-only because
+     * adventures are reference data shared across every plan and tutor;
+     * Reagan must not be able to rename or rewrite them. The input shape
+     * mirrors `create` but every field except `id` is optional, so Mom
+     * can rename one adventure without re-sending the whole record.
+     */
+    update: familyAdminProcedure.input(z.object({
+      id: z.number().int().positive(),
+      title: z.string().min(1).max(200).optional(),
+      description: z.string().min(1).optional(),
+      subjectSlugs: z.array(z.string()).optional(),
+      topicTags: z.array(z.string()).optional(),
+      interestTags: z.array(z.string()).optional(),
+      materials: z.array(z.string()).optional(),
+      instructions: z.string().min(1).optional(),
+      minDurationMin: z.number().int().min(1).max(240).optional(),
+      maxDurationMin: z.number().int().min(1).max(240).optional(),
+      setting: z.enum(["indoor","outdoor","either"]).optional(),
+      energyLevel: z.enum(["low","medium","high"]).optional(),
+      ohioStandards: z.array(z.string()).optional(),
+      emoji: z.string().max(8).optional(),
+      isFavorite: z.boolean().optional(),
+    })).mutation(async ({ input }) => {
+      const { id, ...patch } = input;
+      // Server-side sanity check: if both duration bounds are present,
+      // min must be <= max. Catches typos before they corrupt the row.
+      if (
+        patch.minDurationMin !== undefined &&
+        patch.maxDurationMin !== undefined &&
+        patch.minDurationMin > patch.maxDurationMin
+      ) {
+        throw new Error("minDurationMin cannot be greater than maxDurationMin");
+      }
+      return db.updateAdventure(id, patch as any);
+    }),
+    /**
+     * v2.18 — Materials-only fast path used by the AgendaEditor adventure
+     * materials sub-panel. Replaces the whole array atomically so the UI
+     * can hand us the post-edit list without diffing client-side.
+     */
+    updateMaterials: familyAdminProcedure.input(z.object({
+      id: z.number().int().positive(),
+      materials: z.array(z.string().min(1).max(200)).max(50),
+    })).mutation(({ input }) => db.updateAdventureMaterials(input.id, input.materials)),
+    /**
+     * v2.18 — Hard delete. Adult-only. Adventures are reference data;
+     * removing one removes it from every plan that referenced it by id
+     * (which today is none — plans store materials inline).
+     */
+    delete: familyAdminProcedure.input(z.object({
+      id: z.number().int().positive(),
+    })).mutation(({ input }) => db.deleteAdventure(input.id)),
     generateCover: protectedProcedure.input(z.object({ id: z.number(), promptOverride: z.string().optional() })).mutation(async ({ input }) => {
       const { generateImage } = await import("./_core/imageGeneration");
       const adv = await db.getAdventure(input.id);
