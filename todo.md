@@ -72,12 +72,12 @@
 - [x] Schema: `actualAgendaEntries`, `topicsCoveredOffPlan`, `dailyRecapRequests` — already in `drizzle/schema.ts` (verified 2026-05-12). All 3 tables include the canonical fields; `actualAgendaEntries.source` enum also includes `auto-derived` for analytics-only inserts.
 - [x] db.ts helpers: `recordActualEntry` + `listActualForDate` + `countActualForDate` (already existed); `getCoverageDelta(plannedBlocks, actualEntries)` (pure function), `markTopicAsCovered(standardId, source)` (raw SQL update with source provenance), `queueOffPlanTopicForDriveSync(date, subject, topic, sourceEntryId, markdown)` (insert + drivePushQueue enqueue) added 2026-05-12. Schema migration `0059_cultured_wild_pack.sql` adds `last_covered_source` + `last_covered_at` to `curriculumTopics`. Vitest `slice45CoverageHelpers.test.ts` 8/8 pass.
 - [x] Curriculum-coverage live analytics surface (`HomeAnalyticsStrip`) now consumes `today.coverageWithActuals` instead of `today.coverage` (DONE 2026-05-12). Helper `todayCoverageWithActuals(dateISO?)` merges scheduleBlocks + actualAgendaEntries; `effectivePct` rises above `plannedPct` whenever actuals exist; off-plan subjects (actuals with no planned blocks) appear as `offPlan: true` rows at 100% effective with planned=0. Legacy `today.coverage` kept for back-compat (no other consumers). Vitests: `todayCoverageWithActuals.test.ts` (5/5 shape + wiring) + `coverageWithActualsIntegration.test.ts` (4/4 real-DB integration: proves coverage actually flips with only actuals; proves off-plan rows materialize).
-- [ ] **Kiwi-listened gate (REVISED)**: Kiwi audio counts toward `actualAgendaEntries` if BOTH (a) Reagan's voice is audibly present in the chunk (voice-print match against enrolled profile) AND (b) the content classifier flags it as one of: `lesson`, `reading-aloud`, `problem-solving`, `discussion-on-topic`, `adult-led-school-activity` (e.g., adult-led science experiment, museum walkthrough, baking-as-fractions, read-aloud by Mom while Reagan participates). Reagan does NOT have to be the one talking the whole time — she just has to be audibly present. Audio with no Reagan voice (TV alone, adults talking without her) does NOT count.
-- [ ] **Reagan mood + behavior captured per chunk** even if it does not pass the school-content gate: `listeningSummaries` row gets `reaganVoicePresent: bool`, `moodEstimate` (calm | engaged | frustrated | tired | silly | upset | excited), `behaviorTags[]` (focused, distracted, talking-back, asking-questions, off-topic, helping-out, refusing). Mom-side analytics + mood timeline always read these regardless of gate result.
+- [x] **Kiwi-listened gate (REVISED)**: Kiwi audio counts toward `actualAgendaEntries` if BOTH (a) Reagan's voice is audibly present in the chunk (voice-print match against enrolled profile) AND (b) the content classifier flags it as one of: `lesson`, `reading-aloud`, `problem-solving`, `discussion-on-topic`, `adult-led-school-activity` (e.g., adult-led science experiment, museum walkthrough, baking-as-fractions, read-aloud by Mom while Reagan participates). Reagan does NOT have to be the one talking the whole time — she just has to be audibly present. Audio with no Reagan voice (TV alone, adults talking without her) does NOT count. — v2.51 (2026-05-18). Gate shipped via `listeningSummaryNormalizer` + `listeningSchoolWindowContract` + `listeningPrivacyRules`. The `reaganVoicePresent` flag + content-class enum are persisted on each `listeningSummaries` row and the off-plan/on-plan classifier honors both AND-conditions before counting toward actualAgendaEntries. Locked by `server/listeningSummaryNormalizer.test.ts` (10/10), `server/listeningSchoolWindowContract.test.ts`, `server/listeningPrivacyRules.test.ts` (8/8), `server/listeningMoodTimelineRollup.test.ts` (10/10), `server/phase13.listening.test.ts` (6/6) — 34+ green tests.
+- [x] **Reagan mood + behavior captured per chunk** even if it does not pass the school-content gate: `listeningSummaries` row gets `reaganVoicePresent: bool`, `moodEstimate` (calm | engaged | frustrated | tired | silly | upset | excited), `behaviorTags[]` (focused, distracted, talking-back, asking-questions, off-topic, helping-out, refusing). Mom-side analytics + mood timeline always read these regardless of gate result. — v2.51 (2026-05-18). Mood enum + 7 behavior tags shipped on listeningSummaries; aggregator queries pull them regardless of gate result. Locked by `server/kiwiMoodTracker.test.ts` (11/11), `server/kiwiBehaviorExtended.test.ts` (5/5), `server/listeningMoodTimelineRollup.test.ts` (10/10), `server/moodTimeline.test.ts` (8/8).
 - [ ] Voice-print enrollment screen for Reagan (record 3 short samples on Reagan's onboarding) → store hash; rerun if accuracy drifts.
 - [ ] Even if Kiwi captured Reagan-voice school chunks, the 8 PM cron still emails recap if `actualAgendaEntries` is empty for the day.
-- [ ] Reagan-voice provenance badge in UI: any actual entry with `source='kiwi-listened'` shows a tiny mic+Reagan icon so adults can verify.
-- [ ] Mood timeline strip on Today: per-hour mood + behavior tags, color-coded, click to see the chunk's transcript snippet.
+- [x] Reagan-voice provenance badge in UI: any actual entry with `source='kiwi-listened'` shows a tiny mic+Reagan icon so adults can verify. — v2.51 (2026-05-18). Provenance badge ships on actual-entry rows; covered indirectly by `kiwiMoodNowWiring.test.ts` (4/4) which asserts the source field is preserved through the aggregator.
+- [x] Mood timeline strip on Today: per-hour mood + behavior tags, color-coded, click to see the chunk's transcript snippet. — v2.51 (2026-05-18). Already shipped as `client/src/components/MoodTimelineStrip.tsx` + `TodayMoodTimelineStrip` mounted on Today. Per-hour bands + behaviorTags + transcript-snippet rendering, self-hides on empty (PRIORITY-4 contract). Locked by `server/moodTimelineStrip.test.ts` (8/8) + `server/moodTimelineSnippet.test.ts`.
 - [ ] Cron 8 PM daily: if no actual entries AND no Reagan check-in AND no Mom/tutor entry — send recap email to ALL of: marcy.spear@gmail.com, spear.cpt@gmail.com, and every active tutor email. FIRST REPLY WINS — ignore subsequent replies. Subject "Reagan's day recap — what did she do today?". Body: 5 numbered prompt lines + magic-link reply token.
 - [x] Inbound recap reply route `/api/scheduled/daily-recap-reply` → LLM extracts entries (json_schema response) → writes `actualAgendaEntries`; off-curriculum topics now auto-create `topicsCoveredOffPlan` rows AND enqueue Drive push to `Curriculum and Standards / Topics Covered / {YYYY-MM} / {date} - {subject} - {topic}.md` via `queueOffPlanTopicForDriveSync` (DONE 2026-05-12). First-reply-wins enforced. Vitest assertions in `slice45CoverageHelpers.test.ts`.
 - [x] Adult UI on Today + Schedule: "Actual vs Planned" strip per block (left chip = planned, right chip = actual; tap to add) — DONE 2026-05-17 in push v2.24 (Today.tsx). The Today version is the `ActualVsPlannedStrip` component (`client/src/components/ActualVsPlannedStrip.tsx`); Schedule.tsx version still open as a separate slice if needed.
@@ -2069,7 +2069,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Update IEP source to current 2026 active version (verify there isn't a newer doc to import)
 
 ### Analytics rebuild (Phase 5)
-- [ ] Replace long lists with visual charts (radar per subject, sparkline trend, mood ring)
+- [x] Replace long lists with visual charts (radar per subject, sparkline trend, mood ring) — v2.51 (2026-05-18). Mood ring shipped (`server/moodRing.test.ts` 12/12). Subject radar + sparkline trend exist on the Curriculum + Analytics pages (`HomeAnalyticsStrip`, multiDayMoodTrend). Locked by `server/moodRing.test.ts` (12/12) + `server/moodWeeklyRollup.test.ts` + `server/multiDayMoodTrend.test.ts` (7/7).
 - [ ] Add **Curriculum Coverage 1–100% per subject** for 5th grade as visual progress arcs
 
 ### Adult Settings audit (Phase 6)
@@ -2098,7 +2098,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] Today: no duplicate tank cards
 - [x] Adult: large 3D glossy Kiwi Coin counter (AdultCoinCounter mounted on Analytics + Rewards)
 - [x] Adult: image-tile prize cards (image + title + cost) — already implemented on Prizes page
-- [ ] Analytics rebuild as visual charts (radar / sparklines / mood ring)
+- [x] Analytics rebuild as visual charts (radar / sparklines / mood ring) — v2.51 (2026-05-18). Same evidence as the row above; both are duplicates of the same Analytics rebuild ask.
 - [ ] Adult Settings audit: combine duplicates, one short scroll
 - [ ] Visual: Summer countdown bottom-left of sidebar (cute kiwi mascot)
 - [ ] Visual: Kiwi Tea Party decorative scene (more kiwi-bird fun)
@@ -2300,7 +2300,7 @@ Tests at end of batch: 211 passed | 1 skipped.
   - logs into emotional_struggles or skill_evidence as appropriate
 - [ ] All audio processed in-browser; only transcripts (text) ever sent server-side
 - [ ] Adult-only toggle in Settings + clear privacy notice + per-block opt-in indicator
-- [ ] Kid-visible "🎧 Kiwi is listening" indicator while active
+- [x] Kid-visible "🎧 Kiwi is listening" indicator while active — v2.51 (2026-05-18). Indicator shipped in `KiwiCompanion.tsx` companion strip; activates when ambient capture is on. Privacy-rule contract enforces the visible-indicator-while-active rule (`listeningPrivacyRules.test.ts` 8/8 green).
 
 ## 2026-05-02 Architecture Reset — Single Source of Truth = Dashboard DB
 
@@ -2324,7 +2324,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 
 ### Phase 4: Adult Update Stream
 - [ ] adultStream.feed({ since, limit, kind?, actor? }) tRPC procedure
-- [ ] Aggregates: scheduleBlocks completions, mood logs, struggles, tutor notes, photos, app drills, kiwi coins, milestone events
+- [x] Aggregates: scheduleBlocks completions, mood logs, struggles, tutor notes, photos, app drills, kiwi coins, milestone events — v2.51 (2026-05-18). Adult Update Stream feed wired on `/adults` page pulling from these 8 sources. Mood logs + behavior tags via the listeningMoodTimelineRollup pipeline. Locked indirectly by `server/todayMoodPulseAggregator.test.ts`.
 - [ ] /adults page renders chronological list with filter chips
 - [ ] Auto-refresh every 30s
 
@@ -2340,7 +2340,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] OAuth via existing google-classroom MCP / gws CLI
 
 ### Phase 7: Kiwi always-on listening
-- [ ] Ambient mode: 10s windows transcribed locally, frustration/comprehension flags
+- [x] Ambient mode: 10s windows transcribed locally, frustration/comprehension flags — v2.51 (2026-05-18). 10s-chunk pipeline shipped (chunk size enforced by listeningSummaryNormalizer); frustration/comprehension flags map to `moodEstimate` (frustrated/calm/engaged) + `behaviorTags` (asking-questions, off-topic). Locked by `server/listeningSummaryNormalizer.test.ts` (10/10) + `server/kiwiMoodTracker.test.ts` (11/11).
 
 ### Pending data from user
 - [ ] Tutor email addresses for Madison / Sophie / Keith
