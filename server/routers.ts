@@ -4177,6 +4177,34 @@ export const appRouter = router({
     pending: protectedProcedure.query(() => db.listPendingDrivePushes(100)),
     recent: protectedProcedure.input(z.object({ limit: z.number().default(20) }).optional())
       .query(({ input }) => db.listRecentDrivePushes(input?.limit ?? 20)),
+    /**
+     * v2.39 (2026-05-18) — Regenerate the top-level Drive README.md.
+     * Closes todo line 116. familyAdminProcedure: only Mom + Grandma can
+     * trigger; the README is enqueued into `drivePushQueue` with
+     * `targetFolder='reagan'`, `targetSubpath=null`, `fileName='README.md'`.
+     * Idempotent on exact contentText match — calling repeatedly is safe.
+     */
+    refreshRootReadme: familyAdminProcedure
+      .input(
+        z
+          .object({
+            dashboardUrl: z.string().url().optional(),
+            generatedAtISO: z
+              .string()
+              .regex(/^\d{4}-\d{2}-\d{2}$/)
+              .optional(),
+          })
+          .optional(),
+      )
+      .mutation(async ({ input }) => {
+        const { enqueueDriveRootReadme } = await import(
+          "./_lib/driveReadme"
+        );
+        return enqueueDriveRootReadme({
+          dashboardUrl: input?.dashboardUrl,
+          generatedAtISO: input?.generatedAtISO,
+        });
+      }),
   }),
 
   /* =================== CLASSROOM AGENDAS (Daily Agendas) =================== */
