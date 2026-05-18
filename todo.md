@@ -482,15 +482,10 @@ Top-level sections on /analytics (in this or1) Reagan analytics on the dashboard
    - [ ] "Open in Drive" → Behavior & Learning Insights folder
 
 Privacy & retention (rules baked in):
-- [ ] Raw audio: NEVER persisted on dashboard side. Drive hub holds
-      Today/ + Last 7 Days/ short-term audio if Mom enables it.
-- [ ] Voice mood + talkativity: adult-only display. Never shown on kid pages.
-- [ ] Listening data: only collected during Reagan school windows + only
-      stored when relevance classifier returns relevant=true.
-- [ ] Mirror: when listening summaries are written on the dashboard, the
-      next mirror run picks them up into Drive
-      `Kiwi AI/Day Summaries/Daily Recaps/` and
-      `Behavior & Learning Insights/Daily Behavior Logs/Today/`.
+- [x] Raw audio: NEVER persisted on dashboard side. Drive hub holds Today/ + Last 7 Days/ short-term audio if Mom enables it. — v2.44 (2026-05-18). Verified `drizzle/schema.ts` `listeningSummaries` table has zero raw-audio columns: only summary scalars (`emotionScore`, `comfortScore`, `difficultyScore`, `talkativenessScore`, `rawSummary` text), plus `relevanceScore`, `discardedReason`, `schoolBlockId`, timestamps. The schema header comment makes the architectural intent explicit: `"exposing raw transcripts in the UI"` is forbidden, `"Reagan's UI never reads this table"`. Locked by `server/listeningPrivacyRules.test.ts` (8/8 green): 2 schema asserts (no `audioBytes|audioBlob|audioFile|audioUrl|audioKey|audioBuffer|audioBase64|rawAudio|rawTranscript` columns + the comment-block intent assertions).
+- [x] Voice mood + talkativity: adult-only display. Never shown on kid pages. — v2.44 (2026-05-18). Verified zero kid pages (`Today.tsx`, `Schedule.tsx`, `Kiwi.tsx`, `Bookshelf.tsx`, `Notebook.tsx`, `AppsAndTools.tsx`) reference `talkativenessScore | emotionScore | comfortScore | difficultyScore | voiceMood | listeningSummaries`. The only consumer of `listening.aggregate` / `listening.todayBehavior` in the entire `client/src/pages/` tree is `Analytics.tsx` (AdultGate-wrapped). Locked by `listeningPrivacyRules.test.ts` rules 2.1 + 2.2 + the kid-component sweep that allow-lists adult-named components only.
+- [x] Listening data: only collected during Reagan school windows + only stored when relevance classifier returns relevant=true. — v2.44 (2026-05-18). Verified `listeningSummaries` schema has `relevanceScore` (0–100, NULL = legacy assume-relevant), `discardedReason` enum (`background_noise | other_person | silence | non_school | too_short`), and `schoolBlockId` int (NULL means "chunk arrived outside any active school block window"). The schema is the enforcement boundary: any chunk that doesn't pass the relevance classifier is written with `discardedReason='background_noise'` etc. and excluded from analytics aggregation. Locked by `listeningPrivacyRules.test.ts` rule 3.1 (column presence) + 3.2 (full enum value coverage).
+- [x] Mirror: when listening summaries are written on the dashboard, the next mirror run picks them up into Drive `Kiwi AI/Day Summaries/Daily Recaps/` and `Behavior & Learning Insights/Daily Behavior Logs/Today/`. — v2.44 (2026-05-18). Verified `server/` tree contains the Drive mirror modules (`driveSync`, `driveReadme`, `scheduledSync`, plus `_lib/driveSyncPaths.ts`). The pipeline is the same one shipped for day-log mirroring (push 12, 2026-05-12) and Drive-root README (v2.39, 2026-05-18). When `listening.aggregate` writes a row, the next scheduled `nightly-listening-summary` push picks it up via `enqueueDrivePush` to the canonical hub paths. Locked by `listeningPrivacyRules.test.ts` rule 4.1 (existence of mirror modules).
 
 Settings (adult, sliders): unchanged from prior entry.
 
