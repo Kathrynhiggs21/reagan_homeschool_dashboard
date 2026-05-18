@@ -5400,6 +5400,17 @@ const APP_SETTING_DEFAULTS: Record<string, string> = {
   // Push 66 (2026-05-13) — Calendar foundation: the Google account the
   // ICS feed is published under. Default mirrors student.googleEmail.
   "calendar.ownerEmail": "reaganhiggs910@gmail.com",
+  // v2.32 (2026-05-18) — Calendar identity: the canonical Google Calendar
+  // ID for "Reagan's Homeschool" (owned by spear.cpt@gmail.com). Mom asked
+  // for this to surface in Settings so she can confirm the same calendar
+  // is the one the dashboard reads/writes events into. Switching this is
+  // a Mom-only operation — changing it rewires the entire schedule sync.
+  "calendar.id": "o81tqeb4425ej2k9il7lhmooh4@group.calendar.google.com",
+  // The Google account that OWNS the calendar (vs. just subscribing to
+  // its ICS feed). Mom (spear.cpt@gmail.com) created the calendar; the
+  // student account (reaganhiggs910@gmail.com) is a viewer. The two-row
+  // identity below makes that distinction visible.
+  "calendar.id.ownerEmail": "spear.cpt@gmail.com",
   "classroom.studentDomain": "gmail.com",
   // Drive hub root (under spear.cpt@gmail.com) — established 2026-05-12.
   // The 9 canonical top-level folders below already exist as children of

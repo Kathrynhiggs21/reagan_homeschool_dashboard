@@ -7625,6 +7625,14 @@ export const appRouter = router({
           "summer.end",                 // "MM-DD" — last summer day
           "summer.override",            // "on" | "off" — manual override
           "summer.vacationRanges",      // JSON array of {start,end} ISO dates
+          // v2.32 (2026-05-18) — Calendar identity surfaced on Settings.
+          // Read-only public values (no secrets) so the same key path used
+          // by Mom/Grandma also works for `prefs.getPublic` reads from
+          // unauthenticated cards (e.g., CalendarSyncCard renders on the
+          // public Settings page before the adult-lock is satisfied).
+          "calendar.id",                // Google Calendar ID (e.g., abc@group.calendar.google.com)
+          "calendar.id.ownerEmail",     // Account that OWNS the calendar (vs. ICS subscriber)
+          "calendar.ownerEmail",        // ICS subscriber Google account (existing)
         ]);
         // absence:YYYY-MM-DD flags are non-sensitive and Reagan's UI needs to read them
         const isAbsenceFlag = /^absence:\d{4}-\d{2}-\d{2}$/.test(input.key);
