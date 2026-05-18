@@ -117,3 +117,37 @@ The rule we follow: **if there's no data, the strip doesn't render at all** — 
 If everything in the five items above feels solid by the end of the week, ping back and we'll un-pause the Drive Hub work.
 
 — Manus, 2026-05-18
+
+
+---
+
+## 6. **Drive Hub got cleaned up** (item 6, added 2026-05-18 evening)
+
+**What changed:** When you open Google Drive and go to the **Reagan School Hub (Dashboard)** folder, the top level used to have 11 folders (Daily Operations, Curriculum and Resources, Admin and Records, Behavior Analytics, Classes, Snapshots, Apps & Tools, plus a few archives). It now has **6 numbered folders + 1 Archive**:
+
+1. `01 - Daily Operations`
+2. `02 - Assignments and Work`
+3. `03 - Curriculum and Resources`
+4. `04 - Admin and Records`
+5. `05 - Progress and Reports`
+6. `06 - Inbox (Unsorted)`
+7. `Archive/2026/_engineering/` (the old engineering scratch folder, tucked away — you won't need to open this)
+
+The 4 cluttered top-level folders got absorbed into the 6 above:
+
+- `Behavior Analytics` → moved into `05 - Progress and Reports/`
+- `Snapshots` → moved into `05 - Progress and Reports/`
+- `Classes` → moved into `01 - Daily Operations/`
+- top-level `Apps & Tools` → moved into `03 - Curriculum and Resources/`
+
+**Nothing was deleted.** Every file is in the same place inside its old folder; just the old folder now lives one level deeper.
+
+**What to test:**
+
+1. Open Drive on your phone or laptop.
+2. Open the **Reagan School Hub (Dashboard)** folder.
+3. You should see exactly 6 numbered folders + Archive + the README. No more "behavior analytics" or "snapshots" floating at the top level.
+4. Tap into `01 - Daily Operations`. The 13 subfolders that were there before are still there, and `Classes` is now a 14th.
+5. Tomorrow morning around 6 AM, the nightly 8 PM mirror should still have written tonight's agenda PDF to `01 - Daily Operations / Daily Agenda PDFs / 2026-05 / 2026-05-19 - Agenda.pdf` — confirm the file is where you'd expect.
+
+**If something's wrong:** if the 6-folder top level looks right tonight but tomorrow morning a folder is missing or the agenda PDF didn't land in `01 - Daily Operations`, text "broken: drive folder mirror." That means the canonical-parent mapping needs a re-cache.
