@@ -1,0 +1,9 @@
+{
+  "query": "SELECT * FROM appSettings WHERE `key` IN ('app.publishedUrl', 'app.publicUrl', 'app.deployedUrl', 'site.url') LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT * FROM appSettings WHERE `key` IN ('app.publishedUrl', 'app.publicUrl', 'app.deployedUrl', 'site.url') LIMIT 5;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 600
+}
