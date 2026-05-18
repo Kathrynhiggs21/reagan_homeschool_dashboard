@@ -7861,6 +7861,34 @@ export const appRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         const userEmail = (ctx as any).user?.email ?? "unknown";
+        // v2.31 (2026-05-18) — Slice 3.5 hard rule: Mom + Grandma actions
+        // NEVER enter the approval queue. Tutors / AI / Reagan still queue.
+        // The bypass keys off `roleForEmail()` so it's the same source of
+        // truth as familyAdminProcedure (parent = Mom/Dad, editor = Grandma).
+        // Tutors land in the tutor role and STILL go through the decider
+        // even though adminOrTutorProcedure lets them call this proc.
+        const familyRole = roleForEmail(userEmail);
+        const isHouseholdAdult = familyRole === "parent" || familyRole === "editor";
+        if (isHouseholdAdult) {
+          const now = Date.now();
+          const expires = now + input.ttlHours * 3600 * 1000;
+          const reason = `Household adult (${familyRole}) — bypasses approval queue per Slice 3.5 hard rule.`;
+          const id = await db.insertPendingApproval({
+            kind: input.kind,
+            summary: input.summary,
+            payloadJson: JSON.stringify(input.payload ?? {}),
+            requestedBy: userEmail,
+            requestedAt: now,
+            status: "auto_approved",
+            aiDecision: "auto_approve",
+            aiReason: reason,
+            expiresAt: expires,
+            decidedBy: userEmail,
+            decidedAt: now,
+          } as any);
+          // Audit row only — no notifyOwner ping for household adults.
+          return { id, decision: "auto_approve" as const, reason };
+        }
         const apprCtx: ApprovalContext = {
           kind: input.kind,
           payload: input.payload ?? {},

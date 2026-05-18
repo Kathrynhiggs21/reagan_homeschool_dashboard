@@ -1,0 +1,38 @@
+{
+  "query": "INSERT INTO recipientPushTargets (display_name, role, phone_e164, is_active, created_at)\nSELECT 'Mom (Christy)', 'parent', '+15139265808', 1, UNIX_TIMESTAMP()*1000\nWHERE NOT EXISTS (SELECT 1 FROM recipientPushTargets WHERE display_name='Mom (Christy)');\nINSERT INTO recipientPushTargets (display_name, role, phone_e164, is_active, created_at)\nSELECT 'Grandma Marcy', 'editor', '+15136469281', 1, UNIX_TIMESTAMP()*1000\nWHERE NOT EXISTS (SELECT 1 FROM recipientPushTargets WHERE display_name='Grandma Marcy');\nSELECT id, display_name, role, phone_e164, is_active FROM recipientPushTargets ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute INSERT INTO recipientPushTargets (display_name, role, phone_e164, is_active, created_at)\nSELECT 'Mom (Christy)', 'parent', '+15139265808', 1, UNIX_TIMESTAMP()*1000\nWHERE NOT EXISTS (SELECT 1 FROM recipientPushTargets WHERE display_name='Mom (Christy)');\nINSERT INTO recipientPushTargets (display_name, role, phone_e164, is_active, created_at)\nSELECT 'Grandma Marcy', 'editor', '+15136469281', 1, UNIX_TIMESTAMP()*1000\nWHERE NOT EXISTS (SELECT 1 FROM recipientPushTargets WHERE display_name='Grandma Marcy');\nSELECT id, display_name, role, phone_e164, is_active FROM recipientPushTargets ORDER BY id;",
+  "rows": [
+    {
+      "id": "1",
+      "display_name": "Mom",
+      "role": "parent",
+      "phone_e164": "+15139265808",
+      "is_active": "1"
+    },
+    {
+      "id": "2",
+      "display_name": "Grandma",
+      "role": "grandparent",
+      "phone_e164": "+15136469281",
+      "is_active": "1"
+    },
+    {
+      "id": "30001",
+      "display_name": "Mom (Christy)",
+      "role": "parent",
+      "phone_e164": "+15139265808",
+      "is_active": "1"
+    },
+    {
+      "id": "30002",
+      "display_name": "Grandma Marcy",
+      "role": "editor",
+      "phone_e164": "+15136469281",
+      "is_active": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tdisplay_name\trole\tphone_e164\tis_active\n1\tMom\tparent\t+15139265808\t1\n2\tGrandma\tgrandparent\t+15136469281\t1\n30001\tMom (Christy)\tparent\t+15139265808\t1\n30002\tGrandma Marcy\teditor\t+15136469281\t1\n",
+  "stderr": "",
+  "execution_time_ms": 1530
+}

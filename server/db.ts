@@ -7062,6 +7062,44 @@ export async function listActivePushTargets(): Promise<RecipientPushTarget[]> {
     .orderBy(asc(recipientPushTargets.id))) as RecipientPushTarget[];
 }
 
+/**
+ * v2.31 (2026-05-18) — Slice 3.5 phoneRecipients seed.
+ *
+ * Mom = 513-926-5808, Grandma Marcy = 513-646-9281.
+ * Idempotent on `displayName` (which is unique). Only INSERTs if the row
+ * doesn't already exist; never overwrites a manually-edited number.
+ * Phones stored in E.164 (`+1...`) so downstream SMS providers receive
+ * the canonical form. `role` mirrors the `permissions.HomeRole` vocabulary
+ * so `parent` and `editor` both bypass the approval queue.
+ */
+export const SLICE_3_5_DEFAULT_PUSH_TARGETS = [
+  // Existing live rows already use these short displayNames; the seeder is
+  // idempotent on `displayName` so this matches the live DB exactly.
+  { displayName: "Mom", role: "parent", phoneE164: "+15139265808" },
+  { displayName: "Grandma", role: "grandparent", phoneE164: "+15136469281" },
+] as const;
+
+export async function ensureDefaultPushTargets(): Promise<{ inserted: number; existing: number }> {
+  const existing = (await getDb()
+    .select()
+    .from(recipientPushTargets)) as RecipientPushTarget[];
+  const existingNames = new Set(existing.map(r => r.displayName.trim().toLowerCase()));
+  let inserted = 0;
+  const now = Date.now();
+  for (const seed of SLICE_3_5_DEFAULT_PUSH_TARGETS) {
+    if (existingNames.has(seed.displayName.trim().toLowerCase())) continue;
+    await getDb().insert(recipientPushTargets).values({
+      displayName: seed.displayName,
+      role: seed.role,
+      phoneE164: seed.phoneE164,
+      isActive: true,
+      createdAt: now,
+    });
+    inserted++;
+  }
+  return { inserted, existing: existing.length };
+}
+
 
 /* ============================================================
  * Slice 4.5 — Actual-vs-Planned agenda helpers
