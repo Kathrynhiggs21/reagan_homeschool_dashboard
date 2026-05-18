@@ -156,6 +156,12 @@ export default function Analytics() {
         <div>
           <h1 className="text-3xl font-display font-semibold">Analytics 📊</h1>
           <p className="text-muted-foreground text-sm mt-1">For adults — Reagan's growth, patterns, and where she needs support. Never shown to her.</p>
+          {/* v2.43 (2026-05-18) — root-level "Open in Drive" button so the
+              long-term archive (Reagan School Hub → 05 Progress and Reports
+              → Analytics) is one tap away from the Analytics page header. */}
+          <div className="mt-2" data-testid="analytics-open-in-drive-root">
+            <OpenInDrive label="Open root Analytics folder in Drive" />
+          </div>
         </div>
         <AdultCoinCounter />
       </header>

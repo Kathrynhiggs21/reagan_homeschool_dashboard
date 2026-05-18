@@ -453,11 +453,9 @@ Source of truth for the structure: pasted_content.txt (Reagan School Hub
 → 05 - Progress and Reports/Analytics). Dashboard Analytics page is the
 LIVE view; Drive folders are the long-term archive.
 
-Top-level sections on /analytics (in this order):
-
-1) Day-to-day numbers
-   - [ ] Existing radar / sparklines / mastery / trajectory / IEP cards
-   - [ ] "Open in Drive" button → root Analytics folder
+Top-level sections on /analytics (in this or1) Reagan analytics on the dashboard
+   - [x] Existing radar/sparklines/mastery/trajectory/IEP cards — v2.43 (2026-05-18) reconciliation. Already shipped on `client/src/pages/Analytics.tsx` and confirmed in v2.41: SubjectRadar (line 32), SubjectSparklines (line 33), CurriculumCoverageArcs (line 34), CurriculumProgressArcs (line 35, mounted v2.41), TrajectoryCard (line 24), CurrentLevelsFromIep (line 26), Skills Mastery + IEP Goals & Accommodations cards further down the page. Locked by `server/curriculumProgressArcsMove.test.ts` (6/6) which asserts the radar+sparklines+coverage+progress mounts all coexist on Analytics.
+   - [x] "Open in Drive" button → root Analytics folder — v2.43 (2026-05-18). New mount at the very top of the Analytics page header (`Analytics.tsx` line 162) with `data-testid="analytics-open-in-drive-root"` rendering `<OpenInDrive label="Open root Analytics folder in Drive" />`. The shared `OpenInDrive` helper points at `DRIVE_HUB_URL` (line 7: `https://drive.google.com/drive/search?q=Reagan%20School%20Hub%20Analytics` — the canonical Drive archive scoped under ✍️ Reagan School Hub → 05 Progress and Reports → Analytics). Three section-level Open-in-Drive mounts (Day Summaries, Kiwi AI, IEP) are preserved for in-context jumps. Locked by new `server/analyticsRootOpenInDrive.test.ts` (5/5 green): root data-testid, explicit non-default label, DRIVE_HUB_URL points at the right archive, three section mounts preserved, root mount renders inside the page header above ParentFlagsBanner.
 
 2) Kiwi AI
    - [ ] Day Summary card (today)
