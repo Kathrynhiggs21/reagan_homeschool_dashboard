@@ -1,0 +1,28 @@
+{
+  "query": "SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_SCHEMA=DATABASE() AND (TABLE_NAME LIKE '%mood%' OR TABLE_NAME LIKE '%event%' OR TABLE_NAME LIKE '%upload%' OR TABLE_NAME LIKE '%submission%' OR TABLE_NAME LIKE '%grade%' OR TABLE_NAME LIKE '%summar%' OR TABLE_NAME LIKE '%flag%' OR TABLE_NAME LIKE '%struggle%' OR TABLE_NAME LIKE '%book%') ORDER BY TABLE_NAME;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT TABLE_NAME FROM information_schema.tables WHERE TABLE_SCHEMA=DATABASE() AND (TABLE_NAME LIKE '%mood%' OR TABLE_NAME LIKE '%event%' OR TABLE_NAME LIKE '%upload%' OR TABLE_NAME LIKE '%submission%' OR TABLE_NAME LIKE '%grade%' OR TABLE_NAME LIKE '%summar%' OR TABLE_NAME LIKE '%flag%' OR TABLE_NAME LIKE '%struggle%' OR TABLE_NAME LIKE '%book%') ORDER BY TABLE_NAME;",
+  "rows": [
+    {
+      "TABLE_NAME": "bookAssignments"
+    },
+    {
+      "TABLE_NAME": "bookPagesDone"
+    },
+    {
+      "TABLE_NAME": "books"
+    },
+    {
+      "TABLE_NAME": "moodLogs"
+    },
+    {
+      "TABLE_NAME": "moodSignals"
+    },
+    {
+      "TABLE_NAME": "powerschool_grades"
+    }
+  ],
+  "messages": [],
+  "stdout": "TABLE_NAME\nbookAssignments\nbookPagesDone\nbooks\nmoodLogs\nmoodSignals\npowerschool_grades\n",
+  "stderr": "",
+  "execution_time_ms": 601
+}

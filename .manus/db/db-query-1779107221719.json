@@ -1,0 +1,38 @@
+{
+  "query": "SELECT 'books_demo' AS tbl, COUNT(*) AS n FROM books WHERE title LIKE 'Test %' OR title LIKE '%demo%' OR title LIKE '%placeholder%' OR title LIKE '%fake%'\nUNION ALL SELECT 'assignmentSubmissions_demo',COUNT(*) FROM assignmentSubmissions WHERE COALESCE(title,'') LIKE '%demo%' OR COALESCE(title,'') LIKE '%placeholder%' OR COALESCE(title,'') LIKE '%fake%' OR COALESCE(title,'') LIKE 'Test %'\nUNION ALL SELECT 'books_total', COUNT(*) FROM books\nUNION ALL SELECT 'assignmentSubmissions_total', COUNT(*) FROM assignmentSubmissions\nUNION ALL SELECT 'moodLogs_total', COUNT(*) FROM moodLogs\nUNION ALL SELECT 'moodSignals_total', COUNT(*) FROM moodSignals\nUNION ALL SELECT 'powerschool_grades_total', COUNT(*) FROM powerschool_grades;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT 'books_demo' AS tbl, COUNT(*) AS n FROM books WHERE title LIKE 'Test %' OR title LIKE '%demo%' OR title LIKE '%placeholder%' OR title LIKE '%fake%'\nUNION ALL SELECT 'assignmentSubmissions_demo',COUNT(*) FROM assignmentSubmissions WHERE COALESCE(title,'') LIKE '%demo%' OR COALESCE(title,'') LIKE '%placeholder%' OR COALESCE(title,'') LIKE '%fake%' OR COALESCE(title,'') LIKE 'Test %'\nUNION ALL SELECT 'books_total', COUNT(*) FROM books\nUNION ALL SELECT 'assignmentSubmissions_total', COUNT(*) FROM assignmentSubmissions\nUNION ALL SELECT 'moodLogs_total', COUNT(*) FROM moodLogs\nUNION ALL SELECT 'moodSignals_total', COUNT(*) FROM moodSignals\nUNION ALL SELECT 'powerschool_grades_total', COUNT(*) FROM powerschool_grades;",
+  "rows": [
+    {
+      "tbl": "books_total",
+      "n": "12"
+    },
+    {
+      "tbl": "moodLogs_total",
+      "n": "0"
+    },
+    {
+      "tbl": "assignmentSubmissions_demo",
+      "n": "2"
+    },
+    {
+      "tbl": "assignmentSubmissions_total",
+      "n": "3"
+    },
+    {
+      "tbl": "books_demo",
+      "n": "0"
+    },
+    {
+      "tbl": "powerschool_grades_total",
+      "n": "0"
+    },
+    {
+      "tbl": "moodSignals_total",
+      "n": "68"
+    }
+  ],
+  "messages": [],
+  "stdout": "tbl\tn\nbooks_total\t12\nmoodLogs_total\t0\nassignmentSubmissions_demo\t2\nassignmentSubmissions_total\t3\nbooks_demo\t0\npowerschool_grades_total\t0\nmoodSignals_total\t68\n",
+  "stderr": "",
+  "execution_time_ms": 588
+}
