@@ -941,10 +941,29 @@ export default function Today() {
                     // Push 43 — if adult is unlocked, use the family-admin
                     // procedure (records adult as completer for grading).
                     // Otherwise Reagan herself marks via selfComplete.
+                    //
+                    // v2.30 (2026-05-18) Slice 6 closeout — surface the
+                    // summer streak boost in the celebrate toast when the
+                    // server-side awardSticker reports `summerActive` and a
+                    // multiplier > 1. Always falls back to the regular
+                    // "+1 sticker!" copy outside summer or when the boost
+                    // payload is missing (e.g. blocks.complete returns the
+                    // bare row only). Never blocks the completion path.
                     const onDone = {
-                      onSuccess: () => {
+                      onSuccess: (out: any) => {
                         toast.success("Done!");
-                        celebrateKiwi("Yay! 🎉 +1 sticker!");
+                        const boost = (out && typeof out === "object" && "streakBoostMultiplier" in out)
+                          ? Number((out as any).streakBoostMultiplier)
+                          : NaN;
+                        const summerActive = !!(out && typeof out === "object" && (out as any).summerActive);
+                        const coins = (out && typeof out === "object" && "coins" in out)
+                          ? Number((out as any).coins)
+                          : NaN;
+                        if (summerActive && Number.isFinite(boost) && boost > 1 && Number.isFinite(coins) && coins > 0) {
+                          celebrateKiwi(`Summer streak! 🔥 +${coins} coins (×${boost} boost)`);
+                        } else {
+                          celebrateKiwi("Yay! 🎉 +1 sticker!");
+                        }
                         utils.plans.today.invalidate();
                         // Push 50 — only show chips to Reagan (not adults grading)
                         if (!unlocked) setFeedbackForBlockId(b.id);

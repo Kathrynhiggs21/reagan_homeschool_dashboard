@@ -756,9 +756,15 @@ export const appRouter = router({
           completedAt: new Date(), completedByUserId: ctx.user?.id,
         } as any);
         await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: input.id, action: "complete", summary: input.grade });
-        // Sticker + coin economy: +1 sticker, +1 coin every block done
+        // Sticker + coin economy: +1 sticker, +1 coin every block done.
+        // v2.30 (2026-05-18) Slice 6 closeout — forward awardSticker's
+        // summerActive + streakBoostMultiplier + coins fields onto the
+        // returned row so the kid-side celebrate toast can surface the
+        // boost without a second round-trip. Best-effort — if the award
+        // fails the original block row still ships back.
+        let award: any = null;
         try {
-          await db.awardSticker({
+          award = await db.awardSticker({
             userId: (ctx.user as any)?.id ?? null,
             reason: "block_done",
             blockId: input.id,
@@ -767,7 +773,14 @@ export const appRouter = router({
         } catch (e) {
           console.warn("[rewards] awardSticker failed", e);
         }
-        return r;
+        return {
+          ...(r as any),
+          summerActive: !!(award && award.summerActive),
+          streakDays: award?.streakDays ?? 0,
+          streakBoostMultiplier: award?.streakBoostMultiplier ?? 1,
+          coins: award?.coins ?? 0,
+          baseCoins: award?.baseCoins ?? 0,
+        };
       }),
     /**
      * Push 43 (2026-05-13) — Reagan self-marks her own block complete.
@@ -800,8 +813,12 @@ export const appRouter = router({
           action: "complete",
           summary: "reagan-self-mark",
         });
+        // v2.30 (2026-05-18) Slice 6 closeout — forward awardSticker's
+        // summer-boost payload onto the returned row so Reagan's
+        // celebrate toast can show the ×boost copy on streak days.
+        let award: any = null;
         try {
-          await db.awardSticker({
+          award = await db.awardSticker({
             userId: (ctx.user as any)?.id ?? null,
             reason: "block_done",
             blockId: input.id,
@@ -810,7 +827,14 @@ export const appRouter = router({
         } catch (e) {
           console.warn("[rewards] awardSticker failed (selfComplete)", e);
         }
-        return r;
+        return {
+          ...(r as any),
+          summerActive: !!(award && award.summerActive),
+          streakDays: award?.streakDays ?? 0,
+          streakBoostMultiplier: award?.streakBoostMultiplier ?? 1,
+          coins: award?.coins ?? 0,
+          baseCoins: award?.baseCoins ?? 0,
+        };
       }),
     move: familyAdminProcedure.input(z.object({
       id: z.number(), direction: z.enum(["up", "down"]),
