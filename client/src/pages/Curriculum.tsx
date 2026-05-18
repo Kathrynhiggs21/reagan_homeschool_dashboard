@@ -6,7 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import SubjectColorKey from "@/components/SubjectColorKey";
 import CurriculumTopicsTree from "@/components/CurriculumTopicsTree";
-import CurriculumProgressArcs from "@/components/CurriculumProgressArcs";
+// v2.41 (2026-05-18) — CurriculumProgressArcs moved off Curriculum Hub onto
+// the Analytics page (per todo line 361). The component itself is preserved
+// at /components/CurriculumProgressArcs.tsx and is now mounted on /analytics
+// next to CurriculumCoverageArcs.
 import OwnedBookCard from "@/components/OwnedBookCard";
 import { subjectTint, tintCardStyle, tintInkStyle } from "@/lib/subjectColors";
 
@@ -148,7 +151,7 @@ export default function Curriculum() {
 
       <SubjectColorKey variant="schedule" />
 
-      <CurriculumProgressArcs />
+      {/* v2.41: CurriculumProgressArcs moved to /analytics. */}
 
       <CurriculumTopicsTree />
 

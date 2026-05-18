@@ -32,6 +32,7 @@ import AdultCoinCounter from "@/components/AdultCoinCounter";
 import SubjectRadar from "@/components/SubjectRadar";
 import SubjectSparklines from "@/components/SubjectSparklines";
 import CurriculumCoverageArcs from "@/components/CurriculumCoverageArcs";
+import CurriculumProgressArcs from "@/components/CurriculumProgressArcs";
 import WeeklyDigestCard from "@/components/WeeklyDigestCard";
 import { MoodRing } from "@/components/MoodRing";
 
@@ -316,6 +317,14 @@ export default function Analytics() {
           curriculum.progress (catalog topics done/total). Self-hides
           when no catalog rows exist. */}
       <CurriculumCoverageArcs />
+
+      {/* v2.41 (2026-05-18) — Per-topic progress arcs moved here from
+          Curriculum Hub. Surfaces granular topic-by-topic completion as
+          a dense matrix of small arc cards; the broader-strokes
+          CurriculumCoverageArcs above is the at-a-glance subject roll-up.
+          Self-hides per the don't-show-if-no-info rule when the
+          curriculum.progress query returns 0 topics. */}
+      <CurriculumProgressArcs />
 
       {/* Push 71 (2026-05-13) — Sunday digest preview (Mom + Grandma).
           Auto-emails Sunday 7 PM to both adults; this card surfaces the
