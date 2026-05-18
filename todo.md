@@ -355,7 +355,7 @@
 
 ## 2026-05-04 evening — additional scope (pending)
 
-- [ ] Delete `/agendas` (Daily Schedule) page entirely; remove its sidebar entry
+- [x] Delete `/agendas` (Daily Schedule) page entirely; remove its sidebar entry — v2.40 (2026-05-18) reconciliation. The page was deleted in 2026-05-05 (App.tsx now mounts only `<Route path="/agendas"><Redirect to="/agenda-editor" /></Route>` so legacy bookmarks land on the new editor instead of 404). The sidebar entry was already removed too: `client/src/components/CozyShell.tsx` `ADULT_NAV` (line 57–62) holds exactly four leaves — `/curriculum`, `/agenda-editor`, `/analytics`, `/settings` — and `KID_NAV` has `/schedule` (a different surface; the kid-side calendar) but zero `/agendas`. Locked by new `server/agendasPageDeletion.test.ts` (5/5 green): redirect line preserved verbatim, route mounts ONLY `<Redirect />`, no `AgendasPage`/`DailySchedulePage`/`DailyAgendasPage` imports, ADULT_NAV has zero `/agendas` and all four canonical entries, KID_NAV preserves `/schedule` and rejects `/agendas`, and a directory-walk that catches any other `href|to|push|navigate("/agendas")` re-introduction anywhere under `client/src` (App.tsx redirect line excluded as the only intentional reference).
 - [ ] Move TutorDayNotesBox component INTO the Notebook drawer (Notebook becomes a global open/close slide-over panel)
 - [ ] Build new `/analytics` adult page (rich behind-the-scenes records dashboard)
 - [ ] Move per-topic progress arc cards from Curriculum Hub onto the new Analytics page
