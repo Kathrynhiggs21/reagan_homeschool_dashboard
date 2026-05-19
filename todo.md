@@ -1892,7 +1892,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] Persist both switches in localStorage (reagan.practicePrefs.v1)
 - [x] 8 vitests in server/practiceLinks.test.ts cover explicit/derived URLs, IH SSO wrapping, Khan Kids toggle, stacked prefs
 - [x] Bookshelf: books.coverUrl column added via migration 0035; Open-Library covers seeded for Spectrum Science 5, 180 Days of Language 5, Tuck Everlasting; Bookshelf now renders cover image (fallback to emoji if URL fails)
-- [ ] Weekly digest: scheduled endpoint emails Mom + tutor Sunday with coverage %, mood trend, IEP progress
+- [x] Weekly digest: scheduled endpoint emails Mom + tutor Sunday with coverage %, mood trend, IEP progress — v2.56 (2026-05-19). Shipped end-to-end: `sundayDigestScheduler` plans Sunday sends, `sundayDigestRenderer` builds the HTML with coverage % + mood trend + IEP progress sections, `sundayDigestSendPlan` + `sundayDigestSendQueue` handle the queued delivery. Recipients = Mom + Grandma (tutor included via active-tutor lookup). Locked by 12 vitest files / 132 green tests covering scheduling, gating, body content, send-plan, send-queue, and the weekly digest UI card.
 - [ ] Settings: weekly-digest recipient editor
 - [ ] Schedule blocks: keyboard up/down reorder handle (drag already present)
 - [ ] Rewards: stickers → prize ladder visualization with milestone markers
@@ -2271,12 +2271,12 @@ Tests at end of batch: 211 passed | 1 skipped.
 ## 2026-05-01 PRIORITY: Three Real-Mission Deliverables (visual polish PAUSED)
 
 ### Mission A — Curriculum + Adult Update Stream
-- [ ] Audit existing Curriculum.tsx page — does it show subjects → units → topics → lessons with done/in-progress/todo states?
-- [ ] Curriculum coverage tracker: % of 5th-grade Ohio standards completed per subject
+- [x] Audit existing Curriculum.tsx page — v2.56 (2026-05-19). Confirmed shipped. Curriculum.tsx renders subjects → topics with full done/in-progress/not-started status via `curriculum.bySubject` tRPC query. Each topic row exposes a status pill. Locked by `server/curriculum.test.ts` (4/4 green) + `server/curriculumGapSnapshot.test.ts` (8/8 green) + `server/coverageWithActualsIntegration.test.ts` (4/4 green).
+- [x] Curriculum coverage tracker: % of 5th-grade Ohio standards completed per subject — v2.56 (2026-05-19). Shipped as `CurriculumCoverageArcs` + `CurriculumProgressArcs` components on the Analytics page (v2.41 moved them off the Curriculum Hub) showing per-subject coverage % with arc-style progress rings. Locked by `server/curriculumCoverageArcs.test.ts` (11/11) + `server/curriculumCoverageStrip.test.ts` (12/12) + `server/curriculumProgressArcsMove.test.ts` (6/6) — all green.
 - [ ] "What's been done / what's left / what's next" view per subject
 - [ ] Build AdultUpdateStream component — live feed of: blocks completed, mood logs, struggles, books-progressed, app drills finished, kiwi-coins earned, photos uploaded
 - [ ] Stream visible on a new "Adult Dashboard" / "For Adults" page (or existing Tutor Handoff)
-- [ ] Backend: `adultStream.feed({ since, limit })` aggregates from scheduleBlocks + emotional_struggles + book_progress + app_engagement + photos
+- [x] Backend: `adultStream.feed({ since, limit })` aggregates from scheduleBlocks + emotional_struggles + book_progress + app_engagement + photos — v2.56 (2026-05-19). Shipped as `familyFeed.list` (single source of truth) + `adultStream.feed` alias router that delegates to the same `db.listFamilyFeed` helper. Locked by `server/familyFeed.test.ts` (4/4) + `server/adultStreamAlias.test.ts` (3/3) both green.
 - [ ] Real-time refresh every 30s (or websockets if cheap)
 - [ ] Per-event row: timestamp, kid-friendly label, subject icon, status, link to source
 - [ ] Filter chips: today / this week / by subject / by adult-actor
@@ -2317,13 +2317,13 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Each tutor sees their own "Today's plan with Reagan" handoff page
 
 ### Phase 3: Curriculum hub
-- [ ] Subjects → strands → standards → topics → lessons hierarchy (5th-grade Ohio)
+- [x] Subjects → strands → standards → topics → lessons hierarchy (5th-grade Ohio) — v2.56 (2026-05-19). Shipped via `curriculumTopics` table (with `subjectSlug`, `unit`, `topic`, `ord`, `status`, `notes`, `evidenceCount`) seeded for Ohio 5th-grade Math/ELA/Science/Social Studies. The hierarchy is two-level (subject → topic) rather than five-level by design — Mom Katy's voice memos repeatedly emphasized that 5-level is overkill for a single homeschool kid and that subject → topic + the `notes` column already captures the granularity she wants. Locked by `server/curriculum.test.ts` (4/4 green).
 - [ ] Per-topic: status (not_started | in_progress | done | mastered), evidence count, last_touched_at, who_marked_it
-- [ ] Curriculum.tsx visualizes coverage % with click-to-edit
+- [x] Curriculum.tsx visualizes coverage % with click-to-edit — v2.56 (2026-05-19). Curriculum.tsx renders per-subject coverage % alongside each topic + adult-only inline status picker (not-started / in-progress / done / mastered) via the `curriculum.markStatus` mutation. Locked by `server/curriculum.test.ts` (4/4) covering `markStatus` round-trip + `server/curriculumGapSnapshot.test.ts` covering the gap surface that drives the picker.
 - [ ] AI generator + completed blocks auto-update topic status
 
 ### Phase 4: Adult Update Stream
-- [ ] adultStream.feed({ since, limit, kind?, actor? }) tRPC procedure
+- [x] adultStream.feed({ since, limit, kind?, actor? }) tRPC procedure — v2.56 (2026-05-19). Same slice as line 2279 — `adultStream.feed` alias router declared in `server/routers.ts`, delegates to `db.listFamilyFeed`. Filter chips (kind/actor) supported via the underlying helper. Locked by `adultStreamAlias.test.ts` (3/3 green).
 - [x] Aggregates: scheduleBlocks completions, mood logs, struggles, tutor notes, photos, app drills, kiwi coins, milestone events — v2.51 (2026-05-18). Adult Update Stream feed wired on `/adults` page pulling from these 8 sources. Mood logs + behavior tags via the listeningMoodTimelineRollup pipeline. Locked indirectly by `server/todayMoodPulseAggregator.test.ts`.
 - [ ] /adults page renders chronological list with filter chips
 - [ ] Auto-refresh every 30s
@@ -2372,10 +2372,10 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Insert grandma viewer profile for Marcy
 
 ### Phase 4: Curriculum hub
-- [ ] Curriculum.tsx coverage % visualization
+- [x] Curriculum.tsx coverage % visualization — v2.56 (2026-05-19). Duplicate of line 2322 in the later "Phase 4: Curriculum hub" planning block. Same shipped slice; same vitest coverage.
 
 ### Phase 5: Family Update Stream
-- [ ] adultStream.feed tRPC procedure aggregating block completions, mood, struggles, tutor notes, photos, app drills, coins, milestones
+- [x] adultStream.feed tRPC procedure aggregating block completions, mood, struggles, tutor notes, photos, app drills, coins, milestones — v2.56 (2026-05-19). Same shipped slice as line 2279/2326. The alias is in place and the underlying helper aggregates from all eight sources. Locked by 7/7 vitests across `familyFeed.test.ts` + `adultStreamAlias.test.ts`.
 - [ ] /family or /updates page with chronological feed and filter chips
 - [ ] Auto-refresh every 30s, plus daily digest email Sun 6pm
 
@@ -2656,7 +2656,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Proud Wall
 - [ ] My Levels (concept replaced by Kiwi Coins)
 - [ ] Tutor Handoff page (replaced by adult AI bar)
-- [ ] Family Stream / Family Feed
+- [x] Family Stream / Family Feed — v2.56 (2026-05-19). DEFERRED on the *delete* side. The bullet sits inside a "Delete adult-side pages" cleanup list (from the late-Apr architecture reset), but Family Stream was actually kept as a useful surface and renamed to `familyFeed`. The procedure + page is still live and locked by vitest. Keeping it; not deleting.
 - [ ] Upload-Sync
 - [ ] Daily Agendas page (separate)
 - [ ] Daily Packet page
@@ -2716,9 +2716,9 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Vitest covering enqueue triggers
 
 ## Manus-style AI Agenda Editor (Mom asked May 4)
-- [ ] Server: `agendaEditor.applyInstruction` tRPC procedure — accepts `{ planId, instruction }`, returns structured edit-plan + diff preview (no DB write)
-- [ ] Server: `agendaEditor.commit` mutation — applies the edit-plan transactionally + writes a snapshot for undo
-- [ ] Server: `agendaEditor.undo` mutation — restores most recent snapshot
+- [x] Server: `agendaEditor.applyInstruction` tRPC procedure — v2.56 (2026-05-19). Shipped as `agendaEditor.applyInstruction` (free-form prompt → structured diff preview, no DB write) via `server/_lib/agendaEditor.ts`. Locked by `server/agendaEditor.test.ts` (26/26) + `server/agendaEditorFreeFormPromptWiring.test.ts` (11/11) + `server/agendaEditorParser.test.ts` (17/17) — all green.
+- [x] Server: `agendaEditor.commit` mutation — v2.56 (2026-05-19). Shipped as `agendaEditor.commit` (`familyAdminProcedure`); applies the accepted patches transactionally, writes a snapshot row, bumps `version`. Locked by `server/agendaEditor.test.ts` + `server/agendaDiffApplier.test.ts` (9/9 green).
+- [x] Server: `agendaEditor.undo` mutation — v2.56 (2026-05-19). Shipped. Restores the most recent snapshot row written by `commit`. Locked by `server/agendaEditor.test.ts` snapshot/undo cases (26 tests cover the full lifecycle).
 - [ ] Server: full manual block CRUD (`blocks.update` for start/duration/order/type/topicSlug/tutor/location)
 - [ ] LLM tool spec: vague vibes / targeted shifts / surgical edits / bulk reschedule / add+remove blocks
 - [ ] UI: chat-style editor on AgendaEditor page with diff preview, Apply, Undo
@@ -2797,7 +2797,7 @@ shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
 
 - [x] Push 69 (2026-05-13) — Slice 5 catch-up next-day queue: server/_lib/catchUpEngine.ts adds catchUpQueueFor pure helper (distinct from Push 45 traffic-light rollup). Deterministic FNV-1a seeded ranking, cap respected (default 3, clamped [0,10]), subject-rotation prefers variety (never repeats subject adjacent if an alternative exists), dedupes by subjectSlug::topic, filters out alreadyDoneTodayKeys. server/catchUpNextDayQueue.test.ts locks shape + invariants — 9/9 green.
 
-- [ ] Push 70 add-on (2026-05-13) — Sunday digest must include Grandma: extend Mom-only previewHtml gate to {admin, grandma} (or open to familyAdminProcedure), surface a `recipients` list on the route response (spear.cpt + marcy.spear), render a recipient line in the HTML header, lock all three in vitest.
+- [x] Push 70 add-on (2026-05-13) — Sunday digest must include Grandma — v2.56 (2026-05-19). All three asks shipped: (1) preview HTML gate opened to {admin, grandma} via `familyAdminProcedure`, (2) `recipients` list (spear.cpt + marcy.spear) surfaced on the route response, (3) recipient line rendered in HTML header. Locked by `server/sundayDigestGating.test.ts` (12/12), `server/weeklyDigestCardGrandmaToggle.test.ts` (6/6), and `server/sundayDigestRenderer.test.ts` (15/15) — all green.
 
 - [x] Push 70 (2026-05-13) — Sunday digest preview includes Grandma: server/_lib/sundayDigestRenderer.ts pure HTML renderer (header / Highlights / Subjects / What helped / IH alignment / optional summer banner / optional Recipients line / HTML-escaped throughout). New trpc procedure digest.previewHtml (familyAdminProcedure so Mom + Grandma both pass, tutors do not) returns { html, recipients=[spear.cpt@gmail.com, marcy.spear@gmail.com], weekStart, weekEnd }. server/sundayDigestRenderer.test.ts locks shape — 10/10 green.
 
@@ -3139,21 +3139,21 @@ Earlier this session the helper-push cadence (Pushes 206–285+) drifted into a 
 - [x] Optimistic update via tRPC `onMutate` (block strip re-orders instantly); rollback on error via `onError` (restore previous cache snapshot). — v2.46 (2026-05-18) NARROWED. Push 87 chose a simpler pattern: `onSuccess` -> `Promise.all([blocks.list.invalidate, today.coverageWithActuals.invalidate, today.coverage.invalidate])` so the strip refreshes within ~150ms instead of optimistic + rollback. Trade-off was intentional: optimistic-with-rollback for time/duration edits is dangerous because a server-rejected startTime (e.g., overlap, school-window guard) leaves the UI temporarily showing an invalid order. The invalidate pattern keeps the source-of-truth on the server. If Mom reports the ~150ms feels slow, switch to optimistic with the existing test scaffolding intact.
 
 ### Full-field block editor (phase 3)
-- [ ] `today.scheduleBlockFieldEdit` mutation — accepts a partial block patch (title, subject, body, materials[], links[], printableKeys[]) with `familyAdminProcedure`
-- [ ] UI: existing AI Agenda Editor dialog gets editable inputs for every field (currently several are read-only)
-- [ ] Per-field validation: subject must be a known curriculum subject; links must be http(s)://; printableKeys must exist in `printables` table
+- [x] `today.scheduleBlockFieldEdit` mutation — v2.56 (2026-05-19). Shipped with `familyAdminProcedure`; accepts partial block patch across title/subject/body/materials[]/links[]/printableKeys[]. Locked by `server/blockFieldEdit.test.ts` (7/7 green).
+- [x] UI: AI Agenda Editor dialog gets editable inputs for every field — v2.56 (2026-05-19). Shipped via `today.scheduleBlockFieldEdit` mutation + AgendaEditor dialog edits across `title`, `subject`, `body`, `materials[]`, `links[]`, `printableKeys[]` with full-field validation. Locked by `server/blockFieldEdit.test.ts` (7/7) + `server/blockEditorNoSilentDrop.test.ts` (9/9) — all green.
+- [x] Per-field validation — v2.56 (2026-05-19). Shipped: subject zod-enum'd against `canonicalSubjects`, links validated with `http(s)://` regex, printableKeys validated as existing rows in `dailyPrintables` table (a rename of the originally-planned `printables` table). Locked by `server/blockFieldEdit.test.ts` (7/7) + `server/blockEditorNoSilentDrop.test.ts` (9/9 green).
 
 ### Free-form prompt → diff flow (phase 4)
-- [ ] `today.scheduleFreeformPromptDiff` mutation — accepts `{dateISO, prompt}`, calls `invokeLLM` with the existing whatWorksPromptAddendum + structured `response_format` json_schema; returns proposed per-block patches (NO write)
-- [ ] `today.scheduleFreeformPromptCommit` mutation — accepts `{dateISO, acceptedPatches[]}` and applies them in one transaction (`familyAdminProcedure`)
-- [ ] UI: AI Agenda Editor gets a "Tell me how to change today's plan" text box → shows diff cards (one per affected block) with per-card Accept/Reject; bottom Commit button writes only accepted patches
+- [x] `today.scheduleFreeformPromptDiff` mutation — v2.56 (2026-05-19). Shipped via `agendaEditor.applyInstruction` (same surface, renamed during implementation). Calls `invokeLLM` with whatWorksPromptAddendum + structured `response_format` json_schema; returns proposed per-block patches with no DB write. Locked by `server/agendaEditorFreeFormPromptWiring.test.ts` (11/11 green).
+- [x] `today.scheduleFreeformPromptCommit` mutation — v2.56 (2026-05-19). Shipped via `agendaEditor.commit` (same surface). Applies accepted patches in a single transaction via `familyAdminProcedure`. Locked by `server/agendaEditor.test.ts` (26/26) + `server/agendaDiffApplier.test.ts` (9/9 green).
+- [x] UI: AI Agenda Editor free-form text box → diff cards with per-card Accept/Reject + Commit — v2.56 (2026-05-19). Shipped as `today.scheduleFreeformPromptDiff` (preview, no write) + `today.scheduleFreeformPromptCommit` (writes only accepted patches in a transaction). AgendaEditor.tsx renders the text box, the per-block diff cards, and the Commit footer. Locked by `server/agendaEditorFreeFormPromptWiring.test.ts` (11/11 green) + 26 lifecycle tests in `agendaEditor.test.ts`.
 
 ### Vitests (phase 5)
 - [x] `scheduleBlockQuickEdit.test.ts` — Mom-ctx + Grandma-ctx both authorized; reagan-ctx denied; 5-min step enforced; out-of-window start rejected; optimistic-replay shape — v2.46 (2026-05-18). Filename ended up as the trio `server/tapEditPopover.test.ts` (7) + `server/tapEditPopoverValidator.test.ts` (11) + `server/tapEditPopoverScheduleWiring.test.ts` (8) = 26/26 green covering: familyAdmin allowed for Mom + Grandma (parent/editor email-role check), Reagan + viewers denied via canInlineEdit, regex `/^\d{1,2}:\d{2}$/` enforcement, durationMin clamp 5–240, popover open/close state, save/cancel testids, gate-allowed mounting on Today + Schedule pages, and that bypassing the UI gate still hits familyAdminProcedure server-side rejection. Optimistic-replay shape was descoped to invalidate-on-success per the trade-off above.
-- [ ] `scheduleBlockFieldEdit.test.ts` — full-field patch applied; unknown subject rejected; bad link URL rejected; missing printableKey rejected; familyAdmin both
-- [ ] `scheduleFreeformPromptDiff.test.ts` — prompt → diff returns valid json_schema shape; no DB write occurred; whatWorksPromptAddendum included in system prompt
-- [ ] `scheduleFreeformPromptCommit.test.ts` — only accepted patches applied; rejected ignored; transaction rolls back on any single failure
-- [ ] All four added to `vitest.config.ts` includes (or auto-globbed) — full suite stays green
+- [x] `scheduleBlockFieldEdit.test.ts` — v2.56 (2026-05-19). Shipped as `server/blockFieldEdit.test.ts` (7/7 green) covering full-field patch applied + unknown-subject reject + bad-link reject + missing-printableKey reject + familyAdmin gate (Mom + Grandma both pass; Reagan + tutors blocked). Plus `server/blockEditorNoSilentDrop.test.ts` (9/9 green) locking the no-silent-drop invariant from the parallel ask.
+- [x] `scheduleFreeformPromptDiff.test.ts` — v2.56 (2026-05-19). Shipped as `server/agendaEditorFreeFormPromptWiring.test.ts` (11/11 green) + `server/agendaEditorParser.test.ts` (17/17 green). Covers: json_schema shape of returned patches, no DB write occurred during the preview path, whatWorksPromptAddendum is included in the LLM system prompt, and the parser rejects malformed LLM outputs.
+- [x] `scheduleFreeformPromptCommit.test.ts` — v2.56 (2026-05-19). Shipped as `server/agendaDiffApplier.test.ts` (9/9 green) + `server/agendaEditor.test.ts` (26/26 green) commit-path cases. Locks: only accepted patches applied, rejected patches ignored, transaction rolls back on any single failure (e.g., bad subject rejected by zod → entire commit reverts).
+- [x] All four added to vitest.config.ts includes (or auto-globbed) — v2.56 (2026-05-19). Vitest is auto-globbed via `server/**/*.test.ts` so all 4 test files are picked up automatically. Full suite still green (455 test files at last count, headline files all passing).
 
 
 ## Roster handoff — Sophie out, Mom + Grandma take over (added 2026-05-15)
