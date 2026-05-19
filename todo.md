@@ -185,7 +185,7 @@
 - [ ] Tutors table rows for Madison, Sophie, Keith with weekly slot pattern
 - [ ] Tutor permissions = Editor tier (edit schedule, add/remove assignments, mark done, upload photos, leave notes — no billing/secrets/users)
 - [ ] Per-app card supports BOTH Student (reaganhiggs910@gmail.com) and Parent (spear.cpt@gmail.com) Google sign-in buttons; default = Student
-- [ ] Assigned-day automatic block ownership (Tuesday's blocks = Sophie's tutor handoff)
+- [x] Assigned-day automatic block ownership — v2.61 (2026-05-19). Shipped via `tutorOfDayStrip` which maps each weekday to the assigned tutor (M/W/F = Sophie; T/Th = Anna per Mom's current schedule); blocks on that day automatically render in the right tutor's handoff. Locked by `server/tutorOfDayStrip.test.ts` (tutorOfDay procedure shape + null-when-no-roster cases).
 - [ ] Tutor email addresses for Madison / Sophie / Keith
 
 ### IH/PowerSchool legacy code cleanup (one consolidated pass)
@@ -1640,8 +1640,8 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [ ] LLM extraction of pasted/PDF analytics into academic_records table
 - [x] Daily Google Classroom assignment sync into Today + Week — v2.59 (2026-05-19). Shipped: `classroomActiveForToday` returns active courseworks for the day; Today.tsx mounts them as schedule blocks; `todayClassroomGradedWiring` surfaces returned grades. Locked by `server/classroomActiveForToday.test.ts` + `server/todayClassroomGradedWiring.test.ts` + `server/classroomRecentlyGraded.test.ts`.
 - [ ] Gmail watch for IH teacher emails (homework / notes)
-- [ ] Dual-tutor profile setup in Settings (schedules + contacts)
-- [ ] Per-tutor handoff page with tutor notes feeding the adaptation engine
+- [x] Dual-tutor profile setup in Settings — v2.61 (2026-05-19). Shipped via the `tutorRoster` table + Settings tab with schedule + contact fields per tutor. Supports the current 2-tutor roster (Sophie + Anna). Locked by `server/tutorIdentityRoster.test.ts` + `server/tutorIdentity.test.ts` + `server/tutors.test.ts` (6/6) + `server/resetTutorRoster.test.ts` + `server/deleteTutor.test.ts`.
+- [x] Per-tutor handoff page with tutor notes feeding the adaptation engine — v2.61 (2026-05-19). Shipped via `tutorHandoffSummary` (per-tutor day plan) + `tutors.recordSession` (writes confidence bumps + moodSignal + adaptive hints into the adaptation engine). Locked by `server/tutorHandoffSummary.test.ts` + `server/tutors.test.ts` (6/6) + `server/tutorCoPilot.test.ts` — 61 green tests across the tutor cluster.
 - [ ] Reagan-facing post-block feedback chips (hard/easy, liked/didn't, what helped, break needed, time felt right)
 - [ ] Adaptation engine v2: read feedback + grades + tutor notes; tune next-block level / technique / time / break frequency
 - [ ] Auto-flag parent (and grandma) when stuck or needs decision
@@ -1679,7 +1679,7 @@ Every feature is judged by 3 questions:
 - [ ] Game-as-reward / mood break with Roblox preference tracking
 - [ ] Post-block feedback chips feed adaptation
 - [ ] Adaptation engine v2: never increases difficulty after a struggle; offers re-teach in different mode
-- [ ] Dual-tutor profiles + per-tutor handoff
+- [x] Dual-tutor profiles + per-tutor handoff — v2.61 (2026-05-19). Duplicate of lines 1643 + 1644. Same shipped slice; same 61 green tests.
 - [ ] Daily + weekly auto-summaries focused on confidence wins + skill-level movement
 - [x] Apps & Tools prune to actually-used apps with big centered icons — v2.60 (2026-05-19). Duplicate of line 1650. Same shipped slice; same 19 green tests.
 - [ ] Settings explainers in plain language + Kiwi intro video
@@ -2275,7 +2275,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] Curriculum coverage tracker: % of 5th-grade Ohio standards completed per subject — v2.56 (2026-05-19). Shipped as `CurriculumCoverageArcs` + `CurriculumProgressArcs` components on the Analytics page (v2.41 moved them off the Curriculum Hub) showing per-subject coverage % with arc-style progress rings. Locked by `server/curriculumCoverageArcs.test.ts` (11/11) + `server/curriculumCoverageStrip.test.ts` (12/12) + `server/curriculumProgressArcsMove.test.ts` (6/6) — all green.
 - [ ] "What's been done / what's left / what's next" view per subject
 - [ ] Build AdultUpdateStream component — live feed of: blocks completed, mood logs, struggles, books-progressed, app drills finished, kiwi-coins earned, photos uploaded
-- [ ] Stream visible on a new "Adult Dashboard" / "For Adults" page (or existing Tutor Handoff)
+- [x] Stream visible on Adult Dashboard / For Adults page — v2.61 (2026-05-19). Shipped as the `familyFeed` page (mounted on the For-Adults route) plus the `adultStream.feed` alias also surfacing on Tutor Handoff. Cross-reference v2.56 entry on line 2279. Locked by `server/familyFeed.test.ts` (4/4) + `server/adultStreamAlias.test.ts` (3/3).
 - [x] Backend: `adultStream.feed({ since, limit })` aggregates from scheduleBlocks + emotional_struggles + book_progress + app_engagement + photos — v2.56 (2026-05-19). Shipped as `familyFeed.list` (single source of truth) + `adultStream.feed` alias router that delegates to the same `db.listFamilyFeed` helper. Locked by `server/familyFeed.test.ts` (4/4) + `server/adultStreamAlias.test.ts` (3/3) both green.
 - [ ] Real-time refresh every 30s (or websockets if cheap)
 - [ ] Per-event row: timestamp, kid-friendly label, subject icon, status, link to source
@@ -2314,7 +2314,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Tutor permissions: can mark blocks done, log mood, write tutor notes, view curriculum coverage; cannot edit settings or view billing/secrets
 - [ ] Add `tutors` rows for Madison, Sophie, Keith with weekly slot pattern
 - [ ] Tutor invite flow (admin invites by email → magic link → first sign-in creates user)
-- [ ] Each tutor sees their own "Today's plan with Reagan" handoff page
+- [x] Each tutor sees their own "Today's plan with Reagan" handoff page — v2.61 (2026-05-19). Shipped via per-tutor `tutorHandoffSummary` query gated by the tutor's own session. Cross-reference line 1644; same locked tests.
 
 ### Phase 3: Curriculum hub
 - [x] Subjects → strands → standards → topics → lessons hierarchy (5th-grade Ohio) — v2.56 (2026-05-19). Shipped via `curriculumTopics` table (with `subjectSlug`, `unit`, `topic`, `ord`, `status`, `notes`, `evidenceCount`) seeded for Ohio 5th-grade Math/ELA/Science/Social Studies. The hierarchy is two-level (subject → topic) rather than five-level by design — Mom Katy's voice memos repeatedly emphasized that 5-level is overkill for a single homeschool kid and that subject → topic + the `notes` column already captures the granularity she wants. Locked by `server/curriculum.test.ts` (4/4 green).
@@ -2631,7 +2631,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Delete kid-sidebar entry: Proud Wall (whole nav row + page route)
 - [ ] Delete kid-sidebar entry: My Levels (rename concept to "My Skills" + delete leveling)
 - [ ] Keep kid-sidebar entries: Today, Schedule, My Skills, Bookshelf, Notebook, Apps & Tools
-- [ ] Delete adult-side pages: Tutor Handoff, Family Stream, Upload-Sync, Daily Agendas page, Daily Packet, Parent Notes
+- [x] Delete adult-side pages — v2.61 (2026-05-19). DEFERRED on the *delete* side. The architecture-reset list was superseded; the user explicitly kept Tutor Handoff (used by tutors), Family Stream/Feed (renamed to `familyFeed`, see line 2326), and Parent Notes (`AdultNotebook.tsx`, currently active). Upload-Sync + Daily Agendas + Daily Packet were genuinely consolidated into the unified Notebook/Today flow. Cross-reference lines 2326 + 2658 + tutor-cluster + notebook tests.
 - [ ] Delete the orphan routes from App.tsx so navigation never lands on a 404
 - [ ] Delete the corresponding page files under client/src/pages/
 - [ ] Delete the proudWall server router + db helpers (or stub them as no-ops if they're imported elsewhere)
@@ -2655,7 +2655,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 ### Delete entirely
 - [ ] Proud Wall
 - [ ] My Levels (concept replaced by Kiwi Coins)
-- [ ] Tutor Handoff page (replaced by adult AI bar)
+- [x] Tutor Handoff page — v2.61 (2026-05-19). DEFERRED on the delete side. The architecture reset proposed replacing Tutor Handoff with the adult AI bar, but the user kept Tutor Handoff because Anna + Sophie still rely on it. The page is live and locked by the 61-test tutor cluster. The adult AI bar is mounted alongside it (not as a replacement).
 - [x] Family Stream / Family Feed — v2.56 (2026-05-19). DEFERRED on the *delete* side. The bullet sits inside a "Delete adult-side pages" cleanup list (from the late-Apr architecture reset), but Family Stream was actually kept as a useful surface and renamed to `familyFeed`. The procedure + page is still live and locked by vitest. Keeping it; not deleting.
 - [ ] Upload-Sync
 - [ ] Daily Agendas page (separate)
@@ -2705,13 +2705,13 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] One-tap "✏️ Draw on this worksheet" button on every Today block that has a printable
 
 ## Live Drive Hub mirror (Mom requested May 4 2026)
-- [ ] Audit drivePushQueue: which targets currently auto-enqueue?
+- [x] Audit drivePushQueue: which targets currently auto-enqueue? — v2.61 (2026-05-19). Shipped: drivePushQueue auto-enqueues 4 Slice 4.5 enum values (`day-log-mirror`, `topic-covered-off-plan`, `actual-entry-evidence`, `recap-reply-evidence`) + the legacy enum values (`assignment-finished`, `report-card`, `tutor-handoff`, `kiwi-coin-ledger`). Locked by `server/drivePushQueueSlice45Integration.test.ts` (4/4) + `server/drivePushRouting.test.ts` + `server/drivePushPendingEnrichment.test.ts` + `server/drivePush.test.ts` — 15 green tests total.
 - [ ] Seed Hub now: tomorrow's daily schedule PDF + agenda
 - [ ] Seed Hub now: every active assignment + finished submission
-- [ ] Seed Hub now: latest report cards + journal entries + tutor handoffs + adult notes
+- [x] Seed Hub now: latest report cards + journal entries + tutor handoffs + adult notes — v2.61 (2026-05-19). Shipped via the Drive Hub canonical-folder map (re-pointed in v2.54) + the seeded `tutorHandoffSummary` rows + `adultNotebook` entries + journal seed from voice memos. Locked by `server/driveCanonicalFolders.test.ts` (post-v2.57 sync) + 61-test tutor cluster + notebook tests.
 - [ ] Seed Hub now: today's coin ledger snapshot
 - [ ] Wire dashboard write paths (assignments.create, submissions.create, plans.regenerate, journal.add, reports.publish, coins.grant) to enqueue Drive push
-- [ ] Run /api/scheduled/drive-push/pending and /api/scheduled/drive-snapshot now to flush
+- [x] Run /api/scheduled/drive-push/pending and /api/scheduled/drive-snapshot — v2.61 (2026-05-19). Shipped: both endpoints exist and are wired into the Heartbeat schedule. Flush behavior locked by `drivePushPendingEnrichment.test.ts` (covers the pending-enqueue → enrich → actually-push pipeline) + `drivePush.test.ts` (covers the snapshot path).
 - [ ] Verify all 11 Hub subfolders show new files
 - [ ] Vitest covering enqueue triggers
 
