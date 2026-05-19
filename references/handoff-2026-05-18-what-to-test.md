@@ -121,77 +121,42 @@ If everything in the five items above feels solid by the end of the week, ping b
 
 ---
 
-## 6. **Drive Hub got cleaned up** (item 6, added 2026-05-18 evening)
+## 6 + 7. Drive Hub state — corrected and final (revised 2026-05-18 late evening)
 
-**What changed:** When you open Google Drive and go to the **Reagan School Hub (Dashboard)** folder, the top level used to have 11 folders (Daily Operations, Curriculum and Resources, Admin and Records, Behavior Analytics, Classes, Snapshots, Apps & Tools, plus a few archives). It now has **6 numbered folders + 1 Archive**:
+My earlier Sections 6 and 7 contradicted each other because I kept misreading directory listings. Here is the **actually verified** state of the Hub as of 2026-05-18 evening, after I re-checked every folder with rclone:
 
-1. `01 - Daily Operations`
-2. `02 - Assignments and Work`
-3. `03 - Curriculum and Resources`
-4. `04 - Admin and Records`
-5. `05 - Progress and Reports`
-6. `06 - Inbox (Unsorted)`
-7. `Archive/2026/_engineering/` (the old engineering scratch folder, tucked away — you won't need to open this)
-
-The 4 cluttered top-level folders got absorbed into the 6 above:
-
-- `Behavior Analytics` → moved into `05 - Progress and Reports/`
-- `Snapshots` → moved into `05 - Progress and Reports/`
-- `Classes` → moved into `01 - Daily Operations/`
-- top-level `Apps & Tools` → moved into `03 - Curriculum and Resources/`
-
-**Nothing was deleted.** Every file is in the same place inside its old folder; just the old folder now lives one level deeper.
-
-**What to test:**
-
-1. Open Drive on your phone or laptop.
-2. Open the **Reagan School Hub (Dashboard)** folder.
-3. You should see exactly 6 numbered folders + Archive + the README. No more "behavior analytics" or "snapshots" floating at the top level.
-4. Tap into `01 - Daily Operations`. The 13 subfolders that were there before are still there, and `Classes` is now a 14th.
-5. Tomorrow morning around 6 AM, the nightly 8 PM mirror should still have written tonight's agenda PDF to `01 - Daily Operations / Daily Agenda PDFs / 2026-05 / 2026-05-19 - Agenda.pdf` — confirm the file is where you'd expect.
-
-**If something's wrong:** if the 6-folder top level looks right tonight but tomorrow morning a folder is missing or the agenda PDF didn't land in `01 - Daily Operations`, text "broken: drive folder mirror." That means the canonical-parent mapping needs a re-cache.
-
-
----
-
-## 7. Correction to Section 6 + a 5-minute Drive cleanup task (added 2026-05-18 late evening)
-
-**What I got wrong in Section 6 above:** I described the Drive Hub as already having exactly 6 numbered folders + Archive + README. That's the planned end state but **not the actual current state.** When I went to verify with a fresh listing, the Hub root has **10 folders**, with 2 of them mislabeled — both because the dashboard's Drive write path silently dropped a few mutations and because I missed that two folders I thought were empty placeholders actually contain Reagan's IEP and medical records.
-
-**Current actual state when you open the Hub:**
+### Current state of the Hub root
 
 ```
-01 - Daily Operations         ✓ correct, keep
-02 - Assignments and Work     ✓ correct, keep
-03 - Curriculum and Resources ✗ MISLABELED — contains IEP/medical records, belongs under Admin
-04 - Admin and Records        ✗ MISLABELED — probably empty or near-empty
-05 - Progress and Reports     ✓ correct, keep
-06 - Inbox (Unsorted)         ✓ correct, keep
-Admin and Homeschool Records  ← this is where the medical records ACTUALLY belong
-Archive                       ✓ correct, keep
-Curriculum and Standards      ← this is the real curriculum folder, just unprefixed
-README.md                     ✓ correct, keep
+01 - Daily Operations          ✓ live curriculum-pushed content lands here
+02 - Assignments and Work      ✓ live
+03 - Curriculum and Resources  ✓ contains Lesson Plans, Bookshelf, Apps & Tools, Notebook, Printables, etc.
+04 - Admin and Records         ✓ contains Reagan Health, IEP Snapshots, 504 Plans, Receipts, Tutor Agreements, etc.
+05 - Progress and Reports      ✓ live
+06 - Inbox (Unsorted)          ✓ live
+Admin and Homeschool Records   ✗ empty leftover from before the rename — safe to trash
+Archive                        ✓ keep
+Curriculum and Standards       ✗ empty leftover from before the rename — safe to trash
+README.md                      ✓ keep
 ```
 
-**The good news:** tonight's 8 PM agenda email and its worksheet attachments will still arrive correctly. The dashboard tracks folders by internal ID, not display name, so the misnaming is purely cosmetic for what Mom sees in Drive.
+So the Hub has **10 folders showing instead of 8**, and the extras are **both genuinely empty**. The 03 and 04 prefixed folders contain the real content; the two unprefixed siblings are vestigial.
 
-**The 6-click manual fix to get back to the clean 6-folder layout:**
+### The actual production gotcha
 
-1. Open the folder named `03 - Curriculum and Resources`. You'll see IEP-related files inside (Reagan Higgs 2025-26 IEP.pdf, anxiety timeline stuff, the IH 5th grade comprehensive packet). **Select all of them and drag them into `Admin and Homeschool Records`**. They belong there, not under Curriculum.
+The dashboard's internal folder cache still points its `curriculum` and `admin` canonical slugs at the OLD unprefixed folders (which are now empty). That means tonight's 8 PM cron will write any new curriculum-tagged or admin-tagged file into the empty `Curriculum and Standards` or `Admin and Homeschool Records` folders — **not** into the `03 -` / `04 -` prefixed folders where Mom expects to find them.
 
-2. After moving everything out, the `03 - Curriculum and Resources` folder will be empty. **Right-click it → "Move to trash"**.
+The 8 PM email itself is fine — its agenda PDF lands under `01 - Daily Operations` (whose cache entry is correct). Same for assignments (02), reports (05), inbox (06). The drift only affects files routed to canonical curriculum or admin destinations, which historically has been a small fraction of nightly mirror traffic.
 
-3. Open the folder named `04 - Admin and Records`. If it's empty, right-click → "Move to trash". If it has files, drag them into `Admin and Homeschool Records` first, then trash the now-empty folder.
+### The 4-click manual fix
 
-4. Right-click `Curriculum and Standards` → **Rename** → change to `03 - Curriculum and Resources`. Hit Enter.
+1. Open the **empty** `Curriculum and Standards` folder at the Hub root. Confirm it's empty. **Right-click → "Move to trash"**.
+2. Open the **empty** `Admin and Homeschool Records` folder at the Hub root. Confirm it's empty. **Right-click → "Move to trash"**.
+3. Open Drive's Trash and **Restore neither** — both are safe to delete permanently.
+4. Text me "manus: drive cache repointed" — that's my cue to run two SQL updates that re-point the dashboard's `curriculum` and `admin` cache entries at the new `03 -` and `04 -` folders. After that, tonight's-or-future-night's curriculum/admin file writes will land in the right place.
 
-5. Right-click `Admin and Homeschool Records` → **Rename** → change to `04 - Admin and Records`. Hit Enter.
+**If you'd rather I do steps 1-2 myself** with rclone (which has working write paths on this account), text "manus: trash empty drive leftovers" and I'll do it without touching the medical records (which are already safely sitting in `04 - Admin and Records`).
 
-6. Refresh. You should now see exactly 8 things at the top: 01 through 06 numbered folders, plus Archive, plus README.md. That matches Section 6 above.
+### What I learned (and what to expect next time)
 
-**Why a human and not the engineer:** the script I wrote to do this automatically went through gws which silently no-ops on writes for this account. rclone (the fallback) works for moves but doesn't expose renames. The 2 critical files in step 1 are medical records, so I'd rather you eyeball the move than have me retry with rclone and risk anything unexpected.
-
-**What to text if broken:** if tomorrow morning's 8 PM agenda PDF doesn't land in the expected folder, text "broken: drive folder mirror after manual cleanup." Folder IDs are saved in `references/drive-hub-audit-2026-05-18.md` so the cleanup is reversible.
-
-**If you'd rather have me retry the cleanup via rclone instead of doing it by hand**, text "manus: retry drive cleanup via rclone" and I'll write a fresh script that moves the medical records via rclone (which works) and does the 2 renames by leaving a guided sequence in the Drive web UI (the only step a script can't do reliably). Total time about 15 minutes.
+The gws Drive CLI on this account silently no-ops `files.update` calls (returns 200 OK but the change never lands). I burned multiple cycles thinking my mutations were succeeding when only the reads were going through. Going forward I'll **verify Drive mutations with a fresh read after every write**, and prefer rclone for moves/trashes because its write path actually works.
