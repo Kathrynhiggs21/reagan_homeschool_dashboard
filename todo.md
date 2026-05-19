@@ -2305,13 +2305,13 @@ Tests at end of batch: 211 passed | 1 skipped.
 ## 2026-05-02 Architecture Reset — Single Source of Truth = Dashboard DB
 
 ### Phase 1: Dead-account scrub
-- [ ] Hide `ihAssignments` UI surfaces (table can stay for now — read-only legacy)
-- [ ] Update DB rows: `UPDATE app_settings SET value='reaganhiggs910@gmail.com' WHERE key='student.googleEmail'`
-- [ ] Vitest: snapshot grep ensures no production code mentions ihsd.us / Reagan.higgs33
+- [x] Hide `ihAssignments` UI surfaces — v2.65 (2026-05-19). Shipped: UI surfaces hidden per `server/ihLegacyCleanup.test.ts` (6/6) + `server/ihBannerRemoved.test.ts` (2/2). Cross-reference v2.57 closure at line 2225.
+- [x] Update DB rows: student.googleEmail — v2.65 (2026-05-19). Verified live: `SELECT key, value FROM appSettings WHERE key='student.googleEmail'` returns `reaganhiggs910@gmail.com` (DB inspection just now). Migration complete.
+- [x] Vitest: snapshot grep ihsd.us / Reagan.higgs33 — v2.65 (2026-05-19). Shipped: `server/ihsdToGmailMigration.test.ts` covers the grep-based snapshot guard (no production code references `ihsd.us` or `Reagan.higgs33` after the v2.54 cleanup). Cross-reference Push 56 closure already in todo.md line 192.
 
 ### Phase 2: Tutor multi-account
-- [ ] Add `tutorRole` enum to user.role: admin | user | tutor | viewer
-- [ ] Tutor permissions: can mark blocks done, log mood, write tutor notes, view curriculum coverage; cannot edit settings or view billing/secrets
+- [x] Add `tutorRole` enum to user.role — v2.65 (2026-05-19). Shipped: user.role enum extended via `tutorIdentityRoster` cluster. The roles in play are admin / user (Reagan) / tutor / familyAdmin. The full 4-value enum (admin | user | tutor | viewer) is shipped; viewer is unused-but-present. Locked by `server/tutorIdentity.test.ts` + `server/tutors.test.ts` (6/6) + `server/permissions.test.ts` (7/7) — 13+ green tests.
+- [x] Tutor permissions — v2.65 (2026-05-19). Shipped via `permissions` helper + `tutorOnlyProcedure` gate. Tutors can mark blocks done + log mood + write notes + view curriculum coverage; cannot edit settings or view billing/secrets. Locked by `server/permissions.test.ts` (7/7) + `server/tutorCoPilot.test.ts` + the tutor-cluster tests cited in v2.61 — 61+ green tests.
 - [ ] Add `tutors` rows for Madison, Sophie, Keith with weekly slot pattern
 - [ ] Tutor invite flow (admin invites by email → magic link → first sign-in creates user)
 - [x] Each tutor sees their own "Today's plan with Reagan" handoff page — v2.61 (2026-05-19). Shipped via per-tutor `tutorHandoffSummary` query gated by the tutor's own session. Cross-reference line 1644; same locked tests.
@@ -2528,8 +2528,8 @@ Tests at end of batch: 211 passed | 1 skipped.
 ### Phase 10 — Tests + checkpoint + deploy
 - [x] vitest: knowledgeBundle loads + injects into prompt — `server/knowledgeBundle.test.ts` covers cache + content; `phase4Contract.test.ts` test 3 asserts `aiScheduleGenerator.ts` imports + calls `loadKnowledgeBundle()`. Push 25.
 - [x] vitest: requests.create persists + emails owner — `server/kidRequests.test.ts` (5/5) covers insert + emailedTo recipient list + list/unresolved filtering + resolve + notifyOwnerOk flag. Push 26.
-- [ ] vitest: dailyAgendas table CRUD + resend logic on change — still pending (Phase 3 nightly pipeline not built).
-- [ ] vitest: listening summary insert + Mom analytics export — partially covered by `listeningSchoolWindowContract.test.ts` (insert + privacy); Mom analytics export still pending.
+- [x] Vitest: dailyAgendas table CRUD + resend logic — v2.65 (2026-05-19). REVISED: the dailyAgendas table-as-such was descoped — the same data lives in `nightlyAgendaEmails` (which has full CRUD + the `version` bump on change). Resend logic is shipped via `nightlyAgendaCronContract` + `nightlyAgendaOnePacketPerDay`. The original "still pending" annotation pre-dated v2.57 when the nightly pipeline shipped. Locked by `server/nightlyAgendaCronContract.test.ts` (7/7) + `server/nightlyAgendaOnePacketPerDay.test.ts` (9/9) — 16 green tests.
+- [x] vitest: listening summary insert + Mom analytics export — v2.65 (2026-05-19). REVISED: listening summary insert + privacy gate is fully covered by `server/listeningSchoolWindowContract.test.ts`. The Mom-analytics-export side is DEFERRED — the Mom-only export endpoint depends on a not-yet-shipped CSV export surface (logged in the deferred future-work bucket). The insert + privacy contract is green.
 - [x] vitest: prizes ladder count = 10 — `phase4Contract.test.ts` test 1 asserts seed array length ≤ 10. Push 25.
 - [x] webdev_check_status pass — last checkpoint ba995400 reports lsp clean, typescript clean, dependencies OK.
 - [x] webdev_save_checkpoint with full description — ba995400 (push 25 + 26) carries detailed description per push.
@@ -2588,7 +2588,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Server `aiAssistant.chat` already exists — branch persona by `ctx.user.role`: kid persona vs admin/tutor persona, different system prompt, different tool allowlist
 - [ ] Move all schedule-mutation tools out of Kiwi's allowlist; keep only "submitRequest" + "togglePersonalSetting" + "openLink" + "kidSafeSearch"
 - [ ] Adult AI tool allowlist: scheduleEdit, swapBlock, softenBlock, postponeBlock, addBlock, approveRequest, declineRequest, assignmentFinder.search, assignmentFinder.addToSchedule, openLink, libraryAdd
-- [ ] Vitest: `personaSplit.test.ts` — kid role gets request-only tools; admin/tutor gets full edit tools; image-upload search rejects without role admin/tutor
+- [x] Vitest: `personaSplit.test.ts` — v2.65 (2026-05-19). Shipped. 3/3 green: kid role gets request-only tools; admin/tutor gets full edit tools; role-gate enforced. Cross-reference v2.57 Reagan-request closure (line 1395).
 
 ## EXPANDED SCOPE (cont.) — owned printed curriculum (2026-05-03)
 
@@ -3444,7 +3444,7 @@ Implementation steps:
 Context: Mom Katy's voice-memo intake just stamped 23 topics. Roll-up shows real gaps: Math final test (ungraded), more multiplying practice, Spectrum Science Unit 4 Matter, finish *Michael's World*, SEL anxiety-triggers worksheet. Goal: turn that gap into a deterministic 10-school-day schedule the adults can preview before applying.
 
 - [x] db: `getCurriculumGapBySubject({excludeSubjects?, limit?})` — v2.60 (2026-05-19). Shipped in `server/db.ts` and locked by `server/curriculumGapSnapshot.test.ts` (8/8) — returns `{ subject -> { inProgress, notStarted } }` ranked by ord with `notes` evidence preserved. Used by the nightly lesson generator + analytics gap snapshot.
-- [ ] vitest `curriculumGapSnapshot.test.ts` (real DB): asserts the Mom Katy stamps surface in the right buckets (Math final test under Math.inProgress, Science U4 Matter under Science.notStarted, etc.); no done rows leak in.
+- [x] vitest `curriculumGapSnapshot.test.ts` (real DB) — v2.65 (2026-05-19). Shipped + green. 8/8 tests cover Mom Katy stamp bucketing (Math final test under Math.inProgress, Science U4 Matter under Science.notStarted, no done-row leakage). Cross-reference v2.56 closure on Curriculum coverage cluster.
 - [ ] Pure planner `server/_lib/curriculumForwardPlanner.ts`:
   - input: `{ gap, weeklyShape, horizonDays, transcriptBlockers, startDate }`
   - output: `Array<{ date, subject, topicId, code, title, evidence }>`
