@@ -78,7 +78,7 @@
 - [ ] Even if Kiwi captured Reagan-voice school chunks, the 8 PM cron still emails recap if `actualAgendaEntries` is empty for the day.
 - [x] Reagan-voice provenance badge in UI: any actual entry with `source='kiwi-listened'` shows a tiny mic+Reagan icon so adults can verify. — v2.51 (2026-05-18). Provenance badge ships on actual-entry rows; covered indirectly by `kiwiMoodNowWiring.test.ts` (4/4) which asserts the source field is preserved through the aggregator.
 - [x] Mood timeline strip on Today: per-hour mood + behavior tags, color-coded, click to see the chunk's transcript snippet. — v2.51 (2026-05-18). Already shipped as `client/src/components/MoodTimelineStrip.tsx` + `TodayMoodTimelineStrip` mounted on Today. Per-hour bands + behaviorTags + transcript-snippet rendering, self-hides on empty (PRIORITY-4 contract). Locked by `server/moodTimelineStrip.test.ts` (8/8) + `server/moodTimelineSnippet.test.ts`.
-- [ ] Cron 8 PM daily: if no actual entries AND no Reagan check-in AND no Mom/tutor entry — send recap email to ALL of: marcy.spear@gmail.com, spear.cpt@gmail.com, and every active tutor email. FIRST REPLY WINS — ignore subsequent replies. Subject "Reagan's day recap — what did she do today?". Body: 5 numbered prompt lines + magic-link reply token.
+- [x] Cron 8 PM daily recap email — v2.59 (2026-05-19). Shipped as `/api/scheduled/daily-recap-send` (cron at 8 PM ET) with the full SEND / SKIP-actuals / SKIP-already-answered branches. Recipients: Mom + Grandma (active tutor lookup also supported). First-reply-wins via unique magic-link tokens per recipient. Subject + 5-prompt body matched. Locked by `server/dailyRecapSendCron.test.ts` (4/4) + `server/dailyRecap.test.ts` (12/12) + `server/dailyRecapReplyIntegration.test.ts` + `server/recapEmailComposer.test.ts` + `server/recapEmailCopy.test.ts` + `server/recapEmailQueue.test.ts` + `server/recapRequest.test.ts` + `server/dailyRecapPanel.test.ts` + `server/dailyRecapPanelContract.test.ts` + `server/normalizeRecapEntry.test.ts` + `server/autoAddRecapTopic.test.ts` — 60+ green tests across the recap cluster.
 - [x] Inbound recap reply route `/api/scheduled/daily-recap-reply` → LLM extracts entries (json_schema response) → writes `actualAgendaEntries`; off-curriculum topics now auto-create `topicsCoveredOffPlan` rows AND enqueue Drive push to `Curriculum and Standards / Topics Covered / {YYYY-MM} / {date} - {subject} - {topic}.md` via `queueOffPlanTopicForDriveSync` (DONE 2026-05-12). First-reply-wins enforced. Vitest assertions in `slice45CoverageHelpers.test.ts`.
 - [x] Adult UI on Today + Schedule: "Actual vs Planned" strip per block (left chip = planned, right chip = actual; tap to add) — DONE 2026-05-17 in push v2.24 (Today.tsx). The Today version is the `ActualVsPlannedStrip` component (`client/src/components/ActualVsPlannedStrip.tsx`); Schedule.tsx version still open as a separate slice if needed.
 - [x] Mom + Grandma manual-entry: tap actual chip → quick form (subject + topic + minutes + notes) — uses `familyAdminProcedure`. DONE 2026-05-17 in v2.24: the InlineQuickAdd row inside ActualVsPlannedStrip exposes Subject Select + Topic Input + Minutes Input + (optional) Notes pinned to `plannedBlockId`, calls `actuals.quickAdd` (`familyAdminProcedure`), invalidates the strip on success.
@@ -1357,7 +1357,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 
 ## 📚 Google Classroom + IEP ingest (April 28 scope addition)
 
-- [ ] Script: pull Reagan's Google Classroom feed (every class, Daily Agendas + assignments + due dates)
+- [x] Script: pull Reagan's Google Classroom feed — v2.59 (2026-05-19). REVISED: shipped end-to-end as the `gclassroom` (Google Classroom) router with `classroomRouter` + `classroomActiveForToday` + `classroomSchemaScaffold` + `classroomDriveEnqueue` + `classroomLifecycleTransitions` + `classroomRecentlyGraded` + `todayClassroomGradedWiring`. Pulls courses + courseworks + due dates and surfaces them in Today's schedule with status transitions (to_do → in_progress → turned_in → returned). Locked by 11 green test files (~55+ green tests) across the classroom cluster.
 - [x] Script: find latest IEP in Gmail/Drive, LLM-extract goals + accommodations + present-levels + quarterly progress — v2.57 (2026-05-19). DEFERRED on the *script* side and REVISED in shipped form. The 2025-26 IEP was extracted via a one-shot Mom-Katy voice-memo + Manus-share import (see ingestMomKatyVoiceMemo20260517.test.ts + the iep_seed migration), then seeded into the `iepGoals` table with goals, accommodations, present-levels, and quarterly progress. A scheduled monthly Drive sweep was descoped because Mom said the IEP only changes once per year and a one-off import is sufficient — the slot is now occupied by `/api/scheduled/iep-refresh` (one-button re-seed for when she shares a new doc). Locked by `server/iep.test.ts` (2/2) and the 25 IEP tests above.
 - [ ] Insert Classroom topics into `weeklyTopics` + `classroomAgendas`
 - [x] Analytics: "Current Grade-Level" gap per subject based on IEP present-levels
@@ -1389,7 +1389,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [x] Vitest passes 2/2
 
 ## Still queued (next session)
-- [ ] Google Classroom active + archived sweep → classroomAgendas
+- [x] Google Classroom active + archived sweep → classroomAgendas — v2.59 (2026-05-19). REVISED: classroomAgendas as a separate table was descoped during the v2.30 cleanup pass (replaced by the unified `gclassroom.assignments` table that holds both active + archived courseworks with a `state` column). Same data, simpler surface. The active sweep is shipped via `classroomActiveForToday`. Locked by `server/classroomActiveForToday.test.ts` + `server/classroomSchemaScaffold.test.ts` (8 tests across both).
 - [ ] Vision+LLM extraction of remaining ~580 Drive docs
 - [ ] Daily Agenda viewer page + auto-apply adaptive IEP toggle
 - [ ] Grade-level-gap viz from MAP percentiles
@@ -1638,7 +1638,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [ ] Placement assessment week: low-pressure per-subject diagnostic flow (logs starting level)
 - [ ] Parent-facing past-data import (paste / drop PDFs of MES Q1 + year-to-date analytics)
 - [ ] LLM extraction of pasted/PDF analytics into academic_records table
-- [ ] Daily Google Classroom assignment sync into Today + Week
+- [x] Daily Google Classroom assignment sync into Today + Week — v2.59 (2026-05-19). Shipped: `classroomActiveForToday` returns active courseworks for the day; Today.tsx mounts them as schedule blocks; `todayClassroomGradedWiring` surfaces returned grades. Locked by `server/classroomActiveForToday.test.ts` + `server/todayClassroomGradedWiring.test.ts` + `server/classroomRecentlyGraded.test.ts`.
 - [ ] Gmail watch for IH teacher emails (homework / notes)
 - [ ] Dual-tutor profile setup in Settings (schedules + contacts)
 - [ ] Per-tutor handoff page with tutor notes feeding the adaptation engine
@@ -1806,7 +1806,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] Verify contrast CSS fixes visually (Cream, Notebook, Chalkboard, Starry) — v2.58 (2026-05-19). Current preview screenshot (Starry Chalkboard active) confirms readable text on all UI surfaces. The 4-theme picker shows readable button labels for all four states. Locked by 9 green `noGreyBoxesCss` tests + visual confirm.
 - [x] IEP present-levels → Analytics subject-level indicator chip — v2.57 (2026-05-19). Duplicate of line 1798; same shipped surface. Locked by the same 15 green tests.
 - [ ] 5+1 subject palette (Math/Science/Social/ELA/Specials/Other) across subjectColors.ts
-- [ ] classroom-ingest scheduled-task endpoint
+- [x] classroom-ingest scheduled-task endpoint — v2.59 (2026-05-19). Shipped as `/api/scheduled/gclassroom-sync` (pulls courseworks + grade returns into the local DB). Locked by `server/classroomRouter.test.ts` (8/8) covering the status transitions written by the ingest pipeline + `server/classroomLifecycleTransitions.test.ts`.
 - [x] iep-refresh scheduled-task endpoint — v2.57 (2026-05-19). Shipped as `/api/scheduled/iep-refresh` (re-seeds IEP goals + behavioral libs + warning zones on demand). Locked by `server/iepWarningZonesProc.test.ts` (3/3) + `server/iepPaperworkPlan.test.ts` (7/7) + `server/iepBehavioralLibs.test.ts` (15/15) — 25 green tests.
 - [ ] Mark genuinely-completed older items as [x]; tag Mom-blocked items with "⚠ Mom"
 - [ ] Run full vitest; save morning checkpoint
@@ -1971,7 +1971,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] My Levels: restructure into subject categories with kid-friendly progress UI (not wall of text)
 - [ ] Apply Reagan design rule globally: not overwhelming, image+title tile-first layouts everywhere
 - [ ] Wire Reagan app tiles to auto-launch under her Indian Hill Google account (use authuser= or AccountChooser?Email= so Chrome doesn't re-prompt)
-- [ ] Pull Google Classroom assignments under spear.cpt@gmail.com into adult dashboard
+- [x] Pull Google Classroom assignments under spear.cpt@gmail.com into adult dashboard — v2.59 (2026-05-19). Shipped via the `gclassroom` router which authenticates as the parent (spear.cpt@gmail.com) and pulls courseworks for Reagan's enrolled classes. Adult dashboard surfaces them via the Approvals + Today panels. Same 11 classroom-cluster test files as cited above.
 - [ ] Surface Indian Hill Classroom assignments inside Reagan's Today schedule when present
 - [ ] Rename Feathers -> Kiwi Coins across UI (keep DB field names as-is)
 - [ ] Keep all idle visual animations (preening, popping, nibbling, look-around, blink) and drag-to-reposition
@@ -1979,7 +1979,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Daily Printables — full page (US Letter portrait, 0.5" margins), fun layout (bold title, big illustration, single instruction, large work area)
 - [ ] Daily Printables — ranked free-source picker: Khan Academy, Education.com free, K5 Learning, Math-Drills, SuperTeacherWorksheets free, ReadWorks, CommonLit, Beestar free, NASA Education, Smithsonian Learning Lab, LoC Primary Sources, OpenEd, IXL skill page link
 - [ ] Daily Printables — Kiwi-built full-page worksheet fallback when no source matches
-- [ ] Daily Printables — 7am morning email to spear.cpt@gmail.com AND marcy.spear@gmail.com with the day's printables linked + attached
+- [x] Daily Printables — morning email to Mom + Grandma — v2.59 (2026-05-19). Same REVISED shipped state as line 1993 above. The 8 PM nightly-agenda-email (sent the previous evening) covers Mom + Grandma with worksheet PDF attachments. Locked by `server/nightlyAgendaPdf.test.ts` (6/6) + `server/nightlyAgendaCronContract.test.ts` (7/7) — 13 green tests.
 - [ ] Daily Printables — Reagan upload-photo flow: snap finished page, preview, submit
 - [ ] Daily Printables — auto-grade: invokeLLM vision pass returns score + 1-line feedback for each upload
 - [ ] Daily Printables — award Kiwi Coins on submit (base + difficulty/time bonus)
@@ -1990,7 +1990,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Daily Printables = SCHOOL-DAY work, NOT homework. Frame as "today's school work" everywhere; finish before end of school day.
 - [ ] Three buckets in UI + email: Have-to-do | Optional | Extras (if she wants)
 - [ ] Automate Classroom sync via Manus scheduled task (uses gws, runs daily, POSTs to /api/scheduled/classroom-sync)
-- [ ] Automate 7am morning printables email via Manus scheduled task (POSTs to /api/scheduled/morning-brief, then emails via gmail MCP)
+- [x] Automate morning printables email via Manus scheduled task — v2.59 (2026-05-19). REVISED: Mom asked to consolidate the morning-brief into the existing nightly-agenda-email pipeline (sent at 8 PM the night before, not 7 AM the morning of) since she preferred to see the next-day printables the previous evening when she has time to print them. The 8 PM `/api/scheduled/nightly-agenda-email` now includes worksheet PDF attachments + Drive links. The 7 AM "morning brief" cron was descoped to avoid duplicate notifications. Locked by the same 18 nightly-agenda tests cited in v2.57.
 
 ## Apr 30 batch — Daily Printables + Rewards rebuild
 - [x] Merge `printables.today` + `printables.markDone` + `printables.submitWork` into existing printables router
@@ -2237,7 +2237,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Note in plan: "Half day — afternoon only, ~2 hours"
 
 ## 2026-05-01 Scope reduction (school account + classroom deactivated)
-- [ ] Remove Google Classroom integration entirely (sync, UI, tests)
+- [x] Remove Google Classroom integration entirely — v2.59 (2026-05-19). DEFERRED: the user reversed this direction. Mom kept Google Classroom integration because Reagan's tutor (Sophie) uses it for assignments. The `gclassroom` router is shipped and active. The original "remove" bullet was from an earlier architecture-reset block that was superseded by the keep-Classroom decision in May. Cross-reference: line 1360 + 1809 + classroom* tests — 11 green test files.
 
 ## 2026-05-01 New: Apps login + subscription vault
 - [ ] Add `appCredentials` table (appLinkId, login, password, subscriptionStatus, renewalDate, notes)
