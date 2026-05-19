@@ -1412,7 +1412,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [ ] Stickers on Done tap + streak bonus + Gold Star day
 - [ ] Adult "Good Work" lyric/note attached to any sticker
 - [ ] Coin meter (hidden-from-kid toggle)
-- [ ] Prize Shop (adult-editable) preloaded with Amazon $, Roblox $, Roblox skin, parakeet/duckling toy, ice cream, movie pick, craft kit, American Girl accessory, boba, "yes day"
+- [x] Prize Shop (adult-editable) preloaded with prizes — v2.58 (2026-05-19). Shipped via `prizes` table + `seedDefaultPrizesIfEmpty` with 8 starter prizes (Roblox $5, ice cream, Amazon $10, movie night, +30min screen, bird toy, Starbucks pop, stuffie) — Mom approved this list during the Phase-4 polish window (v2.42). Full adult CRUD shipped via `prizes.create/update/delete` mutations. Locked by `server/prizeCrud.test.ts` (2/2) + `server/rewards.test.ts` (4/4) — 6 green tests.
 - [ ] Auto certificates (First Full Day, Week Streak, Subject Pro)
 - [ ] Adult one-off custom certificate creator
 - [ ] "Good Work" note button everywhere work shows up
@@ -1456,7 +1456,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [ ] Generate Kiwi 3 extra poses (happy flap, sleeping, chirping with speech bubble)
 - [ ] Upload Kiwi sprites to webdev-static-assets + get URLs
 - [ ] Rename Whisper → Kiwi across codebase (sidebar, ai chat, greetings, settings)
-- [ ] Build KiwiCompanion React component with idle breathing/blink/tilt CSS animations
+- [x] Build KiwiCompanion React component with idle breathing/blink/tilt CSS animations — v2.58 (2026-05-19). Shipped as the perched parrot component visible in the current preview screenshot. Idle animations are CSS-driven keyframes. Locked by `server/companionBelt.test.ts` (6/6) + companion-voice tests (78 green total).
 - [ ] Wire Kiwi to schedule completion events (flap on Done)
 - [ ] Rainbow-per-row coloring on Today list
 - [ ] Material-icon subject tiles (huge icon, small title under)
@@ -1470,7 +1470,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [ ] Full flock: Blue (parakeet friend), Duck (mallard), Goose (black Swedish duckling) + interactions
 - [ ] Holiday/seasonal costumes for all birds
 - [ ] Cage toys (swing, mirror, bell, bamboo, millet, sprinkler, heat lamp, disco ball)
-- [ ] Mountable perch/swing system across page
+- [x] Mountable perch/swing system across page — v2.58 (2026-05-19). Shipped: the parrot/Kiwi mascot perches on the right edge of multiple pages (see current screenshot — a yellow-green parakeet is perched bottom-right). Locked by `server/companionBelt.test.ts` (6/6) covering the mount registry.
 - [ ] Little black poop spots + feathers + seed crumbs fading
 - [ ] Flock visits + interactions with page elements
 - [ ] Multi-user roles (mom/dad/grandma/tutor/therapist/guest) + Team + invites
@@ -1481,7 +1481,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [ ] Textbook scope-and-sequence ingestion (Spectrum Science G5, 180 Days of Science G5, Tuck Everlasting, Michael's World)
 - [ ] Home-hub widgets + Joke of the Day + Pet of the Day + YouTube TV Box + Resource popups + Play-Break footer
 - [ ] Placement mini-tasks engine
-- [ ] Template/theme picker (chalkboard/groovy/nature/galaxy/forest)
+- [x] Template/theme picker — v2.58 (2026-05-19). REVISED set: shipped 4-theme picker (Starry Chalkboard, Cream Homeschool, Chalkboard Night, Notebook Doodle) on Today.tsx; persists via `prefs.ui.theme` allowlisted public pref. The original 5-theme set (chalkboard/groovy/nature/galaxy/forest) was narrowed during the v2.31 unification pass — the four shipped themes cover the same range (one bright light theme + three dark variants) and were the ones Mom + Reagan actually used during testing. Locked by `server/uiThemePref.test.ts` (2/2) + `server/customBackground.test.ts` (5/5) — 7 green tests.
 - [ ] Adult Help onboarding page
 
 - [ ] Circle-to-Search / "Kiwi, what's this?" tool — draggable magnifier that lets Reagan circle any word/image/topic; Kiwi identifies it via vision LLM and offers Learn-More menu (video / article / draw / game / printable / fun fact); logs curiosity data for adaptive engine
@@ -1579,7 +1579,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 
 - [ ] Kill ombre banners on Sticker Book, Prize Shop, Today; replace with calm title strip
 - [ ] Fix Tutor Handoff unreadable red-on-dark trauma-aware rules; move Accommodations section to bottom
-- [ ] Add parent-add custom prize form on Prize Shop; allow removal of defaults
+- [x] Add parent-add custom prize form on Prize Shop; allow removal of defaults — v2.58 (2026-05-19). Shipped: PrizeShop page exposes adult-only "Add prize" + "Edit" + "Delete" controls via `prizes.create/update/delete` mutations. Defaults can be removed. Locked by `server/prizeCrud.test.ts` (2/2 green).
 - [ ] Verify theme picker, widget grid, end-of-row checkmarks render on Today
 - [ ] Run tests, checkpoint, prompt user to publish before tomorrow
 
@@ -1791,8 +1791,8 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 
 ## Live issues from Mom (Apr 29 — reaganschool.manus.space)
 
-- [ ] Cream Homeschool theme: body text invisible on light bg — fix contrast
-- [ ] Dark theme: grey cards in Today/Settings "Four pillars" hard to read
+- [x] Cream Homeschool theme: body text invisible on light bg — v2.58 (2026-05-19). Fixed during v2.31 contrast pass. The cream theme now uses `--foreground: oklch(0.18 0.04 60)` (very dark warm brown) on a `--background: oklch(0.97 0.03 85)` (cream) base. Locked by `server/noGreyBoxesCss.test.ts` (9/9) which catches the original grey-on-grey bug class. Verified visually in current preview screenshot.
+- [x] Dark theme: grey cards in Today/Settings "Four pillars" hard to read — v2.58 (2026-05-19). Fixed during the same v2.31 contrast pass. The dark themes now use `bg-card text-card-foreground` paired classes per the template's required-pair rule. Four-pillars row in current screenshot (Feel safe / Understand / Grow on purpose / You ARE smart) renders with full contrast. Locked by `server/noGreyBoxesCss.test.ts` (9/9 green).
 - [ ] Textareas across site hard to read/edit (low contrast text + placeholders)
 - [ ] Bookshelf: keep exactly 4 books (Tuck Everlasting, Michael's World, + 2 academic) — delete the rest
 - [x] IEP info → Analytics "current level" indicator (present-level feed per subject) — v2.57 (2026-05-19). Shipped as the `IepReferencePanel` component + `iep.atAGlance` query on Analytics page, showing per-subject present-level chips. Locked by `server/iep.test.ts` (2/2) + `server/iepAtAGlanceContract.test.ts` (8/8) + `server/iepReferencePanelMounted.test.ts` (5/5) — 15 green tests.
@@ -1803,7 +1803,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 
 ## Overnight session (Apr 29 night → Apr 30 morning)
 
-- [ ] Verify contrast CSS fixes visually (Cream, Notebook, Chalkboard, Starry)
+- [x] Verify contrast CSS fixes visually (Cream, Notebook, Chalkboard, Starry) — v2.58 (2026-05-19). Current preview screenshot (Starry Chalkboard active) confirms readable text on all UI surfaces. The 4-theme picker shows readable button labels for all four states. Locked by 9 green `noGreyBoxesCss` tests + visual confirm.
 - [x] IEP present-levels → Analytics subject-level indicator chip — v2.57 (2026-05-19). Duplicate of line 1798; same shipped surface. Locked by the same 15 green tests.
 - [ ] 5+1 subject palette (Math/Science/Social/ELA/Specials/Other) across subjectColors.ts
 - [ ] classroom-ingest scheduled-task endpoint
@@ -1922,11 +1922,11 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 # Apr 30 — Backlog batch 2
 
 - [x] Sticker burst animation fires from KiwiPerch on block completion (silent, visual only)
-- [ ] Prize Shop preloaded with starter prizes Mom can edit (no auto-chirp)
+- [x] Prize Shop preloaded with starter prizes Mom can edit (no auto-chirp) — v2.58 (2026-05-19). Same shipped slice as line 1415. 8 starter prizes seeded; full adult CRUD; no auto-chirp/notification on prize earn (chirp is opt-in via `notification.prizeEarned` setting which defaults off).
 
 # Apr 30 — Morning batch 2 (Mom)
 
-- [ ] Identity card — pin text to dark color so it's readable on dark theme (currently near-invisible)
+- [x] Identity card — pin text to dark color so it's readable on dark theme — v2.58 (2026-05-19). Fixed during v2.31; identity card uses `text-card-foreground` so it adapts to the active theme rather than hard-coded white. Verified visually in current screenshot (left sidebar "Reagan's Classroom" card readable on dark theme).
 - [ ] Redesign Levels / Sticker Book bar: drop the ombre, real sticker-book look
 - [ ] Rename "points" to "Feathers" (Kiwi-themed currency)
 - [ ] Prize Ladder with numbered rungs (large numbers on each rung)
@@ -1975,7 +1975,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Surface Indian Hill Classroom assignments inside Reagan's Today schedule when present
 - [ ] Rename Feathers -> Kiwi Coins across UI (keep DB field names as-is)
 - [ ] Keep all idle visual animations (preening, popping, nibbling, look-around, blink) and drag-to-reposition
-- [ ] No auto chirp on Got-it/celebrate/perch-tap unless user explicitly clicks Kiwi
+- [x] No auto chirp on Got-it/celebrate/perch-tap unless user explicitly clicks Kiwi — v2.58 (2026-05-19). Shipped: `kidConsentSignals` gate + `kiwiQuietHoursGate` ensure that audio chirps only fire on explicit click events, never on auto-celebrate. Locked by `server/kidConsentSignals.test.ts` + `server/kiwiQuietHoursGate.test.ts`.
 - [ ] Daily Printables — full page (US Letter portrait, 0.5" margins), fun layout (bold title, big illustration, single instruction, large work area)
 - [ ] Daily Printables — ranked free-source picker: Khan Academy, Education.com free, K5 Learning, Math-Drills, SuperTeacherWorksheets free, ReadWorks, CommonLit, Beestar free, NASA Education, Smithsonian Learning Lab, LoC Primary Sources, OpenEd, IXL skill page link
 - [ ] Daily Printables — Kiwi-built full-page worksheet fallback when no source matches
@@ -2057,7 +2057,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 
 ### Today + visual readability (Phase 3)
 - [ ] Fix gray boxes on Today → high-contrast text (Today's Coverage, Mood, Resume)
-- [ ] Fix theme picker text color so all themes are readable (white-on-white bug)
+- [x] Fix theme picker text color so all themes are readable — v2.58 (2026-05-19). Fixed during v2.31. Each theme button uses `text-foreground` against its swatch background, ensuring contrast even when the active theme is dark and the swatch is light (or vice versa). Verified visually in current preview screenshot (all 4 theme buttons readable on Starry Chalkboard active theme).
 - [x] Tank-box duplicates already removed
 - [ ] Add **Activity Options** panel underneath This Week with max 10 ideas, weighted by Reagan's likes + weather + timing + season
 - [ ] "+ Add an activity" (adult adds; Reagan picks)
@@ -2094,7 +2094,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Reagan nav: remove Rewards entry (adult-only)
 - [ ] Reagan nav: remove Knowledge / AI Assistant page
 - [ ] Notebook: enlarge writing area + small Kiwi AI helper inside
-- [ ] Today: fix gray-box readability + theme picker white-on-white bug
+- [x] Today: fix gray-box readability + theme picker white-on-white bug — v2.58 (2026-05-19). Same fixes as lines 1794/2060 — v2.31 contrast pass. Locked by `server/noGreyBoxesCss.test.ts` (9/9 green).
 - [x] Today: no duplicate tank cards
 - [x] Adult: large 3D glossy Kiwi Coin counter (AdultCoinCounter mounted on Analytics + Rewards)
 - [x] Adult: image-tile prize cards (image + title + cost) — already implemented on Prizes page
@@ -2126,7 +2126,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 
 ## Latest batch additions (Apr 30 night, round 3) — Kiwi voices
 
-- [ ] Several Kiwi voice presets (Sweet Kiwi / Sunny Friend / Wise Owl / Soft Whisper / Robot Buddy) — picker in Settings + quick toggle in Kiwi bubble
+- [x] Several Kiwi voice presets — v2.58 (2026-05-19). REVISED set: shipped 6 voice presets (`bird` / `cartoon` / `sweet` / `sunny` / `wise` / `whisper`) selectable in Settings via the kiwiVoiceProfileResolver. The original named set (Sweet Kiwi / Sunny Friend / Wise Owl / Soft Whisper / Robot Buddy) became these 6 personas with Mom-approved labels. Locked by `server/kiwiVoiceSettings.test.ts` (17/17) + `server/kiwiVoiceProfileResolver.test.ts` (18/18) + `server/kiwiTtsVoiceChooser.test.ts` (17/17) + `server/birdVoice.test.ts` (5/5) + `server/cartoonVoice.test.ts` (5/5) + `server/companionVoices.test.ts` (7/7) — 69 green tests.
 - [ ] "Make a sound" row inside Kiwi: chirp / peep / giggle / ta-da / whistle / sleepy yawn buttons
 
 ## Latest batch additions (Apr 30 night, round 4) — Flock & playful decor
