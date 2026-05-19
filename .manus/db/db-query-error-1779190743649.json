@@ -1,0 +1,8 @@
+{
+  "query": "SELECT `key`, value FROM app_settings WHERE `key` LIKE 'drive.folder.%' ORDER BY `key`;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT `key`, value FROM app_settings WHERE `key` LIKE 'drive.folder.%' ORDER BY `key`;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1146 (42S02) at line 1: Table 'mm3swgictqlhdwkpjcgihp.app_settings' doesn't exist"
+  ]
+}

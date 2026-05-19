@@ -1,0 +1,46 @@
+{
+  "query": "SELECT `key`, value FROM appSettings WHERE `key` LIKE 'drive.folder.%' ORDER BY `key`;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT `key`, value FROM appSettings WHERE `key` LIKE 'drive.folder.%' ORDER BY `key`;",
+  "rows": [
+    {
+      "key": "drive.folder.adminAndHomeschoolRecords",
+      "value": "1aLViM1-T0_ob0CFNxJN9hnzMauROySjF"
+    },
+    {
+      "key": "drive.folder.adventuresAndEnrichment",
+      "value": "137Knn9KbGKPcTsmOhHhM930HTxEGpjWB"
+    },
+    {
+      "key": "drive.folder.assignmentsAndWork",
+      "value": "1--Z75dZRcTTrEVlRGtIVfP5b1OMi8hCT"
+    },
+    {
+      "key": "drive.folder.curriculumAndStandards",
+      "value": "1ighaciRpTk8oloh55dEhgx0YZmomsZWJ"
+    },
+    {
+      "key": "drive.folder.dailyOperations",
+      "value": "1wyFk4rTPT-bZsadEVwODmqnABhevn6yb"
+    },
+    {
+      "key": "drive.folder.inboxUnsorted",
+      "value": "1PQPK34gnnlZrNojxFLJddCnDSpUQ5kR1"
+    },
+    {
+      "key": "drive.folder.printablesAndResources",
+      "value": "1UxqumEtHKucybapWNaNttaDGNg_0QQCH"
+    },
+    {
+      "key": "drive.folder.progressAndReports",
+      "value": "1YYRTEko_yYCg0V3S-tx-wyT6wQ2F2mpj"
+    },
+    {
+      "key": "drive.folder.todo",
+      "value": "15XPBzEZZD78Veq3mvk90yFFKP_vGMXHJ"
+    }
+  ],
+  "messages": [],
+  "stdout": "key\tvalue\ndrive.folder.adminAndHomeschoolRecords\t1aLViM1-T0_ob0CFNxJN9hnzMauROySjF\ndrive.folder.adventuresAndEnrichment\t137Knn9KbGKPcTsmOhHhM930HTxEGpjWB\ndrive.folder.assignmentsAndWork\t1--Z75dZRcTTrEVlRGtIVfP5b1OMi8hCT\ndrive.folder.curriculumAndStandards\t1ighaciRpTk8oloh55dEhgx0YZmomsZWJ\ndrive.folder.dailyOperations\t1wyFk4rTPT-bZsadEVwODmqnABhevn6yb\ndrive.folder.inboxUnsorted\t1PQPK34gnnlZrNojxFLJddCnDSpUQ5kR1\ndrive.folder.printablesAndResources\t1UxqumEtHKucybapWNaNttaDGNg_0QQCH\ndrive.folder.progressAndReports\t1YYRTEko_yYCg0V3S-tx-wyT6wQ2F2mpj\ndrive.folder.todo\t15XPBzEZZD78Veq3mvk90yFFKP_vGMXHJ\n",
+  "stderr": "",
+  "execution_time_ms": 597
+}

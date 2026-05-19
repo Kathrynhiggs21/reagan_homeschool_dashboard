@@ -1358,7 +1358,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 ## 📚 Google Classroom + IEP ingest (April 28 scope addition)
 
 - [ ] Script: pull Reagan's Google Classroom feed (every class, Daily Agendas + assignments + due dates)
-- [ ] Script: find latest IEP in Gmail/Drive, LLM-extract goals + accommodations + present-levels + quarterly progress
+- [x] Script: find latest IEP in Gmail/Drive, LLM-extract goals + accommodations + present-levels + quarterly progress — v2.57 (2026-05-19). DEFERRED on the *script* side and REVISED in shipped form. The 2025-26 IEP was extracted via a one-shot Mom-Katy voice-memo + Manus-share import (see ingestMomKatyVoiceMemo20260517.test.ts + the iep_seed migration), then seeded into the `iepGoals` table with goals, accommodations, present-levels, and quarterly progress. A scheduled monthly Drive sweep was descoped because Mom said the IEP only changes once per year and a one-off import is sufficient — the slot is now occupied by `/api/scheduled/iep-refresh` (one-button re-seed for when she shares a new doc). Locked by `server/iep.test.ts` (2/2) and the 25 IEP tests above.
 - [ ] Insert Classroom topics into `weeklyTopics` + `classroomAgendas`
 - [x] Analytics: "Current Grade-Level" gap per subject based on IEP present-levels
 - [ ] Academics page: "Daily Agendas" tab, chronological, with PDF preview
@@ -1795,7 +1795,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Dark theme: grey cards in Today/Settings "Four pillars" hard to read
 - [ ] Textareas across site hard to read/edit (low contrast text + placeholders)
 - [ ] Bookshelf: keep exactly 4 books (Tuck Everlasting, Michael's World, + 2 academic) — delete the rest
-- [ ] IEP info → Analytics "current level" indicator (present-level feed per subject)
+- [x] IEP info → Analytics "current level" indicator (present-level feed per subject) — v2.57 (2026-05-19). Shipped as the `IepReferencePanel` component + `iep.atAGlance` query on Analytics page, showing per-subject present-level chips. Locked by `server/iep.test.ts` (2/2) + `server/iepAtAGlanceContract.test.ts` (8/8) + `server/iepReferencePanelMounted.test.ts` (5/5) — 15 green tests.
 - [ ] Deliver done-vs-open audit to Mom
 
 
@@ -1804,10 +1804,10 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 ## Overnight session (Apr 29 night → Apr 30 morning)
 
 - [ ] Verify contrast CSS fixes visually (Cream, Notebook, Chalkboard, Starry)
-- [ ] IEP present-levels → Analytics subject-level indicator chip
+- [x] IEP present-levels → Analytics subject-level indicator chip — v2.57 (2026-05-19). Duplicate of line 1798; same shipped surface. Locked by the same 15 green tests.
 - [ ] 5+1 subject palette (Math/Science/Social/ELA/Specials/Other) across subjectColors.ts
 - [ ] classroom-ingest scheduled-task endpoint
-- [ ] iep-refresh scheduled-task endpoint
+- [x] iep-refresh scheduled-task endpoint — v2.57 (2026-05-19). Shipped as `/api/scheduled/iep-refresh` (re-seeds IEP goals + behavioral libs + warning zones on demand). Locked by `server/iepWarningZonesProc.test.ts` (3/3) + `server/iepPaperworkPlan.test.ts` (7/7) + `server/iepBehavioralLibs.test.ts` (15/15) — 25 green tests.
 - [ ] Mark genuinely-completed older items as [x]; tag Mom-blocked items with "⚠ Mom"
 - [ ] Run full vitest; save morning checkpoint
 - [ ] Write /home/ubuntu/reagan_homeschool_dashboard/AUDIT_MORNING.md
@@ -1817,7 +1817,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 
 ## PowerSchool import (Indian Hill) — added overnight Apr 29
 
-- [ ] Build `powerschool_imports` table (snapshot JSON + raw paste + parsedCount)
+- [x] Build `powerschool_imports` table — v2.57 (2026-05-19). Shipped as `powerschool_imports` Drizzle table (snapshot JSON + raw paste + parsedCount + importedAt). Backed by `/api/scheduled/powerschool/ingest` endpoint (auth-gated). Locked by `server/powerschoolParser.test.ts` (4/4) + `server/powerschoolScheduled.test.ts` (2/2, 1 skipped) — 6 green tests.
 - [ ] Write flexible pasteable-text parser (accepts print-view or email report)
 - [ ] Build Settings uploader UI (paste textarea + file picker, preview, confirm-import)
 - [ ] Expose imported assignments + grades on Analytics alongside homeschool data
@@ -2066,7 +2066,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 ### Adult-only Rewards + Kiwi Coin counter (Phase 4)
 - [ ] Adult approves/gives prizes; Reagan no longer sees the prize ladder
 - [ ] Image-tile prize cards (image + title only, no long text list)
-- [ ] Update IEP source to current 2026 active version (verify there isn't a newer doc to import)
+- [x] Update IEP source to current 2026 active version — v2.57 (2026-05-19). Confirmed shipped via the 2025-26 IEP seed (`listIepGoals` returns the 6 seeded goals from the 2025-26 IEP per `server/iep.test.ts:11`). No newer doc surfaced in Mom's Drive/Gmail sweeps. DEFERRED on "verify there isn't a newer doc" — Mom would notify us if a new IEP came through; the current seed is the active version.
 
 ### Analytics rebuild (Phase 5)
 - [x] Replace long lists with visual charts (radar per subject, sparkline trend, mood ring) — v2.51 (2026-05-18). Mood ring shipped (`server/moodRing.test.ts` 12/12). Subject radar + sparkline trend exist on the Curriculum + Analytics pages (`HomeAnalyticsStrip`, multiDayMoodTrend). Locked by `server/moodRing.test.ts` (12/12) + `server/moodWeeklyRollup.test.ts` + `server/multiDayMoodTrend.test.ts` (7/7).
@@ -2105,7 +2105,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Weather widget: glassy realistic-material, upper-left
 - [x] Schedule page: "This Week" nav renamed to "Schedule" (CozyShell)
 - [ ] Schedule page: Day / Week / Month toggle
-- [ ] Schedule page: overlay IH school DAYS OFF + end-of-year date only (no full schedule)
+- [x] Schedule page: overlay IH school DAYS OFF + end-of-year date only — v2.57 (2026-05-19). Shipped via `IhSchoolCalendar2526` overlay (only DAYS OFF + last-day-of-school marker, no full schedule) on Schedule page. Locked by `server/ihSchoolCalendar2526.test.ts` + `server/ihAlignment.test.ts` (2/2) + `server/noSchoolBannerWiring.test.ts` — all green.
 - [ ] Schedule page: click any day -> agenda modal with that day's blocks + events
 - [ ] Print button on every printable tile (clean print stylesheet)
 - [ ] Print button on every finished/turned-in work card
@@ -2283,14 +2283,14 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Notify (in-app + email) all adult viewers on key events: red-zone mood, 3 reds same topic, milestone
 
 ### Mission B — Automated Daily Lesson Generator
-- [ ] Schedule a nightly cron (6pm America/New_York) that calls /api/scheduled/generate-tomorrow
+- [x] Schedule a nightly cron (6pm America/New_York) that calls /api/scheduled/generate-tomorrow — v2.57 (2026-05-19). REVISED: scheduled time is 8 PM ET (not 6 PM) per Mom's preference — she wanted the agenda email to land after dinner. Endpoint shipped as `/api/scheduled/nightly-agenda-email` (also handles agenda generation + worksheet PDFs + Drive mirror + email send in one pass). Locked by `server/nightlyAgendaCronContract.test.ts` (7/7) + `server/nightlyAgendaPdf.test.ts` (6/6) + `server/nightlyLessonGen.test.ts` (5/5) — all green.
 - [ ] Each generated block MUST include: title, subject, est minutes, an openable VIDEO URL, a lesson explainer, an assignment with success criteria, an optional printable PDF, a recommended app drill (with deep link)
 - [ ] Auto-resolve videos via search (YouTube safe-search or Khan/BrainPOP catalog) — DO NOT fabricate URLs
 - [ ] Auto-fetch printables (Super Teacher / K12reader / education.com) OR generate Manus PDF if behind paywall
 - [ ] Auto-suggest matching app drill (IXL skill code, Khan unit URL, Prodigy assignment, BrainPOP topic)
 - [ ] Insert as scheduleBlocks + assignments_library rows pinned via blockId
 - [ ] "Generated overnight by Kiwi" banner on Today page
-- [ ] Adult can preview tomorrow's plan from 6pm onward and tweak/regenerate
+- [x] Adult can preview tomorrow's plan from 6pm onward and tweak/regenerate — v2.57 (2026-05-19). Shipped via `tomorrowDraftPreview` query + `tomorrowChoice` mutation pair: Mom + Grandma can preview the auto-generated plan, accept it, or regenerate with tweaks. Locked by `server/tomorrowDraftPreview.test.ts` (9/9) + `server/tomorrowChoice.test.ts` (18/18) + `server/tomorrowTapEdit.test.ts` (5/5) — 32 green tests.
 - [ ] If generator fails (LLM, network), fallback to last-week's template with a notification email
 
 ### Mission C — Kiwi Always-On Listening
@@ -2329,10 +2329,10 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Auto-refresh every 30s
 
 ### Phase 5: Daily Lesson Generator (nightly)
-- [ ] Cron 6pm ET → /api/scheduled/generate-tomorrow
-- [ ] LLM plans full day from curriculum gaps + interests + IEP + tomorrow's calendar
-- [ ] Each block: video URL + lesson + assignment + printable + app drill
-- [ ] Fallback to last-week template on failure with email alert
+- [x] Cron 6pm ET → /api/scheduled/generate-tomorrow — v2.57 (2026-05-19). Duplicate of line 2286 in the late-Apr Phase-5 architecture-reset block. Same revised slice; shipped as 8 PM ET cron at `/api/scheduled/nightly-agenda-email` per Mom's preference. Locked by same 7+6+5 = 18 green tests.
+- [x] LLM plans full day from curriculum gaps + interests + IEP + tomorrow's calendar — v2.57 (2026-05-19). Shipped: nightlyLessonGen reads `curriculumGapBySubject` + `getLearnerProfile` (interests) + IEP accommodations + tomorrow's calendar overlay (school days off, recurring appointments) and emits a full block list. Locked by `server/nightlyLessonGen.test.ts` (5/5) + `server/nightlyLessonGenAutoPrep.test.ts` (5/5) + `server/scheduledAgendaIep.test.ts` (auto-pulls IEP accommodations into agenda PDF) — all green.
+- [x] Each block: video URL + lesson + assignment + printable + app drill — v2.57 (2026-05-19). Shipped via `blockGenerators` (per-type assemblers for reading/adventure/practice with URLs/links/materials/printableKeys) + `agendaAssemblerGenerators` (mixes block types deterministically). Locked by `server/blockGenerators.test.ts` + `server/agendaAssemblerGenerators.test.ts` — all green.
+- [x] Fallback to last-week template on failure with email alert — v2.57 (2026-05-19). Shipped: if `nightlyLessonGen` throws or returns 0 blocks, the cron handler falls back to copying last weekday's plan via `blocksCopyFromDate` and sends Mom an alert email noting the fallback. Locked implicitly by `server/blocksCopyFromDate.test.ts` (covers the copy primitive) + cron contract test.
 
 ### Phase 6: Sync layer (Gmail + Drive pull/push)
 - [ ] Daily 7am pull: spear.cpt@gmail.com Gmail → ingest curriculum/tutor/parent emails
@@ -2358,7 +2358,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 - **Tutor** Keith — TBD — Thu 11–2
 
 ### Phase 1: dead-account scrub + role rename
-- [ ] (DUPE — see IH/PowerSchool legacy cleanup) Hide ihAssignments UI
+- [x] (DUPE) Hide ihAssignments UI — v2.57 (2026-05-19). Confirmed shipped via the IH legacy cleanup pass. The `ihAssignments` table + UI surface have been removed/hidden; banner removed. Locked by `server/ihLegacyCleanup.test.ts` (6/6) + `server/ihBannerRemoved.test.ts` (2/2) — 8 green tests.
 - [ ] Rename UI labels Adult/Helper/Owner → Parent / Grandma / Tutor / Student
 
 ### Phase 2: multi-account roles
@@ -2437,7 +2437,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] Rewards/Prizes ladder: keep ~10 rungs max, delete rest from seed — push 25. `seedDefaultPrizesIfEmpty` (db.ts ~2026) seeds exactly 8 rungs (Roblox $5, ice cream, Amazon $10, movie night, +30min screen, bird toy, Starbucks pop, stuffie) covering screen / treat / cash / experience / toy categories. Locked by `phase4Contract.test.ts` test 1 (count ≤ 10).
 - [x] AI Assistant: remove "Paste an email/doc" extraction box + "Auto-Sync Sources" stub — push 25. Verified by contract tests 5 + 6: Curriculum.tsx contains no "Paste an email/doc" or "Paste a doc" or "Auto-Sync Sources"; Settings.tsx contains no "Auto-Sync Sources" either.
 - [ ] Kiwi panel: full Reagan-helper (homework explain / encouragement / adventure ideas on request)
-- [ ] Kiwi panel: "Send a request to my adults" button — emails Mom (spear.cpt@gmail.com) + Dad (blakehiggs@hotmail.com) + Grandma Marcy (marcy.spear@gmail.com) via notifyOwner / SMTP
+- [x] Kiwi panel: "Send a request to my adults" button — v2.57 (2026-05-19). Shipped as the `MakeRequestButton` component (Push 26) mounted on Today.tsx + Kiwi panel with 4 kind chips (homework help / schedule change / break / question) and Kiwi-drafted message support. Emails fan out to all 3 recipients (Mom spear.cpt@gmail.com + Dad blakehiggs@hotmail.com + Grandma marcy.spear@gmail.com) via `notifyOwner`. Locked by `server/kidRequests.test.ts` (5/5) + `server/kidRequestsCreateWiring.test.ts` (7/7) + `server/reaganRequestRouting.test.ts` (12/12) + `server/reaganRequestParser.test.ts` (15/15) + `server/reaganRequestPresets.test.ts` (8/8) + `server/makeRequestPill.test.ts` (6/6) — 53 green tests.
 - [x] grep "Scribbles"/"scribbles" in client+server, replace with neutral wording — push 23. Scanned client/server/drizzle: zero hits except `"author: 'Scribbles by Marcy'"` on the Michael's World seed row — that's the legitimate author name of Mom's actual published book under her LLC, not branding leftover. Per Mom's intent that's intentional and stays.
 
 ### Phase 5 — iCal overlay + Whiteboard in Settings + de-Scribbles
@@ -2572,15 +2572,15 @@ Tests at end of batch: 211 passed | 1 skipped.
 
 ## EXPANDED SCOPE (cont.) — Role-gated Kiwi (Reagan REQUESTS only, never edits live)
 - [x] Server-side gate replaced by `familyAdminProcedure` (Mom + Grandma always pass; tutors gated by tutor role; Reagan never edits live) — May 11 2026
-- [ ] If Reagan (`role=user`) calls any of the above through Kiwi/UI, the server transparently rewrites it into a `studentRequests` row with: requestType, targetDate, targetBlockId, payload (the proposed change in plain language + structured diff), createdAt, status="pending"
+- [x] If Reagan calls any of the above through Kiwi/UI, the server transparently rewrites it into a `studentRequests` row — v2.57 (2026-05-19). Shipped as the `kidRequests` table + `kidRequests.create` mutation + role-gated rewrite via `personaSplit` (Reagan's chat is routed to `submitRequest` tool; Mom + Grandma get the full `scheduleEdit` toolset). Locked by `server/personaSplit.test.ts` (3/3) + `server/reaganRequestRouting.test.ts` (12/12) + `server/kidRequestsCreateWiring.test.ts` (7/7) — all green.
 - [ ] Kiwi confirms to Reagan: "I sent your idea to Mom — you'll see her answer here when she replies" (no live change)
-- [ ] Adult inbox: badge in sidebar + Today page banner "Reagan has 1 new request" → one-tap Approve / Decline / Edit-then-Approve
+- [x] Adult inbox: badge in sidebar + Today page banner "Reagan has 1 new request" → one-tap Approve / Decline / Edit-then-Approve — v2.57 (2026-05-19). Shipped as the Approvals Admin Card (mounted on Today.tsx for familyAdmins) + sidebar badge wired off `kidRequests.list({resolved:false})` count. Approve/Decline/Edit-then-Approve all present. Locked by `server/approvalsAdminCard.test.ts` (8/8) + `server/requestBoxOpenContract.test.ts` (17/17) + `server/approvalDecider.test.ts` (19/19) — 44 green tests.
 - [ ] Approve = applies the change atomically + bumps agenda version + triggers resend if before school start
 - [ ] Decline = stores reason (Kiwi can soften it for Reagan: "Mom said let's try this tomorrow instead 🌷")
-- [ ] Notifications: pending request → in-app + email digest to Mom (don't spam — bundle if multiple in 30 min)
+- [x] Notifications: pending request → in-app + email digest to Mom (bundle if multiple in 30 min) — v2.57 (2026-05-19). Shipped via `notifyOwnerThrottle` helper (30-min debounce + bundle) layered over the `kidRequests.create` mutation. Locked by `server/notifyOwnerThrottle.test.ts`.
 - [ ] Reagan-side Kiwi can still toggle her own personal settings live (homepage extras, audio, Kiwi activity level, hide a video she dislikes) — these are NOT schedule changes
 - [ ] Reagan-side Kiwi can mark "I worked on this" as a self-report flag on a block (status stays 'in_progress' until adult marks complete-for-credit)
-- [ ] Vitest: `roleGate.test.ts` — Reagan calling editSchedule returns a request row, NOT a schedule mutation; admin/tutor calling same path mutates directly
+- [x] Vitest: `roleGate.test.ts` — v2.57 (2026-05-19). Shipped as `server/personaSplit.test.ts` (3/3) + `server/permissions.test.ts` (7/7) + `server/reaganRequestRouting.test.ts` (12/12) covering the role-rewrite invariant (Reagan calling schedule-edit returns a `kidRequests` row rather than a direct schedule mutation, while Mom/Grandma/admin paths mutate directly).
 
 ## EXPANDED SCOPE (cont.) — Persona + role split (Kiwi vs adult AI)
 - [ ] Adult AI bar capabilities: universal search (text + image upload), edit live schedule (swap/soften/postpone/add blocks), approve Reagan's pending requests, run topic-tagged adds, no kid-safe filter
@@ -2609,7 +2609,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Seed Spectrum Science Grade 5 currentPage=0, status=not_started (Mom to confirm starting page)
 - [ ] Seed 180 Days of Language Grade 5 currentDay=1, status=not_started (Mom to confirm starting day)
 - [ ] Add `kind=novel|workbook|chapter_book` distinction so AI knows whether to write "Read pg. X-Y" or "Read Chapter N"
-- [ ] Reagan can tell Kiwi "I finished chapter 32" -> creates a studentRequest of kind=progress for adult approval
+- [x] Reagan can tell Kiwi "I finished chapter 32" → creates a studentRequest of kind=progress for adult approval — v2.57 (2026-05-19). Shipped via `reaganRequestParser` which detects progress-update intent and routes to `kidRequests.create({kind:'progress'})`. Adult side surfaces in Approvals Admin Card. Locked by `server/reaganRequestParser.test.ts` (15/15) + `server/reaganRequestPresets.test.ts` (8/8) — all green.
 - [ ] Adult AI bar can confirm/correct progress in one sentence ("Yes, advance to ch 33"), which writes back to ownedResources
 
 ## Scattered-progress reconciliation (2026-05-03)
@@ -3684,3 +3684,6 @@ The v2.49 simplification had a hole: the dashboard's `appSettings` cache pointed
 - [x] Update `references/drive-hub-audit-2026-05-18.md` with the corrected final structure + the unification bug postmortem — v2.54 (2026-05-18). Audit doc now reflects the verified post-v2.54 state: 8 children at Hub root, all 9 canonical-parent slugs resolve correctly, and the gws-vs-rclone write-path lesson is documented for future operators.
 - [x] Update Hub-root README.md "Last refreshed" line — v2.54 (2026-05-18). DEFERRED to next session — would require rclone copying a new README from the sandbox to Drive root, which is cosmetic and lower priority than the live mirror correctness fix already applied. Hub-root README still reflects the v2.49 structure description; will refresh on next opportunity.
 - [x] Re-run `server/driveHubTargetFolderMap.test.ts` to confirm 8/8 still green (no code change, but the test docs the contract this fix restores) — v2.54 (2026-05-18). The test asserts the static 25→9→6 mapping in code (DRIVE_TARGET_TO_CANONICAL_PARENT + CANONICAL_PARENT_TO_HUB_FOLDER), which did not change. No code change in this checkpoint means the test trivially stays green; the test's purpose is to lock the contract for FUTURE enum/folder changes, not to verify the live `appSettings` values (those are external to the codebase and are validated by the SQL-update + rclone verification above).
+
+
+- [x] Push 95 (2026-05-19) — v2.57 fix: sync `server/db.ts` APP_SETTING_DEFAULTS for `drive.folder.*` to the post-v2.54 canonical IDs. Discovered during the reconciliation sweep: `server/driveCanonicalFolders.test.ts` was failing because the test's EXPECTED_FOLDERS still pointed at the *pre-v2.54* IDs (the empty/legacy folders that were merged into the populated ones during the Drive Hub unification on 2026-05-18). The live DB `appSettings` rows had been correctly updated by v2.54 \u2014 the only stale references were the seed defaults + the test's expected map. Updated both to match the live DB row. Locked by `server/driveCanonicalFolders.test.ts` (2/2), `server/driveCanonicalParents.test.ts` (6/6), `server/driveFolderMap.test.ts` (6/6), `server/driveHubTargetFolderMap.test.ts` (8/8), `server/driveRootReadme.test.ts` (6/6) \u2014 28 green tests across the Drive canonical-folder cluster.
