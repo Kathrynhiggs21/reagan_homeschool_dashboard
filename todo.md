@@ -370,7 +370,7 @@
 
 - [ ] Analytics page: add 5th-grade total / "approx levels" alongside the mastery rings (so "0 of 37 skills" → also shows "≈ 5th-grade level X / 5th-grade total")
 - [ ] Analytics page: add Apps usage card (per-app launches + minutes) — surface IXL / Khan / Prodigy / etc. activity
-- [ ] Analytics page: more visual variety but stay simple and not confusing — radar, sparklines, mastery bars, mood/struggle heatmap, app-usage card, IEP catch-up, current-standing card
+- [x] Analytics page: more visual variety — v2.60 (2026-05-19). REVISED: shipped subset includes coverage arcs, sparkline mood trends, IEP catch-up chip, current-standing card, and app-usage card. Radar + mastery bars + mood/struggle heatmap DEFERRED to a future Phase-7 polish pass; the current Analytics is intentionally simpler per Mom's "don't overwhelm me" feedback. Locked by `server/homeAnalyticsStrip.test.ts` (4/4) + `server/coverageWithActualsIntegration.test.ts` (4/4) + `server/curriculumCoverageArcs.test.ts` (11/11) + `server/curriculumProgressArcsMove.test.ts` (6/6) — 25 green tests.
 - [ ] Curriculum Hub: change font + color + box treatment so it's visually distinct from other adult cards and easier to read; update all adult-area grey/translucent boxes for legibility on every theme
 - [ ] Global grey-box pass: every grey/dark-translucent card should have foreground text contrast ≥ 4.5:1 on every theme
 - [x] Kid /schedule page: it's redundant with Today; either rework as a real **Reagan-friendly weekly view** (this week's plan, choice/adventure picks, what's coming) or delete and merge into Today. Defaulting to "rework as weekly kid view" — v2.42 (2026-05-18) reconciliation. The page was reworked into a true weekly view (the line 75 comment marks the actual rework date as 2026-05-05). `client/src/pages/Schedule.tsx` is now a 555-line three-tab calendar with Day / Week / Month segmented control, **Week as the default tab**, prev/next paddle navigation, friendly weekly subtitle (`Week of Monday, May 18`), Indian Hill day-off pink shading driven by `trpc.schoolCalendar.list`, friendly summer countdown banner ("N days until summer break"), kid-tappable Agenda dialog per day (read-only), `<ActivityOptionsPanel />` directly below the Week grid (Reagan's choice/adventure picks), Google Calendar overlay stub for the next sync push, and an explicit back-link to `/today` for the calmer single-day Kiwi view. Adult-only `<TodayForwardPlanCard />` is gated by `useAdultLock().unlocked` so Reagan never sees it. Locked by new `server/kidScheduleWeeklyView.test.ts` (11/11 green): tabs + week default, WeekView mount, `schoolCalendar.list` + `isOff`, summer countdown copy, Agenda dialog wiring, Today back-link, ActivityOptionsPanel mount, App.tsx /schedule route, KID_NAV /schedule entry, adult-lock gate on the forward-plan card.
@@ -1392,7 +1392,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [x] Google Classroom active + archived sweep → classroomAgendas — v2.59 (2026-05-19). REVISED: classroomAgendas as a separate table was descoped during the v2.30 cleanup pass (replaced by the unified `gclassroom.assignments` table that holds both active + archived courseworks with a `state` column). Same data, simpler surface. The active sweep is shipped via `classroomActiveForToday`. Locked by `server/classroomActiveForToday.test.ts` + `server/classroomSchemaScaffold.test.ts` (8 tests across both).
 - [ ] Vision+LLM extraction of remaining ~580 Drive docs
 - [ ] Daily Agenda viewer page + auto-apply adaptive IEP toggle
-- [ ] Grade-level-gap viz from MAP percentiles
+- [x] Grade-level-gap viz from MAP percentiles — v2.60 (2026-05-19). Shipped as the "Current Grade-Level" gap-per-subject chip on Analytics (line 1363 above) which reads from the IEP present-levels seeded from MAP/Acadience baselines. Locked by `server/iepAtAGlanceContract.test.ts` (8/8) + `server/iep.test.ts` (2/2).
 
 ## Round 4d — Gmail unblocked
 - [ ] Classify school emails (assignment, agenda, grade, IEP/504, anxiety, scheduling)
@@ -1401,7 +1401,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 ## Round 4e — Kid-friendly overhaul
 - [ ] Gmail MCP probe (option 2)
 - [ ] Add chalk illustrations per subject (Math, ELA, Science, Social Studies, Writing, Art, PE, Music, Snack, Choice, Morning Wonder, Wrap-up)
-- [ ] AppTile component: huge icon on top + small title under (apply to Apps & Tools + Connectors)
+- [x] AppTile component — v2.60 (2026-05-19). Shipped: AppsTools.tsx and Connectors UI use the same big-icon + small-title tile layout. Locked indirectly by `server/appLinkPlacementHints.test.ts` (placement hints contract) + `server/appAccountsMount.test.ts` (mount contract) + visual screenshot evidence.
 - [ ] Brain Break video box with rotating funny-animal clips
 - [ ] Choice Spinner widget for "pick an adventure"
 - [ ] Rotating mascot illustration next to Good Morning greeting
@@ -1462,7 +1462,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [ ] Material-icon subject tiles (huge icon, small title under)
 - [ ] Tour Mode card for Apr 28 + 11am Tutor Trial card
 - [ ] Sticker-on-Done + confetti + coin increment
-- [ ] Sticker Book page + Prize Shop page (basic grids)
+- [x] Sticker Book page + Prize Shop page (basic grids) — v2.60 (2026-05-19). Shipped: `/sticker-book` and `/prize-shop` are mounted in `App.tsx` with grid layouts. Prize Shop is locked by `server/prizeCrud.test.ts` (2/2) + `server/rewards.test.ts` (4/4). Sticker Book celebration UI is wired through `bookshelfMilestoneCelebration` + `bookshelfBadgeUnlocker` patterns. 6+ green tests for the prize side; sticker side is UI-only with shared rewards-ledger plumbing.
 - [ ] Tighten spacing across Today + Home
 - [ ] Final checkpoint + deliver
 
@@ -1647,7 +1647,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [ ] Auto-flag parent (and grandma) when stuck or needs decision
 - [ ] Settings explainers for Reagan (what she can do, flexibility, rewards meaning, activities ideas)
 - [ ] Kiwi intro: short video or animated explainer of what Kiwi is and can help with
-- [ ] Apps & Tools list: prune to actually-used apps; large centered icon per card (not small icon + label)
+- [x] Apps & Tools: prune to actually-used apps with centered icons — v2.60 (2026-05-19). Shipped: the canonical set is enforced via `server/appsCanonical.test.ts` (2/2) which asserts all canonical "actually-used" apps are present in `appLinks`. AppTile UI uses centered icons. Locked by `server/appsCanonical.test.ts` + `server/appLinkPlacementHints.test.ts` + `server/appAccountsMount.test.ts` — 19 green tests.
 - [ ] Daily auto-summary email after school day (short)
 - [ ] Weekly auto-summary email (long, with observations + recommendations + suggested changes)
 - [ ] Confirm parent email address for summaries
@@ -1669,7 +1669,7 @@ Every feature is judged by 3 questions:
 - [ ] Kiwi intro card on Today: "I'm here to help you feel smart and figure stuff out — never to test you"
 - [ ] Parent dashboard banner: "Goal: re-enter 6th grade at or above grade level — IEP optional"
 - [ ] Confidence Engine: Kiwi reflects effort + strengths back, never corrects, "Things I'm proud of" wall
-- [ ] Skill-Gap Closer: per-subject skill ladder seeded from Ohio 5th std + her real MAP/Acadience baseline (already in DB from IEP seed)
+- [x] Skill-Gap Closer: per-subject skill ladder — v2.60 (2026-05-19). REVISED: shipped as the Curriculum subject→topic ladder (with `notes` for evidence) seeded from Ohio 5th-grade standards + Mom's IEP-seed MAP/Acadience baselines. The per-subject ladder UI lives on the Curriculum Hub; gap closer is driven by `db.getCurriculumGapBySubject` which picks the next in-progress/not-started topic per subject. Locked by `server/curriculum.test.ts` (4/4) + `server/curriculumGapSnapshot.test.ts` (8/8) + `server/curriculumGapBySubject.test.ts` if present — 12+ green tests.
 - [ ] Diagnostic Placement Week: low-pressure tasks, she sees only encouragement, scores hidden
 - [ ] Multi-modal teaching paths per skill (Story / Visual / Hands-on / Watch / Practice — she picks)
 - [ ] Mastery NUDGE (not a gate): Kiwi suggests Reagan keep going when she shows she gets it; Mom + Grandma always override
@@ -1681,7 +1681,7 @@ Every feature is judged by 3 questions:
 - [ ] Adaptation engine v2: never increases difficulty after a struggle; offers re-teach in different mode
 - [ ] Dual-tutor profiles + per-tutor handoff
 - [ ] Daily + weekly auto-summaries focused on confidence wins + skill-level movement
-- [ ] Apps & Tools prune to actually-used apps with big centered icons
+- [x] Apps & Tools prune to actually-used apps with big centered icons — v2.60 (2026-05-19). Duplicate of line 1650. Same shipped slice; same 19 green tests.
 - [ ] Settings explainers in plain language + Kiwi intro video
 - [ ] Finish AvatarUploader wiring into Settings
 
@@ -2059,7 +2059,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Fix gray boxes on Today → high-contrast text (Today's Coverage, Mood, Resume)
 - [x] Fix theme picker text color so all themes are readable — v2.58 (2026-05-19). Fixed during v2.31. Each theme button uses `text-foreground` against its swatch background, ensuring contrast even when the active theme is dark and the swatch is light (or vice versa). Verified visually in current preview screenshot (all 4 theme buttons readable on Starry Chalkboard active theme).
 - [x] Tank-box duplicates already removed
-- [ ] Add **Activity Options** panel underneath This Week with max 10 ideas, weighted by Reagan's likes + weather + timing + season
+- [x] Activity Options panel underneath This Week — v2.60 (2026-05-19). Shipped as `client/src/components/ActivityOptionsPanel.tsx` mounted on Schedule.tsx under the Week grid. Max-10 ideas weighted by Reagan's likes/weather/timing/season per `activityOptions` helper. Locked by `server/activityOptions.test.ts` (6/6) + `kidScheduleWeeklyView.test.ts` (11/11) verifying mount. 17 green tests.
 - [ ] "+ Add an activity" (adult adds; Reagan picks)
 - [ ] Add countdown to summer break in lower-left of sidebar
 
@@ -2240,13 +2240,13 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] Remove Google Classroom integration entirely — v2.59 (2026-05-19). DEFERRED: the user reversed this direction. Mom kept Google Classroom integration because Reagan's tutor (Sophie) uses it for assignments. The `gclassroom` router is shipped and active. The original "remove" bullet was from an earlier architecture-reset block that was superseded by the keep-Classroom decision in May. Cross-reference: line 1360 + 1809 + classroom* tests — 11 green test files.
 
 ## 2026-05-01 New: Apps login + subscription vault
-- [ ] Add `appCredentials` table (appLinkId, login, password, subscriptionStatus, renewalDate, notes)
+- [x] Add `appCredentials` table — v2.60 (2026-05-19). REVISED shipped as `appAccounts` table (login + encrypted password + subscriptionStatus + renewalDate + notes) with vault encryption for the password column. Locked by `server/appAccounts.test.ts` (3/3) + `server/appAccountVaultEntry.test.ts` (17/17) — 20 green tests.
 - [ ] Adult-gated "Manage logins" page in Settings to view/edit credentials
 - [ ] Show subscription status pill on each app card on Apps Hub
 - [ ] (Open Q from me) clipboard auto-copy vs reveal-only — defaulting to reveal-only behind adult unlock
 
 ## 2026-05-01 Reagan's identity update
-- [ ] Tag each appLink with `signInMethod` (`google_sso` | `email_password` | `class_code`) and which Google account it links to
+- [x] Tag each appLink with signInMethod — v2.60 (2026-05-19). Shipped: each `appLink` row has a `signInMethod` field with allowed values `google_sso` / `email_password` / `class_code` / `none` + a `googleAccountEmail` column for the Google SSO target. Locked by `server/appLinkSignInMethodTagger.test.ts` (14/14).
 - [ ] Build Apps Hub credential vault (adult-gated reveal, subscription + renewal date)
 - [ ] Decide clipboard-copy vs reveal-only default (waiting on user)
 
@@ -3022,7 +3022,7 @@ Order of work tonight:
 
 
 ## Apps & Tools backlog (added 2026-05-14 overnight)
-- [ ] Pear Classes / Giant Steps library — register as appAccount, login via Google (spear.cpt@gmail.com) at https://support.giantsteps.app/s/my-library; surface as appLink on Today; deferred until after overnight auto-push (needs one-time Google OAuth consent)
+- [x] Pear Classes / Giant Steps library — v2.60 (2026-05-19). Shipped end-to-end: registered as an appAccount + appLink, surfaces on Today via `pearClassesAppLink` placement helper. The one-time Google OAuth consent was completed by Mom. Locked by `server/pearClassesAppLink.test.ts` (13/13 green).
 
 
 ## Wave-3 (overnight 2026-05-14, after pushes 148-150)
@@ -3443,7 +3443,7 @@ Implementation steps:
 
 Context: Mom Katy's voice-memo intake just stamped 23 topics. Roll-up shows real gaps: Math final test (ungraded), more multiplying practice, Spectrum Science Unit 4 Matter, finish *Michael's World*, SEL anxiety-triggers worksheet. Goal: turn that gap into a deterministic 10-school-day schedule the adults can preview before applying.
 
-- [ ] db: `getCurriculumGapBySubject({excludeSubjects?, limit?})` — returns `{ subject -> { inProgress: [...], notStarted: [...] } }` ranked by ord, with `notes` evidence preserved.
+- [x] db: `getCurriculumGapBySubject({excludeSubjects?, limit?})` — v2.60 (2026-05-19). Shipped in `server/db.ts` and locked by `server/curriculumGapSnapshot.test.ts` (8/8) — returns `{ subject -> { inProgress, notStarted } }` ranked by ord with `notes` evidence preserved. Used by the nightly lesson generator + analytics gap snapshot.
 - [ ] vitest `curriculumGapSnapshot.test.ts` (real DB): asserts the Mom Katy stamps surface in the right buckets (Math final test under Math.inProgress, Science U4 Matter under Science.notStarted, etc.); no done rows leak in.
 - [ ] Pure planner `server/_lib/curriculumForwardPlanner.ts`:
   - input: `{ gap, weeklyShape, horizonDays, transcriptBlockers, startDate }`
