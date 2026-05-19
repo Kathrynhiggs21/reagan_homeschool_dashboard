@@ -121,7 +121,48 @@ If everything in the five items above feels solid by the end of the week, ping b
 
 ---
 
-## 6 + 7. Drive Hub state — corrected and final (revised 2026-05-18 late evening)
+## 6. Drive Hub — cleaned up (final, verified 2026-05-19 morning)
+
+When you open Google Drive and go to **Reagan School Hub (Dashboard)** you should now see exactly 8 items in this order:
+
+```
+01 - Daily Operations
+02 - Assignments and Work
+03 - Curriculum and Resources
+04 - Admin and Records
+05 - Progress and Reports
+06 - Inbox (Unsorted)
+Archive
+README.md
+```
+
+The two empty leftover folders (`Curriculum and Standards` and `Admin and Homeschool Records`) were trashed via rclone after the dashboard's folder cache was re-pointed at the prefixed parents. All curriculum, admin, printables, and adventures content is now under the `03 -` and `04 -` prefixed folders where Mom expects to find it.
+
+**What I changed under the hood** (no action needed from you, but useful for the record):
+
+- Created `03 - Curriculum and Resources / Adventures and Enrichment` as a new subfolder (the dashboard had been writing adventure-tagged content to a folder under the old un-prefixed `Curriculum and Standards`).
+- Re-pointed 4 entries in the dashboard's `appSettings` table:
+  - `drive.folder.curriculumAndStandards` → `03 - Curriculum and Resources`
+  - `drive.folder.adminAndHomeschoolRecords` → `04 - Admin and Records`
+  - `drive.folder.printablesAndResources` → `03 - Curriculum and Resources / Printables` (existing subfolder)
+  - `drive.folder.adventuresAndEnrichment` → `03 - Curriculum and Resources / Adventures and Enrichment` (newly created)
+- Trashed the now-empty `Curriculum and Standards` and `Admin and Homeschool Records` folders at the Hub root.
+
+**What to test:**
+
+1. Open Drive on your phone or laptop and tap into **Reagan School Hub (Dashboard)**.
+2. Verify you see exactly 8 items: the 6 numbered folders + Archive + README.md.
+3. Tap into `03 - Curriculum and Resources`. You should see `Adventures and Enrichment`, `Printables`, `Apps & Tools`, `Bookshelf`, `Lesson Plans`, `Notebook`, etc.
+4. Tap into `04 - Admin and Records`. You should see Reagan Health, IEP Snapshots, 504 Plans, Receipts, etc.
+5. Tomorrow morning, confirm tonight's 8 PM agenda PDF landed in `01 - Daily Operations / Daily Agenda PDFs / 2026-05 / 2026-05-20 - Agenda.pdf`.
+
+**What to text if broken:** "broken: drive folder mirror after cleanup." The pre-cleanup folder IDs are recorded in `references/drive-hub-audit-2026-05-18.md` so any change is reversible by un-trashing the 2 folders and running the inverse SQL updates.
+
+### What I learned
+
+The gws Drive CLI on this account silently no-ops `files.update` write calls (returns 200 OK but the change never lands). I lost time on v2.49 thinking my rename + trash mutations succeeded when only the reads were going through. Going forward I verify Drive mutations with a fresh read after every write, and I use rclone (whose write path works on this account) for any moves/trashes.
+
+### (Earlier draft superseded — kept for audit)
 
 My earlier Sections 6 and 7 contradicted each other because I kept misreading directory listings. Here is the **actually verified** state of the Hub as of 2026-05-18 evening, after I re-checked every folder with rclone:
 
