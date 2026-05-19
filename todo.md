@@ -3666,3 +3666,21 @@ Items NOT gated by this blocker (separate work, will be addressed independently)
 - todo.md:1774 "CORRECTION: confirm submissions go to adult analytics dashboard, NOT Google Classroom" — already true (dashboard mirror only), needs a vitest assertion
 
 (End of OAuth blocker reference block.)
+
+
+## DRIVE HUB UNIFICATION FIX — discovered 2026-05-18 evening, after v2.49
+
+The v2.49 simplification had a hole: the dashboard's `appSettings` cache pointed 5 of 9 canonical-parent folder IDs at an entirely different Drive root (`1GOnWdEIBpfnY_14Fr-jf2AJKlzEHvMLH`, the engineering scratch root) rather than the user-facing Hub root (`1r3bJacPLJN7VHI8y72rcx1-GRxspqo1r`). My v2.49 script created NEW empty 03 + 04 placeholder folders at the Hub root rather than moving the engineering ones in. That means until this is fixed, the nightly Drive mirror writes curriculum / admin / printables / adventures into folders Mom + Grandma cannot see, while their user-facing Hub has empty 03 + 04 folders. This wasn't visible at v2.49 verification because the audit only counted top-level Hub children, not whether each canonical-parent folder ID actually lived under the Hub.
+
+- [ ] Trash the two empty placeholder folders I created in v2.49 under the Hub root: `1ighaciRpTk8oloh55dEhgx0YZmomsZWJ` ("03 - Curriculum and Resources" — empty) and `1aLViM1-T0_ob0CFNxJN9hnzMauROySjF` ("04 - Admin and Records" — empty)
+- [ ] Move `1RcO_WCr2mG2v_4cVxHjslx4UpsFflHan` ("Admin and Homeschool Records") into Hub root, rename to "04 - Admin and Records"
+- [ ] Move `18HhQdVn6F-IS6eZOV41xRbST5cHGuqJM` ("Curriculum and Standards") into Hub root, rename to "03 - Curriculum and Resources"
+- [ ] Move `1MpQ0OGDBvloSz_DzCGa8pUYytSjOuHWw` ("Printables and Resources") INSIDE "03 - Curriculum and Resources" (nested, not at Hub root)
+- [ ] Move `1i1-UtUYady8BcWJzozXpf_igQEoY_loa` ("Adventures and Enrichment") INSIDE "03 - Curriculum and Resources"
+- [ ] Move `1SmXWhLk7SF_JNoVa5TWqtAdH60tNSjWA` ("Worksheets (Daily Packets)" from engineering root) INSIDE "01 - Daily Operations"
+- [ ] Move `1_j0cyiJHRpvXjez5jg3n_DZXPvt_QD_M` ("Reagan Dashboard Backend Pushes") into `Hub/Archive/2026/_engineering/`
+- [ ] Trash the three garbage-named folders in the engineering root: `1k1Tb1l32NzogodkJkZwgbl8uOFeFRisj` (",id=19qljXy7RUVwDHZyD_BH1n5G3320R00Th:"), `1mbd71OFHUCAJxy1-_VpLfA04laFpcvH7` (",id=:"), `1NGztVZb0bKckpu-A0gmmpfsm4Rum9yKG` ("{1y4jZtanObfPVjbrPJhqavQd4l3Ra2xxF}")
+- [ ] Verify `appSettings` cache still points all 9 canonical-parent slugs at folder IDs whose live parent is the Hub root (or "03 - Curriculum and Resources" for nested ones)
+- [ ] Update `references/drive-hub-audit-2026-05-18.md` with the corrected final structure + the unification bug postmortem
+- [ ] Update Hub-root README.md "Last refreshed" line
+- [ ] Re-run `server/driveHubTargetFolderMap.test.ts` to confirm 8/8 still green (no code change, but the test docs the contract this fix restores)

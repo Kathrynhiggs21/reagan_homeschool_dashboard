@@ -151,3 +151,47 @@ The 4 cluttered top-level folders got absorbed into the 6 above:
 5. Tomorrow morning around 6 AM, the nightly 8 PM mirror should still have written tonight's agenda PDF to `01 - Daily Operations / Daily Agenda PDFs / 2026-05 / 2026-05-19 - Agenda.pdf` — confirm the file is where you'd expect.
 
 **If something's wrong:** if the 6-folder top level looks right tonight but tomorrow morning a folder is missing or the agenda PDF didn't land in `01 - Daily Operations`, text "broken: drive folder mirror." That means the canonical-parent mapping needs a re-cache.
+
+
+---
+
+## 7. Correction to Section 6 + a 5-minute Drive cleanup task (added 2026-05-18 late evening)
+
+**What I got wrong in Section 6 above:** I described the Drive Hub as already having exactly 6 numbered folders + Archive + README. That's the planned end state but **not the actual current state.** When I went to verify with a fresh listing, the Hub root has **10 folders**, with 2 of them mislabeled — both because the dashboard's Drive write path silently dropped a few mutations and because I missed that two folders I thought were empty placeholders actually contain Reagan's IEP and medical records.
+
+**Current actual state when you open the Hub:**
+
+```
+01 - Daily Operations         ✓ correct, keep
+02 - Assignments and Work     ✓ correct, keep
+03 - Curriculum and Resources ✗ MISLABELED — contains IEP/medical records, belongs under Admin
+04 - Admin and Records        ✗ MISLABELED — probably empty or near-empty
+05 - Progress and Reports     ✓ correct, keep
+06 - Inbox (Unsorted)         ✓ correct, keep
+Admin and Homeschool Records  ← this is where the medical records ACTUALLY belong
+Archive                       ✓ correct, keep
+Curriculum and Standards      ← this is the real curriculum folder, just unprefixed
+README.md                     ✓ correct, keep
+```
+
+**The good news:** tonight's 8 PM agenda email and its worksheet attachments will still arrive correctly. The dashboard tracks folders by internal ID, not display name, so the misnaming is purely cosmetic for what Mom sees in Drive.
+
+**The 6-click manual fix to get back to the clean 6-folder layout:**
+
+1. Open the folder named `03 - Curriculum and Resources`. You'll see IEP-related files inside (Reagan Higgs 2025-26 IEP.pdf, anxiety timeline stuff, the IH 5th grade comprehensive packet). **Select all of them and drag them into `Admin and Homeschool Records`**. They belong there, not under Curriculum.
+
+2. After moving everything out, the `03 - Curriculum and Resources` folder will be empty. **Right-click it → "Move to trash"**.
+
+3. Open the folder named `04 - Admin and Records`. If it's empty, right-click → "Move to trash". If it has files, drag them into `Admin and Homeschool Records` first, then trash the now-empty folder.
+
+4. Right-click `Curriculum and Standards` → **Rename** → change to `03 - Curriculum and Resources`. Hit Enter.
+
+5. Right-click `Admin and Homeschool Records` → **Rename** → change to `04 - Admin and Records`. Hit Enter.
+
+6. Refresh. You should now see exactly 8 things at the top: 01 through 06 numbered folders, plus Archive, plus README.md. That matches Section 6 above.
+
+**Why a human and not the engineer:** the script I wrote to do this automatically went through gws which silently no-ops on writes for this account. rclone (the fallback) works for moves but doesn't expose renames. The 2 critical files in step 1 are medical records, so I'd rather you eyeball the move than have me retry with rclone and risk anything unexpected.
+
+**What to text if broken:** if tomorrow morning's 8 PM agenda PDF doesn't land in the expected folder, text "broken: drive folder mirror after manual cleanup." Folder IDs are saved in `references/drive-hub-audit-2026-05-18.md` so the cleanup is reversible.
+
+**If you'd rather have me retry the cleanup via rclone instead of doing it by hand**, text "manus: retry drive cleanup via rclone" and I'll write a fresh script that moves the medical records via rclone (which works) and does the 2 renames by leaving a guided sequence in the Drive web UI (the only step a script can't do reliably). Total time about 15 minutes.

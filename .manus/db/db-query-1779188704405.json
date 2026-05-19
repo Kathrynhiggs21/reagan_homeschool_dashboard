@@ -1,0 +1,55 @@
+{
+  "query": "SELECT `key`, value, updatedAt FROM appSettings WHERE `key` LIKE 'drive.folder.%' ORDER BY `key`;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT `key`, value, updatedAt FROM appSettings WHERE `key` LIKE 'drive.folder.%' ORDER BY `key`;",
+  "rows": [
+    {
+      "key": "drive.folder.adminAndHomeschoolRecords",
+      "value": "1RcO_WCr2mG2v_4cVxHjslx4UpsFflHan",
+      "updatedAt": "2026-05-12 20:14:13"
+    },
+    {
+      "key": "drive.folder.adventuresAndEnrichment",
+      "value": "1i1-UtUYady8BcWJzozXpf_igQEoY_loa",
+      "updatedAt": "2026-05-12 20:14:13"
+    },
+    {
+      "key": "drive.folder.assignmentsAndWork",
+      "value": "1--Z75dZRcTTrEVlRGtIVfP5b1OMi8hCT",
+      "updatedAt": "2026-05-12 20:14:14"
+    },
+    {
+      "key": "drive.folder.curriculumAndStandards",
+      "value": "18HhQdVn6F-IS6eZOV41xRbST5cHGuqJM",
+      "updatedAt": "2026-05-12 20:14:14"
+    },
+    {
+      "key": "drive.folder.dailyOperations",
+      "value": "1wyFk4rTPT-bZsadEVwODmqnABhevn6yb",
+      "updatedAt": "2026-05-12 20:14:14"
+    },
+    {
+      "key": "drive.folder.inboxUnsorted",
+      "value": "1PQPK34gnnlZrNojxFLJddCnDSpUQ5kR1",
+      "updatedAt": "2026-05-12 20:14:14"
+    },
+    {
+      "key": "drive.folder.printablesAndResources",
+      "value": "1MpQ0OGDBvloSz_DzCGa8pUYytSjOuHWw",
+      "updatedAt": "2026-05-12 20:14:14"
+    },
+    {
+      "key": "drive.folder.progressAndReports",
+      "value": "1YYRTEko_yYCg0V3S-tx-wyT6wQ2F2mpj",
+      "updatedAt": "2026-05-12 20:14:14"
+    },
+    {
+      "key": "drive.folder.todo",
+      "value": "15XPBzEZZD78Veq3mvk90yFFKP_vGMXHJ",
+      "updatedAt": "2026-05-12 20:14:14"
+    }
+  ],
+  "messages": [],
+  "stdout": "key\tvalue\tupdatedAt\ndrive.folder.adminAndHomeschoolRecords\t1RcO_WCr2mG2v_4cVxHjslx4UpsFflHan\t2026-05-12 20:14:13\ndrive.folder.adventuresAndEnrichment\t1i1-UtUYady8BcWJzozXpf_igQEoY_loa\t2026-05-12 20:14:13\ndrive.folder.assignmentsAndWork\t1--Z75dZRcTTrEVlRGtIVfP5b1OMi8hCT\t2026-05-12 20:14:14\ndrive.folder.curriculumAndStandards\t18HhQdVn6F-IS6eZOV41xRbST5cHGuqJM\t2026-05-12 20:14:14\ndrive.folder.dailyOperations\t1wyFk4rTPT-bZsadEVwODmqnABhevn6yb\t2026-05-12 20:14:14\ndrive.folder.inboxUnsorted\t1PQPK34gnnlZrNojxFLJddCnDSpUQ5kR1\t2026-05-12 20:14:14\ndrive.folder.printablesAndResources\t1MpQ0OGDBvloSz_DzCGa8pUYytSjOuHWw\t2026-05-12 20:14:14\ndrive.folder.progressAndReports\t1YYRTEko_yYCg0V3S-tx-wyT6wQ2F2mpj\t2026-05-12 20:14:14\ndrive.folder.todo\t15XPBzEZZD78Veq3mvk90yFFKP_vGMXHJ\t2026-05-12 20:14:14\n",
+  "stderr": "",
+  "execution_time_ms": 621
+}

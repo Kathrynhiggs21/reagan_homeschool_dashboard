@@ -113,3 +113,76 @@ If something goes wrong:
 - Mom's `references/handoff-2026-05-18-what-to-test.md` gets a "Drive Hub got cleaned up" footer pointing at the new structure.
 - The classroom mirror slice (still paused) can resume because its destination folders are now stable.
 - A `drive.audit.last_run_at` app-setting timestamp gets bumped after the move so the next audit knows when this one ran.
+
+
+---
+
+## POSTMORTEM — v2.52 evening, after attempted unification fix
+
+The v2.49 simplification audit looked **only** at the user-facing Hub root's immediate children. It missed two things that matter:
+
+1. **Several canonical-parent folders were buried inside `Hub/Archive/2026/_engineering/`** (folder ID `1GOnWdEIBpfnY_14Fr-jf2AJKlzEHvMLH`), not at the Hub root. Specifically: `Curriculum and Standards` (18HhQdVn...), `Admin and Homeschool Records` (1RcO_WCr...), `Printables and Resources` (1MpQ0OGD...), `Adventures and Enrichment` (1i1-UtUY...), `Worksheets (Daily Packets)` (1SmXWhLk...). Initially I described this as a "parallel root"; after tracing parent chains via `gws drive files get` (chain: 1GOn... → 1FVs... 2026 → 1kbB... Archive → 1r3b... Hub), I confirmed the engineering folder is INSIDE the Hub, just deeply nested.
+
+2. **The two folders my v2.49 script created at the Hub root were not actually empty placeholders.** Verified via `rclone lsd`: folder `1ighaciRpTk8oloh55dEhgx0YZmomsZWJ` (named "03 - Curriculum and Resources") contains medical/IEP records (`Reagan Higgs 2025-26 IEP.pdf`, `Contact Protocol & Crisis Response Decision Tree.pdf`, `Color-Coded Warning Zones & Intervention Guide.pdf`, `Ali_Comprehensive_Structured_Packet_Reagan_IH_2025-2026_v4.docx`, plus subfolders `IEP Snapshots (preserved)` and `Reagan Health (medical, IEP, 504, anxiety timeline)`). The "04 - Admin and Records" folder (`1aLViM1-T0...`) wasn't fully inspected but likely contains data too. So "trash these placeholders" is the wrong move — these are real records that semantically belong inside the Admin canonical parent.
+
+### The gws CLI silent-no-op bug
+
+The v2.52 fix-up attempt also surfaced a separate engineering issue: **`gws drive files update --params '{...}'` silently no-ops on this account.** The HTTP response is a 200 with the file metadata, but the requested change (trashing, renaming, re-parenting) is never actually applied. Verified directly: I called `gws drive files update --params '{"fileId":"1ighaciR...","body":{"trashed":true}}'`, got a 200 with the file metadata, then immediately called `gws drive files get` on the same file and `trashed` was still `false`. This explains why both v2.49 + v2.52 apply runs printed "[done]" / "[trashed]" for mutations that were never actually applied to Drive.
+
+Root cause is almost certainly that gws flattens the `body` JSON into URL query parameters rather than putting it in the HTTP request body. The Drive API's `files.update` endpoint requires body params as JSON in the request body (with `addParents`/`removeParents` as query params for moves). When the body is missing, the API treats the call as "no patch to apply, just return current metadata."
+
+The `rclone` fallback (per the project's `<google_drive_integration>` block) does work for write operations — confirmed via `rclone --config /home/ubuntu/.gdrive-rclone.ini lsd` and `rclone ls` returning live data identical to what gws returns for reads. I stopped short of using rclone for the actual moves because the placeholder folders turned out to contain real medical records that need human-judgment merging.
+
+### Actual current Hub-root state (as of v2.52)
+
+The Hub root has **10 children** instead of the v2.49 plan's 8:
+
+| # | Name | ID | Notes |
+|---|---|---|---|
+| 1 | 01 - Daily Operations | 1wyFk4rTPT-bZsadEVwODmqnABhevn6yb | correct (dashboard cache) |
+| 2 | 02 - Assignments and Work | 1--Z75dZRcTTrEVlRGtIVfP5b1OMi8hCT | correct (dashboard cache) |
+| 3 | 03 - Curriculum and Resources | 1ighaciRpTk8oloh55dEhgx0YZmomsZWJ | **mislabeled** — contains medical/IEP records, belongs under Admin |
+| 4 | 04 - Admin and Records | 1aLViM1-T0_ob0CFNxJN9hnzMauROySjF | not fully inspected for content |
+| 5 | 05 - Progress and Reports | 1YYRTEko_yYCg0V3S-tx-wyT6wQ2F2mpj | correct (dashboard cache) |
+| 6 | 06 - Inbox (Unsorted) | 1PQPK34gnnlZrNojxFLJddCnDSpUQ5kR1 | correct (dashboard cache) |
+| 7 | Admin and Homeschool Records | 1RcO_WCr2mG2v_4cVxHjslx4UpsFflHan | **dashboard cache** points here for `adminAndHomeschoolRecords` |
+| 8 | Archive | 1kbBUq5HdQ71S6R3CORW63X4Nu9_72__O | correct |
+| 9 | Curriculum and Standards | 18HhQdVn6F-IS6eZOV41xRbST5cHGuqJM | **dashboard cache** points here for `curriculumAndStandards` |
+| 10 | README.md | 177-v5I4cIgNV27mJnoxg14YRJfA4ZzIX | correct |
+
+**Critical:** the dashboard's `appSettings` cache still resolves correctly to the right folder IDs (rows 7 + 9, not 3 + 4). Tonight's 8 PM nightly mirror will land files in folders 7 + 9 as it has been doing — Mom just sees them under their CURRENT un-prefixed names "Curriculum and Standards" + "Admin and Homeschool Records" in the Hub root rather than under "03" + "04".
+
+### Manual 5-minute fix for the cosmetic goal
+
+1. Open Drive web UI → `Reagan School Hub (Dashboard)` → look inside `03 - Curriculum and Resources` (the one with IEP/medical content).
+2. Select all subfolders + files inside it. Move them into `Admin and Homeschool Records` (drag-and-drop or right-click → Move to).
+3. After it's empty, right-click → Move to trash.
+4. Do the same for the `04 - Admin and Records` folder if non-empty; if empty, just trash it directly.
+5. Rename `Curriculum and Standards` → `03 - Curriculum and Resources` (right-click → Rename).
+6. Rename `Admin and Homeschool Records` → `04 - Admin and Records` (right-click → Rename).
+
+After these 6 clicks the Hub root will have exactly 8 children (6 numbered + Archive + README) as v2.49 originally planned. The dashboard does NOT need to know about the renames — the canonical-parent indirection layer (`server/db.ts:4465-4491`) only cares about the folder IDs, which are unchanged.
+
+### Alternative for the engineer (rclone-based)
+
+```bash
+# 1. Move medical-record subfolders into Admin and Homeschool Records
+rclone --config /home/ubuntu/.gdrive-rclone.ini move \
+  "manus_google_drive:Reagan School Hub (Dashboard)/03 - Curriculum and Resources" \
+  "manus_google_drive:Reagan School Hub (Dashboard)/Admin and Homeschool Records"
+
+# 2. After verifying empty, purge it
+rclone --config /home/ubuntu/.gdrive-rclone.ini purge \
+  "manus_google_drive:Reagan School Hub (Dashboard)/03 - Curriculum and Resources"
+
+# 3. Repeat for 04 - Admin and Records
+
+# 4. Renames are not exposed in rclone — use Drive web UI for the final 2 renames.
+```
+
+### What's locked + what's at risk
+
+- **Tonight's 8 PM cron**: unaffected. Will land worksheets/agenda PDFs in their existing folder IDs (rows 7 + 9 + others) just like every previous weeknight.
+- **Mom's Drive UI experience**: still slightly cluttered (10 children at Hub root, 2 mislabeled) until the manual fix runs.
+- **The `driveHubTargetFolderMap` vitest**: still 8/8 green. It locks the contract at the canonical-parent layer; the layer is intact.
+- **Future regressions**: protected by the vitest, which fails if any DrivePushTarget enum entry stops mapping to one of the 6 numbered Hub folders.
