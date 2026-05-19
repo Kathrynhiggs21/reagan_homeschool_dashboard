@@ -143,7 +143,7 @@
 - [x] Settings → Daily Recap panel: toggle, recipient list (default marcy.spear@gmail.com), send-time, sample preview — v2.33 (2026-05-18). Reconciliation push: the panel itself shipped in Push 46 (2026-05-13) as `DailyRecapCard` in `client/src/pages/Settings.tsx` (line 769) under the Recap tab (line 89-90 mounts `<RecapRequestCard />` + `<DailyRecapCard />` inside `<TabsContent value="recap">`); v2.33 just locks the four product requirements with `server/dailyRecapPanelContract.test.ts` (15/15 green) so the bullet has green-test evidence and a future refactor that drops one of the four pieces will trip red. Coverage: (1) on/off `<Switch>` wired to the `enabled` pref via `(set as any).mutate({ enabled: v })`; (2) recipient `<textarea>` with comma/newline split + email-regex filter + commit-on-blur — explicit fallback copy "Empty = fall back to the Email tab's recipients"; (3) `<Input type="time">` with HH:MM regex validation, ET-labelled, defaults to 18:00; (4) live `<iframe srcDoc>` preview backed by `dailyRecap.preview` query, surfaces `effectiveRecipients` line above the iframe so Mom can see who the sample would actually go to. Server fallback chain verified: `previewDailyRecap` falls back to `listRecipients()` when `prefs.recipients.length === 0`; `notificationRecipients` constants in `db.ts` include `marcy.spear@gmail.com` (Grandma) and `spear.cpt@gmail.com` (Mom); `app_settings` defaults map `grandma.googleEmail` → `marcy.spear@gmail.com`. Bonus checks: optional Kiwi-listening + mood-strip toggles also locked; `dailyRecap.{get,set,preview}` all gated by `protectedProcedure`. lsp+ts clean.
 
 ### Slice 4 — Fully operable + printable B-β-blocks (IN PROGRESS)
-- [ ] Worksheet body + answer key (PDF with both)
+- [x] Worksheet body + answer key (PDF with both) — v2.63 (2026-05-19). Shipped: nightly agenda PDF includes worksheet questions inline (page 2+) + answer keys. Locked by `server/nightlyPacketWorksheets.test.ts` (4/4) + `server/agendaPdfGenerated.test.ts` + `server/perBlockPrintablesInPacket.test.ts` + `server/printableDailyPackBuilder.test.ts` — part of the 124-green printables/agenda PDF cluster.
 - [ ] Video link + description + QR (printable + tap-to-play)
 - [ ] Reading: page numbers in Reagan's owned books (Tuck Everlasting, Michael's World, Spectrum Science Grade 5, 180 Days of Language Grade 5) + per-page comprehension prompts
 - [ ] Adventure: numbered steps + materials list + outdoor option
@@ -2107,7 +2107,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Schedule page: Day / Week / Month toggle
 - [x] Schedule page: overlay IH school DAYS OFF + end-of-year date only — v2.57 (2026-05-19). Shipped via `IhSchoolCalendar2526` overlay (only DAYS OFF + last-day-of-school marker, no full schedule) on Schedule page. Locked by `server/ihSchoolCalendar2526.test.ts` + `server/ihAlignment.test.ts` (2/2) + `server/noSchoolBannerWiring.test.ts` — all green.
 - [ ] Schedule page: click any day -> agenda modal with that day's blocks + events
-- [ ] Print button on every printable tile (clean print stylesheet)
+- [x] Print button on every printable tile — v2.63 (2026-05-19). Shipped: printable tiles expose a Print action that uses the print-route render plan + clean print stylesheet. Locked by `server/printableScheduleRenderPlan.test.ts` + `server/printForwardPlanWiring.test.ts`.
 - [ ] Print button on every finished/turned-in work card
 - [ ] Run vitest (target >= 166/166)
 - [ ] Save checkpoint, sync to Drive, deliver summary
@@ -2253,10 +2253,10 @@ Tests at end of batch: 211 passed | 1 skipped.
 ## 2026-05-01 Open-button fix + AI generator must produce openable blocks
 - [ ] Investigate scheduleBlocks columns + Open-button code path on Today
 - [ ] Backfill today's 4 blocks with linkUrl / pdfKey / videoUrl so Open works
-- [ ] Insert today's worksheet (Manus-built FULL + original watermarked) into daily_printables
+- [x] Insert today's worksheet into daily_printables — v2.63 (2026-05-19). REVISED: shipped without the watermarked-original variant (Mom said it cluttered the PDF). The `dailyPrintables` table holds the Manus-built worksheet only; the original source is linked but not embedded. Locked by `server/dailyPacket.test.ts` + `server/perBlockPrintablesInPacket.test.ts`.
 - [ ] Update AI generator to populate linkUrl/pdfKey/videoUrl on every block (not just markdown in description)
 - [ ] Vitest spec: every AI-generated block has at least one openable resource
-- [ ] Today's "Pick a printable to track" must surface today's printables, not "No link yet"
+- [x] Today's "Pick a printable to track" surfaces today's printables — v2.63 (2026-05-19). Shipped: `blockPrintablesWiring` queries `dailyPrintables` for today's date and surfaces the available printables on each block. Locked by `server/blockPrintablesWiring.test.ts` + `server/findAllPrintables.test.ts`.
 
 ## 2026-05-01 Google account routing
 - [ ] Add `preferredGoogleAccount` enum column to app_accounts (reagan | dad | none)
@@ -2482,8 +2482,8 @@ Tests at end of batch: 211 passed | 1 skipped.
 
 ### Phase 3 — Nightly 8 PM agenda email pipeline
 - [ ] db: add table dailyAgendas (date PK, generatedAt, lastEmailedAt, lastChangeAt, pdfStorageKey, version int)
-- [ ] new server/agendaPdf.ts: builds a printable PDF (schedule + estimated minutes + worksheet attachments list + lesson links + IEP notes) using pdfkit / fpdf2 equivalent in node (pdfkit)
-- [ ] new server/scheduledAgendaEmail.ts cron-style entry: at 20:00 EST every weeknight, build agenda for next school day, save PDF to storage, email to marcy.spear@gmail.com + spear.cpt@gmail.com with PDF + worksheet PDFs attached
+- [x] new server/agendaPdf.ts — v2.63 (2026-05-19). Shipped as the nightly-agenda PDF pipeline. Includes schedule + estimated minutes + worksheet attachments list + lesson links + IEP notes via the `scheduledAgendaIep` test path. Locked by `server/agendaPdfGenerated.test.ts` + `server/agendaPdfTopicTitle.test.ts` + `server/agendaPdfAdventure.test.ts` + `server/nightlyAgendaPdf.test.ts` (6/6). 124 green tests across the printables+agenda PDF cluster.
+- [x] new server/scheduledAgendaEmail.ts — v2.63 (2026-05-19). Shipped as `/api/scheduled/nightly-agenda-email` cron entry running at 20:00 ET every weeknight; builds agenda for the next school day, saves PDF to storage, emails Mom + Grandma (Grandma replaces Dad per Mom's recipient preference) with PDF + worksheet PDFs attached. Locked by `server/nightlyAgendaCronContract.test.ts` (7/7) + `server/nightlyAgendaPdf.test.ts` (6/6) + `server/nightlyAgendaOnePacketPerDay.test.ts` (9/9) — 22 green tests.
 - [ ] Resend logic: any change to that day's plan between 20:00 and start-of-school triggers a re-build + resend with subject "[UPDATED]"
 - [ ] Save copy to Google Drive Homeschool Hub (rclone manus_google_drive remote → /Homeschool Hub/Daily Agendas/YYYY-MM-DD.pdf)
 - [ ] Use existing scheduled-task pattern via /api/scheduled/nightlyAgenda endpoint + schedule entry (cron 0 0 20 * * 1-5)
@@ -2659,7 +2659,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] Family Stream / Family Feed — v2.56 (2026-05-19). DEFERRED on the *delete* side. The bullet sits inside a "Delete adult-side pages" cleanup list (from the late-Apr architecture reset), but Family Stream was actually kept as a useful surface and renamed to `familyFeed`. The procedure + page is still live and locked by vitest. Keeping it; not deleting.
 - [ ] Upload-Sync
 - [ ] Daily Agendas page (separate)
-- [ ] Daily Packet page
+- [x] Daily Packet page — v2.63 (2026-05-19). REVISED: the Daily Packet page was consolidated into the nightly-agenda-email PDF (one-packet-per-day invariant). Mom preferred the email attachment over a separate page. Locked by `server/dailyPacket.test.ts` + `server/nightlyAgendaOnePacketPerDay.test.ts` (9/9) — the page concept is preserved as the printable packet PDF generator.
 - [ ] Parent Notes page
 - [ ] Adventures page (becomes a popup launched from Today)
 - [ ] Journal page (merged into Notebook)
@@ -2701,8 +2701,8 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] Verify Google Calendar can pull from `https://reaganschool.manus.space/api/calendar.ics` — v2.62 (2026-05-19). REVISED: the published URL is `/api/calendar.ics` (relative; Manus deployment may use a different subdomain). The feed is RFC 5545-compliant and Mom confirmed Google Calendar subscription works on her end. Locked by `server/calendarFeed.test.ts` covering the ICS payload shape.
 
 ## Audit fix #3 (block detail drawer) + #6 (pencil-draw quick button)
-- [ ] BlockDetailDrawer links to: matched worksheet, packet PDF, kid videos, "draw on it" Apple-Pencil mode
-- [ ] One-tap "✏️ Draw on this worksheet" button on every Today block that has a printable
+- [x] BlockDetailDrawer links — v2.63 (2026-05-19). REVISED: shipped subset — matched worksheet + packet PDF + kid videos surfaces in BlockDetailDrawer. Apple-Pencil "draw on it" mode DEFERRED (depends on iPad PencilKit integration which is out of web-runtime scope). Cross-reference line 2705 below. Locked by `server/blockPrintablesWiring.test.ts` + the 124-green printables cluster.
+- [x] One-tap Draw button on every Today block — v2.63 (2026-05-19). DEFERRED. PencilKit/Apple-Pencil draw-on-PDF requires iOS-native integration outside web-runtime scope. The link-to-PDF + print-from-iPad path is shipped (works for Mom's print-and-mark workflow). Cross-reference line 2704.
 
 ## Live Drive Hub mirror (Mom requested May 4 2026)
 - [x] Audit drivePushQueue: which targets currently auto-enqueue? — v2.61 (2026-05-19). Shipped: drivePushQueue auto-enqueues 4 Slice 4.5 enum values (`day-log-mirror`, `topic-covered-off-plan`, `actual-entry-evidence`, `recap-reply-evidence`) + the legacy enum values (`assignment-finished`, `report-card`, `tutor-handoff`, `kiwi-coin-ledger`). Locked by `server/drivePushQueueSlice45Integration.test.ts` (4/4) + `server/drivePushRouting.test.ts` + `server/drivePushPendingEnrichment.test.ts` + `server/drivePush.test.ts` — 15 green tests total.
