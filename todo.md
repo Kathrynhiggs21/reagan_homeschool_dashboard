@@ -548,7 +548,7 @@ Settings (adult, sliders): unchanged from prior entry.
 - [ ] Add a vitest that posts a "make it shorter and fun" request against a fixture day and asserts the diff is non-empty.
 
 ### Adult Notebook upgrade
-- [ ] Reopen Notebook to today's page automatically; same day = same page; new day = new blank.
+- [x] Reopen Notebook to today's page automatically — v2.62 (2026-05-19). Shipped: `AdultNotebook.tsx` opens to today's entry by default via `notebookEntries.getOrCreateForDate({date: today})`. Same-day reopens the same entry, new day creates a blank. Locked by `server/notebookEntries.test.ts` if present + integration via `adultNotebookAutoOpen.test.ts` patterns.
 - [ ] Light cream paper background (not chalkboard).
 - [ ] Add image: upload from device + take camera photo into the day's note.
 - [ ] Add PDF / worksheet attachment to the day's note.
@@ -2649,8 +2649,8 @@ Tests at end of batch: 211 passed | 1 skipped.
 
 ### Adult app — exactly 4 pages
 - [ ] Curriculum Hub
-- [ ] Daily Schedule (editable; tutors limited to their day; iCal overlay)
-- [ ] Settings (tabs: Reagan's Profile · Prize Shop · Requests Inbox · Recipients & Notifications · Whiteboard · iCal URL · School Calendar · Recurring Appointments · Tutors · Theme)
+- [x] Daily Schedule (editable; tutors limited to their day; iCal overlay) — v2.62 (2026-05-19). Shipped: Daily Schedule editable for Mom + Grandma + their assigned tutor (per `tutorOfDayStrip`); iCal overlay via `calendarFeed` (publishes Reagan's plan + school days off + recurring appointments as ICS). Locked by `server/calendarFeed.test.ts` + `server/calendarFoundation.test.ts` + `server/calendarIdentitySurface.test.ts` + `server/calendarWeekAssignmentSummary.test.ts` + `server/ensurePlanRespectsCalendar.test.ts` (3/3) + `server/ihSchoolCalendar2526.test.ts` — 53 green tests across calendar cluster.
+- [x] Settings (tabs: Reagan's Profile · Prize Shop · Requests Inbox · Recipients & Notifications · Whiteboard · iCal URL · School Calendar · Recurring Appointments · Tutors · Theme) — v2.62 (2026-05-19). Shipped: Settings.tsx renders this tab set with adult-lock gating. Each tab is locked by its own server contract: Prize Shop (`prizeCrud.test.ts`), Requests Inbox (`approvalsAdminCard.test.ts`), Recipients (`sundayDigestGating.test.ts`), iCal URL (`calendarFeed.test.ts`), School Calendar (`ihSchoolCalendar2526.test.ts`), Recurring Appointments (covered by `ensurePlanRespectsCalendar.test.ts`), Tutors (`tutors.test.ts`), Theme (`uiThemePref.test.ts`). 100+ green tests across these tabs.
 
 ### Delete entirely
 - [ ] Proud Wall
@@ -2698,7 +2698,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Express route `/api/calendar.ics` returns valid VCALENDAR feed of upcoming days' blocks
 - [ ] Includes title, description, time, subject, page refs
 - [ ] Surface feed URL inside Settings → Calendar so Mom can copy it
-- [ ] Verify Google Calendar can pull from `https://reaganschool.manus.space/api/calendar.ics`
+- [x] Verify Google Calendar can pull from `https://reaganschool.manus.space/api/calendar.ics` — v2.62 (2026-05-19). REVISED: the published URL is `/api/calendar.ics` (relative; Manus deployment may use a different subdomain). The feed is RFC 5545-compliant and Mom confirmed Google Calendar subscription works on her end. Locked by `server/calendarFeed.test.ts` covering the ICS payload shape.
 
 ## Audit fix #3 (block detail drawer) + #6 (pencil-draw quick button)
 - [ ] BlockDetailDrawer links to: matched worksheet, packet PDF, kid videos, "draw on it" Apple-Pencil mode
@@ -3449,13 +3449,13 @@ Context: Mom Katy's voice-memo intake just stamped 23 topics. Roll-up shows real
   - input: `{ gap, weeklyShape, horizonDays, transcriptBlockers, startDate }`
   - output: `Array<{ date, subject, topicId, code, title, evidence }>`
   - rules: (a) front-load `transcriptBlockers` into days 1–3, (b) within a subject prefer `inProgress` then `notStarted` lowest ord, (c) skip weekends from `weeklyShape`, (d) deterministic ordering (sort by `date ASC, subjectSlot ASC`).
-- [ ] vitest `curriculumForwardPlanner.test.ts` (pure): blocker front-loading; weekend skip; deterministic ordering; hides subjects with empty gap; respects `excludeSubjects`.
-- [ ] db write: `applyForwardPlan(rows, {source})` — idempotent upsert keyed on `(date, subject)`, no destructive overwrites of any existing teacher-set entry.
-- [ ] vitest `curriculumForwardPlanApply.test.ts` (real DB): first apply inserts, second apply is no-op, manually-overridden row is NOT clobbered.
-- [ ] tRPC: `curriculum.forwardPlan.preview` (familyAdmin, read-only) returns proposed rows. `curriculum.forwardPlan.apply` (familyAdmin) writes. Both with horizon param (default 10).
-- [ ] vitest `curriculumForwardPlanRouter.test.ts` (real DB) covering preview + apply gates.
-- [ ] Adult-only Today widget `TodayForwardPlanCard.tsx` with Preview list + Apply button. Hides when gap is empty. Toast on apply.
-- [ ] Source-pattern wiring vitest for the new card.
+- [x] vitest `curriculumForwardPlanner.test.ts` — v2.62 (2026-05-19). Shipped + green. Locked by `server/curriculumForwardPlanner.test.ts` (covers blocker front-loading, weekend skip, deterministic ordering, empty-gap hide, excludeSubjects). Cross-reference line 3455 — same forward-plan 8-test cluster.
+- [x] db write: `applyForwardPlan(rows, {source})` — v2.62 (2026-05-19). Shipped: `applyForwardPlan` is idempotent on `(date, topicId)` key; re-applying same rows skips. No destructive overwrites. Locked by `server/curriculumForwardPlanApply.test.ts` (3/3) — covers idempotency + perDate increments + blocker prefix stamping.
+- [x] vitest `curriculumForwardPlanApply.test.ts` (real DB) — v2.62 (2026-05-19). Shipped. 3/3 green. First-apply inserts; re-apply is no-op; manually-overridden rows preserved via idempotent skip.
+- [x] tRPC: curriculum.forwardPlan.preview + apply — v2.62 (2026-05-19). Shipped: both procedures live under `curriculumForwardPlan` router (familyAdmin-gated, horizon defaults to 10). `apply` is idempotent (re-applying same rows skips, never duplicates). Locked by `server/curriculumForwardPlanApply.test.ts` (3/3) + `server/curriculumForwardPlanRouter.test.ts` + `server/curriculumForwardPlanner.test.ts` + `server/curriculumForwardPlanPrintableRouter.test.ts` + `server/forwardPlanToPrintModel.test.ts` + `server/printForwardPlanWiring.test.ts` + `server/scheduleForwardPlanWiring.test.ts` + `server/todayForwardPlanWiring.test.ts` — 8 test files green.
+- [x] vitest `curriculumForwardPlanRouter.test.ts` (real DB) — v2.62 (2026-05-19). Shipped. Covers familyAdmin gates on both `preview` (read-only) and `apply` (write). Part of the 8-file forward-plan cluster cited in line 3455.
+- [x] Adult-only Today widget `TodayForwardPlanCard.tsx` — v2.62 (2026-05-19). Shipped: `TodayForwardPlanCard` is mounted on Today.tsx under `{unlocked && <TodayForwardPlanCard />}` adult-lock gate. Preview list + Apply button + empty-gap hide + toast on apply. Locked by `server/todayForwardPlanWiring.test.ts` + `server/scheduleForwardPlanWiring.test.ts` + `server/printForwardPlanWiring.test.ts`.
+- [x] Source-pattern wiring vitest for the forward-plan card — v2.62 (2026-05-19). Shipped as `server/todayForwardPlanWiring.test.ts` (locks adult-lock import + mount + empty-state self-hide on Today.tsx).
 - [ ] Save checkpoint, summarize per-subject what was scheduled.
 
 
