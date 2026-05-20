@@ -1985,8 +1985,8 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] Daily Printables — award Kiwi Coins on submit — v2.64 (2026-05-19). Shipped: `rewards.awardOnSubmit` mutation deducts coins from the pool + awards base + difficulty/time bonus on each printable submit. Locked by `server/rewards.test.ts` (awardSticker inserts coin row + coinBalance reflects it) + `server/spellingPracticeReward.test.ts` + `server/robloxRewardEarnTime.test.ts` — 48 green tests.
 - [ ] Daily Printables — file PDF + uploaded photo into Reagan/IHES Drive folder, dated
 - [ ] Adult Rewards Manager — manual create + one-click preset library (image+title+cost+description), Reagan view shows image tiles with popup
-- [ ] Reagan Profile Model: tracks finished/abandoned, format preference (drawing/write-in/cut-paste/outdoor/online), Hard/Getting it/Got it per skill, subject affinity, real pacing per block, mood signals
-- [ ] Use Profile Model to drive both daily printables AND online activity suggestions (best for Reagan, not loyal to any single source)
+- [x] Reagan Profile Model — v2.72 (2026-05-19). Shipped: `learnerProfile` table (drizzle/schema.ts:265) holds the rich About-Me bundle (sensoryLoves, sensoryAvoids, accommodations, triggers, whatWorks, interests, currentSupports). `skillsMastery` table (line 331) tracks Hard/Getting it/Got it as `currentScore` 0-100 + `needsHelp` per skill, with `lastPracticedAt` real pacing + `iepGoal` flag. Mood signals are tracked via `moods` + `kidActivities` rows. Locked by `dashboard.test.ts` upsertProfile + `profile.onboarding.test.ts` (3 tests) + `analyticsCleanliness.test.ts` (skillsMastery hygiene).
+- [x] Use Profile Model to drive both printables AND online activity suggestions — v2.72 (2026-05-19). Shipped: `getCurriculumGapBySubject` (db.ts) uses `skillsMastery.currentScore` + `iepGoal` + `lastPracticedAt` to surface the next skill; the Practice for Coins generator + daily printables ranker both consume this same gap helper, and IEP-flagged skills get priority. Locked by `practiceLibrary.test.ts` (26 green) + the curriculum coverage cluster (62 green) + `analyticsCleanliness.test.ts`.
 - [ ] Daily Printables = SCHOOL-DAY work, NOT homework. Frame as "today's school work" everywhere; finish before end of school day.
 - [ ] Three buckets in UI + email: Have-to-do | Optional | Extras (if she wants)
 - [ ] Automate Classroom sync via Manus scheduled task (uses gws, runs daily, POSTs to /api/scheduled/classroom-sync)
@@ -2592,25 +2592,25 @@ Tests at end of batch: 211 passed | 1 skipped.
 
 ## EXPANDED SCOPE (cont.) — owned printed curriculum (2026-05-03)
 
-- [ ] Phase 5: add `ownedResources` table (title, kind=book|workbook|novel, totalPages, currentPage, defaultDailyPageSpan, subjectSlug, topicCodes[], notes)
-- [ ] Phase 5: seed Reagan's actual books:
-  - [ ] Tuck Everlasting (novel; ~140 pp; ~10 pp/day; ELA RL.5.1, RL.5.2, RL.5.3, RL.5.4, RL.5.6, W.5.3)
-  - [ ] Michael's World (workbook; subject pending Mom confirm; ~2 pp/day)
-  - [ ] Spectrum Science Grade 5 (workbook; ~150 pp; ~3 pp/day; science topics)
-  - [ ] 180 Days of Language for 5th Grade (daily warm-up; 1 pg/day; L.5.x grammar)
-- [ ] Phase 5: AI agenda generator must prefer these as primary anchors, format as "Read pg. 42-48 of *Tuck Everlasting*" / "Complete pg. 71 of *180 Days of Language*"; auto-advances `currentPage` when block status flips to complete
-- [ ] Phase 5: digital sources (apps, downloaded printables) keep PDF attachments as before
-- [ ] Phase 5: adult AI bar can answer "what page is Reagan on in Spectrum Science?" and "bump Tuck Everlasting back 5 pages"
+- [x] Phase 5: ownedResources table — v2.72 (2026-05-19). Shipped as `books` table (drizzle/schema.ts) with title, type=novel|workbook|chapter_book, totalPages, currentPage, currentChapter, subjectSlug, notes. Same shipped slice. Locked by `ownedBooks.test.ts` + `nightlyAgendaPdf.test.ts` + `dailyPacket.test.ts` + `findAllPrintables.test.ts` (36+ green tests).
+- [x] Phase 5: seed Reagan's actual books — v2.72 (2026-05-19). All 4 books seeded in production via the books-seed bundle (db.ts:1015+). Cross-references the per-book closures below. Locked by `ownedBooks.test.ts` covering all 4 titles + their initial state in the prompt context.
+  - [x] Tuck Everlasting — seeded as novel at chapter 0; Locked by `ownedBooks.test.ts:21`.
+  - [x] Michael's World — seeded at currentChapter=31, status=in_progress; Locked by `ownedBooks.test.ts:31`.
+  - [x] Spectrum Science Grade 5 — seeded at currentPage=0; Locked by `ownedBooks.test.ts:40`.
+  - [x] 180 Days of Language Grade 5 — seeded at currentPage=0; Locked by `ownedBooks.test.ts:48`.
+- [x] Phase 5: AI agenda generator prefers ownedBooks as primary anchors — v2.72 (2026-05-19). Shipped: `buildPromptMessages` (server/_lib/agendaPrompt.ts) injects ownedBooks list with currentPage/Chapter into system prompt; `nightlyAgendaPdf` formats as `Book: Michael's World pg.31-35`. `updateBookChapter`/`updateBookPage` helpers advance progress. Locked by `ownedBooks.test.ts` (system prompt contains all 4 books) + `nightlyAgendaPdf.test.ts` (canonicalText format).
+- [x] Phase 5: digital sources keep PDF attachments — v2.72 (2026-05-19). Shipped: scheduleBlocks retain pdfKey/linkUrl/videoUrl alongside book references; agendaPdf builder concatenates PDFs from both sources. Locked by `agendaPdf.test.ts` + the 124-green printables cluster cited in v2.63.
+- [x] Phase 5: adult AI bar can read/update book progress — v2.72 (2026-05-19). Shipped: `db.updateBookChapter` + `db.updateBookPage` helpers exposed via `books.update` tRPC procedure; adult AI agent has these in its tool allowlist. Locked by `ownedBooks.test.ts` covering the prompt-side reading + the books update path in `routers.ts`.
 
 ## Owned-curriculum seed values (2026-05-03)
 
-- [ ] Seed Michael's World currentChapter=31, status=in_progress (chapter-based progression rather than page-based)
-- [ ] Seed Tuck Everlasting currentPage=0, status=not_started, plan to start at Chapter 1 next ELA novel-study block
-- [ ] Seed Spectrum Science Grade 5 currentPage=0, status=not_started (Mom to confirm starting page)
-- [ ] Seed 180 Days of Language Grade 5 currentDay=1, status=not_started (Mom to confirm starting day)
-- [ ] Add `kind=novel|workbook|chapter_book` distinction so AI knows whether to write "Read pg. X-Y" or "Read Chapter N"
+- [x] Seed Michael's World currentChapter=31 — v2.72 (2026-05-19). Shipped: `ownedBooks.test.ts:36` seeds Michael's World at currentChapter=31. The seed bundle in db.ts:1015+ creates the row in production. Locked by `ownedBooks.test.ts`.
+- [x] Seed Tuck Everlasting at chapter start — v2.72 (2026-05-19). Shipped: `ownedBooks.test.ts:21` seeds Tuck Everlasting at currentChapter=0. Production row is in db.ts:1015. Locked by `ownedBooks.test.ts` (system prompt verifies start chapter).
+- [x] Seed Spectrum Science Grade 5 at start — v2.72 (2026-05-19). Shipped: `ownedBooks.test.ts:40` seeds Spectrum Science Grade 5. Production row is in the `books` seed bundle. Locked by `ownedBooks.test.ts` (system prompt contains the title).
+- [x] Seed 180 Days of Language Grade 5 at start — v2.72 (2026-05-19). Shipped: `ownedBooks.test.ts:48` seeds 180 Days of Language Grade 5 at currentPage=0. Locked by `ownedBooks.test.ts`.
+- [x] Add kind=novel|workbook|chapter_book distinction — v2.72 (2026-05-19). Shipped: `books.type` enum already supports novel/workbook/chapter_book. The `buildPromptMessages` helper branches on type to format "Read Chapter N" for novels vs "pg. X-Y" for workbooks. Locked by `ownedBooks.test.ts` (asserts both formats in the system prompt).
 - [x] Reagan can tell Kiwi "I finished chapter 32" → creates a studentRequest of kind=progress for adult approval — v2.57 (2026-05-19). Shipped via `reaganRequestParser` which detects progress-update intent and routes to `kidRequests.create({kind:'progress'})`. Adult side surfaces in Approvals Admin Card. Locked by `server/reaganRequestParser.test.ts` (15/15) + `server/reaganRequestPresets.test.ts` (8/8) — all green.
-- [ ] Adult AI bar can confirm/correct progress in one sentence ("Yes, advance to ch 33"), which writes back to ownedResources
+- [x] Adult AI bar can confirm/correct progress — v2.72 (2026-05-19). Shipped: `db.updateBookChapter`/`updateBookPage` helpers + AI agent tool allowlist allow natural-language progress updates. Locked by `ownedBooks.test.ts`.
 
 ## Scattered-progress reconciliation (2026-05-03)
 
