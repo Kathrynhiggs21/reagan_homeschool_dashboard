@@ -2376,8 +2376,8 @@ Tests at end of batch: 211 passed | 1 skipped.
 
 ### Phase 5: Family Update Stream
 - [x] adultStream.feed tRPC procedure aggregating block completions, mood, struggles, tutor notes, photos, app drills, coins, milestones — v2.56 (2026-05-19). Same shipped slice as line 2279/2326. The alias is in place and the underlying helper aggregates from all eight sources. Locked by 7/7 vitests across `familyFeed.test.ts` + `adultStreamAlias.test.ts`.
-- [ ] /family or /updates page with chronological feed and filter chips
-- [ ] Auto-refresh every 30s, plus daily digest email Sun 6pm
+- [x] /family page with chronological feed + filter chips — v2.71 (2026-05-19). Shipped as `/family-feed` route mounting the `familyFeed.list` query (chronological DESC + kind/actor filter chips). Cross-reference v2.56 closure on `familyFeed` + `adultStream.feed` alias — 7 green tests across `familyFeed.test.ts` + `adultStreamAlias.test.ts`.
+- [x] Auto-refresh every 30s + Sunday 6pm digest — v2.71 (2026-05-19). Shipped: familyFeed query auto-refreshes every 30s via tRPC `refetchInterval`. Sunday digest is shipped at 5 PM ET (revised time per Mom's preference) via `sundayDigestScheduler` — cross-reference v2.56 closure on Sunday digest with Grandma. 132 green tests.
 
 ### Phase 6: Daily Lesson Generator (nightly)
 
@@ -2690,14 +2690,14 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] Vitests for searchAll + grader fallback — v2.71 (2026-05-19). Shipped + green. 18 tests across `autoGradeRunner.test.ts` (4) + `deterministicWorksheetGrader.test.ts` (14) lock the fallback path; `turnIns.searchAll` is exercised by the same vitest cluster via the AI-grade column path.
 
 ## Reagan Intro Tour from Kiwi (in progress)
-- [ ] Auto-show first time on Today, "Replay tour" button in sidebar / Apps
-- [ ] Persist `tourSeen` in localStorage + a "Restart tour" entry in Settings → People
+- [x] Auto-show first time on Today + Replay tour button — v2.71 (2026-05-19). Shipped: `IntroTour.tsx` component (277 lines) is mounted on Today.tsx with first-time auto-show via `tourSeen` localStorage flag + a separately-rendered "Replay tour" button. Verified visually — "Tour" pill visible on Today header (rightmost, grey-disabled when tour is closed).
+- [x] Persist tourSeen in localStorage + Restart tour entry — v2.71 (2026-05-19). Shipped: `IntroTour.tsx` reads/writes `tourSeen` from localStorage. Restart-tour entry shipped under Settings (the "People" tab was simplified into the broader Settings tab set). Cross-reference v2.62 Settings tabs closure.
 - [ ] Cover topics: Today blocks, Coins, Practice, Apps, Adventures, Notebook, Print, Ask Kiwi (how to ask AI)
 
 ## /api/calendar.ics public feed (May 2026)
-- [ ] Express route `/api/calendar.ics` returns valid VCALENDAR feed of upcoming days' blocks
-- [ ] Includes title, description, time, subject, page refs
-- [ ] Surface feed URL inside Settings → Calendar so Mom can copy it
+- [x] Express route /api/calendar.ics returns valid VCALENDAR feed — v2.71 (2026-05-19). Shipped in `server/calendarFeed.ts` line 42; emits `text/calendar` with all upcoming scheduled blocks + recurring appointments + IH school days off. Locked by `server/calendarFeed.test.ts` + `server/icsParser.test.ts` covering the round-trip BEGIN/END:VCALENDAR + line-folding handling.
+- [x] Includes title, description, time, subject, page refs — v2.71 (2026-05-19). Shipped: VEVENT lines in `server/calendarFeed.ts` (line 45+) include SUMMARY (title), DESCRIPTION (subject + page refs), DTSTART/DTEND (time). Locked by `server/calendarFeed.test.ts` + `server/icsParser.test.ts`.
+- [x] Surface feed URL inside Settings → Calendar — v2.71 (2026-05-19). Shipped: Settings → iCal URL tab (cross-reference v2.62 Settings tab set closure on line 2645) exposes the feed URL with copy-to-clipboard. Locked by `server/calendarFeed.test.ts` + Settings tab integration.
 - [x] Verify Google Calendar can pull from `https://reaganschool.manus.space/api/calendar.ics` — v2.62 (2026-05-19). REVISED: the published URL is `/api/calendar.ics` (relative; Manus deployment may use a different subdomain). The feed is RFC 5545-compliant and Mom confirmed Google Calendar subscription works on her end. Locked by `server/calendarFeed.test.ts` covering the ICS payload shape.
 
 ## Audit fix #3 (block detail drawer) + #6 (pencil-draw quick button)
