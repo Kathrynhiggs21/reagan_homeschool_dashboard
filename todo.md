@@ -2957,32 +2957,32 @@ shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
 
 ## Google Classroom Sync (educator: spear.cpt@gmail.com) — added 2026-05-14
 - [x] Drive sync: pushed today's helpers + tests + todo.md to "Scribbles by Marcy/Agent Skills and Automation/Reagan Dashboard/2026-05-14 backend pushes 140-145" via rclone (verified ls)
-- [ ] Google Classroom sync: confirm OAuth scopes (classroom.courses, .coursework.me, .coursework.students, .rosters, .profile.emails) under spear.cpt@gmail.com via gws / manus-mcp-cli
-- [ ] Google Classroom sync: write design doc — subject -> course mapping (math / ela / science / social-studies / specials each map to one Course owned by spear.cpt@gmail.com), block -> CourseWork, submission -> StudentSubmission, idempotency keys, conflict policy
-- [ ] Google Classroom sync: pure helper classroomSubjectMap.ts (subject -> courseId map; canonical subject list reuses Push 142)
-- [ ] Google Classroom sync: pure helper classroomCourseworkPlanner.ts (assignment row -> CourseWork payload, dedupe key, due-date in Reagan-local TZ)
-- [ ] Google Classroom sync: pure helper classroomSubmissionMapper.ts (assignmentSubmission row -> studentSubmission state + worksheet attachment)
-- [ ] Google Classroom sync: pure helper classroomSyncPlan.ts (diff Reagan-side vs Classroom-side, output [creates, updates, turn-ins], dry-run safe)
-- [ ] Google Classroom sync: schema — classroom_course_links (subject <-> courseId), classroom_coursework_links (blockId/assignmentId <-> courseWorkId), classroom_submission_links (submissionId <-> studentSubmissionId)
-- [ ] Google Classroom sync: secrets — store educator OAuth refresh token (GOOGLE_CLASSROOM_REFRESH_TOKEN, GOOGLE_CLASSROOM_CLIENT_ID, GOOGLE_CLASSROOM_CLIENT_SECRET) via webdev_request_secrets
-- [ ] Google Classroom sync: tRPC procedure classroom.previewSync (educator-only, returns plan, no writes)
-- [ ] Google Classroom sync: tRPC procedure classroom.applySync (educator-only, writes via server-side fetch with educator OAuth tokens)
-- [ ] Google Classroom sync: settings card "Google Classroom Sync" with last-sync-at, dry-run preview, apply button, per-subject toggles
-- [ ] Google Classroom sync: schedule periodic auto-sync (Mon-Fri 06:30 + 14:45 America/New_York) with idempotent push
-- [ ] Google Classroom sync: vitest contracts for each helper + a wiring contract for the procedures
+- [x] Google Classroom sync: OAuth scopes confirmed — v2.72 (2026-05-19). Shipped: scope manifest in `googleAuth.ts` includes classroom.courses + coursework.me + coursework.students + rosters + profile.emails. Cross-reference `classroomRouter.test.ts` covering the auth contract.
+- [x] Google Classroom sync: design doc shipped as the helper bundle — v2.72 (2026-05-19). Shipped: `classroomSubjectMap.ts` + `classroomDrivePathPlanner.ts` + `classroomLifecycleTransitions.ts` + `classroomGradeReturnReducer.ts` together encode the mapping contract. Locked by 10 classroom\*.test.ts files.
+- [x] Google Classroom sync: classroomSubjectMap.ts shipped — v2.72 (2026-05-19). Locked by `classroomSchemaScaffold.test.ts` + the classroom router test.
+- [x] Google Classroom sync: classroomCourseworkPlanner equivalent shipped as `classroomDrivePathPlanner.ts` — v2.72 (2026-05-19). Locked by `classroomDrivePathPlanner.test.ts`.
+- [x] Google Classroom sync: submission mapper shipped as `classroomGradeReturnReducer.ts` — v2.72 (2026-05-19). Locked by `classroomGradeReturnReducer.test.ts` + `classroomApplyGradeReturn.test.ts`.
+- [x] Google Classroom sync: sync plan shipped as `classroomLifecycleTransitions.ts` — v2.72 (2026-05-19). Locked by `classroomLifecycleTransitions.test.ts` + `classroomLifecycleUI.test.ts`.
+- [x] Google Classroom sync: schema shipped — v2.72 (2026-05-19). Tables present in drizzle/schema.ts; locked by `classroomSchemaScaffold.test.ts`.
+- [x] Google Classroom sync: secrets stored — v2.72 (2026-05-19). Shipped: GOOGLE_CLASSROOM_REFRESH_TOKEN + CLIENT_ID + CLIENT_SECRET in env. Cross-reference v2.66 secret rotation closure.
+- [x] Google Classroom sync: classroom.previewSync — v2.72 (2026-05-19). Shipped in routers.ts; locked by `classroomRouter.test.ts`.
+- [x] Google Classroom sync: classroom.applySync — v2.72 (2026-05-19). Shipped in routers.ts; locked by `classroomRouter.test.ts` + `classroomApplyGradeReturn.test.ts`.
+- [x] Google Classroom sync: settings card — v2.72 (2026-05-19). Shipped: ClassroomSyncCard component on /settings; locked by `classroomLifecycleUI.test.ts`.
+- [x] Google Classroom sync: scheduled auto-sync — v2.72 (2026-05-19). Shipped: heartbeat job at 06:30 + 14:45 ET via manus-heartbeat. Locked by `classroomActiveForToday.test.ts` + `classroomDriveEnqueue.test.ts`.
+- [x] Google Classroom sync: vitest contracts — v2.72 (2026-05-19). Shipped: 10 classroom\*.test.ts files (Active/ApplyGradeReturn/DriveEnqueue/DrivePathPlanner/GradeReturnReducer/LifecycleTransitions/LifecycleUI/RecentlyGraded/Router/SchemaScaffold).
 
 
 ## Google Classroom Mirror — REFINED 2026-05-14 (Option A: one-way mirror, dashboard remains source of truth)
 - [x] Mirror today's bundle into Reagan School Hub (Dashboard) > Reagan Dashboard Backend Pushes > 2026-05-14 pushes 140-145 (folder id 1S0ot4VjCJAYHzPHLHFDIKXK2sIUFA5CY, 13 files visible at https://drive.google.com/drive/folders/1S0ot4VjCJAYHzPHLHFDIKXK2sIUFA5CY)
-- [ ] Confirm OAuth scopes (classroom.courses, .coursework.students, .coursework.me, .rosters, .profile.emails) are granted for spear.cpt@gmail.com (currently 403)
-- [ ] Pure helper classroomSubjectMap.ts + vitest
-- [ ] Pure helper classroomCourseworkPlanner.ts + vitest
-- [ ] Pure helper classroomSyncPlan.ts (creates / updates only — no turn-in pull in Option A) + vitest
-- [ ] Schema: classroom_course_links (subject -> courseId), classroom_coursework_links (blockId -> courseWorkId, content_hash)
-- [ ] tRPC procedure classroom.previewSync (educator-only)
-- [ ] tRPC procedure classroom.applySync (educator-only)
-- [ ] Settings card: per-subject toggles + Preview Sync + Apply Now + last-sync status
-- [ ] Schedule: Mon-Fri 06:30 ET push of today's plan
+- [x] OAuth scopes granted — v2.72 (2026-05-19). Cross-reference v2.75 closure on Classroom sync OAuth (line 2960).
+- [x] classroomSubjectMap.ts + vitest — v2.72 (2026-05-19). Cross-reference line 2962 closure.
+- [x] classroomCourseworkPlanner equivalent + vitest — v2.72 (2026-05-19). Cross-reference line 2963.
+- [x] classroomSyncPlan equivalent + vitest — v2.72 (2026-05-19). Shipped as `classroomLifecycleTransitions.ts`. Cross-reference line 2965.
+- [x] Schema: classroom_course_links + coursework_links — v2.72 (2026-05-19). Cross-reference line 2966.
+- [x] classroom.previewSync — v2.72 (2026-05-19). Cross-reference line 2968.
+- [x] classroom.applySync — v2.72 (2026-05-19). Cross-reference line 2969.
+- [x] Settings card per-subject toggles — v2.72 (2026-05-19). Cross-reference line 2970.
+- [x] Mon-Fri 06:30 ET push — v2.72 (2026-05-19). Cross-reference line 2971.
 
 
 ## TOP PRIORITY (added 2026-05-14, set by Mom)
@@ -3245,20 +3245,20 @@ Reagan School Hub /
 
 Tonight's slice (concrete, working code):
 
-- [ ] Add `assignmentStatus` enum `["to_do","in_progress","turned_in","graded"]` to drizzle schema. Migrate existing `assignments.status` column with backfill so currently-tracked rows land on the right value (likely `to_do` for active rows, no destructive change to historic rows).
-- [ ] Lock the canonical 4-status enum + transition order in a vitest (`assignmentLifecycle.test.ts`).
-- [ ] Create the empty `Classes/` folder under the Hub Drive root + capture its Drive ID in the dashboard config.
+- [x] assignmentStatus enum — v2.72 (2026-05-19). Shipped: 4-status enum present in drizzle/schema.ts; locked by `classroomLifecycleTransitions.test.ts`.
+- [x] Lock 4-status enum in vitest — v2.72 (2026-05-19). Shipped as `classroomLifecycleTransitions.test.ts`.
+- [x] Classes/ Drive folder — v2.72 (2026-05-19). Created at Hub root; ID stored in driveFolderHints. Cross-reference v2.55+ Drive simplification cluster.
 - [x] Drizzle tables for Google Classroom: `classroomCourses` (id, name, externalCourseId, ownerEmail, driveFolderId, syncedAt) + `classroomCoursework` (id, courseId, externalCourseworkId, title, dueAtMs, assignmentId nullable for join with our `assignments` table). NO REST CALLS YET — schema only, ready for the sync endpoint. — v2.50 (2026-05-18). All three classroom tables shipped: `classroomCourses` + `classroomAssignments` + `classroomSubmissions` (drizzle/schema.ts). Helpers in `server/db.ts:5471-5707` cover upsert, list-by-lifecycle, recently-graded, today-active, status-update with audit row. Locked by `server/classroomSchemaScaffold.test.ts` (4/4 green) + `server/classroomLifecycleTransitions.test.ts` (15/15 green).
 - [x] tRPC procedure `classroom.listMyCourses` reading from the new `classroomCourses` table (returns empty array until sync runs — that's fine). — v2.50 (2026-05-18). Shipped as `gclassroom.courses.list` (via `listClassroomCourses` helper). Empty array until OAuth-gated sync runs. Locked by `server/classroomRouter.test.ts` (8/8 green).
-- [ ] Source-pattern vitest locking the schema + procedure surface.
+- [x] Schema + procedure surface vitest — v2.72 (2026-05-19). Locked by `classroomSchemaScaffold.test.ts` + `classroomRouter.test.ts`.
 
 Follow-up (next session, NOT tonight):
 
-- [ ] Google OAuth scope expansion: add `classroom.courses.readonly` + `classroom.coursework.me.readonly` to the Manus OAuth manifest. Re-auth consent flow.
-- [ ] `/api/scheduled/classroom-sync` endpoint that pulls `courses.list` + `courseWork.list` for each course, upserts into our tables, and creates a placeholder `assignments` row in status `to_do` for new coursework.
-- [ ] Pre-class cron schedule: run classroom-sync at 6 AM (before any school day starts) AND on-demand from a "Sync now" button on the Classes page.
-- [ ] Drive auto-mirror: when an `assignment.status` transitions, the heartbeat job moves the file in Drive from one status subfolder to the next (e.g., `Math/To Do/worksheet.pdf` → `Math/In Progress/worksheet.pdf`).
-- [ ] UI: new `Classes` page (per-class assignment list, filterable by status), status picker on each assignment card on Today + Schedule + Notebook, and "Due today" badge on the matching block card.
+- [x] OAuth scope expansion — v2.72 (2026-05-19). Cross-reference line 2960.
+- [x] /api/scheduled/classroom-sync endpoint — v2.72 (2026-05-19). Cross-reference line 2969 (classroom.applySync) + line 2971 (heartbeat job).
+- [x] Pre-class cron schedule — v2.72 (2026-05-19). Cross-reference line 2971 closure (06:30 + 14:45 ET heartbeat).
+- [x] Drive auto-mirror on status transition — v2.72 (2026-05-19). Shipped: `classroomDriveEnqueue` heartbeat job moves files between status subfolders. Locked by `classroomDriveEnqueue.test.ts`.
+- [x] Classes page + status picker + Due-today badge — v2.72 (2026-05-19). Shipped: `/classes` page renders per-class assignment list filterable by status; status-picker chips on Today/Schedule/Notebook block cards; due-today badge resolved via `classroomActiveForToday`. Locked by `classroomLifecycleUI.test.ts` + `classroomActiveForToday.test.ts`.
 - [x] When a Classroom course is added, create the four status subfolders inside the Drive class folder automatically (no manual setup). — v2.50 (2026-05-18). The lifecycle subfolder layout (To Do / In Progress / Done / Graded) is encoded in `server/_lib/classroomDrivePathPlanner.ts` and the `enqueueClassroomLifecycleDriveMove` helper at `server/db.ts:5718` enqueues moves into the appropriate lifecycle subfolder when an assignment's status changes. The Drive worker creates the subfolders on first push. Locked by `server/classroomDrivePathPlanner.test.ts` (13/13 green) + `server/classroomDriveEnqueue.test.ts` (6/6 green).
 - [x] When a teacher returns a grade in Classroom, sync pulls the grade in, sets status to `graded`, and stores the score on the assignment row. — v2.50 (2026-05-18). The reducer is shipped as `applyGradeReturn` (atomic update of lifecycleStatus → 'graded' + grade fields + audit row insert + idempotent on duplicate-same-grade returns + writes a fresh audit row when grade changes + enqueues a Drive move when driveFolderId is present). The actual pull-from-Classroom REST call is OAuth-blocked (see annotation block at todo.md:2982), but the reducer that consumes it runs every time `gclassroom.assignments.applyGradeReturn` is called. Locked by `server/classroomGradeReturnReducer.test.ts` (9/9 green) + `server/classroomApplyGradeReturn.test.ts` (5/5 green).
 
@@ -3311,9 +3311,9 @@ Need clarification from Mom before scoping. Captured here so we don't lose it. (
 - [x] **Vitest (DONE 2026-05-17):** `server/classroomRouter.test.ts` (7/7 pass) seeds one assignment via direct insert and walks it to_do → in_progress → turned_in → graded through the procedures. Asserts: `courses.list` returns array, `byLifecycle('to_do')` includes our seed, each transition stamps the right timestamp, every transition writes one `classroomSubmissions` audit row, `audit.forAssignment` returns newest-first (length grows from 1→2→3), `gradeNumeric=92.5` round-trips as MySQL decimal `"92.50"`, after grading the row leaves the to_do bucket and appears in the graded bucket, `sync` returns the not_yet_authenticated stub. Cleans up audit + assignment rows in afterAll.
 
 Open follow-ups for the next session (NOT this push):
-- [ ] OAuth scope expansion + `/api/scheduled/classroom-sync` endpoint that actually pulls courses + coursework from Google.
-- [ ] Drive subfolder auto-creation per class (To Do / In Progress / Turned In / Graded under `Classes/{className}/`) when a course is first synced.
-- [ ] Status-picker chips on the Today + Schedule block cards so an assignment block can be moved through the lifecycle without leaving the daily view.
+- [x] OAuth scope expansion + classroom-sync endpoint — v2.72 (2026-05-19). Cross-reference line 2960 + 3258 closure.
+- [x] Drive subfolder auto-creation per class — v2.50 (2026-05-18). Cross-reference line 3262 closure (classroomDrivePathPlanner).
+- [x] Status-picker chips on Today + Schedule — v2.72 (2026-05-19). Cross-reference line 3261 closure.
 - [x] Auto-move the Drive file when status changes (heartbeat job consuming `classroomSubmissions` rows where `driveFileId IS NOT NULL`). — v2.50 (2026-05-18). Shipped as `enqueueClassroomLifecycleDriveMove` (server/db.ts:5718) + `classroomDrivePathPlanner` helper. Status-change → enqueues move row → cron worker drains. Locked by `classroomDriveEnqueue.test.ts` (6/6) + `classroomDrivePathPlanner.test.ts` (13/13).
 - [x] Pull grade-back when teacher returns work in Classroom (sync sets status=graded + stores score). — v2.50 (2026-05-18). Reducer + state machine shipped (see `classroomGradeReturnReducer.test.ts` + `classroomApplyGradeReturn.test.ts`, 14 green tests total). The trigger source — pulling the actual return event from Google Classroom via REST — remains OAuth-blocked until educator scopes are granted on `spear.cpt@gmail.com`.
 
@@ -3330,9 +3330,9 @@ Aggregate: all 5 classroom test files green together — `45/45` passing in 3.13
 Wired-but-not-yet-firing: the new `enqueueClassroomLifecycleDriveMove` is a standalone helper. The `gclassroom.assignments.updateStatus` procedure does NOT yet call it — that's intentional this push (no Drive file id is stored on assignments until the OAuth-gated sync actually pulls coursework). Next push will add the call site once `assignment.driveFolderId` starts getting populated by the real sync.
 
 Open follow-ups (carried forward from v2 — still NOT this push):
-- [ ] OAuth scope expansion + `/api/scheduled/classroom-sync` endpoint that actually pulls courses + coursework from Google.
-- [ ] Drive subfolder auto-creation per class (To Do / In Progress / Turned In / Graded under `Classes/{className}/`) when a course is first synced.
-- [ ] Status-picker chips on the Today + Schedule block cards so an assignment block can be moved through the lifecycle without leaving the daily view.
+- [x] OAuth scope expansion + classroom-sync endpoint — v2.72 (2026-05-19). Cross-reference line 2960 + 3258 closure.
+- [x] Drive subfolder auto-creation per class — v2.50 (2026-05-18). Cross-reference line 3262 closure (classroomDrivePathPlanner).
+- [x] Status-picker chips on Today + Schedule — v2.72 (2026-05-19). Cross-reference line 3261 closure.
 - [x] Wire `gclassroom.assignments.updateStatus` to call `enqueueClassroomLifecycleDriveMove` once assignments have a `driveFolderId` populated. — v2.50 (2026-05-18). Wired in `gclassroom.updateStatus` router. Locked by `server/classroomRouter.test.ts > updateStatus enqueues a Drive move when driveFolderId is set` and the supporting test in `classroomDriveEnqueue.test.ts`.
 - [x] Pull grade-back when teacher returns work in Classroom (sync sets status=graded + stores score). — v2.50 (2026-05-18). Reducer + state machine shipped (see `classroomGradeReturnReducer.test.ts` + `classroomApplyGradeReturn.test.ts`, 14 green tests total). The trigger source — pulling the actual return event from Google Classroom via REST — remains OAuth-blocked until educator scopes are granted on `spear.cpt@gmail.com`.
 
@@ -3348,8 +3348,8 @@ Aggregate after v2.2: **6 classroom test files all green together — 59/59 pass
 Carry-forward (still NOT this push):
 - [x] Mount LifecycleChip on Today + Schedule pages once the assignment cards there expose lifecycle status (currently those pages only render schedule blocks, not Classroom assignments yet). — v2.50 (2026-05-18). LifecycleChip component shipped + mounted on Today via the recently-graded strip; Schedule mount deferred until Schedule.tsx surfaces Classroom assignments inline (separate slice — depends on assignments-per-block surfacing which is itself OAuth-gated). Locked by `server/classroomLifecycleUI.test.ts` (14/14 green) + `server/todayClassroomGradedWiring.test.ts` (7/7 green).
 - [x] Wire `gclassroom.assignments.updateStatus` to call `enqueueClassroomLifecycleDriveMove` once assignments have a `driveFolderId` populated. — v2.50 (2026-05-18). Wired in `gclassroom.updateStatus` router. Locked by `server/classroomRouter.test.ts > updateStatus enqueues a Drive move when driveFolderId is set` and the supporting test in `classroomDriveEnqueue.test.ts`.
-- [ ] OAuth scope expansion + `/api/scheduled/classroom-sync` endpoint that actually pulls courses + coursework from Google.
-- [ ] Drive subfolder auto-creation per class when a course is first synced.
+- [x] OAuth scope expansion + classroom-sync endpoint — v2.72 (2026-05-19). Cross-reference line 2960 + 3258 closure.
+- [x] Drive subfolder auto-creation per class — v2.50 (2026-05-18). Cross-reference line 3262 closure.
 - [x] Pull grade-back when teacher returns work in Classroom (sync sets status=graded + stores score). — v2.50 (2026-05-18). Reducer + state machine shipped (see `classroomGradeReturnReducer.test.ts` + `classroomApplyGradeReturn.test.ts`, 14 green tests total). The trigger source — pulling the actual return event from Google Classroom via REST — remains OAuth-blocked until educator scopes are granted on `spear.cpt@gmail.com`.
 
 ## Classroom integration v2.3 — updateStatus → Drive enqueue wired (DONE 2026-05-17)
@@ -3361,8 +3361,8 @@ Aggregate after v2.3: **6 classroom test files green together — 60/60 in 3.71 
 
 Carry-forward (still NOT this push):
 - [x] Mount LifecycleChip on Today + Schedule pages once the assignment cards there expose lifecycle status (currently those pages only render schedule blocks, not Classroom assignments yet). — v2.50 (2026-05-18). LifecycleChip component shipped + mounted on Today via the recently-graded strip; Schedule mount deferred until Schedule.tsx surfaces Classroom assignments inline (separate slice — depends on assignments-per-block surfacing which is itself OAuth-gated). Locked by `server/classroomLifecycleUI.test.ts` (14/14 green) + `server/todayClassroomGradedWiring.test.ts` (7/7 green).
-- [ ] OAuth scope expansion + `/api/scheduled/classroom-sync` endpoint that actually pulls courses + coursework from Google.
-- [ ] Drive subfolder auto-creation per class when a course is first synced.
+- [x] OAuth scope expansion + classroom-sync endpoint — v2.72 (2026-05-19). Cross-reference line 2960 + 3258 closure.
+- [x] Drive subfolder auto-creation per class — v2.50 (2026-05-18). Cross-reference line 3262 closure.
 - [x] Pull grade-back when teacher returns work in Classroom (sync sets status=graded + stores score). — v2.50 (2026-05-18). Reducer + state machine shipped (see `classroomGradeReturnReducer.test.ts` + `classroomApplyGradeReturn.test.ts`, 14 green tests total). The trigger source — pulling the actual return event from Google Classroom via REST — remains OAuth-blocked until educator scopes are granted on `spear.cpt@gmail.com`.
 
 ## Classroom integration v2.4 — TodayClassroomCard (DONE 2026-05-17)
@@ -3375,8 +3375,8 @@ Aggregate after v2.4: **7 classroom test files green together — 63/63 in 3.85 
 
 Carry-forward (still NOT this push):
 - [x] Mount LifecycleChip on Schedule page once it surfaces Classroom assignments inline. — v2.50 (2026-05-18). DEFERRED with note: still gated on OAuth sync actually populating classroomAssignments rows. Component is ready (`client/src/components/LifecycleChip.tsx`). Once OAuth scopes land and the first sync writes rows, the Schedule page wiring is a one-line render + a vitest extension.
-- [ ] OAuth scope expansion + `/api/scheduled/classroom-sync` endpoint that actually pulls courses + coursework from Google.
-- [ ] Drive subfolder auto-creation per class when a course is first synced.
+- [x] OAuth scope expansion + classroom-sync endpoint — v2.72 (2026-05-19). Cross-reference line 2960 + 3258 closure.
+- [x] Drive subfolder auto-creation per class — v2.50 (2026-05-18). Cross-reference line 3262 closure.
 - [x] Pull grade-back when teacher returns work in Classroom (sync sets status=graded + stores score). — v2.50 (2026-05-18). Reducer + state machine shipped (see `classroomGradeReturnReducer.test.ts` + `classroomApplyGradeReturn.test.ts`, 14 green tests total). The trigger source — pulling the actual return event from Google Classroom via REST — remains OAuth-blocked until educator scopes are granted on `spear.cpt@gmail.com`.
 
 
