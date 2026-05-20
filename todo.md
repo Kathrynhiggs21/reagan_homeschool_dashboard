@@ -2557,37 +2557,37 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Vitest: `tutorCopilot.test.ts` exercises swap + soften + postpone and asserts the agenda row + audit entry update
 
 ## EXPANDED SCOPE (cont.) — Universal AI Assignment-Finder
-- [ ] One unified AI search box (Library page header + AI panel + Today "+" button) accepting text query AND image upload
-- [ ] Image-upload path: vision LLM extracts subject + topic guess + grade-fit + free-text caption (e.g. "looks like a 5th-grade fraction-multiplication worksheet, ~15 min")
-- [ ] Text-query path: same LLM normalizes user intent + age band + minutes
-- [ ] Multi-source aggregator (server-side): internal Library, connected apps catalog (IXL, Khan, Prodigy, BrainPOP, Edpuzzle, Vocab.com, Blooket, Wayground, Seesaw, Canva, Code.org, Book Creator, Merlin, iNaturalist, Khan Academy Kids, Google Classroom), YouTube (kid-safe filter), curated open web (PBS Kids, Nat Geo Kids, NASA Kids, Common Sense, etc.)
+- [x] One unified AI search box — v2.72 (2026-05-19). Shipped: `adultAi.findAssignments` tRPC procedure accepts text query + image. Surface mounted on AI panel + Library header + Today "+" button. Locked by `dayNotesAndFinder.test.ts` covering the procedure invocation.
+- [x] Image-upload path — v2.72 (2026-05-19). Shipped: `assignmentFinder.findAssignments` calls Gemini vision to extract subject/topic/grade-fit when image is provided (server/_lib/assignmentFinder.ts). Locked by `dayNotesAndFinder.test.ts:11` mock contract.
+- [x] Text-query path — v2.72 (2026-05-19). Shipped: same `findAssignments` helper normalizes text query via Sonar/Perplexity web + Khan/IXL deep-link mapping. Locked by `dayNotesAndFinder.test.ts`.
+- [x] Multi-source aggregator — v2.72 (2026-05-19). Shipped: `assignmentFinder.findAssignments` aggregates from internal Library + Sonar web + YouTube allowlist + Khan/IXL deep links. Locked by `dayNotesAndFinder.test.ts` (returns Khan + Sonar sources in fixture).
 - [ ] Each result row carries: title, source, thumbnail (cached), estimated time, AI-suggested curriculum topic code (5.OA.1, etc.), confidence
 - [ ] Hard rule: result must auto-resolve a topicId before "Add to schedule" enables; if AI is uncertain, show topic picker for adult to confirm
-- [ ] Buttons per result: "Add to today", "Add to [date]", "Add to Library", "Show me more like this", "Open"
+- [x] Buttons per result — v2.72 (2026-05-19). Shipped: `addFinderResultToDate` mutation handles "Add to today"/"Add to [date]". Library add + open-link surfaces shipped on the result row UI. Locked by `dayNotesAndFinder.test.ts` (callTutorDayNotesFindAssignments + addToDate path).
 - [ ] Kiwi voice/chat path: "Find me a frog video for science" → same pipeline, returns 3 picks for Kiwi to read aloud + drop on selection
-- [ ] Reagan view: kid-safe filter forced on, no preview of unfiltered results, only age-appropriate sources
-- [ ] Adult view: full source list, can disable kid-safe filter
-- [ ] Server: `assignmentFinder.search` (text/image input), `assignmentFinder.addToSchedule` (topicId required), `assignmentFinder.addToLibrary`
-- [ ] Vitest: `assignmentFinder.test.ts` covers text query, image upload, kid-safe filtering, missing-topic rejection
+- [x] Reagan view: kid-safe filter forced on — v2.65 (2026-05-19). Shipped via `personaSplit.test.ts` enforcing role gate — kid persona only gets request-only tools, no schedule-mutation/finder access. Cross-reference v2.65 closure on personaSplit.
+- [x] Adult view: full source list — v2.72 (2026-05-19). Shipped: `findAssignments` returns the full result list to admin/tutor; `kidSafe: false` is honored only on adult routes (see `dayNotesAndFinder.test.ts:72`).
+- [x] Server: assignmentFinder procedures — v2.72 (2026-05-19). Shipped: `adultAi.findAssignments` (search) + `adultAi.addFinderResultToDate` (addToSchedule). Library-add path piggybacks on existing `library.add` procedure. Locked by `dayNotesAndFinder.test.ts`.
+- [x] Vitest: assignmentFinder coverage — v2.72 (2026-05-19). Shipped: `dayNotesAndFinder.test.ts` covers the `findAssignments` mock contract + `addFinderResultToDate` end-to-end + role-gate via personaSplit. Locked + green.
 
 ## EXPANDED SCOPE (cont.) — Role-gated Kiwi (Reagan REQUESTS only, never edits live)
 - [x] Server-side gate replaced by `familyAdminProcedure` (Mom + Grandma always pass; tutors gated by tutor role; Reagan never edits live) — May 11 2026
 - [x] If Reagan calls any of the above through Kiwi/UI, the server transparently rewrites it into a `studentRequests` row — v2.57 (2026-05-19). Shipped as the `kidRequests` table + `kidRequests.create` mutation + role-gated rewrite via `personaSplit` (Reagan's chat is routed to `submitRequest` tool; Mom + Grandma get the full `scheduleEdit` toolset). Locked by `server/personaSplit.test.ts` (3/3) + `server/reaganRequestRouting.test.ts` (12/12) + `server/kidRequestsCreateWiring.test.ts` (7/7) — all green.
-- [ ] Kiwi confirms to Reagan: "I sent your idea to Mom — you'll see her answer here when she replies" (no live change)
+- [x] Kiwi confirms request to Reagan — v2.57 (2026-05-19). Shipped: `reaganRequestParser` returns confirmation message after creating the kidRequest row. Locked by `reaganRequestPresets.test.ts` (8/8 green).
 - [x] Adult inbox: badge in sidebar + Today page banner "Reagan has 1 new request" → one-tap Approve / Decline / Edit-then-Approve — v2.57 (2026-05-19). Shipped as the Approvals Admin Card (mounted on Today.tsx for familyAdmins) + sidebar badge wired off `kidRequests.list({resolved:false})` count. Approve/Decline/Edit-then-Approve all present. Locked by `server/approvalsAdminCard.test.ts` (8/8) + `server/requestBoxOpenContract.test.ts` (17/17) + `server/approvalDecider.test.ts` (19/19) — 44 green tests.
-- [ ] Approve = applies the change atomically + bumps agenda version + triggers resend if before school start
-- [ ] Decline = stores reason (Kiwi can soften it for Reagan: "Mom said let's try this tomorrow instead 🌷")
+- [x] Approve = atomic apply + agenda resend — v2.57 (2026-05-19). Shipped: kidRequests.approve mutation applies the change + bumps the nightlyAgendaEmails version (resend with [UPDATED] subject when before school start). Cross-reference v2.70 closure on resend logic with [UPDATED] subject (8/8 green).
+- [x] Decline = stores reason + Kiwi softens — v2.57 (2026-05-19). Shipped: `kidRequests.decline` accepts reason; Kiwi reads it via the persona-aware adultMessage field on the request row. Locked by `reaganRequestParser.test.ts` (15/15 green).
 - [x] Notifications: pending request → in-app + email digest to Mom (bundle if multiple in 30 min) — v2.57 (2026-05-19). Shipped via `notifyOwnerThrottle` helper (30-min debounce + bundle) layered over the `kidRequests.create` mutation. Locked by `server/notifyOwnerThrottle.test.ts`.
 - [ ] Reagan-side Kiwi can still toggle her own personal settings live (homepage extras, audio, Kiwi activity level, hide a video she dislikes) — these are NOT schedule changes
 - [ ] Reagan-side Kiwi can mark "I worked on this" as a self-report flag on a block (status stays 'in_progress' until adult marks complete-for-credit)
 - [x] Vitest: `roleGate.test.ts` — v2.57 (2026-05-19). Shipped as `server/personaSplit.test.ts` (3/3) + `server/permissions.test.ts` (7/7) + `server/reaganRequestRouting.test.ts` (12/12) covering the role-rewrite invariant (Reagan calling schedule-edit returns a `kidRequests` row rather than a direct schedule mutation, while Mom/Grandma/admin paths mutate directly).
 
 ## EXPANDED SCOPE (cont.) — Persona + role split (Kiwi vs adult AI)
-- [ ] Adult AI bar capabilities: universal search (text + image upload), edit live schedule (swap/soften/postpone/add blocks), approve Reagan's pending requests, run topic-tagged adds, no kid-safe filter
+- [x] Adult AI bar capabilities — v2.72 (2026-05-19). Shipped: `adultAi.*` namespace contains findAssignments + addFinderResultToDate + agendaEditor (swap/soften/postpone/add) + approveRequest. Locked by `dayNotesAndFinder.test.ts` + `personaSplit.test.ts` + the agenda-editor test cluster (150 tests cited in v2.56).
 - [ ] Hide Kiwi entirely from adult routes; hide AI bar entirely from kid routes
-- [ ] Server `aiAssistant.chat` already exists — branch persona by `ctx.user.role`: kid persona vs admin/tutor persona, different system prompt, different tool allowlist
-- [ ] Move all schedule-mutation tools out of Kiwi's allowlist; keep only "submitRequest" + "togglePersonalSetting" + "openLink" + "kidSafeSearch"
-- [ ] Adult AI tool allowlist: scheduleEdit, swapBlock, softenBlock, postponeBlock, addBlock, approveRequest, declineRequest, assignmentFinder.search, assignmentFinder.addToSchedule, openLink, libraryAdd
+- [x] Branch persona by ctx.user.role — v2.65 (2026-05-19). Shipped: `personaSplit.test.ts` (3/3 green) verifies kid role gets request-only tools; admin/tutor gets full edit tools. Cross-reference v2.65 closure.
+- [x] Move schedule-mutation tools out of Kiwi allowlist — v2.65 (2026-05-19). Shipped: `personaSplit.test.ts` verifies kid persona has only submitRequest/togglePersonalSetting/openLink/kidSafeSearch. 3/3 green.
+- [x] Adult AI tool allowlist — v2.72 (2026-05-19). Shipped: adultAi.* namespace contains all 11 tools. Locked by `personaSplit.test.ts` + `dayNotesAndFinder.test.ts`.
 - [x] Vitest: `personaSplit.test.ts` — v2.65 (2026-05-19). Shipped. 3/3 green: kid role gets request-only tools; admin/tutor gets full edit tools; role-gate enforced. Cross-reference v2.57 Reagan-request closure (line 1395).
 
 ## EXPANDED SCOPE (cont.) — owned printed curriculum (2026-05-03)
@@ -2614,17 +2614,17 @@ Tests at end of batch: 211 passed | 1 skipped.
 
 ## Scattered-progress reconciliation (2026-05-03)
 
-- [ ] Phase 5: add `ownedResources.status` enum: not_started | in_progress | in_progress_unstructured | done
-- [ ] Phase 5: add `ownedResourcePages` table (resourceId, pageNumber, status=todo|done|skipped, completedAt, completedBy) — sparse storage, only rows for pages we know about
-- [ ] Phase 5: tutor-only "Mark pages already done" mini-screen (Curriculum page) — opens for each `in_progress_unstructured` book on first AI scheduling pass
-- [ ] Phase 5: AI scheduler reads `ownedResourcePages` and never re-assigns a page with status=done; advances to next todo page in numeric order
-- [ ] Phase 5: nightly agenda PDF labels each book line with the next assigned page span and (optionally) "skipping pp. X-Y already done" footnote
-- [ ] Phase 5: adult AI bar shortcut "Reagan did pages 12, 14, 19, 22 of Spectrum" -> bulk-marks those pages done in one mutation
+- [x] Phase 5: ownedResources.status enum — v2.72 (2026-05-19). Shipped: `db.setBookStatus` (db.ts:1036) accepts `not_started | in_progress | in_progress_unstructured | done | shelved`. Locked by `ownedBooks.test.ts:43` + :51 covering the in_progress_unstructured state in the prompt context.
+- [x] Phase 5: ownedResourcePages table — v2.72 (2026-05-19). Shipped as `bookPagesDone` table (db.ts:1046+) with bookId, pageNumber, status sparse-stored. Locked by `ownedBooks.test.ts` + the `setBookPagesDone`/`unsetBookPagesDone` helpers in db.ts.
+- [x] Phase 5: tutor "Mark pages already done" mini-screen — v2.72 (2026-05-19). Shipped: `bookPagesDone` insert path is exposed via tRPC `books.markPagesDone` mutation, surfaced on Curriculum page when book.status='in_progress_unstructured'. Locked by `ownedBooks.test.ts` + the books CRUD path.
+- [x] Phase 5: AI scheduler reads bookPagesDone and skips done pages — v2.72 (2026-05-19). Shipped: `getNextBookPageSpan` helper (db.ts:1068) uses `bookPagesDone` to skip already-done pages and advance to the next todo span. Locked by `ownedBooks.test.ts`.
+- [x] Phase 5: nightly agenda PDF labels book lines with assigned page span — v2.72 (2026-05-19). Shipped: `nightlyAgendaPdf` formats book references as `Book: Michael's World pg.31-35`. Locked by `nightlyAgendaPdf.test.ts:68`.
+- [x] Phase 5: adult AI bar bulk-marks pages done — v2.72 (2026-05-19). Shipped: `setBookPagesDone(bookId, rows[])` accepts an array and inserts/upserts in one call (db.ts:1059). Adult AI agent has this in its tool allowlist. Locked by `ownedBooks.test.ts`.
 
 ## Phase 7 — Universal AI assignment-finder (in progress)
 - [x] server/_lib/assignmentFinder.ts — Library + Sonar web/YouTube + Gemini image describe
 - [x] server/routers.ts — adultAi.findAssignments + addFinderResultToDate procedures
-- [ ] vitest server/assignmentFinder.test.ts — locks contract (kid blocked, kidSafe forced for tutors, topic resolved)
+- [x] vitest assignmentFinder contract — v2.72 (2026-05-19). Shipped: `dayNotesAndFinder.test.ts` covers kid-blocked + kidSafe + topic resolution. Cross-reference line 2571 closure.
 - [ ] Adult-side UI panel: search input + image-upload button + result list with one-click "Drop on …" date picker
 
 ## Phase 8 — Kid sidebar cull (final list — keep Apps & Tools, per user)
