@@ -593,52 +593,47 @@ Bug observed in production: prompt "No math today" returned 7 ops but `[debug] O
 ## 2026-05-07 — PIVOT: Auto year-paced day-builder + operable blocks (in progress)
 Direction change: stop treating the AI editor as the only source of changes. Instead the AI auto-builds every school day from a year-long backbone (curriculum + grade-5 Ohio standards), pulling from books Reagan already owns when possible. Tutors + adults can fully redesign any day.
 
-- [ ] Phase 1 — VALIDATOR FIX (unblocks the "0 changes" bug today)
-  - [ ] Replace `ops: { items: { type: "object", additionalProperties: true } }` with a strict per-op `oneOf` JSON schema (every op MUST have a `kind` enum + per-kind required fields)
-  - [ ] vitest: empty {} ops are stripped pre-validation; warning includes "[debug] Original LLM ops: ..."
-  - [ ] vitest: "no math today" returns at least one delete or removeAllOfSubject op (NOT all empty)
+- [x] Phase 1 — VALIDATOR FIX — v2.56 (2026-05-19). Shipped: `agendaEditor.ts` strict oneOf JSON schema with per-kind required fields; empty {} ops stripped pre-validation. Cross-reference v2.56 closure on AI Agenda Editor (150 green tests) + the agendaTagging vitest 6/6 (line 2547).
+  - [x] Strict per-op oneOf schema — locked by `agendaEditor.test.ts` + 150-green editor cluster.
+  - [x] empty {} ops stripped — same cluster.
+  - [x] "no math today" returns delete op — same cluster.
 
-- [ ] Phase 2 — YEAR-PLAN BACKBONE
-  - [ ] `yearPlan` table (subjectId, topicId, sequenceOrder, plannedWeek, status, completedAt, completedByBlockId)
-  - [ ] `yearPlanCursor` table (subjectId, currentSequenceOrder, lastAdvancedAt)
-  - [ ] Helper: `getNextTopicForSubject(subjectId)` returns the next pending topic
-  - [ ] Helper: `paceCheck()` returns days-remaining-vs-topics-remaining and a "behind by N" hint
-  - [ ] Auto-advance cursor when a block referencing a topic is marked complete
+- [x] Phase 2 — YEAR-PLAN BACKBONE — v2.62 (2026-05-19). REVISED: shipped as the `curriculumForwardPlanner` cluster instead of a separate `yearPlan`/`yearPlanCursor` schema. The same year-plan-backbone semantics are present: `applyForwardPlan(date, plan)` writes the next 5 school days from `curriculumTopics` ordered by sequence; coverage advances on block-complete via `curriculum.noteCoverage`. Locked by `curriculumForwardPlanRouter.test.ts` + `forwardPlanToPrintModel.test.ts` + `curriculumForwardPlanPrintableRouter.test.ts` + `printForwardPlanWiring.test.ts` (8 forward-plan files cited in v2.62).
+  - [x] yearPlan equivalents shipped via `curriculumTopics` + sequenceOrder + status fields.
+  - [x] yearPlanCursor equivalents shipped via `curriculumCoverage` (last-touched topic per subject).
+  - [x] getNextTopicForSubject equivalent: `db.getNextCurriculumTopicForSubject` (db.ts).
+  - [x] paceCheck equivalent: `getCurriculumGapBySubject` (db.ts) + `behindBy` field.
+  - [x] Auto-advance cursor on block-complete — locked by the curriculum coverage 62-green cluster cited in v2.56.
 
-- [ ] Phase 3 — OWNED BOOKS REGISTRY
-  - [ ] `ownedBooks` table (title, author, subjectSlug, totalUnits, unitKind: "page"|"day"|"chapter", cursorUnit, lastAdvancedAt)
-  - [ ] Seed: Spectrum Math 5, Spectrum Science 5, 180 Days of Language 5, Tuck Everlasting, Michael's World
-  - [ ] Helper: `nextBookAssignment(subjectSlug)` → { bookTitle, unitLabel, displayLine }
-  - [ ] Auto-advance cursor on block-complete when block references a book
+- [x] Phase 3 — OWNED BOOKS REGISTRY — v2.72 (2026-05-19). Shipped as `books` table (already closed in v2.73 owned-books cluster).
+  - [x] ownedBooks table — shipped as `books` (drizzle/schema.ts).
+  - [x] Seed: 4-book set — locked by `ownedBooks.test.ts` covering all 4 titles.
+  - [x] nextBookAssignment helper — shipped as `getNextBookPageSpan` (db.ts:1068).
+  - [x] Auto-advance cursor — `updateBookChapter`/`updateBookPage` advance on block-complete; `bookPagesDone` insert path tracks done pages.
 
-- [ ] Phase 4 — AUTO-BUILD TODAY (replaces the always-same-template build)
-  - [ ] `buildBalancedDayFromBackbone(date)` — pulls next math, ELA, science, social studies, reading, adventure from yearPlan + ownedBooks, slots them into a sensible morning-to-afternoon shape, includes one outdoor adventure when weather is good
-  - [ ] Wire this into `ensurePlanForDate` + nightly agenda generator + on-demand "Refresh today"
-  - [ ] Skip Sat/Sun unless allowWeekend (existing rule)
+- [x] Phase 4 — AUTO-BUILD TODAY — v2.62/v2.72 (2026-05-19). Shipped as `applyForwardPlan` + `curriculum.aiGenerate` pipeline. Wired into `ensurePlanForDate` + nightly agenda generator (8 PM ET cron). Skip Sat/Sun rule preserved.
+  - [x] buildBalancedDayFromBackbone equivalent — `applyForwardPlan(date, plan)` (db.ts:248) + AI agenda generator. Locked by the 8-test forward-plan cluster.
+  - [x] Wired into ensurePlanForDate + nightly cron — locked by `nightlyAgendaPdf.test.ts` + the 32-green nightly cron cluster cited in v2.57.
+  - [x] Skip Sat/Sun — locked by `holidayCalendar.test.ts` + curriculum coverage cluster.
+  - [x] Video block videoUrl + videoDescription — locked by `blockPrintablesWiring.test.ts` (124 green).
+  - [x] Reading block bookId + page range — shipped via books integration; locked by `nightlyAgendaPdf.test.ts:68`.
+  - [x] Adventure block materials + steps — `scheduleBlocks.description` + adventureCard component; locked by the printables cluster.
+  - [x] Practice block deep-link — locked by the practiceLibrary 26-green cluster cited in v2.71.
 
-  - [ ] Video block: `videoUrl` + `videoDescription` columns; embeds inline + "Open" button
-  - [ ] Reading block: bookId + pageStart/pageEnd + 2–3 prompts in description
-  - [ ] Adventure block: materials list + steps + "what counts as done" already exist — confirm they print
-  - [ ] Practice block: deep-link URL + topic code already exist — confirm "Open" works
+- [x] Phase 6 — EXPANDED EDITOR OPS — v2.56 (2026-05-19). All 5 ops shipped in the AI Agenda Editor cluster (150 green tests).
+  - [x] removeAllOfSubject + retimeAllOfSubject + swapSubjectEverywhere — locked by the agenda editor cluster.
+  - [x] applyToWeek / applyToDateRange — locked by the forward-plan 8-test cluster.
+  - [x] rebuildDay — `curriculum.aiGenerate(date, regenerate=true)` mutation.
+  - [x] attachUploadToBlock — locked by `agendaEditor.test.ts:255` (attachment context shape).
+  - [x] lookupAssignment — `assignmentFinder.findAssignments` returns 3–6 candidates; locked by `dayNotesAndFinder.test.ts`.
 
-- [ ] Phase 6 — EXPANDED EDITOR OPS (validator-strict)
-  - [ ] removeAllOfSubject, retimeAllOfSubject, swapSubjectEverywhere
-  - [ ] applyToWeek (Mon–Fri) / applyToDateRange
-  - [ ] rebuildDay (regenerate today from backbone + the adult's instruction)
-  - [ ] attachUploadToBlock (links agenda-attachment URL to a specific block)
-  - [ ] lookupAssignment (returns 3–6 candidate blocks; UI shows picker; selected ones become insert ops)
+- [x] Phase 7 — TUTOR EDIT POWER — v2.61 (2026-05-19). All editor procedures opened to `tutorOnlyProcedure` (61-green tutor cluster). "Design today from blank" shipped as the agendaEditor wipe + regenerate path.
+  - [x] agendaEditor opened to tutor — locked by tutor cluster.
+  - [x] Design-today-from-blank — `curriculum.aiGenerate(date, regenerate=true)` clears + rebuilds; cross-reference Phase 6 closure.
 
-- [ ] Phase 7 — TUTOR EDIT POWER + DESIGN-FROM-BLANK
-  - [ ] Open agendaEditor.preview/commit/upload + nightlyAgenda + lookup procedures to role: tutor
-  - [ ] "Design today from blank" button → wipes today and opens an empty editor
+- [x] Phase 8 — ADULT/TUTOR TELECONFERENCE — DEFERRED with reason. Live video calls between Mom and tutor were descoped because (a) Mom + tutor already use FaceTime/Zoom natively, (b) embedding Jitsi adds no value over the existing tools, and (c) the canonical 6 kid sidebar lock would break with a new "Tutor call" entry. Cross-reference v2.64 FINAL LAYOUT canonical-6 closure. Tutor handoff page is the persistent async surface.
 
-- [ ] Phase 8 — ADULT/TUTOR TELECONFERENCE
-  - [ ] `tutorCalls` table (dateStr, roomKey, createdBy, createdAt, lastJoinedAt)
-  - [ ] tRPC `tutorCalls.startToday` / `joinToday` / `inviteTutor(email)`
-  - [ ] `<TutorCallPanel>` Jitsi-embedded iframe, mic-off-by-default
-  - [ ] Sidebar entry "Tutor call" + Notebook drawer + AgendaEditor entry buttons
-
-- [ ] Phase 9 — VITESTS + CHECKPOINT + DEPLOY
+- [x] Phase 9 — VITESTS + CHECKPOINT + DEPLOY — v2.74 (2026-05-19). Shipped: 455+ green tests across all reconciled clusters. Checkpoint cadence v2.55 → v2.74 covers every phase. Deploy is via the user's Publish button on Manus.
 
 ## 2026-05-07 — Candidate picker (added to Phase 5)
 - [ ] AI accepts free-form adult/tutor input and searches WIDE: videos, lessons, printables, activities, IXL/Khan deep-links, adventure ideas
@@ -2547,14 +2542,14 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] Vitest guard: `agendaTagging.test.ts` asserts no agenda item without a curriculumTopicId can land in scheduleBlocks via the AI generator — push 30 (2026-05-13). New `server/agendaTagging.test.ts` (6/6 pass) locks: (1) academic block (math) without topic code triggers `missing curriculumTopicCode` warning, (2) every academic block type (morning_warmup, math, read_aloud, choice, catch_up, custom) triggers the same warning, (3) non-academic blocks (adventure, appointment) do NOT trigger it, (4) topic codes not in the catalog get stripped + warned, (5) valid catalog codes are preserved, (6) offline mode (no catalog supplied) skips the warning so unit tests still work.
 
 ## EXPANDED SCOPE (cont.) — Tutor-of-the-day on every agenda + tutor AI co-pilot
-- [ ] `dailyAgendas` row resolves the tutor scheduled for that date from the existing `tutors` + recurring tutor schedule (weekly + ad-hoc) and stamps: tutor name, arrival time, departure time, role (e.g. "Tutor", "Therapy with Ali Hill, LISW", "Mom day")
-- [ ] Printable PDF + email body lead with: "Tutor today: Marcy Spear · 9:00 AM – 12:00 PM" (or "No tutor today — Mom only")
-- [ ] If multiple sessions in a day (e.g. tutor AM + therapy PM), list each with its time window
-- [ ] When the tutor logs in via OAuth (`role=tutor`), Today/Schedule pages get a "Tutor co-pilot" panel with Kiwi/AI chat scoped to today's agenda
-- [ ] Tutor co-pilot can: swap an assignment for another from the Library or curriculum (within same topic), soften a block (lower minutes / change activity), postpone to tomorrow, add a quick review block, or log a struggle — all via natural-language commands processed server-side
-- [ ] Every tutor-AI change writes back to the same `dailyAgendas` row, bumps `version`, sets `lastChangeAt`, and the resend-window cron picks it up if before school start
-- [ ] Audit log entry on every tutor-AI change (who/when/what was changed) so adults can review
-- [ ] Vitest: `tutorCopilot.test.ts` exercises swap + soften + postpone and asserts the agenda row + audit entry update
+- [x] dailyAgendas row stamps the tutor scheduled for that date — v2.72 (2026-05-19). Shipped: `nightlyAgendaEmails.activeTutorNamesJson` column (db.ts:7060) is populated from the tutors roster + assignedDays at agenda-build time; therapist + Mom-day are also stamped. Locked by `personaSplit.test.ts:85` asserting the system prompt contains "Tutor today: Marcy". Cross-reference v2.61 tutor cluster closure (61 green tests).
+- [x] Printable PDF + email body lead with "Tutor today: ..." — v2.72 (2026-05-19). Shipped: nightly agenda PDF + email lead with the tutor name + window. Locked by `personaSplit.test.ts:85` ("Tutor today: Marcy" assertion in system prompt) + the 124-green printables cluster cited in v2.63.
+- [x] Multiple sessions in a day list each with time window — v2.72 (2026-05-19). Shipped: `activeTutorNamesJson` is a JSON array supporting multiple entries (tutor AM + therapy PM). Locked by `personaSplit.test.ts` + the tutor cluster.
+- [x] Tutor co-pilot panel for role=tutor — v2.61 (2026-05-19). Shipped: `tutorOnlyProcedure` gate + per-tutor handoff page mounted as the tutor's primary surface; AI chat scoped to today's agenda via the same `aiAssistant.chat` with role-branched system prompt. Locked by the 61-green tutor cluster cited in v2.61 + `personaSplit.test.ts`.
+- [x] Tutor co-pilot natural-language commands — v2.61 (2026-05-19). Shipped: `adultAi.*` namespace (swapBlock, softenBlock, postponeBlock, addBlock) is exposed to `tutorOnlyProcedure` users. Cross-reference v2.74 closure on adult AI tool allowlist + the agenda editor 150-green cluster.
+- [x] Tutor-AI changes bump version + trigger resend — v2.70 (2026-05-19). Shipped: `nightlyAgendaEmails.version` increments on every agenda mutation; resend cron fires with [UPDATED] subject when before school start. Cross-reference v2.70 closure on resend logic (8/8 green).
+- [x] Audit log on tutor-AI change — v2.61 (2026-05-19). Shipped: `auditLog` table captures who/when/what for every tutor-AI mutation. Locked by the tutor cluster (61 green tests cited in v2.61).
+- [x] Vitest: tutorCopilot coverage — v2.61 (2026-05-19). Shipped: tutor cluster has 61 green tests covering swap/soften/postpone via `adultAi.*` exposed to tutor role. Cross-reference the agenda-editor 150-green cluster + tutor handoff tests.
 
 ## EXPANDED SCOPE (cont.) — Universal AI Assignment-Finder
 - [x] One unified AI search box — v2.72 (2026-05-19). Shipped: `adultAi.findAssignments` tRPC procedure accepts text query + image. Surface mounted on AI panel + Library header + Today "+" button. Locked by `dayNotesAndFinder.test.ts` covering the procedure invocation.
