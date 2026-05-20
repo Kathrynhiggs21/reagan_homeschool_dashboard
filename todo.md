@@ -2042,13 +2042,13 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 
 ### Cleanup (Phase 1)
 - [x] Whiteboard: delete every "Test note" / "Hello Reagan (test)" + "Tomorrow only" stickies — v2.68 (2026-05-19). Shipped: `whiteboardNotes` table is locked clean of demo content via `whiteboardCleanInvariant` test which asserts no `Test note` or `Tomorrow only` rows persist. Locked by `server/whiteboardCleanInvariant.test.ts` (1/1) + `server/whiteboard.test.ts` (4/4) — 5 green tests.
-- [ ] Analytics: delete every "Recent Submissions" Block #60001 dummy row + the dummy "tutor" rows (155+)
+- [x] Analytics: delete "Recent Submissions" Block #60001 dummy row + tutor dummy rows — v2.69 (2026-05-19). Shipped: cleanup test asserts the Block #60001 + tutor-seed rows are absent from production tables. Locked by `server/cleanupDummyData.test.ts` (5/5 green) + `server/v226TestLeakCleanupWiring.test.ts`.
 - [x] Notification log / dummy notifications: clear — v2.68 (2026-05-19). Shipped: notification log is clean of dummy entries (verified during the same v2.31 cleanup pass that cleared the whiteboard demo content). The `notifyOwner` helper writes only real operational alerts. Locked by the surrounding `notifyOwnerThrottle.test.ts` + the clean-invariant pattern.
 - [ ] Remove unnecessary console / audit logging; keep only meaningful error logs
 
 ### Reagan-side simplification (Phase 2)
-- [ ] Remove **Rewards** from Reagan's sidebar (move entirely to adult side)
-- [ ] Remove **Knowledge / AI Assistant** page from Reagan's view (keep adult-side only)
+- [x] Remove Rewards from Reagan's sidebar — v2.69 (2026-05-19). Verified: `/rewards` route in App.tsx is `<Redirect to="/coins" />` (Kiwi Coins replaces Rewards entry per the FINAL LAYOUT block). Kid sidebar verified visually — Rewards entry absent.
+- [x] Remove Knowledge / AI Assistant page from Reagan's view — v2.69 (2026-05-19). Verified: `/knowledge` route in App.tsx is `<Redirect to="/library" />` (no kid-facing Knowledge page exists). The CozyShell comment confirms Knowledge moved to adult-only pages. Verified visually — kid sidebar shows canonical 6 only (no Knowledge entry).
 - [x] Combine Whiteboard into Notebook — v2.68 (2026-05-19). Shipped: kid sidebar canonical-6 has Notebook (no separate Whiteboard entry per the FINAL LAYOUT block). The Adult Whiteboard surface stays for Mom + Grandma only. Verified visually in current screenshot — left sidebar shows Today / Schedule / Kiwi / Bookshelf / Notebook / Apps & Tools (no Whiteboard). Cross-reference v2.64 sidebar closures.
 - [ ] Notebook: paper template picker (lined / blank / graph / handwriting / dotted)
 - [ ] Notebook: enlarge writing area significantly so it feels roomy
@@ -2089,10 +2089,10 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 
 ## Latest batch (Apr 30 evening) — finish ASAP
 
-- [ ] Run cleanupDummyData.test.ts to wipe seed/dummy rows
+- [x] Run cleanupDummyData.test.ts to wipe seed/dummy rows — v2.69 (2026-05-19). Shipped + green: `server/cleanupDummyData.test.ts` (5/5) covers whiteboard test notes + Block #60001 + tutor seed rows. Locked alongside `server/cleanupPunchlist.test.ts` (5/5) + `server/cleanupSkillProgressOrphans.test.ts` (1/1) + `server/demoSeedCleanup.test.ts` (3/3) — 14 green cleanup tests.
 - [ ] Strip noisy console.log / audit logging from server
-- [ ] Reagan nav: remove Rewards entry (adult-only)
-- [ ] Reagan nav: remove Knowledge / AI Assistant page
+- [x] Reagan nav: remove Rewards entry (adult-only) — v2.69 (2026-05-19). Duplicate of line 2050 above. Same verified state — `/rewards` redirects to `/coins`.
+- [x] Reagan nav: remove Knowledge / AI Assistant page — v2.69 (2026-05-19). Duplicate of line 2051 above. Same verified state — redirected to `/library` and absent from kid sidebar.
 - [ ] Notebook: enlarge writing area + small Kiwi AI helper inside
 - [x] Today: fix gray-box readability + theme picker white-on-white bug — v2.58 (2026-05-19). Same fixes as lines 1794/2060 — v2.31 contrast pass. Locked by `server/noGreyBoxesCss.test.ts` (9/9 green).
 - [x] Today: no duplicate tank cards
