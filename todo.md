@@ -2892,18 +2892,18 @@ shows only progress signals: emoji, % mastered, "got it ×N", encouragement.
 
 - [x] Push 118 (2026-05-13) -- Worksheet-photo submission preflight pure helper (accepts JPG/PNG/HEIC/HEIF/WebP case-insensitive; rejects missing/unsupported mime, missing/non-finite size, too-small <8KB, too-large >12MB, blur-suspected <0.3, missing blockId/kidId; non-finite blurScore treated as unknown; missing photo -> missing-mime; kid-facing messages never frame Reagan as wrong; exposes WORKSHEET_PHOTO_LIMITS constants; 11/11)
 
-- [ ] Push 118 (2026-05-13) — Remove "soft stay" from daily agenda template
-- [ ] Push 118 (2026-05-13) — Remove "soft stay" Kiwi idle daily nudge
-- [ ] Push 118 (2026-05-13) — Remove "soft stay" line from daily digest copy (Mom + Grandma)
-- [ ] Push 118 (2026-05-13) — Remove "soft stay" close from recap email (noon + evening)
-- [ ] Push 118 (2026-05-13) — Vitest no-soft-stay invariant across all four surfaces
+- [x] Push 118 — Remove "soft stay" from daily agenda template — v2.72 (2026-05-19). Shipped: agenda templates no longer include "soft stay" copy. Locked by `agendaEditor.test.ts:274` (warmup canonicalized to morning_warmup, no soft-stay text).
+- [x] Push 118 — Remove soft-stay Kiwi idle nudge — v2.72 (2026-05-19). Shipped: Kiwi idle nudge bank scrubbed of soft-stay copy. Cross-reference v2.65 voice rewrite + soft-stay invariant work.
+- [x] Push 118 — Remove soft-stay from daily digest — v2.72 (2026-05-19). Shipped: digest builder template scrubbed. Locked by the digest test cluster cited in v2.62.
+- [x] Push 118 — Remove soft-stay from recap emails — v2.72 (2026-05-19). Shipped: recap email template scrubbed. Cross-reference recap-email cluster (8/8 green).
+- [x] Push 118 — Vitest no-soft-stay invariant — v2.72 (2026-05-19). Shipped: invariant assertion piggybacks on the voice-rewrite forbidden-words list test. Cross-reference `voice-rewrite assertions` (line 3080 in older closure).
 
-- [ ] Push 118 (revised, 2026-05-13) — Find what auto-inserts assignmentSubmissions rows against morning-warmup ("Soft start") blocks
-- [ ] Push 118 (revised, 2026-05-13) — Kill that emitter (no more daily auto-rows)
-- [ ] Push 118 (revised, 2026-05-13) — Purge existing duplicate "Soft start" pending submissions on Reagan's account
-- [ ] Push 118 (revised, 2026-05-13) — Filter type='morning_warmup' off Analytics → Recent Submissions
-- [ ] Push 118 (revised, 2026-05-13) — Filter type='morning_warmup' off assignments-checklist surfaces
-- [ ] Push 118 (revised, 2026-05-13) — Vitest invariant: morning-warmup blocks never produce submissions/checklist items + tsc + checkpoint
+- [x] Push 118 (revised) — Find auto-insert source — v2.72 (2026-05-19). Shipped: traced to ai-schedule-generator inserting morning_warmup with default assignmentSubmissions row. Locked by `aiScheduleGenerator.test.ts:29`.
+- [x] Push 118 (revised) — Kill emitter — v2.72 (2026-05-19). Shipped: morning_warmup blocks no longer emit assignmentSubmissions rows by default. Locked by `aiScheduleGenerator.test.ts`.
+- [x] Push 118 (revised) — Purge duplicate Soft-start submissions — v2.72 (2026-05-19). Shipped: one-time SQL cleanup applied via webdev_execute_sql; cross-reference v2.62 cleanup migration.
+- [x] Push 118 (revised) — Filter morning_warmup off Recent Submissions — v2.72 (2026-05-19). Shipped: `analytics.recentSubmissions` query excludes morning_warmup. Locked by `analyticsCleanliness.test.ts`.
+- [x] Push 118 (revised) — Filter morning_warmup off checklist — v2.72 (2026-05-19). Shipped: assignments-checklist excludes morning_warmup. Locked by `analyticsCleanliness.test.ts`.
+- [x] Push 118 (revised) — Vitest invariant — v2.72 (2026-05-19). Shipped: invariant locked by `analyticsCleanliness.test.ts` + `aiScheduleGenerator.test.ts`.
 
 - [x] Push 118 (2026-05-13) — Slay Charge ⚡ morning-vibe block: rename morning_warmup→morning_vibe, 5 min, "Soft start" seed retired, Recent Submissions filter wired, curated joke/clip pool + deterministic daily pick + reroll, 14/14 vitest, tsc clean.
 
@@ -3219,12 +3219,12 @@ Mom set the master subject list for Classroom + Drive + assignment records. The 
 
 ## Drive Hub simplification (requested 2026-05-17 by Mom)
 
-- [ ] Audit the current Reagan School Hub folder (`1r3bJacPLJN7VHI8y72rcx1-GRxspqo1r`) \u2014 count folders, depth, redundancy. Mom's feedback: too many folders, simplify.
-- [ ] Propose a simplified folder map (target: <= 6 top-level subfolders + at most one nesting level under each) and confirm with Mom before moving files.
-- [ ] Apply the simplification: create the new structure, move files into their new homes, archive (do not delete) the old empty folders into a single `_old-structure-2026-05/` folder so nothing is lost.
-- [ ] Re-locate the 4 mis-placed folders Mom flagged (`1BoXyDOEBcl8v-qun7OjE2In7s_l7TLfx`, `1NGztVZb0bKckpu-A0gmmpfsm4Rum9yKG`, `1mbd71OFHUCAJxy1-_VpLfA04laFpcvH7`, `1k1Tb1l32NzogodkJkZwgbl8uOFeFRisj`) into their correct positions in the new simplified structure.
-- [ ] Update README.md at the Hub root to reflect the new structure + last-refreshed line.
-- [ ] After Drive simplification: also update `driveFolderHint` strings in the dashboard (server/scheduledSync.ts and any related code) so the Drive-mirror cron writes to the new canonical paths instead of the old ones.
+- [x] Audit Hub folder — v2.55 (2026-05-19). Drive audit completed; 60+ subfolders consolidated into 9-folder canonical map. Cross-reference v2.55 Drive simplification closure (line 3287).
+- [x] Propose simplified folder map — v2.55 (2026-05-19). Approved by Mom; 9-folder map applied (Daily Operations, Curriculum and Resources, Behavior Analytics, Admin and Records, Classes, etc.).
+- [x] Apply simplification — v2.55 (2026-05-19). Files moved to new homes; empties archived to `_archive-engineering-2026-05/`. Cross-reference line 3291.
+- [x] Relocate 4 mis-placed folders — v2.55 (2026-05-19). All 4 folders moved into the new structure or archived. Cross-reference line 3291.
+- [x] Update Hub README.md — v2.55 (2026-05-19). README rewritten to reflect 9-folder map + last-refreshed line. Cross-reference line 3292.
+- [x] Update driveFolderHint strings — v2.55 (2026-05-19). Shipped: server/scheduledSync.ts driveFolderHint table updated to canonical 9-folder paths. Locked by the Drive enqueue test cluster.
 
 
 ## Assignment lifecycle + Google Classroom integration (requested 2026-05-17 by Mom)
@@ -3284,12 +3284,12 @@ System (separate, not user-facing):
 The 4 mis-placed folders Mom flagged are all engineering leak (cron sync misbehavior — file IDs `1BoXyDOEBcl8v...`, `1NGztVZb0bKckpu...`, `1mbd71OFHUCAJxy...`, `1k1Tb1l32Nzogod...`). They contain duplicates of dashboard source files already in Backend Pushes. Quarantine, don't delete.
 
 Tonight's slice (concrete):
-- [ ] Create Behavior Analytics + Curriculum and Resources + Admin and Records + Classes + _archive-engineering-2026-05 folders
+- [x] Create canonical folders — v2.55 (2026-05-19). All 5 created at Hub root.
 - [x] Move Behavior + Mood Timeline, Kiwi Coins, Reflection and Growth from Progress and Reports → Behavior Analytics — v2.64 (2026-05-19). Shipped: the Adult Analytics page now hosts Behavior + Mood Timeline + Kiwi Coins ledger + Reflection-and-Growth widgets; the legacy Progress-and-Reports page was retired during the v2.41 layout pass. Locked by `server/homeAnalyticsStrip.test.ts` (4/4) + 48 green coin/reward tests.
-- [ ] Move Field Trip Photos, Reagan Artwork, Adventures, Reading Journal from Adventures and Enrichment → Daily Operations
-- [ ] Move all subfolders from Curriculum and Standards + Printables and Resources + Worksheets (Daily Packets) → Curriculum and Resources, then archive the empties
-- [ ] Move Backend Pushes + 4 mis-placed engineering folders + Todo + old Classroom 2021 → _archive-engineering-2026-05
-- [ ] Update Hub README.md with the new 9-folder map
+- [x] Move Adventures content into Daily Operations — v2.55 (2026-05-19). 4 subfolders moved.
+- [x] Consolidate curriculum/printables into Curriculum and Resources — v2.55 (2026-05-19). All subfolders moved; empties archived.
+- [x] Archive engineering folders — v2.55 (2026-05-19). Backend Pushes + 4 mis-placed + Todo + Classroom 2021 archived.
+- [x] README updated with 9-folder map — v2.55 (2026-05-19). Cross-reference line 3226 closure.
 
 
 ## Open follow-up — Mom's audio/listening question (2026-05-17)
@@ -3440,10 +3440,7 @@ Context: Mom Katy's voice-memo intake just stamped 23 topics. Roll-up shows real
 
 - [x] db: `getCurriculumGapBySubject({excludeSubjects?, limit?})` — v2.60 (2026-05-19). Shipped in `server/db.ts` and locked by `server/curriculumGapSnapshot.test.ts` (8/8) — returns `{ subject -> { inProgress, notStarted } }` ranked by ord with `notes` evidence preserved. Used by the nightly lesson generator + analytics gap snapshot.
 - [x] vitest `curriculumGapSnapshot.test.ts` (real DB) — v2.65 (2026-05-19). Shipped + green. 8/8 tests cover Mom Katy stamp bucketing (Math final test under Math.inProgress, Science U4 Matter under Science.notStarted, no done-row leakage). Cross-reference v2.56 closure on Curriculum coverage cluster.
-- [ ] Pure planner `server/_lib/curriculumForwardPlanner.ts`:
-  - input: `{ gap, weeklyShape, horizonDays, transcriptBlockers, startDate }`
-  - output: `Array<{ date, subject, topicId, code, title, evidence }>`
-  - rules: (a) front-load `transcriptBlockers` into days 1–3, (b) within a subject prefer `inProgress` then `notStarted` lowest ord, (c) skip weekends from `weeklyShape`, (d) deterministic ordering (sort by `date ASC, subjectSlot ASC`).
+- [x] Pure planner curriculumForwardPlanner.ts — v2.62 (2026-05-19). Shipped: front-loads transcriptBlockers, prefers inProgress→notStarted within subject, skips weekends, deterministic sort. Cross-reference line 3447 (curriculumForwardPlanner.test.ts) and line 3450 (8-file forward-plan test cluster green).
 - [x] vitest `curriculumForwardPlanner.test.ts` — v2.62 (2026-05-19). Shipped + green. Locked by `server/curriculumForwardPlanner.test.ts` (covers blocker front-loading, weekend skip, deterministic ordering, empty-gap hide, excludeSubjects). Cross-reference line 3455 — same forward-plan 8-test cluster.
 - [x] db write: `applyForwardPlan(rows, {source})` — v2.62 (2026-05-19). Shipped: `applyForwardPlan` is idempotent on `(date, topicId)` key; re-applying same rows skips. No destructive overwrites. Locked by `server/curriculumForwardPlanApply.test.ts` (3/3) — covers idempotency + perDate increments + blocker prefix stamping.
 - [x] vitest `curriculumForwardPlanApply.test.ts` (real DB) — v2.62 (2026-05-19). Shipped. 3/3 green. First-apply inserts; re-apply is no-op; manually-overridden rows preserved via idempotent skip.
@@ -3451,7 +3448,7 @@ Context: Mom Katy's voice-memo intake just stamped 23 topics. Roll-up shows real
 - [x] vitest `curriculumForwardPlanRouter.test.ts` (real DB) — v2.62 (2026-05-19). Shipped. Covers familyAdmin gates on both `preview` (read-only) and `apply` (write). Part of the 8-file forward-plan cluster cited in line 3455.
 - [x] Adult-only Today widget `TodayForwardPlanCard.tsx` — v2.62 (2026-05-19). Shipped: `TodayForwardPlanCard` is mounted on Today.tsx under `{unlocked && <TodayForwardPlanCard />}` adult-lock gate. Preview list + Apply button + empty-gap hide + toast on apply. Locked by `server/todayForwardPlanWiring.test.ts` + `server/scheduleForwardPlanWiring.test.ts` + `server/printForwardPlanWiring.test.ts`.
 - [x] Source-pattern wiring vitest for the forward-plan card — v2.62 (2026-05-19). Shipped as `server/todayForwardPlanWiring.test.ts` (locks adult-lock import + mount + empty-state self-hide on Today.tsx).
-- [ ] Save checkpoint, summarize per-subject what was scheduled.
+- [x] Save checkpoint + summary — v2.62 (2026-05-19). Cross-reference v2.62 checkpoint with full forward-plan cluster summary.
 
 
 ## Forward calendar planner v2.10 (2026-05-17) — DONE
