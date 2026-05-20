@@ -344,6 +344,8 @@ Cron expression notes:
 - 6-field UTC: `sec min hour dom mon dow`. `0 */30 10-22 * * *` = on the hour and half-hour, hours 10–22 UTC inclusive (~06:00–18:00 EDT, which covers both the nightly send window and the daytime Drive mirror).
 - Min interval is 60 s; 30-min spacing is well within bounds.
 - Adjust the hour window after watching one full day in production.
+- **Alternative split-cadence schedule** (preferred once Job B grows hot): register Job A and Job B as two separate AGENT crons. Job A runs `0 0 23 * * 1-5` (8 PM ET weeknights only — the nightly send window) with the same playbook §4 only. Job B runs `0 */15 * * * *` (every 15 min, 24×7) and skips §4 entirely. Both share the same playbook file but pass different `--detail` notes. Idempotency makes the split safe even if the two crons fire on the same minute.
+- The current single-cadence schedule (`0 */30 10-22 * * *`) is still the recommended starting point; the split is an optimization for when the Drive queue routinely has >50 pending rows.
 
 After registration, capture the returned `task_uid`. Inspect runs with `manus-heartbeat list` and `manus-heartbeat logs --task-uid <uid>` (the AGENT-cron and Heartbeat backends share the same listing surface). Pause / resume / delete with the same CLI.
 
@@ -359,8 +361,9 @@ After registration, capture the returned `task_uid`. Inspect runs with `manus-he
 6. **`pdfDownloadUrl` vs `pdfUrl`.** The cron MUST use `pdfDownloadUrl` (absolute presigned S3) in the email body. `pdfUrl` is the cookie-gated dashboard path and only works for an authenticated browser tab. Tested and broken from Gmail click-throughs (Mom and Grandma do not have dashboard cookies in Gmail).
 7. **Worksheet attachments are deduped by url.** `hydrateLessonForBlock` URL-dedupes per-block printables against the assignmentsLibrary worksheet rows; you do not need to filter on the agent side.
 8. **Drive Hub root is owned by Grandma (`spear.cpt@gmail.com`).** All file uploads land in her Drive. Mom has Editor access. Reagan has no access to the Hub root — kid-side flows go through the dashboard UI only.
-9. **Calendar awareness is server-side.** `ensurePlanForDate` already skips IH 2025-26 off-days and the summer auto-window (Jun 6 – Aug 15). The agent should never second-guess the date the email endpoint returns; if `forDate` is set, that's the next legitimate school day.
-10. **`gmail_send_messages` parameter shape.** The MCP accepts `to`, `subject`, `content`, and `attachments` (file paths). It does **not** accept `htmlBody`, `bcc`, or `cc` as separate fields. If a CC is ever needed, append it to `to`.
+9. **Tutor handoff PDFs land in `Daily Operations / Tutor Handoffs / {YYYY-MM} /`.** When a `drive_push_queue` row arrives with `targetFolder: "tutor"` and `contentText` set (markdown), create the file with mime `text/markdown` directly under the resolved subfolder. The `tutorHandoffSummary` mutation enqueues these on every tutor-day rollover (Sophie M/W/F, Anna T/Th by default — see `tutorOfDayStrip` for the active map). The cron worker does not need to know the tutor name; the row's `fileName` (e.g. `2026-09-08 - Sophie - Reagan Handoff.md`) already encodes it.
+10. **Calendar awareness is server-side.** `ensurePlanForDate` already skips IH 2025-26 off-days and the summer auto-window (Jun 6 – Aug 15). The agent should never second-guess the date the email endpoint returns; if `forDate` is set, that's the next legitimate school day.
+11. **`gmail_send_messages` parameter shape.** The MCP accepts `to`, `subject`, `content`, and `attachments` (file paths). It does **not** accept `htmlBody`, `bcc`, or `cc` as separate fields. If a CC is ever needed, append it to `to`.
 
 ---
 
