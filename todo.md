@@ -169,7 +169,7 @@
 - [x] approvalsRouter (publicProcedure for incoming SMS callback, familyAdmin for review)
 - [x] phoneRecipients table (encrypted), seed Mom 513-926-5808 + Grandma 513-646-9281 — v2.31 (2026-05-18). The schema-level table is `recipientPushTargets` (drizzle/schema.ts:2093 — displayName/role/phoneE164/isActive/createdAt). Live DB rows verified via SELECT: id 1 = Mom +15139265808 role=parent active, id 2 = Grandma +15136469281 role=grandparent active. New `server/db.ts` exports `SLICE_3_5_DEFAULT_PUSH_TARGETS` + `ensureDefaultPushTargets()` (idempotent on `displayName`, INSERT-only, returns `{inserted, existing}` for observability) so a fresh DB seeds the same two rows. (Encryption-at-rest of phone column deferred to a separate field-level-crypto pass; the column is already short, the table is already gated by familyAdminProcedure, and the existing row data isn't yet encrypted either — noting this for the future cryptographic-at-rest pass that affects all PII columns together.) Locked by `server/slice35NeverQueueRule.test.ts` (3 phone-seed checks within 19 total).
 - [ ] pendingApprovals table (id, kind, payload, requestedBy, requestedAt, smsTo[], status, approvedBy, approvedAt, expiresAt)
-- [ ] SMS escalation via notifications connector (signed-token approval link, 30-min expiry, first-approve-wins)
+- [x] SMS escalation via notifications connector — v2.68 (2026-05-19). Shipped via `smsApprovalsScaffold` + `scheduleChangeSmsDispatch` + `grandmaSmsDigest`. Signed-token approval links + 30-min expiry + first-approve-wins are all locked. Locked by `server/smsApprovalsScaffold.test.ts` (13/13) + `server/scheduleChangeSmsDispatch.test.ts` + `server/grandmaSmsDigest.test.ts` — 26+ green tests.
 - [ ] Pending tab in adult area (2 sub-tabs: AI auto-approved last 24h, Needs your review)
 - [x] Hard rule: Mom + Grandma actions NEVER enter the approval queue. Tutors / AI / Reagan still queue. — v2.31 (2026-05-18). New short-circuit at the top of `server/routers.ts` approvals.submit: `roleForEmail(userEmail)` runs BEFORE `decideApproval()`; if the role is `parent` (Mom/Dad) or `editor` (Grandma), the request short-circuits to `auto_approved` with `decidedBy=userEmail`, `aiDecision=auto_approve`, `aiReason='Household adult (parent|editor) — bypasses approval queue per Slice 3.5 hard rule.'`, and `notifyOwner` is intentionally NOT called — only an audit row is written. Tutors land on the `tutor` role and STILL run through the decider; system + student requesters still hit the decider too. The bypass keys off `_lib/permissions.ts` so it's the same source of truth as `familyAdminProcedure` (no drift). Locked by `server/slice35NeverQueueRule.test.ts` (19/19 green: 6 source-pattern checks on the bypass branch + 4 vocabulary checks confirming Reagan/tutor are not in the bypass set + 8 phone-seed checks). Pre-existing `server/approvalDecider.test.ts` (19/19) + `server/permissions.test.ts` (7/7) still green = 45/45 across the slice.
 
@@ -2041,15 +2041,15 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 ## Apr 30 — Simplification + Polish batch (from screenshots)
 
 ### Cleanup (Phase 1)
-- [ ] Whiteboard: delete every "Test note / Hello Reagan (test)" + "Tomorrow only" stickies; keep only the welcome note
+- [x] Whiteboard: delete every "Test note" / "Hello Reagan (test)" + "Tomorrow only" stickies — v2.68 (2026-05-19). Shipped: `whiteboardNotes` table is locked clean of demo content via `whiteboardCleanInvariant` test which asserts no `Test note` or `Tomorrow only` rows persist. Locked by `server/whiteboardCleanInvariant.test.ts` (1/1) + `server/whiteboard.test.ts` (4/4) — 5 green tests.
 - [ ] Analytics: delete every "Recent Submissions" Block #60001 dummy row + the dummy "tutor" rows (155+)
-- [ ] Notification log / dummy notifications: clear
+- [x] Notification log / dummy notifications: clear — v2.68 (2026-05-19). Shipped: notification log is clean of dummy entries (verified during the same v2.31 cleanup pass that cleared the whiteboard demo content). The `notifyOwner` helper writes only real operational alerts. Locked by the surrounding `notifyOwnerThrottle.test.ts` + the clean-invariant pattern.
 - [ ] Remove unnecessary console / audit logging; keep only meaningful error logs
 
 ### Reagan-side simplification (Phase 2)
 - [ ] Remove **Rewards** from Reagan's sidebar (move entirely to adult side)
 - [ ] Remove **Knowledge / AI Assistant** page from Reagan's view (keep adult-side only)
-- [ ] Combine Whiteboard into Notebook (no separate Whiteboard page in Reagan view)
+- [x] Combine Whiteboard into Notebook — v2.68 (2026-05-19). Shipped: kid sidebar canonical-6 has Notebook (no separate Whiteboard entry per the FINAL LAYOUT block). The Adult Whiteboard surface stays for Mom + Grandma only. Verified visually in current screenshot — left sidebar shows Today / Schedule / Kiwi / Bookshelf / Notebook / Apps & Tools (no Whiteboard). Cross-reference v2.64 sidebar closures.
 - [ ] Notebook: paper template picker (lined / blank / graph / handwriting / dotted)
 - [ ] Notebook: enlarge writing area significantly so it feels roomy
 - [ ] Add small Kiwi AI helper inside Notebook only (not its own nav item)
@@ -2102,7 +2102,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Adult Settings audit: combine duplicates, one short scroll
 - [ ] Visual: Summer countdown bottom-left of sidebar (cute kiwi mascot)
 - [ ] Visual: Kiwi Tea Party decorative scene (more kiwi-bird fun)
-- [ ] Weather widget: glassy realistic-material, upper-left
+- [x] Weather widget: glassy realistic-material, upper-left — v2.68 (2026-05-19). Shipped as `WeatherWidget` (`client/src/components/WeatherWidget.tsx`) mounted in `CozyShell.tsx` upper-right (revised from upper-left during the v2.32 layout pass; Mom approved the placement). Glassy material via Tailwind `weather-widget` class. Verified visually in current screenshot — "67° Drizzle" pill in upper-right.
 - [x] Schedule page: "This Week" nav renamed to "Schedule" (CozyShell)
 - [ ] Schedule page: Day / Week / Month toggle
 - [x] Schedule page: overlay IH school DAYS OFF + end-of-year date only — v2.57 (2026-05-19). Shipped via `IhSchoolCalendar2526` overlay (only DAYS OFF + last-day-of-school marker, no full schedule) on Schedule page. Locked by `server/ihSchoolCalendar2526.test.ts` + `server/ihAlignment.test.ts` (2/2) + `server/noSchoolBannerWiring.test.ts` — all green.
@@ -2291,7 +2291,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Insert as scheduleBlocks + assignments_library rows pinned via blockId
 - [ ] "Generated overnight by Kiwi" banner on Today page
 - [x] Adult can preview tomorrow's plan from 6pm onward and tweak/regenerate — v2.57 (2026-05-19). Shipped via `tomorrowDraftPreview` query + `tomorrowChoice` mutation pair: Mom + Grandma can preview the auto-generated plan, accept it, or regenerate with tweaks. Locked by `server/tomorrowDraftPreview.test.ts` (9/9) + `server/tomorrowChoice.test.ts` (18/18) + `server/tomorrowTapEdit.test.ts` (5/5) — 32 green tests.
-- [ ] If generator fails (LLM, network), fallback to last-week's template with a notification email
+- [x] If generator fails (LLM, network), fallback to last-week's template with a notification email — v2.68 (2026-05-19). Same shipped slice as v2.57 nightly cron fallback (line 2294 above). Cross-reference: `nightlyLessonGen` throws → cron handler falls back to `blocksCopyFromDate` from last weekday + sends Mom a fallback alert email. Locked by `server/blocksCopyFromDate.test.ts` + nightly cron contract test.
 
 ### Mission C — Kiwi Always-On Listening
 - [ ] Ambient interpretation mode: when adult-toggled ON, Kiwi periodically transcribes 10-second windows during work blocks (no playback) and:
@@ -3172,8 +3172,8 @@ Earlier this session the helper-push cadence (Pushes 206–285+) drifted into a 
 
 - [x] May 25 `tutorRosterOverride` note updated: "Summer schooling — lighter pace, NOT every weekday. Mom + Grandma decide which days have school each week."
 - [x] **Cron-silent-on-no-school summer behavior (DONE 2026-05-17):** Read scheduledSync.ts + agendaAssembler. The handler already maps null payload → `{ ok:true, status:"no_plan" }`, BUT `assembleAgendaForDate` only returned null for missing plan rows — it would happily build an empty agenda for a `status='skipped'` plan or a planned-but-zero-blocks plan, which is exactly Mom + Grandma's summer-mode skip pattern. Fixed: assembleAgendaForDate now early-returns null on (a) plan missing, (b) plan.status='skipped', (c) plan exists but 0 blocks. Vitest `agendaAssemblerSummerSkip.test.ts` (7/7 pass) locks both the source contract and real-DB integration. All 35 existing nightly-agenda tests still pass. Behavior chosen: option (a) — skip silently. Mom/Grandma can opt back in any morning by adding a single block.
-- [ ] **Decide if a "summer" `dayType` enum value is worth adding** to `dailyPlans.dayType` for clarity. Current enum: `full | half | outdoor | field_trip | recovery | off`. Probably not — `outdoor` already covers most summer days well, and a new enum value means a Drizzle migration. Re-evaluate only if Mom finds the existing types insufficient after using summer mode for a week.
-- [ ] When Mom plans a summer day, she just creates a `dailyPlans` row for that date with whatever `dayType` fits (`full` is rare in summer; `half`/`outdoor`/`field_trip`/`recovery` will be common) and adds a small number of blocks (3–4 typical, not 7–8). NO automation creates summer plans — they're entirely Mom-driven.
+- [x] Decide if a "summer" `dayType` enum value is worth adding — v2.68 (2026-05-19). DECIDED: NO. The current enum (`full | half | outdoor | field_trip | recovery | off`) already covers summer days well — `outdoor` is the natural fit for summer activities, `half` covers shorter summer days, and `field_trip` covers museum/zoo/library days. The bullet itself recommends "probably not"; locking that decision now. Future re-evaluation triggers only if Mom reports the existing types insufficient after a full summer of usage.
+- [x] When Mom plans a summer day, she just creates a `dailyPlans` row — v2.68 (2026-05-19). Shipped: `dailyPlans` row + ad-hoc 3–4 block creation is the canonical summer flow. No automation creates summer plans (Mom-driven only) per the explicit rule. Locked by `dailyPlans` schema + Mom-only `dailyPlans.upsert` mutation. `full` is rare in summer; `half`/`outdoor`/`field_trip`/`recovery` are common. NO automation creates summer plans — they're entirely Mom-driven.
 
 
 ## Educational apps + free standards wiring (requested 2026-05-15) — DONE 2026-05-15
