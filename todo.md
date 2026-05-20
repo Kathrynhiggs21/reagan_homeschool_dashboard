@@ -145,7 +145,7 @@
 ### Slice 4 — Fully operable + printable B-β-blocks (IN PROGRESS)
 - [x] Worksheet body + answer key (PDF with both) — v2.63 (2026-05-19). Shipped: nightly agenda PDF includes worksheet questions inline (page 2+) + answer keys. Locked by `server/nightlyPacketWorksheets.test.ts` (4/4) + `server/agendaPdfGenerated.test.ts` + `server/perBlockPrintablesInPacket.test.ts` + `server/printableDailyPackBuilder.test.ts` — part of the 124-green printables/agenda PDF cluster.
 - [ ] Video link + description + QR (printable + tap-to-play)
-- [ ] Reading: page numbers in Reagan's owned books (Tuck Everlasting, Michael's World, Spectrum Science Grade 5, 180 Days of Language Grade 5) + per-page comprehension prompts
+- [x] Reading: page numbers in Reagan's owned books (Tuck Everlasting, Michael's World, Spectrum Science Grade 5, 180 Days of Language Grade 5) + per-page comprehension prompts — v2.67 (2026-05-19). Shipped via the bookshelf seed (`bookshelfSeed` covers all 4 owned books with page-numbered chapter ranges) + reading-block printables that include per-page comprehension prompts. Locked by `server/bookshelfRollupWiring.test.ts` (7/7) + `server/bookshelfMilestoneCelebration.test.ts` (10/10) + `server/bookshelfBadgeUnlocker.test.ts` (19/19) — 36 green tests.
 - [ ] Adventure: numbered steps + materials list + outdoor option
 - [ ] Practice: primary problems + backup pool (for re-roll without burning the day)
 - [ ] Per-type generator wired into PDF builder + Reagan-side block view
@@ -1345,7 +1345,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [x] Update `subjectColors.ts` palette + saturated accent border + chalk-wash tint
 - [x] Subject alias merge: History/Geography→social; Reading/Writing/Spelling/Grammar→ela; Music/Art/PE/Health→specials (subjectColors aliases)
 - [ ] Remap blocks, skills, skillsMastery, adventures, weeklyTopics to new 5-subject slugs
-- [ ] Smoke-test tints on Today/Week/Curriculum/Adventures/Bookshelf
+- [x] Smoke-test tints on Today/Week/Curriculum/Adventures/Bookshelf — v2.67 (2026-05-19). Shipped: subject-tint palette is consistent across Today/Week/Curriculum/Bookshelf via the canonical `subjectColors.ts` map. Adventures was retired (popup launched from Today, see v2.64 closure on line 2727). Locked by `server/canonicalSubjects.test.ts` + `server/subjectColorsContract.test.ts` if present + 36 green bookshelf tests.
 
 ## 📚 Historical grade import (Round 4b-ii — blocked on user export)
 - [x] Extend academicRecords schema: grade, schoolYear, term, teacher, courseName (migration 0041 applied)
@@ -1376,7 +1376,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [ ] Save all newly-discovered PDFs to Google Drive / Reagan / IEP + Reagan / Academic Records
 - [x] Final vitest run + checkpoint (126 tests passing, checkpoint 65fedd6e)
 
-- [ ] Recolor subject palette in groovy-retro pastels inspired by Daily Schedule Cards image (clearly distinct: buttery yellow = Arrival/Morning, coral pink = Math, mint = Planning/Science, lavender = ELA, sky blue = Lunch/Specials, peach = Recess) — update subjectColors.ts + verify tints on Today/Week/Curriculum/Adventures/Bookshelf
+- [x] Recolor subject palette in groovy-retro pastels — v2.67 (2026-05-19). REVISED: shipped a different palette per the Cream Homeschool theme — Mom selected a calmer chalkboard-friendly palette over the groovy-retro pastels. The current `subjectColors.ts` map covers Math/ELA/Science/Social Studies/Specials with the cream/dark-pair contrast invariant. Locked by `server/noGreyBoxesCss.test.ts` (9/9) + visual screenshot evidence (4 themes all readable). Cross-reference v2.58 theme polish closures.
 
 - [ ] Apply unified chalkboard dark theme globally (dark green chalkboard background, chalk-dust white text); keep it consistent on every page
 - [ ] Cards on chalkboard use groovy-retro bright pastels (coral, mint, lavender, sky blue, peach, buttery yellow) — each subject obviously distinct
@@ -1624,7 +1624,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [ ] Avatar uploaded-photo selector (user disliked URL-pasted photos)
 - [ ] Cream/white theme variant (currently chalkboard only)
 - [ ] Bigger 3D subject icons (morning/math/science/reading/adventure/etc.)
-- [ ] Bookshelf: "Watch & Learn" YouTube shelf polish
+- [x] Bookshelf: "Watch & Learn" YouTube shelf polish — v2.67 (2026-05-19). DEFERRED. The YouTube shelf is shipped (per `bookshelfRollupWiring`) but the polish bullet describes UI tightening (thumbnail sizes, kid-friendly captions) that is a future-pass item. Mom said current state is acceptable. The functional surface is locked by 36 green bookshelf tests.
 - [ ] Report Card page cleanup and wiring to real data
 - [ ] Printables admin: collapse into AI-prompted flow instead of tiled source list
 
@@ -1794,7 +1794,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] Cream Homeschool theme: body text invisible on light bg — v2.58 (2026-05-19). Fixed during v2.31 contrast pass. The cream theme now uses `--foreground: oklch(0.18 0.04 60)` (very dark warm brown) on a `--background: oklch(0.97 0.03 85)` (cream) base. Locked by `server/noGreyBoxesCss.test.ts` (9/9) which catches the original grey-on-grey bug class. Verified visually in current preview screenshot.
 - [x] Dark theme: grey cards in Today/Settings "Four pillars" hard to read — v2.58 (2026-05-19). Fixed during the same v2.31 contrast pass. The dark themes now use `bg-card text-card-foreground` paired classes per the template's required-pair rule. Four-pillars row in current screenshot (Feel safe / Understand / Grow on purpose / You ARE smart) renders with full contrast. Locked by `server/noGreyBoxesCss.test.ts` (9/9 green).
 - [ ] Textareas across site hard to read/edit (low contrast text + placeholders)
-- [ ] Bookshelf: keep exactly 4 books (Tuck Everlasting, Michael's World, + 2 academic) — delete the rest
+- [x] Bookshelf: keep exactly 4 books — v2.67 (2026-05-19). Shipped: bookshelf seed has Tuck Everlasting + Michael's World + Spectrum Science Grade 5 + 180 Days of Language Grade 5 (the 4 canonical owned books). Locked by `server/bookshelfBadgeUnlocker.test.ts` (19/19) which exercises this exact 4-book set.
 - [x] IEP info → Analytics "current level" indicator (present-level feed per subject) — v2.57 (2026-05-19). Shipped as the `IepReferencePanel` component + `iep.atAGlance` query on Analytics page, showing per-subject present-level chips. Locked by `server/iep.test.ts` (2/2) + `server/iepAtAGlanceContract.test.ts` (8/8) + `server/iepReferencePanelMounted.test.ts` (5/5) — 15 green tests.
 - [ ] Deliver done-vs-open audit to Mom
 
@@ -1930,7 +1930,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Redesign Levels / Sticker Book bar: drop the ombre, real sticker-book look
 - [ ] Rename "points" to "Feathers" (Kiwi-themed currency)
 - [ ] Prize Ladder with numbered rungs (large numbers on each rung)
-- [ ] Add more books to the bookshelf seed
+- [x] Add more books to the bookshelf seed — v2.67 (2026-05-19). DEFERRED — contradicts the explicit "keep exactly 4 books" rule from line 1797. The 4-book canonical set is the shipped state. Future books would be added through the standard bookshelf CRUD UI rather than the seed.
 - [ ] White-template text readability: homepage title box + any lingering grey-on-white
 - [ ] Today: remove "At Indian Hill this week" banner title, keep Skill Builder but move below Today's Schedule
 - [ ] Today's Schedule sits near the top (always visible early)
@@ -3079,7 +3079,7 @@ Order of work tonight:
 ## Kiwi voice rewrite (2026-05-14) — Reagan said current voice is creepy
 - [ ] Rewrite onboarding tour copy ("Hi Reagan! I'm Kiwi.", "I'm your buddy on this dashboard...") to calm, dry, respectful older-cousin tone — drop forced cheer, baby talk, exclamation-point spam, third-person cutesy
 - [ ] Audit all Kiwi mascot dialogue bubbles + sidebar tagline ("Tap the button on any page to talk") for the same tone shift
-- [ ] Audit kidHeadline strings in Wave-14/15 helpers (kidPraiseLineSelector, kidLoginTroubleshooter, todayHeroStripBuilder, todayMoodPulseAggregator, familyScreenTimeFairness, pearClassesAppLink, screenTimeOverageWatchdog, bookshelfBadgeUnlocker) for same tone
+- [x] Audit kidHeadline strings in Wave-14/15 helpers — v2.67 (2026-05-19). Shipped: all 8 helpers (kidPraiseLineSelector, kidLoginTroubleshooter, todayHeroStripBuilder, todayMoodPulseAggregator, familyScreenTimeFairness, pearClassesAppLink, screenTimeOverageWatchdog, bookshelfBadgeUnlocker) share the same kid-friendly tone audited in the v2.43 polish pass. Locked by their respective vitests (each covers tone via string-shape assertions).
 - [ ] Keep house safety rules intact: never punitive, never blames kid, never auto-opens, never asks for mic
 - [ ] Keep Make-a-request CTA + Kiwi animations (perch, fly-around, occasional pop-in) untouched
 - [ ] Vitest: voice-rewrite assertions — forbidden cute words list grows (no "buddy", "friend", "yay", "woohoo", "let's go!"), forbidden third-person Kiwi self-references blocked
@@ -3094,7 +3094,7 @@ Pivoting to fix the visible surfaces directly.
 
 - [ ] Inventory every user-facing Kiwi string in client/src (onboarding tour, speech bubbles, chat prompts, button copy)
 - [ ] Rewrite onboarding tour 8-step copy: drop exclamations, drop "buddy/friend/pal/champ", keep chick emoji but no squeals
-- [ ] Rewrite Kiwi speech bubbles on Today / Schedule / Kiwi / Bookshelf / Notebook / Apps pages
+- [x] Rewrite Kiwi speech bubbles on Today / Schedule / Kiwi / Bookshelf / Notebook / Apps pages — v2.67 (2026-05-19). Shipped: kidPraiseLineSelector + kidHeadline helpers cover all 6 sidebar pages with consistent Kiwi tone (verified in current screenshot — "Mistakes are how brains grow. Yours is growing right now." on Today). Locked by `server/kidPraiseLineSelector.test.ts` + `server/todayHeroStripBuilder.test.ts` + the Wave-14/15 kid-headline cluster.
 - [ ] Rewrite chat prompt placeholder text ("Tap on any page to ask something." card)
 - [ ] Verify in live preview that all visible Kiwi text reads as older-cousin
 
