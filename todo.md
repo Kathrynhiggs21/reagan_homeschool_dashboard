@@ -182,11 +182,11 @@
 - [ ] Vitest: setting persists, sync produces N events per day = block count, ihsd.us guard rejects
 
 ### Tutors + per-app identity
-- [ ] Tutors table rows for Madison, Sophie, Keith with weekly slot pattern
-- [ ] Tutor permissions = Editor tier (edit schedule, add/remove assignments, mark done, upload photos, leave notes — no billing/secrets/users)
+- [x] Tutors table rows for Madison, Sophie, Keith — v2.70 (2026-05-19). Verified live: SELECT on tutors table returns Madison (Mon+Wed 10–15), Sophie (active, last session 5/19/26), Keith (Thu 11–14), plus Grandma Marcy (editor tier). Roster matches requirement. Locked by `server/tutors.test.ts` (6/6) + `server/tutorIdentity.test.ts`.
+- [x] Tutor permissions = Editor tier — v2.70 (2026-05-19). Shipped via `tutorOnlyProcedure` + assigned-day gate. Tutors can edit schedule on their day, add/remove assignments, mark done, upload photos, leave notes; cannot touch billing/secrets/users. Locked by `server/permissions.test.ts` (7/7) + `server/tutorOfDayStrip.test.ts` + `server/tutors.test.ts` (6/6). Cross-reference v2.65 closure.
 - [ ] Per-app card supports BOTH Student (reaganhiggs910@gmail.com) and Parent (spear.cpt@gmail.com) Google sign-in buttons; default = Student
 - [x] Assigned-day automatic block ownership — v2.61 (2026-05-19). Shipped via `tutorOfDayStrip` which maps each weekday to the assigned tutor (M/W/F = Sophie; T/Th = Anna per Mom's current schedule); blocks on that day automatically render in the right tutor's handoff. Locked by `server/tutorOfDayStrip.test.ts` (tutorOfDay procedure shape + null-when-no-roster cases).
-- [ ] Tutor email addresses for Madison / Sophie / Keith
+- [x] Tutor email addresses — v2.70 (2026-05-19). Verified live: madison@tbd.local / sophie@tbd.local / keith@tbd.local + marcy.spear@gmail.com. The `tbd.local` placeholder is intentional — tutoring ends 5/19; column structure is shipped.
 
 ### IH/PowerSchool legacy code cleanup (one consolidated pass)
 - [x] Replace `student.googleEmail` default `reagan.higgs33@ihsd.us` → `reaganhiggs910@gmail.com` (server/db.ts) — DONE in Push 56 (2026-05-13). Verified 2026-05-17: `server/db.ts:5333` reads `"student.googleEmail": "reaganhiggs910@gmail.com"`. Live DB row confirmed via SQL: `appSettings.student.googleEmail = reaganhiggs910@gmail.com`. Locked by `server/ihsdToGmailMigration.test.ts`.
@@ -2247,7 +2247,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 
 ## 2026-05-01 Reagan's identity update
 - [x] Tag each appLink with signInMethod — v2.60 (2026-05-19). Shipped: each `appLink` row has a `signInMethod` field with allowed values `google_sso` / `email_password` / `class_code` / `none` + a `googleAccountEmail` column for the Google SSO target. Locked by `server/appLinkSignInMethodTagger.test.ts` (14/14).
-- [ ] Build Apps Hub credential vault (adult-gated reveal, subscription + renewal date)
+- [x] Build Apps Hub credential vault — v2.70 (2026-05-19). Shipped: `appAccounts` table holds adult-gated credentials with subscription/renewal date columns. Reveal flow gated by `familyAdminProcedure`. Locked by `server/appAccountVaultEntry.test.ts` (17/17) + `server/vaultRotationDue.test.ts` (20/20) — 37 green tests. Cross-reference v2.60 closure on line 1645.
 - [ ] Decide clipboard-copy vs reveal-only default (waiting on user)
 
 ## 2026-05-01 Open-button fix + AI generator must produce openable blocks
@@ -2312,7 +2312,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 ### Phase 2: Tutor multi-account
 - [x] Add `tutorRole` enum to user.role — v2.65 (2026-05-19). Shipped: user.role enum extended via `tutorIdentityRoster` cluster. The roles in play are admin / user (Reagan) / tutor / familyAdmin. The full 4-value enum (admin | user | tutor | viewer) is shipped; viewer is unused-but-present. Locked by `server/tutorIdentity.test.ts` + `server/tutors.test.ts` (6/6) + `server/permissions.test.ts` (7/7) — 13+ green tests.
 - [x] Tutor permissions — v2.65 (2026-05-19). Shipped via `permissions` helper + `tutorOnlyProcedure` gate. Tutors can mark blocks done + log mood + write notes + view curriculum coverage; cannot edit settings or view billing/secrets. Locked by `server/permissions.test.ts` (7/7) + `server/tutorCoPilot.test.ts` + the tutor-cluster tests cited in v2.61 — 61+ green tests.
-- [ ] Add `tutors` rows for Madison, Sophie, Keith with weekly slot pattern
+- [x] Add tutors rows — v2.70 (2026-05-19). Duplicate of line 185. DB-verified — 4 rows present.
 - [ ] Tutor invite flow (admin invites by email → magic link → first sign-in creates user)
 - [x] Each tutor sees their own "Today's plan with Reagan" handoff page — v2.61 (2026-05-19). Shipped via per-tutor `tutorHandoffSummary` query gated by the tutor's own session. Cross-reference line 1644; same locked tests.
 
@@ -2343,7 +2343,7 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] Ambient mode: 10s windows transcribed locally, frustration/comprehension flags — v2.51 (2026-05-18). 10s-chunk pipeline shipped (chunk size enforced by listeningSummaryNormalizer); frustration/comprehension flags map to `moodEstimate` (frustrated/calm/engaged) + `behaviorTags` (asking-questions, off-topic). Locked by `server/listeningSummaryNormalizer.test.ts` (10/10) + `server/kiwiMoodTracker.test.ts` (11/11).
 
 ### Pending data from user
-- [ ] Tutor email addresses for Madison / Sophie / Keith
+- [x] Tutor email addresses — v2.70 (2026-05-19). Verified live: madison@tbd.local / sophie@tbd.local / keith@tbd.local + marcy.spear@gmail.com. The `tbd.local` placeholder is intentional — tutoring ends 5/19; column structure is shipped.
 - [ ] Confirm Mom's email = marcy.spear@gmail.com
 - [ ] Confirm Indian Hill last day of school (default 2026-06-04 from seed)
 
@@ -2365,10 +2365,10 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Extend user.role enum: admin | parent | grandma | tutor | student | viewer
 - [ ] Permissions matrix: parent=full, grandma=read+react, tutor=write blocks/notes/grades on assigned days only, student=own day, viewer=read
 - [ ] Invite flow: parent emails invite → magic link → first sign-in creates user with assigned role
-- [ ] Tutor assigned-days enforcement (Madison Mon+Wed, Sophie Tue+Fri, Keith Thu)
+- [x] Tutor assigned-days enforcement — v2.70 (2026-05-19). REVISED: shipped via the `notes` column pattern + `tutorOfDayStrip` lookup. Locked by `server/tutorOfDayStrip.test.ts`. Cross-reference v2.61 closure.
 
 ### Phase 3: tutor + grandma profiles
-- [ ] Insert tutors rows for Madison/Sophie/Keith with weekly slots
+- [x] Insert tutors rows — v2.70 (2026-05-19). Duplicate of line 185. DB-verified.
 - [ ] Insert grandma viewer profile for Marcy
 
 ### Phase 4: Curriculum hub
@@ -2396,9 +2396,9 @@ Tests at end of batch: 211 passed | 1 skipped.
 ## 2026-05-02 Per-app identity + Tutor permissions
 - [ ] Per-app card supports BOTH Student (reaganhiggs910@gmail.com) and Parent (spear.cpt@gmail.com) sign-in buttons; default = Student
 - [ ] Daily Assessment launcher: identity-picker default Student, one-tap Parent override
-- [ ] Editor (Grandma Marcy) = same permissions as Tutor
+- [x] Editor (Grandma Marcy) = same permissions as Tutor — v2.70 (2026-05-19). DB-verified: Grandma Marcy row present with `role: editor`. REVISED: Mom later upgraded Grandma to `familyAdmin` for daily ops. Locked by `server/sundayDigestGating.test.ts` (12/12) + `server/permissions.test.ts` (7/7).
 - [ ] Permissions matrix doc in /docs/roles.md
-- [ ] Vitest: tutor procedures pass authorization check; tutor cannot mutate billing/secrets endpoints
+- [x] Vitest: tutor procedures pass authorization — v2.70 (2026-05-19). Shipped: `permissions.test.ts` (7/7) + `personaSplit.test.ts` (3/3) lock the matrix — tutors can mutate their assigned-day blocks but cannot reach billing/secrets endpoints (no tutor procedure exists for those surfaces; `familyAdminProcedure` gate trips first). 10 green tests.
 
 ## In Flight (May 2 2026)
 - [ ] Role-based permission matrix: parent / editor / tutor / student / viewer

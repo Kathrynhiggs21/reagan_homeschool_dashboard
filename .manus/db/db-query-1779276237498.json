@@ -1,0 +1,75 @@
+{
+  "query": "SELECT * FROM tutors LIMIT 5",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT * FROM tutors LIMIT 5",
+  "rows": [
+    {
+      "id": "1",
+      "name": "Tutor",
+      "role": "tutor",
+      "email": "NULL",
+      "phone": "NULL",
+      "bio": "NULL",
+      "subjects": "NULL",
+      "avatarUrl": "NULL",
+      "active": "0",
+      "notes": "NULL",
+      "createdAt": "2026-04-29 02:33:33"
+    },
+    {
+      "id": "60009",
+      "name": "Sophie",
+      "role": "tutor",
+      "email": "sophie@tbd.local",
+      "phone": "NULL",
+      "bio": "NULL",
+      "subjects": "ela,ss,science",
+      "avatarUrl": "NULL",
+      "active": "1",
+      "notes": "Sophie's last day is Tuesday May 19, 2026 (10am–1pm session, shortened). Starting Wed May 20, 2026, Mom + Grandma run school. No tutors after May 19. (Updated 2026-05-15.)",
+      "createdAt": "2026-04-29 17:31:02"
+    },
+    {
+      "id": "510001",
+      "name": "Madison",
+      "role": "tutor",
+      "email": "madison@tbd.local",
+      "phone": "NULL",
+      "bio": "NULL",
+      "subjects": "math,ela,science",
+      "avatarUrl": "NULL",
+      "active": "1",
+      "notes": "Mon + Wed 10:00–15:00. Email TBD. | 2026-05-15: deactivated — Sophie is the only tutor going forward; Mom + Grandma take over after school year ends.",
+      "createdAt": "2026-05-02 23:30:02"
+    },
+    {
+      "id": "510002",
+      "name": "Keith",
+      "role": "tutor",
+      "email": "keith@tbd.local",
+      "phone": "NULL",
+      "bio": "NULL",
+      "subjects": "math,science",
+      "avatarUrl": "NULL",
+      "active": "1",
+      "notes": "Thu 11:00–14:00. Email TBD. | 2026-05-15: deactivated — Sophie is the only tutor going forward; Mom + Grandma take over after school year ends.",
+      "createdAt": "2026-05-02 23:30:02"
+    },
+    {
+      "id": "510003",
+      "name": "Grandma Marcy",
+      "role": "editor",
+      "email": "marcy.spear@gmail.com",
+      "phone": "NULL",
+      "bio": "NULL",
+      "subjects": "all",
+      "avatarUrl": "NULL",
+      "active": "0",
+      "notes": "Editor tier — same edit power as tutors, no billing/secrets.",
+      "createdAt": "2026-05-02 23:30:02"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\trole\temail\tphone\tbio\tsubjects\tavatarUrl\tactive\tnotes\tcreatedAt\n1\tTutor\ttutor\tNULL\tNULL\tNULL\tNULL\tNULL\t0\tNULL\t2026-04-29 02:33:33\n60009\tSophie\ttutor\tsophie@tbd.local\tNULL\tNULL\tela,ss,science\tNULL\t1\tSophie's last day is Tuesday May 19, 2026 (10am–1pm session, shortened). Starting Wed May 20, 2026, Mom + Grandma run school. No tutors after May 19. (Updated 2026-05-15.)\t2026-04-29 17:31:02\n510001\tMadison\ttutor\tmadison@tbd.local\tNULL\tNULL\tmath,ela,science\tNULL\t1\tMon + Wed 10:00–15:00. Email TBD. | 2026-05-15: deactivated — Sophie is the only tutor going forward; Mom + Grandma take over after school year ends.\t2026-05-02 23:30:02\n510002\tKeith\ttutor\tkeith@tbd.local\tNULL\tNULL\tmath,science\tNULL\t1\tThu 11:00–14:00. Email TBD. | 2026-05-15: deactivated — Sophie is the only tutor going forward; Mom + Grandma take over after school year ends.\t2026-05-02 23:30:02\n510003\tGrandma Marcy\teditor\tmarcy.spear@gmail.com\tNULL\tNULL\tall\tNULL\t0\tEditor tier — same edit power as tutors, no billing/secrets.\t2026-05-02 23:30:02\n",
+  "stderr": "",
+  "execution_time_ms": 511
+}
