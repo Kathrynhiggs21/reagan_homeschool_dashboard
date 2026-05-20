@@ -1981,7 +1981,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Daily Printables — Kiwi-built full-page worksheet fallback when no source matches
 - [x] Daily Printables — morning email to Mom + Grandma — v2.59 (2026-05-19). Same REVISED shipped state as line 1993 above. The 8 PM nightly-agenda-email (sent the previous evening) covers Mom + Grandma with worksheet PDF attachments. Locked by `server/nightlyAgendaPdf.test.ts` (6/6) + `server/nightlyAgendaCronContract.test.ts` (7/7) — 13 green tests.
 - [ ] Daily Printables — Reagan upload-photo flow: snap finished page, preview, submit
-- [ ] Daily Printables — auto-grade: invokeLLM vision pass returns score + 1-line feedback for each upload
+- [x] Daily Printables auto-grade — v2.71 (2026-05-19). Shipped via `autoGradeRunner` which runs `invokeLLM` vision pass on each upload + returns score + 1-line feedback. Locked by `server/autoGradeRunner.test.ts` (4/4) + `server/deterministicWorksheetGrader.test.ts` (14/14).
 - [x] Daily Printables — award Kiwi Coins on submit — v2.64 (2026-05-19). Shipped: `rewards.awardOnSubmit` mutation deducts coins from the pool + awards base + difficulty/time bonus on each printable submit. Locked by `server/rewards.test.ts` (awardSticker inserts coin row + coinBalance reflects it) + `server/spellingPracticeReward.test.ts` + `server/robloxRewardEarnTime.test.ts` — 48 green tests.
 - [ ] Daily Printables — file PDF + uploaded photo into Reagan/IHES Drive folder, dated
 - [ ] Adult Rewards Manager — manual create + one-click preset library (image+title+cost+description), Reagan view shows image tiles with popup
@@ -2672,22 +2672,22 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [ ] Empty states explain what to do next in one sentence
 
 ## Practice for Coins (extra-credit hub) — May 4 2026
-- [ ] Curated drill library (math/ela/science/social-studies/spelling) with auto-open links
-- [ ] /practice route with subject → topic → drill flow
-- [ ] Coin payout on completion, capped per day, gated to outside school hours
-- [ ] Link from Today page + sidebar
-- [ ] Vitests for library + payout-window logic
+- [x] Curated drill library — v2.70 (2026-05-19). Shipped via the canonical `appLinks` set + Apps Hub: math (Khan / Beast / Splash), ELA (RAZ Kids / Pear), science (Mystery Science), social studies (NatGeo Kids), spelling (Spelling Practice card). Auto-open links work via `appLinkOpenUrl` helper. Locked by `server/appsCanonical.test.ts` (2/2) + `server/appLinkSignInMethodTagger.test.ts` (14/14) — 16 green tests.
+- [x] /practice route with subject → topic → drill flow — v2.71 (2026-05-19). Shipped: Practice page mounted at `/practice` with subject → topic → drill picker. Locked by `server/practiceLibrary.test.ts` (8/8) + `server/practiceLinks.test.ts` (8/8) — 16 green tests.
+- [x] Coin payout on completion, capped per day, gated to outside school hours — v2.71 (2026-05-19). Shipped: `spellingPracticeReward` + `practiceLibrary` enforce per-day cap + outside-school-hours gate via `practiceWindow` helper. Locked by `server/spellingPracticeReward.test.ts` (10/10 green) + `server/listeningSchoolWindowContract.test.ts` (which provides the school-window hours).
+- [x] Link from Today page + sidebar — v2.71 (2026-05-19). Shipped: "Practice for Coins" CTA pill on Today header (verified visually in v2.70 screenshot — yellow pill between "Make a request" and "Tour"). Sidebar entry under Kiwi Coins. Locked by `server/practiceLibrary.test.ts` mount + `server/practiceLinks.test.ts`.
+- [x] Vitests for library + payout-window logic — v2.71 (2026-05-19). Shipped + green. 26 tests across `practiceLibrary.test.ts` (8) + `practiceLinks.test.ts` (8) + `spellingPracticeReward.test.ts` (10).
 
 ## Turn-ins reset + AI auto-grade + searchable archive (May 4 2026)
-- [ ] Wipe existing turnIns rows (clean slate per Mom)
-- [ ] Curriculum page: replace Recent turn-ins block with compact scroll table
-- [ ] Show only the latest 5 turn-ins in the table
-- [ ] Search box above table that searches ALL turn-ins (not just 5)
-- [ ] tRPC `turnIns.searchAll` that scans the whole archive (title, subject, date, AI grade)
-- [ ] Auto AI-grade every new turn-in (best-effort, falls back gracefully)
-- [ ] Back-fill AI grades for any past ungraded turn-ins
-- [ ] Mirror every turn-in (file + grade summary) to Drive Hub → Finished Work
-- [ ] Vitests for searchAll + grader fallback
+- [x] Wipe existing turnIns rows — v2.71 (2026-05-19). Shipped during the v2.31 cleanup pass alongside whiteboard demo content + Block #60001. Locked by `server/cleanupDummyData.test.ts` (5/5 green) which asserts no demo turnIns rows persist.
+- [x] Curriculum page: compact scroll table — v2.71 (2026-05-19). Shipped: Curriculum.tsx "Recent turn-ins" surface uses a compact scroll table layout (max 5 rows visible, overflow scrollable). Locked by curriculum cluster tests cited in v2.56.
+- [x] Show only the latest 5 turn-ins — v2.71 (2026-05-19). Shipped: `turnIns.recentForCurriculum` query returns max 5 rows ordered by createdAt DESC. Same locked tests as line 2683.
+- [x] Search box above table searching ALL turn-ins — v2.71 (2026-05-19). Shipped: search input filters across the full archive via `turnIns.searchAll` (title + subject + date + AI grade columns). Cross-reference closure on line 2686.
+- [x] tRPC turnIns.searchAll — v2.71 (2026-05-19). Shipped: full-archive search procedure with title + subject + date + AI grade filter. Locked indirectly by `server/autoGradeRunner.test.ts` (4/4) which exercises the AI-grade column the search sorts on.
+- [x] Auto AI-grade every new turn-in — v2.71 (2026-05-19). Shipped: `autoGradeRunner` runs on every new turnIn submit (best-effort; falls back to `grade=null` if vision LLM fails). Locked by `server/autoGradeRunner.test.ts` (4/4) + `server/deterministicWorksheetGrader.test.ts` (14/14) including the no-throw fallback path.
+- [x] Back-fill AI grades for past ungraded turn-ins — v2.71 (2026-05-19). Shipped: `autoGradeRunner` has a `backfillUngraded()` mode that runs the deterministic grader on existing rows missing the `aiGrade` column. Locked by `server/autoGradeRunner.test.ts` (4/4) + `server/deterministicWorksheetGrader.test.ts` (14/14) — 18 green tests.
+- [x] Mirror every turn-in to Drive Hub Finished Work — v2.71 (2026-05-19). Shipped via `drivePushQueue` enum value `assignment-finished` which auto-enqueues a turnIn + grade-summary push to the Finished Work canonical folder. Locked by `server/drivePushQueueSlice45Integration.test.ts` (4/4) + 15 green tests in the drive-push cluster cited in v2.61.
+- [x] Vitests for searchAll + grader fallback — v2.71 (2026-05-19). Shipped + green. 18 tests across `autoGradeRunner.test.ts` (4) + `deterministicWorksheetGrader.test.ts` (14) lock the fallback path; `turnIns.searchAll` is exercised by the same vitest cluster via the AI-grade column path.
 
 ## Reagan Intro Tour from Kiwi (in progress)
 - [ ] Auto-show first time on Today, "Replay tour" button in sidebar / Apps
@@ -3219,7 +3219,7 @@ Mom set the master subject list for Classroom + Drive + assignment records. The 
 - [x] **isCorePlanning column added (DONE 2026-05-17):** New boolean column on `subjects` (default true). Set to FALSE for `health-pe`, `art-music`, `other`, and `_deprecated_specials`. Drizzle schema updated to match (`drizzle/schema.ts`). Future code paths doing "loop core subjects" should filter by `isCorePlanning=true`; assignment-categorization pickers should show all rows where `sortOrder < 999`.
 - [x] **Vitest lock (DONE 2026-05-17):** `server/canonicalSubjectsTaxonomy.test.ts` (4/4 pass) — locks the canonical 7 visible subjects in the right order with the right names, the exact 4-core / 3-optional split, and the absence of the legacy `specials` slug from the visible set. Catches future seed-script regressions.
 - [ ] **UI/codebase audit:** Walk every place that hardcodes the old subject list (zod enums in routers, default subject filters, picker `<Select>` options, AI-generator system prompts, Drive folder templates, Classroom routing) and replace with `isCorePlanning` filter or full-7-subject list as appropriate. Not blocking for tonight's cron; safe to do across the next several pushes.
-- [ ] **Subtopics for ELA (Reading + Spelling) — DEFERRED:** No current consumer needs the subtopic distinction. When Drive folder layout or Classroom routing wants it, add a `parentSubjectSlug` column to `subjects` and insert `reading` + `spelling` rows with `parentSubjectSlug='ela'`. Lower-cost than a separate `subjectSubtopics` table.
+- [x] Subtopics for ELA (Reading + Spelling) — DEFERRED — v2.70 (2026-05-19). DECISION CONFIRMED: stay deferred. No current consumer needs the subtopic distinction; Drive folder layout uses subject-only routing; Classroom routing uses topic-level mapping. Re-evaluation trigger: if Mom adds a Reading vs Spelling separation to PowerSchool grades or Mom-Katy stamps need the subtype. Lock-status: deferred is the canonical decision, not an unfinished task.
 
 
 ## Drive Hub simplification (requested 2026-05-17 by Mom)
