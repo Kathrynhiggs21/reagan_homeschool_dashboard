@@ -1,0 +1,130 @@
+Continuously mirror Reagan's homeschool dashboard into the Reagan School Hub (Dashboard) Google Drive folder, AND send the nightly agenda email.
+
+The dashboard exposes scheduled-task endpoints (auth header is auto-injected):
+  $SCHEDULED_TASK_ENDPOINT_BASE/api/scheduled/drive-push/pending      (GET; returns up to 100 pending file rows, each enriched with canonicalParentSlug, canonicalParentFolderId, and subfolderName)
+  $SCHEDULED_TASK_ENDPOINT_BASE/api/scheduled/drive-push/result       (POST { id, status, driveFileId?, errorMessage? })
+  $SCHEDULED_TASK_ENDPOINT_BASE/api/scheduled/drive-folder-map        (GET; returns the 9 canonical parent folder ids + the subfolders to ensure exist)
+  $SCHEDULED_TASK_ENDPOINT_BASE/api/scheduled/drive-folder-map/result (POST { parentName, subfolderName, driveFolderId })
+  $SCHEDULED_TASK_ENDPOINT_BASE/api/scheduled/drive-snapshot          (GET; returns live JSON snapshot of every section)
+  $SCHEDULED_TASK_ENDPOINT_BASE/api/scheduled/nightly-agenda-email    (GET; returns next school day's agenda payload including pdfUrl, htmlBody, subject, recipients)
+  $SCHEDULED_TASK_ENDPOINT_BASE/api/scheduled/nightly-agenda-email/result (POST { date, status: "sent"|"skipped"|"failed", messageId?, errorMessage? })
+
+Auth header on every request:
+  -H "Cookie: app_session_id=$SCHEDULED_TASK_COOKIE"
+
+Hub root folder ID: 1r3bJacPLJN7VHI8y72rcx1-GRxspqo1r
+
+==============================================================================
+STEP 1 — Ensure canonical folder structure
+==============================================================================
+Fetch /api/scheduled/drive-folder-map. For each (parentName, subfolderName) tuple the dashboard reports:
+  - Locate the parent folder under the Hub root (these are the 9 canonical parents already created; do NOT create new top-level Hub folders).
+  - If the subfolder is missing, create it under that parent.
+  - POST { parentName, subfolderName, driveFolderId } back to /api/scheduled/drive-folder-map/result.
+
+The 9 canonical parent folders (top-level under Hub root, names as displayed in Drive — numeric prefixes were dropped on 2026-05-20):
+  Daily Operations
+  Assignments and Work
+  Curriculum and Resources
+  Admin and Records
+  Progress and Reports
+  Adventures and Enrichment
+  Printables and Resources
+  Inbox (Unsorted)
+  Archive
+
+==============================================================================
+STEP 2 — Drain the drive_push_queue
+==============================================================================
+Fetch /api/scheduled/drive-push/pending. For each row:
+
+  a. Determine target Drive folder:
+       - Use row.canonicalParentFolderId as the parent (already provided).
+       - Use row.subfolderName as the subfolder name under that parent.
+       - If row.targetSubpath is non-empty (e.g. "2026-05"), nest one more level inside the subfolder. Create month folders on demand.
+       - Final path: HubRoot / {canonicalParent} / {subfolderName} / {targetSubpath?} / {fileName}
+
+  b. Resolve file content:
+       - If row.contentText is non-empty AND row.mimeType starts with "text/", upload the text directly with the given mimeType.
+       - Otherwise download row.fileUrl (it returns a redirect to S3) and upload the bytes.
+
+  c. DEDUPE-ON-UPLOAD:
+       - Before creating, search the target folder for a file with the same name.
+       - If a file with the same name already exists, UPDATE that file's content (do not create a duplicate); use its existing driveFileId.
+
+  d. POST { id, status: "pushed", driveFileId } back to /api/scheduled/drive-push/result.
+     On failure, POST { id, status: "failed", errorMessage }.
+     If the row's target_folder is one this playbook does not recognize, POST status: "skipped" with errorMessage="unhandled target" — never leave a row pending forever.
+
+Full subfolder mapping (DrivePushTarget → canonical parent / subfolder):
+
+  finished_work          → Assignments and Work / Finished Work
+  reagan_artwork         → Assignments and Work / Finished Work
+  reagan_assignments     → Assignments and Work / Assignments
+  worksheets             → Assignments and Work / Worksheets (Daily Packets)
+  practice               → Assignments and Work / Practice for Coins
+  classes                → Assignments and Work / Classes / {className}/{status}
+
+  daily_schedule         → Daily Operations / Daily Schedule
+  agenda_pdf             → Daily Operations / Daily Agenda PDFs / {YYYY-MM}
+  day_log                → Daily Operations / Day Logs / {YYYY-MM}
+  recap_reply            → Daily Operations / Recap Replies / {YYYY-MM}
+
+  topics_covered         → Curriculum and Resources / Topics Covered / {YYYY-MM}
+  curriculum_checklist   → Curriculum and Resources / Curriculum Checklist (Weekly)
+  printables             → Printables and Resources / Printables
+  reagan_ihes            → Printables and Resources / Printables   (legacy alias)
+
+  report_cards           → Progress and Reports / Report Cards
+  analytics              → Progress and Reports / Analytics
+  apps_tools             → Progress and Reports / Apps and Tools
+  kiwi_coins             → Progress and Reports / Kiwi Coins
+
+  adult_notes            → Admin and Records / Adult Notes
+  tutor                  → Admin and Records / Tutor Handoffs
+  reagan_tutor           → Admin and Records / Tutor Handoffs
+  notebook               → Admin and Records / Notebook
+
+  bookshelf              → Adventures and Enrichment / Bookshelf
+  adventures             → Adventures and Enrichment / Adventures
+  journal                → Adventures and Enrichment / Journal
+
+  reagan                 → Inbox (Unsorted)   (catch-all)
+
+==============================================================================
+STEP 3 — Hub snapshot
+==============================================================================
+Fetch /api/scheduled/drive-snapshot. Inside Hub / "Snapshots/{YYYY-MM-DD}/{HHMM}/" upload these CSVs/JSONs:
+  assignments.csv, finished_work.csv, schedule_next7.csv, coins.csv, analytics.csv, journal.csv,
+  and a snapshot.json with the full payload. Keep only the last 7 days of Snapshots; delete older.
+
+==============================================================================
+STEP 4 — Nightly agenda email
+==============================================================================
+Fetch /api/scheduled/nightly-agenda-email.
+- If the response status is "skipped" (e.g. weekend, no school day, already sent), do nothing further for this step.
+- Otherwise:
+    a. Recipients THIS WEEK (through Tue May 26, 2026): spear.cpt@gmail.com ONLY. Do NOT include Marcy or any other recipient yet.
+    b. Download pdfUrl.
+    c. Send via gmail-MCP: To=spear.cpt@gmail.com, Subject=response.subject, htmlBody=response.htmlBody, attach the downloaded PDF.
+    d. POST { date: response.date, status: "sent", messageId } to /api/scheduled/nightly-agenda-email/result.
+- On failure, POST status: "failed" with errorMessage.
+
+==============================================================================
+STEP 5 — README refresh
+==============================================================================
+Update README.md at the Hub root: refresh the "Last refreshed" timestamp line. Do not rewrite other content.
+
+==============================================================================
+ROSTER NOTES (as of 2026-05-21)
+==============================================================================
+- Sophie: active tutor through Tue May 26, 2026 (her last day). After that, no tutor uploads expected.
+- Keith: OFF (active=0). Ignore any pre-existing "Keith" tutor sessions; they have been cancelled in the dashboard.
+- Mom (Katy) + Grandma Marcy run school after May 26.
+
+==============================================================================
+FAILURE HANDLING
+==============================================================================
+- Always log a one-line summary to stdout per step: "drive-push: X pushed, Y skipped, Z failed".
+- Never silently leave a queue row in 'pending' status — every fetched row must be POSTed back with pushed | skipped | failed.
+- Never create folders outside the 9 canonical parents under the Hub root.

@@ -444,11 +444,15 @@ export async function enqueueDayLogRebuild(
     const subpath = dayLogSubpath(dateISO);
     const db = getDb();
 
+    // UPSERT semantics (fixed 2026-05-21): at most ONE pending row per
+    // (target=day_log, subpath, fileName) tuple at any time. If a pending
+    // row already exists for this date, update its contentText in place
+    // (so the next worker run pushes the latest markdown); otherwise
+    // insert a new pending row. This prevents the bug where every actual
+    // entry write created another duplicate pending row — we observed
+    // 10 pending duplicates for the same date in production.
     let alreadyQueued = false;
     try {
-      // Look at ALL pending rows for this date+file (not just the first).
-      // Multiple rows can exist when several writes land in quick succession;
-      // we just need to know whether the LATEST content is already represented.
       const existing: any[] = await db
         .select()
         .from(drivePushQueue)
@@ -460,8 +464,35 @@ export async function enqueueDayLogRebuild(
             eq(drivePushQueue.status as any, "pending" as any),
           ),
         );
-      if (existing.some((row: any) => row?.contentText === md)) {
+      if (existing.length > 0) {
         alreadyQueued = true;
+        // Find the newest existing row (highest id) and update its content.
+        // Mark any older duplicate pending rows for the same tuple as 'skipped'
+        // so the worker never wastes a round-trip on stale duplicates.
+        const sorted = [...existing].sort((a: any, b: any) => (b?.id ?? 0) - (a?.id ?? 0));
+        const keep = sorted[0];
+        if (keep && keep.contentText !== md) {
+          try {
+            await db
+              .update(drivePushQueue)
+              .set({ contentText: md, mimeType: "text/markdown" } as any)
+              .where(eq(drivePushQueue.id as any, keep.id));
+          } catch (eu) {
+            console.warn("[enqueueDayLogRebuild] in-place update failed", eu);
+          }
+        }
+        if (sorted.length > 1) {
+          for (const stale of sorted.slice(1)) {
+            try {
+              await db
+                .update(drivePushQueue)
+                .set({ status: "skipped" as any, errorMessage: "superseded-by-newer-pending" } as any)
+                .where(eq(drivePushQueue.id as any, stale.id));
+            } catch (es) {
+              console.warn("[enqueueDayLogRebuild] mark-stale-skipped failed", es);
+            }
+          }
+        }
       }
     } catch (e) {
       // Non-fatal: idempotency check failed, fall through and just enqueue.

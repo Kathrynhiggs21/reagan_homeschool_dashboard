@@ -22,14 +22,19 @@ import { useKiwi } from "@/contexts/KiwiContext";
 import { Slider } from "@/components/ui/slider";
 
 /**
- * Settings — slim version (locked May 4 2026).
+ * Settings — radically slimmed (locked May 21 2026 per Mom "too much").
  *
- * Five tabs, one short card per concern, no duplication, anyone can use cold:
- *   People        — Reagan basics + tutor list (name + day + time)
- *   Prizes        — the ~10 prize tiles + add prize
- *   Requests      — Reagan's pending requests, approve/decline
- *   Calendar      — Mom's iCal URL + recurring appointments + IH calendar toggle
- *   Notifications — recipient emails + 8 PM agenda toggle
+ * Five tabs only. No duplication. Anyone can use cold:
+ *   People    — Reagan basics + tutors + adult passcode + Kiwi listening
+ *   Kid Stuff — prizes + Reagan's pending requests (one place to act on the kid side)
+ *   Calendar  — Mom's iCal + recurring appointments + summer mode
+ *   Email     — recipient emails, 8 PM agenda, daily recap toggles, catch-up queue (one place)
+ *   Kiwi      — personality sliders + dashboard look
+ *
+ * Removed in this pass (2026-05-21):
+ *   - separate "Recap" tab → folded into Email
+ *   - separate "IEP Ref" tab → moved to Curriculum Hub (the learning surface)
+ *   - separate "Requests" tab → folded into Kid Stuff with Prizes
  */
 export default function Settings() {
   return (
@@ -44,15 +49,12 @@ export default function Settings() {
       <SettingsAIHelperCard />
 
       <Tabs defaultValue="people" className="w-full">
-        <TabsList className="grid grid-cols-8 w-full">
+        <TabsList className="grid grid-cols-5 w-full">
           <TabsTrigger value="people">People</TabsTrigger>
-          <TabsTrigger value="prizes">Prizes</TabsTrigger>
-          <TabsTrigger value="requests">Requests</TabsTrigger>
+          <TabsTrigger value="kid">Kid Stuff</TabsTrigger>
           <TabsTrigger value="calendar">Calendar</TabsTrigger>
-          <TabsTrigger value="notifications">Email</TabsTrigger>
-          <TabsTrigger value="recap">Recap</TabsTrigger>
-          <TabsTrigger value="iep">IEP Ref</TabsTrigger>
-          <TabsTrigger value="kiwi">Kiwi &amp; UI</TabsTrigger>
+          <TabsTrigger value="email">Email</TabsTrigger>
+          <TabsTrigger value="kiwi">Kiwi</TabsTrigger>
         </TabsList>
 
         <TabsContent value="people" className="space-y-4">
@@ -63,14 +65,12 @@ export default function Settings() {
           <CartoonVoiceCard />
         </TabsContent>
 
-        <TabsContent value="prizes">
+        <TabsContent value="kid" className="space-y-4">
+          {/* Prizes + Reagan's pending requests in one place — both are
+              "things adults do for the kid side". */}
           <RewardsManagerCard />
-        </TabsContent>
-
-        <TabsContent value="requests" className="space-y-4">
           <KidRequestsCard />
           <RequestsInboxCard />
-          {/* Push 91 — Approvals queue + active push recipients. */}
           <ApprovalsAdminCard />
         </TabsContent>
 
@@ -81,18 +81,14 @@ export default function Settings() {
           <SummerModeSettingsCard />
         </TabsContent>
 
-        <TabsContent value="notifications">
+        <TabsContent value="email" className="space-y-4">
+          {/* All email-related controls in one tab: recipients, nightly
+              agenda toggle, daily recap, catch-up queue. Folded the
+              former "Recap" tab in here so there's one place for it. */}
           <NotificationsCard />
-        </TabsContent>
-
-        <TabsContent value="recap" className="space-y-4">
           <RecapRequestCard />
           <DailyRecapCard />
           <CatchUpQueueSettingsCard />
-        </TabsContent>
-
-        <TabsContent value="iep" className="space-y-4">
-          <IepReferencePanel />
         </TabsContent>
 
         <TabsContent value="kiwi" className="space-y-4">
@@ -100,6 +96,14 @@ export default function Settings() {
           <DashboardObjectsCard />
         </TabsContent>
       </Tabs>
+
+      {/* IEP reference moved to /curriculum — it lives next to the actual
+          learning data instead of being buried in Settings. The link below
+          is a one-tap shortcut so anyone looking for it here still finds it. */}
+      <div className="mt-4 text-xs text-muted-foreground">
+        Looking for IEP reference? It moved to{" "}
+        <a href="/curriculum" className="underline">Curriculum Hub</a>.
+      </div>
     </div>
   );
 }

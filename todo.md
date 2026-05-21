@@ -3689,3 +3689,49 @@ The v2.49 simplification had a hole: the dashboard's `appSettings` cache pointed
 - [ ] Add vitest `nightlyAgendaEmailDispatch.test.ts` asserting the `/result` callback exists + flips the row + the `send_ready` response has the four required fields (recipients, subject, htmlBody, attachments).
 - [ ] Save checkpoint v2.83; ask Mom to Publish; THEN register the cron via `schedule` MCP / `manus-heartbeat create`.
 - [ ] Run Now after registration to confirm the first real email lands in Mom + Grandma's inbox.
+
+
+## 2026-05-21 Mom asks (simplification round 2)
+
+- [ ] Auto-attach worksheet + video + lesson + practice link to **every** Today block from the curriculum gap, so Mom never opens a block to find an empty slot. Use the existing `findAssignments` finder + curriculum gap helper. Block-type drives which resource is preferred (lesson=video, practice=worksheet, etc.).
+- [ ] Run the auto-attach pass on the nightly 8 PM agenda cron + every "Refresh today" + every AI Agenda Editor commit, so attachments stay fresh.
+- [ ] Homepage IS Today's stuff (route `/` already renders Today; verify there is nothing else above the fold). No separate "homepage" with cards that duplicate Today's content.
+- [ ] `/schedule` is the calendar view only (day/week/month) — no daily block list duplicating Today.
+- [ ] Single editor: AI Agenda Editor is the one place to edit. Remove any inline edit pencils on Today/Schedule that open separate editors. Keep one-tap swap/soften/postpone via Kiwi for kid, AI bar for adult.
+- [ ] Vitest covers (a) every Today block has at least one attachment after auto-attach, (b) `/` route renders Today's content, (c) `/schedule` does not render today's block list.
+
+
+## 2026-05-21 Mom asks (simplification round 3 — Drive)
+
+- [ ] Drive folder map: collapse further from the current 9-folder canonical set to the smallest set Mom actually opens. Inventory live folders + counts, propose target map, archive empties.
+- [ ] Every dashboard Drive link must resolve (no 404s, no permission walls for Mom). Verify each link in the UI points at a folder that exists and is shared correctly.
+- [ ] No empty folders: each kept folder must either have live content OR be on the auto-sync path so content lands there automatically. No placeholder/stub folders.
+- [ ] No manual uploads required from Mom: the dashboard auto-pushes worksheets/videos/lessons it auto-attaches (round 2) into the matching Drive subfolder, so the folder fills itself.
+- [ ] Vitest: (a) Drive link inventory in the UI matches the canonical map, (b) auto-attach pass writes a Drive file row for each attached resource.
+
+
+## 2026-05-21 Mom asks (sync + print)
+
+- [ ] Make sure Google Drive auto-sync actually works end-to-end (heartbeat fires, files land in canonical folders, dashboard sees synced URLs).
+- [ ] Add Print Daily Schedule button on the homepage (today's view).
+- [ ] Resume Drive folder cleanup AFTER sync is verified, deleting only empty folders not referenced by the working sync.
+
+
+## 2026-05-21 Mom asks (subfolder + dashboard simplification)
+
+- [ ] Drop numeric prefixes from every Drive subfolder name (not just top-level).
+- [ ] Merge / dedupe duplicate Drive subfolders so each folder has a single canonical home.
+- [ ] Update dashboard's drive-push folder map + heartbeat playbook to match new folder names so sync keeps working.
+- [ ] Collapse duplicate dashboard pages: homepage = Today, Schedule = calendar only, one editor (no secondary edit pencils).
+
+## v2.85 — Drive sync repair + Print button (May 21 2026)
+
+- [x] Audit the heartbeat playbook → confirmed it was missing 5 of the 24 target_folder enum values (day_log, recap_reply, topics_covered, agenda_pdf, classes)
+- [x] Dedupe SQL: 116 stale duplicate day_log pending rows → status=skipped (137 → 21 real pending)
+- [x] Replace heartbeat playbook with the full 24-target mapping + dedupe-on-upload + correct top-level folder names (no numeric prefixes) + nightly agenda email step to spear.cpt@gmail.com ONLY + Sophie May 26 + Keith OFF
+- [x] Seed README.md in every kept canonical subfolder (21 README rows enqueued; worker will push them at 7 AM ET)
+- [x] Fix `_lib/dayLogBuilder.ts → enqueueDayLogRebuild` to upsert (update existing pending row in place + mark older duplicates as skipped) — at most ONE pending row per (date, fileName) ever again
+- [x] Fix the route handler in `scheduledSync.ts` `/api/scheduled/daily-log-rebuild` with the same upsert pattern
+- [x] Update dayLogAutoSync.test.ts to assert count stays at 1 (upsert semantics) instead of growing by 1 on content change
+- [x] Add Print Daily Schedule button to Today page header (uses existing @media print CSS)
+- [x] Reconfirm `/` route already renders <Today/> (no duplicate Home page)

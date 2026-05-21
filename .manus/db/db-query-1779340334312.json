@@ -1,0 +1,130 @@
+{
+  "query": "SELECT id, file_name, target_folder, target_subpath, mime_type, error_message,\n       created_at, pushed_at,\n       CASE WHEN content_text IS NULL THEN 'no' ELSE 'yes' END AS has_content,\n       CASE WHEN file_url IS NULL THEN 'no' ELSE 'yes' END AS has_url\nFROM drive_push_queue\nWHERE status = 'pending'\nORDER BY created_at DESC\nLIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, file_name, target_folder, target_subpath, mime_type, error_message,\n       created_at, pushed_at,\n       CASE WHEN content_text IS NULL THEN 'no' ELSE 'yes' END AS has_content,\n       CASE WHEN file_url IS NULL THEN 'no' ELSE 'yes' END AS has_url\nFROM drive_push_queue\nWHERE status = 'pending'\nORDER BY created_at DESC\nLIMIT 10;",
+  "rows": [
+    {
+      "id": "1680100",
+      "file_name": "2026-05-21 - Day Log.md",
+      "target_folder": "day_log",
+      "target_subpath": "2026-05",
+      "mime_type": "text/markdown",
+      "error_message": "NULL",
+      "created_at": "2026-05-21 04:39:40",
+      "pushed_at": "NULL",
+      "has_content": "yes",
+      "has_url": "no"
+    },
+    {
+      "id": "1680099",
+      "file_name": "2026-05-21 - Day Log.md",
+      "target_folder": "day_log",
+      "target_subpath": "2026-05",
+      "mime_type": "text/markdown",
+      "error_message": "NULL",
+      "created_at": "2026-05-21 04:37:42",
+      "pushed_at": "NULL",
+      "has_content": "yes",
+      "has_url": "no"
+    },
+    {
+      "id": "1680098",
+      "file_name": "2026-05-21 - Day Log.md",
+      "target_folder": "day_log",
+      "target_subpath": "2026-05",
+      "mime_type": "text/markdown",
+      "error_message": "NULL",
+      "created_at": "2026-05-21 04:32:04",
+      "pushed_at": "NULL",
+      "has_content": "yes",
+      "has_url": "no"
+    },
+    {
+      "id": "1680097",
+      "file_name": "2026-05-21 - Day Log.md",
+      "target_folder": "day_log",
+      "target_subpath": "2026-05",
+      "mime_type": "text/markdown",
+      "error_message": "NULL",
+      "created_at": "2026-05-21 04:31:58",
+      "pushed_at": "NULL",
+      "has_content": "yes",
+      "has_url": "no"
+    },
+    {
+      "id": "1680096",
+      "file_name": "2026-05-21 - Day Log.md",
+      "target_folder": "day_log",
+      "target_subpath": "2026-05",
+      "mime_type": "text/markdown",
+      "error_message": "NULL",
+      "created_at": "2026-05-21 04:31:51",
+      "pushed_at": "NULL",
+      "has_content": "yes",
+      "has_url": "no"
+    },
+    {
+      "id": "1680093",
+      "file_name": "2026-05-21 - Day Log.md",
+      "target_folder": "day_log",
+      "target_subpath": "2026-05",
+      "mime_type": "text/markdown",
+      "error_message": "NULL",
+      "created_at": "2026-05-21 04:30:08",
+      "pushed_at": "NULL",
+      "has_content": "yes",
+      "has_url": "no"
+    },
+    {
+      "id": "1680095",
+      "file_name": "2026-05-21 - Day Log.md",
+      "target_folder": "day_log",
+      "target_subpath": "2026-05",
+      "mime_type": "text/markdown",
+      "error_message": "NULL",
+      "created_at": "2026-05-21 04:30:08",
+      "pushed_at": "NULL",
+      "has_content": "yes",
+      "has_url": "no"
+    },
+    {
+      "id": "1680094",
+      "file_name": "2026-05-21 - Day Log.md",
+      "target_folder": "day_log",
+      "target_subpath": "2026-05",
+      "mime_type": "text/markdown",
+      "error_message": "NULL",
+      "created_at": "2026-05-21 04:30:08",
+      "pushed_at": "NULL",
+      "has_content": "yes",
+      "has_url": "no"
+    },
+    {
+      "id": "1680091",
+      "file_name": "2026-05-21 - Day Log.md",
+      "target_folder": "day_log",
+      "target_subpath": "2026-05",
+      "mime_type": "text/markdown",
+      "error_message": "NULL",
+      "created_at": "2026-05-21 04:29:41",
+      "pushed_at": "NULL",
+      "has_content": "yes",
+      "has_url": "no"
+    },
+    {
+      "id": "1680092",
+      "file_name": "2026-05-21 - Day Log.md",
+      "target_folder": "day_log",
+      "target_subpath": "2026-05",
+      "mime_type": "text/markdown",
+      "error_message": "NULL",
+      "created_at": "2026-05-21 04:29:41",
+      "pushed_at": "NULL",
+      "has_content": "yes",
+      "has_url": "no"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tfile_name\ttarget_folder\ttarget_subpath\tmime_type\terror_message\tcreated_at\tpushed_at\thas_content\thas_url\n1680100\t2026-05-21 - Day Log.md\tday_log\t2026-05\ttext/markdown\tNULL\t2026-05-21 04:39:40\tNULL\tyes\tno\n1680099\t2026-05-21 - Day Log.md\tday_log\t2026-05\ttext/markdown\tNULL\t2026-05-21 04:37:42\tNULL\tyes\tno\n1680098\t2026-05-21 - Day Log.md\tday_log\t2026-05\ttext/markdown\tNULL\t2026-05-21 04:32:04\tNULL\tyes\tno\n1680097\t2026-05-21 - Day Log.md\tday_log\t2026-05\ttext/markdown\tNULL\t2026-05-21 04:31:58\tNULL\tyes\tno\n1680096\t2026-05-21 - Day Log.md\tday_log\t2026-05\ttext/markdown\tNULL\t2026-05-21 04:31:51\tNULL\tyes\tno\n1680093\t2026-05-21 - Day Log.md\tday_log\t2026-05\ttext/markdown\tNULL\t2026-05-21 04:30:08\tNULL\tyes\tno\n1680095\t2026-05-21 - Day Log.md\tday_log\t2026-05\ttext/markdown\tNULL\t2026-05-21 04:30:08\tNULL\tyes\tno\n1680094\t2026-05-21 - Day Log.md\tday_log\t2026-05\ttext/markdown\tNULL\t2026-05-21 04:30:08\tNULL\tyes\tno\n1680091\t2026-05-21 - Day Log.md\tday_log\t2026-05\ttext/markdown\tNULL\t2026-05-21 04:29:41\tNULL\tyes\tno\n1680092\t2026-05-21 - Day Log.md\tday_log\t2026-05\ttext/markdown\tNULL\t2026-05-21 04:29:41\tNULL\tyes\tno\n",
+  "stderr": "",
+  "execution_time_ms": 697
+}

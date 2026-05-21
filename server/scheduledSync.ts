@@ -1704,10 +1704,11 @@ ${absolutePdfUrl ? `<p style=\"text-align:center;margin:24px 0;\"><a href=\"${ab
       const fileName = dayLogFileName(dateISO);
       const subpath = dayLogSubpath(dateISO);
 
-      // Idempotency: if a pending row already exists for this date with
-      // identical content, skip enqueueing a duplicate. Drive worker pushes
-      // one file per (target, subpath, fileName) tuple anyway, but avoiding
-      // duplicate queue rows keeps the worker's job count honest.
+      // Upsert: there must be at most one pending row per (target, subpath,
+      // fileName) tuple. If one already exists, overwrite its contentText with
+      // the latest markdown; otherwise insert a new pending row. This prevents
+      // the May 21 bug where every edit during the day created another pending
+      // duplicate (we found 10 pending rows for the same date before dedupe).
       const dbInst = (db as any).getDb?.();
       let alreadyQueued = false;
       if (dbInst) {
@@ -1724,8 +1725,20 @@ ${absolutePdfUrl ? `<p style=\"text-align:center;margin:24px 0;\"><a href=\"${ab
               ),
             )
             .limit(1);
-          if (existing.length > 0 && existing[0].contentText === md) {
+          if (existing.length > 0) {
             alreadyQueued = true;
+            // Update content in place if it changed, so the next worker run
+            // pushes the latest markdown for this date.
+            if (existing[0].contentText !== md) {
+              try {
+                await dbInst
+                  .update(drivePushQueue)
+                  .set({ contentText: md, mimeType: "text/markdown" } as any)
+                  .where(eq(drivePushQueue.id as any, existing[0].id));
+              } catch (eu) {
+                console.warn("[day-log-rebuild] in-place update failed", eu);
+              }
+            }
           }
         } catch (e) {
           console.warn("[day-log-rebuild] idempotency check failed", e);

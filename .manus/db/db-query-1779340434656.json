@@ -1,0 +1,25 @@
+{
+  "query": "SELECT target_folder, status, COUNT(*) AS n\nFROM drive_push_queue\nWHERE status IN ('pending','sent','failed','skipped')\nGROUP BY target_folder, status\nORDER BY target_folder, status;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT target_folder, status, COUNT(*) AS n\nFROM drive_push_queue\nWHERE status IN ('pending','sent','failed','skipped')\nGROUP BY target_folder, status\nORDER BY target_folder, status;",
+  "rows": [
+    {
+      "target_folder": "analytics",
+      "status": "pending",
+      "n": "8"
+    },
+    {
+      "target_folder": "day_log",
+      "status": "pending",
+      "n": "13"
+    },
+    {
+      "target_folder": "day_log",
+      "status": "skipped",
+      "n": "116"
+    }
+  ],
+  "messages": [],
+  "stdout": "target_folder\tstatus\tn\nanalytics\tpending\t8\nday_log\tpending\t13\nday_log\tskipped\t116\n",
+  "stderr": "",
+  "execution_time_ms": 574
+}

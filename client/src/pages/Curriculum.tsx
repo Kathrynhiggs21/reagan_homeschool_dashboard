@@ -11,6 +11,7 @@ import CurriculumTopicsTree from "@/components/CurriculumTopicsTree";
 // at /components/CurriculumProgressArcs.tsx and is now mounted on /analytics
 // next to CurriculumCoverageArcs.
 import OwnedBookCard from "@/components/OwnedBookCard";
+import IepReferencePanel from "@/components/IepReferencePanel";
 import { subjectTint, tintCardStyle, tintInkStyle } from "@/lib/subjectColors";
 
 export default function Curriculum() {
@@ -49,6 +50,18 @@ export default function Curriculum() {
         <h1 className="text-3xl font-display font-semibold curriculum-title">Curriculum</h1>
         <p className="text-sm mt-1 curriculum-subtitle">Subjects, skills, and the books we're working through.</p>
       </header>
+
+      {/* 2026-05-21 — IEP reference moved off Settings ("too much") and onto
+          Curriculum Hub where the actual learning data lives. Collapsible so
+          it doesn't clutter the page for daily use. */}
+      <details className="cozy-card p-3 rounded-lg">
+        <summary className="cursor-pointer text-sm font-medium">
+          IEP reference (goals, accommodations, present levels)
+        </summary>
+        <div className="mt-3">
+          <IepReferencePanel />
+        </div>
+      </details>
 
       {/* Push 37 (2026-05-13) — Tomorrow's draft preview strip. */}
       {tomorrowPreview.data && (

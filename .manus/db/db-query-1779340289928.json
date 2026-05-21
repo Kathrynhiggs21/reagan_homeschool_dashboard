@@ -1,0 +1,20 @@
+{
+  "query": "SELECT target_folder, status, COUNT(*) AS n\nFROM drive_push_queue\nWHERE created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)\nGROUP BY target_folder, status\nORDER BY n DESC\nLIMIT 80;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT target_folder, status, COUNT(*) AS n\nFROM drive_push_queue\nWHERE created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)\nGROUP BY target_folder, status\nORDER BY n DESC\nLIMIT 80;",
+  "rows": [
+    {
+      "target_folder": "day_log",
+      "status": "pending",
+      "n": "129"
+    },
+    {
+      "target_folder": "analytics",
+      "status": "pending",
+      "n": "8"
+    }
+  ],
+  "messages": [],
+  "stdout": "target_folder\tstatus\tn\nday_log\tpending\t129\nanalytics\tpending\t8\n",
+  "stderr": "",
+  "execution_time_ms": 1276
+}

@@ -377,6 +377,19 @@ export default function Today() {
             >
               🐤 Tour
             </Button>
+            {/* Print Daily Schedule — Mom-requested May 21 2026. Triggers
+                window.print() which uses the .print-area / .no-print CSS
+                rules below to print only today's schedule blocks. */}
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={() => window.print()}
+              className="bg-white/80 hover:bg-white"
+              title="Print today's schedule (one page)"
+              data-testid="print-daily-schedule-btn"
+            >
+              🖨️ Print
+            </Button>
           </div>
         </div>
       </header>

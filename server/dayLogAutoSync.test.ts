@@ -170,7 +170,7 @@ describe("Day Log auto-sync — Slice 4.5 push 8", () => {
     expect(row!.contentText).toContain("Baking cookies as fractions");
   });
 
-  it("enqueueDayLogRebuild is idempotent on identical content but enqueues again when content changes", async () => {
+  it("enqueueDayLogRebuild upserts: at most ONE pending row per (date, fileName) regardless of content changes", async () => {
     await cleanDate(D3);
 
     // First seed an actual entry → triggers an enqueue.
@@ -184,15 +184,16 @@ describe("Day Log auto-sync — Slice 4.5 push 8", () => {
     } as any);
     await settle();
     const afterFirst = await countDayLogPendingRows(D3);
-    expect(afterFirst).toBeGreaterThanOrEqual(1);
+    expect(afterFirst).toBe(1);
 
     // Direct call — same content → alreadyQueued=true, count unchanged.
     const r1 = await enqueueDayLogRebuild(D3);
     expect(r1.ok).toBe(true);
     expect(r1.alreadyQueued).toBe(true);
-    expect(await countDayLogPendingRows(D3)).toBe(afterFirst);
+    expect(await countDayLogPendingRows(D3)).toBe(1);
 
-    // Add a second actual entry → content changes → next direct call must enqueue.
+    // Add a second actual entry → content changes, but upsert semantics
+    // mean the SAME pending row is updated in place. Count stays at 1.
     await dbMod.recordActualEntry({
       dateISO: D3,
       subjectSlug: "ela",
@@ -202,17 +203,13 @@ describe("Day Log auto-sync — Slice 4.5 push 8", () => {
       createdBy: "test@example.com",
     } as any);
     await settle();
+    expect(await countDayLogPendingRows(D3)).toBe(1);
 
-    // The recordActualEntry above ALREADY fire-and-forget enqueued a new
-    // row. Count should have grown by exactly one.
-    const afterSecondActual = await countDayLogPendingRows(D3);
-    expect(afterSecondActual).toBe(afterFirst + 1);
-
-    // A direct call with no further change → alreadyQueued=true again.
+    // A direct call with no further change → still upserted, still 1.
     const r2 = await enqueueDayLogRebuild(D3);
     expect(r2.ok).toBe(true);
     expect(r2.alreadyQueued).toBe(true);
-    expect(await countDayLogPendingRows(D3)).toBe(afterSecondActual);
+    expect(await countDayLogPendingRows(D3)).toBe(1);
   });
 
   it("enqueueDayLogRebuild rejects malformed dates without throwing or enqueueing", async () => {

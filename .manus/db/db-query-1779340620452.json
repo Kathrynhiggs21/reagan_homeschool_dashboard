@@ -1,0 +1,98 @@
+{
+  "query": "SELECT target_folder, COUNT(*) AS pending\nFROM drive_push_queue WHERE status='pending'\nGROUP BY target_folder ORDER BY target_folder;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT target_folder, COUNT(*) AS pending\nFROM drive_push_queue WHERE status='pending'\nGROUP BY target_folder ORDER BY target_folder;",
+  "rows": [
+    {
+      "target_folder": "reagan",
+      "pending": "1"
+    },
+    {
+      "target_folder": "reagan_assignments",
+      "pending": "1"
+    },
+    {
+      "target_folder": "finished_work",
+      "pending": "1"
+    },
+    {
+      "target_folder": "daily_schedule",
+      "pending": "1"
+    },
+    {
+      "target_folder": "worksheets",
+      "pending": "1"
+    },
+    {
+      "target_folder": "printables",
+      "pending": "1"
+    },
+    {
+      "target_folder": "report_cards",
+      "pending": "1"
+    },
+    {
+      "target_folder": "journal",
+      "pending": "1"
+    },
+    {
+      "target_folder": "analytics",
+      "pending": "9"
+    },
+    {
+      "target_folder": "adult_notes",
+      "pending": "1"
+    },
+    {
+      "target_folder": "kiwi_coins",
+      "pending": "1"
+    },
+    {
+      "target_folder": "tutor",
+      "pending": "1"
+    },
+    {
+      "target_folder": "apps_tools",
+      "pending": "1"
+    },
+    {
+      "target_folder": "bookshelf",
+      "pending": "1"
+    },
+    {
+      "target_folder": "adventures",
+      "pending": "1"
+    },
+    {
+      "target_folder": "practice",
+      "pending": "1"
+    },
+    {
+      "target_folder": "notebook",
+      "pending": "1"
+    },
+    {
+      "target_folder": "curriculum_checklist",
+      "pending": "1"
+    },
+    {
+      "target_folder": "day_log",
+      "pending": "14"
+    },
+    {
+      "target_folder": "recap_reply",
+      "pending": "1"
+    },
+    {
+      "target_folder": "topics_covered",
+      "pending": "1"
+    },
+    {
+      "target_folder": "agenda_pdf",
+      "pending": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "target_folder\tpending\nreagan\t1\nreagan_assignments\t1\nfinished_work\t1\ndaily_schedule\t1\nworksheets\t1\nprintables\t1\nreport_cards\t1\njournal\t1\nanalytics\t9\nadult_notes\t1\nkiwi_coins\t1\ntutor\t1\napps_tools\t1\nbookshelf\t1\nadventures\t1\npractice\t1\nnotebook\t1\ncurriculum_checklist\t1\nday_log\t14\nrecap_reply\t1\ntopics_covered\t1\nagenda_pdf\t1\n",
+  "stderr": "",
+  "execution_time_ms": 597
+}
