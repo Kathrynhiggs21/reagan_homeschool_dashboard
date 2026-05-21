@@ -1,0 +1,346 @@
+{
+  "query": "SHOW TABLES;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SHOW TABLES;",
+  "rows": [
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "__drizzle_migrations"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "academicRecords"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "academicSourceRuns"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "actualAgendaEntries"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "adaptiveHints"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "adultAiMessages"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "adventures"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "animals"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "appLinks"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "appSettings"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "app_accounts"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "appointments"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "assessmentScreenings"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "assignmentAnswerKeys"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "assignmentBacklog"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "assignmentSubmissions"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "assignmentSubmissionsAutoGrade"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "assignment_bundles"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "assignments_library"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "auditLog"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "badges"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "blockGrades"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "blockedEmails"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "bookAssignments"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "bookPagesDone"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "books"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "certificates"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "classroomAgendas"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "classroomAssignments"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "classroomCourses"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "classroomSubmissions"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "coinLedger"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "curriculumAdjustments"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "curriculumResources"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "curriculumTopics"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "dailyAgendas"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "dailyPlans"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "dailyRecapRequests"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "daily_printables"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "dayAttachments"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "drive_push_queue"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "emotionalStruggles"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "encouragementNotes"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "gameBreakLog"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "gamePrefs"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "goodWorkNotes"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "heartNotes"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "helpList"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "icalEvents"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "icalFeeds"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "iepAccommodations"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "iepGoals"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "ihAssignments"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "journalEntries"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "kidRequests"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "kiwiVoiceAuditEntries"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "learnerProfile"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "listeningSummaries"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "moodLogs"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "moodSignals"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "needsWorkItems"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "nightlyAgendaEmails"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "notificationRecipients"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "notifications"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "ownedBooks"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "parentFlags"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "pendingApprovals"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "placementResponses"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "placementResults"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "placementTasks"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "powerschool_assignments"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "powerschool_grades"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "powerschool_imports"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "printableFavorites"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "printableSources"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "prizeRedemptions"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "prizes"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "proudMoments"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "reaganKnowledge"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "recipientPushTargets"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "rescues"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "reviewResources"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "scheduleBlocks"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "schoolCalendar"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "skillFeedback"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "skillLadder"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "skillProgress"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "skillsMastery"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "specialDays"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "stickers"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "studentRequests"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "subjects"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "sync_requests"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "sync_run_items"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "sync_runs"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "tagLinks"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "tags"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "takeNotes"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "timelineEvents"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "topicsCoveredOffPlan"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "tutorDayNotes"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "tutorRosterOverride"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "tutorSessionSkills"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "tutorSessions"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "tutors"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "users"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "weeklyTopics"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "weekly_digests"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "whisperSessions"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "whiteboardNotes"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "yearPlan"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp": "yearPlanCursor"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_mm3swGictQLHDWKPJCGiHp\n__drizzle_migrations\nacademicRecords\nacademicSourceRuns\nactualAgendaEntries\nadaptiveHints\nadultAiMessages\nadventures\nanimals\nappLinks\nappSettings\napp_accounts\nappointments\nassessmentScreenings\nassignmentAnswerKeys\nassignmentBacklog\nassignmentSubmissions\nassignmentSubmissionsAutoGrade\nassignment_bundles\nassignments_library\nauditLog\nbadges\nblockGrades\nblockedEmails\nbookAssignments\nbookPagesDone\nbooks\ncertificates\nclassroomAgendas\nclassroomAssignments\nclassroomCourses\nclassroomSubmissions\ncoinLedger\ncurriculumAdjustments\ncurriculumResources\ncurriculumTopics\ndailyAgendas\ndailyPlans\ndailyRecapRequests\ndaily_printables\ndayAttachments\ndrive_push_queue\nemotionalStruggles\nencouragementNotes\ngameBreakLog\ngamePrefs\ngoodWorkNotes\nheartNotes\nhelpList\nicalEvents\nicalFeeds\niepAccommodations\niepGoals\nihAssignments\njournalEntries\nkidRequests\nkiwiVoiceAuditEntries\nlearnerProfile\nlisteningSummaries\nmoodLogs\nmoodSignals\nneedsWorkItems\nnightlyAgendaEmails\nnotificationRecipients\nnotifications\nownedBooks\nparentFlags\npendingApprovals\nplacementResponses\nplacementResults\nplacementTasks\npowerschool_assignments\npowerschool_grades\npowerschool_imports\nprintableFavorites\nprintableSources\nprizeRedemptions\nprizes\nproudMoments\nreaganKnowledge\nrecipientPushTargets\nrescues\nreviewResources\nscheduleBlocks\nschoolCalendar\nskillFeedback\nskillLadder\nskillProgress\nskillsMastery\nspecialDays\nstickers\nstudentRequests\nsubjects\nsync_requests\nsync_run_items\nsync_runs\ntagLinks\ntags\ntakeNotes\ntimelineEvents\ntopicsCoveredOffPlan\ntutorDayNotes\ntutorRosterOverride\ntutorSessionSkills\ntutorSessions\ntutors\nusers\nweeklyTopics\nweekly_digests\nwhisperSessions\nwhiteboardNotes\nyearPlan\nyearPlanCursor\n",
+  "stderr": "",
+  "execution_time_ms": 576
+}

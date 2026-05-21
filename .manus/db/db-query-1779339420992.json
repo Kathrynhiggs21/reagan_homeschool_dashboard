@@ -1,0 +1,250 @@
+{
+  "query": "SELECT ts.id, ts.tutorId, ts.scheduledAt, ts.durationMin, ts.status, t.name FROM tutorSessions ts LEFT JOIN tutors t ON t.id=ts.tutorId WHERE DATE(ts.scheduledAt) >= '2026-05-20' ORDER BY ts.scheduledAt LIMIT 30;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT ts.id, ts.tutorId, ts.scheduledAt, ts.durationMin, ts.status, t.name FROM tutorSessions ts LEFT JOIN tutors t ON t.id=ts.tutorId WHERE DATE(ts.scheduledAt) >= '2026-05-20' ORDER BY ts.scheduledAt LIMIT 30;",
+  "rows": [
+    {
+      "id": "960021",
+      "tutorId": "510001",
+      "scheduledAt": "2026-05-20 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "name": "Madison"
+    },
+    {
+      "id": "960022",
+      "tutorId": "510002",
+      "scheduledAt": "2026-05-21 11:00:00",
+      "durationMin": "180",
+      "status": "scheduled",
+      "name": "Keith"
+    },
+    {
+      "id": "960023",
+      "tutorId": "60009",
+      "scheduledAt": "2026-05-22 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "name": "Sophie"
+    },
+    {
+      "id": "960024",
+      "tutorId": "60009",
+      "scheduledAt": "2026-05-25 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "name": "Sophie"
+    },
+    {
+      "id": "960025",
+      "tutorId": "60009",
+      "scheduledAt": "2026-05-26 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "name": "Sophie"
+    },
+    {
+      "id": "960026",
+      "tutorId": "60009",
+      "scheduledAt": "2026-05-27 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "name": "Sophie"
+    },
+    {
+      "id": "960027",
+      "tutorId": "510002",
+      "scheduledAt": "2026-05-28 11:00:00",
+      "durationMin": "180",
+      "status": "scheduled",
+      "name": "Keith"
+    },
+    {
+      "id": "960028",
+      "tutorId": "60009",
+      "scheduledAt": "2026-05-29 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "name": "Sophie"
+    },
+    {
+      "id": "960029",
+      "tutorId": "510001",
+      "scheduledAt": "2026-06-01 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "name": "Madison"
+    },
+    {
+      "id": "960030",
+      "tutorId": "60009",
+      "scheduledAt": "2026-06-02 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "name": "Sophie"
+    },
+    {
+      "id": "960031",
+      "tutorId": "510001",
+      "scheduledAt": "2026-06-03 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "name": "Madison"
+    },
+    {
+      "id": "960032",
+      "tutorId": "510002",
+      "scheduledAt": "2026-06-04 11:00:00",
+      "durationMin": "180",
+      "status": "scheduled",
+      "name": "Keith"
+    },
+    {
+      "id": "960033",
+      "tutorId": "60009",
+      "scheduledAt": "2026-06-05 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "name": "Sophie"
+    },
+    {
+      "id": "960034",
+      "tutorId": "60009",
+      "scheduledAt": "2026-06-08 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "name": "Sophie"
+    },
+    {
+      "id": "960035",
+      "tutorId": "60009",
+      "scheduledAt": "2026-06-09 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "name": "Sophie"
+    },
+    {
+      "id": "960036",
+      "tutorId": "60009",
+      "scheduledAt": "2026-06-10 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "name": "Sophie"
+    },
+    {
+      "id": "960037",
+      "tutorId": "510002",
+      "scheduledAt": "2026-06-11 11:00:00",
+      "durationMin": "180",
+      "status": "scheduled",
+      "name": "Keith"
+    },
+    {
+      "id": "960038",
+      "tutorId": "60009",
+      "scheduledAt": "2026-06-12 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "name": "Sophie"
+    },
+    {
+      "id": "960039",
+      "tutorId": "510001",
+      "scheduledAt": "2026-06-15 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "name": "Madison"
+    },
+    {
+      "id": "960040",
+      "tutorId": "60009",
+      "scheduledAt": "2026-06-16 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "name": "Sophie"
+    },
+    {
+      "id": "960041",
+      "tutorId": "510001",
+      "scheduledAt": "2026-06-17 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "name": "Madison"
+    },
+    {
+      "id": "960042",
+      "tutorId": "510002",
+      "scheduledAt": "2026-06-18 11:00:00",
+      "durationMin": "180",
+      "status": "scheduled",
+      "name": "Keith"
+    },
+    {
+      "id": "960043",
+      "tutorId": "60009",
+      "scheduledAt": "2026-06-19 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "name": "Sophie"
+    },
+    {
+      "id": "960044",
+      "tutorId": "60009",
+      "scheduledAt": "2026-06-22 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "name": "Sophie"
+    },
+    {
+      "id": "960045",
+      "tutorId": "60009",
+      "scheduledAt": "2026-06-23 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "name": "Sophie"
+    },
+    {
+      "id": "960046",
+      "tutorId": "60009",
+      "scheduledAt": "2026-06-24 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "name": "Sophie"
+    },
+    {
+      "id": "960047",
+      "tutorId": "510002",
+      "scheduledAt": "2026-06-25 11:00:00",
+      "durationMin": "180",
+      "status": "scheduled",
+      "name": "Keith"
+    },
+    {
+      "id": "960048",
+      "tutorId": "60009",
+      "scheduledAt": "2026-06-26 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "name": "Sophie"
+    },
+    {
+      "id": "960049",
+      "tutorId": "510001",
+      "scheduledAt": "2026-06-29 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "name": "Madison"
+    },
+    {
+      "id": "960050",
+      "tutorId": "60009",
+      "scheduledAt": "2026-06-30 10:00:00",
+      "durationMin": "300",
+      "status": "scheduled",
+      "name": "Sophie"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttutorId\tscheduledAt\tdurationMin\tstatus\tname\n960021\t510001\t2026-05-20 10:00:00\t300\tscheduled\tMadison\n960022\t510002\t2026-05-21 11:00:00\t180\tscheduled\tKeith\n960023\t60009\t2026-05-22 10:00:00\t300\tscheduled\tSophie\n960024\t60009\t2026-05-25 10:00:00\t300\tscheduled\tSophie\n960025\t60009\t2026-05-26 10:00:00\t300\tscheduled\tSophie\n960026\t60009\t2026-05-27 10:00:00\t300\tscheduled\tSophie\n960027\t510002\t2026-05-28 11:00:00\t180\tscheduled\tKeith\n960028\t60009\t2026-05-29 10:00:00\t300\tscheduled\tSophie\n960029\t510001\t2026-06-01 10:00:00\t300\tscheduled\tMadison\n960030\t60009\t2026-06-02 10:00:00\t300\tscheduled\tSophie\n960031\t510001\t2026-06-03 10:00:00\t300\tscheduled\tMadison\n960032\t510002\t2026-06-04 11:00:00\t180\tscheduled\tKeith\n960033\t60009\t2026-06-05 10:00:00\t300\tscheduled\tSophie\n960034\t60009\t2026-06-08 10:00:00\t300\tscheduled\tSophie\n960035\t60009\t2026-06-09 10:00:00\t300\tscheduled\tSophie\n960036\t60009\t2026-06-10 10:00:00\t300\tscheduled\tSophie\n960037\t510002\t2026-06-11 11:00:00\t180\tscheduled\tKeith\n960038\t60009\t2026-06-12 10:00:00\t300\tscheduled\tSophie\n960039\t510001\t2026-06-15 10:00:00\t300\tscheduled\tMadison\n960040\t60009\t2026-06-16 10:00:00\t300\tscheduled\tSophie\n960041\t510001\t2026-06-17 10:00:00\t300\tscheduled\tMadison\n960042\t510002\t2026-06-18 11:00:00\t180\tscheduled\tKeith\n960043\t60009\t2026-06-19 10:00:00\t300\tscheduled\tSophie\n960044\t60009\t2026-06-22 10:00:00\t300\tscheduled\tSophie\n960045\t60009\t2026-06-23 10:00:00\t300\tscheduled\tSophie\n960046\t60009\t2026-06-24 10:00:00\t300\tscheduled\tSophie\n960047\t510002\t2026-06-25 11:00:00\t180\tscheduled\tKeith\n960048\t60009\t2026-06-26 10:00:00\t300\tscheduled\tSophie\n960049\t510001\t2026-06-29 10:00:00\t300\tscheduled\tMadison\n960050\t60009\t2026-06-30 10:00:00\t300\tscheduled\tSophie\n",
+  "stderr": "",
+  "execution_time_ms": 570
+}

@@ -1,0 +1,31 @@
+{
+  "query": "-- Cancel Keith + Madison sessions from today on\nUPDATE tutorSessions SET status='cancelled', sessionNotes=CONCAT(IFNULL(sessionNotes,''),' | 2026-05-20 audit: tutor deactivated.') WHERE tutorId IN (510001, 510002) AND scheduledAt >= '2026-05-20 00:00:00' AND status='scheduled';\n\n-- Cancel all sessions after Sophie's last day (Tue May 26)\nUPDATE tutorSessions SET status='cancelled', sessionNotes=CONCAT(IFNULL(sessionNotes,''),' | 2026-05-20 audit: no tutors after May 26 — Mom + Grandma run school.') WHERE scheduledAt > '2026-05-26 23:59:59' AND status='scheduled';\n\n-- Verify what's left\nSELECT ts.id, t.name, DATE(ts.scheduledAt) AS dt, ts.status, ts.durationMin FROM tutorSessions ts LEFT JOIN tutors t ON t.id=ts.tutorId WHERE ts.scheduledAt >= '2026-05-20 00:00:00' AND ts.status='scheduled' ORDER BY ts.scheduledAt;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute -- Cancel Keith + Madison sessions from today on\nUPDATE tutorSessions SET status='cancelled', sessionNotes=CONCAT(IFNULL(sessionNotes,''),' | 2026-05-20 audit: tutor deactivated.') WHERE tutorId IN (510001, 510002) AND scheduledAt >= '2026-05-20 00:00:00' AND status='scheduled';\n\n-- Cancel all sessions after Sophie's last day (Tue May 26)\nUPDATE tutorSessions SET status='cancelled', sessionNotes=CONCAT(IFNULL(sessionNotes,''),' | 2026-05-20 audit: no tutors after May 26 — Mom + Grandma run school.') WHERE scheduledAt > '2026-05-26 23:59:59' AND status='scheduled';\n\n-- Verify what's left\nSELECT ts.id, t.name, DATE(ts.scheduledAt) AS dt, ts.status, ts.durationMin FROM tutorSessions ts LEFT JOIN tutors t ON t.id=ts.tutorId WHERE ts.scheduledAt >= '2026-05-20 00:00:00' AND ts.status='scheduled' ORDER BY ts.scheduledAt;",
+  "rows": [
+    {
+      "id": "960023",
+      "name": "Sophie",
+      "dt": "2026-05-22",
+      "status": "scheduled",
+      "durationMin": "300"
+    },
+    {
+      "id": "960024",
+      "name": "Sophie",
+      "dt": "2026-05-25",
+      "status": "scheduled",
+      "durationMin": "300"
+    },
+    {
+      "id": "960025",
+      "name": "Sophie",
+      "dt": "2026-05-26",
+      "status": "scheduled",
+      "durationMin": "300"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tdt\tstatus\tdurationMin\n960023\tSophie\t2026-05-22\tscheduled\t300\n960024\tSophie\t2026-05-25\tscheduled\t300\n960025\tSophie\t2026-05-26\tscheduled\t300\n",
+  "stderr": "",
+  "execution_time_ms": 718
+}
