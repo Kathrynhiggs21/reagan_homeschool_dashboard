@@ -1,0 +1,16 @@
+{
+  "query": "UPDATE tutors SET active = 1, notes = CONCAT(IFNULL(notes,''),' | 2026-05-20 correction: Sophie still active through Tue May 26, 2026 (Mom confirmed) — flipping active=1.') WHERE id = 60009;\nSELECT id, name, active, LEFT(notes, 200) AS note FROM tutors WHERE id = 60009;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute UPDATE tutors SET active = 1, notes = CONCAT(IFNULL(notes,''),' | 2026-05-20 correction: Sophie still active through Tue May 26, 2026 (Mom confirmed) — flipping active=1.') WHERE id = 60009;\nSELECT id, name, active, LEFT(notes, 200) AS note FROM tutors WHERE id = 60009;",
+  "rows": [
+    {
+      "id": "60009",
+      "name": "Sophie",
+      "active": "1",
+      "note": "Sophie's last day is Tuesday May 19, 2026 (10am–1pm session, shortened). Starting Wed May 20, 2026, Mom + Grandma run school. No tutors after May 19. (Updated 2026-05-15.) | 2026-05-20: Mom audit — de"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tactive\tnote\n60009\tSophie\t1\tSophie's last day is Tuesday May 19, 2026 (10am–1pm session, shortened). Starting Wed May 20, 2026, Mom + Grandma run school. No tutors after May 19. (Updated 2026-05-15.) | 2026-05-20: Mom audit — de\n",
+  "stderr": "",
+  "execution_time_ms": 625
+}
