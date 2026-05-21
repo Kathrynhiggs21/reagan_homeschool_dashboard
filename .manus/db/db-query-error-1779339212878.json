@@ -1,0 +1,8 @@
+{
+  "query": "SELECT 'tutors_active' AS metric, COUNT(*) AS value FROM tutors WHERE active = 1\nUNION ALL SELECT 'tutors_total', COUNT(*) FROM tutors\nUNION ALL SELECT 'nightly_email_queued', COUNT(*) FROM nightlyAgendaEmails WHERE status='queued'\nUNION ALL SELECT 'nightly_email_sent', COUNT(*) FROM nightlyAgendaEmails WHERE status='sent'\nUNION ALL SELECT 'plans_total', COUNT(*) FROM dailyPlans\nUNION ALL SELECT 'plans_future_year_2027plus', COUNT(*) FROM dailyPlans WHERE forDate > '2026-12-31'\nUNION ALL SELECT 'blocks_total', COUNT(*) FROM scheduleBlocks\nUNION ALL SELECT 'blocks_orphan', COUNT(*) FROM scheduleBlocks sb LEFT JOIN dailyPlans dp ON dp.id = sb.planId WHERE dp.id IS NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT 'tutors_active' AS metric, COUNT(*) AS value FROM tutors WHERE active = 1\nUNION ALL SELECT 'tutors_total', COUNT(*) FROM tutors\nUNION ALL SELECT 'nightly_email_queued', COUNT(*) FROM nightlyAgendaEmails WHERE status='queued'\nUNION ALL SELECT 'nightly_email_sent', COUNT(*) FROM nightlyAgendaEmails WHERE status='sent'\nUNION ALL SELECT 'plans_total', COUNT(*) FROM dailyPlans\nUNION ALL SELECT 'plans_future_year_2027plus', COUNT(*) FROM dailyPlans WHERE forDate > '2026-12-31'\nUNION ALL SELECT 'blocks_total', COUNT(*) FROM scheduleBlocks\nUNION ALL SELECT 'blocks_orphan', COUNT(*) FROM scheduleBlocks sb LEFT JOIN dailyPlans dp ON dp.id = sb.planId WHERE dp.id IS NULL;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'fordate' in 'where clause'"
+  ]
+}

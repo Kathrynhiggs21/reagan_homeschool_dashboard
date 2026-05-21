@@ -1,0 +1,23 @@
+{
+  "query": "SELECT * FROM tutors WHERE LOWER(name) LIKE '%keith%' OR LOWER(name) LIKE '%kieth%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT * FROM tutors WHERE LOWER(name) LIKE '%keith%' OR LOWER(name) LIKE '%kieth%';",
+  "rows": [
+    {
+      "id": "510002",
+      "name": "Keith",
+      "role": "tutor",
+      "email": "keith@tbd.local",
+      "phone": "NULL",
+      "bio": "NULL",
+      "subjects": "math,science",
+      "avatarUrl": "NULL",
+      "active": "1",
+      "notes": "Thu 11:00–14:00. Email TBD. | 2026-05-15: deactivated — Sophie is the only tutor going forward; Mom + Grandma take over after school year ends.",
+      "createdAt": "2026-05-02 23:30:02"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\trole\temail\tphone\tbio\tsubjects\tavatarUrl\tactive\tnotes\tcreatedAt\n510002\tKeith\ttutor\tkeith@tbd.local\tNULL\tNULL\tmath,science\tNULL\t1\tThu 11:00–14:00. Email TBD. | 2026-05-15: deactivated — Sophie is the only tutor going forward; Mom + Grandma take over after school year ends.\t2026-05-02 23:30:02\n",
+  "stderr": "",
+  "execution_time_ms": 683
+}

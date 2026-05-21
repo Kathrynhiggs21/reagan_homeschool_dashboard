@@ -1,0 +1,46 @@
+{
+  "query": "SELECT 'tutors_active' AS metric, COUNT(*) AS value FROM tutors WHERE active = 1\nUNION ALL SELECT 'tutors_total', COUNT(*) FROM tutors\nUNION ALL SELECT 'nightly_email_queued', COUNT(*) FROM nightlyAgendaEmails WHERE status='queued'\nUNION ALL SELECT 'nightly_email_sent', COUNT(*) FROM nightlyAgendaEmails WHERE status='sent'\nUNION ALL SELECT 'plans_total', COUNT(*) FROM dailyPlans\nUNION ALL SELECT 'plans_far_future_2027plus', COUNT(*) FROM dailyPlans WHERE date > '2026-12-31'\nUNION ALL SELECT 'plans_templates', COUNT(*) FROM dailyPlans WHERE isTemplate = 1\nUNION ALL SELECT 'blocks_total', COUNT(*) FROM scheduleBlocks\nUNION ALL SELECT 'blocks_orphan', COUNT(*) FROM scheduleBlocks sb LEFT JOIN dailyPlans dp ON dp.id = sb.planId WHERE dp.id IS NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT 'tutors_active' AS metric, COUNT(*) AS value FROM tutors WHERE active = 1\nUNION ALL SELECT 'tutors_total', COUNT(*) FROM tutors\nUNION ALL SELECT 'nightly_email_queued', COUNT(*) FROM nightlyAgendaEmails WHERE status='queued'\nUNION ALL SELECT 'nightly_email_sent', COUNT(*) FROM nightlyAgendaEmails WHERE status='sent'\nUNION ALL SELECT 'plans_total', COUNT(*) FROM dailyPlans\nUNION ALL SELECT 'plans_far_future_2027plus', COUNT(*) FROM dailyPlans WHERE date > '2026-12-31'\nUNION ALL SELECT 'plans_templates', COUNT(*) FROM dailyPlans WHERE isTemplate = 1\nUNION ALL SELECT 'blocks_total', COUNT(*) FROM scheduleBlocks\nUNION ALL SELECT 'blocks_orphan', COUNT(*) FROM scheduleBlocks sb LEFT JOIN dailyPlans dp ON dp.id = sb.planId WHERE dp.id IS NULL;",
+  "rows": [
+    {
+      "metric": "nightly_email_queued",
+      "value": "37"
+    },
+    {
+      "metric": "nightly_email_sent",
+      "value": "4"
+    },
+    {
+      "metric": "plans_total",
+      "value": "57"
+    },
+    {
+      "metric": "tutors_active",
+      "value": "2"
+    },
+    {
+      "metric": "tutors_total",
+      "value": "6"
+    },
+    {
+      "metric": "plans_templates",
+      "value": "0"
+    },
+    {
+      "metric": "plans_far_future_2027plus",
+      "value": "24"
+    },
+    {
+      "metric": "blocks_total",
+      "value": "1321"
+    },
+    {
+      "metric": "blocks_orphan",
+      "value": "1038"
+    }
+  ],
+  "messages": [],
+  "stdout": "metric\tvalue\nnightly_email_queued\t37\nnightly_email_sent\t4\nplans_total\t57\ntutors_active\t2\ntutors_total\t6\nplans_templates\t0\nplans_far_future_2027plus\t24\nblocks_total\t1321\nblocks_orphan\t1038\n",
+  "stderr": "",
+  "execution_time_ms": 613
+}

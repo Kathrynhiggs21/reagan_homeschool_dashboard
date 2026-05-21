@@ -1,0 +1,38 @@
+{
+  "query": "-- 1. Orphan schedule blocks (parent plan was deleted)\nDELETE sb FROM scheduleBlocks sb LEFT JOIN dailyPlans dp ON dp.id = sb.planId WHERE dp.id IS NULL;\n\n-- 2. Schedule blocks whose plan is in the deletion set (avoid leaving new orphans)\nDELETE sb FROM scheduleBlocks sb JOIN dailyPlans dp ON dp.id = sb.planId WHERE dp.date > '2026-12-31';\n\n-- 3. Future test-seed daily plans\nDELETE FROM dailyPlans WHERE date > '2026-12-31';\n\n-- 4. Tutor roster cleanup\nUPDATE tutors SET active = 0, notes = CONCAT(IFNULL(notes,''),' | 2026-05-20: Mom audit — deactivated; school year ends Tue May 19 was Sophie last day.') WHERE id IN (510001, 60009);\nDELETE FROM tutors WHERE id IN (1, 510003, 750010);\n\n-- 5. Drop the stuck queued nightly emails (4 sent rows retained for audit)\nDELETE FROM nightlyAgendaEmails WHERE status = 'queued';\n\n-- 6. Verify post-cleanup\nSELECT 'tutors_active' AS metric, COUNT(*) AS value FROM tutors WHERE active = 1\nUNION ALL SELECT 'tutors_total', COUNT(*) FROM tutors\nUNION ALL SELECT 'plans_total', COUNT(*) FROM dailyPlans\nUNION ALL SELECT 'blocks_total', COUNT(*) FROM scheduleBlocks\nUNION ALL SELECT 'blocks_orphan', COUNT(*) FROM scheduleBlocks sb LEFT JOIN dailyPlans dp ON dp.id = sb.planId WHERE dp.id IS NULL\nUNION ALL SELECT 'nightly_email_queued', COUNT(*) FROM nightlyAgendaEmails WHERE status='queued'\nUNION ALL SELECT 'nightly_email_sent', COUNT(*) FROM nightlyAgendaEmails WHERE status='sent';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute -- 1. Orphan schedule blocks (parent plan was deleted)\nDELETE sb FROM scheduleBlocks sb LEFT JOIN dailyPlans dp ON dp.id = sb.planId WHERE dp.id IS NULL;\n\n-- 2. Schedule blocks whose plan is in the deletion set (avoid leaving new orphans)\nDELETE sb FROM scheduleBlocks sb JOIN dailyPlans dp ON dp.id = sb.planId WHERE dp.date > '2026-12-31';\n\n-- 3. Future test-seed daily plans\nDELETE FROM dailyPlans WHERE date > '2026-12-31';\n\n-- 4. Tutor roster cleanup\nUPDATE tutors SET active = 0, notes = CONCAT(IFNULL(notes,''),' | 2026-05-20: Mom audit — deactivated; school year ends Tue May 19 was Sophie last day.') WHERE id IN (510001, 60009);\nDELETE FROM tutors WHERE id IN (1, 510003, 750010);\n\n-- 5. Drop the stuck queued nightly emails (4 sent rows retained for audit)\nDELETE FROM nightlyAgendaEmails WHERE status = 'queued';\n\n-- 6. Verify post-cleanup\nSELECT 'tutors_active' AS metric, COUNT(*) AS value FROM tutors WHERE active = 1\nUNION ALL SELECT 'tutors_total', COUNT(*) FROM tutors\nUNION ALL SELECT 'plans_total', COUNT(*) FROM dailyPlans\nUNION ALL SELECT 'blocks_total', COUNT(*) FROM scheduleBlocks\nUNION ALL SELECT 'blocks_orphan', COUNT(*) FROM scheduleBlocks sb LEFT JOIN dailyPlans dp ON dp.id = sb.planId WHERE dp.id IS NULL\nUNION ALL SELECT 'nightly_email_queued', COUNT(*) FROM nightlyAgendaEmails WHERE status='queued'\nUNION ALL SELECT 'nightly_email_sent', COUNT(*) FROM nightlyAgendaEmails WHERE status='sent';",
+  "rows": [
+    {
+      "metric": "tutors_total",
+      "value": "3"
+    },
+    {
+      "metric": "tutors_active",
+      "value": "0"
+    },
+    {
+      "metric": "plans_total",
+      "value": "33"
+    },
+    {
+      "metric": "nightly_email_queued",
+      "value": "0"
+    },
+    {
+      "metric": "nightly_email_sent",
+      "value": "4"
+    },
+    {
+      "metric": "blocks_total",
+      "value": "217"
+    },
+    {
+      "metric": "blocks_orphan",
+      "value": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "metric\tvalue\ntutors_total\t3\ntutors_active\t0\nplans_total\t33\nnightly_email_queued\t0\nnightly_email_sent\t4\nblocks_total\t217\nblocks_orphan\t0\n",
+  "stderr": "",
+  "execution_time_ms": 931
+}

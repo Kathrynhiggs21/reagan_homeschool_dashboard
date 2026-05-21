@@ -3679,3 +3679,13 @@ The v2.49 simplification had a hole: the dashboard's `appSettings` cache pointed
 
 
 - [x] Push 95 (2026-05-19) — v2.57 fix: sync `server/db.ts` APP_SETTING_DEFAULTS for `drive.folder.*` to the post-v2.54 canonical IDs. Discovered during the reconciliation sweep: `server/driveCanonicalFolders.test.ts` was failing because the test's EXPECTED_FOLDERS still pointed at the *pre-v2.54* IDs (the empty/legacy folders that were merged into the populated ones during the Drive Hub unification on 2026-05-18). The live DB `appSettings` rows had been correctly updated by v2.54 \u2014 the only stale references were the seed defaults + the test's expected map. Updated both to match the live DB row. Locked by `server/driveCanonicalFolders.test.ts` (2/2), `server/driveCanonicalParents.test.ts` (6/6), `server/driveFolderMap.test.ts` (6/6), `server/driveHubTargetFolderMap.test.ts` (8/8), `server/driveRootReadme.test.ts` (6/6) \u2014 28 green tests across the Drive canonical-folder cluster.
+
+
+## Bug 2026-05-21 (Mom): "no emails sent"
+
+- [ ] Root cause: `/api/scheduled/nightly-agenda-email` endpoint builds the agenda + attachments and returns `status: "send_ready"` correctly, BUT no Heartbeat or AGENT cron is registered to actually call the endpoint nightly and dispatch the returned payload via Gmail MCP. All 10 `nightlyAgendaEmails` rows are stuck at `status='queued'` with empty `recipients` and `blockCount=0` (and no row has ever advanced to `status='sent'`).
+- [ ] Register a Manus Heartbeat job `nightly-agenda-email-send` at 8 PM ET (0 0 0 * * *) that POSTs to `/api/scheduled/nightly-agenda-email`. Single-stage HTTP handler is insufficient — need an AGENT cron because the platform requires Gmail MCP to send and that's only available inside a fresh Manus session.
+- [ ] AGENT cron prompt: curl the endpoint → parse JSON → use Gmail MCP `send_email` with `recipients`, `subject`, `htmlBody`, `attachments[]` (base64-decode each `contentBase64` into the MCP-expected file shape) → POST `/api/scheduled/nightly-agenda-email/result` with `{ ok: true, recordId, sentAt }` to flip `status` to `sent`.
+- [ ] Add vitest `nightlyAgendaEmailDispatch.test.ts` asserting the `/result` callback exists + flips the row + the `send_ready` response has the four required fields (recipients, subject, htmlBody, attachments).
+- [ ] Save checkpoint v2.83; ask Mom to Publish; THEN register the cron via `schedule` MCP / `manus-heartbeat create`.
+- [ ] Run Now after registration to confirm the first real email lands in Mom + Grandma's inbox.

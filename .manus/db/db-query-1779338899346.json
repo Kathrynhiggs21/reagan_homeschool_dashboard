@@ -1,0 +1,100 @@
+{
+  "query": "SELECT id, forDate, recipients, status, triggerKind, blockCount, sentAt FROM nightlyAgendaEmails ORDER BY id DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, forDate, recipients, status, triggerKind, blockCount, sentAt FROM nightlyAgendaEmails ORDER BY id DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "570003",
+      "forDate": "2026-05-21",
+      "recipients": "",
+      "status": "queued",
+      "triggerKind": "change_resend",
+      "blockCount": "0",
+      "sentAt": "2026-05-21 04:18:32"
+    },
+    {
+      "id": "450003",
+      "forDate": "2026-05-18",
+      "recipients": "",
+      "status": "queued",
+      "triggerKind": "change_resend",
+      "blockCount": "0",
+      "sentAt": "2026-05-18 11:33:50"
+    },
+    {
+      "id": "270002",
+      "forDate": "2028-04-10",
+      "recipients": "",
+      "status": "queued",
+      "triggerKind": "change_resend",
+      "blockCount": "0",
+      "sentAt": "2026-05-17 15:55:07"
+    },
+    {
+      "id": "270001",
+      "forDate": "2028-03-06",
+      "recipients": "",
+      "status": "queued",
+      "triggerKind": "change_resend",
+      "blockCount": "0",
+      "sentAt": "2026-05-17 15:50:57"
+    },
+    {
+      "id": "180008",
+      "forDate": "2099-09-10",
+      "recipients": "",
+      "status": "queued",
+      "triggerKind": "change_resend",
+      "blockCount": "0",
+      "sentAt": "2026-05-13 06:42:16"
+    },
+    {
+      "id": "180007",
+      "forDate": "2026-05-13",
+      "recipients": "",
+      "status": "queued",
+      "triggerKind": "change_resend",
+      "blockCount": "0",
+      "sentAt": "2026-05-13 06:41:56"
+    },
+    {
+      "id": "180006",
+      "forDate": "2030-09-09",
+      "recipients": "",
+      "status": "queued",
+      "triggerKind": "change_resend",
+      "blockCount": "0",
+      "sentAt": "2026-05-13 06:41:55"
+    },
+    {
+      "id": "180005",
+      "forDate": "2027-09-20",
+      "recipients": "",
+      "status": "queued",
+      "triggerKind": "change_resend",
+      "blockCount": "0",
+      "sentAt": "2026-05-13 06:41:55"
+    },
+    {
+      "id": "180002",
+      "forDate": "2031-01-15",
+      "recipients": "",
+      "status": "queued",
+      "triggerKind": "change_resend",
+      "blockCount": "0",
+      "sentAt": "2026-05-13 06:41:42"
+    },
+    {
+      "id": "180001",
+      "forDate": "2031-01-15",
+      "recipients": "",
+      "status": "queued",
+      "triggerKind": "change_resend",
+      "blockCount": "0",
+      "sentAt": "2026-05-13 06:41:42"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tforDate\trecipients\tstatus\ttriggerKind\tblockCount\tsentAt\n570003\t2026-05-21\t\tqueued\tchange_resend\t0\t2026-05-21 04:18:32\n450003\t2026-05-18\t\tqueued\tchange_resend\t0\t2026-05-18 11:33:50\n270002\t2028-04-10\t\tqueued\tchange_resend\t0\t2026-05-17 15:55:07\n270001\t2028-03-06\t\tqueued\tchange_resend\t0\t2026-05-17 15:50:57\n180008\t2099-09-10\t\tqueued\tchange_resend\t0\t2026-05-13 06:42:16\n180007\t2026-05-13\t\tqueued\tchange_resend\t0\t2026-05-13 06:41:56\n180006\t2030-09-09\t\tqueued\tchange_resend\t0\t2026-05-13 06:41:55\n180005\t2027-09-20\t\tqueued\tchange_resend\t0\t2026-05-13 06:41:55\n180002\t2031-01-15\t\tqueued\tchange_resend\t0\t2026-05-13 06:41:42\n180001\t2031-01-15\t\tqueued\tchange_resend\t0\t2026-05-13 06:41:42\n",
+  "stderr": "",
+  "execution_time_ms": 557
+}

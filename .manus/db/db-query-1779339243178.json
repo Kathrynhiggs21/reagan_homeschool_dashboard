@@ -1,0 +1,78 @@
+{
+  "query": "SELECT id, name, email, active, LEFT(notes, 60) AS note_excerpt FROM tutors ORDER BY active DESC, name;\nSELECT id, date, dayType, status FROM dailyPlans WHERE date > '2026-12-31' ORDER BY date LIMIT 30;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, name, email, active, LEFT(notes, 60) AS note_excerpt FROM tutors ORDER BY active DESC, name;\nSELECT id, date, dayType, status FROM dailyPlans WHERE date > '2026-12-31' ORDER BY date LIMIT 30;",
+  "rows": [
+    {
+      "id": "510001",
+      "name": "Madison",
+      "email": "madison@tbd.local",
+      "active": "1",
+      "note_excerpt": "Mon + Wed 10:00–15:00. Email TBD. | 2026-05-15: deactivated "
+    },
+    {
+      "id": "60009",
+      "name": "Sophie",
+      "email": "sophie@tbd.local",
+      "active": "1",
+      "note_excerpt": "Sophie's last day is Tuesday May 19, 2026 (10am–1pm session,"
+    },
+    {
+      "id": "510003",
+      "name": "Grandma Marcy",
+      "email": "marcy.spear@gmail.com",
+      "active": "0",
+      "note_excerpt": "Editor tier — same edit power as tutors, no billing/secrets."
+    },
+    {
+      "id": "750010",
+      "name": "Kathryn Higgs",
+      "email": "spear.cpt@gmail.com",
+      "active": "0",
+      "note_excerpt": "NULL"
+    },
+    {
+      "id": "510002",
+      "name": "Keith",
+      "email": "keith@tbd.local",
+      "active": "0",
+      "note_excerpt": "Thu 11:00–14:00. Email TBD. | 2026-05-15: deactivated — Soph"
+    },
+    {
+      "id": "1",
+      "name": "Tutor",
+      "email": "NULL",
+      "active": "0",
+      "note_excerpt": "NULL"
+    }
+  ],
+  "messages": [
+    "id\tdate\tdayType\tstatus",
+    "1230013\t2027-09-13\tfull\tplanned",
+    "750001\t2028-01-04\tfull\tplanned",
+    "720004\t2028-01-11\tfull\tplanned",
+    "720002\t2028-01-18\tfull\tplanned",
+    "720003\t2028-01-25\tfull\tplanned",
+    "720005\t2028-02-01\tfull\tplanned",
+    "1020002\t2028-02-08\tfull\tplanned",
+    "1140005\t2028-03-06\tfull\tplanned",
+    "1140006\t2028-04-10\tfull\tplanned",
+    "1140011\t2028-05-08\tfull\tplanned",
+    "6\t2030-01-01\tfull\tplanned",
+    "240002\t2030-01-05\toff\tplanned",
+    "240003\t2030-01-06\toff\tplanned",
+    "240004\t2030-01-12\toff\tplanned",
+    "240005\t2030-01-19\toff\tplanned",
+    "7\t2030-02-15\tfull\tplanned",
+    "8\t2030-02-20\thalf\tplanned",
+    "1590033\t2030-08-15\toutdoor\tplanned",
+    "840047\t2030-09-09\tfull\tplanned",
+    "870001\t2031-01-15\thalf\tplanned",
+    "840001\t2031-05-20\tfull\tplanned",
+    "1590045\t2099-09-09\thalf\tplanned",
+    "1590046\t2099-09-10\toff\tplanned",
+    "1230027\t2099-12-31\tfull\tplanned"
+  ],
+  "stdout": "id\tname\temail\tactive\tnote_excerpt\n510001\tMadison\tmadison@tbd.local\t1\tMon + Wed 10:00–15:00. Email TBD. | 2026-05-15: deactivated \n60009\tSophie\tsophie@tbd.local\t1\tSophie's last day is Tuesday May 19, 2026 (10am–1pm session,\n510003\tGrandma Marcy\tmarcy.spear@gmail.com\t0\tEditor tier — same edit power as tutors, no billing/secrets.\n750010\tKathryn Higgs\tspear.cpt@gmail.com\t0\tNULL\n510002\tKeith\tkeith@tbd.local\t0\tThu 11:00–14:00. Email TBD. | 2026-05-15: deactivated — Soph\n1\tTutor\tNULL\t0\tNULL\nid\tdate\tdayType\tstatus\n1230013\t2027-09-13\tfull\tplanned\n750001\t2028-01-04\tfull\tplanned\n720004\t2028-01-11\tfull\tplanned\n720002\t2028-01-18\tfull\tplanned\n720003\t2028-01-25\tfull\tplanned\n720005\t2028-02-01\tfull\tplanned\n1020002\t2028-02-08\tfull\tplanned\n1140005\t2028-03-06\tfull\tplanned\n1140006\t2028-04-10\tfull\tplanned\n1140011\t2028-05-08\tfull\tplanned\n6\t2030-01-01\tfull\tplanned\n240002\t2030-01-05\toff\tplanned\n240003\t2030-01-06\toff\tplanned\n240004\t2030-01-12\toff\tplanned\n240005\t2030-01-19\toff\tplanned\n7\t2030-02-15\tfull\tplanned\n8\t2030-02-20\thalf\tplanned\n1590033\t2030-08-15\toutdoor\tplanned\n840047\t2030-09-09\tfull\tplanned\n870001\t2031-01-15\thalf\tplanned\n840001\t2031-05-20\tfull\tplanned\n1590045\t2099-09-09\thalf\tplanned\n1590046\t2099-09-10\toff\tplanned\n1230027\t2099-12-31\tfull\tplanned\n",
+  "stderr": "",
+  "execution_time_ms": 650
+}
