@@ -85,6 +85,10 @@ describe("Kiwi sliders persist to appSettings (push 15)", () => {
     expect(m, "prefs router block must exist in routers.ts").toBeTruthy();
     const block = m![0];
     expect(block).toMatch(/get: protectedProcedure/);
-    expect(block).toMatch(/set: protectedProcedure/);
+    // v2.28 (2026-05-17) hardened `prefs.set` from protectedProcedure to
+    // familyAdminProcedure so Reagan cannot flip Summer Mode, the
+    // nightly-email toggle, her own coin balance, or any other KV setting.
+    // Mom + Grandma + tutors retain write access via familyAdminProcedure.
+    expect(block).toMatch(/set: familyAdminProcedure/);
   });
 });
