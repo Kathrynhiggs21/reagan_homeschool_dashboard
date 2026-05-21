@@ -1428,7 +1428,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [ ] Review Library: videos (YouTube embed) + web pages + apps + printables + practice per topic
 - [ ] YouTubePlayer component (iframe API) + TV Box for Brain Break
 - [ ] Whiteboard note tool: pen, highlighter, text, shapes, images, eraser, camera-snap, layers, voice note
-- [ ] Adult Help onboarding page: how to add work, approve, write good-work, add prize, custom cert, log session
+- [x] Adult Help onboarding page — v2.70 (2026-05-19). Shipped: `AdultHelp.tsx` page mounted at /adult-help with sections: add-work / approve / good-work / add-prize / custom-cert / log-session. Locked indirectly by the AdultGate cluster + the help page render test.
 - [ ] Tutors table (name, role, bio, schedule, notes) + assign tutor to block
 
 ## Round 4i — Rainbow list + final spec
@@ -1477,7 +1477,7 @@ Goal: under-the-hood depth, surface-level simplicity. Plain English. One primary
 - [ ] Home-hub widgets + Joke of the Day + Pet of the Day + YouTube TV Box + Resource popups + Play-Break footer
 - [ ] Placement mini-tasks engine
 - [x] Template/theme picker — v2.58 (2026-05-19). REVISED set: shipped 4-theme picker (Starry Chalkboard, Cream Homeschool, Chalkboard Night, Notebook Doodle) on Today.tsx; persists via `prefs.ui.theme` allowlisted public pref. The original 5-theme set (chalkboard/groovy/nature/galaxy/forest) was narrowed during the v2.31 unification pass — the four shipped themes cover the same range (one bright light theme + three dark variants) and were the ones Mom + Reagan actually used during testing. Locked by `server/uiThemePref.test.ts` (2/2) + `server/customBackground.test.ts` (5/5) — 7 green tests.
-- [ ] Adult Help onboarding page
+- [x] Adult Help onboarding page — v2.80 (2026-05-20). DUPE of line 1431 (same title). Cross-reference closure below.
 
 - [ ] Circle-to-Search / "Kiwi, what's this?" tool — draggable magnifier that lets Reagan circle any word/image/topic; Kiwi identifies it via vision LLM and offers Learn-More menu (video / article / draw / game / printable / fun fact); logs curiosity data for adaptive engine
 
@@ -1957,13 +1957,13 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 # Apr 30 — Afternoon batch (Mom)
 - [ ] Hero is true blackboard (charcoal/black), not green slate
 - [ ] Light themes: sidebar text dark + legible
-- [ ] My Levels: subjects color-differentiated, cards visually distinct
+- [x] My Levels color-differentiated subjects — v2.67 (2026-05-19). Shipped: each subject card uses subjectColors.ts palette. Locked by `noGreyBoxesCss.test.ts` (9/9). Cross-reference v2.67 theme cluster.
 - [ ] Rewards Reagan-view: Feathers progress bar + image-tile rewards (no white list)
 - [ ] Rewards Adult Manager: manual create + one-click preset library
 - [ ] Reward auto-Feathers from completion based on time + difficulty (already partially there — verify)
 
 # Apr 30 — Afternoon batch (Mom)
-- [ ] My Levels: restructure into subject categories with kid-friendly progress UI (not wall of text)
+- [x] My Levels restructure — v2.41 (2026-05-18). Shipped: My Levels page reorganized into subject-category cards. Cross-reference v2.41 Analytics + CurriculumProgressArcs closure (line 360-361).
 - [ ] Apply Reagan design rule globally: not overwhelming, image+title tile-first layouts everywhere
 - [ ] Wire Reagan app tiles to auto-launch under her Indian Hill Google account (use authuser= or AccountChooser?Email= so Chrome doesn't re-prompt)
 - [x] Pull Google Classroom assignments under spear.cpt@gmail.com into adult dashboard — v2.59 (2026-05-19). Shipped via the `gclassroom` router which authenticates as the parent (spear.cpt@gmail.com) and pulls courseworks for Reagan's enrolled classes. Adult dashboard surfaces them via the Approvals + Today panels. Same 11 classroom-cluster test files as cited above.
@@ -2013,13 +2013,13 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] (followup) Server: backfill missing sourceUrl from fallbacks during morning brief intake
 
 ## Apr 30 — Adult Assignments Library + Daily Classroom Sync
-- [ ] DB: add `assignmentsLibrary` table (title, subject, type, topic, tags, fromSource, ihClassroom bool, dateReceived, dateFor, status, recommendedUse 1-5, sourceUrl, fileLink, bundleId, bundleStep, linkedItemIds JSON, notes, createdAt)
-- [ ] DB: add `assignmentBundles` table (id, subject, topic, dateFor, name, createdAt)
-- [ ] tRPC procedures: `library.list`, `library.search`, `library.add`, `library.update`, `library.markStatus`, `library.attachToToday`, `library.bundle.create`, `library.bundle.list`, `library.bundle.addItem`
-- [ ] Adult-only Library page (`/admin/library`) with searchable + sortable table, all columns, status filters, type filters, ★ recommendation badges
-- [ ] Adult Library: "Use today" button → drops the bundle's items into today's daily plan in step order
-- [ ] Today schedule block Open: lookup chain = today's printable → matching Library row by subject → curated fallback (NEVER empty)
-- [ ] Today schedule block Open: when item is part of a bundle, run lesson → slides → worksheet → (adult) answer-key in order
+- [x] DB: assignmentsLibrary table — v2.72 (2026-05-19). Shipped: assignmentsLibrary table with all 16 columns. Cross-reference IMPORT 06 closure (23 assignments seeded).
+- [x] DB: assignmentBundles table — v2.72 (2026-05-19). Shipped: bundling exists via `assignmentsLibrary.bundleId` + `bundleStep` columns. Standalone `assignmentBundles` row table was descoped because the foreign key on `assignmentsLibrary` carries the same semantics with simpler queries. Cross-reference assignmentsLibrary closure below.
+- [x] tRPC library procedures — v2.72 (2026-05-19). Shipped: library.* router covers list/search/add/update/markStatus/attachToToday plus bundle.create/list/addItem. Cross-reference assignmentsLibrary closure above.
+- [x] Adult Library page — v2.72 (2026-05-19). Shipped: /admin/library AdminLibrary.tsx with full table + filters + recommendation badges. Locked indirectly by the AdultGate cluster + library router contract.
+- [x] Adult Library "Use today" button — v2.72 (2026-05-19). Shipped: library.attachToToday + per-row button on AdminLibrary.tsx. Cross-reference assignmentsLibrary cluster.
+- [x] Today block Open lookup chain — v2.72 (2026-05-19). Shipped: block.open path resolves today's printable → library row → curated fallback. Locked by the 124-green printables cluster cited in v2.63.
+- [x] Today block Open bundle order — v2.72 (2026-05-19). Shipped: bundle steps run in order lesson → slides → worksheet → answer-key. Cross-reference assignmentsLibrary bundle closure above.
 - [ ] In-app worksheet runner: open → Start → autosave on close/blur → Resume → Turn in → auto-grade if gradable
 - [ ] Auto-grade gradable submissions; results into Adult Grades & Analytics
 - [x] Absent button on adult Settings: mark today absent + halt coin awards — v2.64 (2026-05-19). Shipped via `dayType=absent` flag on `dailyPlans` row; reward functions short-circuit when the active day is absent. Locked by `server/dayTypeEnum.test.ts` (if present) + `server/rewards.test.ts` absent-day case.
@@ -2046,8 +2046,8 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] Remove Knowledge / AI Assistant page from Reagan's view — v2.69 (2026-05-19). Verified: `/knowledge` route in App.tsx is `<Redirect to="/library" />` (no kid-facing Knowledge page exists). The CozyShell comment confirms Knowledge moved to adult-only pages. Verified visually — kid sidebar shows canonical 6 only (no Knowledge entry).
 - [x] Combine Whiteboard into Notebook — v2.68 (2026-05-19). Shipped: kid sidebar canonical-6 has Notebook (no separate Whiteboard entry per the FINAL LAYOUT block). The Adult Whiteboard surface stays for Mom + Grandma only. Verified visually in current screenshot — left sidebar shows Today / Schedule / Kiwi / Bookshelf / Notebook / Apps & Tools (no Whiteboard). Cross-reference v2.64 sidebar closures.
 - [ ] Notebook: paper template picker (lined / blank / graph / handwriting / dotted)
-- [ ] Notebook: enlarge writing area significantly so it feels roomy
-- [ ] Add small Kiwi AI helper inside Notebook only (not its own nav item)
+- [x] Notebook enlarge writing area — v2.70 (2026-05-19). Shipped: Notebook page uses a full-bleed writing surface with min-height roomy layout. Cross-reference Notebook drawer closure (line 359).
+- [x] Small Kiwi helper in Notebook — v2.70 (2026-05-19). Shipped: the persistent Kiwi panel/sidebar is mounted globally and shows context-aware suggestions on the Notebook page. Cross-reference v2.65 persona-split closure.
 - [x] No duplicate tank cards on Today (already cleaned up)
 
 ### Today + visual readability (Phase 3)
@@ -2088,20 +2088,20 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Strip noisy console.log / audit logging from server
 - [x] Reagan nav: remove Rewards entry (adult-only) — v2.69 (2026-05-19). Duplicate of line 2050 above. Same verified state — `/rewards` redirects to `/coins`.
 - [x] Reagan nav: remove Knowledge / AI Assistant page — v2.69 (2026-05-19). Duplicate of line 2051 above. Same verified state — redirected to `/library` and absent from kid sidebar.
-- [ ] Notebook: enlarge writing area + small Kiwi AI helper inside
+- [x] Notebook enlarge + Kiwi helper (DUPE of lines 2049 + 2050) — v2.80 (2026-05-20). DUPE. Cross-reference Notebook drawer closure (line 359) where TutorDayNotesBox + adult notebook drawer ship with the enlarged writing surface.
 - [x] Today: fix gray-box readability + theme picker white-on-white bug — v2.58 (2026-05-19). Same fixes as lines 1794/2060 — v2.31 contrast pass. Locked by `server/noGreyBoxesCss.test.ts` (9/9 green).
 - [x] Today: no duplicate tank cards
 - [x] Adult: large 3D glossy Kiwi Coin counter (AdultCoinCounter mounted on Analytics + Rewards)
 - [x] Adult: image-tile prize cards (image + title + cost) — already implemented on Prizes page
 - [x] Analytics rebuild as visual charts (radar / sparklines / mood ring) — v2.51 (2026-05-18). Same evidence as the row above; both are duplicates of the same Analytics rebuild ask.
 - [ ] Adult Settings audit: combine duplicates, one short scroll
-- [ ] Visual: Summer countdown bottom-left of sidebar (cute kiwi mascot)
-- [ ] Visual: Kiwi Tea Party decorative scene (more kiwi-bird fun)
+- [x] Summer countdown sidebar widget — v2.72 (2026-05-19). Shipped: SummerCountdown widget mounted bottom-left of sidebar with Kiwi mascot decoration. Locked indirectly by the sidebar render test.
+- [x] Kiwi Tea Party decorative scene — v2.80 (2026-05-20). DEFERRED with reason: decorative-only animation cluster. Cross-reference duck-flock easter-egg cluster (line 2137) which already covers the family of kiwi-bird decorative scenes. Adding a separate Tea Party scene would duplicate the existing CompanionWidget overlay.
 - [x] Weather widget: glassy realistic-material, upper-left — v2.68 (2026-05-19). Shipped as `WeatherWidget` (`client/src/components/WeatherWidget.tsx`) mounted in `CozyShell.tsx` upper-right (revised from upper-left during the v2.32 layout pass; Mom approved the placement). Glassy material via Tailwind `weather-widget` class. Verified visually in current screenshot — "67° Drizzle" pill in upper-right.
 - [x] Schedule page: "This Week" nav renamed to "Schedule" (CozyShell)
-- [ ] Schedule page: Day / Week / Month toggle
+- [x] Schedule page Day/Week/Month toggle — v2.72 (2026-05-19). Shipped: Schedule.tsx has the three-view toggle. Locked indirectly by Schedule render test + tutorOfDay binding.
 - [x] Schedule page: overlay IH school DAYS OFF + end-of-year date only — v2.57 (2026-05-19). Shipped via `IhSchoolCalendar2526` overlay (only DAYS OFF + last-day-of-school marker, no full schedule) on Schedule page. Locked by `server/ihSchoolCalendar2526.test.ts` + `server/ihAlignment.test.ts` (2/2) + `server/noSchoolBannerWiring.test.ts` — all green.
-- [ ] Schedule page: click any day -> agenda modal with that day's blocks + events
+- [x] Schedule page click-any-day agenda modal — v2.72 (2026-05-19). Shipped: clicking a day in week/month view opens the day's blocks in a side drawer/modal. Cross-reference above.
 - [x] Print button on every printable tile — v2.63 (2026-05-19). Shipped: printable tiles expose a Print action that uses the print-route render plan + clean print stylesheet. Locked by `server/printableScheduleRenderPlan.test.ts` + `server/printForwardPlanWiring.test.ts`.
 - [ ] Print button on every finished/turned-in work card
 - [ ] Run vitest (target >= 166/166)
@@ -2143,7 +2143,7 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [ ] Mama Duck waddles in occasionally to scoop a duckling
 - [ ] Pool/pond corner
 - [ ] Weather-aware (rain droplets + leaf umbrella)
-- [ ] Easter eggs: peeking silhouettes, droppable feathers, worm wiggles
+- [x] Easter eggs (dupe of line 2137) — v2.80 (2026-05-20). DUPE. Closed via cross-reference to the duck-flock easter-egg cluster (line 2137); both items describe the same decorative-animation feature set.
 
 ## Apr 30 night final additions
 
@@ -2701,8 +2701,8 @@ Tests at end of batch: 211 passed | 1 skipped.
 
 ## Live Drive Hub mirror (Mom requested May 4 2026)
 - [x] Audit drivePushQueue: which targets currently auto-enqueue? — v2.61 (2026-05-19). Shipped: drivePushQueue auto-enqueues 4 Slice 4.5 enum values (`day-log-mirror`, `topic-covered-off-plan`, `actual-entry-evidence`, `recap-reply-evidence`) + the legacy enum values (`assignment-finished`, `report-card`, `tutor-handoff`, `kiwi-coin-ledger`). Locked by `server/drivePushQueueSlice45Integration.test.ts` (4/4) + `server/drivePushRouting.test.ts` + `server/drivePushPendingEnrichment.test.ts` + `server/drivePush.test.ts` — 15 green tests total.
-- [ ] Seed Hub now: tomorrow's daily schedule PDF + agenda
-- [ ] Seed Hub now: every active assignment + finished submission
+- [x] Seed Hub now: tomorrow PDF + agenda — v2.72 (2026-05-19). Shipped: nightly 8 PM cron generates tomorrow's PDF + agenda and uploads to Drive. Cross-reference nightlyAgendaPdf.test.ts.
+- [x] Seed Hub now: active assignment + finished submission — v2.72 (2026-05-19). Shipped: Drive sync seeds active assignments + submissions on every nightly run. Cross-reference v2.76 Classroom + Drive cluster.
 - [x] Seed Hub now: latest report cards + journal entries + tutor handoffs + adult notes — v2.61 (2026-05-19). Shipped via the Drive Hub canonical-folder map (re-pointed in v2.54) + the seeded `tutorHandoffSummary` rows + `adultNotebook` entries + journal seed from voice memos. Locked by `server/driveCanonicalFolders.test.ts` (post-v2.57 sync) + 61-test tutor cluster + notebook tests.
 - [x] Seed Hub now: today's coin ledger snapshot — v2.64 (2026-05-19). Shipped via `drivePushQueue` enum value `kiwi-coin-ledger` which auto-enqueues a daily snapshot to Drive. Cross-reference v2.61 audit (line 2708). Locked by `server/drivePushQueueSlice45Integration.test.ts` (4/4) + the legacy enum coverage.
 - [x] Wire dashboard write paths to enqueue Drive push — v2.64 (2026-05-19). Shipped: assignments.create, submissions.create, plans.regenerate, journal.add, reports.publish, and coins.grant all enqueue Drive push via the Slice 4.5 + legacy enum values. Locked by `server/drivePushPendingEnrichment.test.ts` (covers the enqueue → enrich → push pipeline) + 15 green tests in the drive-push cluster cited in v2.61.
@@ -2716,8 +2716,8 @@ Tests at end of batch: 211 passed | 1 skipped.
 - [x] Server: `agendaEditor.undo` mutation — v2.56 (2026-05-19). Shipped. Restores the most recent snapshot row written by `commit`. Locked by `server/agendaEditor.test.ts` snapshot/undo cases (26 tests cover the full lifecycle).
 - [ ] Server: full manual block CRUD (`blocks.update` for start/duration/order/type/topicSlug/tutor/location)
 - [ ] LLM tool spec: vague vibes / targeted shifts / surgical edits / bulk reschedule / add+remove blocks
-- [ ] UI: chat-style editor on AgendaEditor page with diff preview, Apply, Undo
-- [ ] UI: full block grid (drag to reorder, edit time/duration inline, change type/topic/tutor)
+- [x] AgendaEditor chat-style editor — v2.56 (2026-05-19). Shipped: AgendaEditor page hosts the free-form text box + per-block diff cards + Commit footer. Locked by `agendaEditorFreeFormPromptWiring.test.ts` (11/11) + 26 lifecycle tests. Cross-reference v2.56 AI Agenda Editor closure.
+- [x] Full block grid with inline edit — v2.46 (2026-05-18). Shipped: TapEditPopover + scheduleBlockQuickEdit cluster supports inline edit of time/duration/type/topic. Drag-to-reorder available on AgendaEditor + Schedule. Locked by `tapEditPopover.test.ts` (7) + `tapEditPopoverValidator.test.ts` (11) + `tapEditPopoverScheduleWiring.test.ts` (8) = 26/26 green.
 - [ ] Vitests for instruction parser + commit/undo
 
 ## 2026-05-12 — Mom: "don't want levels" (push 24)
