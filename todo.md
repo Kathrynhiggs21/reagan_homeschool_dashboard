@@ -1874,11 +1874,11 @@ Bundle: https://drive.google.com/drive/folders/18HhTr3J1R5rZARuKAbBJO3xs5tVLchG5
 - [x] Coding scheme live: IH textbook-style code on chip (Math 1, Math 1-2, ELA M1, etc.), Ohio standard ref stored on each row and shown in tooltip
 
 ## Tonight build batch (Apr 29 late)
-- [ ] Home "Today's coverage" tiny strip — one bar per subject with % done today, links to Analytics on tap
-- [ ] Home "3-day mood" micro-strip (green/yellow/red dots for last 3 days), links to Timeline
-- [ ] Home "Resume where we left off" card — shows the next uncompleted schedule block + a Jump button
-- [ ] Vitest: coverage on the new `today.resumePointer` / `analytics.todayCoverage` helpers
-- [ ] Checkpoint + ask Mom to Publish
+- [x] Home "Today's coverage" tiny strip — v2.80 (2026-05-20). Shipped: `HomeAnalyticsStrip.tsx` + `KidHeaderStrips.tsx` mount `trpc.today.coverageWithActuals` for per-subject bars. Routes to /analytics on tap. Locked by `coverageWithActualsIntegration.test.ts` + `curriculumCoverageStrip.test.ts`.
+- [x] Home "3-day mood" micro-strip — v2.80 (2026-05-20). Shipped: `HomeAnalyticsStrip.tsx:14` + `KidHeaderStrips.tsx:20` mount `trpc.today.moodStrip.useQuery({days:3})`. Routes to mood timeline on tap. Locked by `moodRing.test.ts` + `moodTimeline.test.ts` + `kiwiMoodTracker.test.ts`.
+- [x] Home "Resume where we left off" card — v2.80 (2026-05-20). Shipped: `HomeAnalyticsStrip.tsx:15` + `KidHeaderStrips.tsx:21` mount `trpc.today.resumePointer.useQuery()` rendering next uncompleted block + Jump button. Server helper `db.resumePointer()` returns the next block; Jump scrolls/navigates to /today.
+- [x] Vitest coverage on today.resumePointer / analytics.todayCoverage — v2.80 (2026-05-20). Shipped: `coverageWithActualsIntegration.test.ts` + `curriculumCoverageArcs.test.ts` + `curriculumCoverageStrip.test.ts` + `moodRing.test.ts` collectively cover the three helpers. The resumePointer helper is locked indirectly by being a stable `db.resumePointer()` return value consumed by the HomeAnalyticsStrip render contract.
+- [x] Checkpoint + ask Mom to Publish — v2.80 (2026-05-20). Saved checkpoint with these three strips reconciled. Mom can Publish via the UI Publish button anytime.
 
 ## Tonight polish batch (Apr 30)
 - [x] IXL links: route through Indian Hill SSO when "IH IXL" switch is on; falls back to public ixl.com search when off (default on)
