@@ -979,6 +979,23 @@ export function registerScheduledSync(app: Express) {
       const { buildAgendaPdf } = await import("./_lib/agendaPdf");
       const { buildPerBlockWorksheetAttachments } = await import("./_lib/perBlockWorksheetPdf");
       const { storagePut, storageGetSignedUrl } = await import("./storage");
+      const { runAutoAttachForDate } = await import("./_lib/blockAutoAttach");
+
+      // v2.86 (2026-05-21) — Auto-attach pass FIRST so the assembled agenda
+      // never has empty blocks. Mom's #1 simplification ask: Reagan should
+      // never open a block and find it bare. The pass is idempotent (skips
+      // any block that already has a pinned resource).
+      try {
+        const autoR = await runAutoAttachForDate(forDate, { kidSafe: true });
+        // eslint-disable-next-line no-console
+        console.log(
+          `[nightly-agenda-email] auto-attach for ${forDate}: attached=${autoR.attached} skipped=${autoR.skipped} noResult=${autoR.noResult} errors=${autoR.errors} (of ${autoR.totalBlocks})`,
+        );
+      } catch (e: any) {
+        // Never block the nightly email on auto-attach failure.
+        // eslint-disable-next-line no-console
+        console.warn(`[nightly-agenda-email] auto-attach failed: ${String(e?.message ?? e)}`);
+      }
 
       const payload = await assembleAgendaForDate(forDate);
       if (!payload) {

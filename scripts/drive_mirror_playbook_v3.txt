@@ -1,0 +1,151 @@
+Continuously mirror Reagan's homeschool dashboard into the Reagan School Hub (Dashboard) Google Drive folder, AND send the nightly agenda email. Run BOTH on every fire (Job A = email, Job B = mirror).
+
+Auth header on every request (auto-injected):
+  -H "Cookie: app_session_id=$SCHEDULED_TASK_COOKIE"
+
+Hub root folder ID: 1r3bJacPLJN7VHI8y72rcx1-GRxspqo1r
+
+Endpoints the dashboard exposes:
+  $SCHEDULED_TASK_ENDPOINT_BASE/api/scheduled/drive-push/pending          (GET; up to 100 rows, each enriched with canonicalParentSlug, canonicalParentFolderId, subfolderName)
+  $SCHEDULED_TASK_ENDPOINT_BASE/api/scheduled/drive-push/result           (POST { id, status: "pushed"|"skipped"|"failed", driveFileId?, errorMessage? })
+  $SCHEDULED_TASK_ENDPOINT_BASE/api/scheduled/drive-folder-map            (GET; 9 canonical parent folder ids + subfolders to ensure exist)
+  $SCHEDULED_TASK_ENDPOINT_BASE/api/scheduled/drive-folder-map/result     (POST { parentName, subfolderName, driveFolderId })
+  $SCHEDULED_TASK_ENDPOINT_BASE/api/scheduled/drive-snapshot              (GET; live JSON snapshot of every section)
+  $SCHEDULED_TASK_ENDPOINT_BASE/api/scheduled/nightly-agenda-email        (POST {} — targets next non-weekend school day automatically; returns recordId, status, pdfDownloadUrl, attachments[], worksheetAttachments[])
+  $SCHEDULED_TASK_ENDPOINT_BASE/api/scheduled/nightly-agenda-email/result (POST { id, status: "sent"|"failed", messageId?, errorMessage? })
+
+==============================================================================
+JOB A — NIGHTLY AGENDA EMAIL (run first; skip Sat/Sun targets)
+==============================================================================
+
+1. POST /api/scheduled/nightly-agenda-email with body {} (the endpoint targets the next non-weekend school day automatically). Response JSON:
+     - status: "send_ready" | "resend_ready" | "unchanged" | "no_plan" | "skipped"
+     - subject, htmlBody
+     - recipients: array of email addresses (THIS WEEK through Tue May 26 2026 the dashboard returns ["spear.cpt@gmail.com"] only; do not add Marcy or anyone else this week)
+     - pdfDownloadUrl: ABSOLUTE presigned S3 URL — use THIS for any HTTP download. NEVER use the relative "/manus-storage/..." pdfUrl; it requires the dashboard cookie which Gmail/Drive cannot send.
+     - attachments: array of { filename, contentBase64, mimeType, byteSize, kind: "agenda"|"worksheet" } with PDFs already inline-base64 — the simplest path is to decode contentBase64 -> bytes and attach directly.
+     - worksheetAttachments: per-block worksheet metadata; signedUrl on each entry is also presigned absolute S3 if you'd rather download than decode.
+     - recordId: integer; pass this back as { id } on the result POST.
+     - driveFolderHint: where the agenda PDF should land in the Hub.
+     - forDate: YYYY-MM-DD of the targeted school day.
+
+2. If status is "unchanged", "no_plan", or "skipped", stop Job A and proceed to Job B.
+
+3. Otherwise, send the email via gmail-MCP:
+     - to: response.recipients (use exactly what the dashboard returned; this week that is spear.cpt@gmail.com ONLY)
+     - subject: response.subject
+     - htmlBody: response.htmlBody
+     - attachments: decode each attachments[i].contentBase64 -> bytes and attach with attachments[i].filename + attachments[i].mimeType. (Or, equivalently, fetch pdfDownloadUrl and each worksheetAttachments[i].signedUrl directly — both are presigned absolute S3 URLs.)
+
+4. Upload the agenda PDF + each worksheet PDF into Drive under the canonical structure:
+     - Agenda PDF -> Hub / Daily Operations / Daily Agenda PDFs / {YYYY-MM} /
+       filename: "{forDate} - Reagan - Agenda.pdf"
+     - Each worksheet PDF -> Hub / Assignments and Work / Worksheets (Daily Packets) / {YYYY-MM} /
+       filename: worksheetAttachments[i].filename
+     Use dedupe-on-upload semantics: if a file with the same name already exists in the target folder, UPDATE that file's content instead of creating a duplicate.
+
+5. POST /api/scheduled/nightly-agenda-email/result with body:
+     { id: response.recordId, status: "sent", messageId: <gmail message id if available> }
+   On failure: { id: response.recordId, status: "failed", errorMessage: "<reason>" }
+
+==============================================================================
+JOB B — CONTINUOUS DRIVE HUB MIRROR (always run, even after Job A)
+==============================================================================
+
+STEP B1 — Ensure canonical folder structure
+GET /api/scheduled/drive-folder-map. For each (parentName, subfolderName) tuple it reports:
+  - Locate parentName under the Hub root (the 9 canonical parents already exist; do NOT create new top-level Hub folders).
+  - If subfolderName is missing under that parent, create it.
+  - POST { parentName, subfolderName, driveFolderId } back to /api/scheduled/drive-folder-map/result.
+
+The 9 canonical parent folders (top-level under Hub root, names exactly as displayed):
+  Daily Operations
+  Assignments and Work
+  Curriculum and Resources
+  Admin and Records
+  Progress and Reports
+  Adventures and Enrichment
+  Printables and Resources
+  Inbox (Unsorted)
+  Archive
+
+STEP B2 — Drain the drive_push_queue
+GET /api/scheduled/drive-push/pending. For each row:
+
+  a. Determine target Drive folder:
+       - parent = row.canonicalParentFolderId (already provided)
+       - subfolder = row.subfolderName under that parent
+       - If row.targetSubpath is non-empty (e.g. "2026-05"), nest one more level inside the subfolder. Create month folders on demand.
+       - Final path: HubRoot / {canonicalParent} / {subfolderName} / {targetSubpath?} / {fileName}
+
+  b. Resolve file content:
+       - If row.contentText is non-empty AND row.mimeType starts with "text/", upload that text directly with the given mimeType. (No HTTP fetch needed — this is what the README seed rows and day_log markdown use.)
+       - Otherwise download row.fileUrl. NOTE: this is a relative "/manus-storage/..." path which 302-redirects to an absolute presigned S3 URL — your HTTP client must follow redirects and include the Cookie header on the FIRST hop only (the redirect target is presigned and does not need the cookie).
+
+  c. DEDUPE-ON-UPLOAD:
+       - Before creating, search the target folder for a file with the same name.
+       - If a same-named file exists, UPDATE that file's content (do not create a duplicate); reuse its driveFileId.
+
+  d. POST { id, status: "pushed", driveFileId } back to /api/scheduled/drive-push/result.
+     On failure: POST { id, status: "failed", errorMessage }.
+     If row.targetFolder is one this playbook does not recognize, POST { id, status: "skipped", errorMessage: "unhandled target" } — never leave a row pending forever.
+
+Full subfolder mapping (DrivePushTarget -> canonical parent / subfolder):
+
+  finished_work          -> Assignments and Work / Finished Work
+  reagan_artwork         -> Assignments and Work / Finished Work
+  reagan_assignments     -> Assignments and Work / Assignments
+  worksheets             -> Assignments and Work / Worksheets (Daily Packets)
+  practice               -> Assignments and Work / Practice for Coins
+  classes                -> Assignments and Work / Classes / {className}/{status}
+
+  daily_schedule         -> Daily Operations / Daily Schedule
+  agenda_pdf             -> Daily Operations / Daily Agenda PDFs / {YYYY-MM}
+  day_log                -> Daily Operations / Day Logs / {YYYY-MM}
+  recap_reply            -> Daily Operations / Recap Replies / {YYYY-MM}
+
+  topics_covered         -> Curriculum and Resources / Topics Covered / {YYYY-MM}
+  curriculum_checklist   -> Curriculum and Resources / Curriculum Checklist (Weekly)
+  printables             -> Printables and Resources / Printables
+  reagan_ihes            -> Printables and Resources / Printables   (legacy alias)
+
+  report_cards           -> Progress and Reports / Report Cards
+  analytics              -> Progress and Reports / Analytics
+  apps_tools             -> Progress and Reports / Apps and Tools
+  kiwi_coins             -> Progress and Reports / Kiwi Coins
+
+  adult_notes            -> Admin and Records / Adult Notes
+  tutor                  -> Admin and Records / Tutor Handoffs
+  reagan_tutor           -> Admin and Records / Tutor Handoffs
+  notebook               -> Admin and Records / Notebook
+
+  bookshelf              -> Adventures and Enrichment / Bookshelf
+  adventures             -> Adventures and Enrichment / Adventures
+  journal                -> Adventures and Enrichment / Journal
+
+  reagan                 -> Inbox (Unsorted)   (catch-all)
+
+STEP B3 — Hub snapshot
+GET /api/scheduled/drive-snapshot. Inside Hub / "Snapshots/{YYYY-MM-DD}/{HHMM}/" upload these CSVs/JSONs:
+  assignments.csv, finished_work.csv, schedule_next7.csv, coins.csv, analytics.csv, journal.csv,
+  and a snapshot.json with the full payload. Keep only the last 7 days of Snapshots; delete older.
+
+STEP B4 — README refresh
+Update README.md at the Hub root: refresh the "Last refreshed" timestamp line. Do not rewrite other content.
+
+==============================================================================
+ROSTER NOTES (as of 2026-05-21)
+==============================================================================
+- Sophie: active tutor through Tue May 26, 2026 (her last day). After that, no tutor uploads expected.
+- Keith: OFF (active=0). Ignore any pre-existing "Keith" tutor sessions; they have been cancelled in the dashboard.
+- Mom (Katy) + Grandma Marcy run school after May 26.
+
+==============================================================================
+FAILURE HANDLING
+==============================================================================
+- Log a one-line summary to stdout per step:
+    "agenda-email: sent | skipped | failed (forDate=YYYY-MM-DD)"
+    "drive-push: X pushed, Y skipped, Z failed"
+- Never silently leave a queue row in 'pending' status — every fetched row must be POSTed back with pushed | skipped | failed.
+- Never create folders outside the 9 canonical parents under the Hub root.
+- Always prefer the absolute presigned URLs (pdfDownloadUrl, signedUrl) over the relative "/manus-storage/..." paths.

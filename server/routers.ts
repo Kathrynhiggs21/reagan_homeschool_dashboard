@@ -7432,7 +7432,20 @@ export const appRouter = router({
      */
     refresh: publicProcedure
       .input(z.object({ date: z.string().optional() }).optional())
-      .mutation(({ input }) => db.refreshTodayPlan({ dateStr: input?.date })),
+      .mutation(async ({ input }) => {
+        const r = await db.refreshTodayPlan({ dateStr: input?.date });
+        // v2.86 (2026-05-21) — fire-and-forget auto-attach pass so every
+        // refreshed Today block ends up with at least one resource. Non-blocking.
+        const dateForAttach = input?.date || new Date().toISOString().slice(0, 10);
+        try {
+          const { runAutoAttachForDate } = await import("./_lib/blockAutoAttach");
+          await runAutoAttachForDate(dateForAttach, { kidSafe: true });
+        } catch (e: any) {
+          // eslint-disable-next-line no-console
+          console.warn(`[plans.refresh] auto-attach failed: ${String(e?.message ?? e)}`);
+        }
+        return r;
+      }),
   }),
   reagan: router({
     /** Read-only Reagan Profile Model snapshot for printables/online picker. */

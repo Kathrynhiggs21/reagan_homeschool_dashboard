@@ -3735,3 +3735,12 @@ The v2.49 simplification had a hole: the dashboard's `appSettings` cache pointed
 - [x] Update dayLogAutoSync.test.ts to assert count stays at 1 (upsert semantics) instead of growing by 1 on content change
 - [x] Add Print Daily Schedule button to Today page header (uses existing @media print CSS)
 - [x] Reconfirm `/` route already renders <Today/> (no duplicate Home page)
+
+## v2.86 — May 21 simplification round (overnight)
+- [x] Auto-attach helper `server/_lib/blockAutoAttach.ts` (20 vitest)
+- [x] Wire auto-attach into nightly agenda cron (BEFORE PDF build)
+- [x] Wire auto-attach into `plans.refresh` tRPC mutation (Refresh Today button)
+- [x] Nightly agenda email dispatch contract test (9 vitest, real-DB)
+- [x] /schedule = calendar-only: removed both TapEditPopover mounts + import
+- [x] Schedule calendar-only contract test (5 vitest)
+- [ ] Drive link inventory + empty-folder audit — DEFER until tomorrow 7 AM ET cron has run
