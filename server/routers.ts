@@ -2467,6 +2467,14 @@ export const appRouter = router({
       userMessage: z.string(),
       adultPresent: z.boolean().default(false),
       currentBlockTitle: z.string().optional(),
+      // v2.87 (2026-05-21) — Mom asked for more sliders to fine-tune Kiwi.
+      // These three personality knobs (0..1) ride on the chat call so the
+      // slider state can live entirely in the client (localStorage) and
+      // the server stays stateless. The values map to a tone hint suffix
+      // on the system prompt. Defaults are mid-scale.
+      personalityWarmth: z.number().min(0).max(1).optional(),
+      personalityPlayfulness: z.number().min(0).max(1).optional(),
+      personalityBrevity: z.number().min(0).max(1).optional(),
     })).mutation(async ({ input }) => {
       // Save user message
       await db.insertKiwiMessage({ role: "user", content: input.userMessage } as any);
@@ -2533,6 +2541,31 @@ export const appRouter = router({
         knowledgeInsights: knowledge.map(k => ({ insightType: k.insightType, insight: k.insight })),
       });
 
+      // v2.87 (2026-05-21) — Personality slider suffix. Mom can fine-tune
+      // Kiwi from the new sliders panel; we translate the three 0..1 values
+      // into a short, plain-English tone hint that's appended to the system
+      // prompt. Mid-scale (0.5) is a no-op so existing behavior stays.
+      const tone = (() => {
+        const w = input.personalityWarmth;
+        const p = input.personalityPlayfulness;
+        const b = input.personalityBrevity;
+        const lines: string[] = [];
+        if (typeof w === "number") {
+          if (w >= 0.7) lines.push("Tone is gently warmer than usual \u2014 a little softer, a little more caring, never gushing.");
+          else if (w <= 0.3) lines.push("Tone is cooler and more matter-of-fact than usual \u2014 still kind, but reserved.");
+        }
+        if (typeof p === "number") {
+          if (p >= 0.7) lines.push("You can be a touch playful \u2014 light wordplay or a small bird-sized joke is fine. No exclamation marks.");
+          else if (p <= 0.3) lines.push("Stay serious and grounded; skip the playful asides.");
+        }
+        if (typeof b === "number") {
+          if (b >= 0.7) lines.push("Be very brief \u2014 1 short sentence ideally, 2 max.");
+          else if (b <= 0.3) lines.push("You may take 2\u20133 sentences when it actually helps.");
+        }
+        return lines.length === 0 ? "" : `\n\nTONE TUNING (from Mom's sliders):\n${lines.map(l => "\u2022 " + l).join("\n")}`;
+      })();
+      const tunedSystemPrompt = systemPrompt + tone;
+
       // Build chat history (most recent 10 turns, in chronological order)
       const history = recentMessages.slice().reverse().slice(-10).map(m => ({
         role: m.role as any,
@@ -2541,7 +2574,7 @@ export const appRouter = router({
 
       const response = await invokeLLM({
         messages: [
-          { role: "system", content: systemPrompt },
+          { role: "system", content: tunedSystemPrompt },
           ...history,
           { role: "user", content: input.userMessage },
         ],
@@ -4152,6 +4185,32 @@ export const appRouter = router({
         const canonical = lines.join("\n");
         const hash = hashAgenda(canonical);
         return { ok: true as const, payload, agendaHash: hash, blockCount: payload.blocks.length };
+      }),
+    /**
+     * v2.87 (2026-05-21) — On-demand printable agenda PDF for the homepage
+     * Print button. Wraps the same `assembleAgendaForDate` + `buildAgendaPdf`
+     * pipeline the nightly 8 PM cron uses, so what Mom prints from the
+     * homepage is byte-identical to what the cron emails. Public read —
+     * Reagan can also click Print without unlocking the adult panel
+     * (matches existing `forDate` accessor). Returns base64 so the client
+     * can build a Blob and open it in a new tab without going through S3.
+     */
+    printableNow: publicProcedure
+      .input(z.object({ forDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
+      .query(async ({ input }) => {
+        const { assembleAgendaForDate } = await import("./_lib/agendaAssembler");
+        const { buildAgendaPdf } = await import("./_lib/agendaPdf");
+        const payload = await assembleAgendaForDate(input.forDate);
+        if (!payload) return { ok: false as const, reason: "no_plan" as const };
+        const result = await buildAgendaPdf(payload as any);
+        return {
+          ok: true as const,
+          fileName: `${input.forDate}-agenda.pdf`,
+          mime: "application/pdf" as const,
+          pdfBase64: result.pdfBuffer.toString("base64"),
+          agendaHash: result.agendaHash,
+          blockCount: payload.blocks.length,
+        };
       }),
     /** Manually mark a day's agenda dirty so the next cron tick re-sends. */
     markDirty: protectedProcedure

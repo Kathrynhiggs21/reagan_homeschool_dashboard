@@ -1,5 +1,7 @@
 import { trpc } from "@/lib/trpc";
 import { MakeRequestButton } from "@/components/MakeRequestButton";
+import PrintAgendaButton from "@/components/PrintAgendaButton";
+import TalkToKiwiButton from "@/components/TalkToKiwiButton";
 import { popConfettiFromElement } from "@/lib/confetti";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -377,19 +379,20 @@ export default function Today() {
             >
               🐤 Tour
             </Button>
-            {/* Print Daily Schedule — Mom-requested May 21 2026. Triggers
-                window.print() which uses the .print-area / .no-print CSS
-                rules below to print only today's schedule blocks. */}
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => window.print()}
-              className="bg-white/80 hover:bg-white"
-              title="Print today's schedule (one page)"
-              data-testid="print-daily-schedule-btn"
-            >
-              🖨️ Print
-            </Button>
+            {/* v2.87 (2026-05-21) — Print Daily Agenda. Mom asked for the
+                FULL agenda printout (every block's title, time, subject,
+                description, lesson summary, worksheet links, video links,
+                book pages, practice links, and notes), NOT just whatever's
+                on the homepage. We call `nightlyAgenda.printableNow` which
+                runs the same `assembleAgendaForDate` + `buildAgendaPdf`
+                pipeline the 8 PM cron uses, gets a base64 PDF back, and
+                opens it in a new tab so the browser's native print dialog
+                handles the rest. Disabled while loading; toast on no-plan. */}
+            <PrintAgendaButton forDate={todayDate} />
+            {/* v2.87 (2026-05-21) — Talk-to-Kiwi voice button. Click to talk,
+                Kiwi answers aloud through the existing speakLikeBird()
+                pipeline (faster/brighter defaults + slider overrides). */}
+            <TalkToKiwiButton />
           </div>
         </div>
       </header>
@@ -405,10 +408,11 @@ export default function Today() {
       {/* Daily tip strip + Fresh-start button — deterministic by date so the tip stays stable all day */}
       <DailyTipAndFreshStart />
 
-      {/* Kid-readable Confidence Principles — feel safe / understand / grow / you ARE smart */}
-      <ConfidencePrinciplesStrip />
-
+      {/* v2.87 (2026-05-21) — Confidence principles strip moved into the
+          "Today extras" drawer below so the above-the-fold experience is just:
+          header → tutor → tip → schedule. Reagan can still find it any time. */}
       {/* Component lives below the JSX */}
+
       {isAbsentToday && (
         <Card className="p-4 rounded-2xl border-2 border-rose-300 bg-gradient-to-br from-rose-50 to-rose-100">
           <div className="flex items-start gap-3">
@@ -522,73 +526,56 @@ export default function Today() {
         </Card>
       )}
 
-      {/* Kiwi intro — dismissible, plain-language */}
-      <KiwiIntroStrip />
+      {/* v2.87 (2026-05-21) — MAJOR HOMEPAGE SIMPLIFICATION.
+          Mom asked for a calmer, more focused Today page. The 14 cards that
+          used to stack between the header and the schedule are now grouped
+          into TWO collapsible disclosures (one for Reagan, one for adults).
+          Above the schedule we now show only: header → tutor → tip → schedule.
+          Cards inside each drawer still self-hide when empty so the drawer
+          stays compact and the user never sees a wall of empty boxes. */}
+      <details className="group rounded-xl bg-white/5 border border-white/15 mb-2" data-testid="today-extras-kid">
+        <summary className="cursor-pointer select-none px-3 py-2 text-sm font-medium chalk-white flex items-center gap-2 hover:bg-white/10 rounded-xl">
+          <span aria-hidden>🎒</span>
+          <span>Today extras</span>
+          <span className="ml-auto text-xs opacity-60 group-open:hidden">tap to open</span>
+          <span className="ml-auto text-xs opacity-60 hidden group-open:inline">tap to close</span>
+        </summary>
+        <div className="p-3 space-y-3">
+          <ConfidencePrinciplesStrip />
+          <KiwiIntroStrip />
+          <SummerModeBadge />
+          <KidHeaderStrips />
+          <MoodTimelineStrip />
+          <CatchUpNextDayCard />
+          <TomorrowChoiceCard />
+          <PlacementInviteCard />
+          <TodayClassroomCard />
+          <TodayCoveredRecapCard />
+        </div>
+      </details>
 
-      {/* Push 65 (2026-05-13) — Summer-mode badge: self-hides outside the
-          Jun 6 → Aug 15 window (or when Mom flips override off / declares
-          a vacation range). Reads existing public summer.* prefs. */}
-      <div className="mb-2"><SummerModeBadge /></div>
-
-      {/* Push 59 (2026-05-13) — Kid-readable today strips:
-          progress %, last 3 days of mood dots, resume-where-left-off card.
-          Always visible to Reagan; adults still see the analytics card lower. */}
-      <KidHeaderStrips />
-
-      {/* Push 90 (2026-05-13) — Hour-by-hour mood timeline strip.
-          Kid-facing zone-colored bars across today's school-day window.
-          Self-hides when no mood entries have been logged for today. */}
-      <MoodTimelineStrip />
-
-      {/* Push 73 (2026-05-13) — "From yesterday" catch-up nudges; self-hides
-          when nothing was missed and never blocks the schedule. */}
-      <CatchUpNextDayCard />
-
-      {/* Push 84 (2026-05-13) — Adult Today recap: off-plan capture summary.
-          Self-hides when totalCount === 0 OR when caller is Reagan (the
-          server returns allowed:false). Adults see today's captured topics
-          + Drive push status; kid never sees this. */}
-      <OffPlanCaptureCard />
-
-      {/* Push 82 (2026-05-13) — Tomorrow's summer-choice 3-option chooser.
-          Only renders when summer mode is active for tomorrow's date.
-          Reagan picks among pre-approved options; the pick auto-approves
-          (no SMS to Mom/Grandma per the never-queued rule). */}
-      <TomorrowChoiceCard />
-
-      {/* Diagnostic Placement invite — gentle, optional, dismisses at 100% */}
-      <PlacementInviteCard />
-
-      {/* Google Classroom assignments due this week — hides itself when empty
-          (which is the entire pre-OAuth state). Wires the reusable
-          LifecycleChip so Reagan can move work without leaving Today. */}
-      <TodayClassroomCard />
-
-      {/* Adult-only sidekick — Recently-graded Classroom assignments.
-          Hidden when the adult panel is locked, hidden when the list is
-          empty (pre-OAuth and pre-applyGradeReturn). */}
-      {unlocked && <TodayClassroomGradedCard />}
-      {unlocked && <TodayMomVoiceMemoCard />}
-      {/* Push 2.10 (2026-05-17) — Forward calendar planner.
-          Adult-only. Hides itself if no rows are proposed. */}
-      {unlocked && <TodayForwardPlanCard />}
-      {/* Push 2.14 (2026-05-17) — Adult quick-entry "What we actually did".
-          Adult-only. Mom + Grandma type one line per block; the card
-          parses + previews via today.applyAdultQuickEntry, then persists
-          accepted lines via actuals.quickAdd (which auto-enqueues a
-          Drive day-log rebuild). */}
-      {/* v2.24 (2026-05-17) — Per-block Actual-vs-Planned strip for adults.
-          Surfaces existing `actuals.vsPlanned` payload as one row per planned
-          block with “✓ actual” chip or “○ Log it” button. Off-plan section
-          beneath. Adult-gated by the same `unlocked` flag the quick-entry
-          card already uses (familyAdminProcedure on the server). */}
-      {unlocked && <ActualVsPlannedStrip />}
-      {unlocked && <TodayAdultQuickEntryCard />}
-
-      {/* Push 2.9 (2026-05-17) — Kid-facing celebration card.
-          Server-side returns only {id, subject, code, title} for done rows,
-          so it's safe to mount unconditionally. */}
-      <TodayCoveredRecapCard />
+      {/* Adult-only drawer — only renders when an adult has unlocked the
+          adult panel. Inside, each card still self-hides when its data is
+          empty so the drawer collapses to the bare essentials Mom/Grandma
+          actually need to act on today. */}
+      {unlocked && (
+        <details className="group rounded-xl bg-white/5 border border-amber-300/30 mb-2" data-testid="today-extras-adult">
+          <summary className="cursor-pointer select-none px-3 py-2 text-sm font-medium chalk-white flex items-center gap-2 hover:bg-white/10 rounded-xl">
+            <span aria-hidden>🔑</span>
+            <span>For Mom &amp; Grandma</span>
+            <span className="ml-auto text-xs opacity-60 group-open:hidden">tap to open</span>
+            <span className="ml-auto text-xs opacity-60 hidden group-open:inline">tap to close</span>
+          </summary>
+          <div className="p-3 space-y-3">
+            <OffPlanCaptureCard />
+            <TodayClassroomGradedCard />
+            <TodayMomVoiceMemoCard />
+            <TodayForwardPlanCard />
+            <ActualVsPlannedStrip />
+            <TodayAdultQuickEntryCard />
+          </div>
+        </details>
+      )}
 
       {/* Today's Schedule sits near the top so it's always visible quickly */}
       <section>

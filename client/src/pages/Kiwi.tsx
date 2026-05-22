@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { LayoutGrid, List, Columns } from "lucide-react";
+import KiwiVoiceSliders from "@/components/KiwiVoiceSliders";
 
 type ViewMode = "icon" | "list" | "column";
 
@@ -144,7 +145,13 @@ export default function Kiwi() {
         </a>
       </header>
 
-      {/* ── PRACTICE SECTION ─────────────────────────────────────────────
+      {/* ── KIWI VOICE & PERSONALITY ────────────────────────────────────
+          v2.87 (2026-05-21) — Mom asked for more sliders. Saves to
+          localStorage; TalkToKiwiButton + KiwiCompanion read these on
+          every chat call so changes are instant. */}
+      <KiwiVoiceSliders />
+
+      {/* ── PRACTICE SECTION ─────────────────────────────────────────────────
           Hidden entirely if the kid has nothing yet AND no coins. */}
       {hasAnything && visibleGroups.length > 0 && (
         <section className="space-y-4">

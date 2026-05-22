@@ -1,30 +1,85 @@
 // birdVoice.ts — Kiwi speaks like a tween-girl-meets-parakeet.
 //
-// May 4 fix: Kiwi was silent for most adults because the silence gate
-// defaulted to ON whenever localStorage.kiwiSilent was missing. Now the
-// gate defaults to OFF (only silent when the adult explicitly mutes her).
+// v2.87 (2026-05-21) — Mom asked for a faster, brighter, more child-bird voice
+// AND for sliders to fine-tune it. The previous file exported a frozen
+// `BIRD_VOICE_CONFIG` constant. We now:
 //
-// Voice tuning bumped to feel chirpy and bright:
-//   - rate  1.18  (slightly fast, peppy)
-//   - pitch 1.85  (high but still intelligible — tween-girl range)
-//   - volume 0.95
+// 1. Bumped defaults to feel chirpier and lighter:
+//      rate   1.22  (a hair faster than 1.18)
+//      pitch  1.95  (a hair brighter than 1.85 — squarely tween/parakeet)
+//      volume 0.95
+// 2. Read user-tuned overrides from localStorage on EVERY speak call so
+//    Mom's slider changes take effect instantly without reloading.
+// 3. Expose `getBirdVoiceConfig()` and `setBirdVoiceConfig(partial)` so the
+//    new <KiwiVoiceSliders/> component (and tests) can drive it.
+//
+// `BIRD_VOICE_CONFIG` is kept exported (now as a const-snapshot of the
+// defaults) for backwards compatibility with existing imports + tests.
 //
 // Exported surface (covered by vitest):
-//   - BIRD_VOICE_CONFIG    : pitch/rate/volume preset
-//   - pickBirdVoice(voices): returns the best-matching SpeechSynthesisVoice
-//   - chirp()              : plays a 3-note chirp through WebAudio
-//   - speakLikeBird(text)  : chirps once, then speaks the text with bird settings
+//   - BIRD_VOICE_DEFAULTS      : the slider midpoint / fall-back preset
+//   - BIRD_VOICE_CONFIG        : alias of BIRD_VOICE_DEFAULTS (legacy)
+//   - getBirdVoiceConfig()     : reads current effective config
+//   - setBirdVoiceConfig(p)    : merges partial into stored slider values
+//   - pickBirdVoice(voices)    : returns the best-matching SpeechSynthesisVoice
+//   - chirp()                  : plays a 3-note chirp through WebAudio
+//   - speakLikeBird(text)      : chirps once, then speaks the text with bird settings
 
-export const BIRD_VOICE_CONFIG = {
-  rate: 1.18,
-  pitch: 1.85,
+export const BIRD_VOICE_DEFAULTS = {
+  rate: 1.22,
+  pitch: 1.95,
   volume: 0.95,
 } as const;
 
+/** @deprecated — use getBirdVoiceConfig() so user slider values flow through. */
+export const BIRD_VOICE_CONFIG = BIRD_VOICE_DEFAULTS;
+
+const LS_KEYS = {
+  rate: "kiwiVoiceRate",
+  pitch: "kiwiVoicePitch",
+  volume: "kiwiVoiceVolume",
+} as const;
+
+function readNum(key: string, fallback: number, min: number, max: number): number {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = window.localStorage?.getItem(key);
+    if (raw == null) return fallback;
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return fallback;
+    return Math.max(min, Math.min(max, n));
+  } catch {
+    return fallback;
+  }
+}
+
+export interface BirdVoiceConfig {
+  rate: number;
+  pitch: number;
+  volume: number;
+}
+
+/** Read the current effective Kiwi voice config (defaults + slider overrides). */
+export function getBirdVoiceConfig(): BirdVoiceConfig {
+  return {
+    rate:   readNum(LS_KEYS.rate,   BIRD_VOICE_DEFAULTS.rate,   0.7, 1.8),
+    pitch:  readNum(LS_KEYS.pitch,  BIRD_VOICE_DEFAULTS.pitch,  0.6, 2.2),
+    volume: readNum(LS_KEYS.volume, BIRD_VOICE_DEFAULTS.volume, 0,   1),
+  };
+}
+
+/** Persist one or more slider values. Caller should rerender if it cares. */
+export function setBirdVoiceConfig(partial: Partial<BirdVoiceConfig>): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (partial.rate   != null) window.localStorage?.setItem(LS_KEYS.rate,   String(partial.rate));
+    if (partial.pitch  != null) window.localStorage?.setItem(LS_KEYS.pitch,  String(partial.pitch));
+    if (partial.volume != null) window.localStorage?.setItem(LS_KEYS.volume, String(partial.volume));
+  } catch { /* noop */ }
+}
+
 /**
- * Global silence gate. While true, chirp() and speakLikeBird() are hard no-ops
- * — no WebAudio chirp and no SpeechSynthesis speech.
- *
+ * Global silence gate. While true, chirp() and speakLikeBird() are hard no-ops.
  * Driven by `kiwiSilent` in localStorage. Defaults to "0" (audible) when the
  * key is missing, so first-time visitors hear Kiwi without needing to flip a
  * setting. Adults can still mute Kiwi from the Settings panel.
@@ -33,7 +88,6 @@ function isSilenced(): boolean {
   if (typeof window === "undefined") return true;
   try {
     const v = window.localStorage?.getItem("kiwiSilent");
-    // Default to AUDIBLE ("0") when the key is missing.
     return v === "1";
   } catch {
     return false;
@@ -42,33 +96,30 @@ function isSilenced(): boolean {
 
 /**
  * Rank a voice list to find the best "tween-girl-meets-bright-bird" voice.
- * Order matters — earlier patterns win.
+ * Order matters — earlier patterns win. v2.87: pushed child/kid voices ahead
+ * of the generic adult-female ones so the OS-default child voice (Edge,
+ * iOS-13+, etc.) is preferred when present.
  */
 export function pickBirdVoice(
   voices: SpeechSynthesisVoice[],
 ): SpeechSynthesisVoice | undefined {
   if (!voices || voices.length === 0) return undefined;
-
-  // Strong preference for voices that sound small/bright/female.
-  // Cloud / premium voices first (they have natural intonation), then the
-  // built-in OS voices that are reliably bright.
   const preferred = [
-    /child|kid|girl/i,                 // Edge / cloud "child" voices when present
-    /jenny.*online/i,                  // Azure JennyMultilingual — bright tween-feel
-    /aria.*online/i,                   // Azure Aria
+    /child|kid|girl|junior/i,           // explicit child voices first
+    /jenny.*online/i,                   // Azure JennyMultilingual — bright tween-feel
+    /aria.*online/i,                    // Azure Aria
     /google\s+(uk|us)\s+english.*female/i,
-    /samantha/i,                       // macOS / iOS — clear, bright
+    /samantha/i,                        // macOS / iOS — clear, bright
     /aria/i,
     /jenny/i,
     /microsoft (zira|jenny|aria)/i,
-    /karen/i,                          // AU female — bright
+    /karen/i,                           // AU female — bright
     /female/i,
   ];
   for (const rx of preferred) {
     const hit = voices.find((v) => rx.test(v.name));
     if (hit) return hit;
   }
-  // Fall back to any English voice, but skip obvious male/deep options.
   const anyEn = voices.find(
     (v) => v.lang?.startsWith("en") && !/male|daniel|alex|fred|kevin|david|mark|george/i.test(v.name),
   );
@@ -88,8 +139,6 @@ function getCtx(): AudioContext | null {
       return null;
     }
   }
-  // Some browsers (Chrome, Safari) suspend the context until a user gesture.
-  // Try to resume on each call so the first chirp after a gesture actually plays.
   try {
     if (sharedCtx.state === "suspended") sharedCtx.resume().catch(() => {});
   } catch { /* noop */ }
@@ -102,7 +151,6 @@ export function chirp() {
   if (isSilenced()) return;
   const ctx = getCtx();
   if (!ctx) return;
-  // Three quick notes — slightly higher than before so it reads "tween bird".
   const notes = [
     { freq: 2400, start: 0,    dur: 0.08 },
     { freq: 3000, start: 0.07, dur: 0.08 },
@@ -136,10 +184,11 @@ export function chirp() {
 /** Internal: fall back to the browser's built-in speechSynthesis. */
 function speakWithBrowser(text: string) {
   if (!("speechSynthesis" in window)) return;
+  const cfg = getBirdVoiceConfig();
   const u = new SpeechSynthesisUtterance(text);
-  u.rate = BIRD_VOICE_CONFIG.rate;
-  u.pitch = BIRD_VOICE_CONFIG.pitch;
-  u.volume = BIRD_VOICE_CONFIG.volume;
+  u.rate = cfg.rate;
+  u.pitch = cfg.pitch;
+  u.volume = cfg.volume;
   const choose = () => {
     const v = pickBirdVoice(speechSynthesis.getVoices());
     if (v) u.voice = v;
@@ -156,43 +205,15 @@ function speakWithBrowser(text: string) {
   } catch { /* noop */ }
 }
 
-/** Read the user-selected Kiwi voice preset from localStorage. */
-function readVoicePref(): string {
-  try {
-    return window.localStorage?.getItem("kiwiVoice") ?? "Leda";
-  } catch {
-    return "Leda";
-  }
-}
-
-/** Try to play an audio URL; resolves to true on success. */
-function playAudio(url: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    try {
-      const a = new Audio(url);
-      a.volume = BIRD_VOICE_CONFIG.volume;
-      a.onended = () => resolve(true);
-      a.onerror = () => resolve(false);
-      a.play().then(
-        () => { /* ended will fire later */ },
-        () => resolve(false),
-      );
-    } catch {
-      resolve(false);
-    }
-  });
-}
-
 /** Module-level singleton so we don't stack overlapping clips. */
 let currentKiwiAudio: HTMLAudioElement | null = null;
 
 /**
  * Chirp once, then speak with Kiwi's neural Gemini voice via the existing
- * `kiwi.voice` mutation (the same pipeline Blue/Daffy/Honk use).
- *
- * Falls back to the browser's built-in speechSynthesis only if (a) the
- * network call hard-fails or (b) the adult has set `kiwiCartoonVoice="0"`
- * to opt out of neural TTS. Silenced when `kiwiSilent === "1"`.
+ * `kiwi.voice` mutation. Falls back to the browser's built-in speechSynthesis
+ * only if (a) the network call hard-fails or (b) the adult has set
+ * `kiwiCartoonVoice="0"` to opt out of neural TTS. Silenced when
+ * `kiwiSilent === "1"`.
  */
 export function speakLikeBird(text: string) {
   if (typeof window === "undefined") return;
@@ -200,7 +221,6 @@ export function speakLikeBird(text: string) {
   const trimmed = (text || "").trim();
   if (!trimmed) return;
 
-  // Check the cartoon-voice opt-out (default ON).
   let useCartoon = true;
   try {
     const raw = window.localStorage?.getItem("kiwiCartoonVoice");
@@ -213,8 +233,7 @@ export function speakLikeBird(text: string) {
     return;
   }
 
-  // Neural path — chirp first as a tiny attention grabber, then play the
-  // Gemini-rendered Kiwi voice.
+  const cfg = getBirdVoiceConfig();
   chirp();
   const body = JSON.stringify({
     json: { companionId: "kiwi", text: trimmed.slice(0, 800) },
@@ -237,7 +256,12 @@ export function speakLikeBird(text: string) {
       const url = URL.createObjectURL(blob);
       try { currentKiwiAudio?.pause(); } catch { /* noop */ }
       const audio = new Audio(url);
-      audio.volume = BIRD_VOICE_CONFIG.volume;
+      audio.volume = cfg.volume;
+      // HTMLAudioElement doesn't have rate/pitch knobs that map cleanly to
+      // Gemini-rendered speech, but we still apply playbackRate (which the
+      // browser supports) so the slider has a perceivable effect on the
+      // neural path too.
+      try { audio.playbackRate = Math.max(0.5, Math.min(2, cfg.rate)); } catch { /* noop */ }
       currentKiwiAudio = audio;
       audio.onended = () => { URL.revokeObjectURL(url); };
       audio.onerror = () => { URL.revokeObjectURL(url); speakWithBrowser(trimmed); };

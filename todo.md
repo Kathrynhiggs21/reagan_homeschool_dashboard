@@ -3744,3 +3744,50 @@ The v2.49 simplification had a hole: the dashboard's `appSettings` cache pointed
 - [x] /schedule = calendar-only: removed both TapEditPopover mounts + import
 - [x] Schedule calendar-only contract test (5 vitest)
 - [ ] Drive link inventory + empty-folder audit — DEFER until tomorrow 7 AM ET cron has run
+
+## v2.87 — Kiwi voice + homepage simplification
+- [ ] Kiwi: add "Talk to Kiwi" mic button (voice input → Kiwi responds aloud)
+- [ ] Kiwi: faster child-bird TTS voice (higher pitch, 1.15-1.25x speed default)
+- [ ] Kiwi: expanded voice sliders (speed, pitch, volume, warmth/playfulness/strictness personality)
+- [ ] Today: major homepage simplification — remove clutter, calm focused layout
+
+## v2.87 — Dashboard simplification + Kiwi voice
+- [ ] Inventory: identify clutter on Today, Schedule, Sidebar, Kiwi
+- [ ] Today: collapse low-priority sections behind disclosure / "More" menu
+- [ ] Sidebar: trim nav to essentials, group rest under "More"
+- [ ] Schedule: keep calendar-only (already done) + verify
+- [ ] Kiwi: add Talk-to-Kiwi mic button (voice in → voice out)
+- [ ] Kiwi: faster child-bird voice (higher pitch, 1.15-1.25x speed)
+- [ ] Kiwi: expanded sliders (speed, pitch, warmth, playfulness, strictness, brevity)
+- [ ] Vitest contract for simplification + checkpoint
+
+
+## v2.87 — Homepage simplification + Print Agenda + Kiwi voice (2026-05-21)
+
+- [x] Wrap 14 stacked Today cards into 2 collapsible drawers (kid + adult)
+- [x] Move Confidence Principles into kid drawer
+- [x] Lock simplification with contract test (`server/todaySimplificationContract.test.ts`, 7/7)
+- [x] Faster/brighter Kiwi voice defaults (rate 1.22, pitch 1.95)
+- [x] Make Kiwi voice config dynamic (reads localStorage on every speak)
+- [ ] Rewire 🖨️ Print button — NOT homepage. Instead a Daily Agenda printout
+      with each block's title, time, subject, description, lesson summary,
+      worksheet link(s), video link(s), practice link(s), and a notes area.
+- [ ] Talk-to-Kiwi voice button on Today header (mic → Kiwi speaks back).
+      Click-to-toggle, never auto-listens, no popup mic notification.
+- [ ] Kiwi sliders panel: speed, pitch, volume + personality (warmth,
+      playfulness, brevity). Mounted on Kiwi page, persists to localStorage.
+- [ ] Vitest contracts for Daily Agenda printout + voice sliders
+- [ ] Final checkpoint
+
+## v2.87 — Major dashboard simplification + Kiwi voice (2026-05-22)
+- [x] Major Today simplification: 14 stacked cards collapsed into a "Today extras" + "Adult tools" disclosure
+- [x] Today simplification contract test (locks the new layout)
+- [x] /schedule = calendar-only — removed both inline TapEditPopover mounts; AgendaEditor is the one edit surface
+- [x] Print button rewired: now fetches the full Daily Agenda PDF (block descriptions, lesson notes, video links, worksheet links) on-demand via `nightlyAgenda.printableNow`
+- [x] PrintAgendaButton component + printDailyAgendaContract.test.ts (15 tests)
+- [x] Talk-to-Kiwi voice button (mic input → kiwi.chat → speakLikeBird)
+- [x] Faster, brighter child-bird voice defaults (rate 1.22, pitch 1.95)
+- [x] birdVoice.ts: dynamic config (reads localStorage on every speak so slider changes are instant)
+- [x] KiwiVoiceSliders panel on Kiwi page: speed, pitch, volume, warmth, playfulness, brevity + Test + Reset
+- [x] kiwi.chat accepts personalityWarmth/Playfulness/Brevity (0..1) — folded into system prompt as tone-tuning suffix
+- [x] kiwiVoiceSlidersContract.test.ts (20 tests)
