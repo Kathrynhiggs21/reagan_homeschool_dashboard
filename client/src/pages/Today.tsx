@@ -437,71 +437,11 @@ export default function Today() {
         </Card>
       )}
 
-      {/* Adult quick-links — Curriculum + Analytics */}
-      {unlocked && (
-        <Card className="classroom-card p-4">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="font-display text-sm font-semibold chalk-white">Adult tools</div>
-            <div className="flex gap-2 flex-wrap">
-              <Button size="sm" variant="outline" className="bg-transparent" onClick={() => (window.location.href = "/curriculum")}>
-                📚 Curriculum & Standards
-              </Button>
-              <Button size="sm" variant="outline" className="bg-transparent" onClick={() => (window.location.href = "/analytics")}>
-                📊 Analytics
-              </Button>
-              <Button size="sm" variant="outline" className="bg-transparent" onClick={() => (window.location.href = "/agenda-editor")}>
-                📝 Agenda Editor
-              </Button>
-            </div>
-          </div>
-          <HomeAnalyticsStrip />
-        </Card>
-      )}
-
-      {/* Push 39 (2026-05-13) — Adult quick-entry card.
-          One-tap log of what Reagan actually did today (subject + topic +
-          minutes + optional notes). Writes through trpc.actuals.quickAdd
-          (familyAdmin gate). Hidden when adult is not unlocked so the
-          kid view stays calm. */}
-      {unlocked && (
-        <TodayQuickEntryCard />
-      )}
-
-      {/* Push 41 (2026-05-13) — Mood timeline strip.
-          Adult-only visualisation derived from the same ambient-listening
-          chunks that power the Kiwi behavior helper. 12 bins across the
-          school day, color-coded green/yellow/red. Empty days render
-          nothing so the page stays calm. */}
-      {unlocked && <TodayMoodTimelineStrip />}
-
-      {/* AI Schedule Generator — adult-gated */}
-      {unlocked && (
-        <AIScheduleGeneratorCard defaultDate={new Date().toISOString().slice(0, 10)} />
-      )}
-
-      {/* Check-in strip — adult-only, since mood tracking is parent-facing, not kid-facing. */}
-      {unlocked && (
-        <Card className="classroom-card p-4">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="font-display text-sm font-semibold chalk-white">
-              Adult check-in
-              <span className="ml-2 text-[10px] font-normal text-muted-foreground uppercase tracking-wider">for Mom/tutor</span>
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              {ZONES.map(z => (
-                <button
-                  key={z.z}
-                  onClick={() => planId && moodM.mutate({ planId, zone: z.z as any })}
-                  className="mood-chip"
-                >
-                  <span>{z.icon}</span>
-                  <span>{z.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </Card>
-      )}
+      {/* v2.88 (2026-05-22) — The five adult-only cards that used to stack
+          here (Adult tools tile / Quick-entry / Mood timeline / AI schedule
+          generator / Adult check-in) were folded INTO the "For Mom & Grandma"
+          drawer below to give Reagan a calmer pre-schedule view. Adults still
+          reach them with one tap on the drawer. */}
 
       {/* End-of-day recap (kept, but much calmer) */}
       {total > 0 && done === total && (
@@ -567,6 +507,47 @@ export default function Today() {
             <span className="ml-auto text-xs opacity-60 hidden group-open:inline">tap to close</span>
           </summary>
           <div className="p-3 space-y-3">
+            {/* v2.88 — quick-link tile row (was above the schedule) */}
+            <Card className="classroom-card p-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="font-display text-sm font-semibold chalk-white">Quick links</div>
+                <div className="flex gap-2 flex-wrap">
+                  <Button size="sm" variant="outline" className="bg-transparent" onClick={() => (window.location.href = "/curriculum")}>
+                    📚 Curriculum & Standards
+                  </Button>
+                  <Button size="sm" variant="outline" className="bg-transparent" onClick={() => (window.location.href = "/analytics")}>
+                    📊 Analytics
+                  </Button>
+                  <Button size="sm" variant="outline" className="bg-transparent" onClick={() => (window.location.href = "/agenda-editor")}>
+                    📝 Agenda Editor
+                  </Button>
+                </div>
+              </div>
+              <HomeAnalyticsStrip />
+            </Card>
+            <TodayQuickEntryCard />
+            <TodayMoodTimelineStrip />
+            <AIScheduleGeneratorCard defaultDate={new Date().toISOString().slice(0, 10)} />
+            <Card className="classroom-card p-3">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="font-display text-sm font-semibold chalk-white">
+                  Adult check-in
+                  <span className="ml-2 text-[10px] font-normal text-muted-foreground uppercase tracking-wider">for Mom/tutor</span>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  {ZONES.map(z => (
+                    <button
+                      key={z.z}
+                      onClick={() => planId && moodM.mutate({ planId, zone: z.z as any })}
+                      className="mood-chip"
+                    >
+                      <span>{z.icon}</span>
+                      <span>{z.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </Card>
             <OffPlanCaptureCard />
             <TodayClassroomGradedCard />
             <TodayMomVoiceMemoCard />

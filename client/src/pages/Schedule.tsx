@@ -209,6 +209,11 @@ function DayView({
   const blocksQ = trpc.blocks.list.useQuery({ planId: plan?.id || 0 }, { enabled: !!plan?.id });
   const blocks: any[] = blocksQ.data || [];
 
+  // v2.88 (2026-05-22) — If there are no blocks AND it's not an off-day,
+  // hide the entire DayView card so the page stays calm (Reagan/Mom asked
+  // to drop the empty "Nothing scheduled yet" footer card).
+  if (blocks.length === 0 && !off) return null;
+
   return (
     <Card className="p-5 bg-amber-50 dark:bg-amber-950/40 border-amber-200">
       {off && (
@@ -445,21 +450,9 @@ function AgendaDialog({ open, dateStr, offInfo, onClose }: {
 function GoogleCalendarOverlayStub() {
   const feedsQ = trpc.icalFeeds.list.useQuery();
   const feeds: any[] = feedsQ.data || [];
-  if (feeds.length === 0) {
-    return (
-      <Card className="p-4 bg-blue-50 border border-blue-200 text-blue-900 dark:bg-blue-950/30 dark:text-blue-100">
-        <div className="flex items-start gap-3">
-          <ExternalLink className="w-4 h-4 mt-1" />
-          <div className="flex-1 text-sm">
-            <div className="font-display font-semibold">No calendars connected yet</div>
-            <div>
-              Add a public iCal feed (Indian Hill, soccer, family) so events show up here next to school. Adult only — Mom can paste an iCal URL from <a href="/calendars" className="underline font-semibold">Settings &rarr; Calendars</a>.
-            </div>
-          </div>
-        </div>
-      </Card>
-    );
-  }
+  // v2.88 — hide the no-calendars hint entirely; Mom said it adds clutter
+  // to /schedule. Mom can still add feeds from Settings → Calendars.
+  if (feeds.length === 0) return null;
   return (
     <Card className="p-4 bg-blue-50 border border-blue-200 text-blue-900 dark:bg-blue-950/30 dark:text-blue-100">
       <div className="flex items-start gap-3">

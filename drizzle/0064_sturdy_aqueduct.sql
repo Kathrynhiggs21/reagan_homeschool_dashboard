@@ -1,0 +1,2 @@
+ALTER TABLE `drive_push_queue` MODIFY COLUMN `target_folder` enum('reagan','reagan_ihes','reagan_tutor','reagan_artwork','reagan_assignments','finished_work','daily_schedule','worksheets','printables','report_cards','journal','analytics','adult_notes','kiwi_coins','tutor','apps_tools','bookshelf','adventures','practice','notebook','curriculum_checklist','day_log','recap_reply','topics_covered','agenda_pdf','classes','future_worksheets') NOT NULL DEFAULT 'reagan';--> statement-breakpoint
+ALTER TABLE `daily_printables` ADD `block_id` varchar(64);

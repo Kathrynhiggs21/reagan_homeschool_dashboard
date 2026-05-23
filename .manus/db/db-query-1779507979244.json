@@ -1,0 +1,82 @@
+{
+  "query": "SELECT id, title, author, status FROM books ORDER BY id DESC LIMIT 50;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, title, author, status FROM books ORDER BY id DESC LIMIT 50;",
+  "rows": [
+    {
+      "id": "780003",
+      "title": "180 Days of Language for 5th Grade",
+      "author": "Shell Education",
+      "status": "in_progress_unstructured"
+    },
+    {
+      "id": "780002",
+      "title": "Spectrum Science Grade 5",
+      "author": "Spectrum",
+      "status": "in_progress_unstructured"
+    },
+    {
+      "id": "780001",
+      "title": "Michael's World",
+      "author": "NULL",
+      "status": "in_progress"
+    },
+    {
+      "id": "390009",
+      "title": "The Milli Adventures",
+      "author": "Marcy Nyerges",
+      "status": "not_started"
+    },
+    {
+      "id": "390008",
+      "title": "Who Was Jane Goodall?",
+      "author": "Roberta Edwards",
+      "status": "not_started"
+    },
+    {
+      "id": "390007",
+      "title": "National Geographic Kids Almanac 2026",
+      "author": "National Geographic Kids",
+      "status": "not_started"
+    },
+    {
+      "id": "390006",
+      "title": "Fractions, Decimals, and Percents",
+      "author": "David A. Adler",
+      "status": "not_started"
+    },
+    {
+      "id": "390005",
+      "title": "Wonder",
+      "author": "R. J. Palacio",
+      "status": "not_started"
+    },
+    {
+      "id": "390004",
+      "title": "The One and Only Ivan",
+      "author": "Katherine Applegate",
+      "status": "not_started"
+    },
+    {
+      "id": "390003",
+      "title": "Because of Winn-Dixie",
+      "author": "Kate DiCamillo",
+      "status": "not_started"
+    },
+    {
+      "id": "390002",
+      "title": "Charlotte's Web",
+      "author": "E. B. White",
+      "status": "not_started"
+    },
+    {
+      "id": "390001",
+      "title": "Tuck Everlasting",
+      "author": "Natalie Babbitt",
+      "status": "not_started"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tauthor\tstatus\n780003\t180 Days of Language for 5th Grade\tShell Education\tin_progress_unstructured\n780002\tSpectrum Science Grade 5\tSpectrum\tin_progress_unstructured\n780001\tMichael's World\tNULL\tin_progress\n390009\tThe Milli Adventures\tMarcy Nyerges\tnot_started\n390008\tWho Was Jane Goodall?\tRoberta Edwards\tnot_started\n390007\tNational Geographic Kids Almanac 2026\tNational Geographic Kids\tnot_started\n390006\tFractions, Decimals, and Percents\tDavid A. Adler\tnot_started\n390005\tWonder\tR. J. Palacio\tnot_started\n390004\tThe One and Only Ivan\tKatherine Applegate\tnot_started\n390003\tBecause of Winn-Dixie\tKate DiCamillo\tnot_started\n390002\tCharlotte's Web\tE. B. White\tnot_started\n390001\tTuck Everlasting\tNatalie Babbitt\tnot_started\n",
+  "stderr": "",
+  "execution_time_ms": 592
+}

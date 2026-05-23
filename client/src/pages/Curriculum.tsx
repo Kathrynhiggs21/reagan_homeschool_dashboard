@@ -114,8 +114,9 @@ export default function Curriculum() {
               Open in Agenda Editor →
             </a>
           </div>
-          {/* Push 48 (2026-05-13) — tap-block inline edit (start time + duration only). */}
-          <TomorrowTapEditList />
+          {/* 2026-05-22 (v2.88) — Removed the dark-on-dark inline block tile
+              grid (TomorrowTapEditList). The summary line above already shows
+              block count + first-up; for edits use the Agenda Editor link. */}
         </Card>
       )}
 
@@ -346,8 +347,8 @@ function CatchUpRollupStrip() {
                       className={
                         "inline-flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded border " +
                         (t.status === "inProgress"
-                          ? "border-sky-300 bg-sky-50 text-sky-900 dark:bg-sky-950/40 dark:text-sky-200"
-                          : "border-border bg-card/60 hover:bg-card")
+                          ? "border-sky-300 bg-sky-50 text-sky-900 dark:bg-sky-950/60 dark:text-sky-100 dark:border-sky-500"
+                          : "border-slate-300 bg-white text-slate-900 hover:bg-slate-100 dark:border-slate-500 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700")
                       }
                     >
                       <span className="font-mono text-[10px] opacity-70">{t.code}</span>

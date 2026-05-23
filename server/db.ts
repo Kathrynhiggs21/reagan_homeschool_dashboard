@@ -4377,7 +4377,8 @@ export type DrivePushTarget =
   | "day_log"             // Slice 4.5 — Daily Operations / Day Logs / {YYYY-MM} / {date} - Day Log.md
   | "recap_reply"         // Slice 4.5 — Daily Operations / Recap Replies / {YYYY-MM} / {date} - {sender} - Recap.md
   | "topics_covered"      // Slice 4.5 — Curriculum and Standards / Topics Covered / {YYYY-MM} / {date} - {subject} - {topic}.md
-  | "agenda_pdf";          // Slice 4.5 — Daily Operations / Daily Agenda PDFs / {YYYY-MM} / {date} - Agenda.pdf
+  | "agenda_pdf"          // Slice 4.5 — Daily Operations / Daily Agenda PDFs / {YYYY-MM} / {date} - Agenda.pdf
+  | "future_worksheets";   // v2.88 — Curriculum and Resources / Future Worksheets / {Subject} / *.{md|pdf} — the planning bench Mom can pull from
 
 /** Decide which Drive folder a file belongs in based on the classifier's RoutedResult. */
 export function pickDriveFolderForRouted(routed: RoutedResult, item: ClassifiedItem): DrivePushTarget {
@@ -4441,6 +4442,7 @@ export const DRIVE_FOLDER_NAMES: Record<DrivePushTarget, string> = {
   recap_reply: "Recap Replies",
   topics_covered: "Topics Covered",
   agenda_pdf: "Daily Agenda PDFs",
+  future_worksheets: "Future Worksheets",
 };
 
 /**
@@ -4488,6 +4490,7 @@ export const DRIVE_TARGET_TO_CANONICAL_PARENT: Record<DrivePushTarget, Canonical
   recap_reply: "dailyOperations",
   topics_covered: "curriculumAndStandards",
   agenda_pdf: "dailyOperations",
+  future_worksheets: "printablesAndResources",
 };
 
 /**

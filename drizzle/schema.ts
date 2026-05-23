@@ -1412,6 +1412,9 @@ export const drivePushQueue = mysqlTable("drive_push_queue", {
     // Classroom integration v2 (2026-05-17) — per-class lifecycle subfolders.
     // Path under this bucket: {Class Name}/{To Do|In Progress|Turned In|Graded}/...
     "classes",
+    // v2.88 (2026-05-22) — Future Worksheets planning bench.
+    // Path: Curriculum and Resources / Future Worksheets / {Subject} / ...
+    "future_worksheets",
   ]).default("reagan").notNull(),
   status: mysqlEnum("status", ["pending", "pushed", "skipped", "failed"]).default("pending").notNull(),
   driveFileId: varchar("drive_file_id", { length: 200 }),

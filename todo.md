@@ -3791,3 +3791,26 @@ The v2.49 simplification had a hole: the dashboard's `appSettings` cache pointed
 - [x] KiwiVoiceSliders panel on Kiwi page: speed, pitch, volume, warmth, playfulness, brevity + Test + Reset
 - [x] kiwi.chat accepts personalityWarmth/Playfulness/Brevity (0..1) — folded into system prompt as tone-tuning suffix
 - [x] kiwiVoiceSlidersContract.test.ts (20 tests)
+
+## v2.88 — Contrast fixes + round-2 simplification (2026-05-22)
+- [ ] Agenda Editor: remove the unreadable "Quick Day Templates" pill row (redundant with chip suggestions below)
+- [ ] Curriculum Hub: collapse "Tomorrow's draft" block-tile grid into a one-line summary ("12 blocks · First up: Slay Charge → Open in Agenda Editor")
+- [ ] Curriculum Hub: bump Catch-up snapshot subject chips contrast (ELA/Math/Sci/SS/SEL tiles)
+- [ ] Today: fold "Adult tools" tile row (today/mood/recap) INTO the existing "For Mom & Grandma" disclosure — keep Reagan's homepage clean
+- [ ] Schedule: remove the empty "Today / Nothing scheduled" footer card and the "No calendars connected yet" hint from the day view
+- [ ] Bump global contrast: ensure no faded-foreground-on-faded-background text anywhere (audit text-{muted}-foreground on bg-muted/30 patterns)
+- [ ] Vitest contracts for all four surfaces
+
+## v2.88 — Contrast/simplification round 2 + Future Worksheets + Bookshelf seed (2026-05-22)
+
+- [x] Agenda Editor: removed unreadable Quick Day Templates pill row
+- [x] Curriculum Hub: collapsed Tomorrow's draft block grid to one-line summary
+- [x] Curriculum Hub: bumped Catch-up snapshot chip contrast for legibility
+- [x] Today: folded Adult tools tile row + adult cards into For Mom & Grandma drawer
+- [x] Schedule: removed empty "Nothing scheduled" footer card + "No calendars connected" hint
+- [x] DrivePushTarget enum: added future_worksheets (Curriculum and Resources / Future Worksheets / {Subject})
+- [x] Migration 0064 applied: enum extended in MySQL
+- [x] Seeded 7 Future Worksheets cards (root README + 6 subject _index.md with topics + free online sources)
+- [x] Seeded 23 Bookshelf cards: 3 Currently Reading + 9 Future Reading + 11 Free Books Library (public-domain)
+- [x] Heartbeat playbook patched (v5, 10,442 chars) with future_worksheets mapping
+- [x] 76/76 touched-test vitest run green
