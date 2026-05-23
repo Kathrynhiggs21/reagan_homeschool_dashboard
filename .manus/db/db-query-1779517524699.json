@@ -1,0 +1,22 @@
+{
+  "query": "SHOW TABLES LIKE '%plan%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SHOW TABLES LIKE '%plan%';",
+  "rows": [
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%plan%)": "dailyPlans"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%plan%)": "topicsCoveredOffPlan"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%plan%)": "yearPlan"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%plan%)": "yearPlanCursor"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_mm3swGictQLHDWKPJCGiHp (%plan%)\ndailyPlans\ntopicsCoveredOffPlan\nyearPlan\nyearPlanCursor\n",
+  "stderr": "",
+  "execution_time_ms": 580
+}

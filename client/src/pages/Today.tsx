@@ -37,6 +37,7 @@ import CatchUpNextDayCard from "@/components/CatchUpNextDayCard";
 import { TomorrowChoiceCard } from "@/components/TomorrowChoiceCard";
 import TodayClassroomCard from "@/components/TodayClassroomCard";
 import TodayClassroomGradedCard from "@/components/TodayClassroomGradedCard";
+import SendAgendaNowCard from "@/components/SendAgendaNowCard";
 import TodayMomVoiceMemoCard from "@/components/TodayMomVoiceMemoCard";
 import TodayCoveredRecapCard from "@/components/TodayCoveredRecapCard";
 import TodayForwardPlanCard from "@/components/TodayForwardPlanCard";
@@ -507,6 +508,9 @@ export default function Today() {
             <span className="ml-auto text-xs opacity-60 hidden group-open:inline">tap to close</span>
           </summary>
           <div className="p-3 space-y-3">
+            {/* v2.89 (2026-05-23) — Manual Send Now FIRST so Mom can
+                trigger an email immediately when the nightly cron fails. */}
+            <SendAgendaNowCard />
             {/* v2.88 — quick-link tile row (was above the schedule) */}
             <Card className="classroom-card p-3">
               <div className="flex items-center justify-between flex-wrap gap-2">

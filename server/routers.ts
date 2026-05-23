@@ -4212,6 +4212,154 @@ export const appRouter = router({
           blockCount: payload.blocks.length,
         };
       }),
+    /**
+     * v2.89 (2026-05-23) — Manual "Send Daily Agenda Now" trigger.
+     *
+     * Mom reported (May 22) that she has not received any nightly emails.
+     * Diagnosis showed the deployed `/api/scheduled/nightly-agenda-email`
+     * endpoint is gated by a Cloudflare-layer cron-cookie check that
+     * returns 403 to the heartbeat task — so Job A never enqueues a real
+     * row, and no emails leave. Until that gate is fixed at the platform
+     * level, this mutation gives Mom + Grandma a one-click in-dashboard
+     * way to send the agenda right now via the Manus owner-notification
+     * channel (which surfaces as a push notification with the PDF link).
+     *
+     * Steps:
+     *   1. Assemble the agenda for the requested date (defaults to today).
+     *   2. Build the PDF, upload to S3, presign an absolute URL.
+     *   3. notifyOwner({ title, content }) with the link + block list.
+     *   4. Insert + immediately mark the nightlyAgendaEmails row 'sent'
+     *      so the dispatch contract test stays green and the audit trail
+     *      records exactly when this fired.
+     *
+     * familyAdminProcedure → Mom + Grandma + tutors only.
+     */
+    sendNow: familyAdminProcedure
+      .input(
+        z.object({
+          forDate: z
+            .string()
+            .regex(/^\d{4}-\d{2}-\d{2}$/)
+            .optional(),
+        }).optional(),
+      )
+      .mutation(async ({ input }) => {
+        const { assembleAgendaForDate } = await import("./_lib/agendaAssembler");
+        const { buildAgendaPdf } = await import("./_lib/agendaPdf");
+        const { storagePut, storageGetSignedUrl } = await import("./storage");
+        const { notifyOwner } = await import("./_core/notification");
+
+        const today = (() => {
+          const d = new Date();
+          // Local ET date — matches the rest of the dashboard's "today".
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, "0");
+          const day = String(d.getDate()).padStart(2, "0");
+          return `${y}-${m}-${day}`;
+        })();
+        const forDate = input?.forDate ?? today;
+
+        const payload = await assembleAgendaForDate(forDate);
+        if (!payload) {
+          return { ok: false as const, reason: "no_plan" as const, forDate };
+        }
+
+        const { pdfBuffer, agendaHash } = await buildAgendaPdf(payload as any);
+        const fileKey = `nightly-agendas/${forDate}/agenda_${agendaHash.slice(0, 8)}.pdf`;
+        const { key } = await storagePut(fileKey, pdfBuffer, "application/pdf");
+        let signedUrl: string | null = null;
+        try {
+          signedUrl = await storageGetSignedUrl(key);
+        } catch {
+          signedUrl = null;
+        }
+
+        const recipients = ["spear.cpt@gmail.com"]; // Marcy joins later — Mom-only this week.
+        const recordId = await db.insertNightlyAgendaEmail({
+          forDate,
+          recipients: recipients.join(", "),
+          agendaHash,
+          blockCount: payload.blocks.length,
+          pdfStorageKey: key,
+          status: "queued",
+          triggerKind: "manual",
+        });
+
+        // Build a kid-friendly summary line + per-block list for the
+        // notification body. Owner notifications support markdown.
+        const subjectsList = Array.from(
+          new Set(
+            (payload.blocks ?? [])
+              .map((b: any) => (b.subjectName ?? b.title ?? "").toString().trim())
+              .filter((s: string) => s.length > 0),
+          ),
+        );
+        const summary =
+          subjectsList.length > 0
+            ? `${payload.studentName} has ${payload.blocks.length} block${
+                payload.blocks.length === 1 ? "" : "s"
+              } — ${
+                subjectsList.length === 1
+                  ? subjectsList[0]
+                  : subjectsList.slice(0, -1).join(", ") +
+                    ", and " +
+                    subjectsList[subjectsList.length - 1]
+              }.`
+            : `${payload.studentName} has ${payload.blocks.length} blocks scheduled.`;
+
+        const blockLines = payload.blocks
+          .map((b: any) => {
+            const head = `${b.sortOrder}. ${b.startTime ?? "flex"} · ${b.durationMin}m`;
+            const subj = b.subjectName ? ` [${b.subjectName}]` : "";
+            return `- ${head}${subj} — ${b.title}`;
+          })
+          .join("\n");
+
+        const linkLine = signedUrl
+          ? `\n\nDownload PDF: ${signedUrl}`
+          : `\n\n(PDF stored at ${key}; presign failed — refresh in the dashboard.)`;
+
+        const title = `${payload.studentName}'s school plan — ${payload.dayLabel}`;
+        const content =
+          `${summary}\n\n` +
+          (payload.tutorName
+            ? `Tutor today: ${payload.tutorName}${
+                payload.tutorArrival ? ` (arrives ${payload.tutorArrival})` : ""
+              }${payload.tutorDeparture ? ` (leaves ${payload.tutorDeparture})` : ""}\n\n`
+            : `Mom-only day — no tutor scheduled.\n\n`) +
+          `Today's blocks:\n${blockLines || "(no blocks scheduled)"}` +
+          linkLine;
+
+        let notified = false;
+        try {
+          notified = await notifyOwner({ title, content });
+        } catch (e) {
+          notified = false;
+        }
+
+        try {
+          await db.markNightlyAgendaEmailStatus({
+            id: recordId,
+            status: notified ? "sent" : "failed",
+            errorMessage: notified ? null : "notifyOwner returned false",
+            drivePushed: false,
+          });
+        } catch {
+          // Stat write failure is non-fatal — the row is still in the audit trail.
+        }
+
+        return {
+          ok: true as const,
+          forDate,
+          recordId,
+          notified,
+          signedUrl,
+          recipients,
+          blockCount: payload.blocks.length,
+          subject: title,
+        };
+      }),
+
     /** Manually mark a day's agenda dirty so the next cron tick re-sends. */
     markDirty: protectedProcedure
       .input(z.object({ forDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), reason: z.string().max(200).optional() }))

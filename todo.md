@@ -3814,3 +3814,12 @@ The v2.49 simplification had a hole: the dashboard's `appSettings` cache pointed
 - [x] Seeded 23 Bookshelf cards: 3 Currently Reading + 9 Future Reading + 11 Free Books Library (public-domain)
 - [x] Heartbeat playbook patched (v5, 10,442 chars) with future_worksheets mapping
 - [x] 76/76 touched-test vitest run green
+
+
+## v2.89 (2026-05-23) — "I haven't gotten any emails" hotfix
+
+- [x] **Diagnosis**: 7 AM cron is firing (`lastExecutedAt` = 2026-05-22T11:01 UTC) but the deployed `/api/scheduled/nightly-agenda-email` endpoint returns 403 `permission error for cron cookie` at the Cloudflare edge — the heartbeat task's session cookie is being rejected before it reaches Express, so Job A never enqueues a real send. Last successful `triggerKind=nightly` row was 2026-05-04. Every row since is `change_resend` placeholder from in-app block edits with `recipients=""` and `status=queued`, never actually emailed.
+- [x] **Fallback shipped**: `nightlyAgenda.sendNow` mutation (familyAdminProcedure) — assembles the agenda, builds the PDF, uploads to S3, presigns an absolute URL, calls `notifyOwner({ title, content })` with the summary + link, marks the `nightlyAgendaEmails` row `sent`. New `SendAgendaNowCard` component mounted at the top of the For Mom & Grandma drawer on Today.
+- [x] **Verified live**: Triggered via `pnpm tsx scripts/trigger-send-now.ts 2026-05-25`. Returned `{ ok:true, recordId:780001, notified:true, blockCount:17, signedUrl:"...cloudfront..." }`. DB row `780001` confirmed `status='sent'`, `recipients='spear.cpt@gmail.com'`, `triggerKind='manual'`.
+- [x] **Locked with 21/21 vitest**: `server/nightlyAgendaSendNow.test.ts` (12 source-contract tests) + `server/nightlyAgendaEmailDispatch.test.ts` (9 dispatch tests, still green).
+- [ ] **Follow-up**: ask Manus support to whitelist the heartbeat task at the deployment edge so the 7 AM cron resumes. The new `sendNow` button is the safety net regardless.

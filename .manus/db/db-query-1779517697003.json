@@ -1,0 +1,19 @@
+{
+  "query": "SELECT id, forDate, recipients, status, triggerKind, blockCount, agendaHash FROM nightlyAgendaEmails WHERE id = 780001;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, forDate, recipients, status, triggerKind, blockCount, agendaHash FROM nightlyAgendaEmails WHERE id = 780001;",
+  "rows": [
+    {
+      "id": "780001",
+      "forDate": "2026-05-25",
+      "recipients": "spear.cpt@gmail.com",
+      "status": "sent",
+      "triggerKind": "manual",
+      "blockCount": "17",
+      "agendaHash": "18f13bc60dcebfee22e230a2f31623d378564c834e42bb855810271a8f67e5e8"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tforDate\trecipients\tstatus\ttriggerKind\tblockCount\tagendaHash\n780001\t2026-05-25\tspear.cpt@gmail.com\tsent\tmanual\t17\t18f13bc60dcebfee22e230a2f31623d378564c834e42bb855810271a8f67e5e8\n",
+  "stderr": "",
+  "execution_time_ms": 1109
+}
