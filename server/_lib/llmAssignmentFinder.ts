@@ -146,8 +146,14 @@ export async function llmFindAssignments(args: {
   ].filter(Boolean).join("\n");
 
   let rawJson: any = null;
+  // v2.97.4 — Hard 20s timeout. Even with the new evening pre-prep heartbeat,
+  // we never want a single slow LLM call to drag the whole pipeline past its
+  // window. Falling back to empty results is safe because blockAutoAttach
+  // tolerates noResult and the library + hand-seeded rows still cover most
+  // blocks. (Heartbeat hard timeout is 30s; we leave 10s for downstream work.)
+  const TIMEOUT_MS = 20_000;
   try {
-    const response = await invokeLLM({
+    const llmCall = invokeLLM({
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: userMessage },
@@ -198,6 +204,14 @@ export async function llmFindAssignments(args: {
         },
       },
     });
+    const timeout = new Promise<null>((resolve) =>
+      setTimeout(() => resolve(null), TIMEOUT_MS)
+    );
+    const response: any = await Promise.race([llmCall, timeout]);
+    if (response === null) {
+      // hit our timeout window — return empty, downstream falls through cleanly
+      return [];
+    }
 
     const content = response?.choices?.[0]?.message?.content;
     if (typeof content === "string") {
