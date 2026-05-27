@@ -4248,6 +4248,7 @@ export const appRouter = router({
         const { buildAgendaPdf } = await import("./_lib/agendaPdf");
         const { storagePut, storageGetSignedUrl } = await import("./storage");
         const { notifyOwner } = await import("./_core/notification");
+        const { runAutoAttachForDate } = await import("./_lib/blockAutoAttach");
 
         const today = (() => {
           const d = new Date();
@@ -4258,6 +4259,21 @@ export const appRouter = router({
           return `${y}-${m}-${day}`;
         })();
         const forDate = input?.forDate ?? today;
+
+        // v2.93 (2026-05-27) — Auto-attach pass FIRST so the manually-sent
+        // agenda is never bare. Mirrors what the nightly scheduled route
+        // already does. Idempotent — skips blocks that already have a
+        // resource attached. Never throws into the caller path.
+        try {
+          const autoR = await runAutoAttachForDate(forDate, { kidSafe: true });
+          // eslint-disable-next-line no-console
+          console.log(
+            `[nightlyAgenda.sendNow] auto-attach for ${forDate}: attached=${autoR.attached} skipped=${autoR.skipped} noResult=${autoR.noResult} errors=${autoR.errors} (of ${autoR.totalBlocks})`,
+          );
+        } catch (e: any) {
+          // eslint-disable-next-line no-console
+          console.warn(`[nightlyAgenda.sendNow] auto-attach failed: ${String(e?.message ?? e)}`);
+        }
 
         const payload = await assembleAgendaForDate(forDate);
         if (!payload) {

@@ -1,0 +1,9 @@
+{
+  "query": "SELECT id, title, type, source_url, file_link FROM assignments_library WHERE subject_slug='math' AND (title LIKE '%Line%' OR topic LIKE '%Line%' OR title LIKE '%Plot%' OR topic LIKE '%Plot%') LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, title, type, source_url, file_link FROM assignments_library WHERE subject_slug='math' AND (title LIKE '%Line%' OR topic LIKE '%Line%' OR title LIKE '%Plot%' OR topic LIKE '%Plot%') LIMIT 5;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 587
+}

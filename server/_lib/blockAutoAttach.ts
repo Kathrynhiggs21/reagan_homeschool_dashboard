@@ -128,16 +128,84 @@ export function inferPreferredTypeForBlock(
 
 /**
  * Build the canonical query string for the finder from a block.
- * Strips house-syntax noise like "Custom worksheet:" prefixes.
+ * Strips:
+ *   - emoji / pictograph prefixes that the planner uses to mark blocks (✏️ 📐 📝 📖 …)
+ *   - house-syntax noise ("Custom worksheet:", "Read aloud:")
+ *   - curriculum code prefixes like "Math 10-2 —" / "ELA M4-L1 —" / "SS 4-2 —"
+ *     that aren't searchable phrases by themselves
+ *   - em/en dashes used as separators
+ *
+ * v2.93 (2026-05-27) — the bare-block bug: blocks titled
+ * "✏️ Math 10-2 — Make Line Plots" were returning 0 finder results because
+ * both library LIKE matching and Sonar's relevance ranker chose to anchor on
+ * the curriculum-code half ("Math 10-2") instead of the searchable phrase
+ * ("Make Line Plots"). This cleanup keeps the searchable phrase + the subject
+ * keyword and drops everything else.
  */
 export function buildFinderQueryForBlock(block: AutoAttachBlock): string {
   const raw = block.title ?? "";
-  return raw
+
+  // Strip leading emoji/pictograph block (incl. variation selectors + ZWJ
+  // sequences). Covers ✏️ 📐 📕 📚 🔬 🏛️ 📢 — anything in the unicode
+  // emoji / symbol planes at the front of the title.
+  const noEmoji = raw
+    .replace(
+      /^(?:[\u2600-\u27BF\uD83C-\uDBFF\uDC00-\uDFFF\uFE00-\uFE0F\u200D\s]+)/,
+      "",
+    )
+    .trim();
+
+  // Drop a leading curriculum-code half: "Math 10-2 —", "ELA M4-L1 —",
+  // "SS 4-2 —". The em/en dash terminates the code; everything before it is
+  // the searchable phrase. If there's no dash we keep the whole string.
+  const dashSplit = noEmoji.split(/\s+[\u2014\u2013-]\s+/);
+  const tailPhrase =
+    dashSplit.length > 1 && /^[A-Za-z]+\s+[A-Z0-9\-]+$/.test(dashSplit[0])
+      ? dashSplit.slice(1).join(" ").trim()
+      : noEmoji;
+
+  // Subject keyword recovery: prepend the subject hint so the searchable
+  // phrase stays anchored ("Make Line Plots" → "Math: Make Line Plots").
+  // Pulled from the block's subjectSlug or the stripped curriculum-code
+  // prefix ("Math", "ELA", "SS", …).
+  const subjectHint = (() => {
+    if (block.subjectSlug) {
+      const m: Record<string, string> = {
+        math: "Math",
+        ela: "ELA",
+        reading: "Reading",
+        writing: "Writing",
+        science: "Science",
+        ss: "Social Studies",
+        social_studies: "Social Studies",
+        art: "Art",
+        music: "Music",
+        health: "Health",
+        pe: "PE",
+      };
+      return m[block.subjectSlug] ?? null;
+    }
+    if (dashSplit.length > 1) {
+      const head = dashSplit[0].split(/\s+/)[0];
+      if (/^[A-Za-z]+$/.test(head)) return head;
+    }
+    return null;
+  })();
+
+  let cleaned = tailPhrase
     .replace(/^custom worksheet:\s*/i, "")
     .replace(/^work the attached worksheet:\s*/i, "")
     .replace(/^read[- ]aloud:?\s*/i, "")
     .replace(/\s+/g, " ")
     .trim();
+
+  if (
+    subjectHint &&
+    !new RegExp(`\\b${subjectHint}\\b`, "i").test(cleaned)
+  ) {
+    cleaned = `${subjectHint} ${cleaned}`.trim();
+  }
+  return cleaned;
 }
 
 /**

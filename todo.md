@@ -3853,3 +3853,16 @@ The v2.49 simplification had a hole: the dashboard's `appSettings` cache pointed
 - [ ] Add "Last successful run" monitoring per automation in the For Mom & Grandma drawer
 - [ ] Vitest contract coverage for every fix
 - [ ] Save checkpoint and ship
+
+## v2.93 — Worksheet auto-prep pipeline (2026-05-27)
+
+- [ ] Read worksheetAutoPrepPlanner.ts contract
+- [ ] Read assignmentFinder.ts contract
+- [ ] Build server/_lib/worksheetAutoPrepExecutor.ts
+- [ ] Add POST /api/scheduled/worksheet-auto-prep with dual-auth
+- [ ] Add /api/scheduled/worksheet-auto-prep/result callback
+- [ ] Create heartbeat worksheet-auto-prep daily 00:00 UTC = 8 PM EDT
+- [ ] Vitest contract: bearer auth (401 / 200)
+- [ ] Vitest contract: executor inserts curriculumResources
+- [ ] Vitest contract: skips off-day / non-academic blocks
+- [ ] Manual one-shot fire for 2026-05-28 plan

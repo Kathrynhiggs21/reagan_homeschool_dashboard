@@ -1,0 +1,70 @@
+{
+  "query": "SELECT sb.id, sb.title, COUNT(al.id) AS lib_count FROM scheduleBlocks sb LEFT JOIN assignments_library al ON al.block_id = sb.id WHERE sb.planId = 1200002 GROUP BY sb.id, sb.title ORDER BY sb.sortOrder;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT sb.id, sb.title, COUNT(al.id) AS lib_count FROM scheduleBlocks sb LEFT JOIN assignments_library al ON al.block_id = sb.id WHERE sb.planId = 1200002 GROUP BY sb.id, sb.title ORDER BY sb.sortOrder;",
+  "rows": [
+    {
+      "id": "1260007",
+      "title": "Slow morning",
+      "lib_count": "0"
+    },
+    {
+      "id": "1260008",
+      "title": "Try one thing on the placement page",
+      "lib_count": "0"
+    },
+    {
+      "id": "1260009",
+      "title": "Duck care + nature",
+      "lib_count": "0"
+    },
+    {
+      "id": "1260010",
+      "title": "Spectrum Science Gr 5",
+      "lib_count": "0"
+    },
+    {
+      "id": "1260011",
+      "title": "Choice block",
+      "lib_count": "0"
+    },
+    {
+      "id": "1260012",
+      "title": "180 Days of Language Gr 5",
+      "lib_count": "0"
+    },
+    {
+      "id": "1260013",
+      "title": "Cozy wrap-up",
+      "lib_count": "0"
+    },
+    {
+      "id": "1620030",
+      "title": "✏️ Math 10-2 — Make Line Plots",
+      "lib_count": "1"
+    },
+    {
+      "id": "1620031",
+      "title": "✏️ ELA M4-L2 — Research project using multiple sources",
+      "lib_count": "1"
+    },
+    {
+      "id": "1770012",
+      "title": "✏️ Math 10-1 — Analyze Line Plots",
+      "lib_count": "1"
+    },
+    {
+      "id": "1770013",
+      "title": "✏️ ELA M4-L1 — Use context to determine word meaning",
+      "lib_count": "1"
+    },
+    {
+      "id": "1770014",
+      "title": "✏️ SS 4-2 — Scarcity, trade, and economic choices",
+      "lib_count": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tlib_count\n1260007\tSlow morning\t0\n1260008\tTry one thing on the placement page\t0\n1260009\tDuck care + nature\t0\n1260010\tSpectrum Science Gr 5\t0\n1260011\tChoice block\t0\n1260012\t180 Days of Language Gr 5\t0\n1260013\tCozy wrap-up\t0\n1620030\t✏️ Math 10-2 — Make Line Plots\t1\n1620031\t✏️ ELA M4-L2 — Research project using multiple sources\t1\n1770012\t✏️ Math 10-1 — Analyze Line Plots\t1\n1770013\t✏️ ELA M4-L1 — Use context to determine word meaning\t1\n1770014\t✏️ SS 4-2 — Scarcity, trade, and economic choices\t1\n",
+  "stderr": "",
+  "execution_time_ms": 575
+}
