@@ -38,6 +38,7 @@ import { TomorrowChoiceCard } from "@/components/TomorrowChoiceCard";
 import TodayClassroomCard from "@/components/TodayClassroomCard";
 import TodayClassroomGradedCard from "@/components/TodayClassroomGradedCard";
 import SendAgendaNowCard from "@/components/SendAgendaNowCard";
+import RecapReplyInboxCard from "@/components/RecapReplyInboxCard";
 import TodayMomVoiceMemoCard from "@/components/TodayMomVoiceMemoCard";
 import TodayCoveredRecapCard from "@/components/TodayCoveredRecapCard";
 import TodayForwardPlanCard from "@/components/TodayForwardPlanCard";
@@ -511,6 +512,9 @@ export default function Today() {
             {/* v2.89 (2026-05-23) — Manual Send Now FIRST so Mom can
                 trigger an email immediately when the nightly cron fails. */}
             <SendAgendaNowCard />
+            {/* v2.92 (2026-05-27) — Recap reply inbox so Mom/Grandma can
+                close out days that never got a Gmail reply parsed in. */}
+            <RecapReplyInboxCard />
             {/* v2.88 — quick-link tile row (was above the schedule) */}
             <Card className="classroom-card p-3">
               <div className="flex items-center justify-between flex-wrap gap-2">

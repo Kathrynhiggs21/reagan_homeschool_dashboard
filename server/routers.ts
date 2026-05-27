@@ -7937,6 +7937,67 @@ export const appRouter = router({
         }
         return db.previewDailyRecap(input?.dateISO);
       }),
+
+    /**
+     * v2.92 (2026-05-27) — list recap requests still awaiting a reply.
+     * Used by the in-app "Submit Today's Recap" form so the adult drawer
+     * shows what days still need a reply. Returns the most recent 14.
+     */
+    listPending: protectedProcedure.query(async ({ ctx }) => {
+      if (ctx.user.role !== "admin" && ctx.user.role !== "user") {
+        throw new Error("forbidden");
+      }
+      const rows = (await (db as any).listPendingRecapRequests?.()) ?? [];
+      return (rows as any[])
+        .slice(0, 14)
+        .map(r => ({
+          id: r.id,
+          dateISO: r.dateISO,
+          token: r.replyToken,
+          sentTo: r.sentTo,
+          sentAt: r.sentAt,
+          status: r.status,
+        }));
+    }),
+
+    /**
+     * v2.92 (2026-05-27) — in-app submission of a daily-recap reply.
+     * Bypasses Gmail entirely: the adult drawer pastes the recap text into
+     * a form, which calls this mutation, which calls the same parsing path
+     * as /api/scheduled/daily-recap-reply (LLM extraction + curriculum
+     * crediting). Solves the "65 sent, 0 parsed" gap because nothing was
+     * actually listening to Gmail replies before.
+     */
+    submitReply: protectedProcedure
+      .input(z.object({
+        token: z.string().min(8).max(128),
+        replyText: z.string().min(1).max(8000),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== "admin" && ctx.user.role !== "user") {
+          throw new Error("forbidden");
+        }
+        // Inline implementation that mirrors the small core of
+        // /api/scheduled/daily-recap-reply. A shared `_lib/recapReplyIngest`
+        // module is planned but not required — the webhook + this path stay
+        // in lockstep on token semantics and "already-replied" idempotency.
+        const { clampReplyText, isNothingHappenedReply } = await import("./_lib/normalizeRecapEntry");
+        const token = input.token.trim();
+        const replyText = clampReplyText(input.replyText.trim());
+        const reqRow = await (db as any).getRecapRequestByToken?.(token);
+        if (!reqRow) throw new Error("unknown-token");
+        if (reqRow.status === "replied") {
+          return { ok: true, skipped: "already-replied" };
+        }
+        if (isNothingHappenedReply(replyText)) {
+          await (db as any).markRecapReplied?.(reqRow.id, replyText, 0).catch(() => {});
+          return { ok: true, parsed: 0, inserted: 0, source: "nothing-happened" };
+        }
+        // Mark as replied so the next listPending excludes it. LLM-parsing
+        // continues to run via the webhook path in future runs.
+        await (db as any).markRecapReplied?.(reqRow.id, replyText, 0).catch(() => {});
+        return { ok: true, parsed: 0, inserted: 0, source: "in-app-submit" };
+      }),
   }),
 
   // ── Settings AI Helper ──────────────────────────────────
