@@ -27,6 +27,7 @@ import {
   kiwiVoiceAuditEntries,
   type KiwiVoiceAuditEntry as KiwiVoiceAuditEntryRow,
   type InsertKiwiVoiceAuditEntry,
+  notebookPages,
 } from "../drizzle/schema";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -7582,6 +7583,52 @@ export async function countUnresolvedKidRequests(): Promise<number> {
   const db = getDb();
   const rows: any = await db.select().from(kidRequests).where(isNull(kidRequests.resolvedAt));
   return (rows as any[]).length;
+}
+
+/* ============================== NOTEBOOK PAGES ============================== */
+export async function getNotebookPage(dateStr: string, pageIndex: number) {
+  const db = getDb();
+  const [row] = await db
+    .select()
+    .from(notebookPages)
+    .where(and(eq(notebookPages.dateStr, dateStr), eq(notebookPages.pageIndex, pageIndex)));
+  return row ?? null;
+}
+
+export async function listNotebookPagesForDate(dateStr: string) {
+  const db = getDb();
+  return db
+    .select()
+    .from(notebookPages)
+    .where(eq(notebookPages.dateStr, dateStr))
+    .orderBy(asc(notebookPages.pageIndex));
+}
+
+export async function upsertNotebookPage(
+  dateStr: string,
+  pageIndex: number,
+  patch: { paperStyle?: string; textContent?: string | null; drawingStrokes?: string | null; penColor?: string | null },
+) {
+  const db = getDb();
+  const existing = await getNotebookPage(dateStr, pageIndex);
+  if (existing) {
+    await db
+      .update(notebookPages)
+      .set({ ...patch })
+      .where(and(eq(notebookPages.dateStr, dateStr), eq(notebookPages.pageIndex, pageIndex)));
+    return getNotebookPage(dateStr, pageIndex);
+  }
+  await db
+    .insert(notebookPages)
+    .values({ dateStr, pageIndex, paperStyle: patch.paperStyle ?? "lined", ...patch });
+  return getNotebookPage(dateStr, pageIndex);
+}
+
+export async function deleteNotebookPage(dateStr: string, pageIndex: number) {
+  const db = getDb();
+  await db
+    .delete(notebookPages)
+    .where(and(eq(notebookPages.dateStr, dateStr), eq(notebookPages.pageIndex, pageIndex)));
 }
 
 export async function resolveKidRequest(

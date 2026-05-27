@@ -162,7 +162,8 @@ describe("v2.21 — agendaAssembler.ts forwards dateStr to the hydrator", () => 
   const ASSEMBLER_PATH = path.join(ROOT, "server/_lib/agendaAssembler.ts");
   const src = fs.readFileSync(ASSEMBLER_PATH, "utf8");
 
-  it("calls hydrateLessonForBlock with (b.id, dateStr)", () => {
-    expect(src).toMatch(/hydrateLessonForBlock\(\s*b\.id\s*,\s*dateStr\s*\)/);
+  it("calls hydrateLessonForBlock with at least (b.id, dateStr)", () => {
+    // v2.98: now also passes curriculumTopicId as 3rd arg — accept 2- or 3-arg call.
+    expect(src).toMatch(/hydrateLessonForBlock\(\s*b\.id\s*,\s*dateStr/);
   });
 });

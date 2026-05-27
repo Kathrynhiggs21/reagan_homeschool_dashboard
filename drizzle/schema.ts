@@ -5,6 +5,7 @@ import {
   decimal,
   int,
   json,
+  longtext,
   mysqlEnum,
   mysqlTable,
   text,
@@ -67,6 +68,8 @@ export const dailyPlans = mysqlTable("dailyPlans", {
   ]).default("full").notNull(),
   status: mysqlEnum("status", ["planned", "in_progress", "complete", "skipped"]).default("planned").notNull(),
   notes: text("notes"),
+  /** Optional devotion / scripture / reflection for the day's printed packet. */
+  devotionText: text("devotion_text"),
   isTemplate: boolean("isTemplate").default(false).notNull(),
   templateName: varchar("templateName", { length: 128 }),
   parentPlanId: int("parentPlanId"), // for copies/duplicates
@@ -2228,3 +2231,22 @@ export const kiwiVoiceAuditEntries = mysqlTable("kiwiVoiceAuditEntries", {
 });
 export type KiwiVoiceAuditEntry = typeof kiwiVoiceAuditEntries.$inferSelect;
 export type InsertKiwiVoiceAuditEntry = typeof kiwiVoiceAuditEntries.$inferInsert;
+
+/* ============================== ADULT NOTEBOOK PAGES ===========================
+ * Full-screen writing pad for adults. One row per (dateStr, pageIndex).
+ * Stores typed text content (with [x] checkbox markup) and drawing strokes
+ * from DrawCanvas, plus the chosen paper background style.
+ * ============================================================================== */
+export const notebookPages = mysqlTable("notebookPages", {
+  id: int("id").autoincrement().primaryKey(),
+  dateStr: varchar("dateStr", { length: 10 }).notNull(), // YYYY-MM-DD
+  pageIndex: int("pageIndex").notNull().default(0),      // 0-based page within the day
+  paperStyle: varchar("paperStyle", { length: 32 }).notNull().default("lined"),
+  textContent: longtext("textContent"),                  // typed text with [x] checkbox markup
+  drawingStrokes: longtext("drawingStrokes"),            // JSON-encoded PFStroke[]
+  penColor: varchar("penColor", { length: 16 }),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type NotebookPage = typeof notebookPages.$inferSelect;
+export type InsertNotebookPage = typeof notebookPages.$inferInsert;

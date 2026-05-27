@@ -1242,29 +1242,37 @@ ${absolutePdfUrl ? `<p style=\"text-align:center;margin:24px 0;\"><a href=\"${ab
       } catch { momBriefing = null; }
 
       // ============================================================
-      // CRON-AGENT CONTRACT (read this before changing the response):
+      // v2.97.5 (2026-05-28): SELF-CONTAINED SEND via Nodemailer + Gmail SMTP.
+      // The endpoint now sends the email directly instead of returning a payload
+      // for an external agent. The external-agent path was silently failing
+      // because the scheduled-task agent was not configured to pick up the
+      // response and call gmail MCP.
       //
-      //   * `pdfDownloadUrl`  → ABSOLUTE presigned S3 GET URL. This is the
-      //                        ONLY field the scheduled-task cron agent
-      //                        should fetch the PDF from. No cookies, no
-      //                        OAuth. Works from any HTTP client.
-      //
-      //   * `pdfUrl`         → RELATIVE `/manus-storage/...` path. Gated
-      //                        on the dashboard's user OAuth cookie via
-      //                        a 307 redirect to the same presigned URL.
-      //                        Useful for an authenticated browser tab
-      //                        (Mom + Grandma) but **NOT cron-safe**.
-      //                        DEPRECATED for cron use; will stay in the
-      //                        response for backward compatibility.
-      //
-      //   * `pdfStorageKey`  → The raw storage key. Cron agents that have
-      //                        a way to mint their own presigned URLs may
-      //                        prefer this over the (~7-day TTL) link.
-      //
-      // The agendaAssemblerSummerSkip + nightlyAgendaCronContract test
-      // suites lock the contract. Do not drop pdfDownloadUrl from the
-      // response shape without updating the cron agent in the same push.
+      // If GMAIL_APP_PASSWORD is not set, sendEmail() returns { skipped: true }
+      // and the endpoint still returns the full payload for backward compat.
       // ============================================================
+      const { sendEmail } = await import("./_core/mailer");
+      const emailAttachments = attachments.map((a) => ({
+        filename: a.filename,
+        content: Buffer.from(a.contentBase64, "base64"),
+        contentType: a.mimeType,
+        encoding: "base64" as const,
+      }));
+      const sendResult = await sendEmail({
+        to: recipients,
+        subject,
+        html,
+        attachments: emailAttachments,
+      });
+      // Update DB row: mark sent (or failed)
+      try {
+        await db.markNightlyAgendaEmailStatus({
+          id: recordId,
+          status: sendResult.ok ? "sent" : "failed",
+          errorMessage: sendResult.error ?? null,
+        });
+      } catch { /* non-fatal — row stays queued */ }
+
       return res.json({
         ok: true,
         status: isResend ? "resend_ready" : "send_ready",

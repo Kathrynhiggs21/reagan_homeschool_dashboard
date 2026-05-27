@@ -184,13 +184,17 @@
     letter-spacing: 0.005em;
   }
 
-  /* Generic card — dark slate with soft border, minimal shadow */
+  /* Generic card — dark slate with deep 3D shadow */
   .cozy-card,
   .classroom-card {
     background: var(--card);
-    border: 1px solid oklch(1 0 0 / 0.1);
+    border: 1px solid oklch(1 0 0 / 0.09);
     border-radius: var(--radius);
-    box-shadow: 0 2px 0 oklch(0 0 0 / 0.15), 0 8px 24px -12px oklch(0 0 0 / 0.35);
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 0.06) inset,
+      0 2px 0 oklch(0 0 0 / 0.28),
+      0 6px 16px -4px oklch(0 0 0 / 0.38),
+      0 18px 40px -12px oklch(0 0 0 / 0.28);
   }
 
   /* Chalkboard hero panel — real chalkboard texture inside a wood frame */
@@ -217,7 +221,48 @@
   }
   .chalkboard .font-chalk-hand { color: #f7f1e3; }
 
-  /* Expanded chalk palette */
+  /* ===== Expanded details/summary (collapsible drawers) ===== */
+  details > summary {
+    list-style: none;
+  }
+  details > summary::-webkit-details-marker { display: none; }
+  /* Ensure text inside expanded drawers is always readable regardless of theme */
+  details[open] > div {
+    color: inherit;
+  }
+  /* The tan/amber expanded block fix: force readable text in all light themes */
+  html[data-rtheme="cream"] details[open] > div,
+  html[data-rtheme="notebook"] details[open] > div {
+    color: #2d2317 !important;
+  }
+  html[data-rtheme="cream"] details[open] > div *,
+  html[data-rtheme="notebook"] details[open] > div * {
+    color: inherit;
+  }
+  /* Dark themes keep white text */
+  html[data-rtheme="chalkboard"] details[open] > div,
+  html[data-rtheme="chalkboard"] details[open] > div * {
+    color: #f0ebe0 !important;
+  }
+
+  /* ===== Professional shadcn Card override — deeper 3D lift ===== */
+  [data-slot="card"] {
+    box-shadow:
+      0 1px 0 oklch(1 0 0 / 0.06) inset,
+      0 2px 0 oklch(0 0 0 / 0.22),
+      0 8px 20px -6px oklch(0 0 0 / 0.32),
+      0 20px 44px -14px oklch(0 0 0 / 0.22) !important;
+  }
+  html[data-rtheme="cream"] [data-slot="card"],
+  html[data-rtheme="notebook"] [data-slot="card"] {
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.9) inset,
+      0 2px 0 rgba(120,80,30,0.14),
+      0 8px 20px -6px rgba(120,80,30,0.12),
+      0 20px 44px -14px rgba(120,80,30,0.08) !important;
+  }
+
+  /* ===== Expanded chalk palette ===== */
   .chalk-orange { color: #ffb248; text-shadow: 0 0 1px oklch(1 0 0 / 0.25); }
   .chalk-violet { color: #d199ff; text-shadow: 0 0 1px oklch(1 0 0 / 0.25); }
   .chalk-coral  { color: #ff8a8a; text-shadow: 0 0 1px oklch(1 0 0 / 0.25); }

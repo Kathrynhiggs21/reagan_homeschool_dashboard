@@ -1,0 +1,22 @@
+{
+  "query": "INSERT INTO icalFeeds (label, url, color, enabled, lastSyncStatus, eventsCached, createdAt)\nVALUES (\n  \"Reagan's Calendar\",\n  'https://calendar.google.com/calendar/ical/o81tqeb4425ej2k9il7lhmooh4%40group.calendar.google.com/private-0bfb2bc4b56adae471935859cb84b75b/basic.ics',\n  '#16a34a',\n  true,\n  'never',\n  0,\n  NOW()\n);\nSELECT id, label, color, lastSyncStatus FROM icalFeeds ORDER BY id;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute INSERT INTO icalFeeds (label, url, color, enabled, lastSyncStatus, eventsCached, createdAt)\nVALUES (\n  \"Reagan's Calendar\",\n  'https://calendar.google.com/calendar/ical/o81tqeb4425ej2k9il7lhmooh4%40group.calendar.google.com/private-0bfb2bc4b56adae471935859cb84b75b/basic.ics',\n  '#16a34a',\n  true,\n  'never',\n  0,\n  NOW()\n);\nSELECT id, label, color, lastSyncStatus FROM icalFeeds ORDER BY id;",
+  "rows": [
+    {
+      "id": "1",
+      "label": "Family Calendar",
+      "color": "#7c3aed",
+      "lastSyncStatus": "never"
+    },
+    {
+      "id": "2",
+      "label": "Reagan's Calendar",
+      "color": "#16a34a",
+      "lastSyncStatus": "never"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tlabel\tcolor\tlastSyncStatus\n1\tFamily Calendar\t#7c3aed\tnever\n2\tReagan's Calendar\t#16a34a\tnever\n",
+  "stderr": "",
+  "execution_time_ms": 619
+}

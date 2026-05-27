@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO icalFeeds (label, url, color, enabled, lastSyncStatus, eventsCached, createdAt)\nVALUES (\n  'Family Calendar',\n  'https://calendar.google.com/calendar/ical/family13835357858763006842%40group.calendar.google.com/private-47f547e925fdcbaf2778d6643d83510f/basic.ics',\n  '#7c3aed',\n  true,\n  'never',\n  0,\n  NOW()\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute INSERT INTO icalFeeds (label, url, color, enabled, lastSyncStatus, eventsCached, createdAt)\nVALUES (\n  'Family Calendar',\n  'https://calendar.google.com/calendar/ical/family13835357858763006842%40group.calendar.google.com/private-47f547e925fdcbaf2778d6643d83510f/basic.ics',\n  '#7c3aed',\n  true,\n  'never',\n  0,\n  NOW()\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 656
+}

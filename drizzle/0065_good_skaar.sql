@@ -1,0 +1,1 @@
+ALTER TABLE `dailyPlans` ADD `devotion_text` text;

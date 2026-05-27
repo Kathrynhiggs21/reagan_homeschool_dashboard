@@ -386,7 +386,7 @@ export default function Today() {
               onClick={() => { window.location.href = "/practice"; }}
               size="lg"
               variant="outline"
-              className="rounded-full bg-card font-display text-base px-5 py-6"
+              className="rounded-full bg-emerald-500 text-white hover:bg-emerald-600 font-display text-base px-5 py-6 border-0 shadow-[0_4px_0_rgba(0,0,0,0.3)]"
               title="Earn extra Kiwi Coins by doing fun practice drills outside school hours"
             >
               🪙 Practice for Coins
@@ -401,7 +401,7 @@ export default function Today() {
                 try { window.localStorage?.removeItem("kiwiTourSeen"); } catch {}
                 setTourOpen(true);
               }}
-              className="bg-white/80 hover:bg-white"
+              className="bg-violet-500 text-white hover:bg-violet-600 border-0 shadow-[0_4px_0_rgba(0,0,0,0.3)]"
               title="Watch Kiwi's intro tour again"
             >
               🐤 Tour
@@ -493,33 +493,7 @@ export default function Today() {
         </Card>
       )}
 
-      {/* v2.87 (2026-05-21) — MAJOR HOMEPAGE SIMPLIFICATION.
-          Mom asked for a calmer, more focused Today page. The 14 cards that
-          used to stack between the header and the schedule are now grouped
-          into TWO collapsible disclosures (one for Reagan, one for adults).
-          Above the schedule we now show only: header → tutor → tip → schedule.
-          Cards inside each drawer still self-hide when empty so the drawer
-          stays compact and the user never sees a wall of empty boxes. */}
-      <details className="group rounded-xl bg-white/5 border border-white/15 mb-2" data-testid="today-extras-kid">
-        <summary className="cursor-pointer select-none px-3 py-2 text-sm font-medium chalk-white flex items-center gap-2 hover:bg-white/10 rounded-xl">
-          <span aria-hidden>🎒</span>
-          <span>Today extras</span>
-          <span className="ml-auto text-xs opacity-60 group-open:hidden">tap to open</span>
-          <span className="ml-auto text-xs opacity-60 hidden group-open:inline">tap to close</span>
-        </summary>
-        <div className="p-3 space-y-3">
-          <ConfidencePrinciplesStrip />
-          <KiwiIntroStrip />
-          <SummerModeBadge />
-          <KidHeaderStrips />
-          <MoodTimelineStrip />
-          <CatchUpNextDayCard />
-          <TomorrowChoiceCard />
-          <PlacementInviteCard />
-          <TodayClassroomCard />
-          <TodayCoveredRecapCard />
-        </div>
-      </details>
+      {/* v2.99 — Removed "Today extras" kid drawer per Mom's request (unnecessary clutter). */}
 
       {/* Adult-only drawer — only renders when an adult has unlocked the
           adult panel. Inside, each card still self-hides when its data is

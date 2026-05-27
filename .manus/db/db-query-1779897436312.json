@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE `notebookPages` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`dateStr` varchar(10) NOT NULL,\n\t`pageIndex` int NOT NULL DEFAULT 0,\n\t`paperStyle` varchar(32) NOT NULL DEFAULT 'lined',\n\t`textContent` longtext,\n\t`drawingStrokes` longtext,\n\t`penColor` varchar(16),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `notebookPages_id` PRIMARY KEY(`id`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute CREATE TABLE `notebookPages` (\n\t`id` int AUTO_INCREMENT NOT NULL,\n\t`dateStr` varchar(10) NOT NULL,\n\t`pageIndex` int NOT NULL DEFAULT 0,\n\t`paperStyle` varchar(32) NOT NULL DEFAULT 'lined',\n\t`textContent` longtext,\n\t`drawingStrokes` longtext,\n\t`penColor` varchar(16),\n\t`updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n\t`createdAt` timestamp NOT NULL DEFAULT (now()),\n\tCONSTRAINT `notebookPages_id` PRIMARY KEY(`id`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 1904
+}

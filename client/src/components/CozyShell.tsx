@@ -99,28 +99,29 @@ export default function CozyShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen flex">
       <aside className="w-60 shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col h-screen sticky top-0 no-print">
         {/* Sidebar countdown is mounted just above the Kiwi card via the SummerCountdown component below */}
-        {/* Compact chalkboard nameplate with Reagan's photo */}
+        {/* Nameplate — fills the upper-left square with photo + title */}
         <div className="px-3 pt-3 pb-2 border-b border-sidebar-border">
           <div className="chalkboard !p-3 !rounded-lg">
-            <div className="flex items-center gap-3">
+            {/* Photo row — centred, larger */}
+            <div className="flex flex-col items-center gap-2">
               {photoUrl ? (
                 <img
                   src={photoUrl}
                   alt="Reagan"
-                  className="w-12 h-12 rounded-full object-cover border-2"
+                  className="w-20 h-20 rounded-full object-cover border-[3px] shadow-md"
                   style={{ borderColor: "#f7f1e3" }}
                 />
               ) : (
                 <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center text-xl font-display"
-                  style={{ background: "#faf6ec", color: "#1a1a1a", border: "2px solid #f7f1e3" }}
+                  className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-display shadow-md"
+                  style={{ background: "#faf6ec", color: "#1a1a1a", border: "3px solid #f7f1e3" }}
                 >
                   R
                 </div>
               )}
-              <div className="min-w-0">
-                <div className="font-display text-base leading-tight chalk-white">Reagan's</div>
-                <div className="font-chalk-hand text-2xl leading-none mt-0.5 chalk-yellow">
+              <div className="text-center min-w-0 w-full">
+                <div className="font-display text-sm leading-tight chalk-white opacity-80 tracking-wide">Reagan's</div>
+                <div className="font-chalk-hand text-[1.6rem] leading-tight mt-0.5 chalk-yellow">
                   Classroom
                 </div>
               </div>

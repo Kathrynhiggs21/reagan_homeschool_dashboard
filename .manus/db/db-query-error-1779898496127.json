@@ -1,0 +1,8 @@
+{
+  "query": "\nSELECT id, title, start_time, block_type FROM scheduleBlocks \nWHERE (title LIKE '%vet%' OR title LIKE '%Vet%' OR title LIKE '%API%') \n  AND start_time = '12:00'\nLIMIT 5;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \nSELECT id, title, start_time, block_type FROM scheduleBlocks \nWHERE (title LIKE '%vet%' OR title LIKE '%Vet%' OR title LIKE '%API%') \n  AND start_time = '12:00'\nLIMIT 5;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 2: Unknown column 'start_time' in 'where clause'"
+  ]
+}

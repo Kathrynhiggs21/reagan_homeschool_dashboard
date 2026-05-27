@@ -80,9 +80,10 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
         // ignore
       }
       try {
-        // v2.21: pass dateStr so per-block printables for this date
-        // are merged into the lesson's worksheet list.
-        const lesson = await hydrateLessonForBlock(b.id, dateStr);
+        // v2.21: pass dateStr so per-block printables for this date are merged.
+        // v2.98: pass curriculumTopicId so uploaded PDFs, camera photos, and
+        // custom lessons from BlockResourcesPanel also flow into the packet.
+        const lesson = await hydrateLessonForBlock(b.id, dateStr, b.curriculumTopicId ?? null);
         if (lesson) lessonByBlockId.set(b.id, lesson);
       } catch {
         // ignore
@@ -167,5 +168,6 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
     blocks,
     tutorNotesYesterday,
     schoolDayWindow: { start: "09:00", end: "13:00" },
+    devotionText: (plan as any).devotionText ?? null,
   };
 }

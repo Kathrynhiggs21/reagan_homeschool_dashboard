@@ -1,0 +1,37 @@
+{
+  "query": "SHOW TABLES LIKE '%agenda%'; SHOW TABLES LIKE '%email%'; SHOW TABLES LIKE '%nightly%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SHOW TABLES LIKE '%agenda%'; SHOW TABLES LIKE '%email%'; SHOW TABLES LIKE '%nightly%';",
+  "rows": [
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%agenda%)": "actualAgendaEntries"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%agenda%)": "classroomAgendas"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%agenda%)": "dailyAgendas"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%agenda%)": "nightlyAgendaEmails"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%agenda%)": "Tables_in_mm3swGictQLHDWKPJCGiHp (%email%)"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%agenda%)": "blockedEmails"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%agenda%)": "nightlyAgendaEmails"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%agenda%)": "Tables_in_mm3swGictQLHDWKPJCGiHp (%nightly%)"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%agenda%)": "nightlyAgendaEmails"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_mm3swGictQLHDWKPJCGiHp (%agenda%)\nactualAgendaEntries\nclassroomAgendas\ndailyAgendas\nnightlyAgendaEmails\nTables_in_mm3swGictQLHDWKPJCGiHp (%email%)\nblockedEmails\nnightlyAgendaEmails\nTables_in_mm3swGictQLHDWKPJCGiHp (%nightly%)\nnightlyAgendaEmails\n",
+  "stderr": "",
+  "execution_time_ms": 654
+}

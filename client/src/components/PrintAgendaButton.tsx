@@ -81,7 +81,7 @@ export default function PrintAgendaButton({ forDate, className }: Props) {
       size="lg"
       onClick={handleClick}
       disabled={loading}
-      className={className ?? "bg-white/80 hover:bg-white"}
+      className={className ?? "bg-sky-500 text-white hover:bg-sky-600 border-0 shadow-[0_4px_0_rgba(0,0,0,0.3)]"}
       title="Print the full daily agenda — block details, worksheets, videos, links, and a notes area"
       data-testid="print-daily-schedule-btn"
     >

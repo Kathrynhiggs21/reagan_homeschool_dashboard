@@ -1,0 +1,9 @@
+{
+  "query": "\nUPDATE scheduleBlocks \nSET title = 'Ali — Therapy Session (Online)',\n    description = 'Online session with Ali, Reagan''s therapist. 12:00 PM – 12:45 PM.',\n    blockType = 'appointment'\nWHERE id = 1950001;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \nUPDATE scheduleBlocks \nSET title = 'Ali — Therapy Session (Online)',\n    description = 'Online session with Ali, Reagan''s therapist. 12:00 PM – 12:45 PM.',\n    blockType = 'appointment'\nWHERE id = 1950001;\n",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 578
+}

@@ -1,20 +1,16 @@
 /**
- * AgendaEditor — Manus-style natural language schedule editor for adults.
+ * AgendaEditor — unified AI chat schedule editor for adults.
  *
- * Three sections:
- *   1. Chat-style instruction box. Adult types anything ("make it shorter and
- *      fun", "swap 10:30 to a nature walk", "start at 9, end by 1, 25-min
- *      blocks"). Hits Send → backend returns an EditPlan + before/after diff.
- *   2. Diff preview (Before / After columns) with Apply + Undo buttons.
- *   3. Manual block grid: every block's title, type, time, length, subject,
- *      topic editable inline using the widened blocks.update tRPC procedure.
+ * One AI chat box does everything: add, remove, reorder, reschedule, change
+ * subjects, add notes, push the whole day — all from plain English.
+ * Changes are applied immediately (no preview/confirm step).
+ * The manual block grid is still available as an advanced fallback.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { parseTime12h, formatTime12h } from "@/lib/time12h";
@@ -22,7 +18,8 @@ import { useTutorMode } from "@/hooks/useTutorMode";
 import { BlockResourcesPanel } from "@/components/BlockResourcesPanel";
 import { BlockAdventurePanel } from "@/components/BlockAdventurePanel";
 import { BlockPrintablesPanel } from "@/components/BlockPrintablesPanel";
-import { FreeFormPromptPanel } from "@/components/FreeFormPromptPanel";
+import { Loader2, Send, Sparkles, Paperclip } from "lucide-react";
+import { Streamdown } from "streamdown";
 
 type Snapshot = {
   id: number;
@@ -97,143 +94,51 @@ function BlockLine({ b, kind }: { b: Snapshot; kind: string }) {
   );
 }
 
+type ChatMessage = { role: "user" | "assistant"; content: string };
+
+const SUGGESTED_PROMPTS = [
+  "Make it shorter and fun today",
+  "Add a 20-min read aloud after lunch",
+  "Start at 9 AM with 25-min blocks",
+  "Move math to the morning",
+  "Tutor not here — push everything to tomorrow",
+  "Add a brain break before lunch",
+  "Make every block 20 min",
+  "Swap science to weather topic",
+  "Drop the catch-up block",
+  "Add a vet appointment at noon for 45 min",
+];
+
 export default function AgendaEditor() {
   const [date, setDate] = useState<string>(todayYmd());
-  const [instruction, setInstruction] = useState<string>("");
-  const [editPlan, setEditPlan] = useState<any | null>(null);
-  const [beforeBlocks, setBeforeBlocks] = useState<Snapshot[] | null>(null);
-  const [afterBlocks, setAfterBlocks] = useState<Snapshot[] | null>(null);
-  const [savedSnapshot, setSavedSnapshot] = useState<Snapshot[] | null>(null);
+
+  // ─── Unified chat state ────────────────────────────────────────────────────
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [attachment, setAttachment] = useState<{ url: string; mimeType: string; fileName: string } | null>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
   const utils = trpc.useUtils();
-  // Slice 3: clearDay mutation (Design today from blank). Wipes all blocks for
-  // the chosen date. Adult/tutor only via adminOrTutorProcedure on the server.
-  const clearDayMut = (trpc as any).blocks.clearDay.useMutation({
-    onSuccess: async (r: any) => {
-      toast.success(`Cleared ${r?.deleted ?? 0} block(s). Build a new day in the AI box, or use '+ Add block'.`);
-      await utils.agendaEditor.snapshot.invalidate({ date });
-      setEditPlan(null); setBeforeBlocks(null); setAfterBlocks(null);
+
+  const chatM = (trpc as any).agendaEditor?.chat?.useMutation?.({
+    onSuccess: (data: any) => {
+      setChatMessages(prev => [...prev, { role: "assistant", content: data.reply }]);
+      setAttachment(null);
+      utils.agendaEditor.snapshot.invalidate({ date });
     },
     onError: (e: any) => {
-      toast.error(e?.message ?? "Could not clear day");
+      setChatMessages(prev => [...prev, { role: "assistant", content: `❌ Sorry, something went wrong: ${e?.message || "unknown error"}` }]);
     },
-  });
-  const snapQ = trpc.agendaEditor.snapshot.useQuery({ date });
-
-  const previewM = trpc.agendaEditor.preview.useMutation({
-    onSuccess: (data: any) => {
-      setEditPlan(data.plan);
-      setBeforeBlocks(data.before);
-      setAfterBlocks(data.after);
-      // If the AI returned 0 ops we still want the adult to see SOMETHING
-      // so the spinner ending is meaningful (was: "always stays the same").
-      const opsCount = data?.plan?.ops?.length ?? 0;
-      if (opsCount === 0) {
-        const note = data?.plan?.summary || "The AI didn't suggest any changes.";
-        const w0 = data?.plan?.warnings?.[0];
-        if (w0 === "timeout" || w0 === "upstream-error") {
-          toast.error(note);
-        } else {
-          toast(note);
-        }
-      }
-    },
-    onError: (e) => toast.error("Preview failed: " + e.message),
   });
 
-  const commitM = trpc.agendaEditor.commit.useMutation({
-    onSuccess: (data: any) => {
-      toast.success(`Applied! ${data.updated}upd ${data.inserted}ins ${data.deleted}del`);
-      setSavedSnapshot(beforeBlocks);
-      setEditPlan(null);
-      setAfterBlocks(null);
-      setBeforeBlocks(null);
-      setInstruction("");
-      utils.agendaEditor.snapshot.invalidate({ date });
-    },
-    onError: (e) => toast.error("Apply failed: " + e.message),
-  });
-
-  const undoM = trpc.agendaEditor.undo.useMutation({
-    onSuccess: (data: any) => {
-      toast.success(`Undone — restored ${data.restored} blocks.`);
-      setSavedSnapshot(null);
-      utils.agendaEditor.snapshot.invalidate({ date });
-    },
-    onError: (e) => toast.error("Undo failed: " + e.message),
-  });
-
-  const blockUpdateM = trpc.blocks.update.useMutation({
-    onSuccess: () => utils.agendaEditor.snapshot.invalidate({ date }),
-    onError: (e) => toast.error("Block update failed: " + e.message),
-  });
-  const blockDeleteM = trpc.blocks.delete.useMutation({
-    onSuccess: () => utils.agendaEditor.snapshot.invalidate({ date }),
-  });
-  const blockCreateM = trpc.blocks.createForDate.useMutation({
-    onSuccess: () => {
-      toast.success("Block added — edit it inline below.");
-      utils.agendaEditor.snapshot.invalidate({ date });
-    },
-    onError: (e) => toast.error("Add block failed: " + e.message),
-  });
-  // Adult quick-action: postpone a single block to tomorrow without opening a modal.
-  const postponeBlockM = (trpc as any).adultAi?.postponeBlock?.useMutation?.({
-    onSuccess: () => { utils.agendaEditor.snapshot.invalidate({ date }); utils.plans.byDate.invalidate(); utils.plans.today.invalidate(); toast.success("Moved to tomorrow."); },
-    onError: (e: any) => toast.error(e?.message || "Move failed."),
-  });
-  const blockReorderM = trpc.blocks.reorder.useMutation({
-    onSuccess: () => utils.agendaEditor.snapshot.invalidate({ date }),
-    onError: (e) => toast.error("Reorder failed: " + e.message),
-  });
-  // Push 19 (2026-05-12) — Tutor convenience: direct "copy from another
-  // day" mutation. Used by the two canned buttons below; bypasses the
-  // LLM for an instant, lossless copy of every block field.
-  const copyFromDateM = (trpc as any).blocks?.copyFromDate?.useMutation?.({
-    onSuccess: (r: any) => {
-      if (r?.copied > 0) {
-        toast.success(`Copied ${r.copied} block${r.copied === 1 ? "" : "s"} into ${date}.`);
-      } else if (r?.reason === "no-source-plan" || r?.reason === "empty-source") {
-        toast.info("That source day was empty — nothing to copy. Try a different date or use the AI box.");
-      } else if (r?.reason === "same-date") {
-        toast.info("Source and target date are the same — nothing to copy.");
-      }
-      utils.agendaEditor.snapshot.invalidate({ date });
-    },
-    onError: (e: any) => toast.error("Copy failed: " + (e?.message || "unknown")),
-  });
-  // Helper: yesterday in YYYY-MM-DD relative to current `date` field.
-  const dateMinusDays = (iso: string, days: number): string => {
-    const d = new Date(iso + "T00:00:00");
-    d.setDate(d.getDate() - days);
-    return d.toISOString().slice(0, 10);
-  };
-  // Helper: most recent Monday strictly before the current `date`.
-  const lastMondayBefore = (iso: string): string => {
-    const d = new Date(iso + "T00:00:00");
-    const dow = d.getDay(); // 0=Sun..6=Sat
-    // Days back to PREVIOUS Monday: if today is Mon (1), go back 7; otherwise (dow + 6) % 7.
-    const back = dow === 1 ? 7 : (dow + 6) % 7;
-    d.setDate(d.getDate() - back);
-    return d.toISOString().slice(0, 10);
-  };
-  const shiftDayM = trpc.blocks.shiftDay.useMutation({
-    onSuccess: (data: any) => {
-      toast.success(`Shifted ${data.shifted} block${data.shifted === 1 ? "" : "s"}` + (data.skipped ? ` (skipped ${data.skipped})` : ""));
-      utils.agendaEditor.snapshot.invalidate({ date });
-    },
-    onError: (e) => toast.error("Shift failed: " + e.message),
-  });
-
-  // HTML5 drag-and-drop state for the manual grid
-  const [draggingId, setDraggingId] = useState<number | null>(null);
-  const [dragOverId, setDragOverId] = useState<number | null>(null);
-
-  // Optional file the adult attached to the chat (worksheet, page photo, PDF).
-  const [attachment, setAttachment] = useState<{ url: string; mimeType: string; fileName: string } | null>(null);
   const uploadM = trpc.agendaEditor.uploadAttachment.useMutation({
     onError: (e) => toast.error("Upload failed: " + e.message),
   });
+
+  // Auto-scroll chat to bottom
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
 
   const onPickFile = async (file: File) => {
     if (file.size > 8 * 1024 * 1024) {
@@ -250,41 +155,77 @@ export default function AgendaEditor() {
     reader.readAsDataURL(file);
   };
 
-  const onSend = () => {
-    const trimmed = instruction.trim();
+  const sendChat = () => {
+    const trimmed = chatInput.trim();
     if (!trimmed && !attachment) return;
-    previewM.mutate({
+    if (!chatM) { toast.error("Chat not available."); return; }
+    const userMsg = trimmed || "(attached file)";
+    setChatMessages(prev => [...prev, { role: "user", content: userMsg + (attachment ? `\n\n📎 ${attachment.fileName}` : "") }]);
+    setChatInput("");
+    chatM.mutate({
       date,
-      instruction: trimmed || "Read the attached file and work it into today's plan.",
+      message: trimmed || "Read the attached file and work it into today's plan.",
       attachmentUrl: attachment?.url,
       attachmentMimeType: attachment?.mimeType,
     });
   };
 
-  const onApply = () => {
-    if (!editPlan) return;
-    commitM.mutate({
-      date,
-      ops: editPlan.ops,
-      summary: editPlan.summary,
-    });
+  // ─── Manual grid state (kept as advanced fallback) ─────────────────────────────
+  const clearDayMut = (trpc as any).blocks.clearDay.useMutation({
+    onSuccess: async (r: any) => {
+      toast.success(`Cleared ${r?.deleted ?? 0} block(s). Tell the AI what to build.`);
+      await utils.agendaEditor.snapshot.invalidate({ date });
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Could not clear day"),
+  });
+  const snapQ = trpc.agendaEditor.snapshot.useQuery({ date });
+  const blockUpdateM = trpc.blocks.update.useMutation({
+    onSuccess: () => utils.agendaEditor.snapshot.invalidate({ date }),
+    onError: (e) => toast.error("Block update failed: " + e.message),
+  });
+  const blockDeleteM = trpc.blocks.delete.useMutation({
+    onSuccess: () => utils.agendaEditor.snapshot.invalidate({ date }),
+  });
+  const blockCreateM = trpc.blocks.createForDate.useMutation({
+    onSuccess: () => {
+      toast.success("Block added — edit it inline below.");
+      utils.agendaEditor.snapshot.invalidate({ date });
+    },
+    onError: (e) => toast.error("Add block failed: " + e.message),
+  });
+  const postponeBlockM = (trpc as any).adultAi?.postponeBlock?.useMutation?.({
+    onSuccess: () => { utils.agendaEditor.snapshot.invalidate({ date }); utils.plans.byDate.invalidate(); utils.plans.today.invalidate(); toast.success("Moved to tomorrow."); },
+    onError: (e: any) => toast.error(e?.message || "Move failed."),
+  });
+  const blockReorderM = trpc.blocks.reorder.useMutation({
+    onSuccess: () => utils.agendaEditor.snapshot.invalidate({ date }),
+    onError: (e) => toast.error("Reorder failed: " + e.message),
+  });
+  const copyFromDateM = (trpc as any).blocks?.copyFromDate?.useMutation?.({
+    onSuccess: (r: any) => {
+      if (r?.copied > 0) toast.success(`Copied ${r.copied} block${r.copied === 1 ? "" : "s"} into ${date}.`);
+      else if (r?.reason === "no-source-plan" || r?.reason === "empty-source") toast.info("That source day was empty.");
+      else if (r?.reason === "same-date") toast.info("Source and target date are the same.");
+      utils.agendaEditor.snapshot.invalidate({ date });
+    },
+    onError: (e: any) => toast.error("Copy failed: " + (e?.message || "unknown")),
+  });
+  const dateMinusDays = (iso: string, days: number): string => {
+    const d = new Date(iso + "T00:00:00"); d.setDate(d.getDate() - days); return d.toISOString().slice(0, 10);
   };
-
-  const onUndo = () => {
-    if (!savedSnapshot) return;
-    undoM.mutate({ date, snapshot: savedSnapshot });
+  const lastMondayBefore = (iso: string): string => {
+    const d = new Date(iso + "T00:00:00"); const dow = d.getDay();
+    const back = dow === 1 ? 7 : (dow + 6) % 7; d.setDate(d.getDate() - back); return d.toISOString().slice(0, 10);
   };
-
-  const beforeById = useMemo(() => {
-    const m = new Map<number, Snapshot>();
-    (beforeBlocks ?? []).forEach(b => m.set(b.id, b));
-    return m;
-  }, [beforeBlocks]);
-  const afterById = useMemo(() => {
-    const m = new Map<number, Snapshot>();
-    (afterBlocks ?? []).forEach(b => m.set(b.id, b));
-    return m;
-  }, [afterBlocks]);
+  const shiftDayM = trpc.blocks.shiftDay.useMutation({
+    onSuccess: (data: any) => {
+      toast.success(`Shifted ${data.shifted} block${data.shifted === 1 ? "" : "s"}` + (data.skipped ? ` (skipped ${data.skipped})` : ""));
+      utils.agendaEditor.snapshot.invalidate({ date });
+    },
+    onError: (e) => toast.error("Shift failed: " + e.message),
+  });
+  const [draggingId, setDraggingId] = useState<number | null>(null);
+  const [dragOverId, setDragOverId] = useState<number | null>(null);
 
   const ctx: any = snapQ.data;
   const liveBlocks: Snapshot[] = ctx?.blocks ?? [];
@@ -366,36 +307,17 @@ export default function AgendaEditor() {
         </div>
       </header>
 
-      {/* CHAT INSTRUCTION — the primary surface */}
-      <Card className="border-primary/40">
-        <CardHeader>
+      {/* ─── UNIFIED AI CHAT ─────────────────────────────────────────────────── */}
+      <Card className="border-primary/40 flex flex-col">
+        <CardHeader className="pb-2">
           <CardTitle className="text-xl flex items-center gap-2">
-            <span aria-hidden>✨</span>
-            Tell the AI what to change
+            <Sparkles className="w-5 h-5 text-primary" />
+            AI Agenda Editor
           </CardTitle>
-          <p className="text-sm opacity-70 mt-1">Plain English. Press Enter or click Send. You’ll see a preview before anything changes.</p>
+          <p className="text-sm opacity-70">Tell me anything — add blocks, remove them, change times, reschedule the whole day, add notes, swap subjects. Changes apply immediately.</p>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <Textarea
-            value={instruction}
-            onChange={(e) => setInstruction(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                onSend();
-              }
-            }}
-            placeholder='"shorter and fun" • "more math today" • "swap 10:30 to a nature walk" • "start at 9, 25-min blocks" • "Mom can’t tutor today, push to tomorrow" • "add a 20-min read aloud after lunch"'
-            rows={4}
-            className="text-base"
-          />
-
-          {/* 2026-05-22 (v2.88) — Removed the unreadable Quick Day Templates
-              pill row (faded amber-on-amber was illegible against the dark
-              theme; the five canned prompts were also redundant with the
-              chip-suggestions just below this block). Kept the genuinely
-              useful lossless copy buttons on a brighter slate strip so they
-              still have one-click reachability. */}
+        <CardContent className="flex flex-col gap-3">
+          {/* Copy shortcuts */}
           <div className="flex flex-wrap gap-2 text-xs">
             <button
               type="button"
@@ -403,7 +325,6 @@ export default function AgendaEditor() {
               onClick={() => copyFromDateM?.mutate?.({ sourceDate: dateMinusDays(date, 1), targetDate: date })}
               className="rounded-full border border-emerald-400 bg-emerald-500/20 px-3 py-1.5 font-medium text-emerald-50 hover:bg-emerald-500/30 disabled:opacity-50"
               data-testid="copy-yesterday-btn"
-              title="Copy every block from yesterday onto this date (lossless, instant)"
             >
               {copyFromDateM?.isPending ? "Copying…" : "→ Copy yesterday"}
             </button>
@@ -413,139 +334,107 @@ export default function AgendaEditor() {
               onClick={() => copyFromDateM?.mutate?.({ sourceDate: lastMondayBefore(date), targetDate: date })}
               className="rounded-full border border-emerald-400 bg-emerald-500/20 px-3 py-1.5 font-medium text-emerald-50 hover:bg-emerald-500/30 disabled:opacity-50"
               data-testid="copy-last-monday-btn"
-              title="Copy every block from the previous Monday onto this date (lossless, instant)"
             >
               {copyFromDateM?.isPending ? "Copying…" : "→ Copy last Monday"}
             </button>
           </div>
 
-          <div className="flex flex-wrap gap-2 text-xs">
-            {[
-              "Make it shorter and fun",
-              "More math today",
-              "Add a 20-min read aloud after lunch",
-              "Start at 9 AM, 25-min blocks",
-              "Move math to the morning",
-              "Drop the catch-up block",
-              "Tutor not here — push everything to tomorrow",
-              "Swap science topic to weather",
-              "Add a brain break before lunch",
-              "Make every block 20 min",
-            ].map((sample) => (
-              <button
-                key={sample}
-                type="button"
-                onClick={() => setInstruction(sample)}
-                className="rounded-full border border-border px-3 py-1 hover:bg-accent"
-              >
-                {sample}
-              </button>
-            ))}
-          </div>
+          {/* Chat history */}
+          {chatMessages.length > 0 && (
+            <div className="rounded-lg border border-border/60 bg-muted/30 p-3 space-y-3 max-h-80 overflow-y-auto">
+              {chatMessages.map((msg, i) => (
+                <div key={i} className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                  {msg.role === "assistant" && (
+                    <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+                      <Sparkles className="w-3 h-3 text-primary" />
+                    </div>
+                  )}
+                  <div className={`rounded-xl px-3 py-2 text-sm max-w-[85%] ${
+                    msg.role === "user"
+                      ? "bg-primary text-primary-foreground ml-auto"
+                      : "bg-card border border-border/60"
+                  }`}>
+                    {msg.role === "assistant" ? (
+                      <Streamdown>{msg.content}</Streamdown>
+                    ) : (
+                      <span className="whitespace-pre-wrap">{msg.content}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {chatM?.isPending && (
+                <div className="flex gap-2 justify-start">
+                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                    <Loader2 className="w-3 h-3 text-primary animate-spin" />
+                  </div>
+                  <div className="rounded-xl px-3 py-2 text-sm bg-card border border-border/60 opacity-70">Thinking…</div>
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+          )}
+
+          {/* Suggestion chips — only show when chat is empty */}
+          {chatMessages.length === 0 && (
+            <div className="flex flex-wrap gap-2 text-xs">
+              {SUGGESTED_PROMPTS.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setChatInput(p)}
+                  className="rounded-full border border-border px-3 py-1.5 hover:bg-accent transition-colors"
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Attachment preview */}
           {attachment && (
             <div className="flex items-center gap-2 rounded-md border border-border bg-accent/30 px-3 py-2 text-sm">
               <span aria-hidden>{attachment.mimeType.startsWith("image/") ? "🖼️" : "📄"}</span>
               <span className="truncate flex-1">{attachment.fileName}</span>
-              <span className="opacity-60 text-xs">{attachment.mimeType}</span>
-              <button
-                type="button"
-                onClick={() => setAttachment(null)}
-                className="text-xs underline opacity-70 hover:opacity-100"
-              >
-                Remove
-              </button>
+              <button type="button" onClick={() => setAttachment(null)} className="text-xs underline opacity-70 hover:opacity-100">Remove</button>
             </div>
           )}
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <div className="flex items-center gap-3">
-              <label className="cursor-pointer text-sm rounded-full border border-border px-3 py-1 hover:bg-accent">
-                {uploadM.isPending ? "Uploading…" : "📎 Attach worksheet / page"}
-                <input
-                  type="file"
-                  accept="image/*,application/pdf"
-                  className="hidden"
-                  onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) onPickFile(f);
-                    e.target.value = "";
-                  }}
-                />
-              </label>
-              <div className="text-xs opacity-60">Tip: ⌘/Ctrl + Enter to send.</div>
+
+          {/* Composer */}
+          <div className="flex gap-2 items-end">
+            <div className="flex-1 relative">
+              <textarea
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendChat();
+                  }
+                }}
+                placeholder="Type anything… 'add Ali therapy at noon', 'move math earlier', 'make today shorter', 'Sophie starts at 1pm for fun activities'…"
+                rows={2}
+                className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 pr-10"
+              />
             </div>
-            <div className="flex gap-2">
-              {savedSnapshot && (
-                <Button variant="outline" onClick={onUndo} disabled={undoM.isPending}>
-                  ↶ Undo last apply
-                </Button>
-              )}
-              <Button size="lg" onClick={onSend} disabled={previewM.isPending || (!instruction.trim() && !attachment)}>
-                {previewM.isPending ? "Thinking…" : "Send →"}
-              </Button>
-            </div>
+            <label className="cursor-pointer flex items-center justify-center w-9 h-9 rounded-lg border border-border hover:bg-accent transition-colors shrink-0" title="Attach file">
+              {uploadM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
+              <input type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onPickFile(f); e.target.value = ""; }} />
+            </label>
+            <Button
+              size="sm"
+              className="h-9 px-4 shrink-0"
+              onClick={sendChat}
+              disabled={chatM?.isPending || (!chatInput.trim() && !attachment)}
+            >
+              {chatM?.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            </Button>
           </div>
+          <div className="text-xs opacity-50">Enter to send · Shift+Enter for new line · Changes apply immediately</div>
         </CardContent>
       </Card>
 
-      {/* v2.16 (2026-05-17) — Free-form prompt panel with per-decision
-          Accept/Reject. Sits between the wholesale-diff AI box and the
-          old-style preview card. Defense-in-depth: this whole page is
-          already gated to adults, and `plans.aiPropose` /
-          `plans.aiApplyProposal` are familyAdminProcedure on the server. */}
-      <FreeFormPromptPanel date={date} />
-
-      {/* DIFF PREVIEW */}
-      {editPlan && beforeBlocks && afterBlocks && (
-        <Card className="border-amber-500/40">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              Preview
-              <span className="text-xs font-normal rounded-full bg-amber-500/20 px-2 py-0.5">{editPlan.intent}</span>
-            </CardTitle>
-            <p className="text-sm opacity-80">{editPlan.summary}</p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {editPlan.warnings?.length > 0 && (
-              <div className="rounded border border-yellow-500/40 bg-yellow-500/10 px-3 py-2 text-xs space-y-1">
-                {editPlan.warnings.map((w: string, i: number) => <div key={i}>⚠️ {w}</div>)}
-              </div>
-            )}
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <div className="mb-2 text-sm font-medium">Before</div>
-                <div className="space-y-2">
-                  {beforeBlocks.length === 0 ? (
-                    <div className="text-sm opacity-60 italic">no blocks</div>
-                  ) : beforeBlocks.map(b => (
-                    <BlockLine key={b.id} b={b} kind={diffBlock(b, afterById)} />
-                  ))}
-                </div>
-              </div>
-              <div>
-                <div className="mb-2 text-sm font-medium">After</div>
-                <div className="space-y-2">
-                  {afterBlocks.length === 0 ? (
-                    <div className="text-sm opacity-60 italic">no blocks</div>
-                  ) : afterBlocks.map(b => (
-                    <BlockLine key={b.id} b={b} kind={b.id < 0 ? "new" : diffBlock(b, beforeById)} />
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="ghost" onClick={() => { setEditPlan(null); setBeforeBlocks(null); setAfterBlocks(null); }}>
-                Discard
-              </Button>
-              <Button onClick={onApply} disabled={commitM.isPending || editPlan.ops.length === 0}>
-                {commitM.isPending ? "Applying…" : `Apply ${editPlan.ops.length} change${editPlan.ops.length === 1 ? "" : "s"}`}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* TODAY'S BLOCKS — read-only quick view so the adult sees what they're editing */}
-      {!editPlan && liveBlocks.length > 0 && (
+      {/* TODAY'S BLOCKS — live schedule view */}
+      {liveBlocks.length > 0 && (
         <Card>
           <CardHeader className="py-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -564,11 +453,8 @@ export default function AgendaEditor() {
         </Card>
       )}
 
-      {/* Push 38 (2026-05-13) — Quick-attach worksheets sidebar.
-          Surfaces every unpinned library item dated for the selected day so
-          Mom can one-tap pin it to a block. Hidden when there are no live
-          blocks (nothing to pin to). */}
-      {!editPlan && liveBlocks.length > 0 && (
+      {/* Quick-attach worksheets */}
+      {liveBlocks.length > 0 && (
         <QuickAttachWorksheets date={date} liveBlocks={liveBlocks} />
       )}
 

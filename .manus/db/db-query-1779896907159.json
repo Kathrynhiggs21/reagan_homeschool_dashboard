@@ -1,0 +1,37 @@
+{
+  "query": "SELECT id, title, startTime, durationMin, sortOrder, blockType, description\nFROM scheduleBlocks\nWHERE planId = 1560002\nORDER BY sortOrder;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, title, startTime, durationMin, sortOrder, blockType, description\nFROM scheduleBlocks\nWHERE planId = 1560002\nORDER BY sortOrder;",
+  "rows": [
+    {
+      "id": "1950001",
+      "title": "Vet Appointment",
+      "startTime": "12:00",
+      "durationMin": "45",
+      "sortOrder": "10",
+      "blockType": "appointment",
+      "description": "API vet appointment — noon to 12:45 PM."
+    },
+    {
+      "id": "1950002",
+      "title": "Lunch",
+      "startTime": "12:45",
+      "durationMin": "30",
+      "sortOrder": "11",
+      "blockType": "custom",
+      "description": "Lunch break."
+    },
+    {
+      "id": "1950003",
+      "title": "Sophie's Fun Learning Session",
+      "startTime": "13:00",
+      "durationMin": "90",
+      "sortOrder": "12",
+      "blockType": "custom",
+      "description": "Sophie arrives at 1 PM with Reagan and her friend for fun educational activities that Sophie prepares. Group session — hands-on, activity-based learning."
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tstartTime\tdurationMin\tsortOrder\tblockType\tdescription\n1950001\tVet Appointment\t12:00\t45\t10\tappointment\tAPI vet appointment — noon to 12:45 PM.\n1950002\tLunch\t12:45\t30\t11\tcustom\tLunch break.\n1950003\tSophie's Fun Learning Session\t13:00\t90\t12\tcustom\tSophie arrives at 1 PM with Reagan and her friend for fun educational activities that Sophie prepares. Group session — hands-on, activity-based learning.\n",
+  "stderr": "",
+  "execution_time_ms": 583
+}

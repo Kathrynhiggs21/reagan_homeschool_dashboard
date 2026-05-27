@@ -1,0 +1,16 @@
+{
+  "query": "\nSELECT id, title, startTime, blockType FROM scheduleBlocks \nWHERE (title LIKE '%vet%' OR title LIKE '%Vet%' OR title LIKE '%API%')\nLIMIT 5;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \nSELECT id, title, startTime, blockType FROM scheduleBlocks \nWHERE (title LIKE '%vet%' OR title LIKE '%Vet%' OR title LIKE '%API%')\nLIMIT 5;\n",
+  "rows": [
+    {
+      "id": "1950001",
+      "title": "Vet Appointment",
+      "startTime": "12:00",
+      "blockType": "appointment"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tstartTime\tblockType\n1950001\tVet Appointment\t12:00\tappointment\n",
+  "stderr": "",
+  "execution_time_ms": 579
+}

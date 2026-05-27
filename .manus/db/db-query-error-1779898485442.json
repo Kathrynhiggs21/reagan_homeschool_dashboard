@@ -1,0 +1,8 @@
+{
+  "query": "\nUPDATE schedule_blocks \nSET title = 'Ali — Therapy Session (Online)',\n    description = 'Online session with Ali, Reagan''s therapist. 12:00 PM – 12:45 PM.',\n    block_type = 'appointment'\nWHERE title LIKE '%Vet%' OR title LIKE '%vet%' OR title LIKE '%API vet%'\n  AND start_time = '12:00';\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \nUPDATE schedule_blocks \nSET title = 'Ali — Therapy Session (Online)',\n    description = 'Online session with Ali, Reagan''s therapist. 12:00 PM – 12:45 PM.',\n    block_type = 'appointment'\nWHERE title LIKE '%Vet%' OR title LIKE '%vet%' OR title LIKE '%API vet%'\n  AND start_time = '12:00';\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1146 (42S02) at line 2: Table 'mm3swgictqlhdwkpjcgihp.schedule_blocks' doesn't exist"
+  ]
+}

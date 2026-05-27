@@ -26,6 +26,7 @@ import { useAdultLock } from "@/contexts/AdultLockContext";
 import { trpc } from "@/lib/trpc";
 import TutorDayNotesBox from "@/components/TutorDayNotesBox";
 import MarkupCanvas from "@/components/MarkupCanvas";
+import NotebookPad from "@/components/NotebookPad";
 
 type DayAttachmentRow = {
   id: number;
@@ -78,6 +79,7 @@ export default function NotebookDrawer() {
     return d.toISOString().slice(0, 10);
   })();
   const [editing, setEditing] = useState<DayAttachmentRow | null>(null);
+  const [padOpen, setPadOpen] = useState(false);
 
   const utils = trpc.useUtils();
 
@@ -171,9 +173,19 @@ export default function NotebookDrawer() {
           className="w-full sm:max-w-lg overflow-y-auto bg-amber-50 text-stone-900 dark:bg-amber-50 dark:text-stone-900"
         >
           <SheetHeader>
+          <div className="flex items-center justify-between w-full pr-2">
             <SheetTitle className="font-display text-xl text-stone-900">
               📓 Notebook
             </SheetTitle>
+            <Button
+              size="sm"
+              variant="outline"
+              className="bg-amber-100 border-amber-300 text-stone-800 hover:bg-amber-200 text-xs"
+              onClick={() => setPadOpen(true)}
+            >
+              ⛶ Full-screen writing pad
+            </Button>
+          </div>
           </SheetHeader>
           <div className="px-4 pb-6 space-y-4 text-stone-900">
             {/* Day picker + tutor of the day inline */}
@@ -365,6 +377,14 @@ export default function NotebookDrawer() {
           kind={editing.kind}
           existingMarkupUrl={fileKeyToUrl(editing.markupKey)}
           onClose={() => setEditing(null)}
+        />
+      ) : null}
+
+      {padOpen ? (
+        <NotebookPad
+          dateStr={dateStr}
+          pageIndex={0}
+          onClose={() => setPadOpen(false)}
         />
       ) : null}
     </>

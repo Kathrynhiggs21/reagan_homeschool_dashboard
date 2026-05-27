@@ -1,0 +1,106 @@
+{
+  "query": "DESCRIBE nightlyAgendaEmails;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute DESCRIBE nightlyAgendaEmails;",
+  "rows": [
+    {
+      "Field": "id",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "PRI",
+      "Default": "NULL",
+      "Extra": "auto_increment"
+    },
+    {
+      "Field": "forDate",
+      "Type": "varchar(10)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "sentAt",
+      "Type": "timestamp",
+      "Null": "NO",
+      "Key": "",
+      "Default": "CURRENT_TIMESTAMP",
+      "Extra": ""
+    },
+    {
+      "Field": "recipients",
+      "Type": "text",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "agendaHash",
+      "Type": "varchar(64)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "blockCount",
+      "Type": "int",
+      "Null": "NO",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "pdfStorageKey",
+      "Type": "varchar(200)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "drivePushed",
+      "Type": "tinyint(1)",
+      "Null": "NO",
+      "Key": "",
+      "Default": "0",
+      "Extra": ""
+    },
+    {
+      "Field": "driveFolderPath",
+      "Type": "varchar(200)",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "status",
+      "Type": "enum('queued','sent','failed','resent')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "queued",
+      "Extra": ""
+    },
+    {
+      "Field": "errorMessage",
+      "Type": "text",
+      "Null": "YES",
+      "Key": "",
+      "Default": "NULL",
+      "Extra": ""
+    },
+    {
+      "Field": "triggerKind",
+      "Type": "enum('nightly','change_resend','manual')",
+      "Null": "NO",
+      "Key": "",
+      "Default": "nightly",
+      "Extra": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "Field\tType\tNull\tKey\tDefault\tExtra\nid\tint\tNO\tPRI\tNULL\tauto_increment\nforDate\tvarchar(10)\tNO\t\tNULL\t\nsentAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP\t\nrecipients\ttext\tNO\t\tNULL\t\nagendaHash\tvarchar(64)\tNO\t\tNULL\t\nblockCount\tint\tNO\t\tNULL\t\npdfStorageKey\tvarchar(200)\tYES\t\tNULL\t\ndrivePushed\ttinyint(1)\tNO\t\t0\t\ndriveFolderPath\tvarchar(200)\tYES\t\tNULL\t\nstatus\tenum('queued','sent','failed','resent')\tNO\t\tqueued\t\nerrorMessage\ttext\tYES\t\tNULL\t\ntriggerKind\tenum('nightly','change_resend','manual')\tNO\t\tnightly\t\n",
+  "stderr": "",
+  "execution_time_ms": 636
+}

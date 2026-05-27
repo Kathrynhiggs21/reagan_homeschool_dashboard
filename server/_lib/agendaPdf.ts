@@ -1,15 +1,18 @@
 /**
- * Nightly Agenda PDF builder.
+ * Nightly Agenda PDF builder — v2.98 "Print-and-Go" Packet.
  *
- * Composes a simple, plain-language one-pager that Mom (Marcy / spear.cpt) can
- * print or hand to whoever's covering the day. Block list mirrors what the
- * Daily Schedule page shows, with:
- *   - Date + tutor of the day (with arrival/departure)
- *   - Numbered blocks with start time, duration, subject, title
- *   - Page-spans for printed books written inline ("Read pg. 31–35 of …")
- *   - Tutor day notes (carry-forward from the prior day if present)
- *   - Footer with sha256 hash so the email recipient can spot if the agenda
- *     changed between 8 PM and school start.
+ * Produces a self-contained daily packet that lets Mom, Grandma, or a tutor
+ * run the entire school day without logging into the dashboard:
+ *
+ *   Page 1  — Cover sheet: date, student, tutor, school-day window, block list
+ *              with start times, durations, subjects, book page refs, and a
+ *              "What's in this packet" summary.
+ *   Page 2  — Devotion / scripture / reflection (if set for the day).
+ *   Pages … — One full page per block that has ANY content attached:
+ *              lesson instructions, objectives, materials, videos (with URLs),
+ *              worksheets (with writable answer lines), answer key (adult-only),
+ *              uploaded PDFs / camera photos / custom lessons, and clickable
+ *              links to every external resource.
  *
  * No external services here — purely PDF bytes + a canonical text snapshot.
  */
@@ -25,17 +28,13 @@ export type AgendaPdfBlock = {
   title: string;
   description?: string | null;
   curriculumTopicCode?: string | null;
-  /** Push 30 (2026-05-13): plain-language topic title shown alongside the code
-   *  on the agenda head + lesson page header so tutors don't need to look up
-   *  what "5.OA.1" means. Optional for back-compat — existing payloads
-   *  rendered without it still hash identically. */
+  /** Push 30 (2026-05-13): plain-language topic title shown alongside the code. */
   curriculumTopicTitle?: string | null;
   bookPageRefs?: Array<{ bookTitle: string; fromPage: number; toPage: number }>;
   printablesAttached?: number;
   /**
-   * 2026-05-05 — full self-contained lesson content. When present, the PDF
-   * also renders one lesson page per block AFTER the summary page so the
-   * print-out is usable without any dashboard access.
+   * Full self-contained lesson content. When present, the PDF renders one
+   * lesson page per block AFTER the cover page.
    */
   lesson?: {
     instructions?: string | null;
@@ -46,10 +45,7 @@ export type AgendaPdfBlock = {
     answerKey?: string | null;
   } | null;
   /**
-   * Push 74 (2026-05-13) — operable + printable per-type block payload
-   * from server/_lib/blockGenerators. Optional and back-compat: legacy
-   * blocks rendered before this field existed still hash identically
-   * because canonicalize() only includes fields it knows about.
+   * Push 74 (2026-05-13) — operable + printable per-type block payload.
    */
   generated?: {
     kind: "reading" | "adventure" | "practice";
@@ -70,6 +66,9 @@ export type AgendaPdfInput = {
   blocks: AgendaPdfBlock[];
   tutorNotesYesterday?: { tutorName: string; notes: string } | null;
   schoolDayWindow?: { start: string; end: string } | null;
+  /** Optional devotion / scripture / reflection for the day. Prints as its
+   *  own page in the print-and-go packet before the block pages. */
+  devotionText?: string | null;
 };
 
 export type AgendaPdfResult = {
@@ -90,15 +89,15 @@ function canonicalize(input: AgendaPdfInput): string {
   if (input.schoolDayWindow) {
     lines.push(`Window: ${input.schoolDayWindow.start} – ${input.schoolDayWindow.end}`);
   }
+  if (input.devotionText) {
+    lines.push(`Devotion: ${input.devotionText.trim().slice(0, 200)}`);
+  }
   for (const b of input.blocks) {
     const parts = [
       `#${b.sortOrder}`,
       b.startTime ? `@${b.startTime}` : "@flex",
       `${b.durationMin}m`,
       b.subjectName ? `[${b.subjectName}]` : "",
-      // Push 30: only stamp the topic title in canonical text when it's
-      // both present AND a code exists — keeps hashes stable for blocks that
-      // never had a topic at all.
       b.curriculumTopicCode
         ? (b.curriculumTopicTitle ? `(${b.curriculumTopicCode}: ${b.curriculumTopicTitle})` : `(${b.curriculumTopicCode})`)
         : "",
@@ -122,248 +121,385 @@ export function hashAgenda(canonical: string): string {
   return createHash("sha256").update(canonical, "utf8").digest("hex");
 }
 
-/* ---------------------------- pdf rendering ------------------------------- */
+/* ----------------------------- helpers ------------------------------------ */
+
+const BRAND_GREEN = "#1f3a2e";
+const BRAND_BLUE  = "#0a66c2";
+const BRAND_WARM  = "#7a4d00";
+const GRAY_DARK   = "#222222";
+const GRAY_MED    = "#444444";
+const GRAY_LIGHT  = "#888888";
+const RULE_COLOR  = "#dddddd";
+const PAGE_W      = 564; // 8.5in × 72 - 2×48 margin
+const MARGIN      = 48;
+
+function rule(doc: PDFKit.PDFDocument) {
+  doc.strokeColor(RULE_COLOR).moveTo(MARGIN, doc.y).lineTo(PAGE_W + MARGIN, doc.y).stroke();
+  doc.moveDown(0.4);
+}
+
+function sectionHead(doc: PDFKit.PDFDocument, text: string) {
+  doc.fillColor(BRAND_GREEN).fontSize(12).font("Helvetica-Bold").text(text.toUpperCase(), { characterSpacing: 0.5 });
+  doc.font("Helvetica");
+  doc.moveDown(0.2);
+}
+
+function bodyText(doc: PDFKit.PDFDocument, text: string, opts?: PDFKit.Mixins.TextOptions) {
+  doc.fillColor(GRAY_DARK).fontSize(10).font("Helvetica").text(text, { width: PAGE_W, ...opts });
+}
+
+function bullet(doc: PDFKit.PDFDocument, text: string) {
+  doc.fillColor(GRAY_DARK).fontSize(10).font("Helvetica").text(`• ${text}`, { width: PAGE_W, indent: 8 });
+}
+
+function answerLine(doc: PDFKit.PDFDocument) {
+  doc.fillColor("#cccccc").fontSize(10).text(
+    "___________________________________________",
+    { width: PAGE_W, indent: 8 },
+  );
+  doc.moveDown(0.1);
+}
+
+function formatTime(t: string | null | undefined): string {
+  if (!t) return "flex";
+  // Convert HH:MM 24h to h:MM AM/PM
+  const m = t.match(/^(\d{1,2}):(\d{2})$/);
+  if (!m) return t;
+  let h = parseInt(m[1], 10);
+  const min = m[2];
+  const ampm = h >= 12 ? "PM" : "AM";
+  if (h > 12) h -= 12;
+  if (h === 0) h = 12;
+  return `${h}:${min} ${ampm}`;
+}
+
+/* ========================= COVER PAGE ==================================== */
+
+function renderCoverPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, agendaHash: string) {
+  // Title bar
+  doc.fillColor(BRAND_GREEN).fontSize(22).font("Helvetica-Bold")
+    .text(`${input.studentName}'s School Day`, { align: "center" });
+  doc.moveDown(0.15);
+  doc.fillColor(GRAY_MED).fontSize(14).font("Helvetica").text(input.dayLabel, { align: "center" });
+  doc.moveDown(0.3);
+
+  // Tutor line
+  if (input.tutorName) {
+    const tutorLine = `Tutor: ${input.tutorName}` +
+      (input.tutorArrival ? `  ·  Arrives ${formatTime(input.tutorArrival)}` : "") +
+      (input.tutorDeparture ? `  ·  Leaves ${formatTime(input.tutorDeparture)}` : "");
+    doc.fillColor(BRAND_BLUE).fontSize(11).font("Helvetica").text(tutorLine, { align: "center" });
+    doc.moveDown(0.2);
+  }
+
+  // School-day window
+  if (input.schoolDayWindow) {
+    doc.fillColor(GRAY_LIGHT).fontSize(10).text(
+      `School day: ${formatTime(input.schoolDayWindow.start)} – ${formatTime(input.schoolDayWindow.end)}`,
+      { align: "center" },
+    );
+    doc.moveDown(0.2);
+  }
+
+  doc.moveDown(0.3);
+  rule(doc);
+
+  // What's in this packet summary
+  const hasDevotionPage = !!input.devotionText;
+  const blocksWithContent = input.blocks.filter((b) => !!b.lesson || !!b.generated);
+  const totalWorksheets = input.blocks.reduce((s, b) => {
+    const ws = b.lesson?.worksheets?.length ?? 0;
+    return s + ws;
+  }, 0);
+  const totalVideos = input.blocks.reduce((s, b) => {
+    const vids = b.lesson?.videos?.length ?? 0;
+    return s + vids;
+  }, 0);
+
+  doc.fillColor(BRAND_GREEN).fontSize(11).font("Helvetica-Bold").text("What's in this packet:");
+  doc.font("Helvetica").moveDown(0.15);
+  const packetSummary: string[] = [];
+  if (hasDevotionPage) packetSummary.push("📖 Devotion / reflection page");
+  packetSummary.push(`📋 Cover sheet (this page) with today's full schedule`);
+  if (blocksWithContent.length > 0) packetSummary.push(`📄 ${blocksWithContent.length} detailed lesson page${blocksWithContent.length === 1 ? "" : "s"} (one per block)`);
+  if (totalWorksheets > 0) packetSummary.push(`✏️  ${totalWorksheets} worksheet${totalWorksheets === 1 ? "" : "s"} with answer lines`);
+  if (totalVideos > 0) packetSummary.push(`▶  ${totalVideos} video link${totalVideos === 1 ? "" : "s"} with descriptions`);
+  for (const line of packetSummary) {
+    bullet(doc, line);
+  }
+  doc.moveDown(0.4);
+  rule(doc);
+
+  // Block list
+  doc.fillColor(BRAND_GREEN).fontSize(13).font("Helvetica-Bold").text("Today's Schedule");
+  doc.font("Helvetica").moveDown(0.3);
+
+  if (input.blocks.length === 0) {
+    doc.fillColor(GRAY_LIGHT).fontSize(11).text("No blocks scheduled.");
+  }
+
+  for (const b of input.blocks) {
+    const timeStr = formatTime(b.startTime);
+    const subj = b.subjectName ? ` [${b.subjectName}]` : "";
+    const topicStr = b.curriculumTopicCode
+      ? (b.curriculumTopicTitle
+          ? `  ·  ${b.curriculumTopicCode}: ${b.curriculumTopicTitle}`
+          : `  ·  ${b.curriculumTopicCode}`)
+      : "";
+    const hasPage = !!b.lesson || !!b.generated;
+
+    // Block header row
+    doc.fillColor(GRAY_DARK).fontSize(10).font("Helvetica-Bold")
+      .text(`${b.sortOrder}.  ${timeStr}  ·  ${b.durationMin} min${subj}${topicStr}`, { continued: false });
+    doc.font("Helvetica");
+    doc.fillColor(GRAY_DARK).fontSize(11).text(`   ${b.title}`, { indent: 4 });
+
+    if (b.description) {
+      doc.fillColor(GRAY_MED).fontSize(9).text(`   ${b.description.trim()}`, { width: PAGE_W, indent: 4 });
+    }
+    if (b.bookPageRefs?.length) {
+      for (const r of b.bookPageRefs) {
+        doc.fillColor(BRAND_BLUE).fontSize(9).text(`   📖 ${r.bookTitle} — pg. ${r.fromPage}–${r.toPage}`, { indent: 4 });
+      }
+    }
+    if (hasPage) {
+      doc.fillColor(GRAY_LIGHT).fontSize(8).text(`   → See lesson page in this packet`, { indent: 4 });
+    }
+    // Surface generated payload hint on cover
+    if (b.generated && !b.description && !(b.bookPageRefs && b.bookPageRefs.length > 0)) {
+      const kindIcon = b.generated.kind === "reading" ? "📖" :
+                       b.generated.kind === "adventure" ? "🌟" : "🎯";
+      doc.fillColor(BRAND_WARM).fontSize(9).text(`   ${kindIcon} ${b.generated.printable}`, { indent: 4 });
+    }
+    doc.moveDown(0.4);
+  }
+
+  // Yesterday's tutor notes
+  if (input.tutorNotesYesterday) {
+    doc.moveDown(0.2);
+    rule(doc);
+    doc.fillColor(BRAND_GREEN).fontSize(11).font("Helvetica-Bold").text("From yesterday's tutor");
+    doc.font("Helvetica");
+    doc.fillColor(GRAY_DARK).fontSize(10)
+      .text(`${input.tutorNotesYesterday.tutorName}: ${input.tutorNotesYesterday.notes.trim()}`, { width: PAGE_W });
+    doc.moveDown(0.3);
+  }
+
+  // Footer
+  doc.moveDown(0.4);
+  doc.fillColor(GRAY_LIGHT).fontSize(7)
+    .text(`Packet hash: ${agendaHash.slice(0, 16)}…  ·  Generated for ${input.forDate}  ·  If anything changes before school, this packet will be re-sent.`);
+}
+
+/* ========================= DEVOTION PAGE ================================== */
+
+function renderDevotionPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput) {
+  if (!input.devotionText) return;
+  doc.addPage();
+  doc.fillColor(BRAND_GREEN).fontSize(20).font("Helvetica-Bold").text("Today's Devotion", { align: "center" });
+  doc.moveDown(0.2);
+  doc.fillColor(GRAY_MED).fontSize(11).font("Helvetica").text(input.dayLabel, { align: "center" });
+  doc.moveDown(0.5);
+  rule(doc);
+  doc.moveDown(0.3);
+  doc.fillColor(GRAY_DARK).fontSize(12).font("Helvetica").text(input.devotionText.trim(), { width: PAGE_W });
+  doc.moveDown(0.8);
+  rule(doc);
+  doc.fillColor(GRAY_LIGHT).fontSize(9).text("Reflection space:", { indent: 0 });
+  doc.moveDown(0.2);
+  for (let i = 0; i < 6; i++) answerLine(doc);
+}
+
+/* ========================= BLOCK LESSON PAGES ============================ */
+
+function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: AgendaPdfBlock) {
+  doc.addPage();
+
+  // Page header
+  doc.fillColor(BRAND_GREEN).fontSize(18).font("Helvetica-Bold").text(`${b.sortOrder}. ${b.title}`);
+  doc.font("Helvetica");
+  doc.fillColor(GRAY_LIGHT).fontSize(10).text(
+    [
+      formatTime(b.startTime),
+      `${b.durationMin} min`,
+      b.subjectName ?? null,
+      b.curriculumTopicCode
+        ? (b.curriculumTopicTitle ? `${b.curriculumTopicCode} · ${b.curriculumTopicTitle}` : b.curriculumTopicCode)
+        : null,
+    ].filter(Boolean).join("  ·  "),
+  );
+  doc.moveDown(0.3);
+  rule(doc);
+
+  if (b.description) {
+    bodyText(doc, b.description.trim());
+    doc.moveDown(0.3);
+  }
+
+  // Book page refs
+  if (b.bookPageRefs?.length) {
+    sectionHead(doc, "Book Assignment");
+    for (const r of b.bookPageRefs) {
+      bullet(doc, `${r.bookTitle} — pages ${r.fromPage}–${r.toPage}`);
+    }
+    doc.moveDown(0.3);
+  }
+
+  const L = b.lesson;
+  if (L) {
+    // Objectives
+    if (L.objectives && L.objectives.length > 0) {
+      sectionHead(doc, "Learning Goals");
+      for (const o of L.objectives) bullet(doc, o);
+      doc.moveDown(0.3);
+    }
+
+    // Materials
+    if (L.materials && L.materials.length > 0) {
+      sectionHead(doc, "What You Need");
+      for (const m of L.materials) bullet(doc, m);
+      doc.moveDown(0.3);
+    }
+
+    // Instructions / lesson body
+    if (L.instructions && L.instructions.trim().length > 0) {
+      sectionHead(doc, "Instructions");
+      bodyText(doc, L.instructions.trim());
+      doc.moveDown(0.3);
+    }
+
+    // Videos — with clickable URLs
+    if (L.videos && L.videos.length > 0) {
+      sectionHead(doc, "Watch First");
+      for (const v of L.videos) {
+        doc.fillColor(BRAND_BLUE).fontSize(11).font("Helvetica-Bold")
+          .text(`▶ ${v.title}`, { link: v.url || undefined, underline: !!v.url });
+        doc.font("Helvetica");
+        if (v.description) {
+          doc.fillColor(GRAY_MED).fontSize(9).text(v.description.trim(), { width: PAGE_W, indent: 8 });
+        }
+        if (v.url) {
+          doc.fillColor(BRAND_BLUE).fontSize(8).text(v.url, { link: v.url, underline: true, indent: 8, width: PAGE_W });
+        }
+        if (v.transcript) {
+          doc.fillColor(GRAY_LIGHT).fontSize(7)
+            .text(`Transcript: ${v.transcript.trim().slice(0, 800)}${v.transcript.length > 800 ? "…" : ""}`,
+              { width: PAGE_W, indent: 8 });
+        }
+        doc.moveDown(0.3);
+      }
+    }
+
+    // Worksheets — with writable answer lines
+    if (L.worksheets && L.worksheets.length > 0) {
+      sectionHead(doc, "Worksheets & Activities");
+      for (const w of L.worksheets) {
+        doc.fillColor(GRAY_DARK).fontSize(12).font("Helvetica-Bold").text(w.title);
+        doc.font("Helvetica");
+        if (w.description) {
+          doc.fillColor(GRAY_MED).fontSize(9).text(w.description.trim(), { width: PAGE_W, indent: 4 });
+        }
+        // Clickable link to the external/uploaded resource
+        if (w.printableUrl) {
+          doc.fillColor(BRAND_BLUE).fontSize(9)
+            .text(`Open / print: ${w.printableUrl}`, {
+              link: w.printableUrl,
+              underline: true,
+              indent: 4,
+              width: PAGE_W,
+            });
+        }
+        // Inline questions with writable answer lines
+        if (w.questions && w.questions.length > 0) {
+          doc.moveDown(0.2);
+          for (let i = 0; i < w.questions.length; i++) {
+            doc.fillColor(GRAY_DARK).fontSize(10).text(`${i + 1}. ${w.questions[i]}`, { width: PAGE_W, indent: 4 });
+            answerLine(doc);
+          }
+        } else if (!w.printableUrl) {
+          // No URL and no questions — add a few blank answer lines so the
+          // block is still writable on paper.
+          doc.moveDown(0.1);
+          for (let i = 0; i < 4; i++) answerLine(doc);
+        }
+        doc.moveDown(0.3);
+      }
+    }
+
+    // Answer key — adult-only, smaller text, clearly labelled
+    if (L.answerKey && L.answerKey.trim().length > 0) {
+      doc.moveDown(0.2);
+      rule(doc);
+      doc.fillColor(GRAY_LIGHT).fontSize(8).font("Helvetica-Bold")
+        .text("ANSWER KEY (for adult use only)");
+      doc.font("Helvetica");
+      doc.fillColor(GRAY_MED).fontSize(8).text(L.answerKey.trim(), { width: PAGE_W });
+      doc.moveDown(0.2);
+    }
+  }
+
+  // Generated payload (adventure / practice / reading)
+  const G = b.generated;
+  if (G && !L) {
+    if (G.kind === "adventure" && G.instructions[0]) {
+      doc.fillColor(BRAND_WARM).fontSize(10).font("Helvetica-Bold")
+        .text(`Safety: ${G.instructions[0]}`, { width: PAGE_W });
+      doc.font("Helvetica");
+      doc.moveDown(0.2);
+    }
+    const stepsToRender = G.kind === "adventure" ? G.instructions.slice(1) : G.instructions;
+    if (stepsToRender.length > 0) {
+      sectionHead(doc, "What to Do");
+      for (const step of stepsToRender) bullet(doc, step);
+      doc.moveDown(0.3);
+    }
+    if (G.operable.supplyList && G.operable.supplyList.length > 0) {
+      sectionHead(doc, "What You Need");
+      for (const s of G.operable.supplyList) bullet(doc, s);
+      doc.moveDown(0.3);
+    }
+    if (G.printable) {
+      sectionHead(doc, "Try These");
+      bodyText(doc, G.printable);
+      doc.moveDown(0.2);
+      for (let i = 0; i < 4; i++) answerLine(doc);
+    }
+    if (G.operable.url) {
+      doc.moveDown(0.2);
+      doc.fillColor(BRAND_BLUE).fontSize(9)
+        .text(`Open online: ${G.operable.url}`, { link: G.operable.url, underline: true });
+    }
+  }
+
+  // Page footer
+  doc.moveDown(0.4);
+  doc.fillColor(GRAY_LIGHT).fontSize(7)
+    .text(`Block ${b.sortOrder} of ${input.blocks.length}  ·  ${input.studentName}  ·  ${input.forDate}`);
+}
+
+/* ========================= MAIN BUILDER ================================== */
 
 export async function buildAgendaPdf(input: AgendaPdfInput): Promise<AgendaPdfResult> {
   const canonical = canonicalize(input);
   const agendaHash = hashAgenda(canonical);
 
-  const doc = new PDFDocument({ size: "LETTER", margin: 48 });
+  const doc = new PDFDocument({ size: "LETTER", margin: MARGIN });
   const chunks: Buffer[] = [];
   doc.on("data", (c: Buffer) => chunks.push(c));
   const done = new Promise<void>((resolve) => doc.on("end", () => resolve()));
 
-  // Header
-  doc.fillColor("#1f3a2e").fontSize(20).text(`${input.studentName}'s School Day`, { continued: false });
-  doc.moveDown(0.2);
-  doc.fillColor("#444").fontSize(13).text(input.dayLabel);
-  if (input.tutorName) {
-    doc.moveDown(0.2);
-    const tutorLine = `Tutor: ${input.tutorName}` +
-      (input.tutorArrival ? ` · Arrives ${input.tutorArrival}` : "") +
-      (input.tutorDeparture ? ` · Leaves ${input.tutorDeparture}` : "");
-    doc.fillColor("#0a66c2").fontSize(12).text(tutorLine);
-  }
-  if (input.schoolDayWindow) {
-    doc.fillColor("#666").fontSize(10).text(`School-day window: ${input.schoolDayWindow.start} – ${input.schoolDayWindow.end}`);
-  }
-  doc.moveDown(0.6);
-  doc.strokeColor("#ddd").moveTo(48, doc.y).lineTo(564, doc.y).stroke();
-  doc.moveDown(0.6);
+  // Page 1: Cover sheet
+  renderCoverPage(doc, input, agendaHash);
 
-  // Blocks
-  doc.fillColor("#1f3a2e").fontSize(14).text("Today's plan", { underline: false });
-  doc.moveDown(0.3);
-  if (input.blocks.length === 0) {
-    doc.fillColor("#999").fontSize(11).text("No blocks scheduled.");
-  }
-  for (const b of input.blocks) {
-    const head = `${b.sortOrder}. ${b.startTime ?? "flex"} · ${b.durationMin} min · ${b.subjectName ?? "any"}` +
-      (b.curriculumTopicCode
-        ? (b.curriculumTopicTitle
-            ? `  ·  ${b.curriculumTopicCode}  ·  ${b.curriculumTopicTitle}`
-            : `  ·  topic ${b.curriculumTopicCode}`)
-        : "");
-    doc.fillColor("#222").fontSize(11).text(head);
-    doc.fillColor("#000").fontSize(12).text(`   ${b.title}`);
-    if (b.description) {
-      doc.fillColor("#444").fontSize(10).text(`   ${b.description.trim()}`, { width: 500 });
-    }
-    if (b.bookPageRefs?.length) {
-      for (const r of b.bookPageRefs) {
-        doc.fillColor("#0a66c2").fontSize(10).text(`   📖 ${r.bookTitle} — pg. ${r.fromPage}–${r.toPage}`);
-      }
-    }
-    if ((b.printablesAttached ?? 0) > 0) {
-      doc.fillColor("#27ae60").fontSize(10).text(`   📎 ${b.printablesAttached} printable(s) attached to email`);
-    }
-    // Push 76 (2026-05-13) — surface generated payload (single calm line)
-    // on the summary page when there's no description and no book page refs
-    // already, so adults see "🎯 Practice — 4 problems" / "🌟 Adventure …"
-    // without flipping to the addendum page.
-    if (b.generated && !b.description && !(b.bookPageRefs && b.bookPageRefs.length > 0)) {
-      const kindIcon = b.generated.kind === "reading" ? "📖" :
-                       b.generated.kind === "adventure" ? "🌟" : "🎯";
-      doc.fillColor("#7a4d00").fontSize(10).text(`   ${kindIcon} ${b.generated.printable}`);
-      // Push 80 (2026-05-13) — for adventure blocks, surface the
-      // outdoor/indoor hint (first instruction line is the safety chip)
-      // on the summary too so Mom can pick weather-friendly slots without
-      // flipping to the addendum.
-      if (b.generated.kind === "adventure" && b.generated.instructions[0]) {
-        const hint = b.generated.instructions[0];
-        doc.fillColor("#7a4d00").fontSize(9).text(`     ${hint}`);
-      }
-    }
-    doc.moveDown(0.5);
+  // Page 2: Devotion (if set)
+  if (input.devotionText) {
+    renderDevotionPage(doc, input);
   }
 
-  // Yesterday's tutor notes carry-forward
-  if (input.tutorNotesYesterday) {
-    doc.moveDown(0.4);
-    doc.strokeColor("#ddd").moveTo(48, doc.y).lineTo(564, doc.y).stroke();
-    doc.moveDown(0.4);
-    doc.fillColor("#1f3a2e").fontSize(13).text("From yesterday's tutor");
-    doc.fillColor("#222").fontSize(11).text(`${input.tutorNotesYesterday.tutorName}: ${input.tutorNotesYesterday.notes.trim()}`, { width: 500 });
-  }
-
-  // Footer for summary page
-  doc.moveDown(0.8);
-  doc.fillColor("#888").fontSize(8).text(`Hash: ${agendaHash.slice(0, 16)}…  ·  Generated for ${input.forDate}`);
-
-  /* ----------------------------------------------------------------------
-   * 2026-05-05 — Self-contained lesson pages.
-   * One page per block that has a `lesson` payload, so the printed packet
-   * is a complete day even without dashboard access.
-   * -------------------------------------------------------------------- */
-  /* ----------------------------------------------------------------------
-   * Push 76 (2026-05-13) — Generated payload addendum pages.
-   * One page per block that has a `generated` payload but NO `lesson` (so
-   * we don't double-render the same block). Keeps the printed packet
-   * self-contained: instructions, supply list, printable, operable URL.
-   * -------------------------------------------------------------------- */
-  const generatedBlocks = input.blocks.filter((b) => !!b.generated && !b.lesson);
-  for (const b of generatedBlocks) {
-    doc.addPage();
-    doc.fillColor("#1f3a2e").fontSize(16).text(`${b.sortOrder}. ${b.title}`);
-    doc.fillColor("#666").fontSize(10).text(
-      [
-        b.startTime ? b.startTime : "flex",
-        `${b.durationMin} min`,
-        b.subjectName ?? "any",
-        b.generated!.kind,
-      ].filter(Boolean).join("  ·  "),
-    );
-    doc.moveDown(0.4);
-    doc.strokeColor("#ddd").moveTo(48, doc.y).lineTo(564, doc.y).stroke();
-    doc.moveDown(0.4);
-
-    const G = b.generated!;
-    // Push 80 (2026-05-13) — for adventure blocks, the safety chip is the
-    // first instruction; pull it out into its own "Safety" callout so it
-    // doesn't blend into the numbered steps and Mom can spot it at a glance.
-    let stepsToRender = G.instructions;
-    if (G.kind === "adventure" && stepsToRender.length > 0) {
-      const safety = stepsToRender[0];
-      stepsToRender = stepsToRender.slice(1);
-      doc.fillColor("#7a4d00").fontSize(11).text(`Safety: ${safety}`, { width: 500 });
-      doc.moveDown(0.3);
-    }
-    doc.fillColor("#1f3a2e").fontSize(12).text("What to do");
-    for (const step of stepsToRender) {
-      doc.fillColor("#222").fontSize(10).text(`• ${step}`, { width: 500 });
-    }
-    doc.moveDown(0.3);
-
-    if (G.operable.supplyList && G.operable.supplyList.length > 0) {
-      doc.fillColor("#1f3a2e").fontSize(12).text("Supplies");
-      for (const s of G.operable.supplyList) {
-        doc.fillColor("#222").fontSize(10).text(`• ${s}`, { width: 500 });
-      }
-      doc.moveDown(0.3);
-    }
-
-    doc.fillColor("#1f3a2e").fontSize(12).text("Printable");
-    doc.fillColor("#000").fontSize(11).text(G.printable, { width: 500 });
-    doc.moveDown(0.3);
-
-    if (G.operable.url) {
-      doc.fillColor("#0a66c2").fontSize(10).text(`Open: ${G.operable.url}`, {
-        link: G.operable.url,
-        underline: true,
-      });
-    }
-
-    // Footer text — NOT pinned to y=740 (which can overflow into a new page);
-    // a small moveDown + text keeps it on the same addendum page.
-    doc.moveDown(0.4);
-    doc.fillColor("#888").fontSize(8).text(
-      `Block ${b.sortOrder} of ${input.blocks.length}  ·  ${input.forDate}`,
-    );
-  }
-
-  const lessonBlocks = input.blocks.filter((b) => !!b.lesson);
-  for (const b of lessonBlocks) {
-    doc.addPage();
-    // Page header
-    doc.fillColor("#1f3a2e").fontSize(16).text(`${b.sortOrder}. ${b.title}`);
-    doc.fillColor("#666").fontSize(10).text(
-      [
-        b.startTime ? b.startTime : "flex",
-        `${b.durationMin} min`,
-        b.subjectName ?? "any",
-        b.curriculumTopicCode
-          ? (b.curriculumTopicTitle
-              ? `${b.curriculumTopicCode} · ${b.curriculumTopicTitle}`
-              : `topic ${b.curriculumTopicCode}`)
-          : null,
-      ].filter(Boolean).join("  ·  "),
-    );
-    doc.moveDown(0.4);
-    doc.strokeColor("#ddd").moveTo(48, doc.y).lineTo(564, doc.y).stroke();
-    doc.moveDown(0.4);
-
-    const L = b.lesson!;
-    if (L.objectives && L.objectives.length > 0) {
-      doc.fillColor("#1f3a2e").fontSize(12).text("Objectives");
-      for (const o of L.objectives) {
-        doc.fillColor("#222").fontSize(10).text(`• ${o}`, { width: 500 });
-      }
-      doc.moveDown(0.4);
-    }
-    if (L.materials && L.materials.length > 0) {
-      doc.fillColor("#1f3a2e").fontSize(12).text("Materials");
-      for (const m of L.materials) {
-        doc.fillColor("#222").fontSize(10).text(`• ${m}`, { width: 500 });
-      }
-      doc.moveDown(0.4);
-    }
-    if (L.instructions) {
-      doc.fillColor("#1f3a2e").fontSize(12).text("Instructions");
-      doc.fillColor("#222").fontSize(10).text(L.instructions.trim(), { width: 500 });
-      doc.moveDown(0.4);
-    }
-    if (L.videos && L.videos.length > 0) {
-      doc.fillColor("#1f3a2e").fontSize(12).text("Videos");
-      for (const v of L.videos) {
-        doc.fillColor("#0a66c2").fontSize(10).text(`▶ ${v.title}`, { link: v.url, underline: true });
-        if (v.description) {
-          doc.fillColor("#444").fontSize(9).text(v.description.trim(), { width: 500 });
-        }
-        if (v.transcript) {
-          doc.fillColor("#666").fontSize(8).text(`Transcript: ${v.transcript.trim().slice(0, 1200)}${v.transcript.length > 1200 ? "…" : ""}`, { width: 500 });
-        }
-        doc.moveDown(0.2);
-      }
-      doc.moveDown(0.2);
-    }
-    if (L.worksheets && L.worksheets.length > 0) {
-      doc.fillColor("#1f3a2e").fontSize(12).text("Worksheet");
-      for (const w of L.worksheets) {
-        doc.fillColor("#000").fontSize(11).text(w.title);
-        if (w.description) {
-          doc.fillColor("#444").fontSize(9).text(w.description.trim(), { width: 500 });
-        }
-        if (w.questions && w.questions.length > 0) {
-          doc.moveDown(0.2);
-          for (let i = 0; i < w.questions.length; i++) {
-            doc.fillColor("#222").fontSize(10).text(`${i + 1}. ${w.questions[i]}`, { width: 500 });
-            // answer line so it's writable on paper
-            doc.fillColor("#999").fontSize(10).text("_______________________________________________________________________", { width: 500 });
-            doc.moveDown(0.15);
-          }
-        }
-        if (w.printableUrl) {
-          doc.fillColor("#0a66c2").fontSize(9).text(`Printable: ${w.printableUrl}`, { link: w.printableUrl, underline: true });
-        }
-        doc.moveDown(0.3);
-      }
-    }
-    if (L.answerKey) {
-      doc.moveDown(0.2);
-      doc.fillColor("#888").fontSize(8).text(`Answer key (adult): ${L.answerKey.trim()}`, { width: 500 });
-    }
-    // page footer
-    doc.fillColor("#888").fontSize(8).text(`Block ${b.sortOrder} of ${input.blocks.length}  ·  ${input.forDate}`, 48, 740);
+  // Per-block lesson pages — blocks that have lesson OR generated content
+  const contentBlocks = input.blocks.filter((b) => !!b.lesson || !!b.generated);
+  for (const b of contentBlocks) {
+    renderLessonPage(doc, input, b);
   }
 
   doc.end();

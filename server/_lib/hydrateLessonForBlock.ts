@@ -14,6 +14,16 @@
  *   - answer_key rows   → answerKey (concatenated)
  *   - video rows        → videos[]
  *
+ * v2.21 (2026-05-17): Also pulls per-block `dailyPrintables` rows for the
+ * given date, so anything Mom attaches via `BlockPrintablesPanel` lands
+ * in tomorrow's nightly packet PDF as a worksheet.
+ *
+ * v2.98 (2026-05-28): Also pulls `curriculumResources` for the block's
+ * curriculum topic (uploaded PDFs, camera photos, custom lessons from the
+ * 4-tab BlockResourcesPanel). This is the key path for the "print-and-go"
+ * packet — every resource Mom or Grandma attaches to a block's topic now
+ * flows into the nightly PDF.
+ *
  * Pure read; no DB writes. Returns null if no rows are pinned to the block.
  */
 import * as db from "../db";
@@ -21,19 +31,10 @@ import type { AgendaPdfBlock } from "./agendaPdf";
 
 type LessonPayload = NonNullable<AgendaPdfBlock["lesson"]>;
 
-/**
- * v2.21 (2026-05-17): The hydrator now also pulls per-block printables
- * (the block_id-anchored daily_printables rows added in v2.19) for the
- * given date, so anything Mom attaches via `BlockPrintablesPanel` lands
- * in tomorrow's nightly packet PDF as a worksheet.
- *
- * `forDate` is optional for backward compatibility — if not supplied,
- * the hydrator behaves exactly as before (assignmentsLibrary only).
- * The agenda assembler now passes the plan date so the merge happens.
- */
 export async function hydrateLessonForBlock(
   blockId: number,
   forDate?: string,
+  curriculumTopicId?: number | null,
 ): Promise<LessonPayload | null> {
   let rows: any[] = [];
   try {
@@ -43,8 +44,6 @@ export async function hydrateLessonForBlock(
   }
 
   // Pull per-block printables (v2.19) for this date, if we know the date.
-  // These get appended to lesson.worksheets[] alongside any
-  // assignmentsLibrary worksheet rows.
   let blockPrintables: any[] = [];
   if (forDate) {
     try {
@@ -57,9 +56,21 @@ export async function hydrateLessonForBlock(
     }
   }
 
+  // v2.98: Pull curriculumResources for the block's topic (uploaded PDFs,
+  // camera photos, custom lessons from BlockResourcesPanel 4-tab UI).
+  let topicResources: any[] = [];
+  if (curriculumTopicId) {
+    try {
+      topicResources = (await db.listTopicResources(curriculumTopicId)) as any[];
+    } catch {
+      topicResources = [];
+    }
+  }
+
   if (
     (!Array.isArray(rows) || rows.length === 0) &&
-    (!Array.isArray(blockPrintables) || blockPrintables.length === 0)
+    (!Array.isArray(blockPrintables) || blockPrintables.length === 0) &&
+    (!Array.isArray(topicResources) || topicResources.length === 0)
   ) {
     return null;
   }
@@ -76,6 +87,7 @@ export async function hydrateLessonForBlock(
   const instructionsParts: string[] = [];
   const answerKeyParts: string[] = [];
 
+  // Process assignmentsLibrary rows
   for (const r of rows) {
     const type = String(r.type ?? "").toLowerCase();
     const title = String(r.title ?? "").trim();
@@ -95,15 +107,11 @@ export async function hydrateLessonForBlock(
         lesson.worksheets!.push({
           title: title || "Worksheet",
           description: notes || null,
-          // questions are not modeled per-row in assignmentsLibrary today;
-          // leave null so PDF skips the inline questions list. The
-          // printableUrl link still lets adults open the source.
           questions: null,
           printableUrl: url,
         });
         break;
       case "answer_key":
-        // Prefer notes (the actual key body), fall back to title.
         if (notes) answerKeyParts.push(notes);
         else if (title) answerKeyParts.push(title);
         break;
@@ -114,23 +122,24 @@ export async function hydrateLessonForBlock(
           description: notes || null,
         });
         break;
-      // "reading" / "slideshow" / "other" / "project" intentionally not
-      // surfaced as their own section yet — they show up in the block
-      // description on the summary page.
       default:
         break;
     }
   }
 
-  // Append per-block printables as worksheets so they print in tomorrow's
-  // packet alongside any assignmentsLibrary worksheets. We dedupe by URL
-  // so a printable that's ALSO an assignmentsLibrary row doesn't get
-  // double-rendered.
+  // Dedupe tracker — used for both printables and topic resources
   const seenUrls = new Set<string>(
     (lesson.worksheets ?? [])
       .map((w) => (w.printableUrl || "").trim())
       .filter(Boolean),
   );
+  const seenVideoUrls = new Set<string>(
+    (lesson.videos ?? [])
+      .map((v) => (v.url || "").trim())
+      .filter(Boolean),
+  );
+
+  // Append per-block printables (v2.19)
   for (const p of blockPrintables) {
     const url: string | null =
       p.sourceUrl || p.source_url || p.fileLink || p.url || null;
@@ -144,6 +153,74 @@ export async function hydrateLessonForBlock(
       printableUrl: url,
     });
     if (url) seenUrls.add(url.trim());
+  }
+
+  // v2.98: Append curriculumResources (uploaded PDFs, camera photos, custom
+  // lessons from BlockResourcesPanel). Map each kind to the right lesson slot.
+  for (const r of topicResources) {
+    const kind = String(r.kind ?? "").toLowerCase();
+    const title = String(r.title ?? "").trim();
+    const notes = r.notes ? String(r.notes).trim() : "";
+    const url: string | null = r.url || null;
+
+    switch (kind) {
+      case "lesson":
+      case "reading": {
+        // Custom lessons and reading notes go into instructions
+        const body = notes || title;
+        if (body) instructionsParts.push(body);
+        // If there's also a URL (e.g. uploaded PDF), surface it as a worksheet
+        // link so it prints with the lesson page.
+        if (url && !seenUrls.has(url.trim())) {
+          lesson.worksheets!.push({
+            title: title || "Lesson",
+            description: notes || null,
+            questions: null,
+            printableUrl: url,
+          });
+          seenUrls.add(url.trim());
+        }
+        break;
+      }
+      case "worksheet":
+      case "printable": {
+        if (url && seenUrls.has(url.trim())) break;
+        lesson.worksheets!.push({
+          title: title || "Worksheet",
+          description: notes || null,
+          questions: null,
+          printableUrl: url,
+        });
+        if (url) seenUrls.add(url.trim());
+        break;
+      }
+      case "video": {
+        if (!url) break;
+        if (seenVideoUrls.has(url.trim())) break;
+        lesson.videos!.push({
+          title: title || "Video",
+          url,
+          description: notes || null,
+        });
+        seenVideoUrls.add(url.trim());
+        break;
+      }
+      case "link": {
+        // Generic links surface as worksheet-style entries so they print
+        // with a clickable URL on the lesson page.
+        if (!url || seenUrls.has(url.trim())) break;
+        lesson.worksheets!.push({
+          title: title || "Link",
+          description: notes || null,
+          questions: null,
+          printableUrl: url,
+        });
+        seenUrls.add(url.trim());
+        break;
+      }
+      default:
+        break;
+    }
   }
 
   if (instructionsParts.length > 0) {

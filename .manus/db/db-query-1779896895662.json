@@ -1,0 +1,20 @@
+{
+  "query": "SELECT p.id as planId, p.date, b.id as blockId, b.title, b.startTime, b.durationMin, b.sortOrder, b.blockType\nFROM dailyPlans p\nLEFT JOIN scheduleBlocks b ON b.planId = p.id\nWHERE p.date = CURDATE()\nORDER BY b.sortOrder;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT p.id as planId, p.date, b.id as blockId, b.title, b.startTime, b.durationMin, b.sortOrder, b.blockType\nFROM dailyPlans p\nLEFT JOIN scheduleBlocks b ON b.planId = p.id\nWHERE p.date = CURDATE()\nORDER BY b.sortOrder;",
+  "rows": [
+    {
+      "planId": "1560002",
+      "date": "2026-05-27",
+      "blockId": "NULL",
+      "title": "NULL",
+      "startTime": "NULL",
+      "durationMin": "NULL",
+      "sortOrder": "NULL",
+      "blockType": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "planId\tdate\tblockId\ttitle\tstartTime\tdurationMin\tsortOrder\tblockType\n1560002\t2026-05-27\tNULL\tNULL\tNULL\tNULL\tNULL\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 559
+}

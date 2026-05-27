@@ -130,8 +130,9 @@ describe("agendaAssembler wiring — source-level", () => {
     expect(src).toContain('from "./hydrateLessonForBlock"');
     // Push-176 (2026-05-19) extended `hydrateLessonForBlock` to accept an
     // optional `dateStr` arg so per-date book progression can be resolved.
-    // Accept either the 1-arg (legacy) or 2-arg (current) call shape.
-    expect(src).toMatch(/hydrateLessonForBlock\(b\.id(?:,\s*[a-zA-Z_]+)?\)/);
+    // v2.98: now also accepts optional 3rd arg (curriculumTopicId).
+    // Accept 1-, 2-, or 3-arg call shapes.
+    expect(src).toMatch(/hydrateLessonForBlock\(b\.id(?:,\s*[a-zA-Z_]+(?:,\s*[a-zA-Z_.()\s?]+)?)?\)/);
     expect(src).toMatch(/lesson:\s*lessonByBlockId\.get\(b\.id\)\s*\?\?\s*null/);
   });
 });

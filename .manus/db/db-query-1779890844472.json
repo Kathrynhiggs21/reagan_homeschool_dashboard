@@ -1,0 +1,82 @@
+{
+  "query": "SELECT id, forDate, status, sentAt, recipients, errorMessage, triggerKind FROM nightlyAgendaEmails WHERE forDate >= '2026-05-27' ORDER BY id DESC LIMIT 10;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, forDate, status, sentAt, recipients, errorMessage, triggerKind FROM nightlyAgendaEmails WHERE forDate >= '2026-05-27' ORDER BY id DESC LIMIT 10;",
+  "rows": [
+    {
+      "id": "840001",
+      "forDate": "2026-05-28",
+      "status": "queued",
+      "sentAt": "2026-05-27 11:00:35",
+      "recipients": "marcy.spear@gmail.com, spear.cpt@gmail.com",
+      "errorMessage": "NULL",
+      "triggerKind": "nightly"
+    },
+    {
+      "id": "600010",
+      "forDate": "2099-09-10",
+      "status": "queued",
+      "sentAt": "2026-05-21 05:20:27",
+      "recipients": "",
+      "errorMessage": "updateBlock",
+      "triggerKind": "change_resend"
+    },
+    {
+      "id": "600009",
+      "forDate": "2030-09-09",
+      "status": "queued",
+      "sentAt": "2026-05-21 05:19:55",
+      "recipients": "",
+      "errorMessage": "updateBlock",
+      "triggerKind": "change_resend"
+    },
+    {
+      "id": "600007",
+      "forDate": "2027-09-20",
+      "status": "queued",
+      "sentAt": "2026-05-21 05:19:52",
+      "recipients": "",
+      "errorMessage": "updateBlock",
+      "triggerKind": "change_resend"
+    },
+    {
+      "id": "600004",
+      "forDate": "2031-01-15",
+      "status": "queued",
+      "sentAt": "2026-05-21 05:19:34",
+      "recipients": "",
+      "errorMessage": "updateBlock",
+      "triggerKind": "change_resend"
+    },
+    {
+      "id": "600003",
+      "forDate": "2031-01-15",
+      "status": "queued",
+      "sentAt": "2026-05-21 05:19:34",
+      "recipients": "",
+      "errorMessage": "updateBlock",
+      "triggerKind": "change_resend"
+    },
+    {
+      "id": "600002",
+      "forDate": "2028-04-10",
+      "status": "queued",
+      "sentAt": "2026-05-21 05:19:32",
+      "recipients": "",
+      "errorMessage": "updateBlock",
+      "triggerKind": "change_resend"
+    },
+    {
+      "id": "600001",
+      "forDate": "2028-03-06",
+      "status": "queued",
+      "sentAt": "2026-05-21 05:19:30",
+      "recipients": "",
+      "errorMessage": "updateBlock",
+      "triggerKind": "change_resend"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tforDate\tstatus\tsentAt\trecipients\terrorMessage\ttriggerKind\n840001\t2026-05-28\tqueued\t2026-05-27 11:00:35\tmarcy.spear@gmail.com, spear.cpt@gmail.com\tNULL\tnightly\n600010\t2099-09-10\tqueued\t2026-05-21 05:20:27\t\tupdateBlock\tchange_resend\n600009\t2030-09-09\tqueued\t2026-05-21 05:19:55\t\tupdateBlock\tchange_resend\n600007\t2027-09-20\tqueued\t2026-05-21 05:19:52\t\tupdateBlock\tchange_resend\n600004\t2031-01-15\tqueued\t2026-05-21 05:19:34\t\tupdateBlock\tchange_resend\n600003\t2031-01-15\tqueued\t2026-05-21 05:19:34\t\tupdateBlock\tchange_resend\n600002\t2028-04-10\tqueued\t2026-05-21 05:19:32\t\tupdateBlock\tchange_resend\n600001\t2028-03-06\tqueued\t2026-05-21 05:19:30\t\tupdateBlock\tchange_resend\n",
+  "stderr": "",
+  "execution_time_ms": 591
+}

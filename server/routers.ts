@@ -1307,6 +1307,130 @@ export const appRouter = router({
     }),
 
     /**
+     * v2.99 — Unified AI chat: preview + auto-commit in one call.
+     * Adult types anything; changes are applied immediately to the DB.
+     * Returns a plain-English reply + the updated block list so the UI
+     * can refresh without a second round-trip.
+     */
+    chat: familyAdminProcedure.input(z.object({
+      date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      message: z.string().min(1).max(2000),
+      attachmentUrl: z.string().url().or(z.string().startsWith("/manus-storage/")).optional(),
+      attachmentMimeType: z.string().regex(/^[\w.+-]+\/[\w.+-]+$/).optional(),
+    })).mutation(async ({ input, ctx }) => {
+      // 1. Build context from live DB
+      const plan = await db.ensurePlanForDate(input.date, "full", { allowWeekendAutoBuild: false });
+      if (!plan) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "could not ensure plan" });
+      const live = await db.listBlocksForPlan(plan.id);
+      const profile: any = await db.getProfile().catch(() => null);
+      const subjects = (await db.listSubjects()).map((s: any) => ({ slug: s.slug, name: s.name }));
+      const subjectIdBySlug = new Map<string, number>((await db.listSubjects()).map((s: any) => [s.slug, s.id as number]));
+      const topicCatalog = await loadTopicHintsForPrompt().catch(() => []);
+      const tod = await resolveTutorOfDay(input.date).catch(() => null);
+      const dt = new Date(input.date + "T12:00:00");
+      const dayLabel = dt.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+      const snapshot: AgendaBlockSnapshot[] = (live as any[]).map((b: any) => ({
+        id: b.id, title: b.title, description: b.description ?? null,
+        blockType: b.blockType, startTime: b.startTime ?? null,
+        durationMin: b.durationMin, sortOrder: b.sortOrder,
+        status: b.status, subjectSlug: b.subjectSlug ?? null,
+        curriculumTopicCode: b.curriculumTopicCode ?? null,
+      }));
+      const planCtx: AgendaPlanContext = {
+        planId: plan.id, date: input.date, dayLabel,
+        studentName: profile?.studentName || "Reagan",
+        gradeLevel: profile?.gradeLevel || "5th grade",
+        tutorOfDayLabel: tutorOfDayLabel(tod),
+        blocks: snapshot, subjects,
+        topicCatalog: topicCatalog.map(t => ({ code: t.code, title: t.title, subjectSlug: t.subjectSlug })),
+      };
+      // 2. Generate edit plan via LLM
+      const attachment = input.attachmentUrl && input.attachmentMimeType
+        ? { url: input.attachmentUrl, mimeType: input.attachmentMimeType } : undefined;
+      const editPlan = await generateAgendaEditPlan(planCtx, input.message, attachment);
+      // 3. Validate + apply ops to DB immediately (no preview step)
+      const validated = validateEditPlan(editPlan, planCtx);
+      const codeMap = await resolveTopicIds(
+        validated.ops.flatMap((op: AgendaEditOp) =>
+          op.kind === "update" || op.kind === "insert" ? [(op as any).curriculumTopicCode || null] : []
+        )
+      ).catch(() => new Map<string, number>());
+      let inserted = 0, updated = 0, deleted = 0, reordered = 0, shifted = 0;
+      for (const op of validated.ops) {
+        switch (op.kind) {
+          case "update": {
+            const patch: any = {};
+            if (op.title !== undefined) patch.title = op.title;
+            if (op.description !== undefined) patch.description = op.description;
+            if (op.blockType !== undefined) patch.blockType = op.blockType;
+            if (op.startTime !== undefined) patch.startTime = op.startTime;
+            if (op.durationMin !== undefined) patch.durationMin = op.durationMin;
+            if (op.subjectSlug !== undefined) patch.subjectId = op.subjectSlug ? (subjectIdBySlug.get(op.subjectSlug) ?? null) : null;
+            if (op.curriculumTopicCode !== undefined) {
+              const code = (op.curriculumTopicCode || "").trim().toUpperCase();
+              patch.curriculumTopicId = code ? (codeMap.get(code) ?? null) : null;
+            }
+            await db.updateBlock(op.id, patch); updated++; break;
+          }
+          case "delete": await db.deleteBlock(op.id); deleted++; break;
+          case "insert": {
+            const subjectId = op.subjectSlug ? (subjectIdBySlug.get(op.subjectSlug) ?? null) : null;
+            const code = (op.curriculumTopicCode || "").trim().toUpperCase();
+            const topicId = code ? (codeMap.get(code) ?? null) : null;
+            const maxSort = Math.max(0, ...(live as any[]).map((b: any) => b.sortOrder || 0)) + inserted + 1;
+            await db.createBlock({
+              planId: plan.id, blockType: op.blockType as any, subjectId,
+              title: op.title, description: op.description || null,
+              durationMin: op.durationMin, startTime: op.startTime || null,
+              sortOrder: maxSort, status: "not_started" as any, curriculumTopicId: topicId,
+            } as any);
+            inserted++; break;
+          }
+          case "reorder": {
+            let i = 0;
+            for (const id of op.orderedIds) { await db.updateBlock(id, { sortOrder: i++ } as any); }
+            reordered++; break;
+          }
+          case "shiftAll": {
+            for (const b of live as any[]) {
+              if (!b.startTime) continue;
+              const m2 = String(b.startTime).match(/^(\d{1,2}):(\d{2})$/);
+              if (!m2) continue;
+              const total = parseInt(m2[1], 10) * 60 + parseInt(m2[2], 10) + op.minutes;
+              if (total < 0 || total >= 24 * 60) continue;
+              const hh = Math.floor(total / 60).toString().padStart(2, "0");
+              const mm2 = (total % 60).toString().padStart(2, "0");
+              await db.updateBlock(b.id, { startTime: `${hh}:${mm2}` } as any);
+            }
+            shifted++; break;
+          }
+        }
+      }
+      await db.logAudit({
+        actorOpenId: ctx.user?.openId, actorName: ctx.user?.name,
+        entityType: "block", entityId: plan.id, action: "update",
+        summary: `AI chat: "${input.message.slice(0, 80)}" [+${inserted} ~${updated} -${deleted} ord${reordered} shift${shifted}]`,
+      });
+      // 4. Return fresh block list + AI reply
+      const fresh = await db.listBlocksForPlan(plan.id);
+      const freshBlocks: AgendaBlockSnapshot[] = (fresh as any[]).map((b: any) => ({
+        id: b.id, title: b.title, description: b.description ?? null,
+        blockType: b.blockType, startTime: b.startTime ?? null,
+        durationMin: b.durationMin, sortOrder: b.sortOrder,
+        status: b.status, subjectSlug: b.subjectSlug ?? null,
+        curriculumTopicCode: b.curriculumTopicCode ?? null,
+      }));
+      const changeCount = inserted + updated + deleted + reordered + shifted;
+      const reply = changeCount === 0
+        ? (editPlan.summary || "No changes needed — the schedule already looks good!")
+        : editPlan.summary || `Done! Made ${changeCount} change${changeCount === 1 ? "" : "s"} to the schedule.`;
+      return {
+        reply, inserted, updated, deleted, reordered, shifted,
+        warnings: validated.warnings, blocks: freshBlocks,
+      };
+    }),
+
+    /**
      * Upload an image or PDF the adult attached to the chat box. Stored under
      * agenda-attachments/<date>-<rand>-<filename> and returned as the public
      * /manus-storage URL plus mime type. The client then passes both into
@@ -8424,6 +8548,46 @@ export const appRouter = router({
       .input(z.object({ id: z.number().int().positive() }))
       .mutation(async ({ input }) => {
         await db.deleteActualEntry(input.id);
+        return { ok: true };
+      }),
+  }),
+
+  /* ============================== NOTEBOOK PAGES ============================== */
+  notebookPages: router({
+    /** Load a single page (or null if not yet created). */
+    get: familyAdminProcedure
+      .input(z.object({ dateStr: z.string(), pageIndex: z.number().int().min(0).default(0) }))
+      .query(async ({ input }) => {
+        return db.getNotebookPage(input.dateStr, input.pageIndex);
+      }),
+
+    /** List all pages for a date (for multi-page support). */
+    listForDate: familyAdminProcedure
+      .input(z.object({ dateStr: z.string() }))
+      .query(async ({ input }) => {
+        return db.listNotebookPagesForDate(input.dateStr);
+      }),
+
+    /** Save / update a page (upsert). */
+    save: familyAdminProcedure
+      .input(z.object({
+        dateStr: z.string(),
+        pageIndex: z.number().int().min(0).default(0),
+        paperStyle: z.string().optional(),
+        textContent: z.string().nullable().optional(),
+        drawingStrokes: z.string().nullable().optional(),
+        penColor: z.string().nullable().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { dateStr, pageIndex, ...patch } = input;
+        return db.upsertNotebookPage(dateStr, pageIndex, patch);
+      }),
+
+    /** Delete a page. */
+    delete: familyAdminProcedure
+      .input(z.object({ dateStr: z.string(), pageIndex: z.number().int().min(0) }))
+      .mutation(async ({ input }) => {
+        await db.deleteNotebookPage(input.dateStr, input.pageIndex);
         return { ok: true };
       }),
   }),

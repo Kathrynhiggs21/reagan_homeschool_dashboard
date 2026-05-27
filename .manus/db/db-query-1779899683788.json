@@ -1,0 +1,17 @@
+{
+  "query": "SELECT id, label, url, color, lastSyncStatus FROM icalFeeds ORDER BY id DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, label, url, color, lastSyncStatus FROM icalFeeds ORDER BY id DESC LIMIT 5;",
+  "rows": [
+    {
+      "id": "1",
+      "label": "Family Calendar",
+      "url": "https://calendar.google.com/calendar/ical/family13835357858763006842%40group.calendar.google.com/private-47f547e925fdcbaf2778d6643d83510f/basic.ics",
+      "color": "#7c3aed",
+      "lastSyncStatus": "never"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tlabel\turl\tcolor\tlastSyncStatus\n1\tFamily Calendar\thttps://calendar.google.com/calendar/ical/family13835357858763006842%40group.calendar.google.com/private-47f547e925fdcbaf2778d6643d83510f/basic.ics\t#7c3aed\tnever\n",
+  "stderr": "",
+  "execution_time_ms": 588
+}

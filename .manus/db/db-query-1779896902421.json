@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO scheduleBlocks (planId, blockType, title, description, startTime, durationMin, sortOrder, status)\nVALUES\n  (1560002, 'appointment', 'Vet Appointment', 'API vet appointment — noon to 12:45 PM.', '12:00', 45, 10, 'not_started'),\n  (1560002, 'custom', 'Lunch', 'Lunch break.', '12:45', 30, 11, 'not_started'),\n  (1560002, 'custom', 'Sophie''s Fun Learning Session', 'Sophie arrives at 1 PM with Reagan and her friend for fun educational activities that Sophie prepares. Group session — hands-on, activity-based learning.', '13:00', 90, 12, 'not_started');",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute INSERT INTO scheduleBlocks (planId, blockType, title, description, startTime, durationMin, sortOrder, status)\nVALUES\n  (1560002, 'appointment', 'Vet Appointment', 'API vet appointment — noon to 12:45 PM.', '12:00', 45, 10, 'not_started'),\n  (1560002, 'custom', 'Lunch', 'Lunch break.', '12:45', 30, 11, 'not_started'),\n  (1560002, 'custom', 'Sophie''s Fun Learning Session', 'Sophie arrives at 1 PM with Reagan and her friend for fun educational activities that Sophie prepares. Group session — hands-on, activity-based learning.', '13:00', 90, 12, 'not_started');",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 614
+}

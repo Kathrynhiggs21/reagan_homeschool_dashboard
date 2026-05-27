@@ -175,8 +175,8 @@ export default function TalkToKiwiButton({
       aria-pressed={listening}
       title="Tap once to talk to Kiwi. Tap again when you're done."
       className={
-        (className ?? "bg-white/80 hover:bg-white") +
-        (listening ? " ring-2 ring-amber-400 animate-pulse" : "")
+        (className ?? "bg-amber-400 text-amber-950 hover:bg-amber-500 border-0 shadow-[0_4px_0_rgba(0,0,0,0.3)]") +
+        (listening ? " ring-2 ring-white animate-pulse" : "")
       }
     >
       {label}

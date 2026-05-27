@@ -383,9 +383,11 @@ function MonthView({
           );
         })}
       </div>
-      <div className="flex items-center gap-3 text-[11px] text-muted-foreground pt-1">
+      <div className="flex items-center gap-3 flex-wrap text-[11px] text-muted-foreground pt-1">
         <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded bg-pink-200 border border-pink-300" /> Indian Hill day off</span>
         <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded ring-2 ring-amber-500 bg-amber-50" /> Today</span>
+        <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded" style={{ backgroundColor: "#7c3aed" }} /> Family Calendar</span>
+        <span className="inline-flex items-center gap-1"><span className="inline-block w-3 h-3 rounded" style={{ backgroundColor: "#16a34a" }} /> Reagan&apos;s Calendar</span>
       </div>
     </div>
   );

@@ -3904,3 +3904,29 @@ The v2.49 simplification had a hole: the dashboard's `appSettings` cache pointed
 - [x] Summer mode default: 10am start, ~4 blocks, curriculum-focused, fewer specials
 - [x] AIScheduleGenerator: seasonal-aware defaults injected into system prompt
 - [x] AIScheduleProposer NL parser: start time / end time / day length / subject focus / mode
+
+## v2.98 — Print-and-Go Daily Packet (2026-05-28)
+
+- [x] Expand hydrateLessonForBlock to pull curriculumResources for block's topic (uploaded PDFs, camera photos, custom lessons from BlockResourcesPanel)
+- [x] Add devotion support: dailyPlans.devotionText field + assembler pulls it into packet
+- [x] Upgrade agendaPdf.ts: full cover sheet with school day summary, devotion page, per-block resource pages with all URLs/instructions/answer keys/writable question lines
+- [x] Wire new packet into nightly email (single combined PDF) and sendNow mutation
+- [x] Vitest contracts for packet assembler and PDF shape
+
+## v2.99 — Unified AI Agenda Editor (single chat box)
+- [ ] Remove FreeFormPromptPanel from AgendaEditor (redundant second AI widget)
+- [ ] Replace dual-AI layout with single conversation-style chat panel
+- [ ] Chat history persists per-date in component state (shows past requests + AI replies)
+- [ ] Quick-action chips feed into the unified chat
+- [ ] Manual block grid stays as fine-tune fallback below chat
+
+## v3.00 — Calendar, Button Colors, Schedule Legend
+- [x] Add Family Calendar iCal feed (purple #7c3aed, 63 events synced)
+- [x] Add Reagan's Calendar iCal feed (green #16a34a, 743 events synced)
+- [x] Update Schedule page legend to show Family + Reagan calendar colors
+- [x] Fix Print Daily Agenda button — solid sky-blue with white text
+- [x] Fix Talk to Kiwi button — solid amber with dark text
+- [x] Fix Practice for Coins button — solid emerald green with white text
+- [x] Fix Tour button — solid violet with white text
+- [x] Remove Today extras drawer from homepage (less is more)
+- [x] Fix Ali therapy appointment block (noon-12:45pm online)
