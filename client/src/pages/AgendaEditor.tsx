@@ -18,7 +18,7 @@ import { useTutorMode } from "@/hooks/useTutorMode";
 import { BlockResourcesPanel } from "@/components/BlockResourcesPanel";
 import { BlockAdventurePanel } from "@/components/BlockAdventurePanel";
 import { BlockPrintablesPanel } from "@/components/BlockPrintablesPanel";
-import { Loader2, Send, Sparkles, Paperclip } from "lucide-react";
+import { Loader2, Send, Sparkles, Paperclip, Printer, Trash2, ArrowRight, Clock, ChevronDown, ChevronUp } from "lucide-react";
 import { Streamdown } from "streamdown";
 
 type Snapshot = {
@@ -106,8 +106,31 @@ const SUGGESTED_PROMPTS = [
   "Make every block 20 min",
   "Swap science to weather topic",
   "Drop the catch-up block",
-  "Add a vet appointment at noon for 45 min",
+  "Add Ali therapy at noon online",
+  "Sophie starts at 1pm for fun activities",
+  "Add lunch at 12:45 for 30 min",
+  "Shift everything 15 min later",
+  "Make today easy — Reagan needs a light day",
 ];
+
+const SUBJECT_COLORS: Record<string, string> = {
+  math: "bg-blue-500",
+  reading: "bg-purple-500",
+  writing: "bg-pink-500",
+  science: "bg-green-500",
+  history: "bg-amber-500",
+  art: "bg-orange-500",
+  music: "bg-teal-500",
+  pe: "bg-red-500",
+  social_studies: "bg-yellow-500",
+  language: "bg-indigo-500",
+};
+
+function subjectDot(slug: string | null) {
+  if (!slug) return null;
+  const color = SUBJECT_COLORS[slug] ?? "bg-gray-400";
+  return <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${color}`} title={slug} />;
+}
 
 export default function AgendaEditor() {
   const [date, setDate] = useState<string>(todayYmd());
@@ -244,6 +267,8 @@ export default function AgendaEditor() {
   // intentionally narrowed (and the tutor can ask her to flip it off if
   // they need Settings or Analytics).
   const { enabled: tutorModeOn, setEnabled: setTutorMode } = useTutorMode();
+  const [expandedBlock, setExpandedBlock] = useState<number | null>(null);
+
   return (
     <div className="container max-w-6xl py-6 space-y-6">
       {tutorModeOn && (
@@ -262,196 +287,311 @@ export default function AgendaEditor() {
       )}
       <header className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-3xl font-semibold">Agenda Editor</h1>
-          <p className="text-sm opacity-70">Just tell the AI what you want — rearrange, swap topics, change tutors, push the day, anything. It edits the agenda for you.</p>
+          <h1 className="text-3xl font-bold tracking-tight">Agenda Editor</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Tell the AI anything — add, remove, reschedule, swap subjects, push the day. Changes apply immediately.</p>
         </div>
-        <div className="flex items-center gap-2">
-          <label className="text-sm opacity-70">Date</label>
-          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-44" />
-          {/* Item L — tutor strip beside the date picker so adults always see
-              who's slated to be with Reagan on the day they're editing. */}
-          <div className="text-xs px-2.5 py-1 rounded-full border border-border/60 bg-card/50 dark:bg-card/30 whitespace-nowrap" data-testid="tutor-of-day-strip">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
+          <div className="text-xs px-2.5 py-1.5 rounded-full border border-border/60 bg-card/50 whitespace-nowrap" data-testid="tutor-of-day-strip">
             {tutorOfDay ? (
-              <>
-                <span className="opacity-60 mr-1">👩‍🏫</span>
-                <span className="font-semibold">{tutorOfDay.name}</span>
-                {tutorOfDay.role && <span className="opacity-60"> · {tutorOfDay.role}</span>}
-                {tutorOfDay.arrival && tutorOfDay.departure && (
-                  <span className="opacity-60"> · {tutorOfDay.arrival}–{tutorOfDay.departure}</span>
-                )}
-              </>
+              <><span className="mr-1">👩‍🏫</span><span className="font-semibold">{tutorOfDay.name}</span>{tutorOfDay.arrival && tutorOfDay.departure && <span className="opacity-60"> · {tutorOfDay.arrival}–{tutorOfDay.departure}</span>}</>
             ) : (
               <span className="opacity-60">👩‍💻 Mom-only day</span>
             )}
           </div>
-          {/* Slice 3: Design today from blank — wipes every block on the chosen
-              date so the adult/tutor can build it from scratch using the AI box
-              or the manual + Add block button. Confirm before destructive action. */}
           <Button
             type="button"
             variant="outline"
             size="sm"
-            className="bg-amber-500/10 border-amber-500/40 text-amber-900 dark:text-amber-100"
+            onClick={() => window.print()}
+            className="gap-1.5"
+          >
+            <Printer className="w-3.5 h-3.5" /> Print
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="border-amber-400/60 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-900/20"
             onClick={async () => {
               const n = liveBlocks.length;
-              if (n === 0) {
-                toast.info("This day is already blank — use the AI box or '+ Add block' to start building.");
-                return;
-              }
-              if (!confirm(`Clear all ${n} block${n === 1 ? "" : "s"} on ${date} and start from scratch? This can't be undone — but you can re-build with the AI box.`)) return;
+              if (n === 0) { toast.info("Already blank — use the AI box to build the day."); return; }
+              if (!confirm(`Clear all ${n} block${n === 1 ? "" : "s"} on ${date}?`)) return;
               clearDayMut.mutate({ date });
             }}
           >
-            Design from blank
+            Clear day
           </Button>
         </div>
       </header>
 
-      {/* ─── UNIFIED AI CHAT ─────────────────────────────────────────────────── */}
-      <Card className="border-primary/40 flex flex-col">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-xl flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" />
-            AI Agenda Editor
-          </CardTitle>
-          <p className="text-sm opacity-70">Tell me anything — add blocks, remove them, change times, reschedule the whole day, add notes, swap subjects. Changes apply immediately.</p>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          {/* Copy shortcuts */}
-          <div className="flex flex-wrap gap-2 text-xs">
-            <button
-              type="button"
-              disabled={!copyFromDateM || copyFromDateM.isPending}
-              onClick={() => copyFromDateM?.mutate?.({ sourceDate: dateMinusDays(date, 1), targetDate: date })}
-              className="rounded-full border border-emerald-400 bg-emerald-500/20 px-3 py-1.5 font-medium text-emerald-50 hover:bg-emerald-500/30 disabled:opacity-50"
-              data-testid="copy-yesterday-btn"
-            >
-              {copyFromDateM?.isPending ? "Copying…" : "→ Copy yesterday"}
-            </button>
-            <button
-              type="button"
-              disabled={!copyFromDateM || copyFromDateM.isPending}
-              onClick={() => copyFromDateM?.mutate?.({ sourceDate: lastMondayBefore(date), targetDate: date })}
-              className="rounded-full border border-emerald-400 bg-emerald-500/20 px-3 py-1.5 font-medium text-emerald-50 hover:bg-emerald-500/30 disabled:opacity-50"
-              data-testid="copy-last-monday-btn"
-            >
-              {copyFromDateM?.isPending ? "Copying…" : "→ Copy last Monday"}
-            </button>
-          </div>
+      {/* ─── TWO-COLUMN LAYOUT: AI CHAT + LIVE SCHEDULE ─────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
 
-          {/* Chat history */}
-          {chatMessages.length > 0 && (
-            <div className="rounded-lg border border-border/60 bg-muted/30 p-3 space-y-3 max-h-80 overflow-y-auto">
-              {chatMessages.map((msg, i) => (
-                <div key={i} className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                  {msg.role === "assistant" && (
-                    <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
-                      <Sparkles className="w-3 h-3 text-primary" />
-                    </div>
-                  )}
-                  <div className={`rounded-xl px-3 py-2 text-sm max-w-[85%] ${
-                    msg.role === "user"
-                      ? "bg-primary text-primary-foreground ml-auto"
-                      : "bg-card border border-border/60"
-                  }`}>
-                    {msg.role === "assistant" ? (
-                      <Streamdown>{msg.content}</Streamdown>
-                    ) : (
-                      <span className="whitespace-pre-wrap">{msg.content}</span>
+        {/* LEFT: AI Chat Panel */}
+        <Card className="border-primary/30 shadow-lg">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              AI Schedule Editor
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">Type anything — changes apply immediately to the live schedule on the right.</p>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-3">
+
+            {/* Copy shortcuts */}
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={!copyFromDateM || copyFromDateM.isPending}
+                onClick={() => copyFromDateM?.mutate?.({ sourceDate: dateMinusDays(date, 1), targetDate: date })}
+                className="text-xs rounded-full border border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 px-3 py-1.5 font-medium hover:bg-emerald-500/20 disabled:opacity-50 transition-colors"
+                data-testid="copy-yesterday-btn"
+              >
+                {copyFromDateM?.isPending ? "Copying…" : "Copy yesterday's schedule"}
+              </button>
+              <button
+                type="button"
+                disabled={!copyFromDateM || copyFromDateM.isPending}
+                onClick={() => copyFromDateM?.mutate?.({ sourceDate: lastMondayBefore(date), targetDate: date })}
+                className="text-xs rounded-full border border-emerald-500/50 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 px-3 py-1.5 font-medium hover:bg-emerald-500/20 disabled:opacity-50 transition-colors"
+                data-testid="copy-last-monday-btn"
+              >
+                {copyFromDateM?.isPending ? "Copying…" : "Copy last Monday"}
+              </button>
+            </div>
+
+            {/* Chat history */}
+            <div className="rounded-xl border border-border/50 bg-muted/20 flex flex-col" style={{ minHeight: 240 }}>
+              <div className="flex-1 p-3 space-y-3 overflow-y-auto" style={{ maxHeight: 360 }}>
+                {chatMessages.length === 0 && (
+                  <div className="text-xs text-muted-foreground text-center py-4">
+                    <Sparkles className="w-6 h-6 mx-auto mb-2 opacity-40" />
+                    Start typing below — or pick a suggestion
+                  </div>
+                )}
+                {chatMessages.map((msg, i) => (
+                  <div key={i} className={`flex gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                    {msg.role === "assistant" && (
+                      <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+                        <Sparkles className="w-3 h-3 text-primary" />
+                      </div>
                     )}
+                    <div className={`rounded-2xl px-3.5 py-2 text-sm max-w-[88%] ${
+                      msg.role === "user"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-card border border-border/60 shadow-sm"
+                    }`}>
+                      {msg.role === "assistant" ? (
+                        <Streamdown>{msg.content}</Streamdown>
+                      ) : (
+                        <span className="whitespace-pre-wrap">{msg.content}</span>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
-              {chatM?.isPending && (
-                <div className="flex gap-2 justify-start">
-                  <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
-                    <Loader2 className="w-3 h-3 text-primary animate-spin" />
+                ))}
+                {chatM?.isPending && (
+                  <div className="flex gap-2 justify-start">
+                    <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+                      <Loader2 className="w-3 h-3 text-primary animate-spin" />
+                    </div>
+                    <div className="rounded-2xl px-3.5 py-2 text-sm bg-card border border-border/60 shadow-sm">
+                      <span className="inline-flex gap-1">
+                        <span className="animate-bounce" style={{ animationDelay: "0ms" }}>·</span>
+                        <span className="animate-bounce" style={{ animationDelay: "150ms" }}>·</span>
+                        <span className="animate-bounce" style={{ animationDelay: "300ms" }}>·</span>
+                      </span>
+                    </div>
                   </div>
-                  <div className="rounded-xl px-3 py-2 text-sm bg-card border border-border/60 opacity-70">Thinking…</div>
+                )}
+                <div ref={chatEndRef} />
+              </div>
+
+              {/* Suggestion chips — show when chat is empty */}
+              {chatMessages.length === 0 && (
+                <div className="border-t border-border/40 p-3">
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Suggestions</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {SUGGESTED_PROMPTS.map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setChatInput(p)}
+                        className="text-xs rounded-full border border-border/60 px-2.5 py-1 hover:bg-accent hover:border-primary/40 transition-colors"
+                      >
+                        {p}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
-              <div ref={chatEndRef} />
             </div>
-          )}
 
-          {/* Suggestion chips — only show when chat is empty */}
-          {chatMessages.length === 0 && (
-            <div className="flex flex-wrap gap-2 text-xs">
-              {SUGGESTED_PROMPTS.map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setChatInput(p)}
-                  className="rounded-full border border-border px-3 py-1.5 hover:bg-accent transition-colors"
-                >
-                  {p}
-                </button>
-              ))}
-            </div>
-          )}
+            {/* Attachment preview */}
+            {attachment && (
+              <div className="flex items-center gap-2 rounded-lg border border-border bg-accent/30 px-3 py-2 text-sm">
+                <span aria-hidden>{attachment.mimeType.startsWith("image/") ? "🖼️" : "📄"}</span>
+                <span className="truncate flex-1 text-xs">{attachment.fileName}</span>
+                <button type="button" onClick={() => setAttachment(null)} className="text-xs text-muted-foreground hover:text-foreground underline">Remove</button>
+              </div>
+            )}
 
-          {/* Attachment preview */}
-          {attachment && (
-            <div className="flex items-center gap-2 rounded-md border border-border bg-accent/30 px-3 py-2 text-sm">
-              <span aria-hidden>{attachment.mimeType.startsWith("image/") ? "🖼️" : "📄"}</span>
-              <span className="truncate flex-1">{attachment.fileName}</span>
-              <button type="button" onClick={() => setAttachment(null)} className="text-xs underline opacity-70 hover:opacity-100">Remove</button>
+            {/* Composer */}
+            <div className="flex gap-2 items-end">
+              <div className="flex-1">
+                <textarea
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChat(); }
+                  }}
+                  placeholder="'Add Ali therapy at noon online', 'move math earlier', 'make today a light day', 'Sophie at 1pm for fun activities'…"
+                  rows={2}
+                  className="w-full resize-none rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 placeholder:text-muted-foreground"
+                />
+              </div>
+              <label className="cursor-pointer flex items-center justify-center w-10 h-10 rounded-xl border border-border hover:bg-accent transition-colors shrink-0" title="Attach file">
+                {uploadM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
+                <input type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onPickFile(f); e.target.value = ""; }} />
+              </label>
+              <Button
+                size="sm"
+                className="h-10 px-4 rounded-xl shrink-0 gap-1.5"
+                onClick={sendChat}
+                disabled={chatM?.isPending || (!chatInput.trim() && !attachment)}
+              >
+                {chatM?.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Send className="w-4 h-4" /> Send</>}
+              </Button>
             </div>
-          )}
-
-          {/* Composer */}
-          <div className="flex gap-2 items-end">
-            <div className="flex-1 relative">
-              <textarea
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    sendChat();
-                  }
-                }}
-                placeholder="Type anything… 'add Ali therapy at noon', 'move math earlier', 'make today shorter', 'Sophie starts at 1pm for fun activities'…"
-                rows={2}
-                className="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40 pr-10"
-              />
-            </div>
-            <label className="cursor-pointer flex items-center justify-center w-9 h-9 rounded-lg border border-border hover:bg-accent transition-colors shrink-0" title="Attach file">
-              {uploadM.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
-              <input type="file" accept="image/*,application/pdf" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) onPickFile(f); e.target.value = ""; }} />
-            </label>
-            <Button
-              size="sm"
-              className="h-9 px-4 shrink-0"
-              onClick={sendChat}
-              disabled={chatM?.isPending || (!chatInput.trim() && !attachment)}
-            >
-              {chatM?.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            </Button>
-          </div>
-          <div className="text-xs opacity-50">Enter to send · Shift+Enter for new line · Changes apply immediately</div>
-        </CardContent>
-      </Card>
-
-      {/* TODAY'S BLOCKS — live schedule view */}
-      {liveBlocks.length > 0 && (
-        <Card>
-          <CardHeader className="py-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <span aria-hidden>🗓️</span>
-              Current schedule for {date}
-              <span className="text-xs font-normal opacity-60">({liveBlocks.length} blocks)</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="space-y-1">
-              {liveBlocks.map(b => (
-                <BlockLine key={b.id} b={b} kind="same" />
-              ))}
-            </div>
+            <div className="text-[11px] text-muted-foreground">Enter to send · Shift+Enter for new line</div>
           </CardContent>
         </Card>
-      )}
+
+        {/* RIGHT: Live Schedule Panel */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold flex items-center gap-2">
+              <span>🗓️</span>
+              Schedule for {date}
+              {liveBlocks.length > 0 && <span className="text-xs font-normal text-muted-foreground">({liveBlocks.length} blocks)</span>}
+            </h2>
+            {liveBlocks.length > 0 && (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <Clock className="w-3 h-3" />
+                {(() => {
+                  const total = liveBlocks.reduce((s, b) => s + b.durationMin, 0);
+                  return `${Math.floor(total / 60)}h ${total % 60}m total`;
+                })()}
+              </div>
+            )}
+          </div>
+
+          {snapQ.isLoading ? (
+            <div className="space-y-2">
+              {[1,2,3,4].map(i => <div key={i} className="h-14 rounded-xl bg-muted/40 animate-pulse" />)}
+            </div>
+          ) : liveBlocks.length === 0 ? (
+            <div className="rounded-xl border-2 border-dashed border-border/50 p-8 text-center">
+              <div className="text-3xl mb-2">📋</div>
+              <div className="text-sm text-muted-foreground">No blocks yet for {date}.</div>
+              <div className="text-xs text-muted-foreground mt-1">Use the AI editor or copy a previous day's schedule.</div>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {liveBlocks.map((b) => (
+                <div key={b.id} className="rounded-xl border border-border/60 bg-card shadow-sm overflow-hidden">
+                  <div
+                    className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-accent/30 transition-colors"
+                    onClick={() => setExpandedBlock(expandedBlock === b.id ? null : b.id)}
+                  >
+                    <div className="flex items-center gap-2 w-20 shrink-0">
+                      <span className="text-xs font-mono text-muted-foreground">{formatTime12h(b.startTime)}</span>
+                    </div>
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {subjectDot(b.subjectSlug)}
+                      <span className="font-medium text-sm truncate">{b.title}</span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-xs text-muted-foreground">{b.durationMin}m</span>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); if (postponeBlockM) { const t = new Date(date + "T00:00:00"); const tom = new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1); postponeBlockM.mutate({ blockId: b.id, toDate: `${tom.getFullYear()}-${String(tom.getMonth()+1).padStart(2,"0")}-${String(tom.getDate()).padStart(2,"0")}` }); } }}
+                        className="p-1 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-900/30 text-muted-foreground hover:text-amber-600 transition-colors"
+                        title="Move to tomorrow"
+                      >
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); if (confirm(`Delete "${b.title}"?`)) blockDeleteM.mutate({ id: b.id }); }}
+                        className="p-1 rounded-lg hover:bg-red-100 dark:hover:bg-red-900/30 text-muted-foreground hover:text-red-500 transition-colors"
+                        title="Delete block"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      {expandedBlock === b.id ? <ChevronUp className="w-3.5 h-3.5 text-muted-foreground" /> : <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />}
+                    </div>
+                  </div>
+                  {expandedBlock === b.id && (
+                    <div className="border-t border-border/40 px-4 py-3 bg-muted/20 space-y-2">
+                      {b.description && <p className="text-xs text-muted-foreground">{b.description}</p>}
+                      <div className="flex flex-wrap gap-2">
+                        {b.subjectSlug && <span className="text-[11px] px-2 py-0.5 rounded-full bg-primary/10 text-primary">{b.subjectSlug}</span>}
+                        {b.blockType && <span className="text-[11px] px-2 py-0.5 rounded-full bg-muted">{b.blockType}</span>}
+                        {b.curriculumTopicCode && <span className="text-[11px] px-2 py-0.5 rounded-full bg-muted">{b.curriculumTopicCode}</span>}
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { const msg = `Rename the "${b.title}" block`; setChatInput(msg); }}>
+                          Rename
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { const msg = `Change the time of "${b.title}" to `; setChatInput(msg); }}>
+                          Change time
+                        </Button>
+                        <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { const msg = `Make "${b.title}" longer by 15 minutes`; setChatInput(msg); }}>
+                          +15 min
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Quick add via AI */}
+          {liveBlocks.length > 0 && (
+            <div className="flex gap-2 flex-wrap">
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs gap-1.5"
+                onClick={() => blockCreateM.mutate({ date, title: "New block", blockType: "custom" as any, durationMin: 30 })}
+                disabled={blockCreateM.isPending}
+              >
+                + Add blank block
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs gap-1.5"
+                onClick={() => shiftDayM.mutate({ date, minutes: -15 })}
+                disabled={shiftDayM.isPending}
+              >
+                − 15 min all
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-xs gap-1.5"
+                onClick={() => shiftDayM.mutate({ date, minutes: 15 })}
+                disabled={shiftDayM.isPending}
+              >
+                + 15 min all
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Quick-attach worksheets */}
       {liveBlocks.length > 0 && (

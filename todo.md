@@ -3930,3 +3930,17 @@ The v2.49 simplification had a hole: the dashboard's `appSettings` cache pointed
 - [x] Fix Tour button — solid violet with white text
 - [x] Remove Today extras drawer from homepage (less is more)
 - [x] Fix Ali therapy appointment block (noon-12:45pm online)
+
+## v3.01 — Unified AI Agenda Editor UI
+- [x] Two-column layout: AI chat panel (left) + live schedule panel (right)
+- [x] Chat history with animated typing indicator (bouncing dots)
+- [x] Suggestion chips (15 common requests) shown when chat is empty
+- [x] File attachment support (image/PDF) in chat
+- [x] Live schedule panel: subject color dots, time, duration, expand/collapse
+- [x] Inline quick actions on each block: delete, move to tomorrow, rename/change time/+15min via AI
+- [x] Total day duration shown in schedule header
+- [x] Print button in header (window.print())
+- [x] Copy yesterday / Copy last Monday shortcuts
+- [x] Shift all blocks ±15 min quick buttons
+- [x] Add blank block button
+- [x] Advanced manual editor demoted to collapsible details section
