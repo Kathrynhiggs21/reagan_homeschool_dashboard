@@ -1,0 +1,17 @@
+{
+  "query": "SELECT name FROM subjects ORDER BY name; SELECT DISTINCT provider FROM curriculumResources WHERE provider IS NOT NULL ORDER BY provider LIMIT 50;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT name FROM subjects ORDER BY name; SELECT DISTINCT provider FROM curriculumResources WHERE provider IS NOT NULL ORDER BY provider LIMIT 50;",
+  "returncode": 1,
+  "logs": [
+    "name",
+    "(deprecated) Specials",
+    "Art and Music",
+    "Health and PE",
+    "Math",
+    "Other",
+    "Reading and Language Arts (ELA)",
+    "Science",
+    "Social Studies",
+    "ERROR 1054 (42S22) at line 1: Unknown column 'provider' in 'where clause'"
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "query": "SELECT id, name, category FROM appLinks WHERE category IN ('learning','school') AND name NOT IN ('Educational ','Khanmigo (Khan Academy AI tutor)','Kimi AI','Mystery Science','Ohio Learning Standards','Planets Recap Video','Stellarium Mobile','Adobe Spark','Aimswebplus','BrainPOP','Class Dojo','Clever','Edpuzzle','iCivics','IXL') ORDER BY category, name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, name, category FROM appLinks WHERE category IN ('learning','school') AND name NOT IN ('Educational ','Khanmigo (Khan Academy AI tutor)','Kimi AI','Mystery Science','Ohio Learning Standards','Planets Recap Video','Stellarium Mobile','Adobe Spark','Aimswebplus','BrainPOP','Class Dojo','Clever','Edpuzzle','iCivics','IXL') ORDER BY category, name;",
+  "rows": [
+    {
+      "id": "1320002",
+      "name": "Kahoot!",
+      "category": "school"
+    },
+    {
+      "id": "30032",
+      "name": "Khan Academy",
+      "category": "school"
+    },
+    {
+      "id": "1320001",
+      "name": "Photomath",
+      "category": "school"
+    },
+    {
+      "id": "30033",
+      "name": "Prodigy Math",
+      "category": "school"
+    },
+    {
+      "id": "210092",
+      "name": "Quizlet",
+      "category": "school"
+    },
+    {
+      "id": "210054",
+      "name": "Vocabulary.com",
+      "category": "school"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcategory\n1320002\tKahoot!\tschool\n30032\tKhan Academy\tschool\n1320001\tPhotomath\tschool\n30033\tProdigy Math\tschool\n210092\tQuizlet\tschool\n210054\tVocabulary.com\tschool\n",
+  "stderr": "",
+  "execution_time_ms": 682
+}

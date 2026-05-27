@@ -1,0 +1,31 @@
+{
+  "query": "\nSELECT 'dailyRecapRequests' as t, status, COUNT(*) as cnt, MAX(sent_at) as last_sent, MAX(replied_at) as last_replied FROM dailyRecapRequests GROUP BY status\nUNION ALL\nSELECT 'icalFeeds' as t, COALESCE(lastSyncStatus,'-') as status, COUNT(*), MAX(lastSyncedAt), NULL FROM icalFeeds GROUP BY lastSyncStatus\nUNION ALL\nSELECT 'icalEvents' as t, '-', COUNT(*), MAX(forDate), NULL FROM icalEvents\nUNION ALL\nSELECT 'weekly_digests' as t, email_status, COUNT(*), MAX(created_at), MAX(emailed_at) FROM weekly_digests GROUP BY email_status;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \nSELECT 'dailyRecapRequests' as t, status, COUNT(*) as cnt, MAX(sent_at) as last_sent, MAX(replied_at) as last_replied FROM dailyRecapRequests GROUP BY status\nUNION ALL\nSELECT 'icalFeeds' as t, COALESCE(lastSyncStatus,'-') as status, COUNT(*), MAX(lastSyncedAt), NULL FROM icalFeeds GROUP BY lastSyncStatus\nUNION ALL\nSELECT 'icalEvents' as t, '-', COUNT(*), MAX(forDate), NULL FROM icalEvents\nUNION ALL\nSELECT 'weekly_digests' as t, email_status, COUNT(*), MAX(created_at), MAX(emailed_at) FROM weekly_digests GROUP BY email_status;\n",
+  "rows": [
+    {
+      "t": "icalEvents",
+      "status": "-",
+      "cnt": "0",
+      "last_sent": "NULL",
+      "last_replied": "NULL"
+    },
+    {
+      "t": "weekly_digests",
+      "status": "sent",
+      "cnt": "2",
+      "last_sent": "2026-05-24 22:00:09",
+      "last_replied": "2026-05-24 22:00:10"
+    },
+    {
+      "t": "dailyRecapRequests",
+      "status": "sent",
+      "cnt": "65",
+      "last_sent": "1779840122067",
+      "last_replied": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "t\tstatus\tcnt\tlast_sent\tlast_replied\nicalEvents\t-\t0\tNULL\tNULL\nweekly_digests\tsent\t2\t2026-05-24 22:00:09\t2026-05-24 22:00:10\ndailyRecapRequests\tsent\t65\t1779840122067\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 585
+}

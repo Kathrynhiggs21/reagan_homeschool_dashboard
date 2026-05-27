@@ -1,6 +1,7 @@
 import type { Express, Request, Response } from "express";
 import * as db from "./db";
 import { sdk } from "./_core/sdk";
+import { ENV } from "./_core/env";
 import { buildDayLogMarkdown, dayLogFileName, dayLogSubpath } from "./_lib/dayLogBuilder";
 import { buildDailyMomBriefing } from "./_lib/dailyMomBriefing";
 import { drivePushQueue } from "../drizzle/schema";
@@ -951,13 +952,28 @@ export function registerScheduledSync(app: Express) {
    *      and to gws for the Drive Homeschool Hub mirror.
    * ============================================================================ */
   app.post("/api/scheduled/nightly-agenda-email", async (req: Request, res: Response) => {
+    // v2.92 (2026-05-27) — dual auth: accept EITHER the cookie-based
+    // scheduled-task session OR a shared bearer secret in the Authorization
+    // header. The bearer path bypasses the Cloudflare edge cookie gate that
+    // has been silently 403'ing the nightly cron since May 4. The cookie
+    // path stays so manual parent calls still work.
+    const bearerHeader = String(req.headers["authorization"] ?? req.headers["Authorization" as any] ?? "");
+    const bearerSecret = ENV.scheduledBearer;
+    const bearerOk =
+      !!bearerSecret &&
+      bearerHeader.startsWith("Bearer ") &&
+      bearerHeader.slice(7).trim() === bearerSecret;
+
     let role: string | null = null;
-    try {
-      const u = await sdk.authenticateRequest(req);
-      role = u?.role ?? null;
-    } catch { role = null; }
-    if (!role || (role !== "user" && role !== "admin")) {
-      return res.status(401).json({ ok: false, error: "Unauthorized \u2014 scheduled-task cookie required." });
+    if (!bearerOk) {
+      try {
+        const u = await sdk.authenticateRequest(req);
+        role = u?.role ?? null;
+      } catch { role = null; }
+    }
+    const cookieOk = !!role && (role === "user" || role === "admin");
+    if (!bearerOk && !cookieOk) {
+      return res.status(401).json({ ok: false, error: "Unauthorized \u2014 scheduled-task cookie or bearer required." });
     }
     try {
       // Resolve target date: explicit forDate, else next school day (skip Sat/Sun).
@@ -1289,9 +1305,14 @@ ${absolutePdfUrl ? `<p style=\"text-align:center;margin:24px 0;\"><a href=\"${ab
 
   /** Mark a queued/sent agenda row complete after gmail MCP confirms send. */
   app.post("/api/scheduled/nightly-agenda-email/result", async (req: Request, res: Response) => {
+    // v2.92 (2026-05-27) — dual auth, see nightly-agenda-email POST above.
+    const bearerHeader2 = String(req.headers["authorization"] ?? req.headers["Authorization" as any] ?? "");
+    const bearerOk2 = !!ENV.scheduledBearer && bearerHeader2.startsWith("Bearer ") && bearerHeader2.slice(7).trim() === ENV.scheduledBearer;
     let role: string | null = null;
-    try { const u = await sdk.authenticateRequest(req); role = u?.role ?? null; } catch { role = null; }
-    if (!role || (role !== "user" && role !== "admin")) {
+    if (!bearerOk2) {
+      try { const u = await sdk.authenticateRequest(req); role = u?.role ?? null; } catch { role = null; }
+    }
+    if (!bearerOk2 && (!role || (role !== "user" && role !== "admin"))) {
       return res.status(401).json({ ok: false, error: "Unauthorized" });
     }
     try {

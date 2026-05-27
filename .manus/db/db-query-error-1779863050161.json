@@ -1,0 +1,8 @@
+{
+  "query": "\nSELECT 'nightlyAgendaEmails' as automation, status, COUNT(*) as cnt, MAX(scheduledAt) as last_scheduled, MAX(sentAt) as last_sent\n  FROM nightlyAgendaEmails GROUP BY status\nUNION ALL\nSELECT 'dailyRecapRequests', status, COUNT(*), MAX(sent_at), MAX(replied_at) FROM dailyRecapRequests GROUP BY status\nUNION ALL\nSELECT 'icalFeeds', 'rows' as status, COUNT(*), MAX(lastFetchedAt), NULL FROM icalFeeds\nUNION ALL\nSELECT 'icalEvents', 'rows' as status, COUNT(*), MAX(forDate), NULL FROM icalEvents\nORDER BY automation, status;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \nSELECT 'nightlyAgendaEmails' as automation, status, COUNT(*) as cnt, MAX(scheduledAt) as last_scheduled, MAX(sentAt) as last_sent\n  FROM nightlyAgendaEmails GROUP BY status\nUNION ALL\nSELECT 'dailyRecapRequests', status, COUNT(*), MAX(sent_at), MAX(replied_at) FROM dailyRecapRequests GROUP BY status\nUNION ALL\nSELECT 'icalFeeds', 'rows' as status, COUNT(*), MAX(lastFetchedAt), NULL FROM icalFeeds\nUNION ALL\nSELECT 'icalEvents', 'rows' as status, COUNT(*), MAX(forDate), NULL FROM icalEvents\nORDER BY automation, status;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 2: Unknown column 'scheduledat' in 'group statement'"
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "query": "SELECT column_name FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'nightlyAgendaEmails' ORDER BY ordinal_position;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT column_name FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = 'nightlyAgendaEmails' ORDER BY ordinal_position;",
+  "rows": [
+    {
+      "column_name": "id"
+    },
+    {
+      "column_name": "forDate"
+    },
+    {
+      "column_name": "sentAt"
+    },
+    {
+      "column_name": "recipients"
+    },
+    {
+      "column_name": "agendaHash"
+    },
+    {
+      "column_name": "blockCount"
+    },
+    {
+      "column_name": "pdfStorageKey"
+    },
+    {
+      "column_name": "drivePushed"
+    },
+    {
+      "column_name": "driveFolderPath"
+    },
+    {
+      "column_name": "status"
+    },
+    {
+      "column_name": "errorMessage"
+    },
+    {
+      "column_name": "triggerKind"
+    }
+  ],
+  "messages": [],
+  "stdout": "column_name\nid\nforDate\nsentAt\nrecipients\nagendaHash\nblockCount\npdfStorageKey\ndrivePushed\ndriveFolderPath\nstatus\nerrorMessage\ntriggerKind\n",
+  "stderr": "",
+  "execution_time_ms": 574
+}

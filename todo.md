@@ -3823,3 +3823,33 @@ The v2.49 simplification had a hole: the dashboard's `appSettings` cache pointed
 - [x] **Verified live**: Triggered via `pnpm tsx scripts/trigger-send-now.ts 2026-05-25`. Returned `{ ok:true, recordId:780001, notified:true, blockCount:17, signedUrl:"...cloudfront..." }`. DB row `780001` confirmed `status='sent'`, `recipients='spear.cpt@gmail.com'`, `triggerKind='manual'`.
 - [x] **Locked with 21/21 vitest**: `server/nightlyAgendaSendNow.test.ts` (12 source-contract tests) + `server/nightlyAgendaEmailDispatch.test.ts` (9 dispatch tests, still green).
 - [ ] **Follow-up**: ask Manus support to whitelist the heartbeat task at the deployment edge so the 7 AM cron resumes. The new `sendNow` button is the safety net regardless.
+
+
+## v2.90 (2026-05-23) — Schedule audit + heartbeat-migration follow-up
+
+- [x] **Schedule audit (2026-05-23)**: The Manus schedule for this project is an AGENT-cron (`SCHEDULE_TYPE_INTERVAL`, `interval: 660` seconds = every 11 minutes), `runAsNewTask=true`, `runMode=full_auto`, timezone America/New_York. Last fire 2026-05-23T11:01:32Z. The `--detail` and `--playbook` fields were successfully replaced with the v5 canonical playbook (Job A nightly email + Job B drive-mirror, full subfolder map, `nightly-agenda-email/result` shape with `id` not `recordId`, all 9 canonical parents, future_worksheets included). The `--cron` flag on `manus-config schedule update` is silently ignored when the existing schedule is interval-based, so the trigger stayed at 660s. That doesn't matter right now because every fire returns `403 permission error for cron cookie` at the deployed Cloudflare edge — the schedule could be 7 AM cron or 11-minute interval, the result is identical (no email).
+- [ ] **Migrate to Heartbeat HTTP cron (per `references/periodic-updates.md`)**: replace the AGENT-cron + cookie auth with a Heartbeat job that POSTs directly to `/api/scheduled/sendNightlyAgenda` and authenticates via `sdk.authenticateRequest(req).isCron === true`. Steps: (1) apply the §5c SDK patches in `server/_core/sdk.ts` + `server/_core/types/manusTypes.ts` so `user.isCron`/`user.taskUid` work; (2) add `/api/scheduled/sendNightlyAgenda` Express route that runs the same code path as `nightlyAgenda.sendNow` but is gated by `isCron`; (3) save checkpoint and ask Mom to publish (Heartbeat requires the site to be deployed because biz-server POSTs the prod URL); (4) `manus-heartbeat create --name reagan-nightly-agenda --cron "0 0 11 * * 1-5" --path /api/scheduled/sendNightlyAgenda` (11:00 UTC = 7:00 AM EDT, weekdays only). This bypasses the cookie-rejection edge gate entirely and survives sandbox teardown.
+- [ ] **Until heartbeat migration ships**: the in-dashboard 📨 Send Now button (v2.89) is the working channel. The current AGENT-cron schedule is harmless (returns 403, marks no rows), and the v5 detail is now correct so it'll behave properly the moment the auth gate clears.
+
+
+## v2.91 (2026-05-23) — Begin Heartbeat HTTP-cron migration (active)
+
+- [ ] Apply §5c SDK patches: add `taskUid` to `GetUserInfoWithJwtResponse`, add `CRON_OPEN_ID_PREFIX`, `AuthenticatedUser`, `buildCronUser`, and the cron short-circuit branch in `authenticateRequest` so `user.isCron === true` for heartbeat callers.
+- [ ] Add Express route `POST /api/scheduled/sendNightlyAgenda` gated by `user.isCron`; reuses the same code path as `nightlyAgenda.sendNow`.
+- [ ] Write vitest contract test for the new route (auth gate, success path, no-plan path).
+- [ ] Save checkpoint; ask Mom to publish; create the heartbeat with `manus-heartbeat create` (cron `0 0 11 * * 1-5` = 7:00 AM EDT weekdays).
+- [ ] Verify with `manus-heartbeat run-now` and confirm DB row lands `status='sent'`.
+
+
+## v2.92 (2026-05-27) — Full automation audit + fixes
+
+- [ ] Inventory every automation in the project
+- [ ] Triage by impact and recent failure evidence
+- [ ] FIX #1 — Nightly agenda email pipeline (still broken at the deploy-edge cookie gate; ship the bearer-secret endpoint that v2.91 started)
+- [ ] FIX #2 — Printable daily agenda PDF (verify it builds, includes all blocks + worksheet links, matches Today)
+- [ ] FIX #3 — Daily AI assignment generator (verify each subject is producing real, fully-operable, 5th-grade content)
+- [ ] FIX #4 — Recap-reply ingestion pipeline (Mom/Grandma replies to recap email → day log)
+- [ ] FIX #5 — Drive sync, behavior tracker, curriculum auto-tagger, off-script tagger, PowerSchool ingest
+- [ ] Add "Last successful run" monitoring per automation in the For Mom & Grandma drawer
+- [ ] Vitest contract coverage for every fix
+- [ ] Save checkpoint and ship

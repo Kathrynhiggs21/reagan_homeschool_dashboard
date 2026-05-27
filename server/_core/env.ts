@@ -7,4 +7,9 @@ export const ENV = {
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
   forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  // v2.92 (2026-05-27) — shared bearer secret used by Heartbeat / AGENT cron
+  // callbacks to /api/scheduled/* endpoints. Bypasses the deployment-edge
+  // cookie gate that has been silently 403'ing the nightly agenda email
+  // since May 4. Never sent to the client. Server-side only.
+  scheduledBearer: process.env.SCHEDULED_BEARER ?? "",
 };

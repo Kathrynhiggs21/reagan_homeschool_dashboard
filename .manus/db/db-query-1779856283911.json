@@ -1,0 +1,95 @@
+{
+  "query": "SELECT id, name, category FROM appLinks WHERE category IN ('google','reading','video','nature') ORDER BY category, name;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, name, category FROM appLinks WHERE category IN ('google','reading','video','nature') ORDER BY category, name;",
+  "rows": [
+    {
+      "id": "210056",
+      "name": "iNaturalist",
+      "category": "nature"
+    },
+    {
+      "id": "210055",
+      "name": "Merlin Bird ID",
+      "category": "nature"
+    },
+    {
+      "id": "30048",
+      "name": "CommonLit",
+      "category": "reading"
+    },
+    {
+      "id": "30046",
+      "name": "Epic! Books",
+      "category": "reading"
+    },
+    {
+      "id": "210088",
+      "name": "ReadWorks",
+      "category": "reading"
+    },
+    {
+      "id": "1320004",
+      "name": "Starfall",
+      "category": "reading"
+    },
+    {
+      "id": "30047",
+      "name": "Storyline Online",
+      "category": "reading"
+    },
+    {
+      "id": "30040",
+      "name": "Gmail",
+      "category": "google"
+    },
+    {
+      "id": "1320006",
+      "name": "Google Classroom",
+      "category": "google"
+    },
+    {
+      "id": "30037",
+      "name": "Google Docs",
+      "category": "google"
+    },
+    {
+      "id": "30039",
+      "name": "Google Drive",
+      "category": "google"
+    },
+    {
+      "id": "30038",
+      "name": "Google Slides",
+      "category": "google"
+    },
+    {
+      "id": "30044",
+      "name": "Crash Course Kids",
+      "category": "video"
+    },
+    {
+      "id": "30043",
+      "name": "Generation Genius",
+      "category": "video"
+    },
+    {
+      "id": "30045",
+      "name": "Math Antics",
+      "category": "video"
+    },
+    {
+      "id": "30042",
+      "name": "Mystery Doug",
+      "category": "video"
+    },
+    {
+      "id": "30041",
+      "name": "YouTube Kids",
+      "category": "video"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcategory\n210056\tiNaturalist\tnature\n210055\tMerlin Bird ID\tnature\n30048\tCommonLit\treading\n30046\tEpic! Books\treading\n210088\tReadWorks\treading\n1320004\tStarfall\treading\n30047\tStoryline Online\treading\n30040\tGmail\tgoogle\n1320006\tGoogle Classroom\tgoogle\n30037\tGoogle Docs\tgoogle\n30039\tGoogle Drive\tgoogle\n30038\tGoogle Slides\tgoogle\n30044\tCrash Course Kids\tvideo\n30043\tGeneration Genius\tvideo\n30045\tMath Antics\tvideo\n30042\tMystery Doug\tvideo\n30041\tYouTube Kids\tvideo\n",
+  "stderr": "",
+  "execution_time_ms": 590
+}

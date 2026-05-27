@@ -1,0 +1,8 @@
+{
+  "query": "\nSELECT 'dailyRecapRequests' as t, status, COUNT(*) as cnt, MAX(sent_at) as last_sent_at, MAX(replied_at) as last_replied_at FROM dailyRecapRequests GROUP BY status\nUNION ALL\nSELECT 'icalFeeds' as t, '-' as status, COUNT(*), MAX(lastFetchedAt), NULL FROM icalFeeds\nUNION ALL\nSELECT 'icalEvents' as t, '-' as status, COUNT(*), MAX(forDate), NULL FROM icalEvents\nUNION ALL\nSELECT 'weekly_digests' as t, status, COUNT(*), MAX(generated_at), MAX(sent_at) FROM weekly_digests GROUP BY status;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \nSELECT 'dailyRecapRequests' as t, status, COUNT(*) as cnt, MAX(sent_at) as last_sent_at, MAX(replied_at) as last_replied_at FROM dailyRecapRequests GROUP BY status\nUNION ALL\nSELECT 'icalFeeds' as t, '-' as status, COUNT(*), MAX(lastFetchedAt), NULL FROM icalFeeds\nUNION ALL\nSELECT 'icalEvents' as t, '-' as status, COUNT(*), MAX(forDate), NULL FROM icalEvents\nUNION ALL\nSELECT 'weekly_digests' as t, status, COUNT(*), MAX(generated_at), MAX(sent_at) FROM weekly_digests GROUP BY status;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 2: Unknown column 'lastfetchedat' in 'field list'"
+  ]
+}

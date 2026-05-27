@@ -1,0 +1,78 @@
+{
+  "query": "SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name IN ('icalFeeds','weekly_digests') ORDER BY table_name, ordinal_position;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name IN ('icalFeeds','weekly_digests') ORDER BY table_name, ordinal_position;",
+  "rows": [
+    {
+      "table_name": "icalFeeds",
+      "column_name": "id"
+    },
+    {
+      "table_name": "icalFeeds",
+      "column_name": "label"
+    },
+    {
+      "table_name": "icalFeeds",
+      "column_name": "url"
+    },
+    {
+      "table_name": "icalFeeds",
+      "column_name": "color"
+    },
+    {
+      "table_name": "icalFeeds",
+      "column_name": "enabled"
+    },
+    {
+      "table_name": "icalFeeds",
+      "column_name": "lastSyncedAt"
+    },
+    {
+      "table_name": "icalFeeds",
+      "column_name": "lastSyncStatus"
+    },
+    {
+      "table_name": "icalFeeds",
+      "column_name": "lastSyncError"
+    },
+    {
+      "table_name": "icalFeeds",
+      "column_name": "eventsCached"
+    },
+    {
+      "table_name": "icalFeeds",
+      "column_name": "createdAt"
+    },
+    {
+      "table_name": "weekly_digests",
+      "column_name": "id"
+    },
+    {
+      "table_name": "weekly_digests",
+      "column_name": "week_start"
+    },
+    {
+      "table_name": "weekly_digests",
+      "column_name": "week_end"
+    },
+    {
+      "table_name": "weekly_digests",
+      "column_name": "payload"
+    },
+    {
+      "table_name": "weekly_digests",
+      "column_name": "emailed_at"
+    },
+    {
+      "table_name": "weekly_digests",
+      "column_name": "email_status"
+    },
+    {
+      "table_name": "weekly_digests",
+      "column_name": "created_at"
+    }
+  ],
+  "messages": [],
+  "stdout": "table_name\tcolumn_name\nicalFeeds\tid\nicalFeeds\tlabel\nicalFeeds\turl\nicalFeeds\tcolor\nicalFeeds\tenabled\nicalFeeds\tlastSyncedAt\nicalFeeds\tlastSyncStatus\nicalFeeds\tlastSyncError\nicalFeeds\teventsCached\nicalFeeds\tcreatedAt\nweekly_digests\tid\nweekly_digests\tweek_start\nweekly_digests\tweek_end\nweekly_digests\tpayload\nweekly_digests\temailed_at\nweekly_digests\temail_status\nweekly_digests\tcreated_at\n",
+  "stderr": "",
+  "execution_time_ms": 563
+}

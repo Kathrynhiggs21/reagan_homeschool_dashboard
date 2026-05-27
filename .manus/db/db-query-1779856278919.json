@@ -1,0 +1,268 @@
+{
+  "query": "SELECT id, name, category, COALESCE(description,'') AS description FROM appLinks ORDER BY category, name LIMIT 200;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, name, category, COALESCE(description,'') AS description FROM appLinks ORDER BY category, name LIMIT 200;",
+  "rows": [
+    {
+      "id": "630001",
+      "name": "Educational ",
+      "category": "learning",
+      "description": ""
+    },
+    {
+      "id": "210091",
+      "name": "Khanmigo (Khan Academy AI tutor)",
+      "category": "learning",
+      "description": "1:1 tutor for stuck moments — voice OK"
+    },
+    {
+      "id": "1320008",
+      "name": "Kimi AI",
+      "category": "learning",
+      "description": "AI tutor + chat assistant"
+    },
+    {
+      "id": "210090",
+      "name": "Mystery Science",
+      "category": "learning",
+      "description": "5th-grade Mysteries — Chemical Magic, Force Olympics, Watery Planet"
+    },
+    {
+      "id": "1320007",
+      "name": "Ohio Learning Standards",
+      "category": "learning",
+      "description": "Ohio Department of Education — what each grade is supposed to cover"
+    },
+    {
+      "id": "930013",
+      "name": "Planets Recap Video",
+      "category": "learning",
+      "description": ""
+    },
+    {
+      "id": "210093",
+      "name": "Stellarium Mobile",
+      "category": "learning",
+      "description": "Sky watching for moon phases + meteor shower"
+    },
+    {
+      "id": "60002",
+      "name": "Adobe Apps",
+      "category": "creativity",
+      "description": "From IH student portal"
+    },
+    {
+      "id": "210058",
+      "name": "Minecraft",
+      "category": "creativity",
+      "description": ""
+    },
+    {
+      "id": "210087",
+      "name": "Pinterest",
+      "category": "creativity",
+      "description": "Craft + makeup + animal inspiration boards. Approved boards only — Mom curates."
+    },
+    {
+      "id": "210057",
+      "name": "Roblox",
+      "category": "creativity",
+      "description": ""
+    },
+    {
+      "id": "210059",
+      "name": "Toca Boca",
+      "category": "creativity",
+      "description": ""
+    },
+    {
+      "id": "60003",
+      "name": "Adobe Spark",
+      "category": "school",
+      "description": "From IH student portal"
+    },
+    {
+      "id": "60004",
+      "name": "Aimswebplus",
+      "category": "school",
+      "description": "From IH student portal"
+    },
+    {
+      "id": "210052",
+      "name": "BrainPOP",
+      "category": "school",
+      "description": ""
+    },
+    {
+      "id": "1320003",
+      "name": "Class Dojo",
+      "category": "school",
+      "description": "Behavior tracking + parent messaging"
+    },
+    {
+      "id": "1320005",
+      "name": "Clever",
+      "category": "school",
+      "description": "School SSO portal (adult use)"
+    },
+    {
+      "id": "210053",
+      "name": "Edpuzzle",
+      "category": "school",
+      "description": ""
+    },
+    {
+      "id": "210089",
+      "name": "iCivics",
+      "category": "school",
+      "description": "Branches of Power, Do I Have a Right?, Map It"
+    },
+    {
+      "id": "30031",
+      "name": "IXL",
+      "category": "school",
+      "description": ""
+    },
+    {
+      "id": "1320002",
+      "name": "Kahoot!",
+      "category": "school",
+      "description": "Quiz games"
+    },
+    {
+      "id": "30032",
+      "name": "Khan Academy",
+      "category": "school",
+      "description": ""
+    },
+    {
+      "id": "1320001",
+      "name": "Photomath",
+      "category": "school",
+      "description": "Camera-based math problem solver"
+    },
+    {
+      "id": "30033",
+      "name": "Prodigy Math",
+      "category": "school",
+      "description": ""
+    },
+    {
+      "id": "210092",
+      "name": "Quizlet",
+      "category": "school",
+      "description": "Spelling + vocab flashcards"
+    },
+    {
+      "id": "210054",
+      "name": "Vocabulary.com",
+      "category": "school",
+      "description": ""
+    },
+    {
+      "id": "210056",
+      "name": "iNaturalist",
+      "category": "nature",
+      "description": ""
+    },
+    {
+      "id": "210055",
+      "name": "Merlin Bird ID",
+      "category": "nature",
+      "description": "Bird identification on hikes — pairs with Adventures library"
+    },
+    {
+      "id": "30048",
+      "name": "CommonLit",
+      "category": "reading",
+      "description": ""
+    },
+    {
+      "id": "30046",
+      "name": "Epic! Books",
+      "category": "reading",
+      "description": ""
+    },
+    {
+      "id": "210088",
+      "name": "ReadWorks",
+      "category": "reading",
+      "description": "Article-a-day. Pick animal-themed."
+    },
+    {
+      "id": "1320004",
+      "name": "Starfall",
+      "category": "reading",
+      "description": "Reading, phonics, and math"
+    },
+    {
+      "id": "30047",
+      "name": "Storyline Online",
+      "category": "reading",
+      "description": ""
+    },
+    {
+      "id": "30040",
+      "name": "Gmail",
+      "category": "google",
+      "description": ""
+    },
+    {
+      "id": "1320006",
+      "name": "Google Classroom",
+      "category": "google",
+      "description": "Assignment hub"
+    },
+    {
+      "id": "30037",
+      "name": "Google Docs",
+      "category": "google",
+      "description": ""
+    },
+    {
+      "id": "30039",
+      "name": "Google Drive",
+      "category": "google",
+      "description": ""
+    },
+    {
+      "id": "30038",
+      "name": "Google Slides",
+      "category": "google",
+      "description": ""
+    },
+    {
+      "id": "30044",
+      "name": "Crash Course Kids",
+      "category": "video",
+      "description": ""
+    },
+    {
+      "id": "30043",
+      "name": "Generation Genius",
+      "category": "video",
+      "description": ""
+    },
+    {
+      "id": "30045",
+      "name": "Math Antics",
+      "category": "video",
+      "description": ""
+    },
+    {
+      "id": "30042",
+      "name": "Mystery Doug",
+      "category": "video",
+      "description": ""
+    },
+    {
+      "id": "30041",
+      "name": "YouTube Kids",
+      "category": "video",
+      "description": ""
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tname\tcategory\tdescription\n630001\tEducational \tlearning\t\n210091\tKhanmigo (Khan Academy AI tutor)\tlearning\t1:1 tutor for stuck moments — voice OK\n1320008\tKimi AI\tlearning\tAI tutor + chat assistant\n210090\tMystery Science\tlearning\t5th-grade Mysteries — Chemical Magic, Force Olympics, Watery Planet\n1320007\tOhio Learning Standards\tlearning\tOhio Department of Education — what each grade is supposed to cover\n930013\tPlanets Recap Video\tlearning\t\n210093\tStellarium Mobile\tlearning\tSky watching for moon phases + meteor shower\n60002\tAdobe Apps\tcreativity\tFrom IH student portal\n210058\tMinecraft\tcreativity\t\n210087\tPinterest\tcreativity\tCraft + makeup + animal inspiration boards. Approved boards only — Mom curates.\n210057\tRoblox\tcreativity\t\n210059\tToca Boca\tcreativity\t\n60003\tAdobe Spark\tschool\tFrom IH student portal\n60004\tAimswebplus\tschool\tFrom IH student portal\n210052\tBrainPOP\tschool\t\n1320003\tClass Dojo\tschool\tBehavior tracking + parent messaging\n1320005\tClever\tschool\tSchool SSO portal (adult use)\n210053\tEdpuzzle\tschool\t\n210089\tiCivics\tschool\tBranches of Power, Do I Have a Right?, Map It\n30031\tIXL\tschool\t\n1320002\tKahoot!\tschool\tQuiz games\n30032\tKhan Academy\tschool\t\n1320001\tPhotomath\tschool\tCamera-based math problem solver\n30033\tProdigy Math\tschool\t\n210092\tQuizlet\tschool\tSpelling + vocab flashcards\n210054\tVocabulary.com\tschool\t\n210056\tiNaturalist\tnature\t\n210055\tMerlin Bird ID\tnature\tBird identification on hikes — pairs with Adventures library\n30048\tCommonLit\treading\t\n30046\tEpic! Books\treading\t\n210088\tReadWorks\treading\tArticle-a-day. Pick animal-themed.\n1320004\tStarfall\treading\tReading, phonics, and math\n30047\tStoryline Online\treading\t\n30040\tGmail\tgoogle\t\n1320006\tGoogle Classroom\tgoogle\tAssignment hub\n30037\tGoogle Docs\tgoogle\t\n30039\tGoogle Drive\tgoogle\t\n30038\tGoogle Slides\tgoogle\t\n30044\tCrash Course Kids\tvideo\t\n30043\tGeneration Genius\tvideo\t\n30045\tMath Antics\tvideo\t\n30042\tMystery Doug\tvideo\t\n30041\tYouTube Kids\tvideo\t\n",
+  "stderr": "",
+  "execution_time_ms": 661
+}

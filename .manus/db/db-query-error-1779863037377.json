@@ -1,0 +1,8 @@
+{
+  "query": "\nSELECT 'nightlyAgendaEmails' as automation, status, COUNT(*) as cnt, MAX(createdAt) as last_at FROM nightlyAgendaEmails GROUP BY status\nUNION ALL\nSELECT 'dailyRecapRequests', status, COUNT(*), MAX(createdAt) FROM dailyRecapRequests GROUP BY status\nUNION ALL\nSELECT 'weekly_digests', status, COUNT(*), MAX(createdAt) FROM weekly_digests GROUP BY status\nUNION ALL\nSELECT 'icalEvents', 'rows', COUNT(*), MAX(updatedAt) FROM icalEvents\nUNION ALL\nSELECT 'icalFeeds', 'rows', COUNT(*), MAX(lastFetchedAt) FROM icalFeeds\nORDER BY automation, status;\n",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute \nSELECT 'nightlyAgendaEmails' as automation, status, COUNT(*) as cnt, MAX(createdAt) as last_at FROM nightlyAgendaEmails GROUP BY status\nUNION ALL\nSELECT 'dailyRecapRequests', status, COUNT(*), MAX(createdAt) FROM dailyRecapRequests GROUP BY status\nUNION ALL\nSELECT 'weekly_digests', status, COUNT(*), MAX(createdAt) FROM weekly_digests GROUP BY status\nUNION ALL\nSELECT 'icalEvents', 'rows', COUNT(*), MAX(updatedAt) FROM icalEvents\nUNION ALL\nSELECT 'icalFeeds', 'rows', COUNT(*), MAX(lastFetchedAt) FROM icalFeeds\nORDER BY automation, status;\n",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 2: Unknown column 'createdat' in 'group statement'"
+  ]
+}
