@@ -1,0 +1,42 @@
+{
+  "query": "SELECT subject_slug, COUNT(*) AS n FROM assignments_library GROUP BY subject_slug ORDER BY n DESC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT subject_slug, COUNT(*) AS n FROM assignments_library GROUP BY subject_slug ORDER BY n DESC;",
+  "rows": [
+    {
+      "subject_slug": "math",
+      "n": "22"
+    },
+    {
+      "subject_slug": "science",
+      "n": "16"
+    },
+    {
+      "subject_slug": "ela",
+      "n": "10"
+    },
+    {
+      "subject_slug": "ss",
+      "n": "9"
+    },
+    {
+      "subject_slug": "NULL",
+      "n": "1"
+    },
+    {
+      "subject_slug": "health",
+      "n": "1"
+    },
+    {
+      "subject_slug": "music",
+      "n": "1"
+    },
+    {
+      "subject_slug": "art",
+      "n": "1"
+    }
+  ],
+  "messages": [],
+  "stdout": "subject_slug\tn\nmath\t22\nscience\t16\nela\t10\nss\t9\nNULL\t1\nhealth\t1\nmusic\t1\nart\t1\n",
+  "stderr": "",
+  "execution_time_ms": 559
+}

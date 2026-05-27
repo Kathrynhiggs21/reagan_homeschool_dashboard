@@ -11,6 +11,7 @@
  */
 import { invokeLLM } from "../_core/llm";
 import { loadKnowledgeBundle } from "./knowledgeBundle";
+import { buildSeasonalProfile, renderSeasonalPromptFragment } from "./seasonalProfile";
 
 export const ALLOWED_BLOCK_TYPES = [
   "morning_warmup",
@@ -172,10 +173,24 @@ export function buildPromptMessages(input: AIGenerateInput) {
   const subjectsList = input.subjects.map(s => `- ${s.slug} (${s.name})`).join("\n");
   const blockTypesList = ALLOWED_BLOCK_TYPES.map(t => `"${t}"`).join(", ");
 
+  // v2.97 (2026-05-27) — Seasonal-aware defaults. Parse the dateStr robustly
+  // so the profile reflects the day being PLANNED, not the day the LLM call
+  // happens to fire on (matters when nightly jobs plan tomorrow at midnight).
+  const parsedDate = (() => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(input.dateStr ?? "");
+    if (!m) return new Date();
+    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  })();
+  const seasonal = buildSeasonalProfile(parsedDate);
+  const seasonalFragment = renderSeasonalPromptFragment(seasonal);
+
+  // Day-length hint now defers to seasonal target when caller didn't override.
+  // "full" = use seasonal target, "half" = halve it, "off" = no blocks.
+  const seasonalTargetMin = seasonal.targetBlockCount * 35; // ~35 min avg block
   const totalMinHint =
     input.dayLength === "off" ? "0 (just one optional rest block)" :
-    input.dayLength === "half" ? "around 90–150 minutes total" :
-    "around 180–240 minutes total";
+    input.dayLength === "half" ? `around ${Math.round(seasonalTargetMin / 2)}–${Math.round(seasonalTargetMin * 0.75)} minutes total` :
+    `around ${seasonalTargetMin}–${seasonalTargetMin + 60} minutes total (seasonal default: ${seasonal.mode} mode, ${seasonal.targetBlockCount} blocks starting ${seasonal.defaultStart})`;
 
   const knowledge = loadKnowledgeBundle();
   const topicCatalog = (input.topicCatalog || []).slice(0, 80);
@@ -203,6 +218,8 @@ export function buildPromptMessages(input: AIGenerateInput) {
   const sys = [
     `You are the homeschool day-planning engine for ${input.studentName}, a ${input.gradeLevel || "5th-grade"} student.`,
     `You design short, kid-friendly schedule blocks. Always respect what works and avoid what harms.`,
+    ``,
+    seasonalFragment,
     ``,
     `What works for her: ${(input.whatWorks || []).join("; ") || "(unspecified)"}`,
     `What harms her: ${(input.whatHarms || []).join("; ") || "(unspecified)"}`,

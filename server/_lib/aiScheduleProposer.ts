@@ -18,6 +18,7 @@
  * persistence happens in `server/routers.ts`.
  */
 import { invokeLLM } from "../_core/llm";
+import { buildSeasonalProfile, renderSeasonalPromptFragment } from "./seasonalProfile";
 import {
   ALLOWED_BLOCK_TYPES,
   type AllowedBlockType,
@@ -214,6 +215,19 @@ export function sanitizeProposal(
 export function buildProposalPromptMessages(input: ProposalInput) {
   const blockTypesList = ALLOWED_BLOCK_TYPES.map((t) => `"${t}"`).join(", ");
   const subjectsList = input.subjects.map((s) => `- ${s.slug} (${s.name})`).join("\n");
+
+  // v2.97 (2026-05-27) — Seasonal-aware proposer. Bake the active profile into
+  // the system prompt so commands like "long focused day" properly override
+  // and commands like "start later" inherit the seasonal default start time
+  // (10:00 in summer, 8:30 school-year).
+  const parsedDate = (() => {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(input.dateStr ?? "");
+    if (!m) return new Date();
+    return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  })();
+  const seasonal = buildSeasonalProfile(parsedDate);
+  const seasonalFragment = renderSeasonalPromptFragment(seasonal);
+
   const existingList = input.existingBlocks
     .map(
       (b) =>
@@ -221,19 +235,32 @@ export function buildProposalPromptMessages(input: ProposalInput) {
     )
     .join(",\n");
 
-  const system = `You are helping a parent edit a homeschool day's schedule.
+  const system = `You are helping a parent, grandparent, or tutor edit a homeschool day's schedule for Reagan.
 
 You are NOT generating from scratch — you are editing an EXISTING list
-
 of blocks. Return decisions for each existing block (keep / modify / remove),
 plus any new blocks to add.
+
+${seasonalFragment}
 
 Allowed blockType values: ${blockTypesList}
 Valid subject slugs:
 ${subjectsList || "(none)"}
 
-Honor the parent's intent. Be conservative — only modify or remove a block
+Honor the adult's intent. Be conservative — only modify or remove a block
 when the prompt clearly asks for that. Default to keep.
+
+INTERPRET FREE-FORM ADULT REQUESTS LIBERALLY:
+- "Start at 9:30" / "start later" / "begin at 11am"     → shift all block startTimes accordingly
+- "End by 2pm" / "short day" / "long day" / "focused day" → adjust durations + block count to fit
+- "Crush math" / "math focus" / "all math today"          → replace non-academic blocks with math deep-dive blocks
+- "Only ELA and science"                                     → keep those subjects, replace others with adventure/choice
+- "More hands-on" / "outdoor day" / "field trip"           → swap worksheet blocks for project/outdoor/maker activities
+- "Add a break after lunch" / "break at 11"                  → insert an appointment block at the right slot
+- "Move math to the morning"                                 → reorder by sortOrder
+- "Make it easier" / "sick day" / "low energy"             → trim duration, drop one block, keep gentle ones
+- "Make it harder" / "challenge day"                         → increase duration slightly + replace warmup with extension block
+When the request conflicts with the seasonal default (e.g. user says "long focused day" in summer), HONOR THE USER OVERRIDE.
 
 Output a JSON object with this exact shape:
 {

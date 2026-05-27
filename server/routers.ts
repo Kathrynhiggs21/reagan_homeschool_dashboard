@@ -600,7 +600,7 @@ export const appRouter = router({
     create: familyAdminProcedure.input(z.object({
       planId: z.number(), blockType: BlockType, title: z.string(), description: z.string().optional(),
       durationMin: z.number().default(30), startTime: z.string().optional(), sortOrder: z.number().default(0),
-      subjectId: z.number().optional(), adventureId: z.number().optional(), ihAssignmentId: z.number().optional(),
+      subjectId: z.number().optional(), adventureId: z.number().optional(),
     })).mutation(async ({ input, ctx }) => {
       const r = await db.createBlock(input as any);
       await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: (r as any)?.id, action: "create", summary: input.title });
@@ -1656,14 +1656,10 @@ export const appRouter = router({
     }),
   }),
 
-  /* =================== IH ASSIGNMENTS =================== */
-  ih: router({
-    list: publicProcedure.input(z.object({ daysBack: z.number().default(14) })).query(({ input }) => db.listIHAssignments(input.daysBack)),
-    add: protectedProcedure.input(z.object({
-      sourceTeacher: z.string(), sourceClass: z.string(), title: z.string(),
-      description: z.string().optional(), postedAt: z.date().optional(), dueDate: z.string().optional(), url: z.string().optional(),
-    })).mutation(({ input }) => db.insertIHAssignment(input as any)),
-  }),
+  // Removed v2.97 (2026-05-27): the `ih: router` was a stale sync surface for
+  // Indian Hill (the public school Reagan no longer attends). No client code
+  // calls trpc.ih.list or trpc.ih.add anywhere (grep-verified). The underlying
+  // table itself is still in the DB for historical records.
 
   /* =================== SKILLS =================== */
   skills: router({
@@ -4965,6 +4961,71 @@ export const appRouter = router({
     removeResource: familyAdminProcedure
       .input(z.object({ id: z.number().int().positive() }))
       .mutation(({ input }) => db.removeTopicResource(input.id)),
+    /**
+     * Upload a PDF or image (from file picker OR live camera capture) and
+     * attach it to a curriculum topic in one shot. v2.97 (2026-05-27).
+     *
+     * `fileData` is a base64 string (no data: prefix) so the tRPC payload
+     * stays JSON-only. Caps at ~10 MB so we don't try to push a giant
+     * scan through the proxy.
+     */
+    uploadResourceFile: familyAdminProcedure
+      .input(z.object({
+        topicId: z.number().int().positive(),
+        kind: z.enum(["worksheet", "video", "lesson", "reading", "printable", "link"]),
+        title: z.string().min(1).max(400),
+        notes: z.string().max(2000).optional().nullable(),
+        fileName: z.string().min(1).max(200),
+        mimeType: z.string().min(1).max(120),
+        fileData: z.string().min(1).max(15_000_000), // base64, ~10 MB raw
+        captureSource: z.enum(["upload", "camera"]).default("upload"),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const buf = Buffer.from(input.fileData, "base64");
+        if (buf.length === 0) throw new Error("Empty file");
+        if (buf.length > 10 * 1024 * 1024) throw new Error("File too large (max 10 MB)");
+        const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100);
+        const key = `curriculum-resources/${input.topicId}/${Date.now()}-${safeName}`;
+        const stored = await storagePut(key, buf, input.mimeType);
+        const rawId = (ctx as any).user?.id;
+        const num = typeof rawId === "number" ? rawId : Number(rawId);
+        const addedByUserId = Number.isFinite(num) ? num : null;
+        return db.addTopicResource({
+          topicId: input.topicId,
+          kind: input.kind,
+          title: input.title.trim(),
+          url: stored.url,
+          source: input.captureSource === "camera" ? "camera" : "upload",
+          notes: input.notes ?? null,
+          addedByUserId,
+        });
+      }),
+    /**
+     * Create your own lesson / assignment / activity with no URL required.
+     * v2.97 (2026-05-27). Title + description only. Stores notes as the body
+     * so kid sees it inline in their block detail view.
+     */
+    createCustomResource: familyAdminProcedure
+      .input(z.object({
+        topicId: z.number().int().positive(),
+        kind: z.enum(["worksheet", "video", "lesson", "reading", "printable", "link"]),
+        title: z.string().min(1).max(400),
+        description: z.string().min(1).max(2000),
+      }))
+      .mutation(({ input, ctx }) => {
+        const rawId = (ctx as any).user?.id;
+        const num = typeof rawId === "number" ? rawId : Number(rawId);
+        const addedByUserId = Number.isFinite(num) ? num : null;
+        return db.addTopicResource({
+          topicId: input.topicId,
+          kind: input.kind,
+          title: input.title.trim(),
+          url: null,
+          source: "adult_created",
+          notes: input.description.trim(),
+          addedByUserId,
+        });
+      }),
     /** Find free, no-login external resources for a topic (Khan/IXL/ReadWorks/etc.). */
     freeLinks: publicProcedure
       .input(z.object({ subjectSlug: z.string().min(1).max(32), topicName: z.string().min(1).max(200), gradeBand: z.string().optional() }))

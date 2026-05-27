@@ -5,7 +5,7 @@ import { eq, desc, and, gte, lte, lt, sql, isNotNull, isNull, asc, inArray } fro
 import {
   users, type InsertUser,
   subjects, dailyPlans, scheduleBlocks, bookAssignments, adventures,
-  appLinks, books, moodLogs, timelineEvents, notifications, ihAssignments,
+  appLinks, books, moodLogs, timelineEvents, notifications,
   learnerProfile, skillsMastery, weeklyTopics, notificationRecipients,
   appointments, schoolCalendar, animals, rescues, badges, whisperSessions,
   heartNotes, encouragementNotes, emotionalStruggles, specialDays,
@@ -1130,24 +1130,10 @@ export async function markNotificationRead(id: number) {
   await getDb().update(notifications).set({ read: true }).where(eq(notifications.id, id));
 }
 
-/* ============================== IH ASSIGNMENTS ============================ */
-/**
- * @deprecated v2.94 (2026-05-27) — Indian Hill (the public school Reagan left)
- * is no longer the source of truth for assignments. The `ihAssignments` table
- * + the `bookAssignments.ihAssignmentId` FK column are scheduled for removal
- * in the next session after the user confirms. Helpers below are unreferenced
- * by any router/client (verified via grep). Keeping the table around so the
- * `autoCompleteFromHistory` heuristic at line ~5133 doesn't have to change
- * shape until the DROP migration ships. Do not call from new code.
- */
-export async function listIHAssignments(daysBack = 14) {
-  const since = new Date(Date.now() - daysBack * 86400000);
-  return getDb().select().from(ihAssignments).where(gte(ihAssignments.syncedAt, since)).orderBy(desc(ihAssignments.postedAt));
-}
-/** @deprecated see listIHAssignments above. */
-export async function insertIHAssignment(a: typeof ihAssignments.$inferInsert) {
-  await getDb().insert(ihAssignments).values(a);
-}
+// IH ASSIGNMENTS helpers removed v2.97 (2026-05-27) — the Indian Hill sync
+// is no longer the source of truth. The `ihAssignments` table itself stays
+// for now (data preserved for historical sanity check). DROP TABLE will
+// happen in a future migration once the user confirms.
 
 /* ============================== PROFILE =================================== */
 export async function getProfile() {
@@ -5139,12 +5125,9 @@ export async function autoCompleteFromHistory(): Promise<{ checked: number; byQu
     `);
     titles.push(...(psRows as any[]).map((r) => String(r.title || "")));
   } catch { /* table may not exist */ }
-  try {
-    const [ihRows]: any = await db.execute(sql`
-      SELECT DISTINCT title FROM ihAssignments WHERE status = 'done' OR status = 'completed'
-    `);
-    titles.push(...(ihRows as any[]).map((r) => String(r.title || "")));
-  } catch { /* table may not exist */ }
+  // ihAssignments title-match dedupe removed v2.97 (2026-05-27): the table
+  // hasn't received fresh syncs since the school switch. powerschool_assignments
+  // is the sole auto-complete source going forward.
 
   if (titles.length === 0) {
     return { checked: q1Count, byQuarter: q1Count };

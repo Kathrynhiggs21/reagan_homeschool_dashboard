@@ -3887,3 +3887,20 @@ The v2.49 simplification had a hole: the dashboard's `appSettings` cache pointed
 - [ ] Two-tier allowlist: tight for worksheets/practice; broader (YouTube + reputable kid-edu hosts) for videos/lessons
 - [ ] Tag video URLs with requiresAdultPreview=true so Mom/Grandma can preview before Reagan opens
 - [ ] LLM prompt explicitly forbids Shorts, monetized influencers, and any non-kid channels
+
+## v2.97 - Upload/Camera/Custom resource attach + NL schedule controls
+- [ ] Add curriculum.uploadResourceFile tRPC mutation (PDF/image to S3 + addResource)
+- [ ] Expand BlockResourcesPanel with tabs: Link | Upload | Camera | Custom
+- [ ] Custom tab = title + description only (no URL required) for adult-created lessons
+- [ ] AIScheduleProposer system prompt: parse start time, end time, day length, subject focus, mode (outdoor/hands-on/crush-X)
+- [ ] Vitest for new mutation + NL intent parser
+- [ ] Final checkpoint v2.97
+- [ ] Summer mode: late start 9:30, ~4 blocks, curriculum-focused, fewer specials, more outdoor
+- [ ] School year mode: 8:30 start, 6-7 blocks, full specials rotation
+- [ ] Auto-detect season from current date (Memorial Day to Labor Day = summer)
+- [ ] Friday lighter day rule in summer mode
+- [ ] Tutor role: confirmed already accepted by familyAdminProcedure
+- [ ] Standing rule: prune stale code/docs/automations that contradict AI agenda
+- [ ] Summer mode default: 10am start, ~4 blocks, curriculum-focused, fewer specials
+- [ ] AIScheduleGenerator: seasonal-aware defaults injected into system prompt
+- [ ] AIScheduleProposer NL parser: start time / end time / day length / subject focus / mode
