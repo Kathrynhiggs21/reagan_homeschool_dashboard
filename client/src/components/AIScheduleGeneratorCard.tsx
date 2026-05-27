@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { DescriptionWithLinks } from "@/components/DescriptionWithLinks";
+import { formatTime12h } from "@/lib/time12h";
 
 /**
  * Adult-only card on Today: ask Kiwi to draft a schedule for a date.
@@ -137,7 +138,7 @@ export default function AIScheduleGeneratorCard({ defaultDate }: { defaultDate: 
                     <div className="flex items-baseline justify-between gap-2">
                       <div className="font-semibold text-sm">{b.title}</div>
                       <div className="text-xs text-muted-foreground whitespace-nowrap">
-                        {b.startTime ? `${b.startTime} · ` : ""}{b.durationMin}m
+                        {b.startTime ? `${formatTime12h(b.startTime)} · ` : ""}{b.durationMin}m
                         {b.subjectSlug ? ` · ${b.subjectSlug}` : ""}
                       </div>
                     </div>

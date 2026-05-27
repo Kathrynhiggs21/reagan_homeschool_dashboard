@@ -13,6 +13,7 @@ import CurriculumTopicsTree from "@/components/CurriculumTopicsTree";
 import OwnedBookCard from "@/components/OwnedBookCard";
 import IepReferencePanel from "@/components/IepReferencePanel";
 import { subjectTint, tintCardStyle, tintInkStyle } from "@/lib/subjectColors";
+import { formatTime12h } from "@/lib/time12h";
 
 export default function Curriculum() {
   const subjects = trpc.subjects.list.useQuery();
@@ -444,7 +445,7 @@ function TomorrowEditableBlockRow({
       >
         <span className="truncate">
           <span className="font-mono text-[10px] opacity-70 mr-1">
-            {block.startTime ?? "--:--"}
+            {block.startTime ? formatTime12h(block.startTime) : "--:--"}
           </span>
           {block.title ?? "(untitled)"}
         </span>

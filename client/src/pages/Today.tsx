@@ -60,6 +60,7 @@ import { detectSubjectSlug, findBestPrintableForSubject, findAllPrintablesForSub
 import { fallbackActivityFor } from "@/lib/subjectFallbackActivity";
 import { useRef } from "react";
 import { dailyTipForDate, localDateKey } from "@/lib/dailyTips";
+import { formatTime12h } from "@/lib/time12h";
 import { speakLikeBird } from "@/lib/birdVoice";
 import { Volume2 } from "lucide-react";
 
@@ -102,10 +103,33 @@ function tileFor(slug?: string | null): string {
   return SUBJECT_TILES[key] || SUBJECT_TILES.wonder;
 }
 
-function blockTimeLabel(i: number): string {
-  // Give each block a clean time label (pretend a typical school schedule).
-  // We intentionally keep this cosmetic — real scheduling isn't the point.
-  const starts = ["8:30", "9:15", "10:00", "10:45", "11:30", "1:00", "1:45", "2:30"];
+/**
+ * v2.93 (2026-05-27) — 12-hour clock cleanup.
+ *
+ * Was: hardcoded cosmetic 24-hour times ("8:30, 9:15, 10:00, … 1:00, 1:45,
+ * 2:30") that ignored the block's actual `startTime` and gave kids no AM/PM
+ * indicator ("1:00" looked like morning). Now: render the block's real
+ * stored `startTime` through `formatTime12h`, with a stable fallback grid
+ * for blocks that genuinely have no startTime set.
+ */
+function blockTimeLabel(
+  i: number,
+  startTime: string | null | undefined,
+): string {
+  if (startTime) {
+    const formatted = formatTime12h(startTime);
+    if (formatted !== "—") return formatted;
+  }
+  const starts = [
+    "8:30 AM",
+    "9:15 AM",
+    "10:00 AM",
+    "10:45 AM",
+    "11:30 AM",
+    "1:00 PM",
+    "1:45 PM",
+    "2:30 PM",
+  ];
   return starts[i % starts.length];
 }
 
@@ -624,7 +648,7 @@ export default function Today() {
                 {/* Time + body */}
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="time-chip time-chip-v2" style={rainbowPillStyle(i)}>{blockTimeLabel(i)}</span>
+                    <span className="time-chip time-chip-v2" style={rainbowPillStyle(i)}>{blockTimeLabel(i, b.startTime)}</span>
                     <TapEditPopover blockId={b.id} startTime={b.startTime ?? null} durationMin={b.durationMin ?? 30} />
                     <span className="text-xl" aria-hidden="true">{tint.emoji}</span>
                     {/* Push 42 (2026-05-13) — tap title to edit block.
