@@ -1,0 +1,70 @@
+{
+  "query": "SELECT id, startTime, title FROM scheduleBlocks WHERE planId = 1200002 ORDER BY startTime LIMIT 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, startTime, title FROM scheduleBlocks WHERE planId = 1200002 ORDER BY startTime LIMIT 20;",
+  "rows": [
+    {
+      "id": "1260008",
+      "startTime": "NULL",
+      "title": "Try one thing on the placement page"
+    },
+    {
+      "id": "1260009",
+      "startTime": "NULL",
+      "title": "Duck care + nature"
+    },
+    {
+      "id": "1260010",
+      "startTime": "NULL",
+      "title": "Spectrum Science Gr 5"
+    },
+    {
+      "id": "1260011",
+      "startTime": "NULL",
+      "title": "Choice block"
+    },
+    {
+      "id": "1260012",
+      "startTime": "NULL",
+      "title": "180 Days of Language Gr 5"
+    },
+    {
+      "id": "1260013",
+      "startTime": "NULL",
+      "title": "Cozy wrap-up"
+    },
+    {
+      "id": "1620030",
+      "startTime": "NULL",
+      "title": "✏️ Math 10-2 — Make Line Plots"
+    },
+    {
+      "id": "1620031",
+      "startTime": "NULL",
+      "title": "✏️ ELA M4-L2 — Research project using multiple sources"
+    },
+    {
+      "id": "1770012",
+      "startTime": "NULL",
+      "title": "✏️ Math 10-1 — Analyze Line Plots"
+    },
+    {
+      "id": "1770013",
+      "startTime": "NULL",
+      "title": "✏️ ELA M4-L1 — Use context to determine word meaning"
+    },
+    {
+      "id": "1770014",
+      "startTime": "NULL",
+      "title": "✏️ SS 4-2 — Scarcity, trade, and economic choices"
+    },
+    {
+      "id": "1260007",
+      "startTime": "NULL",
+      "title": "Slow morning"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tstartTime\ttitle\n1260008\tNULL\tTry one thing on the placement page\n1260009\tNULL\tDuck care + nature\n1260010\tNULL\tSpectrum Science Gr 5\n1260011\tNULL\tChoice block\n1260012\tNULL\t180 Days of Language Gr 5\n1260013\tNULL\tCozy wrap-up\n1620030\tNULL\t✏️ Math 10-2 — Make Line Plots\n1620031\tNULL\t✏️ ELA M4-L2 — Research project using multiple sources\n1770012\tNULL\t✏️ Math 10-1 — Analyze Line Plots\n1770013\tNULL\t✏️ ELA M4-L1 — Use context to determine word meaning\n1770014\tNULL\t✏️ SS 4-2 — Scarcity, trade, and economic choices\n1260007\tNULL\tSlow morning\n",
+  "stderr": "",
+  "execution_time_ms": 583
+}

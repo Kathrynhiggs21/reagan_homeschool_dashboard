@@ -1,0 +1,130 @@
+{
+  "query": "SELECT sb.sortOrder, sb.startTime, sb.durationMin, sb.blockType, sb.title, sb.curriculumTopicId, sb.ihAssignmentId, LEFT(IFNULL(sb.description,''), 80) AS descPreview FROM scheduleBlocks sb JOIN dailyPlans dp ON sb.planId = dp.id WHERE dp.date = '2026-05-28' ORDER BY sb.sortOrder;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT sb.sortOrder, sb.startTime, sb.durationMin, sb.blockType, sb.title, sb.curriculumTopicId, sb.ihAssignmentId, LEFT(IFNULL(sb.description,''), 80) AS descPreview FROM scheduleBlocks sb JOIN dailyPlans dp ON sb.planId = dp.id WHERE dp.date = '2026-05-28' ORDER BY sb.sortOrder;",
+  "rows": [
+    {
+      "sortOrder": "0",
+      "startTime": "NULL",
+      "durationMin": "20",
+      "blockType": "morning_warmup",
+      "title": "Slow morning",
+      "curriculumTopicId": "NULL",
+      "ihAssignmentId": "NULL",
+      "descPreview": "Slow start. Summer pace."
+    },
+    {
+      "sortOrder": "1",
+      "startTime": "NULL",
+      "durationMin": "20",
+      "blockType": "custom",
+      "title": "Try one thing on the placement page",
+      "curriculumTopicId": "NULL",
+      "ihAssignmentId": "NULL",
+      "descPreview": "Try a few questions. Skip is a real button. We are just seeing what feels easy a"
+    },
+    {
+      "sortOrder": "2",
+      "startTime": "NULL",
+      "durationMin": "35",
+      "blockType": "adventure",
+      "title": "Duck care + nature",
+      "curriculumTopicId": "NULL",
+      "ihAssignmentId": "NULL",
+      "descPreview": "Sit with the ducks, water, run check, notice the yard."
+    },
+    {
+      "sortOrder": "3",
+      "startTime": "NULL",
+      "durationMin": "25",
+      "blockType": "adventure",
+      "title": "Spectrum Science Gr 5",
+      "curriculumTopicId": "NULL",
+      "ihAssignmentId": "NULL",
+      "descPreview": "One short lesson plus the matching reading."
+    },
+    {
+      "sortOrder": "4",
+      "startTime": "NULL",
+      "durationMin": "30",
+      "blockType": "choice",
+      "title": "Choice block",
+      "curriculumTopicId": "NULL",
+      "ihAssignmentId": "NULL",
+      "descPreview": "Whatever you want."
+    },
+    {
+      "sortOrder": "5",
+      "startTime": "NULL",
+      "durationMin": "15",
+      "blockType": "custom",
+      "title": "180 Days of Language Gr 5",
+      "curriculumTopicId": "NULL",
+      "ihAssignmentId": "NULL",
+      "descPreview": "One page. That is it."
+    },
+    {
+      "sortOrder": "6",
+      "startTime": "NULL",
+      "durationMin": "10",
+      "blockType": "catch_up",
+      "title": "Cozy wrap-up",
+      "curriculumTopicId": "NULL",
+      "ihAssignmentId": "NULL",
+      "descPreview": "Optional. Or just done."
+    },
+    {
+      "sortOrder": "7",
+      "startTime": "NULL",
+      "durationMin": "30",
+      "blockType": "math",
+      "title": "✏️ Math 10-2 — Make Line Plots",
+      "curriculumTopicId": "47",
+      "ihAssignmentId": "NULL",
+      "descPreview": "Make Line Plots — Forward planner (forward_planner_2026-05-17)"
+    },
+    {
+      "sortOrder": "8",
+      "startTime": "NULL",
+      "durationMin": "25",
+      "blockType": "read_aloud",
+      "title": "✏️ ELA M4-L2 — Research project using multiple sources",
+      "curriculumTopicId": "77",
+      "ihAssignmentId": "NULL",
+      "descPreview": "Research project using multiple sources — Forward planner (forward_planner_2026-"
+    },
+    {
+      "sortOrder": "9",
+      "startTime": "NULL",
+      "durationMin": "30",
+      "blockType": "math",
+      "title": "✏️ Math 10-1 — Analyze Line Plots",
+      "curriculumTopicId": "46",
+      "ihAssignmentId": "NULL",
+      "descPreview": "Analyze Line Plots — Forward planner (forward_planner_2026-05-17)"
+    },
+    {
+      "sortOrder": "10",
+      "startTime": "NULL",
+      "durationMin": "25",
+      "blockType": "read_aloud",
+      "title": "✏️ ELA M4-L1 — Use context to determine word meaning",
+      "curriculumTopicId": "76",
+      "ihAssignmentId": "NULL",
+      "descPreview": "Use context to determine word meaning — Forward planner (forward_planner_2026-05"
+    },
+    {
+      "sortOrder": "11",
+      "startTime": "NULL",
+      "durationMin": "25",
+      "blockType": "custom",
+      "title": "✏️ SS 4-2 — Scarcity, trade, and economic choices",
+      "curriculumTopicId": "102",
+      "ihAssignmentId": "NULL",
+      "descPreview": "Scarcity, trade, and economic choices — Forward planner (forward_planner_2026-05"
+    }
+  ],
+  "messages": [],
+  "stdout": "sortOrder\tstartTime\tdurationMin\tblockType\ttitle\tcurriculumTopicId\tihAssignmentId\tdescPreview\n0\tNULL\t20\tmorning_warmup\tSlow morning\tNULL\tNULL\tSlow start. Summer pace.\n1\tNULL\t20\tcustom\tTry one thing on the placement page\tNULL\tNULL\tTry a few questions. Skip is a real button. We are just seeing what feels easy a\n2\tNULL\t35\tadventure\tDuck care + nature\tNULL\tNULL\tSit with the ducks, water, run check, notice the yard.\n3\tNULL\t25\tadventure\tSpectrum Science Gr 5\tNULL\tNULL\tOne short lesson plus the matching reading.\n4\tNULL\t30\tchoice\tChoice block\tNULL\tNULL\tWhatever you want.\n5\tNULL\t15\tcustom\t180 Days of Language Gr 5\tNULL\tNULL\tOne page. That is it.\n6\tNULL\t10\tcatch_up\tCozy wrap-up\tNULL\tNULL\tOptional. Or just done.\n7\tNULL\t30\tmath\t✏️ Math 10-2 — Make Line Plots\t47\tNULL\tMake Line Plots — Forward planner (forward_planner_2026-05-17)\n8\tNULL\t25\tread_aloud\t✏️ ELA M4-L2 — Research project using multiple sources\t77\tNULL\tResearch project using multiple sources — Forward planner (forward_planner_2026-\n9\tNULL\t30\tmath\t✏️ Math 10-1 — Analyze Line Plots\t46\tNULL\tAnalyze Line Plots — Forward planner (forward_planner_2026-05-17)\n10\tNULL\t25\tread_aloud\t✏️ ELA M4-L1 — Use context to determine word meaning\t76\tNULL\tUse context to determine word meaning — Forward planner (forward_planner_2026-05\n11\tNULL\t25\tcustom\t✏️ SS 4-2 — Scarcity, trade, and economic choices\t102\tNULL\tScarcity, trade, and economic choices — Forward planner (forward_planner_2026-05\n",
+  "stderr": "",
+  "execution_time_ms": 599
+}

@@ -1,0 +1,8 @@
+{
+  "query": "SELECT dp.planDate, dp.id AS plan_id, COUNT(sb.id) AS blocks FROM dailyPlans dp LEFT JOIN scheduleBlocks sb ON sb.dailyPlanId = dp.id WHERE dp.planDate IN ('2026-05-27','2026-05-28') GROUP BY dp.id, dp.planDate ORDER BY dp.planDate;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT dp.planDate, dp.id AS plan_id, COUNT(sb.id) AS blocks FROM dailyPlans dp LEFT JOIN scheduleBlocks sb ON sb.dailyPlanId = dp.id WHERE dp.planDate IN ('2026-05-27','2026-05-28') GROUP BY dp.id, dp.planDate ORDER BY dp.planDate;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'sb.dailyplanid' in 'on clause'"
+  ]
+}

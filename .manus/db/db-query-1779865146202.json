@@ -1,0 +1,181 @@
+{
+  "query": "SELECT id, LEFT(title, 60) AS title, subject_slug, type, topic, status, LEFT(source_url, 60) AS source_url FROM assignments_library ORDER BY id DESC LIMIT 19;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT id, LEFT(title, 60) AS title, subject_slug, type, topic, status, LEFT(source_url, 60) AS source_url FROM assignments_library ORDER BY id DESC LIMIT 19;",
+  "rows": [
+    {
+      "id": "90012",
+      "title": "📘 Spectrum Math G5 — pg 149–151 (Chapter 8 continued)",
+      "subject_slug": "math",
+      "type": "printable",
+      "topic": "Spectrum Math Grade 5 (printed workbook)",
+      "status": "pending",
+      "source_url": "NULL"
+    },
+    {
+      "id": "90011",
+      "title": "📐 Protractor Worksheet — Determining Angles (Common Core She",
+      "subject_slug": "math",
+      "type": "printable",
+      "topic": "Angles & Degrees",
+      "status": "pending",
+      "source_url": "https://www.commoncoresheets.com/determining-angles-with-pro"
+    },
+    {
+      "id": "90010",
+      "title": "🍕 Pizza-Wheel Angle Spinner — DIY paper plate activity",
+      "subject_slug": "math",
+      "type": "activity",
+      "topic": "Angles & Degrees",
+      "status": "pending",
+      "source_url": "NULL"
+    },
+    {
+      "id": "90009",
+      "title": "📄 Spectrum Math G5 pg 148 (Pretest Ch 8) — Reagan's complete",
+      "subject_slug": "math",
+      "type": "printable",
+      "topic": "Shapes & Angles — review",
+      "status": "pending",
+      "source_url": "/manus-storage/spectrum_g5_pg148_pretest_ch8_49d81c6d.jpg"
+    },
+    {
+      "id": "90008",
+      "title": "🃏 Shape Flashcards (1→8 sides) — print PDF",
+      "subject_slug": "math",
+      "type": "printable",
+      "topic": "Shapes & Angles",
+      "status": "pending",
+      "source_url": "/manus-storage/shape_flashcards_081b30a9.pdf"
+    },
+    {
+      "id": "90007",
+      "title": "🎬 Planets Recap — Earth's Movements (rewatch)",
+      "subject_slug": "science",
+      "type": "video",
+      "topic": "Planets / Day-Night / Seasons recap",
+      "status": "pending",
+      "source_url": "https://youtu.be/fajsyiKRfxI"
+    },
+    {
+      "id": "90006",
+      "title": "🧭 Build Your Own Compass — STEM video (Generation Genius / k",
+      "subject_slug": "math",
+      "type": "video",
+      "topic": "Degrees & Compass",
+      "status": "pending",
+      "source_url": "https://www.youtube.com/watch?v=ZaQkohuqoXY"
+    },
+    {
+      "id": "90005",
+      "title": "📘 Spectrum Math Grade 5 — pg 146–148",
+      "subject_slug": "math",
+      "type": "printable",
+      "topic": "Spectrum Math Grade 5 (printed workbook)",
+      "status": "pending",
+      "source_url": "NULL"
+    },
+    {
+      "id": "90004",
+      "title": "🎨 Solar System Coloring Sheet (NASA printable)",
+      "subject_slug": "science",
+      "type": "printable",
+      "topic": "Planets — coloring",
+      "status": "pending",
+      "source_url": "https://www.nasa.gov/sites/default/files/atoms/files/solar_s"
+    },
+    {
+      "id": "90003",
+      "title": "🧭 Body Compass — outdoor degrees activity (0°/90°/180°/270°/",
+      "subject_slug": "math",
+      "type": "activity",
+      "topic": "Angles & Degrees",
+      "status": "pending",
+      "source_url": "NULL"
+    },
+    {
+      "id": "90002",
+      "title": "🌞 Walk Around the Sun — hands-on day/night/year/seasons acti",
+      "subject_slug": "science",
+      "type": "activity",
+      "topic": "Planets / Seasons / Axial Tilt",
+      "status": "pending",
+      "source_url": "NULL"
+    },
+    {
+      "id": "90001",
+      "title": "🎬 Earth's Movements — Rotation & Translation (video)",
+      "subject_slug": "science",
+      "type": "video",
+      "topic": "Planets / Earth Rotation & Orbit",
+      "status": "pending",
+      "source_url": "https://youtu.be/fajsyiKRfxI"
+    },
+    {
+      "id": "60005",
+      "title": "📐 Math: angles & triangles — Tipsy Top resource hub",
+      "subject_slug": "math",
+      "type": "lesson_plan",
+      "topic": "Circles → angles → triangles",
+      "status": "pending",
+      "source_url": "https://www.mathsisfun.com/angles.html"
+    },
+    {
+      "id": "60004",
+      "title": "⚖️ Weight on Planets — original (preview, parts watermarked)",
+      "subject_slug": "science",
+      "type": "worksheet",
+      "topic": "Gravity / multiplication (alt)",
+      "status": "in_progress",
+      "source_url": "https://www.superteacherworksheets.com"
+    },
+    {
+      "id": "60003",
+      "title": "⚖️ Weight on Planets — full worksheet (Manus version)",
+      "subject_slug": "science",
+      "type": "worksheet",
+      "topic": "Gravity / multiplication",
+      "status": "pending",
+      "source_url": "NULL"
+    },
+    {
+      "id": "60002",
+      "title": "🪐 Planets-to-scale collage — reference image",
+      "subject_slug": "science",
+      "type": "project",
+      "topic": "Compare planet sizes",
+      "status": "pending",
+      "source_url": "https://wildabouthere.com"
+    },
+    {
+      "id": "60001",
+      "title": "🎬 The Planets — Pancake Manor (3 min, kid-safe)",
+      "subject_slug": "science",
+      "type": "video",
+      "topic": "Solar system: planets in order",
+      "status": "in_progress",
+      "source_url": "https://www.youtube.com/watch?v=tNlhqPz5-Kw"
+    },
+    {
+      "id": "30001",
+      "title": "Planets",
+      "subject_slug": "science",
+      "type": "project",
+      "topic": "NULL",
+      "status": "in_progress",
+      "source_url": "NULL"
+    },
+    {
+      "id": "1",
+      "title": "At-a-Glance: INFOhio Resources",
+      "subject_slug": "NULL",
+      "type": "slideshow",
+      "topic": "INFOhio digital library reference (databases, eBooks, research tools)",
+      "status": "skipped",
+      "source_url": "https://docs.google.com/presentation/d/1SGEcDnWpaM6zxd3VWfSI"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\ttitle\tsubject_slug\ttype\ttopic\tstatus\tsource_url\n90012\t📘 Spectrum Math G5 — pg 149–151 (Chapter 8 continued)\tmath\tprintable\tSpectrum Math Grade 5 (printed workbook)\tpending\tNULL\n90011\t📐 Protractor Worksheet — Determining Angles (Common Core She\tmath\tprintable\tAngles & Degrees\tpending\thttps://www.commoncoresheets.com/determining-angles-with-pro\n90010\t🍕 Pizza-Wheel Angle Spinner — DIY paper plate activity\tmath\tactivity\tAngles & Degrees\tpending\tNULL\n90009\t📄 Spectrum Math G5 pg 148 (Pretest Ch 8) — Reagan's complete\tmath\tprintable\tShapes & Angles — review\tpending\t/manus-storage/spectrum_g5_pg148_pretest_ch8_49d81c6d.jpg\n90008\t🃏 Shape Flashcards (1→8 sides) — print PDF\tmath\tprintable\tShapes & Angles\tpending\t/manus-storage/shape_flashcards_081b30a9.pdf\n90007\t🎬 Planets Recap — Earth's Movements (rewatch)\tscience\tvideo\tPlanets / Day-Night / Seasons recap\tpending\thttps://youtu.be/fajsyiKRfxI\n90006\t🧭 Build Your Own Compass — STEM video (Generation Genius / k\tmath\tvideo\tDegrees & Compass\tpending\thttps://www.youtube.com/watch?v=ZaQkohuqoXY\n90005\t📘 Spectrum Math Grade 5 — pg 146–148\tmath\tprintable\tSpectrum Math Grade 5 (printed workbook)\tpending\tNULL\n90004\t🎨 Solar System Coloring Sheet (NASA printable)\tscience\tprintable\tPlanets — coloring\tpending\thttps://www.nasa.gov/sites/default/files/atoms/files/solar_s\n90003\t🧭 Body Compass — outdoor degrees activity (0°/90°/180°/270°/\tmath\tactivity\tAngles & Degrees\tpending\tNULL\n90002\t🌞 Walk Around the Sun — hands-on day/night/year/seasons acti\tscience\tactivity\tPlanets / Seasons / Axial Tilt\tpending\tNULL\n90001\t🎬 Earth's Movements — Rotation & Translation (video)\tscience\tvideo\tPlanets / Earth Rotation & Orbit\tpending\thttps://youtu.be/fajsyiKRfxI\n60005\t📐 Math: angles & triangles — Tipsy Top resource hub\tmath\tlesson_plan\tCircles → angles → triangles\tpending\thttps://www.mathsisfun.com/angles.html\n60004\t⚖️ Weight on Planets — original (preview, parts watermarked)\tscience\tworksheet\tGravity / multiplication (alt)\tin_progress\thttps://www.superteacherworksheets.com\n60003\t⚖️ Weight on Planets — full worksheet (Manus version)\tscience\tworksheet\tGravity / multiplication\tpending\tNULL\n60002\t🪐 Planets-to-scale collage — reference image\tscience\tproject\tCompare planet sizes\tpending\thttps://wildabouthere.com\n60001\t🎬 The Planets — Pancake Manor (3 min, kid-safe)\tscience\tvideo\tSolar system: planets in order\tin_progress\thttps://www.youtube.com/watch?v=tNlhqPz5-Kw\n30001\tPlanets\tscience\tproject\tNULL\tin_progress\tNULL\n1\tAt-a-Glance: INFOhio Resources\tNULL\tslideshow\tINFOhio digital library reference (databases, eBooks, research tools)\tskipped\thttps://docs.google.com/presentation/d/1SGEcDnWpaM6zxd3VWfSI\n",
+  "stderr": "",
+  "execution_time_ms": 563
+}

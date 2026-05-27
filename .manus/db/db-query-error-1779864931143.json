@@ -1,0 +1,8 @@
+{
+  "query": "SELECT sb.sortOrder, LEFT(sb.title, 50) AS title, sb.curriculumTopicId AS topic, (SELECT COUNT(*) FROM curriculumResources cr WHERE cr.topicId = sb.curriculumTopicId) AS topicResources, (SELECT COUNT(*) FROM bookAssignments ba2 WHERE ba2.blockId = sb.id) AS bookRefs, (SELECT COUNT(*) FROM daily_printables dp2 WHERE dp2.blockId = sb.id) AS dailyPrintables FROM scheduleBlocks sb JOIN dailyPlans dp ON dp.id = sb.planId WHERE dp.date = '2026-05-28' ORDER BY sb.sortOrder;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT sb.sortOrder, LEFT(sb.title, 50) AS title, sb.curriculumTopicId AS topic, (SELECT COUNT(*) FROM curriculumResources cr WHERE cr.topicId = sb.curriculumTopicId) AS topicResources, (SELECT COUNT(*) FROM bookAssignments ba2 WHERE ba2.blockId = sb.id) AS bookRefs, (SELECT COUNT(*) FROM daily_printables dp2 WHERE dp2.blockId = sb.id) AS dailyPrintables FROM scheduleBlocks sb JOIN dailyPlans dp ON dp.id = sb.planId WHERE dp.date = '2026-05-28' ORDER BY sb.sortOrder;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'cr.topicid' in 'where clause'"
+  ]
+}

@@ -1,0 +1,74 @@
+{
+  "query": "SELECT dp.date AS forDate, dp.dayType, dp.status, COUNT(sb.id) AS blocks, SUM(CASE WHEN sb.curriculumTopicId IS NOT NULL THEN 1 ELSE 0 END) AS withTopic, SUM(CASE WHEN sb.ihAssignmentId IS NOT NULL THEN 1 ELSE 0 END) AS withAssignment FROM dailyPlans dp LEFT JOIN scheduleBlocks sb ON sb.planId = dp.id WHERE dp.date BETWEEN '2026-05-27' AND '2026-06-10' GROUP BY dp.id, dp.date, dp.dayType, dp.status ORDER BY dp.date;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT dp.date AS forDate, dp.dayType, dp.status, COUNT(sb.id) AS blocks, SUM(CASE WHEN sb.curriculumTopicId IS NOT NULL THEN 1 ELSE 0 END) AS withTopic, SUM(CASE WHEN sb.ihAssignmentId IS NOT NULL THEN 1 ELSE 0 END) AS withAssignment FROM dailyPlans dp LEFT JOIN scheduleBlocks sb ON sb.planId = dp.id WHERE dp.date BETWEEN '2026-05-27' AND '2026-06-10' GROUP BY dp.id, dp.date, dp.dayType, dp.status ORDER BY dp.date;",
+  "rows": [
+    {
+      "forDate": "2026-05-27",
+      "dayType": "half",
+      "status": "planned",
+      "blocks": "0",
+      "withTopic": "0",
+      "withAssignment": "0"
+    },
+    {
+      "forDate": "2026-05-28",
+      "dayType": "full",
+      "status": "planned",
+      "blocks": "12",
+      "withTopic": "5",
+      "withAssignment": "0"
+    },
+    {
+      "forDate": "2026-05-29",
+      "dayType": "full",
+      "status": "planned",
+      "blocks": "12",
+      "withTopic": "4",
+      "withAssignment": "0"
+    },
+    {
+      "forDate": "2026-06-01",
+      "dayType": "full",
+      "status": "planned",
+      "blocks": "11",
+      "withTopic": "3",
+      "withAssignment": "0"
+    },
+    {
+      "forDate": "2026-06-02",
+      "dayType": "full",
+      "status": "planned",
+      "blocks": "10",
+      "withTopic": "2",
+      "withAssignment": "0"
+    },
+    {
+      "forDate": "2026-06-03",
+      "dayType": "half",
+      "status": "planned",
+      "blocks": "9",
+      "withTopic": "2",
+      "withAssignment": "0"
+    },
+    {
+      "forDate": "2026-06-04",
+      "dayType": "full",
+      "status": "planned",
+      "blocks": "10",
+      "withTopic": "2",
+      "withAssignment": "0"
+    },
+    {
+      "forDate": "2026-06-05",
+      "dayType": "full",
+      "status": "planned",
+      "blocks": "9",
+      "withTopic": "1",
+      "withAssignment": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "forDate\tdayType\tstatus\tblocks\twithTopic\twithAssignment\n2026-05-27\thalf\tplanned\t0\t0\t0\n2026-05-28\tfull\tplanned\t12\t5\t0\n2026-05-29\tfull\tplanned\t12\t4\t0\n2026-06-01\tfull\tplanned\t11\t3\t0\n2026-06-02\tfull\tplanned\t10\t2\t0\n2026-06-03\thalf\tplanned\t9\t2\t0\n2026-06-04\tfull\tplanned\t10\t2\t0\n2026-06-05\tfull\tplanned\t9\t1\t0\n",
+  "stderr": "",
+  "execution_time_ms": 606
+}

@@ -1,0 +1,8 @@
+{
+  "query": "SELECT dp.forDate, dp.dayType, dp.status, COUNT(sb.id) AS blocks, SUM(CASE WHEN sb.curriculumTopicId IS NOT NULL THEN 1 ELSE 0 END) AS withTopic FROM dailyPlans dp LEFT JOIN scheduleBlocks sb ON sb.planId = dp.id WHERE dp.forDate BETWEEN '2026-05-27' AND '2026-06-10' GROUP BY dp.id, dp.forDate, dp.dayType, dp.status ORDER BY dp.forDate;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT dp.forDate, dp.dayType, dp.status, COUNT(sb.id) AS blocks, SUM(CASE WHEN sb.curriculumTopicId IS NOT NULL THEN 1 ELSE 0 END) AS withTopic FROM dailyPlans dp LEFT JOIN scheduleBlocks sb ON sb.planId = dp.id WHERE dp.forDate BETWEEN '2026-05-27' AND '2026-06-10' GROUP BY dp.id, dp.forDate, dp.dayType, dp.status ORDER BY dp.forDate;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1054 (42S22) at line 1: Unknown column 'dp.fordate' in 'group statement'"
+  ]
+}

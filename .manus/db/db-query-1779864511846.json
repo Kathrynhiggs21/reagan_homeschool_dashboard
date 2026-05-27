@@ -1,0 +1,19 @@
+{
+  "query": "SHOW TABLES LIKE '%lock%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SHOW TABLES LIKE '%lock%';",
+  "rows": [
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%lock%)": "blockGrades"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%lock%)": "blockedEmails"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%lock%)": "scheduleBlocks"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_mm3swGictQLHDWKPJCGiHp (%lock%)\nblockGrades\nblockedEmails\nscheduleBlocks\n",
+  "stderr": "",
+  "execution_time_ms": 581
+}

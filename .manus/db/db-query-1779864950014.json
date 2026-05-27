@@ -1,0 +1,118 @@
+{
+  "query": "SELECT sb.sortOrder AS ord, LEFT(sb.title, 50) AS title, sb.curriculumTopicId AS topic, (SELECT COUNT(*) FROM curriculumResources cr WHERE cr.topic_id = sb.curriculumTopicId) AS topicResources, (SELECT COUNT(*) FROM curriculumResources cr WHERE cr.topic_id = sb.curriculumTopicId AND cr.kind = 'worksheet') AS topicWorksheets, (SELECT COUNT(*) FROM curriculumResources cr WHERE cr.topic_id = sb.curriculumTopicId AND cr.kind = 'video') AS topicVideos, (SELECT COUNT(*) FROM bookAssignments ba2 WHERE ba2.blockId = sb.id) AS bookRefs FROM scheduleBlocks sb JOIN dailyPlans dp ON dp.id = sb.planId WHERE dp.date = '2026-05-28' ORDER BY sb.sortOrder;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT sb.sortOrder AS ord, LEFT(sb.title, 50) AS title, sb.curriculumTopicId AS topic, (SELECT COUNT(*) FROM curriculumResources cr WHERE cr.topic_id = sb.curriculumTopicId) AS topicResources, (SELECT COUNT(*) FROM curriculumResources cr WHERE cr.topic_id = sb.curriculumTopicId AND cr.kind = 'worksheet') AS topicWorksheets, (SELECT COUNT(*) FROM curriculumResources cr WHERE cr.topic_id = sb.curriculumTopicId AND cr.kind = 'video') AS topicVideos, (SELECT COUNT(*) FROM bookAssignments ba2 WHERE ba2.blockId = sb.id) AS bookRefs FROM scheduleBlocks sb JOIN dailyPlans dp ON dp.id = sb.planId WHERE dp.date = '2026-05-28' ORDER BY sb.sortOrder;",
+  "rows": [
+    {
+      "ord": "0",
+      "title": "Slow morning",
+      "topic": "NULL",
+      "topicResources": "0",
+      "topicWorksheets": "0",
+      "topicVideos": "0",
+      "bookRefs": "0"
+    },
+    {
+      "ord": "1",
+      "title": "Try one thing on the placement page",
+      "topic": "NULL",
+      "topicResources": "0",
+      "topicWorksheets": "0",
+      "topicVideos": "0",
+      "bookRefs": "0"
+    },
+    {
+      "ord": "2",
+      "title": "Duck care + nature",
+      "topic": "NULL",
+      "topicResources": "0",
+      "topicWorksheets": "0",
+      "topicVideos": "0",
+      "bookRefs": "0"
+    },
+    {
+      "ord": "3",
+      "title": "Spectrum Science Gr 5",
+      "topic": "NULL",
+      "topicResources": "0",
+      "topicWorksheets": "0",
+      "topicVideos": "0",
+      "bookRefs": "0"
+    },
+    {
+      "ord": "4",
+      "title": "Choice block",
+      "topic": "NULL",
+      "topicResources": "0",
+      "topicWorksheets": "0",
+      "topicVideos": "0",
+      "bookRefs": "0"
+    },
+    {
+      "ord": "5",
+      "title": "180 Days of Language Gr 5",
+      "topic": "NULL",
+      "topicResources": "0",
+      "topicWorksheets": "0",
+      "topicVideos": "0",
+      "bookRefs": "0"
+    },
+    {
+      "ord": "6",
+      "title": "Cozy wrap-up",
+      "topic": "NULL",
+      "topicResources": "0",
+      "topicWorksheets": "0",
+      "topicVideos": "0",
+      "bookRefs": "0"
+    },
+    {
+      "ord": "7",
+      "title": "✏️ Math 10-2 — Make Line Plots",
+      "topic": "47",
+      "topicResources": "0",
+      "topicWorksheets": "0",
+      "topicVideos": "0",
+      "bookRefs": "0"
+    },
+    {
+      "ord": "8",
+      "title": "✏️ ELA M4-L2 — Research project using multiple sou",
+      "topic": "77",
+      "topicResources": "0",
+      "topicWorksheets": "0",
+      "topicVideos": "0",
+      "bookRefs": "0"
+    },
+    {
+      "ord": "9",
+      "title": "✏️ Math 10-1 — Analyze Line Plots",
+      "topic": "46",
+      "topicResources": "0",
+      "topicWorksheets": "0",
+      "topicVideos": "0",
+      "bookRefs": "0"
+    },
+    {
+      "ord": "10",
+      "title": "✏️ ELA M4-L1 — Use context to determine word meani",
+      "topic": "76",
+      "topicResources": "0",
+      "topicWorksheets": "0",
+      "topicVideos": "0",
+      "bookRefs": "0"
+    },
+    {
+      "ord": "11",
+      "title": "✏️ SS 4-2 — Scarcity, trade, and economic choices",
+      "topic": "102",
+      "topicResources": "0",
+      "topicWorksheets": "0",
+      "topicVideos": "0",
+      "bookRefs": "0"
+    }
+  ],
+  "messages": [],
+  "stdout": "ord\ttitle\ttopic\ttopicResources\ttopicWorksheets\ttopicVideos\tbookRefs\n0\tSlow morning\tNULL\t0\t0\t0\t0\n1\tTry one thing on the placement page\tNULL\t0\t0\t0\t0\n2\tDuck care + nature\tNULL\t0\t0\t0\t0\n3\tSpectrum Science Gr 5\tNULL\t0\t0\t0\t0\n4\tChoice block\tNULL\t0\t0\t0\t0\n5\t180 Days of Language Gr 5\tNULL\t0\t0\t0\t0\n6\tCozy wrap-up\tNULL\t0\t0\t0\t0\n7\t✏️ Math 10-2 — Make Line Plots\t47\t0\t0\t0\t0\n8\t✏️ ELA M4-L2 — Research project using multiple sou\t77\t0\t0\t0\t0\n9\t✏️ Math 10-1 — Analyze Line Plots\t46\t0\t0\t0\t0\n10\t✏️ ELA M4-L1 — Use context to determine word meani\t76\t0\t0\t0\t0\n11\t✏️ SS 4-2 — Scarcity, trade, and economic choices\t102\t0\t0\t0\t0\n",
+  "stderr": "",
+  "execution_time_ms": 633
+}

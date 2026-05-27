@@ -1,0 +1,46 @@
+{
+  "query": "SHOW TABLES LIKE '%urric%'; SHOW TABLES LIKE '%resource%'; SHOW TABLES LIKE '%librar%'; SHOW TABLES LIKE '%print%';",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SHOW TABLES LIKE '%urric%'; SHOW TABLES LIKE '%resource%'; SHOW TABLES LIKE '%librar%'; SHOW TABLES LIKE '%print%';",
+  "rows": [
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%urric%)": "curriculumAdjustments"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%urric%)": "curriculumResources"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%urric%)": "curriculumTopics"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%urric%)": "Tables_in_mm3swGictQLHDWKPJCGiHp (%resource%)"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%urric%)": "curriculumResources"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%urric%)": "reviewResources"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%urric%)": "Tables_in_mm3swGictQLHDWKPJCGiHp (%librar%)"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%urric%)": "assignments_library"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%urric%)": "Tables_in_mm3swGictQLHDWKPJCGiHp (%print%)"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%urric%)": "daily_printables"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%urric%)": "printableFavorites"
+    },
+    {
+      "Tables_in_mm3swGictQLHDWKPJCGiHp (%urric%)": "printableSources"
+    }
+  ],
+  "messages": [],
+  "stdout": "Tables_in_mm3swGictQLHDWKPJCGiHp (%urric%)\ncurriculumAdjustments\ncurriculumResources\ncurriculumTopics\nTables_in_mm3swGictQLHDWKPJCGiHp (%resource%)\ncurriculumResources\nreviewResources\nTables_in_mm3swGictQLHDWKPJCGiHp (%librar%)\nassignments_library\nTables_in_mm3swGictQLHDWKPJCGiHp (%print%)\ndaily_printables\nprintableFavorites\nprintableSources\n",
+  "stderr": "",
+  "execution_time_ms": 729
+}

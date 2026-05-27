@@ -1,0 +1,8 @@
+{
+  "query": "SELECT sb.id AS blockId, sb.sortOrder, sb.title, sb.curriculumTopicId, ct.subjectId AS topicSubject, ct.title AS topicTitle, (SELECT COUNT(*) FROM blockAttachments ba WHERE ba.blockId = sb.id) AS attachments, (SELECT COUNT(*) FROM bookAssignments ba2 WHERE ba2.blockId = sb.id) AS bookRefs FROM scheduleBlocks sb LEFT JOIN curriculumTopics ct ON ct.id = sb.curriculumTopicId JOIN dailyPlans dp ON dp.id = sb.planId WHERE dp.date = '2026-05-28' ORDER BY sb.sortOrder;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT sb.id AS blockId, sb.sortOrder, sb.title, sb.curriculumTopicId, ct.subjectId AS topicSubject, ct.title AS topicTitle, (SELECT COUNT(*) FROM blockAttachments ba WHERE ba.blockId = sb.id) AS attachments, (SELECT COUNT(*) FROM bookAssignments ba2 WHERE ba2.blockId = sb.id) AS bookRefs FROM scheduleBlocks sb LEFT JOIN curriculumTopics ct ON ct.id = sb.curriculumTopicId JOIN dailyPlans dp ON dp.id = sb.planId WHERE dp.date = '2026-05-28' ORDER BY sb.sortOrder;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1146 (42S02) at line 1: Table 'mm3swgictqlhdwkpjcgihp.blockAttachments' doesn't exist"
+  ]
+}

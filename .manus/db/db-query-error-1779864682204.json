@@ -1,0 +1,19 @@
+{
+  "query": "DESCRIBE ihAssignments; SELECT id, source, subject, title, status, postedAt FROM ihAssignments ORDER BY postedAt DESC LIMIT 12;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute DESCRIBE ihAssignments; SELECT id, source, subject, title, status, postedAt FROM ihAssignments ORDER BY postedAt DESC LIMIT 12;",
+  "returncode": 1,
+  "logs": [
+    "Field\tType\tNull\tKey\tDefault\tExtra",
+    "id\tint\tNO\tPRI\tNULL\tauto_increment",
+    "sourceTeacher\tvarchar(100)\tNO\t\tNULL\t",
+    "sourceClass\tvarchar(100)\tNO\t\tNULL\t",
+    "title\tvarchar(300)\tNO\t\tNULL\t",
+    "description\ttext\tYES\t\tNULL\t",
+    "postedAt\ttimestamp\tYES\t\tNULL\t",
+    "dueDate\tdate\tYES\t\tNULL\t",
+    "url\tvarchar(1000)\tYES\t\tNULL\t",
+    "raw\tjson\tYES\t\tNULL\t",
+    "syncedAt\ttimestamp\tNO\t\tCURRENT_TIMESTAMP",
+    "ERROR 1054 (42S22) at line 1: Unknown column 'source' in 'field list'"
+  ]
+}
