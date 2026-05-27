@@ -28,6 +28,9 @@ import TakeNotes from "./pages/TakeNotes";
 import Schedule from "./pages/Schedule";
 import Kiwi from "./pages/Kiwi";
 import AgendaEditor from "./pages/AgendaEditor";
+import PracticeHub from "./pages/PracticeHub";
+import FlashcardMaker from "./pages/FlashcardMaker";
+import ReviewQuiz from "./pages/ReviewQuiz";
 import Analytics from "./pages/Analytics";
 import Placement from "./pages/Placement";
 import Classes from "./pages/Classes";
@@ -61,7 +64,9 @@ function Router() {
         <Route path="/schedule" component={Schedule} />
         <Route path="/kiwi" component={Kiwi} />
         <Route path="/coins" component={Kiwi} />
-        <Route path="/practice" component={Kiwi} />
+        <Route path="/practice" component={PracticeHub} />
+        <Route path="/flashcards" component={FlashcardMaker} />
+        <Route path="/review" component={ReviewQuiz} />
         <Route path="/bookshelf" component={Bookshelf} />
         <Route path="/notes" component={TakeNotes} />
         <Route path="/apps" component={Apps} />

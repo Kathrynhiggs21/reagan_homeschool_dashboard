@@ -8538,5 +8538,131 @@ export const appRouter = router({
         return { ok: true };
       }),
   }),
+
+  /* ======================================================================
+   * FLASHCARD DECKS + CARDS
+   * ==================================================================== */
+  flashcards: router({
+    listDecks: protectedProcedure
+      .input(z.object({ subjectSlug: z.string().optional() }))
+      .query(async ({ input }) => db.listFlashcardDecks(input.subjectSlug)),
+    getDeck: protectedProcedure
+      .input(z.object({ id: z.number().int() }))
+      .query(async ({ input }) => db.getFlashcardDeck(input.id)),
+    createDeck: familyAdminProcedure
+      .input(z.object({
+        title: z.string().min(1).max(255),
+        subjectSlug: z.string().min(1).max(64),
+        topicHandle: z.string().max(128).optional(),
+        gradeLevel: z.number().int().min(1).max(12).optional(),
+        description: z.string().max(1000).optional(),
+        isAiGenerated: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => db.createFlashcardDeck(input)),
+    deleteDeck: familyAdminProcedure
+      .input(z.object({ id: z.number().int() }))
+      .mutation(async ({ input }) => { await db.deleteFlashcardDeck(input.id); return { ok: true }; }),
+    listCards: protectedProcedure
+      .input(z.object({ deckId: z.number().int() }))
+      .query(async ({ input }) => db.listFlashcardCards(input.deckId)),
+    addCard: familyAdminProcedure
+      .input(z.object({
+        deckId: z.number().int(),
+        front: z.string().min(1).max(2000),
+        back: z.string().min(1).max(2000),
+        hint: z.string().max(500).optional(),
+        imageUrl: z.string().max(512).optional(),
+      }))
+      .mutation(async ({ input }) => db.addFlashcardCard(input)),
+    deleteCard: familyAdminProcedure
+      .input(z.object({ id: z.number().int() }))
+      .mutation(async ({ input }) => { await db.deleteFlashcardCard(input.id); return { ok: true }; }),
+    aiGenerateDeck: familyAdminProcedure
+      .input(z.object({
+        subjectSlug: z.string().min(1).max(64),
+        topicTitle: z.string().min(1).max(255),
+        topicHandle: z.string().max(128).optional(),
+        cardCount: z.number().int().min(3).max(30).default(10),
+        gradeLevel: z.number().int().min(1).max(12).default(5),
+      }))
+      .mutation(async ({ input }) => {
+        const prompt = `Create ${input.cardCount} flashcards for a Grade ${input.gradeLevel} student studying "${input.topicTitle}" in ${input.subjectSlug}. Return JSON: { "title": string, "cards": [{"front": string, "back": string, "hint": string|null}] }. Front = question/term. Back = answer/definition. Keep language simple and age-appropriate.`;
+        const resp = await invokeLLM({ messages: [{ role: "system", content: "You are a homeschool curriculum assistant. Always return valid JSON only." }, { role: "user", content: prompt }], response_format: { type: "json_schema", json_schema: { name: "flashcard_deck", strict: true, schema: { type: "object", properties: { title: { type: "string" }, cards: { type: "array", items: { type: "object", properties: { front: { type: "string" }, back: { type: "string" }, hint: { type: ["string", "null"] } }, required: ["front", "back", "hint"], additionalProperties: false } } }, required: ["title", "cards"], additionalProperties: false } } } });
+        const raw = resp.choices[0].message.content;
+        const parsed = JSON.parse(typeof raw === "string" ? raw : JSON.stringify(raw));
+        const deck = await db.createFlashcardDeck({ title: parsed.title || input.topicTitle, subjectSlug: input.subjectSlug, topicHandle: input.topicHandle, gradeLevel: input.gradeLevel, isAiGenerated: true });
+        for (const c of (parsed.cards || []).slice(0, 30)) {
+          await db.addFlashcardCard({ deckId: deck.id, front: c.front, back: c.back, hint: c.hint || undefined });
+        }
+        return { deckId: deck.id, cardCount: (parsed.cards || []).length };
+      }),
+  }),
+
+  /* ======================================================================
+   * REVIEW SESSIONS + WEAK TOPICS
+   * ==================================================================== */
+  reviewSessions: router({
+    listWeakTopics: protectedProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(20).default(5) }))
+      .query(async ({ input }) => db.getWeakTopicsForStudent(input.limit)),
+    allWeakTopics: protectedProcedure
+      .query(async () => db.getAllWeakTopics()),
+    startSession: familyAdminProcedure
+      .input(z.object({
+        dateStr: z.string(),
+        subjectSlug: z.string().min(1).max(64),
+        topicHandle: z.string().max(128).optional(),
+        topicTitle: z.string().max(255).optional(),
+        totalQuestions: z.number().int().min(1).max(20),
+      }))
+      .mutation(async ({ input }) => db.createReviewSession(input)),
+    submitAnswer: protectedProcedure
+      .input(z.object({
+        questionId: z.number().int(),
+        studentAnswer: z.string(),
+        isCorrect: z.boolean(),
+        timeSpentMs: z.number().int().optional(),
+      }))
+      .mutation(async ({ input }) => { await db.submitReviewAnswer(input); return { ok: true }; }),
+    completeSession: protectedProcedure
+      .input(z.object({ sessionId: z.number().int() }))
+      .mutation(async ({ input }) => db.completeReviewSession(input.sessionId)),
+    aiGenerateQuiz: familyAdminProcedure
+      .input(z.object({
+        dateStr: z.string(),
+        subjectSlug: z.string().min(1).max(64),
+        topicTitle: z.string().min(1).max(255),
+        topicHandle: z.string().max(128).optional(),
+        questionCount: z.number().int().min(3).max(10).default(5),
+        ck12Url: z.string().max(512).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const prompt = `Create ${input.questionCount} multiple-choice quiz questions for a Grade 5 student reviewing "${input.topicTitle}" in ${input.subjectSlug}. Return JSON: { "questions": [{"question": string, "correctAnswer": string, "choices": [string, string, string, string]}] }. Keep language simple. The correct answer must be one of the 4 choices.`;
+        const resp = await invokeLLM({ messages: [{ role: "system", content: "You are a homeschool quiz generator. Always return valid JSON only." }, { role: "user", content: prompt }], response_format: { type: "json_schema", json_schema: { name: "quiz", strict: true, schema: { type: "object", properties: { questions: { type: "array", items: { type: "object", properties: { question: { type: "string" }, correctAnswer: { type: "string" }, choices: { type: "array", items: { type: "string" } } }, required: ["question", "correctAnswer", "choices"], additionalProperties: false } } }, required: ["questions"], additionalProperties: false } } } });
+        const raw = resp.choices[0].message.content;
+        const parsed = JSON.parse(typeof raw === "string" ? raw : JSON.stringify(raw));
+        const questions = (parsed.questions || []).slice(0, 10);
+        const session = await db.createReviewSession({ dateStr: input.dateStr, subjectSlug: input.subjectSlug, topicHandle: input.topicHandle, topicTitle: input.topicTitle, totalQuestions: questions.length });
+        for (const q of questions) {
+          await db.addReviewQuestion({ sessionId: session.id, questionType: "multiple-choice", question: q.question, correctAnswer: q.correctAnswer, choices: q.choices });
+        }
+        if (input.ck12Url) {
+          await db.upsertWeakTopic({ subjectSlug: input.subjectSlug, topicHandle: input.topicHandle || input.topicTitle, topicTitle: input.topicTitle, newScore: 50, ck12Url: input.ck12Url });
+        }
+        return { sessionId: session.id, questionCount: questions.length };
+      }),
+    listSessionsForDate: protectedProcedure
+      .input(z.object({ dateStr: z.string() }))
+      .query(async ({ input }) => db.listReviewSessionsForDate(input.dateStr)),
+    updateWeakTopic: familyAdminProcedure
+      .input(z.object({
+        subjectSlug: z.string().min(1).max(64),
+        topicHandle: z.string().min(1).max(128),
+        topicTitle: z.string().min(1).max(255),
+        newScore: z.number().int().min(0).max(100),
+        ck12Url: z.string().max(512).optional(),
+      }))
+      .mutation(async ({ input }) => { await db.upsertWeakTopic(input); return { ok: true }; }),
+  }),
 });
 export type AppRouter = typeof appRouter;

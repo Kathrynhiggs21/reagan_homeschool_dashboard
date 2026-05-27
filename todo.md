@@ -3951,3 +3951,65 @@ The v2.49 simplification had a hole: the dashboard's `appSettings` cache pointed
 - [x] Remove PowerSchool db helpers from db.ts
 - [x] Delete PowerSchool parser lib, test files, and UI components
 - [x] Clean up powerschool_ih/madeira source enum references
+
+## 🎓 6th Grade Summer Prep (after 5th grade curriculum is covered)
+
+- [ ] Add `gradeLevel` field to `curriculumTopics` table (5 vs 6) so 6th grade topics can coexist with 5th grade topics in the same DB
+- [ ] Seed Ohio 6th grade core curriculum topics (Math, ELA, Science, Social Studies) — mark as `gradeLevel: 6`
+- [ ] Add "Summer Mode" flag to `app_settings`: when enabled, AI agenda generator pulls from 6th grade preview topics instead of 5th grade topics
+- [ ] Curriculum page: add a "5th Grade Complete" banner/trigger that appears when all 5th grade topics are marked accomplished — prompts Mom to switch to Summer/6th grade mode
+- [ ] AI agenda editor: when Summer Mode is active, seasonal profile already defaults to 4 blocks / 10 AM start — wire it to pull 6th grade preview topics for Math + ELA blocks
+- [ ] Assignment library: tag 6th grade preview assignments with `gradeLevel: 6` so auto-attach only pulls them when Summer Mode is on
+- [ ] Print packet: cover sheet shows "Summer Preview — 6th Grade" label when Summer Mode is active
+- [ ] Skills: update `reagan-homeschool-grading` SKILL.md to document 6th grade grading expectations
+- [ ] Optional: "5th Grade Report Card" page — summary of all completed 5th grade topics with completion dates, for IH records
+
+## 🔁 Spaced-Repetition Review System ("Review Block")
+
+**Goal:** Reagan gets a short daily or weekly review of previously-learned topics. Kiwi quizzes her, tracks what she struggles with, and the AI agenda editor automatically schedules more practice on weak spots.
+
+### Schema
+- [ ] Add `topicMastery` table: `(id, curriculumTopicId, gradeLevel, lastReviewedAt, nextReviewAt, masteryScore 0-100, attemptCount, weakSpots text)` — one row per topic per student
+- [ ] Add `reviewAttempts` table: `(id, topicMasteryId, attemptedAt, score, kiwiQuizLog json, notes)` — log of every quiz attempt
+
+### Review Block Generation
+- [ ] Add `blockType: "review"` to the scheduleBlocks enum
+- [ ] `server/_lib/reviewBlockGenerator.ts` — picks the N topics most overdue for review (lowest `nextReviewAt`, lowest `masteryScore`) and generates a short quiz (3-5 questions) via LLM, formatted for Kiwi to deliver conversationally
+- [ ] Seasonal profile: inject 1 review block per day automatically (morning warm-up slot, ~15 min) — skip on Fridays if it's a short day
+- [ ] AI agenda editor: when Mom says "review fractions" or "she needs more practice on writing", the AI can manually queue a review block for a specific topic
+
+### Kiwi Quiz Delivery
+- [ ] Kiwi chat: when the active block is a `review` type, Kiwi enters "quiz mode" — asks questions one at a time, gives encouraging feedback, tracks right/wrong answers in session
+- [ ] At end of quiz, Kiwi summarizes: "You got 4 out of 5! You're really strong on X but let's practice Y more."
+- [ ] Quiz results POST to `reviewAttempts` table, update `topicMastery.masteryScore` (weighted rolling average)
+
+### AI Agenda Adjustment
+- [ ] `aiScheduleProposer.ts`: inject weak-topic context into the LLM system prompt — "Reagan has struggled with: [topic list with scores]" — so the AI naturally suggests review blocks for those topics
+- [ ] Weekly digest email: include a "Mastery Snapshot" section — subject by subject, which topics are strong (≥80), developing (50-79), or need work (<50)
+- [ ] Curriculum page (adult): show mastery score badge next to each topic — green/yellow/red dot
+
+### 6th Grade Bridge
+- [ ] When Summer Mode is active, review blocks pull from 5th grade topics with mastery < 80 — ensuring gaps are filled before 6th grade content starts
+- [ ] "Ready for 6th Grade" indicator: shows when all core 5th grade topics reach mastery ≥ 75
+- [ ] Printable flashcards: PDF export of any deck (2-per-row, front/back on same card, dashed cut lines, subject color header)
+
+## v2.97 — Skills, CK-12, Flashcards, Review, Kiwi Poses (2026-05-27)
+- [x] Completed reagan-print-packet SKILL.md with full PDF workflow, email attachment, and Drive push documentation
+- [x] Completed reagan-ai-agenda-editor SKILL.md with full two-column chat+schedule workflow, quick-action chips, and AI diff system
+- [x] Created reagan-flashcard-maker SKILL.md — AI deck generation, study mode, spaced repetition, CK-12 integration, print-to-PDF
+- [x] Created reagan-review-system SKILL.md — weak topic tracking, quiz generation, mastery scoring, agenda AI feedback loop
+- [x] CK-12 Practice Hub page at /practice — Grade 5 subject browser (Math, Science, ELA, Spelling) with direct concept deep-links, wired into sidebar nav
+- [x] Flashcard Maker page at /flashcards — AI deck generation, flip-card study mode, add/edit/delete cards, print-to-PDF (sidebar nav)
+- [x] Review & Quiz page at /review-quiz — AI quiz generation per topic, weak topic tracker, mastery scoring, spaced repetition schedule (sidebar nav)
+- [x] DB tables: flashcardDecks, flashcardCards, reviewSessions, reviewQuestions, weakTopics (all created via webdev_execute_sql)
+- [x] Visual polish CSS: .adult-card 3D lift, .block-card-compact spacing, .cozy-section-header, .stat-pill, .progress-ring-container — applied globally via index.css
+- [x] Nightly email confirmed live (GMAIL_SMTP_USER + GMAIL_APP_PASSWORD set, last send status: sent)
+- [x] Kiwi 12 activity poses generated and wired: reading, cooking, dancing, yoga, painting, guitar, writing, tv, eating, exercise, hammock, stargazing
+- [x] KiwiSprite updated: lazy-loads activity poses, 16 total poses, transparent backgrounds
+- [x] KiwiPerch updated: activity pose cycling every 15-30s, holds pose 8-12s, shows speech bubble, returns to idle
+- [x] 6th grade summer prep reference file created at references/sixth-grade-summer-prep.md
+- [x] flashcardMaker.test.ts: 11/11 green (GMAIL credentials, deck CRUD, card CRUD, AI generation, print export, CK-12 link format)
+- [ ] Printable flashcards: PDF export of any deck (2-per-row, front/back on same card, dashed cut lines, subject color header) — wired in FlashcardMaker.tsx UI but PDF generation server procedure needs final test
+- [ ] Review system: wire reviewSessions/reviewQuestions to actual AI quiz generation endpoint (currently uses placeholder LLM call)
+- [ ] CK-12: add Grade 6 subject links for summer prep mode
+- [ ] Skills: update reagan-homeschool-grading SKILL.md to document 6th grade grading expectations

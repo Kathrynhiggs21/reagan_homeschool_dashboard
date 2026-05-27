@@ -2250,3 +2250,87 @@ export const notebookPages = mysqlTable("notebookPages", {
 });
 export type NotebookPage = typeof notebookPages.$inferSelect;
 export type InsertNotebookPage = typeof notebookPages.$inferInsert;
+
+/* ============================== FLASHCARD DECKS ================================
+ * AI-generated or manually created flashcard decks.
+ * Each deck belongs to a subject/topic and contains many cards.
+ * ============================================================================== */
+export const flashcardDecks = mysqlTable("flashcardDecks", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  subjectSlug: varchar("subjectSlug", { length: 64 }).notNull(),
+  topicHandle: varchar("topicHandle", { length: 128 }),
+  gradeLevel: int("gradeLevel").notNull().default(5),
+  description: text("description"),
+  cardCount: int("cardCount").notNull().default(0),
+  isAiGenerated: boolean("isAiGenerated").notNull().default(false),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type FlashcardDeck = typeof flashcardDecks.$inferSelect;
+export type InsertFlashcardDeck = typeof flashcardDecks.$inferInsert;
+
+export const flashcardCards = mysqlTable("flashcardCards", {
+  id: int("id").autoincrement().primaryKey(),
+  deckId: int("deckId").notNull(),
+  front: text("front").notNull(),
+  back: text("back").notNull(),
+  hint: text("hint"),
+  imageUrl: varchar("imageUrl", { length: 512 }),
+  sortOrder: int("sortOrder").notNull().default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type FlashcardCard = typeof flashcardCards.$inferSelect;
+export type InsertFlashcardCard = typeof flashcardCards.$inferInsert;
+
+/* ============================== REVIEW SESSIONS ================================
+ * Spaced-repetition review: Reagan is quizzed on past topics.
+ * ============================================================================== */
+export const reviewSessions = mysqlTable("reviewSessions", {
+  id: int("id").autoincrement().primaryKey(),
+  dateStr: varchar("dateStr", { length: 10 }).notNull(),
+  subjectSlug: varchar("subjectSlug", { length: 64 }).notNull(),
+  topicHandle: varchar("topicHandle", { length: 128 }),
+  topicTitle: varchar("topicTitle", { length: 255 }),
+  score: int("score"),
+  totalQuestions: int("totalQuestions").notNull().default(0),
+  correctAnswers: int("correctAnswers").notNull().default(0),
+  completedAt: timestamp("completedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ReviewSession = typeof reviewSessions.$inferSelect;
+export type InsertReviewSession = typeof reviewSessions.$inferInsert;
+
+export const reviewQuestions = mysqlTable("reviewQuestions", {
+  id: int("id").autoincrement().primaryKey(),
+  sessionId: int("sessionId").notNull(),
+  questionType: mysqlEnum("questionType", ["multiple-choice", "short-answer", "flashcard", "ck12-practice"]).notNull().default("multiple-choice"),
+  question: text("question").notNull(),
+  correctAnswer: text("correctAnswer").notNull(),
+  choices: json("choices"),
+  studentAnswer: text("studentAnswer"),
+  isCorrect: boolean("isCorrect"),
+  timeSpentMs: int("timeSpentMs"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ReviewQuestion = typeof reviewQuestions.$inferSelect;
+export type InsertReviewQuestion = typeof reviewQuestions.$inferInsert;
+
+/* ============================== WEAK TOPICS ====================================
+ * Rolling mastery score per subject/topic. Topics with masteryScore < 70
+ * are surfaced to the AI agenda editor for extra practice scheduling.
+ * ============================================================================== */
+export const weakTopics = mysqlTable("weakTopics", {
+  id: int("id").autoincrement().primaryKey(),
+  subjectSlug: varchar("subjectSlug", { length: 64 }).notNull(),
+  topicHandle: varchar("topicHandle", { length: 128 }).notNull(),
+  topicTitle: varchar("topicTitle", { length: 255 }).notNull(),
+  masteryScore: int("masteryScore").notNull().default(50),
+  reviewCount: int("reviewCount").notNull().default(0),
+  lastReviewedAt: timestamp("lastReviewedAt"),
+  ck12Url: varchar("ck12Url", { length: 512 }),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type WeakTopic = typeof weakTopics.$inferSelect;
+export type InsertWeakTopic = typeof weakTopics.$inferInsert;

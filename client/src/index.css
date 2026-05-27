@@ -1172,3 +1172,80 @@ html[data-rtheme="chalkboard"] .text-zinc-900 {
 [class*="bg-white/"] .text-slate-900 {
   color: #1f2937 !important;
 }
+
+/* ===== Visual Polish Pass (2026-05-27) ===== */
+
+.adult-card {
+  background: var(--card);
+  border: 1px solid oklch(1 0 0 / 0.10);
+  border-radius: var(--radius);
+  box-shadow:
+    0 1px 0 oklch(1 0 0 / 0.08) inset,
+    0 2px 0 oklch(0 0 0 / 0.35),
+    0 8px 24px -6px oklch(0 0 0 / 0.45),
+    0 24px 56px -16px oklch(0 0 0 / 0.35);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.adult-card:hover {
+  box-shadow:
+    0 1px 0 oklch(1 0 0 / 0.10) inset,
+    0 3px 0 oklch(0 0 0 / 0.40),
+    0 12px 32px -8px oklch(0 0 0 / 0.52),
+    0 32px 64px -20px oklch(0 0 0 / 0.40);
+  transform: translateY(-1px);
+}
+
+.flashcard-face {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.practice-subject-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.practice-subject-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px -6px oklch(0 0 0 / 0.45);
+}
+
+.today-block-card {
+  border-radius: 0.75rem;
+  transition: box-shadow 0.15s ease;
+}
+.today-block-card:hover {
+  box-shadow:
+    0 1px 0 oklch(1 0 0 / 0.08) inset,
+    0 4px 12px -4px oklch(0 0 0 / 0.4),
+    0 12px 28px -10px oklch(0 0 0 / 0.3);
+}
+
+.ck12-topic-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  transition: background-color 0.15s ease, transform 0.1s ease;
+  cursor: pointer;
+}
+.ck12-topic-pill:hover { transform: scale(1.04); }
+
+.flashcard-deck-card-active {
+  box-shadow:
+    0 0 0 2px #0ea5e9,
+    0 4px 16px -4px oklch(0 0 0 / 0.45);
+}
+
+.agenda-editor-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .agenda-editor-grid {
+    grid-template-columns: 1fr;
+  }
+}

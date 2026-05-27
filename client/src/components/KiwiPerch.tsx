@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import KiwiSprite, { type KiwiPose } from "./KiwiSprite";
+import KiwiSprite, { type KiwiPose, KIWI_ACTIVITY_POSES, KIWI_ACTIVITY_BUBBLES } from "./KiwiSprite";
 import FlockSprite, { type FlockMember, getFlockMeta } from "./FlockSprite";
 import { useKiwi } from "@/contexts/KiwiContext";
 // Kiwi is silent by default. We deliberately do NOT import chirp() here so the
@@ -174,6 +174,41 @@ export default function KiwiPerch() {
     // Fire once immediately so you see motion right away
     window.setTimeout(tick, 300);
     return () => window.clearInterval(interval);
+  }, [enabled, adultPresent, dragging, flying]);
+
+  /* ======================== ACTIVITY POSE CYCLING ===========================
+   * Every 15-30s, Kiwi switches to a random activity pose for ~8-12s, then
+   * returns to idle. A speech bubble shows what she's doing. This makes her
+   * feel like a real companion with her own life.
+   */
+  useEffect(() => {
+    if (!enabled || adultPresent) return;
+    let timer: number;
+    const schedule = () => {
+      const delay = 15_000 + Math.random() * 15_000; // 15-30s between activities
+      timer = window.setTimeout(() => {
+        if (!dragging && !flying) {
+          // Pick a random activity pose
+          const pick = KIWI_ACTIVITY_POSES[Math.floor(Math.random() * KIWI_ACTIVITY_POSES.length)];
+          setPose(pick);
+          // Show speech bubble for this activity
+          const bubbleMsg = KIWI_ACTIVITY_BUBBLES[pick];
+          if (bubbleMsg) {
+            setBubbleText(bubbleMsg);
+            if (bubbleTimeoutRef.current) window.clearTimeout(bubbleTimeoutRef.current);
+            bubbleTimeoutRef.current = window.setTimeout(() => setBubbleText(null), 4000);
+          }
+          // Hold the activity pose for 8-12s, then return to idle
+          const holdDuration = 8_000 + Math.random() * 4_000;
+          window.setTimeout(() => {
+            setPose("idle");
+          }, holdDuration);
+        }
+        schedule();
+      }, delay);
+    };
+    schedule();
+    return () => { if (timer) window.clearTimeout(timer); };
   }, [enabled, adultPresent, dragging, flying]);
 
   // Medium flutter hop every 25-45s: bigger movement

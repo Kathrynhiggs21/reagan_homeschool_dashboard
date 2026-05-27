@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `flashcardCards` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `deckId` int NOT NULL,\n  `front` text NOT NULL,\n  `back` text NOT NULL,\n  `hint` text,\n  `imageUrl` varchar(512),\n  `sortOrder` int NOT NULL DEFAULT 0,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `flashcardCards_id` PRIMARY KEY(`id`)\n)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute CREATE TABLE IF NOT EXISTS `flashcardCards` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `deckId` int NOT NULL,\n  `front` text NOT NULL,\n  `back` text NOT NULL,\n  `hint` text,\n  `imageUrl` varchar(512),\n  `sortOrder` int NOT NULL DEFAULT 0,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  CONSTRAINT `flashcardCards_id` PRIMARY KEY(`id`)\n)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 664
+}

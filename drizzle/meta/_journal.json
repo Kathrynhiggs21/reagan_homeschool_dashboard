@@ -470,6 +470,13 @@
       "when": 1779897417392,
       "tag": "0066_young_iron_patriot",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "5",
+      "when": 1779916589826,
+      "tag": "0067_nappy_jackpot",
+      "breakpoints": true
     }
   ]
 }

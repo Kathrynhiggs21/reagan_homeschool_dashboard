@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `flashcardDecks` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `title` varchar(255) NOT NULL,\n  `subjectSlug` varchar(64) NOT NULL,\n  `topicHandle` varchar(128),\n  `gradeLevel` int NOT NULL DEFAULT 5,\n  `description` text,\n  `cardCount` int NOT NULL DEFAULT 0,\n  `isAiGenerated` boolean NOT NULL DEFAULT false,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  `updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n  CONSTRAINT `flashcardDecks_id` PRIMARY KEY(`id`)\n)",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute CREATE TABLE IF NOT EXISTS `flashcardDecks` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `title` varchar(255) NOT NULL,\n  `subjectSlug` varchar(64) NOT NULL,\n  `topicHandle` varchar(128),\n  `gradeLevel` int NOT NULL DEFAULT 5,\n  `description` text,\n  `cardCount` int NOT NULL DEFAULT 0,\n  `isAiGenerated` boolean NOT NULL DEFAULT false,\n  `createdAt` timestamp NOT NULL DEFAULT (now()),\n  `updatedAt` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,\n  CONSTRAINT `flashcardDecks_id` PRIMARY KEY(`id`)\n)",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 4016
+}

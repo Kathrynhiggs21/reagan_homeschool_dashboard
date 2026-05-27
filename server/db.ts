@@ -8738,3 +8738,122 @@ export async function countMajorKiwiVoiceAuditEntries(
     );
   return (rows as any[]).length;
 }
+
+/* ============================================================================
+ * FLASHCARD DECKS + CARDS  (added 2026-05-27)
+ * ============================================================================ */
+import { flashcardDecks, flashcardCards, reviewSessions, reviewQuestions, weakTopics } from "../drizzle/schema";
+
+export async function listFlashcardDecks(subjectSlug?: string) {
+  const db = getDb();
+  const conds: any[] = [];
+  if (subjectSlug) conds.push(eq(flashcardDecks.subjectSlug, subjectSlug));
+  return db.select().from(flashcardDecks).where(conds.length ? and(...conds) : undefined).orderBy(desc(flashcardDecks.updatedAt));
+}
+
+export async function getFlashcardDeck(id: number) {
+  const db = getDb();
+  const rows = await db.select().from(flashcardDecks).where(eq(flashcardDecks.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function createFlashcardDeck(input: { title: string; subjectSlug: string; topicHandle?: string; gradeLevel?: number; description?: string; isAiGenerated?: boolean }) {
+  const db = getDb();
+  const res: any = await db.insert(flashcardDecks).values({ title: input.title, subjectSlug: input.subjectSlug, topicHandle: input.topicHandle ?? null, gradeLevel: input.gradeLevel ?? 5, description: input.description ?? null, isAiGenerated: input.isAiGenerated ?? false, cardCount: 0 });
+  return { id: res.insertId as number };
+}
+
+export async function deleteFlashcardDeck(id: number) {
+  const db = getDb();
+  await db.delete(flashcardCards).where(eq(flashcardCards.deckId, id));
+  await db.delete(flashcardDecks).where(eq(flashcardDecks.id, id));
+}
+
+export async function listFlashcardCards(deckId: number) {
+  const db = getDb();
+  return db.select().from(flashcardCards).where(eq(flashcardCards.deckId, deckId)).orderBy(flashcardCards.sortOrder, flashcardCards.id);
+}
+
+export async function addFlashcardCard(input: { deckId: number; front: string; back: string; hint?: string; imageUrl?: string }) {
+  const db = getDb();
+  const existing = await db.select({ sortOrder: flashcardCards.sortOrder }).from(flashcardCards).where(eq(flashcardCards.deckId, input.deckId)).orderBy(desc(flashcardCards.sortOrder)).limit(1);
+  const nextSort = existing.length > 0 ? (existing[0].sortOrder ?? 0) + 1 : 0;
+  const res: any = await db.insert(flashcardCards).values({ deckId: input.deckId, front: input.front, back: input.back, hint: input.hint ?? null, imageUrl: input.imageUrl ?? null, sortOrder: nextSort });
+  await db.update(flashcardDecks).set({ cardCount: nextSort + 1 }).where(eq(flashcardDecks.id, input.deckId));
+  return { id: res.insertId as number };
+}
+
+export async function deleteFlashcardCard(id: number) {
+  const db = getDb();
+  const card = await db.select({ deckId: flashcardCards.deckId }).from(flashcardCards).where(eq(flashcardCards.id, id)).limit(1);
+  await db.delete(flashcardCards).where(eq(flashcardCards.id, id));
+  if (card[0]) {
+    const count = await db.select({ id: flashcardCards.id }).from(flashcardCards).where(eq(flashcardCards.deckId, card[0].deckId));
+    await db.update(flashcardDecks).set({ cardCount: count.length }).where(eq(flashcardDecks.id, card[0].deckId));
+  }
+}
+
+/* ============================================================================
+ * REVIEW SESSIONS + QUESTIONS  (added 2026-05-27)
+ * ============================================================================ */
+
+export async function createReviewSession(input: { dateStr: string; subjectSlug: string; topicHandle?: string; topicTitle?: string; totalQuestions: number }) {
+  const db = getDb();
+  const res: any = await db.insert(reviewSessions).values({ dateStr: input.dateStr, subjectSlug: input.subjectSlug, topicHandle: input.topicHandle ?? null, topicTitle: input.topicTitle ?? null, totalQuestions: input.totalQuestions, correctAnswers: 0 });
+  return { id: res.insertId as number };
+}
+
+export async function addReviewQuestion(input: { sessionId: number; questionType: "multiple-choice" | "short-answer" | "flashcard" | "ck12-practice"; question: string; correctAnswer: string; choices?: string[] }) {
+  const db = getDb();
+  const res: any = await db.insert(reviewQuestions).values({ sessionId: input.sessionId, questionType: input.questionType, question: input.question, correctAnswer: input.correctAnswer, choices: input.choices ? JSON.stringify(input.choices) : null });
+  return { id: res.insertId as number };
+}
+
+export async function submitReviewAnswer(input: { questionId: number; studentAnswer: string; isCorrect: boolean; timeSpentMs?: number }) {
+  const db = getDb();
+  await db.update(reviewQuestions).set({ studentAnswer: input.studentAnswer, isCorrect: input.isCorrect, timeSpentMs: input.timeSpentMs ?? null }).where(eq(reviewQuestions.id, input.questionId));
+}
+
+export async function completeReviewSession(sessionId: number) {
+  const db = getDb();
+  const questions = await db.select({ isCorrect: reviewQuestions.isCorrect }).from(reviewQuestions).where(eq(reviewQuestions.sessionId, sessionId));
+  const correct = questions.filter((q) => q.isCorrect === true).length;
+  const total = questions.length;
+  const score = total > 0 ? Math.round((correct / total) * 100) : 0;
+  await db.update(reviewSessions).set({ score, correctAnswers: correct, completedAt: new Date() }).where(eq(reviewSessions.id, sessionId));
+  return { score, correct, total };
+}
+
+export async function listReviewSessionsForDate(dateStr: string) {
+  const db = getDb();
+  return db.select().from(reviewSessions).where(eq(reviewSessions.dateStr, dateStr)).orderBy(desc(reviewSessions.createdAt));
+}
+
+/* ============================================================================
+ * WEAK TOPICS  (added 2026-05-27)
+ * ============================================================================ */
+
+export async function getWeakTopicsForStudent(limit = 5) {
+  const db = getDb();
+  return db.select().from(weakTopics).where(sql`${weakTopics.masteryScore} < 70`).orderBy(weakTopics.masteryScore, desc(weakTopics.lastReviewedAt)).limit(limit);
+}
+
+export async function upsertWeakTopic(input: { subjectSlug: string; topicHandle: string; topicTitle: string; newScore: number; ck12Url?: string }) {
+  const db = getDb();
+  const existing = await db.select().from(weakTopics).where(and(eq(weakTopics.subjectSlug, input.subjectSlug), eq(weakTopics.topicHandle, input.topicHandle))).limit(1);
+  if (existing.length === 0) {
+    await db.insert(weakTopics).values({ subjectSlug: input.subjectSlug, topicHandle: input.topicHandle, topicTitle: input.topicTitle, masteryScore: input.newScore, reviewCount: 1, lastReviewedAt: new Date(), ck12Url: input.ck12Url ?? null });
+  } else {
+    const current = existing[0];
+    let newMastery = current.masteryScore;
+    if (input.newScore < 70) newMastery = Math.max(0, current.masteryScore - 10);
+    else if (input.newScore >= 90) newMastery = Math.min(100, current.masteryScore + 15);
+    else newMastery = Math.round((current.masteryScore + input.newScore) / 2);
+    await db.update(weakTopics).set({ masteryScore: newMastery, reviewCount: (current.reviewCount ?? 0) + 1, lastReviewedAt: new Date(), topicTitle: input.topicTitle, ...(input.ck12Url ? { ck12Url: input.ck12Url } : {}) }).where(eq(weakTopics.id, current.id));
+  }
+}
+
+export async function getAllWeakTopics() {
+  const db = getDb();
+  return db.select().from(weakTopics).orderBy(weakTopics.subjectSlug, weakTopics.masteryScore);
+}
