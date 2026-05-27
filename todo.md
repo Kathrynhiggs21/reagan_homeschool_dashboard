@@ -3856,51 +3856,51 @@ The v2.49 simplification had a hole: the dashboard's `appSettings` cache pointed
 
 ## v2.93 — Worksheet auto-prep pipeline (2026-05-27)
 
-- [ ] Read worksheetAutoPrepPlanner.ts contract
-- [ ] Read assignmentFinder.ts contract
-- [ ] Build server/_lib/worksheetAutoPrepExecutor.ts
-- [ ] Add POST /api/scheduled/worksheet-auto-prep with dual-auth
-- [ ] Add /api/scheduled/worksheet-auto-prep/result callback
-- [ ] Create heartbeat worksheet-auto-prep daily 00:00 UTC = 8 PM EDT
-- [ ] Vitest contract: bearer auth (401 / 200)
-- [ ] Vitest contract: executor inserts curriculumResources
-- [ ] Vitest contract: skips off-day / non-academic blocks
-- [ ] Manual one-shot fire for 2026-05-28 plan
+- [x] Read worksheetAutoPrepPlanner.ts contract
+- [x] Read assignmentFinder.ts contract
+- [x] Build server/_lib/worksheetAutoPrepExecutor.ts
+- [x] Add POST /api/scheduled/worksheet-auto-prep with dual-auth
+- [x] Add /api/scheduled/worksheet-auto-prep/result callback
+- [x] Create heartbeat worksheet-auto-prep daily 00:00 UTC = 8 PM EDT
+- [x] Vitest contract: bearer auth (401 / 200)
+- [x] Vitest contract: executor inserts curriculumResources
+- [x] Vitest contract: skips off-day / non-academic blocks
+- [x] Manual one-shot fire for 2026-05-28 plan
 
 ## v2.96 — LLM-backed finder + curated library (A + C, replaces Sonar)
-- [ ] Build `server/_lib/llmAssignmentFinder.ts` using built-in `invokeLLM` with strict JSON schema
-- [ ] URL allowlist filter (kid-safe educational domains)
-- [ ] Wire LLM finder into `assignmentFinder.findAssignments` as fallback after library
-- [ ] Vitest contract for the LLM finder
-- [ ] Seed `assignmentsLibrary` with 200+ curated kid-safe URLs covering Q4
-- [ ] Re-fire auto-attach for May 28 + verify all blocks resolve
-- [ ] Lock results with checkpoint v2.96
+- [x] Build `server/_lib/llmAssignmentFinder.ts` using built-in `invokeLLM` with strict JSON schema
+- [x] URL allowlist filter (kid-safe educational domains)
+- [x] Wire LLM finder into `assignmentFinder.findAssignments` as fallback after library
+- [x] Vitest contract for the LLM finder
+- [x] Seed `assignmentsLibrary` with 200+ curated kid-safe URLs covering Q4
+- [x] Re-fire auto-attach for May 28 + verify all blocks resolve
+- [x] Lock results with checkpoint v2.96
 
 ## v2.96 — LLM-backed finder + curated library (A + C, replaces Sonar)
-- [ ] Build llmAssignmentFinder.ts using built-in invokeLLM with strict JSON schema
-- [ ] URL allowlist filter (kid-safe educational domains)
-- [ ] Wire LLM finder into assignmentFinder.findAssignments as fallback after library
-- [ ] Vitest contract for the LLM finder
-- [ ] Seed assignmentsLibrary with 200+ curated kid-safe URLs covering Q4
-- [ ] Re-fire auto-attach for May 28 + verify all blocks resolve
-- [ ] Lock results with checkpoint v2.96
-- [ ] Two-tier allowlist: tight for worksheets/practice; broader (YouTube + reputable kid-edu hosts) for videos/lessons
-- [ ] Tag video URLs with requiresAdultPreview=true so Mom/Grandma can preview before Reagan opens
-- [ ] LLM prompt explicitly forbids Shorts, monetized influencers, and any non-kid channels
+- [x] Build llmAssignmentFinder.ts using built-in invokeLLM with strict JSON schema
+- [x] URL allowlist filter (kid-safe educational domains)
+- [x] Wire LLM finder into assignmentFinder.findAssignments as fallback after library
+- [x] Vitest contract for the LLM finder
+- [x] Seed assignmentsLibrary with 200+ curated kid-safe URLs covering Q4
+- [x] Re-fire auto-attach for May 28 + verify all blocks resolve
+- [x] Lock results with checkpoint v2.96
+- [x] Two-tier allowlist: tight for worksheets/practice; broader (YouTube + reputable kid-edu hosts) for videos/lessons
+- [x] Tag video URLs with requiresAdultPreview=true so Mom/Grandma can preview before Reagan opens
+- [x] LLM prompt explicitly forbids Shorts, monetized influencers, and any non-kid channels
 
 ## v2.97 - Upload/Camera/Custom resource attach + NL schedule controls
-- [ ] Add curriculum.uploadResourceFile tRPC mutation (PDF/image to S3 + addResource)
-- [ ] Expand BlockResourcesPanel with tabs: Link | Upload | Camera | Custom
-- [ ] Custom tab = title + description only (no URL required) for adult-created lessons
-- [ ] AIScheduleProposer system prompt: parse start time, end time, day length, subject focus, mode (outdoor/hands-on/crush-X)
-- [ ] Vitest for new mutation + NL intent parser
-- [ ] Final checkpoint v2.97
-- [ ] Summer mode: late start 9:30, ~4 blocks, curriculum-focused, fewer specials, more outdoor
-- [ ] School year mode: 8:30 start, 6-7 blocks, full specials rotation
-- [ ] Auto-detect season from current date (Memorial Day to Labor Day = summer)
-- [ ] Friday lighter day rule in summer mode
-- [ ] Tutor role: confirmed already accepted by familyAdminProcedure
-- [ ] Standing rule: prune stale code/docs/automations that contradict AI agenda
-- [ ] Summer mode default: 10am start, ~4 blocks, curriculum-focused, fewer specials
-- [ ] AIScheduleGenerator: seasonal-aware defaults injected into system prompt
-- [ ] AIScheduleProposer NL parser: start time / end time / day length / subject focus / mode
+- [x] Add curriculum.uploadResourceFile tRPC mutation (PDF/image to S3 + addResource)
+- [x] Expand BlockResourcesPanel with tabs: Link | Upload | Camera | Custom
+- [x] Custom tab = title + description only (no URL required) for adult-created lessons
+- [x] AIScheduleProposer system prompt: parse start time, end time, day length, subject focus, mode (outdoor/hands-on/crush-X)
+- [x] Vitest for new mutation + NL intent parser
+- [x] Final checkpoint v2.97
+- [x] Summer mode: late start 9:30, ~4 blocks, curriculum-focused, fewer specials, more outdoor
+- [x] School year mode: 8:30 start, 6-7 blocks, full specials rotation
+- [x] Auto-detect season from current date (Memorial Day to Labor Day = summer)
+- [x] Friday lighter day rule in summer mode
+- [x] Tutor role: confirmed already accepted by familyAdminProcedure
+- [x] Standing rule: prune stale code/docs/automations that contradict AI agenda
+- [x] Summer mode default: 10am start, ~4 blocks, curriculum-focused, fewer specials
+- [x] AIScheduleGenerator: seasonal-aware defaults injected into system prompt
+- [x] AIScheduleProposer NL parser: start time / end time / day length / subject focus / mode
