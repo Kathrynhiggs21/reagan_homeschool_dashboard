@@ -39,6 +39,7 @@ import TodayClassroomCard from "@/components/TodayClassroomCard";
 import TodayClassroomGradedCard from "@/components/TodayClassroomGradedCard";
 import SendAgendaNowCard from "@/components/SendAgendaNowCard";
 import RecapReplyInboxCard from "@/components/RecapReplyInboxCard";
+import CalendarFeedsCard from "@/components/CalendarFeedsCard";
 import TodayMomVoiceMemoCard from "@/components/TodayMomVoiceMemoCard";
 import TodayCoveredRecapCard from "@/components/TodayCoveredRecapCard";
 import TodayForwardPlanCard from "@/components/TodayForwardPlanCard";
@@ -515,6 +516,8 @@ export default function Today() {
             {/* v2.92 (2026-05-27) — Recap reply inbox so Mom/Grandma can
                 close out days that never got a Gmail reply parsed in. */}
             <RecapReplyInboxCard />
+
+            <CalendarFeedsCard />
             {/* v2.88 — quick-link tile row (was above the schedule) */}
             <Card className="classroom-card p-3">
               <div className="flex items-center justify-between flex-wrap gap-2">
