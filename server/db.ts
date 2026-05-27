@@ -1131,10 +1131,20 @@ export async function markNotificationRead(id: number) {
 }
 
 /* ============================== IH ASSIGNMENTS ============================ */
+/**
+ * @deprecated v2.94 (2026-05-27) — Indian Hill (the public school Reagan left)
+ * is no longer the source of truth for assignments. The `ihAssignments` table
+ * + the `bookAssignments.ihAssignmentId` FK column are scheduled for removal
+ * in the next session after the user confirms. Helpers below are unreferenced
+ * by any router/client (verified via grep). Keeping the table around so the
+ * `autoCompleteFromHistory` heuristic at line ~5133 doesn't have to change
+ * shape until the DROP migration ships. Do not call from new code.
+ */
 export async function listIHAssignments(daysBack = 14) {
   const since = new Date(Date.now() - daysBack * 86400000);
   return getDb().select().from(ihAssignments).where(gte(ihAssignments.syncedAt, since)).orderBy(desc(ihAssignments.postedAt));
 }
+/** @deprecated see listIHAssignments above. */
 export async function insertIHAssignment(a: typeof ihAssignments.$inferInsert) {
   await getDb().insert(ihAssignments).values(a);
 }
