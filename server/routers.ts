@@ -4593,6 +4593,7 @@ export const appRouter = router({
         return row;
       }),
   }),
+  curriculum: router({
     list: protectedProcedure
       .input(z.object({ subject: z.string().optional() }).optional())
       .query(({ input }) => db.listCurriculumTopics(input?.subject)),
