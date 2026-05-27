@@ -1,0 +1,66 @@
+{
+  "query": "SELECT forDate, status, sentAt, recipients, LEFT(agendaHash, 12) AS hash FROM nightlyAgendaEmails ORDER BY id DESC LIMIT 8;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT forDate, status, sentAt, recipients, LEFT(agendaHash, 12) AS hash FROM nightlyAgendaEmails ORDER BY id DESC LIMIT 8;",
+  "rows": [
+    {
+      "forDate": "2026-05-28",
+      "status": "queued",
+      "sentAt": "2026-05-27 11:00:35",
+      "recipients": "marcy.spear@gmail.com, spear.cpt@gmail.com",
+      "hash": "344bcdf7741c"
+    },
+    {
+      "forDate": "2026-05-25",
+      "status": "sent",
+      "sentAt": "2026-05-23 06:25:42",
+      "recipients": "spear.cpt@gmail.com",
+      "hash": "18f13bc60dce"
+    },
+    {
+      "forDate": "2099-09-10",
+      "status": "queued",
+      "sentAt": "2026-05-21 05:20:27",
+      "recipients": "",
+      "hash": "dirty_mpf1l5"
+    },
+    {
+      "forDate": "2030-09-09",
+      "status": "queued",
+      "sentAt": "2026-05-21 05:19:55",
+      "recipients": "",
+      "hash": "dirty_mpf1kg"
+    },
+    {
+      "forDate": "2026-05-21",
+      "status": "queued",
+      "sentAt": "2026-05-21 05:19:53",
+      "recipients": "",
+      "hash": "dirty_mpf1kf"
+    },
+    {
+      "forDate": "2027-09-20",
+      "status": "queued",
+      "sentAt": "2026-05-21 05:19:52",
+      "recipients": "",
+      "hash": "dirty_mpf1ke"
+    },
+    {
+      "forDate": "2031-01-15",
+      "status": "queued",
+      "sentAt": "2026-05-21 05:19:34",
+      "recipients": "",
+      "hash": "dirty_mpf1k0"
+    },
+    {
+      "forDate": "2031-01-15",
+      "status": "queued",
+      "sentAt": "2026-05-21 05:19:34",
+      "recipients": "",
+      "hash": "dirty_mpf1k0"
+    }
+  ],
+  "messages": [],
+  "stdout": "forDate\tstatus\tsentAt\trecipients\thash\n2026-05-28\tqueued\t2026-05-27 11:00:35\tmarcy.spear@gmail.com, spear.cpt@gmail.com\t344bcdf7741c\n2026-05-25\tsent\t2026-05-23 06:25:42\tspear.cpt@gmail.com\t18f13bc60dce\n2099-09-10\tqueued\t2026-05-21 05:20:27\t\tdirty_mpf1l5\n2030-09-09\tqueued\t2026-05-21 05:19:55\t\tdirty_mpf1kg\n2026-05-21\tqueued\t2026-05-21 05:19:53\t\tdirty_mpf1kf\n2027-09-20\tqueued\t2026-05-21 05:19:52\t\tdirty_mpf1ke\n2031-01-15\tqueued\t2026-05-21 05:19:34\t\tdirty_mpf1k0\n2031-01-15\tqueued\t2026-05-21 05:19:34\t\tdirty_mpf1k0\n",
+  "stderr": "",
+  "execution_time_ms": 583
+}

@@ -997,21 +997,24 @@ export function registerScheduledSync(app: Express) {
       const { storagePut, storageGetSignedUrl } = await import("./storage");
       const { runAutoAttachForDate } = await import("./_lib/blockAutoAttach");
 
-      // v2.86 (2026-05-21) — Auto-attach pass FIRST so the assembled agenda
-      // never has empty blocks. Mom's #1 simplification ask: Reagan should
-      // never open a block and find it bare. The pass is idempotent (skips
-      // any block that already has a pinned resource).
-      try {
-        const autoR = await runAutoAttachForDate(forDate, { kidSafe: true });
-        // eslint-disable-next-line no-console
-        console.log(
-          `[nightly-agenda-email] auto-attach for ${forDate}: attached=${autoR.attached} skipped=${autoR.skipped} noResult=${autoR.noResult} errors=${autoR.errors} (of ${autoR.totalBlocks})`,
-        );
-      } catch (e: any) {
-        // Never block the nightly email on auto-attach failure.
-        // eslint-disable-next-line no-console
-        console.warn(`[nightly-agenda-email] auto-attach failed: ${String(e?.message ?? e)}`);
-      }
+      // v2.97.2 (2026-05-27) — Auto-attach is now FIRE-AND-FORGET so this
+      // endpoint stays under the 30s heartbeat timeout. The 8 PM evening
+      // pre-prep heartbeat already runs auto-attach the night before, so
+      // by 7 AM blocks are populated. We still kick off a background pass
+      // to backfill any block that was added/edited overnight, but we do
+      // NOT await it. The agenda assembles from whatever is already in DB.
+      void (async () => {
+        try {
+          const autoR = await runAutoAttachForDate(forDate, { kidSafe: true });
+          // eslint-disable-next-line no-console
+          console.log(
+            `[nightly-agenda-email] background auto-attach for ${forDate}: attached=${autoR.attached} skipped=${autoR.skipped} noResult=${autoR.noResult} errors=${autoR.errors} (of ${autoR.totalBlocks})`,
+          );
+        } catch (e: any) {
+          // eslint-disable-next-line no-console
+          console.warn(`[nightly-agenda-email] background auto-attach failed: ${String(e?.message ?? e)}`);
+        }
+      })();
 
       const payload = await assembleAgendaForDate(forDate);
       if (!payload) {
@@ -1297,6 +1300,54 @@ ${absolutePdfUrl ? `<p style=\"text-align:center;margin:24px 0;\"><a href=\"${ab
           byteSize: a.byteSize,
         })),
         driveFolderHint: "Reagan School Hub (Dashboard) > Daily Operations > Daily Agenda PDFs",
+      });
+    } catch (e: any) {
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
+
+  /* ============================================================================
+   * EVENING AUTO-ATTACH — 8 PM EDT the night before each school day.
+   *
+   * Decoupled from nightly-agenda-email so the 7 AM email request stays under
+   * the 30s heartbeat timeout. This endpoint runs the LLM-backed finder for
+   * every block on tomorrow's plan, attaching kid-safe resources so by 7 AM
+   * the agenda assembles instantly.
+   *
+   * Idempotent: skips any block that already has a pinned resource.
+   * ============================================================================ */
+  app.post("/api/scheduled/auto-attach-evening", async (req: Request, res: Response) => {
+    // Dual auth (cookie OR bearer)
+    const bearerHeader = String(req.headers["authorization"] ?? req.headers["Authorization" as any] ?? "");
+    const bearerOk = !!ENV.scheduledBearer && bearerHeader.startsWith("Bearer ") && bearerHeader.slice(7).trim() === ENV.scheduledBearer;
+    let role: string | null = null;
+    if (!bearerOk) {
+      try { const u = await sdk.authenticateRequest(req); role = u?.role ?? null; } catch { role = null; }
+    }
+    if (!bearerOk && (!role || (role !== "user" && role !== "admin"))) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
+    try {
+      // Resolve target date: explicit forDate, else next school day (skip Sat/Sun).
+      let forDate: string = (req.body?.forDate ?? "") as string;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(forDate)) {
+        const now = new Date();
+        let target = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        while (target.getDay() === 0 || target.getDay() === 6) {
+          target = new Date(target.getTime() + 24 * 60 * 60 * 1000);
+        }
+        forDate = target.toISOString().slice(0, 10);
+      }
+      const { runAutoAttachForDate } = await import("./_lib/blockAutoAttach");
+      const r = await runAutoAttachForDate(forDate, { kidSafe: true });
+      return res.json({
+        ok: true,
+        forDate,
+        attached: r.attached,
+        skipped: r.skipped,
+        noResult: r.noResult,
+        errors: r.errors,
+        totalBlocks: r.totalBlocks,
       });
     } catch (e: any) {
       return res.status(500).json({ ok: false, error: e?.message ?? String(e) });

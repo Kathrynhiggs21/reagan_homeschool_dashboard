@@ -18,6 +18,7 @@ import AppointmentsCardLite from "@/components/AppointmentsCardLite";
 import SummerModeSettingsCard from "@/components/SummerModeSettingsCard";
 import CatchUpQueueSettingsCard from "@/components/CatchUpQueueSettingsCard";
 import SettingsAIHelperCard from "@/components/SettingsAIHelperCard";
+import AutomationHealthCard from "@/components/AutomationHealthCard";
 import { useKiwi } from "@/contexts/KiwiContext";
 import { Slider } from "@/components/ui/slider";
 
@@ -86,6 +87,7 @@ export default function Settings() {
               agenda toggle, daily recap, catch-up queue. Folded the
               former "Recap" tab in here so there's one place for it. */}
           <NotificationsCard />
+          <AutomationHealthCard />
           <RecapRequestCard />
           <DailyRecapCard />
           <CatchUpQueueSettingsCard />

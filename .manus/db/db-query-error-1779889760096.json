@@ -1,0 +1,8 @@
+{
+  "query": "SELECT for_date, status, sent_at, recipients, agenda_hash FROM nightly_agenda_emails ORDER BY id DESC LIMIT 8;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT for_date, status, sent_at, recipients, agenda_hash FROM nightly_agenda_emails ORDER BY id DESC LIMIT 8;",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1146 (42S02) at line 1: Table 'mm3swgictqlhdwkpjcgihp.nightly_agenda_emails' doesn't exist"
+  ]
+}
