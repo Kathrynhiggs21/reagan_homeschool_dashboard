@@ -654,49 +654,6 @@ export function registerScheduledSync(app: Express) {
       return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
     }
   });
-
-  /* ====================== POWERSCHOOL INGEST (daily scraper) ====================== */
-  app.post("/api/scheduled/powerschool/ingest", async (req: Request, res: Response) => {
-    let role: string | null = null;
-    try {
-      const u = await sdk.authenticateRequest(req);
-      role = u?.role ?? null;
-    } catch {
-      role = null;
-    }
-    if (!role || (role !== "user" && role !== "admin")) {
-      return res.status(401).json({ ok: false, error: "Unauthorized" });
-    }
-    try {
-      const { raw, source } = req.body ?? {};
-      if (typeof raw !== "string" || raw.length < 10) {
-        return res.status(400).json({ ok: false, error: "Expected { raw: string }" });
-      }
-      const { parsePowerSchoolPaste } = await import("./_lib/powerschoolParser");
-      const parsed = parsePowerSchoolPaste(raw);
-      const importRow = await db.recordPowerschoolImport({
-        source: source ?? "scraper",
-        rawBody: raw,
-        parsedCount: parsed.grades.length + parsed.assignments.length,
-        errorCount: parsed.unparsedLines.length,
-        notes: parsed.notes.join(" · "),
-        importedBy: "scheduled-task",
-      });
-      await db.bulkInsertPowerschoolGrades(importRow.id, parsed.grades);
-      await db.bulkInsertPowerschoolAssignments(importRow.id, parsed.assignments);
-      return res.json({
-        ok: true,
-        importId: importRow.id,
-        grades: parsed.grades.length,
-        assignments: parsed.assignments.length,
-        unparsed: parsed.unparsedLines.length,
-        kind: parsed.kind,
-      });
-    } catch (e: any) {
-      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
-    }
-  });
-
   /* ====================== ADULT ASSIGNMENTS LIBRARY IMPORT ======================
    *
    * Daily 6 AM scheduled task pulls from Reagan's IH Gmail (forwarded to

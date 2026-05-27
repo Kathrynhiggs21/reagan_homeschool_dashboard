@@ -2110,7 +2110,7 @@ export async function rebuildAdaptiveSuggestions() {
 
 /* =================== ACADEMIC RECORDS =================== */
 export type AcademicSource =
-  "paste" | "manus_share" | "gmail" | "classroom" | "powerschool_ih" | "powerschool_madeira" | "ixl" | "drive" | "manual";
+  "paste" | "manus_share" | "gmail" | "classroom" | "ixl" | "drive" | "manual";
 export type AcademicKind = "assignment" | "grade" | "mastery" | "note" | "attendance";
 
 export async function listAcademicRecords(filter?: {
@@ -4645,109 +4645,6 @@ export async function deletePrize(id: number) {
   return { ok: true };
 }
 
-
-// -------- PowerSchool helpers --------
-import {
-  powerschoolImports,
-  powerschoolGrades,
-  powerschoolAssignments,
-} from "../drizzle/schema";
-
-export async function recordPowerschoolImport(args: {
-  source: "paste" | "csv" | "scraper" | "email";
-  rawBody: string;
-  rawMime?: string;
-  parsedCount: number;
-  errorCount: number;
-  notes?: string;
-  importedBy?: string;
-}) {
-  const db = getDb();
-  await db.insert(powerschoolImports).values({
-    source: args.source,
-    rawBody: args.rawBody.slice(0, 60000),
-    rawMime: args.rawMime ?? "text/plain",
-    parsedCount: args.parsedCount,
-    errorCount: args.errorCount,
-    notes: args.notes,
-    importedBy: args.importedBy,
-  });
-  const rows = await db
-    .select()
-    .from(powerschoolImports)
-    .orderBy(desc(powerschoolImports.id))
-    .limit(1);
-  return rows[0];
-}
-
-export async function bulkInsertPowerschoolGrades(
-  importId: number,
-  rows: Array<{
-    term: string;
-    course: string;
-    teacher?: string;
-    letter?: string;
-    percent?: string;
-    comments?: string;
-    snapshotDate?: string;
-  }>,
-) {
-  if (rows.length === 0) return 0;
-  const db = getDb();
-  await db
-    .insert(powerschoolGrades)
-    .values(rows.map((r) => ({ ...r, importId })));
-  return rows.length;
-}
-
-export async function bulkInsertPowerschoolAssignments(
-  importId: number,
-  rows: Array<{
-    course: string;
-    category?: string;
-    title: string;
-    dueDate?: string;
-    assignedDate?: string;
-    score?: string;
-    pointsPossible?: string;
-    status?: string;
-    teacherComment?: string;
-  }>,
-) {
-  if (rows.length === 0) return 0;
-  const db = getDb();
-  await db
-    .insert(powerschoolAssignments)
-    .values(rows.map((r) => ({ ...r, importId })));
-  return rows.length;
-}
-
-export async function listPowerschoolGrades(limit = 200) {
-  const db = getDb();
-  return db
-    .select()
-    .from(powerschoolGrades)
-    .orderBy(desc(powerschoolGrades.id))
-    .limit(limit);
-}
-
-export async function listPowerschoolAssignments(limit = 200) {
-  const db = getDb();
-  return db
-    .select()
-    .from(powerschoolAssignments)
-    .orderBy(desc(powerschoolAssignments.id))
-    .limit(limit);
-}
-
-export async function listPowerschoolImports(limit = 20) {
-  const db = getDb();
-  return db
-    .select()
-    .from(powerschoolImports)
-    .orderBy(desc(powerschoolImports.id))
-    .limit(limit);
-}
 
 
 // -------- Classroom-agendas helpers (for daily Classroom/teacher-Gmail sync) --------

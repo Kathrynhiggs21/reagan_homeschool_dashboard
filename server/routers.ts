@@ -3201,7 +3201,7 @@ export const appRouter = router({
   /* =================== ACADEMIC RECORDS =================== */
   academics: router({
     list: publicProcedure.input(z.object({
-      source: z.enum(["paste","manus_share","gmail","classroom","powerschool_ih","powerschool_madeira","ixl","drive","manual"]).optional(),
+      source: z.enum(["paste","manus_share","gmail","classroom","ixl","drive","manual"]).optional(),
       subjectSlug: z.string().optional(),
       schoolYear: z.string().optional(),
       term: z.string().optional(),
@@ -3210,7 +3210,7 @@ export const appRouter = router({
       limit: z.number().optional(),
     }).optional()).query(({ input }) => db.listAcademicRecords(input)),
     create: publicProcedure.input(z.object({
-      source: z.enum(["paste","manus_share","gmail","classroom","powerschool_ih","powerschool_madeira","ixl","drive","manual"]),
+      source: z.enum(["paste","manus_share","gmail","classroom","ixl","drive","manual"]),
       kind: z.enum(["assignment","grade","mastery","note","attendance"]),
       subjectSlug: z.string().optional(),
       title: z.string(),
@@ -3231,7 +3231,7 @@ export const appRouter = router({
       dueAt: input.dueAt ? new Date(input.dueAt) : undefined,
     } as any)),
     extract: publicProcedure.input(z.object({
-      source: z.enum(["paste","manus_share","gmail","classroom","powerschool_ih","powerschool_madeira","ixl","drive","manual"]).default("paste"),
+      source: z.enum(["paste","manus_share","gmail","classroom","ixl","drive","manual"]).default("paste"),
       text: z.string().min(3),
     })).mutation(({ input }) => db.extractAcademicFromPaste(input.source, input.text)),
     delete: publicProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deleteAcademicRecord(input.id)),
@@ -3242,7 +3242,7 @@ export const appRouter = router({
      */
     bulkUpsert: publicProcedure.input(z.object({
       records: z.array(z.object({
-        source: z.enum(["paste","manus_share","gmail","classroom","powerschool_ih","powerschool_madeira","ixl","drive","manual"]),
+        source: z.enum(["paste","manus_share","gmail","classroom","ixl","drive","manual"]),
         kind: z.enum(["assignment","grade","mastery","note","attendance"]),
         subjectSlug: z.string().optional(),
         title: z.string(),
@@ -4593,60 +4593,6 @@ export const appRouter = router({
         return row;
       }),
   }),
-
-  /* =================== POWERSCHOOL IMPORT (Indian Hill grades + assignments) =================== */
-  powerschool: router({
-    importPaste: protectedProcedure
-      .input(
-        z.object({
-          raw: z.string().min(1),
-          source: z
-            .enum(["paste", "csv", "scraper", "email"])
-            .default("paste"),
-          notes: z.string().optional(),
-        }),
-      )
-      .mutation(async ({ ctx, input }) => {
-        const { parsePowerSchoolPaste } = await import(
-          "./_lib/powerschoolParser"
-        );
-        const parsed = parsePowerSchoolPaste(input.raw);
-        const parsedCount = parsed.grades.length + parsed.assignments.length;
-        const importRow = await db.recordPowerschoolImport({
-          source: input.source,
-          rawBody: input.raw,
-          parsedCount,
-          errorCount: parsed.unparsedLines.length,
-          notes: input.notes ?? parsed.notes.join(" · "),
-          importedBy: ctx.user?.email ?? ctx.user?.openId,
-        });
-        await db.bulkInsertPowerschoolGrades(importRow.id, parsed.grades);
-        await db.bulkInsertPowerschoolAssignments(
-          importRow.id,
-          parsed.assignments,
-        );
-        return {
-          importId: importRow.id,
-          grades: parsed.grades.length,
-          assignments: parsed.assignments.length,
-          unparsed: parsed.unparsedLines,
-          kind: parsed.kind,
-          notes: parsed.notes,
-        };
-      }),
-    listGrades: protectedProcedure
-      .input(z.object({ limit: z.number().default(200) }).optional())
-      .query(({ input }) => db.listPowerschoolGrades(input?.limit ?? 200)),
-    listAssignments: protectedProcedure
-      .input(z.object({ limit: z.number().default(200) }).optional())
-      .query(({ input }) =>
-        db.listPowerschoolAssignments(input?.limit ?? 200),
-      ),
-    listImports: protectedProcedure
-      .input(z.object({ limit: z.number().default(20) }).optional())
-      .query(({ input }) => db.listPowerschoolImports(input?.limit ?? 20)),
-  }),
-  curriculum: router({
     list: protectedProcedure
       .input(z.object({ subject: z.string().optional() }).optional())
       .query(({ input }) => db.listCurriculumTopics(input?.subject)),

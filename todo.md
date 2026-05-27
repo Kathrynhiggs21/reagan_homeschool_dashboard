@@ -3944,3 +3944,10 @@ The v2.49 simplification had a hole: the dashboard's `appSettings` cache pointed
 - [x] Shift all blocks ±15 min quick buttons
 - [x] Add blank block button
 - [x] Advanced manual editor demoted to collapsible details section
+
+## v3.02 — PowerSchool Removal
+- [x] Remove PowerSchool router from routers.ts
+- [x] Remove PowerSchool ingest endpoint from scheduledSync.ts
+- [x] Remove PowerSchool db helpers from db.ts
+- [x] Delete PowerSchool parser lib, test files, and UI components
+- [x] Clean up powerschool_ih/madeira source enum references
