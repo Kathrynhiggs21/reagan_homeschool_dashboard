@@ -3866,3 +3866,24 @@ The v2.49 simplification had a hole: the dashboard's `appSettings` cache pointed
 - [ ] Vitest contract: executor inserts curriculumResources
 - [ ] Vitest contract: skips off-day / non-academic blocks
 - [ ] Manual one-shot fire for 2026-05-28 plan
+
+## v2.96 — LLM-backed finder + curated library (A + C, replaces Sonar)
+- [ ] Build `server/_lib/llmAssignmentFinder.ts` using built-in `invokeLLM` with strict JSON schema
+- [ ] URL allowlist filter (kid-safe educational domains)
+- [ ] Wire LLM finder into `assignmentFinder.findAssignments` as fallback after library
+- [ ] Vitest contract for the LLM finder
+- [ ] Seed `assignmentsLibrary` with 200+ curated kid-safe URLs covering Q4
+- [ ] Re-fire auto-attach for May 28 + verify all blocks resolve
+- [ ] Lock results with checkpoint v2.96
+
+## v2.96 — LLM-backed finder + curated library (A + C, replaces Sonar)
+- [ ] Build llmAssignmentFinder.ts using built-in invokeLLM with strict JSON schema
+- [ ] URL allowlist filter (kid-safe educational domains)
+- [ ] Wire LLM finder into assignmentFinder.findAssignments as fallback after library
+- [ ] Vitest contract for the LLM finder
+- [ ] Seed assignmentsLibrary with 200+ curated kid-safe URLs covering Q4
+- [ ] Re-fire auto-attach for May 28 + verify all blocks resolve
+- [ ] Lock results with checkpoint v2.96
+- [ ] Two-tier allowlist: tight for worksheets/practice; broader (YouTube + reputable kid-edu hosts) for videos/lessons
+- [ ] Tag video URLs with requiresAdultPreview=true so Mom/Grandma can preview before Reagan opens
+- [ ] LLM prompt explicitly forbids Shorts, monetized influencers, and any non-kid channels

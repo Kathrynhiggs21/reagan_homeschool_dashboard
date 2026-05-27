@@ -13,9 +13,11 @@
  */
 import * as db from "../db";
 import { resolveTopicId } from "./topicCatalog";
+import { llmFindAssignments } from "./llmAssignmentFinder";
 
 export type FinderResult = {
-  source: "library" | "sonar_web" | "sonar_youtube";
+  // v2.96 (2026-05-27): replaced sonar_* sources with llm_* — Sonar branch is gone.
+  source: "library" | "llm_web" | "llm_youtube";
   title: string;
   url: string | null;
   snippet: string;
@@ -27,6 +29,12 @@ export type FinderResult = {
   ageAppropriate: boolean;                     // false → flagged as not kid-safe
   thumbnail?: string | null;
   internalId?: number | null;                  // assignments_library id when source==="library"
+  /** v2.96: grade fit + adult-preview flags for the new LLM-backed finder. */
+  gradeLabel?: string | null;
+  gradeFit?: "primary" | "adjacent" | "needs_review" | null;
+  gradeNeedsReview?: boolean;
+  requiresAdultPreview?: boolean;
+  allowlistTier?: string | null;
 };
 
 const KID_UNSAFE_PATTERNS = [
@@ -58,73 +66,42 @@ async function searchLibrary(query: string, subjectSlug: string | null): Promise
   }));
 }
 
-async function sonarSearch(query: string, kidSafe: boolean): Promise<FinderResult[]> {
-  const apiKey = process.env.SONAR_API_KEY;
-  if (!apiKey) return [];
-
-  const safetyLine = kidSafe
-    ? "Restrict results to content explicitly safe and appropriate for a 10-year-old (5th grade). No ads, no gambling, no graphic content, no social-media platforms. Prefer Khan Academy, IXL, ReadWorks, PBS Kids, NASA Kids, National Geographic Kids, Common Sense Media-approved sources, and educational YouTube channels (SciShow Kids, Mark Rober, Crash Course Kids)."
-    : "No restrictions, but prefer reputable educational sources.";
-
-  const sysPrompt = `You are an educational research assistant for a 5th-grade homeschooler.
-${safetyLine}
-For the user's query, return up to 6 specific assignments / videos / activities they could drop into today's schedule.
-Output a JSON object: { "items": [ { "title": string, "url": string, "type": "worksheet"|"video"|"lesson_plan"|"quiz"|"project"|"app_activity"|"reading"|"other", "snippet": string, "estimated_minutes": number, "subject_slug": "math"|"ela"|"reading"|"writing"|"science"|"ss"|"art"|"music"|"other", "topic_code": string } ] }
-"topic_code" should be the closest 5th-grade Common Core / Ohio Learning Standard code (e.g. "5.OA.1", "5.RL.5.2", "5.NBT.3"). If you genuinely cannot identify one, use null.`;
-
-  let json: any = null;
+/**
+ * v2.96 (2026-05-27): replaces the old sonarSearch. Uses the built-in LLM
+ * (no new API key) via llmAssignmentFinder.ts; honors the kid-safe allowlist,
+ * grade-fit rules, and the worksheet ad-free + free + PDF + saveable
+ * requirements baked into the LLM prompt + post-validator.
+ */
+async function llmSearch(query: string, kidSafe: boolean, subjectSlug: string | null): Promise<FinderResult[]> {
+  if (!kidSafe) {
+    // Reagan's whole dashboard is kid-only — no "adult" path. If a caller asks
+    // for the un-safe mode, just return [].
+    return [];
+  }
+  let items: Awaited<ReturnType<typeof llmFindAssignments>> = [];
   try {
-    const res = await fetch("https://api.perplexity.ai/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "sonar-pro",
-        messages: [
-          { role: "system", content: sysPrompt },
-          { role: "user", content: query },
-        ],
-        temperature: 0.2,
-        response_format: { type: "json_object" },
-      }),
-      // Sonar can be slow; cap so the chat UI doesn't stall.
-      signal: AbortSignal.timeout(20_000),
-    });
-    if (!res.ok) return [];
-    const body: any = await res.json();
-    const content = body?.choices?.[0]?.message?.content || "{}";
-    json = typeof content === "string" ? JSON.parse(content) : content;
+    items = await llmFindAssignments({ query, subjectSlug });
   } catch {
     return [];
   }
 
-  const rawItems: any[] = Array.isArray(json?.items) ? json.items : [];
-  const out: FinderResult[] = [];
-  for (const it of rawItems) {
-    const title = String(it?.title || "").trim();
-    if (!title) continue;
-    const url = typeof it?.url === "string" ? it.url : null;
-    const snippet = String(it?.snippet || "").trim();
-    const type = String(it?.type || "other") as FinderResult["type"];
-    const isYouTube = !!url && /youtube\.com|youtu\.be/.test(url);
-    const blob = `${title} ${snippet} ${url || ""}`;
-    const safe = !kidSafe || isKidSafe(blob);
-    out.push({
-      source: isYouTube ? "sonar_youtube" : "sonar_web",
-      title,
-      url,
-      snippet,
-      type,
-      subjectSlug: it?.subject_slug ?? null,
-      estimatedMinutes: typeof it?.estimated_minutes === "number" ? it.estimated_minutes : null,
-      curriculumTopicCode: typeof it?.topic_code === "string" && /^[0-9A-Z]+\.[A-Z0-9.]+/i.test(it.topic_code) ? it.topic_code : null,
-      curriculumTopicId: null,
-      ageAppropriate: safe,
-    });
-  }
-  return out;
+  return items.map((it) => ({
+    source: it.source,
+    title: it.title,
+    url: it.url,
+    snippet: it.snippet,
+    type: it.type,
+    subjectSlug: it.subjectSlug,
+    estimatedMinutes: it.estimatedMinutes,
+    curriculumTopicCode: it.topicCode,
+    curriculumTopicId: null,
+    ageAppropriate: true, // already validated by llmFindAssignments
+    gradeLabel: it.gradeLabel,
+    gradeFit: it.gradeFit,
+    gradeNeedsReview: it.gradeNeedsReview,
+    requiresAdultPreview: it.requiresAdultPreview,
+    allowlistTier: it.allowlistTier,
+  }));
 }
 
 /**
@@ -188,7 +165,7 @@ export async function findAssignments(args: {
 
   const [libRaw, webRaw] = await Promise.all([
     includeLibrary ? searchLibrary(q, subjectSlug).catch(() => []) : Promise.resolve([]),
-    includeWeb ? sonarSearch(q, kidSafe).catch(() => []) : Promise.resolve([]),
+    includeWeb ? llmSearch(q, kidSafe, subjectSlug).catch(() => []) : Promise.resolve([]),
   ]);
 
   // Resolve topic codes to real ids so the caller can refuse non-tagged items.
