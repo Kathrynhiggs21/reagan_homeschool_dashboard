@@ -11,13 +11,17 @@ import { toast } from "sonner";
 
 /**
  * Push 72 (2026-05-13) — Slice 5 summer-mode settings card.
+ * Updated 2026-05-28 — added day length (2-5hr) and flexible start time settings.
  *
- * Mom-side editor for the 5 summer.* keys in `prefs`:
+ * Mom-side editor for the 7 summer.* keys in `prefs`:
  *   summer.autoFlipEnabled    "1" | "0"
  *   summer.start              "MM-DD"
  *   summer.end                "MM-DD"
  *   summer.override           "on" | "off" | null
  *   summer.vacationRanges     JSON [{start,end}, ...]
+ *   summer.dayLengthMin       "2" (hours, default 2)
+ *   summer.dayLengthMax       "5" (hours, default 5)
+ *   summer.startTimeDefault   "10:00" (default school start, flexible)
  *
  * The same priority order the badge and the server use:
  *   override "off" > vacation > override "on" > auto window
@@ -65,6 +69,9 @@ export default function SummerModeSettingsCard() {
   const end = trpc.prefs.get.useQuery({ key: "summer.end" });
   const override = trpc.prefs.get.useQuery({ key: "summer.override" });
   const vacationRangesQ = trpc.prefs.get.useQuery({ key: "summer.vacationRanges" });
+  const dayLengthMin = trpc.prefs.get.useQuery({ key: "summer.dayLengthMin" });
+  const dayLengthMax = trpc.prefs.get.useQuery({ key: "summer.dayLengthMax" });
+  const startTimeDefault = trpc.prefs.get.useQuery({ key: "summer.startTimeDefault" });
 
   const utils = trpc.useUtils();
   const setPref = trpc.prefs.set.useMutation({
@@ -82,6 +89,9 @@ export default function SummerModeSettingsCard() {
   const [newStart, setNewStart] = useState("");
   const [newEnd, setNewEnd] = useState("");
   const [newLabel, setNewLabel] = useState("");
+  const [dayMinInput, setDayMinInput] = useState<string>("2");
+  const [dayMaxInput, setDayMaxInput] = useState<string>("5");
+  const [startTimeInput, setStartTimeInput] = useState<string>("10:00");
 
   // Hydrate local state from server once
   useEffect(() => {
@@ -106,6 +116,15 @@ export default function SummerModeSettingsCard() {
       setRanges(parseVacationRanges(vacationRangesQ.data as string | null));
     }
   }, [vacationRangesQ.data]);
+  useEffect(() => {
+    if (dayLengthMin.data !== undefined) setDayMinInput((dayLengthMin.data as string | null) ?? "2");
+  }, [dayLengthMin.data]);
+  useEffect(() => {
+    if (dayLengthMax.data !== undefined) setDayMaxInput((dayLengthMax.data as string | null) ?? "5");
+  }, [dayLengthMax.data]);
+  useEffect(() => {
+    if (startTimeDefault.data !== undefined) setStartTimeInput((startTimeDefault.data as string | null) ?? "10:00");
+  }, [startTimeDefault.data]);
 
   const today = todayIso();
   const todayMMDD = today.slice(5);
@@ -183,6 +202,23 @@ export default function SummerModeSettingsCard() {
   const removeRange = async (idx: number) => {
     const next = ranges.filter((_, i) => i !== idx);
     await persistRanges(next);
+  };
+
+  const handleSaveDaySettings = async () => {
+    const min = parseInt(dayMinInput);
+    const max = parseInt(dayMaxInput);
+    if (isNaN(min) || isNaN(max) || min < 1 || max > 8 || min > max) {
+      toast.error("Day length must be 1–8 hours, min ≤ max.");
+      return;
+    }
+    if (!/^\d{2}:\d{2}$/.test(startTimeInput)) {
+      toast.error("Start time must be HH:MM (e.g. 10:00).");
+      return;
+    }
+    await setPref.mutateAsync({ key: "summer.dayLengthMin", value: String(min) });
+    await setPref.mutateAsync({ key: "summer.dayLengthMax", value: String(max) });
+    await setPref.mutateAsync({ key: "summer.startTimeDefault", value: startTimeInput });
+    toast.success("Summer day settings saved.");
   };
 
   const loading =
