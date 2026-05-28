@@ -36,7 +36,7 @@ type Snapshot = {
 
 const BLOCK_TYPES = [
   "morning_warmup", "math", "adventure", "read_aloud",
-  "choice", "catch_up", "appointment", "custom",
+  "choice", "catch_up", "appointment", "review", "custom",
 ];
 
 function todayYmd() {
@@ -674,6 +674,22 @@ export default function AgendaEditor() {
                     const dd = String(tom.getDate()).padStart(2, "0");
                     postponeBlockM.mutate({ blockId: b.id, toDate: `${yyyy}-${mm}-${dd}` });
                   } : undefined}
+                  onMoveUp={() => {
+                    const ids = liveBlocks.map(x => x.id);
+                    const idx = ids.indexOf(b.id);
+                    if (idx <= 0) return;
+                    const next = ids.slice();
+                    [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+                    blockReorderM.mutate({ date, orderedIds: next });
+                  }}
+                  onMoveDown={() => {
+                    const ids = liveBlocks.map(x => x.id);
+                    const idx = ids.indexOf(b.id);
+                    if (idx < 0 || idx >= ids.length - 1) return;
+                    const next = ids.slice();
+                    [next[idx], next[idx + 1]] = [next[idx + 1], next[idx]];
+                    blockReorderM.mutate({ date, orderedIds: next });
+                  }}
                 />
               ))}
             </div>
@@ -797,6 +813,7 @@ function QuickAttachWorksheets({ date, liveBlocks }: { date: string; liveBlocks:
 function ManualBlockRow({
   date, block, subjects, topicCatalog, onPatch, onDelete, onMoveToTomorrow,
   isDragging, isDragOver, onDragStart, onDragEnter, onDragEnd,
+  onMoveUp, onMoveDown,
 }: {
   /** v2.19 — forwarded so the printables sub-panel can scope per-day. */
   date: string;
@@ -811,6 +828,8 @@ function ManualBlockRow({
   onPatch: (patch: any) => void;
   onDelete: () => void;
   onMoveToTomorrow?: () => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
 }) {
   const [title, setTitle] = useState(block.title);
   const [startTime, setStartTime] = useState(formatTime12h(block.startTime));
@@ -850,9 +869,15 @@ function ManualBlockRow({
       style={{ gridTemplateColumns: "24px 90px 56px 1fr 130px 130px 130px 130px" }}
     >
       <span
-        className="cursor-grab select-none text-base opacity-50 hover:opacity-100"
-        title="Drag to reorder"
+        className="cursor-grab select-none text-base opacity-50 hover:opacity-100 focus:outline-none focus:ring-1 focus:ring-primary focus:opacity-100 rounded"
+        title="Drag to reorder (↑↓ arrow keys also work)"
         aria-label="Drag to reorder"
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowUp") { e.preventDefault(); onMoveUp?.(); }
+          if (e.key === "ArrowDown") { e.preventDefault(); onMoveDown?.(); }
+        }}
       >☰</span>
       <Input
         className="h-8 text-xs"

@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { usePracticePrefs } from "@/hooks/usePracticePrefs";
 import TopicDrawer from "@/components/TopicDrawer";
+import { subjectTint } from "@/lib/subjectColors";
 
 // Inlined prefs-aware version of shared/practiceLinks.ts — kept in this file
 // because the client tsconfig paths don't alias the shared/ dir yet.
@@ -223,29 +224,32 @@ export default function CurriculumTopicsTree() {
   }
 
   return (
-    <Card className="cozy-card p-4">
-      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <div>
-          <h2 className="font-display font-semibold text-lg">Topics & Standards</h2>
-          <p className="text-xs text-muted-foreground">
-            Ohio 5th-grade scope. Tick to mark complete.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {rows.length === 0 && (
-            <Button size="sm" onClick={handleSeed} disabled={seed.isPending}>
-              {seed.isPending ? "Seeding…" : "Seed curriculum"}
+    <Card className="cozy-card overflow-hidden">
+      {/* Distinctive chalk-green header bar */}
+      <div className="px-4 py-3 border-b border-border/60" style={{ background: "linear-gradient(135deg, #1a3a2a 0%, #1e4d35 50%, #163028 100%)" }}>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <h2 className="font-display font-bold text-lg" style={{ color: "#b8e6c8", textShadow: "0 1px 2px rgba(0,0,0,0.5)" }}>Topics &amp; Standards</h2>
+            <p className="text-[11px]" style={{ color: "#7ab894" }}>
+              Ohio 5th-grade scope · tick to mark complete
+            </p>
+          </div>
+          <div className="flex gap-2">
+            {rows.length === 0 && (
+              <Button size="sm" onClick={handleSeed} disabled={seed.isPending}>
+                {seed.isPending ? "Seeding…" : "Seed curriculum"}
+              </Button>
+            )}
+            <Button size="sm" variant="outline" className="bg-transparent text-[#b8e6c8] border-[#4a8a5a] hover:bg-[#2a5a3a]" onClick={handleAuto} disabled={autoComp.isPending}>
+              {autoComp.isPending ? "Scanning…" : "Auto-check from history"}
             </Button>
-          )}
-          <Button size="sm" variant="outline" className="bg-transparent" onClick={handleAuto} disabled={autoComp.isPending}>
-            {autoComp.isPending ? "Scanning…" : "Auto-check from history"}
-          </Button>
+          </div>
         </div>
       </div>
 
       {/* progress strip */}
       {/* DON'T-SHOW-IF-NO-INFO (2026-05-12 push 14): hide subject buttons that have 0 topics seeded */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">
+      <div className="px-4 pt-4 grid grid-cols-2 sm:grid-cols-5 gap-2 mb-4">
         {SUBJECTS.map((s) => {
           const p = (progress.data as any[])?.find((x) => x.subject === s);
           const pct = p?.pct ?? 0;
@@ -276,18 +280,18 @@ export default function CurriculumTopicsTree() {
 
       {/* topic tree */}
       {rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground italic">
+        <p className="text-sm text-muted-foreground italic px-4 pb-4">
           No topics seeded yet. Click <em>Seed curriculum</em> above.
         </p>
       ) : (
-        <div className="space-y-3">
+        <div className="px-4 pb-4 space-y-2.5">
           {topLevel
             .sort((a, b) => a.ord - b.ord)
             .map((t: Topic) => {
               const kids = childrenOf(t.id);
               const allDone = kids.length > 0 && kids.every((k) => k.status === "done");
               return (
-                <div key={t.id} className="rounded-md border border-border/60 bg-card/40 dark:bg-card/30 p-2">
+                <div key={t.id} className="rounded-md border border-border/60 bg-card/40 dark:bg-card/30 p-2" style={{ borderLeft: `4px solid ${subjectTint(t.subject?.toLowerCase()).border}` }}>
                   <div className="flex items-start gap-2">
                     <Checkbox
                       checked={t.status === "done" || allDone}

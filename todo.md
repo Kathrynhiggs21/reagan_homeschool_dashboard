@@ -70,11 +70,11 @@
 - [ ] Behavior & Learning Insights section (Day Summary, Voice Mood, focus%, trends, learning style profile, recommendations)
 
 ### Curriculum Hub Visual
-- [ ] Change font + color + box treatment so it's visually distinct from other adult cards and easier to read
+- [x] Change font + color + box treatment: chalk-green header bar, subject-tinted left border on topic rows, better padding/spacing
 
 ### Agenda Editor
-- [ ] Add drag-and-drop reorder to manual block grid (with keyboard a11y fallback)
-- [ ] Make blockType, subject, topic all inline-editable dropdowns that save on change
+- [x] Drag-and-drop reorder already implemented (native HTML5 drag, ☰ grip handle, blockReorderM.mutate); added keyboard a11y (↑↓ arrow keys on grip handle)
+- [x] blockType, subject, topic already inline-editable Select dropdowns that save on change; added "review" to BLOCK_TYPES list
 - [ ] AI agenda chat: file/image upload (assignment, worksheet) and "create custom worksheet" op
 
 ### Google Calendar Sync
