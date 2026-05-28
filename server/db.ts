@@ -2294,6 +2294,36 @@ export async function deleteAppLink(id: number) {
   return { deleted: true };
 }
 
+/* ============================== APP LAUNCHES ============================== */
+export async function insertAppLaunch(data: { appLinkId: number; appName: string; category?: string | null }) {
+  const { appLaunches } = await import("../drizzle/schema");
+  await getDb().insert(appLaunches).values({
+    appLinkId: data.appLinkId,
+    appName: data.appName,
+    category: data.category ?? null,
+    launchedAt: new Date(),
+  });
+  return { ok: true };
+}
+export async function getAppLaunchStats(days = 30) {
+  const { appLaunches } = await import("../drizzle/schema");
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const rows = await getDb()
+    .select()
+    .from(appLaunches)
+    .where(gte(appLaunches.launchedAt, since))
+    .orderBy(desc(appLaunches.launchedAt));
+  // Group by appName + category
+  const map: Record<string, { appName: string; category: string | null; count: number; lastLaunch: Date }> = {};
+  for (const r of rows as any[]) {
+    const key = `${r.appName}::${r.category ?? ""}`;
+    if (!map[key]) map[key] = { appName: r.appName, category: r.category, count: 0, lastLaunch: r.launchedAt };
+    map[key].count++;
+    if (r.launchedAt > map[key].lastLaunch) map[key].lastLaunch = r.launchedAt;
+  }
+  return Object.values(map).sort((a, b) => b.count - a.count).slice(0, 20);
+}
+
 export async function updateBook(
   id: number,
   patch: Partial<{ title: string; author: string; type: any; subjectSlug: string; currentPage: number; totalPages: number; notes: string }>

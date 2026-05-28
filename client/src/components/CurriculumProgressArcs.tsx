@@ -48,9 +48,15 @@ function ProgressArc({ value, color }: { value: number; color: string }) {
 export default function CurriculumProgressArcs() {
   const progress = trpc.curriculum.progress.useQuery();
   const recent = trpc.curriculum.recent.useQuery({ limit: 15 });
+  const skillSummary = (trpc.skillLadder as any).summary.useQuery();
 
   const rows: any[] = (progress.data as any[]) ?? [];
   const recentRows: any[] = (recent.data as any[]) ?? [];
+  // Map subjectSlug → skillLadder summary for approx level display
+  const skillMap: Record<string, { avgLevel: number; pctMastered: number; mastered: number; skills: number }> = {};
+  for (const s of (skillSummary.data as any[]) ?? []) {
+    skillMap[s.subjectSlug] = s;
+  }
 
   return (
     <Card className="cozy-card p-4 space-y-4">
@@ -86,6 +92,14 @@ export default function CurriculumProgressArcs() {
                 <div className="text-[11px] text-muted-foreground">
                   {r.done} / {r.total} topics
                 </div>
+                {skillMap[slug] && (
+                  <div className="text-[10px] text-muted-foreground mt-0.5 text-center">
+                    <span className="font-semibold" style={{ color: meta.color }}>
+                      Lvl {skillMap[slug].avgLevel.toFixed(1)}
+                    </span>
+                    {" · "}{skillMap[slug].pctMastered}% mastered
+                  </div>
+                )}
               </div>
             );
           })}

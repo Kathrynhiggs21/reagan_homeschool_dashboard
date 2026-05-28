@@ -635,6 +635,47 @@ export default function Analytics() {
 
       {/* DON'T-SHOW-IF-NO-INFO (2026-05-12 push 14): Subject grades hides when no real grades */}
       {realSubjectGrades.length === 0 ? null : null}
+
+      {/* Apps Usage Card */}
+      <AppsUsageCard />
     </div>
+  );
+}
+
+function AppsUsageCard() {
+  const stats = (trpc.appLinks as any).launchStats.useQuery({ days: 30 }, { retry: false });
+  const rows = (stats.data ?? []) as Array<{ appName: string; category: string | null; count: number; lastLaunch: Date }>;
+  if (stats.isLoading) return null;
+  if (rows.length === 0) return null;
+  const max = rows[0]?.count || 1;
+  const CAT_EMOJI: Record<string, string> = {
+    school: "\uD83C\uDFEB", google: "\uD83C\uDF10", reading: "\uD83D\uDCDA", video: "\uD83C\uDFAC", nature: "\uD83C\uDF3F", creativity: "\uD83C\uDFA8", learning: "\uD83D\uDCA1",
+  };
+  return (
+    <Card className="cozy-card p-4 border-l-4" style={{ borderLeftColor: "oklch(0.78 0.15 150)" }}>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="font-display font-semibold">Apps Used (last 30 days)</h2>
+        <span className="text-xs text-muted-foreground">{rows.length} apps</span>
+      </div>
+      <div className="space-y-2">
+        {rows.slice(0, 10).map((r) => (
+          <div key={r.appName} className="flex items-center gap-3">
+            <span className="text-base w-5 shrink-0">{CAT_EMOJI[r.category ?? ""] ?? "\uD83D\uDD17"}</span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between gap-2 mb-0.5">
+                <span className="text-sm font-medium truncate">{r.appName}</span>
+                <span className="text-xs text-muted-foreground shrink-0">{r.count}\u00d7</span>
+              </div>
+              <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-emerald-500 transition-all"
+                  style={{ width: `${Math.round((r.count / max) * 100)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Card>
   );
 }

@@ -86,6 +86,8 @@ export default function Apps() {
   const apps = trpc.appLinks.list.useQuery();
   // Fire-and-forget engagement signal when Reagan launches an app.
   const openEng = trpc.appLinks.openEngagement.useMutation();
+  // Fire-and-forget launch tracking for analytics.
+  const trackLaunch = (trpc.appLinks as any).trackLaunch.useMutation();
   const studentGoogleEmail = trpc.prefs.getPublic.useQuery({ key: "student.googleEmail" });
   const parentGoogleEmail = trpc.prefs.getPublic.useQuery({ key: "parent.googleEmail" });
   const reaganEmail = (studentGoogleEmail.data as string | null) ?? null;
@@ -146,7 +148,7 @@ export default function Apps() {
                     target="_blank"
                     rel="noreferrer"
                     aria-label={a.name}
-                    onClick={() => { try { openEng.mutate({ id: a.id }); } catch {} }}
+                    onClick={() => { try { openEng.mutate({ id: a.id }); trackLaunch.mutate({ id: a.id, name: a.name, category: a.category }); } catch {} }}
                   >
                     <Card className="classroom-card p-5 h-full flex flex-col items-center justify-center text-center gap-2 hover:-translate-y-1 hover:shadow-lg transition-all min-h-[140px]">
                       <span
@@ -181,7 +183,7 @@ export default function Apps() {
                       href={withGoogleSsoHint(a.url, dadEmail)}
                       target="_blank"
                       rel="noreferrer"
-                      onClick={(e) => { e.stopPropagation(); try { openEng.mutate({ id: a.id }); } catch {} }}
+                      onClick={(e) => { e.stopPropagation(); try { openEng.mutate({ id: a.id }); trackLaunch.mutate({ id: a.id, name: a.name, category: a.category }); } catch {} }}
                       className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded-md bg-purple-600 text-white text-[10px] font-semibold opacity-0 group-hover:opacity-100 transition-opacity"
                       title={`Open as Dad (${dadEmail})`}
                       aria-label={`Open ${a.name} as Dad`}

@@ -169,6 +169,22 @@ export default function CurriculumTopicsTree() {
   const utils = trpc.useUtils();
   const [drawerTopic, setDrawerTopic] = useState<Topic | null>(null);
 
+  // Mastery dots — query topicMastery for the active subject tab
+  const tabSlug = subjectSlugFromName(tab);
+  const masteryQ = (trpc.topicMastery as any).listBySubject.useQuery(
+    { subjectSlug: tabSlug },
+    { retry: false, staleTime: 60_000 },
+  );
+  // Key by topicTitle (normalized lowercase) — the stable join key between
+  // curriculum topics and topicMastery records (CK-12 handles != curriculum codes)
+  const masteryByTitle = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const r of (masteryQ.data ?? []) as any[]) {
+      if (r.topicTitle) m[r.topicTitle.toLowerCase().trim()] = r.masteryScore;
+    }
+    return m;
+  }, [masteryQ.data]);
+
   const rows = (list.data as any[]) ?? [];
   const byId = useMemo(() => {
     const m = new Map<number, Topic>();
@@ -306,6 +322,16 @@ export default function CurriculumTopicsTree() {
                         >
                           {t.title}
                         </button>
+                        {/* Mastery dot — keyed by topicTitle (normalized) */}
+                        {masteryByTitle[t.title.toLowerCase().trim()] !== undefined && (
+                          <span
+                            className={`inline-block w-2 h-2 rounded-full shrink-0 ${
+                              masteryByTitle[t.title.toLowerCase().trim()] >= 75 ? "bg-emerald-500" :
+                              masteryByTitle[t.title.toLowerCase().trim()] >= 40 ? "bg-amber-400" : "bg-rose-400"
+                            }`}
+                            title={`Mastery: ${masteryByTitle[t.title.toLowerCase().trim()]}%`}
+                          />
+                        )}
                         <PracticeLinks t={t} />
                         <MoreLinksButton subjectSlug={subjectSlugFromName(t.subject)} topicName={t.title} />
                       </div>

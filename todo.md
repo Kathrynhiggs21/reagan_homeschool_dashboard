@@ -50,7 +50,7 @@
 - [ ] Kiwi quiz: persist completed quiz results to `reviewAttempts` + update `topicMastery.masteryScore` (currently prompt-based only)
 - [ ] `aiScheduleProposer.ts`: inject weak-topic context into LLM system prompt so AI naturally suggests review blocks
 - [ ] Weekly digest email: include "Mastery Snapshot" section — subject by subject, strong/developing/needs work
-- [ ] Curriculum page (adult): show mastery score badge next to each topic — green/yellow/red dot
+- [x] Curriculum page (adult): mastery dot next to each topic title (green ≥75, amber 40-74, rose <40) — topicMastery.listBySubject + CurriculumTopicsTree dot rendering
 
 ### 6th Grade Summer Prep
 - [x] Summer Mode: when active, pull 6th grade preview topics for Math + ELA blocks (PracticeHub grade toggle + reviewBlockGenerator uses gradeLevel)
@@ -65,8 +65,8 @@
 - [x] Summer Mode: review blocks pull from topics with mastery < 80 (reviewBlockGenerator.ts uses topicMastery table, SM-2 intervals)
 
 ### Analytics Page
-- [ ] Add 5th-grade total / "approx levels" alongside mastery rings
-- [ ] Add Apps usage card (per-app launches + minutes) — surface IXL / Khan / Prodigy activity
+- [x] Add approx level + pctMastered under each arc in CurriculumProgressArcs (skillLadder.summary query)
+- [x] Apps usage card (top 10 apps by launch count, last 30 days) — appLaunches table + launchStats procedure + AppsUsageCard component in Analytics
 - [ ] Behavior & Learning Insights section (Day Summary, Voice Mood, focus%, trends, learning style profile, recommendations)
 
 ### Curriculum Hub Visual

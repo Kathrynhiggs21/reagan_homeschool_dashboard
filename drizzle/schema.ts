@@ -2376,3 +2376,17 @@ export const reviewAttempts = mysqlTable("reviewAttempts", {
 });
 export type ReviewAttempt = typeof reviewAttempts.$inferSelect;
 export type InsertReviewAttempt = typeof reviewAttempts.$inferInsert;
+
+/* ============================== APP LAUNCHES ================================
+ * Tracks when Reagan opens an app from the Apps & Tools page.
+ * Used for the Analytics "Apps usage" card.
+ * ============================================================================== */
+export const appLaunches = mysqlTable("appLaunches", {
+  id: int("id").autoincrement().primaryKey(),
+  appLinkId: int("appLinkId").notNull(),
+  appName: varchar("appName", { length: 100 }).notNull(),
+  category: varchar("category", { length: 50 }),
+  launchedAt: timestamp("launchedAt").defaultNow().notNull(),
+});
+export type AppLaunch = typeof appLaunches.$inferSelect;
+export type InsertAppLaunch = typeof appLaunches.$inferInsert;

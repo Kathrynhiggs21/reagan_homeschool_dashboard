@@ -1617,14 +1617,43 @@ export const appRouter = router({
           parentNote: `auto: opened ${link.name}`,
         });
         return { ok: true as const, bumped: true, subjectSlug, skillLadderId: next.id };
-      } catch (e: any) {
+            } catch (e: any) {
         // Fire-and-forget: never throw to the client. Log only.
         console.warn("[appLinks.openEngagement] swallowed:", e?.message || e);
         return { ok: false as const, reason: "error" };
       }
     }),
+    /**
+     * trackLaunch — fire-and-forget: records an appLaunch row when Reagan opens an app tile.
+     * Called alongside openEngagement so we get usage analytics.
+     */
+    trackLaunch: publicProcedure.input(z.object({
+      id: z.number(),
+      name: z.string(),
+      category: z.string().optional(),
+    })).mutation(async ({ input }) => {
+      try {
+        await db.insertAppLaunch({ appLinkId: input.id, appName: input.name, category: input.category });
+        return { ok: true };
+      } catch (e: any) {
+        console.warn("[appLinks.trackLaunch] swallowed:", e?.message);
+        return { ok: false };
+      }
+    }),
+    /**
+     * launchStats — returns top apps by launch count for the Analytics page.
+     */
+    launchStats: protectedProcedure.input(z.object({
+      days: z.number().default(30),
+    })).query(async ({ input }) => {
+      try {
+        return await db.getAppLaunchStats(input.days);
+      } catch (e: any) {
+        console.warn("[appLinks.launchStats] error:", e?.message);
+        return [];
+      }
+    }),
   }),
-
   /* =================== APP ACCOUNTS (encrypted password locker, adult-only) =================== */
   appAccounts: router({
     list: protectedProcedure.query(async () => {
@@ -1849,6 +1878,67 @@ export const appRouter = router({
     }),
   }),
 
+  /* =================== TOPIC MASTERY (Spaced Repetition) =================== */
+  topicMastery: router({
+    /** List mastery records for a subject, keyed by topicTitle (stable join key). */
+    listBySubject: publicProcedure.input(z.object({
+      subjectSlug: z.string(),
+    })).query(async ({ input }) => {
+      try {
+        const { topicMastery } = await import("../drizzle/schema");
+        const { eq: drizzleEq } = await import("drizzle-orm");
+        const rows = await db.getDb()
+          .select()
+          .from(topicMastery)
+          .where(drizzleEq(topicMastery.subjectSlug, input.subjectSlug));
+        return rows;
+      } catch (e: any) {
+        console.warn("[topicMastery.listBySubject] error:", e?.message);
+        return [];
+      }
+    }),
+    /** Upsert a mastery record after a review session. */
+    upsert: publicProcedure.input(z.object({
+      subjectSlug: z.string(),
+      topicHandle: z.string(),
+      topicTitle: z.string(),
+      gradeLevel: z.string().optional(),
+      masteryScore: z.number().min(0).max(100),
+      attemptCount: z.number().optional(),
+      weakSpots: z.string().optional(),
+    })).mutation(async ({ input }) => {
+      try {
+        const { topicMastery } = await import("../drizzle/schema");
+        const now = new Date();
+        // SM-2 interval: next review in max(1, round(6 * (masteryScore/100)^2)) days
+        const intervalDays = Math.max(1, Math.round(6 * Math.pow(input.masteryScore / 100, 2)));
+        const nextReview = new Date(now.getTime() + intervalDays * 24 * 60 * 60 * 1000);
+        await db.getDb().insert(topicMastery).values({
+          subjectSlug: input.subjectSlug,
+          topicHandle: input.topicHandle,
+          topicTitle: input.topicTitle,
+          gradeLevel: input.gradeLevel ?? "5",
+          masteryScore: input.masteryScore,
+          attemptCount: input.attemptCount ?? 1,
+          lastReviewedAt: now,
+          nextReviewAt: nextReview,
+          weakSpots: input.weakSpots ?? null,
+        } as any).onDuplicateKeyUpdate({
+          set: {
+            masteryScore: input.masteryScore,
+            attemptCount: undefined, // incremented server-side on next upsert
+            lastReviewedAt: now,
+            nextReviewAt: nextReview,
+            weakSpots: input.weakSpots ?? null,
+          } as any,
+        });
+        return { ok: true };
+      } catch (e: any) {
+        console.warn("[topicMastery.upsert] error:", e?.message);
+        return { ok: false, error: e?.message };
+      }
+    }),
+  }),
   /* =================== PROUD MOMENTS (Confidence Engine) =================== */
   proud: router({
     list: publicProcedure.input(z.object({ limit: z.number().default(50) }).optional())
