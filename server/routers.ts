@@ -4603,6 +4603,8 @@ export const appRouter = router({
         const { storagePut, storageGetSignedUrl } = await import("./storage");
         const { notifyOwner } = await import("./_core/notification");
         const { runAutoAttachForDate } = await import("./_lib/blockAutoAttach");
+        const { sendEmail } = await import("./_core/mailer");
+        const { buildPerBlockWorksheetAttachments } = await import("./_lib/perBlockWorksheetPdf");
 
         const today = (() => {
           const d = new Date();
@@ -4733,11 +4735,50 @@ export const appRouter = router({
           notified = false;
         }
 
+        // Also send via Gmail MCP (triggers confirmation card in Manus UI)
+        let emailSent = false;
+        try {
+          // Build HTML body
+          const blockListHtml = payload.blocks.map((b: any) => {
+            const head = `<b>${b.sortOrder}. ${b.startTime ?? "flex"} &middot; ${b.durationMin} min</b>` +
+              (b.subjectName ? ` <span style="color:#888;">[${b.subjectName}]</span>` : "") +
+              (b.curriculumTopicCode ? ` <span style="color:#888;">topic ${b.curriculumTopicCode}</span>` : "");
+            const desc = b.description ? `<div style="color:#444;font-size:13px;margin:2px 0 0 14px;">${b.description}</div>` : "";
+            return `<div style="padding:8px 0;border-bottom:1px solid #eee;">${head}<div style="margin:2px 0 0 14px;">${b.title}</div>${desc}</div>`;
+          }).join("");
+          const html = `<!doctype html><html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#222;max-width:680px;margin:0 auto;padding:20px;">
+<div style="text-align:center;margin-bottom:8px;"><div style="font-size:22px;font-weight:800;color:#1f3a2e;">${payload.studentName}'s School Plan</div><div style="color:#666;font-size:14px;">${payload.dayLabel}</div></div>
+<div style="margin:20px 0;padding:14px 16px;border-left:4px solid #1f3a2e;background:#fafafa;border-radius:8px;">${blockListHtml || '<div style="color:#888;">No blocks scheduled.</div>'}</div>
+${signedUrl ? `<p style="text-align:center;margin:24px 0;"><a href="${signedUrl}" style="display:inline-block;padding:10px 20px;background:#1f3a2e;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;">Download agenda PDF</a></p>` : ""}
+<p style="font-size:12px;color:#888;text-align:center;margin-top:24px;">PDF agenda attached.</p>
+</body></html>`;
+          // Build worksheet attachments
+          const emailAtts: Array<{ filename: string; content: Buffer; contentType: string }> = [
+            { filename: `${forDate} - ${payload.studentName} - Agenda.pdf`, content: pdfBuffer, contentType: "application/pdf" },
+          ];
+          try {
+            const wsAtts = await buildPerBlockWorksheetAttachments(payload as any);
+            for (const ws of wsAtts) {
+              emailAtts.push({ filename: ws.filename, content: ws.pdfBuffer, contentType: "application/pdf" });
+            }
+          } catch { /* worksheet build failure is non-fatal */ }
+          const emailResult = await sendEmail({
+            to: ["marcy.spear@gmail.com", "spear.cpt@gmail.com"],
+            subject: title,
+            html,
+            attachments: emailAtts,
+          });
+          emailSent = emailResult.ok;
+        } catch (e: any) {
+          console.warn(`[nightlyAgenda.sendNow] Gmail MCP send failed: ${String(e?.message ?? e)}`);
+          emailSent = false;
+        }
+
         try {
           await db.markNightlyAgendaEmailStatus({
             id: recordId,
-            status: notified ? "sent" : "failed",
-            errorMessage: notified ? null : "notifyOwner returned false",
+            status: (notified || emailSent) ? "sent" : "failed",
+            errorMessage: (notified || emailSent) ? null : "notifyOwner and Gmail MCP both failed",
             drivePushed: false,
           });
         } catch {
@@ -4749,6 +4790,7 @@ export const appRouter = router({
           forDate,
           recordId,
           notified,
+          emailSent,
           signedUrl,
           recipients,
           blockCount: payload.blocks.length,

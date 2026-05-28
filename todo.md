@@ -60,6 +60,16 @@
 - [x] Wire Summer Mode into agenda AI: when summer active, Math + ELA blocks source from 6th-grade preview topics (sixth-grade-summer-prep.md)
 - [x] PDF agenda printout: embed image worksheets (PNG/JPG) inline; PDF worksheets merged inline via pdf-lib; show "📄 PRINT SEPARATELY" box only for unfetchable external links
 - [x] PDF agenda printout: resolve /manus-storage/ relative paths to absolute signed URLs; absolute http URLs passed through as-is; PDF bytes fetched and merged via pdf-lib
+- [ ] PDF agenda: add page numbers (bottom-center, "Page X of Y") to every page
+- [ ] PDF agenda: add Table of Contents page (after cover, before devotion) listing each block with its page number
+- [ ] PDF agenda: embed ALL worksheet content inline (no "print separately" box for any stored worksheet — PDF pages merged via pdf-lib, images embedded via pdfkit)
+- [ ] PDF agenda: fix emoji rendering (replace Unicode emoji with ASCII equivalents — PDFKit Helvetica can't render emoji)
+- [ ] PDF agenda: add page numbers (bottom-center, "Page X of Y") to every page
+- [ ] PDF agenda: add Table of Contents page listing each block with its page number
+- [ ] Worksheet pre-fetch: download and store external worksheet PDFs/images in S3 at assignment time so they are always available for the printout
+- [ ] Daily schedule: cap total school day at 2–5 hours (4–10 blocks max); AI schedule proposer should not generate 16-block days
+- [x] Nightly email: rebuilt to use Zapier webhook (hooks.zapier.com) instead of SMTP — fully automated, no confirmation needed, sends to marcy.spear@gmail.com + spear.cpt@gmail.com
+- [ ] PDF agenda: for video blocks, fetch/generate transcript or AI lesson plan and print it inline instead of just the URL
 - [ ] Seed 6th-grade preview assignments in skillLadder with gradeLevel="6"; update auto-attach to filter by gradeLevel + Summer Mode
 - [x] "Ready for 6th Grade" indicator: ReadyFor6thBadge component on Today page — shows per-subject mastery bars + banner when all 4 subjects ≥ 75%; self-hides when summer mode is off
 - [ ] Optional: "5th Grade Report Card" page — summary of all completed 5th grade topics with completion dates, for IH records

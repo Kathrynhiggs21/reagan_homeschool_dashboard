@@ -1199,21 +1199,16 @@ ${absolutePdfUrl ? `<p style=\"text-align:center;margin:24px 0;\"><a href=\"${ab
       } catch { momBriefing = null; }
 
       // ============================================================
-      // v2.97.5 (2026-05-28): SELF-CONTAINED SEND via Nodemailer + Gmail SMTP.
-      // The endpoint now sends the email directly instead of returning a payload
-      // for an external agent. The external-agent path was silently failing
-      // because the scheduled-task agent was not configured to pick up the
-      // response and call gmail MCP.
-      //
-      // If GMAIL_APP_PASSWORD is not set, sendEmail() returns { skipped: true }
-      // and the endpoint still returns the full payload for backward compat.
+      // v2.98 (2026-05-28): Send via Gmail MCP (manus-mcp-cli).
+      // Replaces broken SMTP/Nodemailer path. Gmail MCP triggers a
+      // confirmation card in the Manus UI — user taps Send to confirm.
+      // Attachments are uploaded to public CDN URLs first.
       // ============================================================
       const { sendEmail } = await import("./_core/mailer");
       const emailAttachments = attachments.map((a) => ({
         filename: a.filename,
         content: Buffer.from(a.contentBase64, "base64"),
         contentType: a.mimeType,
-        encoding: "base64" as const,
       }));
       const sendResult = await sendEmail({
         to: recipients,
