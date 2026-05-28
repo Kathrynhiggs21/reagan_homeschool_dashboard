@@ -41,6 +41,7 @@ import TodayClassroomGradedCard from "@/components/TodayClassroomGradedCard";
 import SendAgendaNowCard from "@/components/SendAgendaNowCard";
 import RecapReplyInboxCard from "@/components/RecapReplyInboxCard";
 import CalendarFeedsCard from "@/components/CalendarFeedsCard";
+import GoogleCalendarEmbed from "@/components/GoogleCalendarEmbed";
 import TodayMomVoiceMemoCard from "@/components/TodayMomVoiceMemoCard";
 import TodayCoveredRecapCard from "@/components/TodayCoveredRecapCard";
 import TodayForwardPlanCard from "@/components/TodayForwardPlanCard";
@@ -510,6 +511,7 @@ export default function Today() {
             <RecapReplyInboxCard />
 
             <CalendarFeedsCard />
+            <GoogleCalendarEmbed size="compact" />
             {/* v2.88 — quick-link tile row (was above the schedule) */}
             <Card className="classroom-card p-3">
               <div className="flex items-center justify-between flex-wrap gap-2">

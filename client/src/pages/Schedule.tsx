@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Calendar, ChevronLeft, ChevronRight, MapPin, Sun, ExternalLink } from "lucide-react";
+import GoogleCalendarEmbed from "@/components/GoogleCalendarEmbed";
 import TopicLabel from "@/components/TopicLabel";
 import ActivityOptionsPanel from "@/components/ActivityOptionsPanel";
 
@@ -185,6 +186,7 @@ export default function Schedule() {
       )}
 
       <GoogleCalendarOverlayStub />
+      <GoogleCalendarEmbed size="full" />
 
       <div className="text-xs text-muted-foreground italic">
         Tip: tap a day to see its blocks. Tap <button className="underline" onClick={() => navigate("/today") }>Today</button> for a calmer single-day view with Kiwi.

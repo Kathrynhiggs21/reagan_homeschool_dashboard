@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useKiwi } from "@/contexts/KiwiContext";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,9 @@ export default function KiwiCompanion() {
     if (typeof window === "undefined") return false;
     try { return window.localStorage?.getItem("kiwiMicConsent") === "1"; } catch { return false; }
   });
+  // Quiz persistence: track answer counts from Kiwi's quiz summary messages.
+  // When Kiwi says "X out of Y" we extract the score and persist it.
+  const [quizPersisted, setQuizPersisted] = useState(false);
   useEffect(() => {
     function onChange(e: Event) {
       const id = (e as CustomEvent).detail?.id as CompanionId | undefined;
@@ -54,9 +57,42 @@ export default function KiwiCompanion() {
   const activeReviewBlock = (todayPlanData.data?.blocks as any[])?.find(
     (b: any) => b.blockType === 'review' && (b.status === 'in_progress' || b.status === 'not_started')
   ) ?? null;
+  // Reset quiz-persisted flag when the review block changes
+  const activeReviewBlockId = activeReviewBlock?.id ?? null;
+  useEffect(() => { setQuizPersisted(false); }, [activeReviewBlockId]);
   const reviewQuizPayload: string | undefined = activeReviewBlock?.description
     ? (() => { try { const p = JSON.parse(activeReviewBlock.description); return p._type === 'review_block' ? activeReviewBlock.description : undefined; } catch { return undefined; } })()
     : undefined;
+  const submitQuizResult = trpc.topicMastery.submitQuizResult.useMutation();
+
+  // Detect quiz completion from Kiwi's summary message.
+  // Pattern: "X out of Y" — e.g. "3 out of 4 — solid"
+  const detectAndPersistQuiz = useCallback((reply: string) => {
+    if (!activeReviewBlock || !reviewQuizPayload || quizPersisted) return;
+    const match = reply.match(/\b(\d+)\s+out\s+of\s+(\d+)\b/i);
+    if (!match) return;
+    const correct = parseInt(match[1], 10);
+    const total = parseInt(match[2], 10);
+    if (isNaN(correct) || isNaN(total) || total === 0) return;
+    const score = Math.round((correct / total) * 100);
+    try {
+      const quiz = JSON.parse(reviewQuizPayload);
+      const topic = quiz.topics?.[0];
+      if (!topic) return;
+      setQuizPersisted(true);
+      submitQuizResult.mutate({
+        subjectSlug: topic.subjectSlug,
+        topicHandle: topic.topicHandle,
+        topicTitle: topic.topicTitle,
+        gradeLevel: String(quiz.gradeLevel ?? "5"),
+        score,
+        totalQuestions: total,
+        correctAnswers: correct,
+        kiwiQuizLog: { correct, total, reply },
+      });
+    } catch { /* ignore parse errors */ }
+  }, [activeReviewBlock, reviewQuizPayload, quizPersisted, submitQuizResult]);
+
   const sendMsg = trpc.kiwi.chat.useMutation({
     onSuccess: (data: any) => {
       messages.refetch();
@@ -67,6 +103,10 @@ export default function KiwiCompanion() {
       }
       if (!muted && voiceMode === "voice" && data?.reply) {
         speak(data.reply);
+      }
+      // Detect quiz completion and persist results
+      if (data?.reply) {
+        detectAndPersistQuiz(data.reply);
       }
     },
   });

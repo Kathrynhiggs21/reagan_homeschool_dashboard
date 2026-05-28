@@ -72,6 +72,10 @@ export type ProposalInput = {
   existingBlocks: ExistingBlockSnapshot[];
   /** Defaults to "Reagan" if missing. */
   gradeLevel?: string | null;
+  /** Weak topics (mastery < 70) to inject as review suggestions. */
+  weakTopics?: Array<{ subjectSlug: string; topicTitle: string; masteryScore: number }>;
+  /** Whether summer mode is active — triggers 6th-grade preview topic suggestions. */
+  summerModeActive?: boolean;
 };
 
 export type ProposalResult = {
@@ -228,6 +232,31 @@ export function buildProposalPromptMessages(input: ProposalInput) {
   const seasonal = buildSeasonalProfile(parsedDate);
   const seasonalFragment = renderSeasonalPromptFragment(seasonal);
 
+  // v2.98 — Inject weak-topic context so AI naturally suggests review blocks
+  const weakTopicLines: string[] = [];
+  if (input.weakTopics && input.weakTopics.length > 0) {
+    weakTopicLines.push("\n=== Reagan's Weak Topics (mastery < 70%) ===");
+    weakTopicLines.push("These topics need more practice. When the prompt asks for review or catch-up, prefer these:");
+    for (const wt of input.weakTopics.slice(0, 5)) {
+      weakTopicLines.push(`- ${wt.topicTitle} (${wt.subjectSlug}, ${wt.masteryScore}% mastered)`);
+    }
+    weakTopicLines.push("If adding a review block, use one of these weak topics as the focus.");
+  }
+  const weakTopicFragment = weakTopicLines.join("\n");
+
+  // v2.98 — Summer mode: inject 6th-grade preview topic suggestions
+  const summerPrepLines: string[] = [];
+  if (input.summerModeActive) {
+    summerPrepLines.push("\n=== Summer Mode: 6th Grade Preview Topics ===");
+    summerPrepLines.push("It is summer break. For Math and ELA blocks, prefer these 6th-grade bridge topics:");
+    summerPrepLines.push("Math: Ratios & Proportional Relationships, Negative Numbers & Integers, Expressions & Variables, Area of Triangles & Quadrilaterals");
+    summerPrepLines.push("ELA: Figurative Language (metaphor/simile/personification), Informational Text Structure, Argument Writing Basics, Greek & Latin Roots");
+    summerPrepLines.push("Science: Cells Structure & Function, Ecosystems & Food Webs");
+    summerPrepLines.push("Social Studies: Map Skills (Latitude/Longitude/Hemispheres), Ancient Civilizations Overview");
+    summerPrepLines.push("Use these as block titles/descriptions when adding or modifying Math/ELA/Science/SS blocks in summer.");
+  }
+  const summerPrepFragment = summerPrepLines.join("\n");
+
   const existingList = input.existingBlocks
     .map(
       (b) =>
@@ -241,7 +270,7 @@ You are NOT generating from scratch — you are editing an EXISTING list
 of blocks. Return decisions for each existing block (keep / modify / remove),
 plus any new blocks to add.
 
-${seasonalFragment}
+${seasonalFragment}${weakTopicFragment}${summerPrepFragment}
 
 Allowed blockType values: ${blockTypesList}
 Valid subject slugs:

@@ -1948,6 +1948,7 @@ export const icalFeeds = mysqlTable("icalFeeds", {
   lastSyncStatus: mysqlEnum("lastSyncStatus", ["never", "ok", "failed"]).default("never").notNull(),
   lastSyncError: text("lastSyncError"),
   eventsCached: int("eventsCached").default(0).notNull(),
+  gcalEmbedUrl: text("gcalEmbedUrl"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 export type IcalFeed = typeof icalFeeds.$inferSelect;

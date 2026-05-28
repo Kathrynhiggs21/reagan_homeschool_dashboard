@@ -517,6 +517,7 @@ function IcalFeedsCard() {
   const [label, setLabel] = useState("");
   const [url, setUrl] = useState("");
   const [color, setColor] = useState("#0a66c2");
+  const [gcalEmbedUrl, setGcalEmbedUrl] = useState("");
   const feeds: any[] = feedsQ.data || [];
   return (
     <Card>
@@ -545,13 +546,17 @@ function IcalFeedsCard() {
           <Button
             disabled={!label.trim() || !url.trim() || add.isPending}
             onClick={() => {
-              add.mutate({ label: label.trim(), url: url.trim(), color }, {
-                onSuccess: () => { setLabel(""); setUrl(""); setColor("#0a66c2"); },
+              add.mutate({ label: label.trim(), url: url.trim(), color, gcalEmbedUrl: gcalEmbedUrl.trim() || undefined }, {
+                onSuccess: () => { setLabel(""); setUrl(""); setColor("#0a66c2"); setGcalEmbedUrl(""); },
               });
             }}
           >
             Add
           </Button>
+          <div className="col-span-full">
+            <Label className="text-xs text-muted-foreground">Google Calendar embed URL <span className="italic">(optional — shows live calendar widget on Today &amp; Schedule pages)</span></Label>
+            <Input value={gcalEmbedUrl} onChange={(e) => setGcalEmbedUrl(e.target.value)} placeholder="https://calendar.google.com/calendar/embed?src=..." className="text-xs" />
+          </div>
         </div>
 
         {feeds.length === 0 ? (
@@ -571,6 +576,7 @@ function IcalFeedsCard() {
                         ? <span className="text-red-600">Sync failed: {f.lastSyncError}</span>
                         : "Not synced yet"}
                   </div>
+                  {f.gcalEmbedUrl && <div className="text-[11px] text-green-700 dark:text-green-400">✓ Calendar widget active</div>}
                 </div>
                 <Switch
                   checked={!!f.enabled}
@@ -578,6 +584,18 @@ function IcalFeedsCard() {
                 />
                 <Button size="sm" variant="outline" disabled={refresh.isPending} onClick={() => refresh.mutate({ id: f.id })}>
                   Refresh
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="text-sky-600"
+                  onClick={() => {
+                    const newUrl = prompt("Paste Google Calendar embed URL (from Google Calendar → Settings → Integrate calendar → Embed code):", f.gcalEmbedUrl || "");
+                    if (newUrl !== null) update.mutate({ id: f.id, patch: { gcalEmbedUrl: newUrl.trim() || null } });
+                  }}
+                  title="Set Google Calendar embed URL for live widget"
+                >
+                  Widget
                 </Button>
                 <Button size="sm" variant="ghost" className="text-red-600" onClick={() => { if (confirm("Remove this calendar?")) del.mutate({ id: f.id }); }}>
                   Remove

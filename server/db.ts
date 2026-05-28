@@ -6550,17 +6550,17 @@ export async function getIcalFeed(id: number) {
   return rows[0] ?? null;
 }
 
-export async function insertIcalFeed(row: { label: string; url: string; color?: string; enabled?: boolean }) {
+export async function insertIcalFeed(row: { label: string; url: string; color?: string; enabled?: boolean; gcalEmbedUrl?: string }) {
   const r = await getDb().insert(icalFeeds).values({
     label: row.label,
     url: row.url,
     color: row.color ?? "#0a66c2",
     enabled: row.enabled ?? true,
+    gcalEmbedUrl: row.gcalEmbedUrl ?? null,
   } as any);
   return Number((r as any)?.[0]?.insertId ?? (r as any)?.insertId ?? 0);
 }
-
-export async function updateIcalFeed(id: number, patch: { label?: string; url?: string; color?: string; enabled?: boolean }) {
+export async function updateIcalFeed(id: number, patch: { label?: string; url?: string; color?: string; enabled?: boolean; gcalEmbedUrl?: string | null }) {
   await getDb().update(icalFeeds).set(patch as any).where(eq(icalFeeds.id, id));
 }
 
@@ -8886,4 +8886,78 @@ export async function upsertWeakTopic(input: { subjectSlug: string; topicHandle:
 export async function getAllWeakTopics() {
   const db = getDb();
   return db.select().from(weakTopics).orderBy(weakTopics.subjectSlug, weakTopics.masteryScore);
+}
+/* ============================================================================
+ * TOPIC MASTERY + REVIEW ATTEMPTS  (added 2026-05-28)
+ * ============================================================================ */
+import { topicMastery, reviewAttempts } from "../drizzle/schema";
+
+/**
+ * Upsert a topicMastery row and insert a reviewAttempts row in one call.
+ * Called by the client after Kiwi finishes a quiz block.
+ *
+ * masteryScore is computed by the client as: round(correctAnswers / totalQuestions * 100)
+ * SM-2 interval: nextReviewAt = now + max(1, round(6 * (score/100)^2)) days
+ */
+export async function persistQuizResult(input: {
+  subjectSlug: string;
+  topicHandle: string;
+  topicTitle: string;
+  gradeLevel?: string;
+  score: number;           // 0-100
+  totalQuestions: number;
+  correctAnswers: number;
+  weakSpots?: string;
+  kiwiQuizLog?: any;
+  sessionId?: number;
+}) {
+  const db = getDb();
+  const now = new Date();
+  const intervalDays = Math.max(1, Math.round(6 * Math.pow(input.score / 100, 2)));
+  const nextReview = new Date(now.getTime() + intervalDays * 24 * 60 * 60 * 1000);
+
+  // 1. Upsert topicMastery
+  await db.insert(topicMastery).values({
+    subjectSlug: input.subjectSlug,
+    topicHandle: input.topicHandle,
+    topicTitle: input.topicTitle,
+    gradeLevel: input.gradeLevel ? parseInt(input.gradeLevel, 10) : 5,
+    masteryScore: input.score,
+    attemptCount: 1,
+    lastReviewedAt: now,
+    nextReviewAt: nextReview,
+    weakSpots: input.weakSpots ?? null,
+  } as any).onDuplicateKeyUpdate({
+    set: {
+      masteryScore: input.score,
+      lastReviewedAt: now,
+      nextReviewAt: nextReview,
+      weakSpots: input.weakSpots ?? null,
+    } as any,
+  });
+
+  // 2. Fetch the topicMastery row id
+  const rows = await db.select({ id: topicMastery.id })
+    .from(topicMastery)
+    .where(and(
+      eq(topicMastery.subjectSlug, input.subjectSlug),
+      eq(topicMastery.topicHandle, input.topicHandle),
+    ))
+    .limit(1);
+  const topicMasteryId = rows[0]?.id;
+  if (!topicMasteryId) return { ok: false as const, error: "topicMastery row not found after upsert" };
+
+  // 3. Insert reviewAttempts row
+  await db.insert(reviewAttempts).values({
+    topicMasteryId,
+    sessionId: input.sessionId ?? null,
+    attemptedAt: now,
+    score: input.score,
+    totalQuestions: input.totalQuestions,
+    correctAnswers: input.correctAnswers,
+    kiwiQuizLog: input.kiwiQuizLog ?? null,
+    notes: input.weakSpots ?? null,
+  } as any);
+
+  return { ok: true as const, topicMasteryId, intervalDays };
 }

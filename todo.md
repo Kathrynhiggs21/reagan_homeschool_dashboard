@@ -47,19 +47,19 @@
 - [ ] AI agenda editor: when Mom says "review fractions" or "she needs more practice on writing", AI can manually queue a review block
 - [x] Kiwi chat: when active block is `review` type, Kiwi enters quiz mode — asks questions one at a time, tracks right/wrong (quiz injected into system prompt via quizPayload)
 - [x] At end of quiz, Kiwi summarizes results (handled in quiz mode system prompt — "3 out of 4 — solid"); reviewAttempts DB write wired via existing reviewSessions flow
-- [ ] Kiwi quiz: persist completed quiz results to `reviewAttempts` + update `topicMastery.masteryScore` (currently prompt-based only)
-- [ ] `aiScheduleProposer.ts`: inject weak-topic context into LLM system prompt so AI naturally suggests review blocks
+- [x] Kiwi quiz: persist completed quiz results to `reviewAttempts` + update `topicMastery.masteryScore` (currently prompt-based only)
+- [x] `aiScheduleProposer.ts`: inject weak-topic context into LLM system prompt so AI naturally suggests review blocks
 - [x] Nightly email: Mastery Snapshot section added to nightlyAgenda.sendNow — per-subject pctMastered, avgLevel, traffic-light emoji, strong/developing/needs work label
-- [ ] Weekly digest email: separate Sunday-evening email with full week summary + Mastery Snapshot (no weekly digest pipeline exists yet; nightly email fires daily)
+- [x] Weekly digest email: separate Sunday-evening email with full week summary + Mastery Snapshot (no weekly digest pipeline exists yet; nightly email fires daily)
 - [x] Curriculum page (adult): mastery dot next to each topic title (green ≥75, amber 40-74, rose <40) — topicMastery.listBySubject + CurriculumTopicsTree dot rendering
 
 ### 6th Grade Summer Prep
 - [x] Summer Mode: when active, pull 6th grade preview topics for Math + ELA blocks (PracticeHub grade toggle + reviewBlockGenerator uses gradeLevel)
 - [x] Assignment library: gradeLevel field already on skillLadder (varchar "3","4","5","6") — Grade 6 skills can be seeded with gradeLevel="6"
 - [x] Print packet: cover sheet shows "☀️ Summer Preview — 6th Grade" banner when Summer Mode is active (agendaPdf.ts renderCoverPage + agendaAssembler.ts summer detection)
-- [ ] Wire Summer Mode into agenda AI: when summer active, Math + ELA blocks source from 6th-grade preview topics (sixth-grade-summer-prep.md)
-- [x] PDF agenda printout: embed image worksheets (PNG/JPG) inline; show prominent "📄 PRINT SEPARATELY" dashed box for PDF/external links
-- [x] PDF agenda printout: resolve /manus-storage/ relative paths to absolute signed URLs; absolute http URLs passed through as-is
+- [x] Wire Summer Mode into agenda AI: when summer active, Math + ELA blocks source from 6th-grade preview topics (sixth-grade-summer-prep.md)
+- [x] PDF agenda printout: embed image worksheets (PNG/JPG) inline; PDF worksheets merged inline via pdf-lib; show "📄 PRINT SEPARATELY" box only for unfetchable external links
+- [x] PDF agenda printout: resolve /manus-storage/ relative paths to absolute signed URLs; absolute http URLs passed through as-is; PDF bytes fetched and merged via pdf-lib
 - [ ] Seed 6th-grade preview assignments in skillLadder with gradeLevel="6"; update auto-attach to filter by gradeLevel + Summer Mode
 - [x] "Ready for 6th Grade" indicator: ReadyFor6thBadge component on Today page — shows per-subject mastery bars + banner when all 4 subjects ≥ 75%; self-hides when summer mode is off
 - [ ] Optional: "5th Grade Report Card" page — summary of all completed 5th grade topics with completion dates, for IH records
@@ -81,7 +81,7 @@
 ### Google Calendar Sync
 - [x] ICS feed: /api/calendar.ics exports all blocks + timeline events; Mom subscribes in Google Calendar (auto-refreshes every few hours)
 - [ ] True one-way API write sync: when blocks are committed, create/update timed Google Calendar events via Calendar API (BLOCKED: requires Google Calendar OAuth credentials or service account — not yet configured)
-- [ ] Today + Schedule pages embed a read-only Google Calendar widget (iframe embed of Mom's calendar)
+- [x] Today + Schedule pages embed a read-only Google Calendar widget (iframe embed of Mom's calendar)
 - [ ] When a tutor is on the day, their email is added as a guest on that day's events (requires Google Calendar API OAuth — deferred until credentials available)
 
 ### Apps & Integrations Page
@@ -95,7 +95,7 @@
 
 ### Summer / Catch-up
 - [x] Catch-up engine: CatchupEngineCard on Analytics page — per-subject mastery % bar, traffic-light (green/amber/red), next-3 topics (not yet mastered, ordered by sortOrder); catchupEngine tRPC procedure
-- [ ] Weekly summer digest email (Sunday evenings) — same as weekly digest above; build a Sunday-only scheduled job that sends the full week summary + mastery snapshot + catch-up recommendations
+- [x] Weekly summer digest email (Sunday evenings) — same as weekly digest above; build a Sunday-only scheduled job that sends the full week summary + mastery snapshot + catch-up recommendations
 
 ### SMS Approvals (deferred)
 - [ ] `pendingApprovals` table (id, kind, payload, requestedBy, requestedAt, smsTo[], status, approvedBy, approvedAt, expiresAt)

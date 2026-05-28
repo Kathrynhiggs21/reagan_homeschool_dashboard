@@ -59,30 +59,38 @@ async function resolveWorksheetUrl(url: string | null | undefined): Promise<stri
 }
 
 /**
- * Try to fetch image bytes for a worksheet URL.
- * Returns { bytes, mimeType } if the resource is a PNG or JPEG image,
- * null otherwise (PDF, HTML, or fetch failure).
+ * Try to fetch worksheet resource bytes.
+ * Returns { bytes, mimeType } for PNG, JPEG, or PDF resources.
+ * Returns null for HTML, fetch failures, or resources < 1 KB.
  */
-async function tryFetchImageBytes(
+async function tryFetchWorksheetBytes(
   absoluteUrl: string | null,
 ): Promise<{ bytes: Buffer; mimeType: string } | null> {
   if (!absoluteUrl || !absoluteUrl.startsWith("http")) return null;
   try {
     const resp = await fetch(absoluteUrl, {
-      signal: AbortSignal.timeout(8000),
-      headers: { Accept: "image/*" },
+      signal: AbortSignal.timeout(15000),
+      headers: { Accept: "image/*, application/pdf" },
     });
     if (!resp.ok) return null;
     const ct = resp.headers.get("content-type") ?? "";
-    if (!ct.startsWith("image/jpeg") && !ct.startsWith("image/png")) return null;
+    const mime = ct.split(";")[0].trim();
+    const isImage = mime.startsWith("image/jpeg") || mime.startsWith("image/png");
+    const isPdf = mime === "application/pdf" || absoluteUrl.toLowerCase().endsWith(".pdf");
+    if (!isImage && !isPdf) return null;
     const buf = Buffer.from(await resp.arrayBuffer());
-    // Sanity check: images should be at least 1 KB
+    // Sanity check: resources should be at least 1 KB
     if (buf.length < 1024) return null;
-    return { bytes: buf, mimeType: ct.split(";")[0].trim() };
+    // Use application/pdf if URL ends with .pdf but content-type was wrong
+    const effectiveMime = isPdf && !isImage ? "application/pdf" : mime;
+    return { bytes: buf, mimeType: effectiveMime };
   } catch {
     return null;
   }
 }
+
+// Keep old name as alias for backward compatibility
+const tryFetchImageBytes = tryFetchWorksheetBytes;
 
 export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfInput | null> {
   const plan = await db.getPlanByDate(dateStr);
@@ -161,7 +169,7 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
   }
 
   // Resolve + fetch in parallel (cap concurrency at 6)
-  type WsResolved = { blockId: number; wsIdx: number; resolvedUrl: string | null; imageBytes: Buffer | null; mimeType: string | null };
+  type WsResolved = { blockId: number; wsIdx: number; resolvedUrl: string | null; imageBytes: Buffer | null; mimeType: string | null; pdfBytes: Buffer | null };
   const resolvedMap = new Map<string, WsResolved>();
 
   const CONCURRENCY = 6;
@@ -170,13 +178,16 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
     const results = await Promise.all(
       chunk.map(async (ref) => {
         const resolvedUrl = await resolveWorksheetUrl(ref.rawUrl);
-        const imgResult = await tryFetchImageBytes(resolvedUrl);
+        const fetchResult = await tryFetchWorksheetBytes(resolvedUrl);
+        const isImage = fetchResult?.mimeType?.startsWith("image/") ?? false;
+        const isPdf = fetchResult?.mimeType === "application/pdf";
         return {
           blockId: ref.blockId,
           wsIdx: ref.wsIdx,
           resolvedUrl,
-          imageBytes: imgResult?.bytes ?? null,
-          mimeType: imgResult?.mimeType ?? null,
+          imageBytes: (fetchResult && isImage) ? fetchResult.bytes : null,
+          mimeType: fetchResult?.mimeType ?? null,
+          pdfBytes: (fetchResult && isPdf) ? fetchResult.bytes : null,
         };
       }),
     );
@@ -198,6 +209,7 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
           resolvedUrl: resolved.resolvedUrl,
           imageBytes: resolved.imageBytes,
           mimeType: resolved.mimeType,
+          pdfBytes: resolved.pdfBytes,
         };
       });
     }

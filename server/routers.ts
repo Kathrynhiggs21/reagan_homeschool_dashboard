@@ -423,6 +423,23 @@ export const appRouter = router({
         sortOrder: b.sortOrder ?? 0,
       }));
 
+      // v2.98 — Inject weak topics + summer mode context into AI proposer
+      let weakTopicsForProposer: Array<{ subjectSlug: string; topicTitle: string; masteryScore: number }> = [];
+      try {
+        const wt = await db.getWeakTopicsForStudent(5);
+        weakTopicsForProposer = (wt as any[]).map((w) => ({
+          subjectSlug: w.subjectSlug || "other",
+          topicTitle: w.topicTitle || w.topicHandle || "Unknown",
+          masteryScore: w.masteryScore ?? 0,
+        }));
+      } catch { /* non-fatal */ }
+      let summerModeActive = false;
+      try {
+        const { effectiveSummerActive } = await import("./summerMode");
+        const summerSettings = await (db as any).getSummerSettings?.().catch(() => null);
+        const status = effectiveSummerActive(input.date, summerSettings);
+        summerModeActive = status.active;
+      } catch { /* non-fatal */ }
       const result = await proposeScheduleEdit({
         dateStr: input.date,
         dayLabel,
@@ -431,6 +448,8 @@ export const appRouter = router({
         adultPrompt: input.adultPrompt,
         subjects,
         existingBlocks,
+        weakTopics: weakTopicsForProposer,
+        summerModeActive,
       });
 
       return {
@@ -1970,6 +1989,31 @@ export const appRouter = router({
         return { ok: false, error: e?.message };
       }
     }),
+    /**
+     * Persist a completed Kiwi quiz — writes a reviewAttempts row and
+     * updates topicMastery.masteryScore with SM-2 interval scheduling.
+     * Called from KiwiCompanion when the AI signals quiz completion.
+     */
+    submitQuizResult: publicProcedure.input(z.object({
+      subjectSlug: z.string(),
+      topicHandle: z.string(),
+      topicTitle: z.string(),
+      gradeLevel: z.string().optional(),
+      score: z.number().min(0).max(100),
+      totalQuestions: z.number().min(1),
+      correctAnswers: z.number().min(0),
+      weakSpots: z.string().optional(),
+      kiwiQuizLog: z.any().optional(),
+      sessionId: z.number().optional(),
+    })).mutation(async ({ input }) => {
+      try {
+        const result = await db.persistQuizResult(input);
+        return result;
+      } catch (e: any) {
+        console.warn("[topicMastery.submitQuizResult] error:", e?.message);
+        return { ok: false as const, error: e?.message };
+      }
+    }),
   }),
   /* =================== PROUD MOMENTS (Confidence Engine) =================== */
   proud: router({
@@ -2192,6 +2236,7 @@ export const appRouter = router({
         label: z.string().min(1).max(120),
         url: z.string().url(),
         color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+        gcalEmbedUrl: z.string().url().optional(),
       }))
       .mutation(({ input }) => db.insertIcalFeed(input)),
     update: protectedProcedure
@@ -2202,6 +2247,7 @@ export const appRouter = router({
           url: z.string().url().optional(),
           color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
           enabled: z.boolean().optional(),
+          gcalEmbedUrl: z.string().url().optional().nullable(),
         }),
       }))
       .mutation(({ input }) => db.updateIcalFeed(input.id, input.patch)),

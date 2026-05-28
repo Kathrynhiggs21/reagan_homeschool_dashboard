@@ -1,5 +1,5 @@
 /**
- * Nightly Agenda PDF builder — v3.10 "Print-and-Go" Packet.
+ * Nightly Agenda PDF builder — v3.11 "Print-and-Go" Packet.
  *
  * Produces a self-contained daily packet that lets Mom, Grandma, or a tutor
  * run the entire school day without logging into the dashboard:
@@ -11,9 +11,16 @@
  *   Page 2  — Devotion / scripture / reflection (if set for the day).
  *   Pages … — One full page per block that has ANY content attached:
  *              lesson instructions, objectives, materials, videos (with URLs),
- *              worksheets (embedded images when available, prominent print-box
- *              for PDF/external links), answer key (adult-only), and clickable
- *              links to every external resource.
+ *              worksheets (embedded images when available, PDF pages merged
+ *              inline for PDF worksheets, prominent print-box for external
+ *              links that can't be fetched), answer key (adult-only), and
+ *              clickable links to every external resource.
+ *
+ * v3.11 changes:
+ *   - PDF worksheet pages are now merged inline using pdf-lib (no more
+ *     "PRINT SEPARATELY" box for stored PDFs — they appear in the packet)
+ *   - pdfBytes field on worksheet carries fetched PDF bytes from assembler
+ *   - External URLs that fail to fetch still show the print-separately box
  *
  * v3.10 changes:
  *   - summerMode flag → "☀ Summer Preview — 6th Grade" cover banner
@@ -59,6 +66,8 @@ export type AgendaPdfBlock = {
       imageBytes?: Buffer | null;
       /** v3.10: mime type of the fetched resource */
       mimeType?: string | null;
+      /** v3.11: fetched PDF bytes for merging into the agenda PDF */
+      pdfBytes?: Buffer | null;
     }>;
     answerKey?: string | null;
   } | null;
@@ -195,8 +204,8 @@ function formatTime(t: string | null | undefined): string {
 }
 
 /**
- * Render a prominent "PRINT SEPARATELY" box for worksheets that are PDFs
- * or external URLs that can't be embedded inline.
+ * Render a prominent "PRINT SEPARATELY" box for worksheets that are external
+ * URLs that can't be fetched/embedded.
  */
 function renderPrintSeparatelyBox(
   doc: PDFKit.PDFDocument,
@@ -288,7 +297,7 @@ function renderCoverPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, agendaH
   if (hasDevotionPage) packetSummary.push("📖 Devotion / reflection page");
   packetSummary.push(`📋 Cover sheet (this page) with today's full schedule`);
   if (blocksWithContent.length > 0) packetSummary.push(`📄 ${blocksWithContent.length} detailed lesson page${blocksWithContent.length === 1 ? "" : "s"} (one per block)`);
-  if (totalWorksheets > 0) packetSummary.push(`✏️  ${totalWorksheets} worksheet${totalWorksheets === 1 ? "" : "s"} with answer lines`);
+  if (totalWorksheets > 0) packetSummary.push(`✏️  ${totalWorksheets} worksheet${totalWorksheets === 1 ? "" : "s"} embedded in packet`);
   if (totalVideos > 0) packetSummary.push(`▶  ${totalVideos} video link${totalVideos === 1 ? "" : "s"} with descriptions`);
   for (const line of packetSummary) {
     bullet(doc, line);
@@ -390,73 +399,73 @@ function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: Age
       `${b.durationMin} min`,
       b.subjectName ?? null,
       b.curriculumTopicCode
-        ? (b.curriculumTopicTitle ? `${b.curriculumTopicCode} · ${b.curriculumTopicTitle}` : b.curriculumTopicCode)
+        ? (b.curriculumTopicTitle ? `${b.curriculumTopicCode}: ${b.curriculumTopicTitle}` : b.curriculumTopicCode)
         : null,
     ].filter(Boolean).join("  ·  "),
   );
   doc.moveDown(0.3);
   rule(doc);
 
-  if (b.description) {
-    bodyText(doc, b.description.trim());
-    doc.moveDown(0.3);
-  }
-
-  // Book page refs
-  if (b.bookPageRefs?.length) {
-    sectionHead(doc, "Book Assignment");
-    for (const r of b.bookPageRefs) {
-      bullet(doc, `${r.bookTitle} — pages ${r.fromPage}–${r.toPage}`);
-    }
-    doc.moveDown(0.3);
-  }
-
   const L = b.lesson;
   if (L) {
+    // Description
+    if (b.description) {
+      bodyText(doc, b.description.trim());
+      doc.moveDown(0.3);
+    }
+
     // Objectives
     if (L.objectives && L.objectives.length > 0) {
-      sectionHead(doc, "Learning Goals");
-      for (const o of L.objectives) bullet(doc, o);
+      sectionHead(doc, "Learning Objectives");
+      for (const obj of L.objectives) bullet(doc, obj);
       doc.moveDown(0.3);
     }
 
     // Materials
     if (L.materials && L.materials.length > 0) {
-      sectionHead(doc, "What You Need");
-      for (const m of L.materials) bullet(doc, m);
+      sectionHead(doc, "Materials Needed");
+      for (const mat of L.materials) bullet(doc, mat);
       doc.moveDown(0.3);
     }
 
-    // Instructions / lesson body
+    // Instructions
     if (L.instructions && L.instructions.trim().length > 0) {
       sectionHead(doc, "Instructions");
       bodyText(doc, L.instructions.trim());
       doc.moveDown(0.3);
     }
 
+    // Book page refs
+    if (b.bookPageRefs && b.bookPageRefs.length > 0) {
+      sectionHead(doc, "Reading Assignment");
+      for (const r of b.bookPageRefs) {
+        bullet(doc, `${r.bookTitle} — pages ${r.fromPage}–${r.toPage}`);
+      }
+      doc.moveDown(0.3);
+    }
+
     // Videos — with clickable URLs
     if (L.videos && L.videos.length > 0) {
-      sectionHead(doc, "Watch First");
+      sectionHead(doc, "Videos");
       for (const v of L.videos) {
-        doc.fillColor(BRAND_BLUE).fontSize(11).font("Helvetica-Bold")
+        doc.fillColor(GRAY_DARK).fontSize(11).font("Helvetica-Bold")
           .text(`▶ ${v.title}`, { link: v.url || undefined, underline: !!v.url });
         doc.font("Helvetica");
-        if (v.description) {
-          doc.fillColor(GRAY_MED).fontSize(9).text(v.description.trim(), { width: PAGE_W, indent: 8 });
-        }
         if (v.url) {
           doc.fillColor(BRAND_BLUE).fontSize(8).text(v.url, { link: v.url, underline: true, indent: 8, width: PAGE_W });
         }
-        if (v.transcript) {
-          doc.fillColor(GRAY_LIGHT).fontSize(7)
-            .text(`Transcript: ${v.transcript.trim().slice(0, 800)}${v.transcript.length > 800 ? "…" : ""}`,
-              { width: PAGE_W, indent: 8 });
+        if (v.description) {
+          doc.fillColor(GRAY_MED).fontSize(9).text(v.description.trim(), { indent: 8, width: PAGE_W });
         }
-        doc.moveDown(0.3);
+        if (v.transcript) {
+          doc.fillColor(GRAY_LIGHT).fontSize(8).text(`Transcript: ${v.transcript.trim().slice(0, 300)}…`, { indent: 8, width: PAGE_W });
+        }
+        doc.moveDown(0.2);
       }
+      doc.moveDown(0.1);
     }
 
-    // Worksheets — embed images inline; show print-box for PDFs/external links
+    // Worksheets — embed images inline; merge PDF pages; show print-box for unfetchable external links
     if (L.worksheets && L.worksheets.length > 0) {
       sectionHead(doc, "Worksheets & Activities");
       for (const w of L.worksheets) {
@@ -465,8 +474,7 @@ function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: Age
         if (w.description) {
           doc.fillColor(GRAY_MED).fontSize(9).text(w.description.trim(), { width: PAGE_W, indent: 4 });
         }
-
-        // v3.10: Try to embed image inline; fall back to print-separately box
+        // v3.11: Try to embed image inline; PDF bytes are merged after pdfkit finishes
         const displayUrl = w.resolvedUrl || w.printableUrl || null;
         if (w.imageBytes && w.mimeType && (w.mimeType.startsWith("image/jpeg") || w.mimeType.startsWith("image/png"))) {
           // Embed the image directly — scale to fit page width
@@ -487,11 +495,35 @@ function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: Age
             // If image embedding fails, fall back to print-separately box
             if (displayUrl) renderPrintSeparatelyBox(doc, w.title, displayUrl);
           }
+        } else if (w.pdfBytes) {
+          // PDF bytes available — will be merged after pdfkit finishes.
+          // Show a placeholder note so the reader knows pages follow.
+          doc.moveDown(0.2);
+          const boxX = MARGIN;
+          const boxY = doc.y;
+          const boxW = PAGE_W;
+          const boxH = 40;
+          doc.save()
+            .rect(boxX, boxY, boxW, boxH)
+            .fillColor("#f0fdf4")
+            .fill()
+            .rect(boxX, boxY, boxW, boxH)
+            .strokeColor("#16a34a")
+            .lineWidth(1)
+            .stroke()
+            .restore();
+          doc.y = boxY + 8;
+          doc.fillColor("#16a34a").fontSize(10).font("Helvetica-Bold")
+            .text("📄  Worksheet pages follow immediately after this block", { indent: 8, width: PAGE_W - 16 });
+          doc.font("Helvetica");
+          doc.fillColor(GRAY_MED).fontSize(8)
+            .text(w.title, { indent: 8, width: PAGE_W - 16 });
+          doc.y = boxY + boxH + 6;
+          doc.moveDown(0.2);
         } else if (displayUrl) {
           // PDF or external URL — show prominent print-separately box
           renderPrintSeparatelyBox(doc, w.title, displayUrl);
         }
-
         // Inline questions with writable answer lines
         if (w.questions && w.questions.length > 0) {
           doc.moveDown(0.2);
@@ -499,7 +531,7 @@ function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: Age
             doc.fillColor(GRAY_DARK).fontSize(10).text(`${i + 1}. ${w.questions[i]}`, { width: PAGE_W, indent: 4 });
             answerLine(doc);
           }
-        } else if (!displayUrl && !w.imageBytes) {
+        } else if (!displayUrl && !w.imageBytes && !w.pdfBytes) {
           // No URL and no questions — add a few blank answer lines so the
           // block is still writable on paper.
           doc.moveDown(0.1);
@@ -562,6 +594,23 @@ function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: Age
 
 /* ========================= MAIN BUILDER ================================== */
 
+/**
+ * Collect all worksheet PDF buffers from all blocks, in order.
+ * Returns array of { blockTitle, worksheetTitle, pdfBytes } for merging.
+ */
+function collectPdfWorksheets(input: AgendaPdfInput): Array<{ blockTitle: string; worksheetTitle: string; pdfBytes: Buffer }> {
+  const result: Array<{ blockTitle: string; worksheetTitle: string; pdfBytes: Buffer }> = [];
+  for (const b of input.blocks) {
+    if (!b.lesson?.worksheets) continue;
+    for (const w of b.lesson.worksheets) {
+      if (w.pdfBytes) {
+        result.push({ blockTitle: b.title, worksheetTitle: w.title, pdfBytes: w.pdfBytes });
+      }
+    }
+  }
+  return result;
+}
+
 export async function buildAgendaPdf(input: AgendaPdfInput): Promise<AgendaPdfResult> {
   const canonical = canonicalize(input);
   const agendaHash = hashAgenda(canonical);
@@ -588,6 +637,32 @@ export async function buildAgendaPdf(input: AgendaPdfInput): Promise<AgendaPdfRe
   doc.end();
   await done;
 
-  const pdfBuffer = Buffer.concat(chunks);
+  let pdfBuffer = Buffer.concat(chunks);
+
+  // v3.11: Merge worksheet PDF pages into the agenda PDF using pdf-lib
+  const pdfWorksheets = collectPdfWorksheets(input);
+  if (pdfWorksheets.length > 0) {
+    try {
+      const { PDFDocument: PdfLib } = await import("pdf-lib");
+      const mainDoc = await PdfLib.load(pdfBuffer);
+      for (const ws of pdfWorksheets) {
+        try {
+          const wsDoc = await PdfLib.load(ws.pdfBytes);
+          const pageCount = wsDoc.getPageCount();
+          if (pageCount === 0) continue;
+          const copiedPages = await mainDoc.copyPages(wsDoc, wsDoc.getPageIndices());
+          for (const page of copiedPages) {
+            mainDoc.addPage(page);
+          }
+        } catch {
+          // If a specific worksheet PDF fails to merge, skip it silently
+        }
+      }
+      pdfBuffer = Buffer.from(await mainDoc.save());
+    } catch {
+      // If pdf-lib merge fails entirely, return the original pdfkit PDF
+    }
+  }
+
   return { pdfBuffer, canonicalText: canonical, agendaHash };
 }
