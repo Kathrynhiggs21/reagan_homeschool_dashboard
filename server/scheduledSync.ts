@@ -1882,6 +1882,33 @@ ${absolutePdfUrl ? `<p style=\"text-align:center;margin:24px 0;\"><a href=\"${ab
       const wins = payload?.confidenceWins?.length ?? 0;
       if (wins > 0) lines.push(`**Confidence wins:** ${wins} (level-ups + auto proud moments)`);
       lines.push("");
+      // ─── Mastery Snapshot ────────────────────────────────────────────────────
+      try {
+        const masteryRows = await (db as any).subjectLevelSummary?.();
+        if (masteryRows && masteryRows.length > 0) {
+          lines.push("");
+          lines.push("## Mastery Snapshot");
+          const LIGHT = (pct: number) => pct >= 75 ? "🟢" : pct >= 40 ? "🟡" : "🔴";
+          const LABEL = (pct: number) => pct >= 75 ? "Strong" : pct >= 40 ? "Developing" : "Needs work";
+          const SUBJ: Record<string, string> = {
+            math: "Math",
+            ela: "ELA / Reading",
+            science: "Science",
+            social_studies: "Social Studies",
+            ss: "Social Studies",
+            writing: "Writing",
+            history: "History",
+          };
+          for (const s of masteryRows as any[]) {
+            const label = SUBJ[s.subjectSlug] ?? s.subjectSlug;
+            const pct = Math.round(s.pctMastered ?? 0);
+            const lvl = s.avgLevel != null ? Number(s.avgLevel).toFixed(1) : "—";
+            lines.push(`${LIGHT(pct)} **${label}** — ${pct}% mastered · avg level ${lvl} · ${LABEL(pct)}`);
+          }
+        }
+      } catch (e) {
+        console.warn("[weekly-digest-send] mastery snapshot failed (non-fatal)", e);
+      }
       lines.push(`_Auto-emailed weekly. Recipients: ${recipientEmails.length ? recipientEmails.join(", ") : "(none configured)"}._`);
       const content = lines.join("\n");
 

@@ -1857,6 +1857,38 @@ export const appRouter = router({
      * Returns true when all 4 core subjects (math, ela, science, ss) have
      * pctMastered >= 75 based on the skillLadder progress.
      */
+    catchupEngine: publicProcedure.query(async () => {
+      // Per-subject mastery % + traffic-light + next-3 topics
+      const summary = await db.subjectLevelSummary();
+      const SUBJECT_LABELS: Record<string, string> = {
+        math: "Math", ela: "ELA / Reading", science: "Science",
+        social_studies: "Social Studies", ss: "Social Studies",
+        writing: "Writing", history: "History", art: "Art", music: "Music",
+      };
+      const subjects = await Promise.all(
+        (summary as any[]).map(async (s) => {
+          const light = s.pctMastered >= 75 ? "green" : s.pctMastered >= 40 ? "amber" : "red";
+          // Next 3 skills not yet mastered (level < 4), ordered by sortOrder
+          const skills = await db.listSkillsWithProgress(s.subjectSlug);
+          const nextTopics = (skills as any[])
+            .filter((sk: any) => (sk.progress?.level ?? 0) < 4)
+            .sort((a: any, b: any) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+            .slice(0, 3)
+            .map((sk: any) => ({ id: sk.id, title: sk.title, level: sk.progress?.level ?? 0 }));
+          return {
+            subjectSlug: s.subjectSlug,
+            label: SUBJECT_LABELS[s.subjectSlug] ?? s.subjectSlug,
+            pctMastered: s.pctMastered,
+            avgLevel: s.avgLevel,
+            skills: s.skills,
+            mastered: s.mastered,
+            trafficLight: light,
+            nextTopics,
+          };
+        })
+      );
+      return subjects.sort((a, b) => a.pctMastered - b.pctMastered); // weakest first
+    }),
     readyFor6th: publicProcedure.query(async () => {
       const summary = await db.subjectLevelSummary();
       const coreSubjects = ["math", "ela", "science", "ss"];
@@ -4611,6 +4643,31 @@ export const appRouter = router({
           ? `\n\nDownload PDF: ${signedUrl}`
           : `\n\n(PDF stored at ${key}; presign failed — refresh in the dashboard.)`;
 
+        // Mastery Snapshot — per-subject mastery % for the weekly digest
+        let masterySection = "";
+        try {
+          const masteryRows = await db.subjectLevelSummary();
+          if (masteryRows.length > 0) {
+            const SUBJECT_LABELS: Record<string, string> = {
+              math: "Math", ela: "ELA / Reading", science: "Science",
+              social_studies: "Social Studies", writing: "Writing",
+              history: "History", art: "Art", music: "Music",
+            };
+            const masteryLines = masteryRows
+              .sort((a: any, b: any) => b.pctMastered - a.pctMastered)
+              .map((r: any) => {
+                const label = SUBJECT_LABELS[r.subjectSlug] ?? r.subjectSlug;
+                const bar = r.pctMastered >= 75 ? "🟢" : r.pctMastered >= 40 ? "🟡" : "🔴";
+                const status = r.pctMastered >= 75 ? "strong" : r.pctMastered >= 40 ? "developing" : "needs work";
+                return `  ${bar} ${label}: ${r.pctMastered}% mastered (avg level ${r.avgLevel}) — ${status}`;
+              })
+              .join("\n");
+            masterySection = `\n\n📊 Mastery Snapshot:\n${masteryLines}`;
+          }
+        } catch {
+          // Non-fatal — skip mastery section if query fails
+        }
+
         const title = `${payload.studentName}'s school plan — ${payload.dayLabel}`;
         const content =
           `${summary}\n\n` +
@@ -4620,6 +4677,7 @@ export const appRouter = router({
               }${payload.tutorDeparture ? ` (leaves ${payload.tutorDeparture})` : ""}\n\n`
             : `Mom-only day — no tutor scheduled.\n\n`) +
           `Today's blocks:\n${blockLines || "(no blocks scheduled)"}` +
+          masterySection +
           linkLine;
 
         let notified = false;

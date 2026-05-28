@@ -35,6 +35,7 @@ import CurriculumCoverageArcs from "@/components/CurriculumCoverageArcs";
 import CurriculumProgressArcs from "@/components/CurriculumProgressArcs";
 import WeeklyDigestCard from "@/components/WeeklyDigestCard";
 import BehaviorInsightsCard from "@/components/BehaviorInsightsCard";
+import CatchupEngineCard from "@/components/CatchupEngineCard";
 import { MoodRing } from "@/components/MoodRing";
 
 function MoodArcChart({ moods }: { moods: any[] }) {
@@ -637,9 +638,10 @@ export default function Analytics() {
       {/* DON'T-SHOW-IF-NO-INFO (2026-05-12 push 14): Subject grades hides when no real grades */}
       {realSubjectGrades.length === 0 ? null : null}
 
-      {/* Apps Usage Card */}
+            {/* Apps Usage Card */}
       <AppsUsageCard />
-
+      {/* Catch-up Engine */}
+      <CatchupEngineCard />
       {/* Behavior & Learning Insights */}
       <BehaviorInsightsCard />
     </div>

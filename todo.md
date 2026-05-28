@@ -49,7 +49,8 @@
 - [x] At end of quiz, Kiwi summarizes results (handled in quiz mode system prompt — "3 out of 4 — solid"); reviewAttempts DB write wired via existing reviewSessions flow
 - [ ] Kiwi quiz: persist completed quiz results to `reviewAttempts` + update `topicMastery.masteryScore` (currently prompt-based only)
 - [ ] `aiScheduleProposer.ts`: inject weak-topic context into LLM system prompt so AI naturally suggests review blocks
-- [ ] Weekly digest email: include "Mastery Snapshot" section — subject by subject, strong/developing/needs work
+- [x] Nightly email: Mastery Snapshot section added to nightlyAgenda.sendNow — per-subject pctMastered, avgLevel, traffic-light emoji, strong/developing/needs work label
+- [ ] Weekly digest email: separate Sunday-evening email with full week summary + Mastery Snapshot (no weekly digest pipeline exists yet; nightly email fires daily)
 - [x] Curriculum page (adult): mastery dot next to each topic title (green ≥75, amber 40-74, rose <40) — topicMastery.listBySubject + CurriculumTopicsTree dot rendering
 
 ### 6th Grade Summer Prep
@@ -93,8 +94,8 @@
 - [ ] Per-type generator wired into PDF builder + Reagan-side block view
 
 ### Summer / Catch-up
-- [ ] Catch-up engine: per-subject mastery % + traffic-light + next-3 topics
-- [ ] Weekly summer digest email (Sunday evenings)
+- [x] Catch-up engine: CatchupEngineCard on Analytics page — per-subject mastery % bar, traffic-light (green/amber/red), next-3 topics (not yet mastered, ordered by sortOrder); catchupEngine tRPC procedure
+- [ ] Weekly summer digest email (Sunday evenings) — same as weekly digest above; build a Sunday-only scheduled job that sends the full week summary + mastery snapshot + catch-up recommendations
 
 ### SMS Approvals (deferred)
 - [ ] `pendingApprovals` table (id, kind, payload, requestedBy, requestedAt, smsTo[], status, approvedBy, approvedAt, expiresAt)
