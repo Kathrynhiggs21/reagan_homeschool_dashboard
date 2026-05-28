@@ -1,0 +1,9 @@
+{
+  "query": "ALTER TABLE `scheduleBlocks` MODIFY COLUMN `blockType` enum('morning_warmup','math','adventure','read_aloud','choice','catch_up','appointment','custom','review') NOT NULL;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute ALTER TABLE `scheduleBlocks` MODIFY COLUMN `blockType` enum('morning_warmup','math','adventure','read_aloud','choice','catch_up','appointment','custom','review') NOT NULL;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 5823
+}

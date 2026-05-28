@@ -1,16 +1,16 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { trpc } from "@/lib/trpc";
 
 /* ─── CK-12 subject catalogue ─────────────────────────────────────────────── */
 const CK12_BASE = "https://www.ck12.org";
 
 interface Concept {
   label: string;
-  slug: string; // concept-slug used in the direct URL
-  conceptHandle: string; // conceptCollectionHandle suffix
+  slug: string;
+  conceptHandle: string;
 }
 
 interface Topic {
@@ -29,7 +29,8 @@ interface Subject {
   topics: Topic[];
 }
 
-const SUBJECTS: Subject[] = [
+/* ─── Grade 5 subjects ─────────────────────────────────────────────────────── */
+const SUBJECTS_GRADE5: Subject[] = [
   {
     key: "math5",
     label: "Math — Grade 5",
@@ -235,6 +236,177 @@ const SUBJECTS: Subject[] = [
   },
 ];
 
+/* ─── Grade 6 subjects (Summer Prep) ──────────────────────────────────────── */
+const SUBJECTS_GRADE6: Subject[] = [
+  {
+    key: "math6",
+    label: "Math — Grade 6",
+    emoji: "🔢",
+    color: "bg-blue-100 border-blue-300 text-blue-800",
+    browseUrl: `${CK12_BASE}/assessment/ui/browse/practice/middle-school-math-grade-6/?topic=MAT.MS6`,
+    collectionHandle: "middle-school-math-grade-6",
+    topics: [
+      {
+        label: "Ratios & Proportions",
+        topicHandle: "ratios-and-proportions",
+        concepts: [
+          { label: "Ratios", slug: "ratios-practice", conceptHandle: "ratios" },
+          { label: "Unit Rates", slug: "unit-rates-practice", conceptHandle: "unit-rates" },
+          { label: "Proportions", slug: "proportions-practice", conceptHandle: "proportions" },
+          { label: "Percent Problems", slug: "percent-problems-practice", conceptHandle: "percent-problems" },
+        ],
+      },
+      {
+        label: "Integers & Negative Numbers",
+        topicHandle: "integers",
+        concepts: [
+          { label: "Integers on a Number Line", slug: "integers-on-a-number-line-practice", conceptHandle: "integers-on-a-number-line" },
+          { label: "Adding Integers", slug: "adding-integers-practice", conceptHandle: "adding-integers" },
+          { label: "Subtracting Integers", slug: "subtracting-integers-practice", conceptHandle: "subtracting-integers" },
+          { label: "Multiplying & Dividing Integers", slug: "multiplying-and-dividing-integers-practice", conceptHandle: "multiplying-and-dividing-integers" },
+        ],
+      },
+      {
+        label: "Expressions & Equations",
+        topicHandle: "expressions-and-equations",
+        concepts: [
+          { label: "Writing Expressions", slug: "writing-expressions-practice", conceptHandle: "writing-expressions" },
+          { label: "Evaluating Expressions", slug: "evaluating-expressions-practice", conceptHandle: "evaluating-expressions" },
+          { label: "One-Step Equations", slug: "one-step-equations-practice", conceptHandle: "one-step-equations" },
+          { label: "Two-Step Equations", slug: "two-step-equations-practice", conceptHandle: "two-step-equations" },
+        ],
+      },
+      {
+        label: "Geometry",
+        topicHandle: "geometry-6",
+        concepts: [
+          { label: "Area of Triangles", slug: "area-of-triangles-practice", conceptHandle: "area-of-triangles" },
+          { label: "Area of Quadrilaterals", slug: "area-of-quadrilaterals-practice", conceptHandle: "area-of-quadrilaterals" },
+          { label: "Surface Area", slug: "surface-area-practice", conceptHandle: "surface-area" },
+          { label: "Volume of Prisms", slug: "volume-of-prisms-practice", conceptHandle: "volume-of-prisms" },
+        ],
+      },
+      {
+        label: "Statistics",
+        topicHandle: "statistics",
+        concepts: [
+          { label: "Mean, Median, Mode", slug: "mean-median-mode-practice", conceptHandle: "mean-median-and-mode" },
+          { label: "Data Displays", slug: "data-displays-practice", conceptHandle: "data-displays" },
+          { label: "Box Plots", slug: "box-plots-practice", conceptHandle: "box-plots" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "ela6",
+    label: "ELA — Grade 6",
+    emoji: "📖",
+    color: "bg-green-100 border-green-300 text-green-800",
+    browseUrl: `${CK12_BASE}/assessment/ui/browse/practice/middle-school-ela-grade-6/?topic=ELA.MS6`,
+    collectionHandle: "middle-school-ela-grade-6",
+    topics: [
+      {
+        label: "Reading Comprehension",
+        topicHandle: "reading-comprehension-6",
+        concepts: [
+          { label: "Main Idea & Details", slug: "main-idea-and-details-practice", conceptHandle: "main-idea-and-details" },
+          { label: "Inference", slug: "inference-practice", conceptHandle: "inference" },
+          { label: "Author's Purpose", slug: "authors-purpose-practice", conceptHandle: "authors-purpose" },
+          { label: "Text Structure", slug: "text-structure-practice", conceptHandle: "text-structure" },
+        ],
+      },
+      {
+        label: "Vocabulary",
+        topicHandle: "vocabulary-6",
+        concepts: [
+          { label: "Context Clues", slug: "context-clues-practice", conceptHandle: "context-clues" },
+          { label: "Word Roots", slug: "word-roots-practice", conceptHandle: "word-roots" },
+          { label: "Figurative Language", slug: "figurative-language-practice", conceptHandle: "figurative-language" },
+          { label: "Connotation & Denotation", slug: "connotation-and-denotation-practice", conceptHandle: "connotation-and-denotation" },
+        ],
+      },
+      {
+        label: "Grammar",
+        topicHandle: "grammar-6",
+        concepts: [
+          { label: "Nouns & Pronouns", slug: "nouns-and-pronouns-practice", conceptHandle: "nouns-and-pronouns" },
+          { label: "Verbs & Tenses", slug: "verbs-and-tenses-practice", conceptHandle: "verbs-and-tenses" },
+          { label: "Adjectives & Adverbs", slug: "adjectives-and-adverbs-practice", conceptHandle: "adjectives-and-adverbs" },
+          { label: "Sentence Structure", slug: "sentence-structure-practice", conceptHandle: "sentence-structure" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "science6",
+    label: "Science — Grade 6",
+    emoji: "🔬",
+    color: "bg-purple-100 border-purple-300 text-purple-800",
+    browseUrl: `${CK12_BASE}/assessment/ui/browse/practice/middle-school-science-grade-6/?topic=SCI.MS6`,
+    collectionHandle: "middle-school-science-grade-6",
+    topics: [
+      {
+        label: "Earth Science",
+        topicHandle: "earth-science-6",
+        concepts: [
+          { label: "Plate Tectonics", slug: "plate-tectonics-practice", conceptHandle: "plate-tectonics" },
+          { label: "Rock Cycle", slug: "rock-cycle-practice", conceptHandle: "rock-cycle" },
+          { label: "Weather & Climate", slug: "weather-and-climate-practice", conceptHandle: "weather-and-climate" },
+          { label: "The Solar System", slug: "the-solar-system-practice", conceptHandle: "the-solar-system" },
+        ],
+      },
+      {
+        label: "Life Science",
+        topicHandle: "life-science-6",
+        concepts: [
+          { label: "Cell Division", slug: "cell-division-practice", conceptHandle: "cell-division" },
+          { label: "Genetics Basics", slug: "genetics-basics-practice", conceptHandle: "genetics-basics" },
+          { label: "Classification of Living Things", slug: "classification-of-living-things-practice", conceptHandle: "classification-of-living-things" },
+          { label: "Ecosystems & Biodiversity", slug: "ecosystems-and-biodiversity-practice", conceptHandle: "ecosystems-and-biodiversity" },
+        ],
+      },
+      {
+        label: "Physical Science",
+        topicHandle: "physical-science-6",
+        concepts: [
+          { label: "Atoms & Elements", slug: "atoms-and-elements-practice", conceptHandle: "atoms-and-elements" },
+          { label: "Chemical Reactions", slug: "chemical-reactions-practice", conceptHandle: "chemical-reactions" },
+          { label: "Forces & Energy", slug: "forces-and-energy-practice", conceptHandle: "forces-and-energy" },
+        ],
+      },
+    ],
+  },
+  {
+    key: "ss6",
+    label: "Social Studies — Grade 6",
+    emoji: "🌍",
+    color: "bg-orange-100 border-orange-300 text-orange-800",
+    browseUrl: `${CK12_BASE}/assessment/ui/browse/practice/middle-school-social-studies/?topic=SS.MS`,
+    collectionHandle: "middle-school-social-studies",
+    topics: [
+      {
+        label: "Ancient Civilizations",
+        topicHandle: "ancient-civilizations",
+        concepts: [
+          { label: "Mesopotamia", slug: "mesopotamia-practice", conceptHandle: "mesopotamia" },
+          { label: "Ancient Egypt", slug: "ancient-egypt-practice", conceptHandle: "ancient-egypt" },
+          { label: "Ancient Greece", slug: "ancient-greece-practice", conceptHandle: "ancient-greece" },
+          { label: "Ancient Rome", slug: "ancient-rome-practice", conceptHandle: "ancient-rome" },
+        ],
+      },
+      {
+        label: "Geography",
+        topicHandle: "geography-6",
+        concepts: [
+          { label: "Map Skills", slug: "map-skills-practice", conceptHandle: "map-skills" },
+          { label: "World Regions", slug: "world-regions-practice", conceptHandle: "world-regions" },
+          { label: "Climate Zones", slug: "climate-zones-practice", conceptHandle: "climate-zones" },
+        ],
+      },
+    ],
+  },
+];
+
 function buildConceptUrl(subject: Subject, topic: Topic, concept: Concept): string {
   const base = `${CK12_BASE}/assessment/ui/?test/detail/practice/${subject.collectionHandle}/${concept.slug}`;
   const params = new URLSearchParams({
@@ -253,12 +425,38 @@ function buildTopicUrl(subject: Subject, topic: Topic): string {
   return `${subject.browseUrl}&topicHandle=${topic.topicHandle}`;
 }
 
+/* ─── Summer mode hook (mirrors SummerModeBadge logic) ─────────────────────── */
+function useIsSummer(): boolean {
+  const override = (trpc as any).prefs?.getPublic?.useQuery?.({ key: "summer.override" });
+  const autoFlip = (trpc as any).prefs?.getPublic?.useQuery?.({ key: "summer.autoFlipEnabled" });
+  const start = (trpc as any).prefs?.getPublic?.useQuery?.({ key: "summer.start" });
+  const end = (trpc as any).prefs?.getPublic?.useQuery?.({ key: "summer.end" });
+  return useMemo(() => {
+    const ov = (override?.data ?? null) as string | null;
+    if (ov === "off") return false;
+    if (ov === "on") return true;
+    const autoOn = (autoFlip?.data ?? "1") !== "0";
+    if (!autoOn) return false;
+    const d = new Date();
+    const mmdd = `${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const s = (start?.data as string) ?? "06-06";
+    const e = (end?.data as string) ?? "08-15";
+    return mmdd >= s && mmdd <= e;
+  }, [override?.data, autoFlip?.data, start?.data, end?.data]);
+}
+
 /* ─── Component ────────────────────────────────────────────────────────────── */
 export default function PracticeHub() {
-  const [selectedSubject, setSelectedSubject] = useState<Subject>(SUBJECTS[0]);
+  const isSummer = useIsSummer();
+  const [gradeOverride, setGradeOverride] = useState<5 | 6 | null>(null);
+  const activeGrade = gradeOverride ?? (isSummer ? 6 : 5);
+  const activeSubjects = activeGrade === 6 ? SUBJECTS_GRADE6 : SUBJECTS_GRADE5;
+
+  const [selectedSubjectKey, setSelectedSubjectKey] = useState<string | null>(null);
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
   const [search, setSearch] = useState("");
 
+  const selectedSubject = activeSubjects.find(s => s.key === selectedSubjectKey) ?? activeSubjects[0];
   const displayedTopics = selectedSubject.topics;
   const activeTopic = selectedTopic ?? displayedTopics[0];
 
@@ -269,10 +467,17 @@ export default function PracticeHub() {
         .filter((c) => c.label.toLowerCase().includes(search.toLowerCase()))
     : activeTopic.concepts.map((c) => ({ ...c, topicLabel: activeTopic.label, topic: activeTopic }));
 
+  function switchGrade(g: 5 | 6) {
+    setGradeOverride(g);
+    setSelectedSubjectKey(null);
+    setSelectedTopic(null);
+    setSearch("");
+  }
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-6">
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <span>🎯</span> Practice Hub
         </h1>
@@ -281,13 +486,41 @@ export default function PracticeHub() {
         </p>
       </div>
 
+      {/* Grade toggle */}
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-xs text-muted-foreground font-medium">Grade:</span>
+        <button
+          onClick={() => switchGrade(5)}
+          className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${
+            activeGrade === 5
+              ? "bg-primary text-primary-foreground border-primary"
+              : "bg-card border-border text-muted-foreground hover:bg-muted"
+          }`}
+        >
+          Grade 5
+        </button>
+        <button
+          onClick={() => switchGrade(6)}
+          className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${
+            activeGrade === 6
+              ? "bg-amber-500 text-white border-amber-500"
+              : "bg-card border-border text-muted-foreground hover:bg-muted"
+          }`}
+        >
+          Grade 6 ☀️
+        </button>
+        {isSummer && gradeOverride === null && (
+          <span className="text-xs text-amber-400 italic">Summer prep — showing Grade 6</span>
+        )}
+      </div>
+
       {/* Subject tabs */}
       <div className="flex flex-wrap gap-2 mb-5">
-        {SUBJECTS.map((s) => (
+        {activeSubjects.map((s) => (
           <button
             key={s.key}
             onClick={() => {
-              setSelectedSubject(s);
+              setSelectedSubjectKey(s.key);
               setSelectedTopic(null);
               setSearch("");
             }}

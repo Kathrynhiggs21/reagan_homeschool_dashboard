@@ -477,6 +477,20 @@
       "when": 1779916589826,
       "tag": "0067_nappy_jackpot",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "5",
+      "when": 1779936997920,
+      "tag": "0068_thick_maestro",
+      "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "5",
+      "when": 1779937123636,
+      "tag": "0069_concerned_komodo",
+      "breakpoints": true
     }
   ]
 }

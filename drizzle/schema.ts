@@ -92,6 +92,7 @@ export const scheduleBlocks = mysqlTable("scheduleBlocks", {
     "catch_up",
     "appointment",
     "custom",
+    "review",
   ]).notNull(),
   subjectId: int("subjectId"),
   title: varchar("title", { length: 200 }).notNull(),
@@ -2334,3 +2335,44 @@ export const weakTopics = mysqlTable("weakTopics", {
 });
 export type WeakTopic = typeof weakTopics.$inferSelect;
 export type InsertWeakTopic = typeof weakTopics.$inferInsert;
+
+/* ============================== TOPIC MASTERY ==================================
+ * Per-topic mastery tracking for spaced-repetition review system.
+ * masteryScore 0-100: <50 = needs work, 50-79 = developing, 80+ = strong.
+ * nextReviewAt drives the spaced-repetition schedule.
+ * ============================================================================== */
+export const topicMastery = mysqlTable("topicMastery", {
+  id: int("id").autoincrement().primaryKey(),
+  subjectSlug: varchar("subjectSlug", { length: 64 }).notNull(),
+  topicHandle: varchar("topicHandle", { length: 128 }).notNull(),
+  topicTitle: varchar("topicTitle", { length: 255 }).notNull(),
+  gradeLevel: int("gradeLevel").notNull().default(5),
+  masteryScore: int("masteryScore").notNull().default(50),
+  attemptCount: int("attemptCount").notNull().default(0),
+  lastReviewedAt: timestamp("lastReviewedAt"),
+  nextReviewAt: timestamp("nextReviewAt"),
+  weakSpots: text("weakSpots"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+export type TopicMastery = typeof topicMastery.$inferSelect;
+export type InsertTopicMastery = typeof topicMastery.$inferInsert;
+
+/* ============================== REVIEW ATTEMPTS ================================
+ * Individual quiz attempt log linked to topicMastery.
+ * kiwiQuizLog stores the full Q&A transcript as JSON.
+ * ============================================================================== */
+export const reviewAttempts = mysqlTable("reviewAttempts", {
+  id: int("id").autoincrement().primaryKey(),
+  topicMasteryId: int("topicMasteryId").notNull(),
+  sessionId: int("sessionId"),
+  attemptedAt: timestamp("attemptedAt").defaultNow().notNull(),
+  score: int("score").notNull().default(0),
+  totalQuestions: int("totalQuestions").notNull().default(0),
+  correctAnswers: int("correctAnswers").notNull().default(0),
+  kiwiQuizLog: json("kiwiQuizLog"),
+  notes: text("notes"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+export type ReviewAttempt = typeof reviewAttempts.$inferSelect;
+export type InsertReviewAttempt = typeof reviewAttempts.$inferInsert;

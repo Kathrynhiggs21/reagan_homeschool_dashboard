@@ -17,6 +17,7 @@ import { describeUser, roleForEmail, capabilitiesFor, type HomeRole } from "./_l
 import { loadTopicHintsForPrompt, resolveTopicId, resolveTopicIds } from "./_lib/topicCatalog";
 import { resolveTutorOfDay, tutorOfDayLabel } from "./_lib/tutorOfDay";
 import { loadOwnedBooksForAgenda } from "./_lib/ownedBooksHints";
+import { injectReviewBlockIfNeeded } from "./_lib/reviewBlockGenerator";
 import { decideApproval, type ApprovalContext } from "./_lib/approvalDecider";
 import { classroomGradeReturnReducer } from "./_lib/classroomGradeReturnReducer";
 import {
@@ -41,7 +42,7 @@ const Intensity = z.enum(["green", "yellow", "red"]);
 const DayType = z.enum(["full", "half", "outdoor", "field_trip", "recovery", "off"]);
 const PlanStatus = z.enum(["planned", "in_progress", "complete", "skipped"]);
 const BlockStatus = z.enum(["not_started", "in_progress", "complete", "skipped"]);
-const BlockType = z.enum(["morning_warmup","math","adventure","read_aloud","choice","catch_up","appointment","custom"]);
+const BlockType = z.enum(["morning_warmup","math","adventure","read_aloud","choice","catch_up","appointment","custom","review"]);
 
 /* ---------- WHISPER SYSTEM PROMPT (the soul of the AI) ---------- */
 function buildKiwiSystemPrompt(ctx: {
@@ -310,7 +311,7 @@ export const appRouter = router({
       replaceExisting: z.boolean().default(true),
       allowWeekend: z.boolean().optional(),
       blocks: z.array(z.object({
-        blockType: z.enum(["morning_warmup","math","adventure","read_aloud","choice","catch_up","appointment","custom"]),
+        blockType: z.enum(["morning_warmup","math","adventure","read_aloud","choice","catch_up","appointment","custom","review"]),
         title: z.string().min(1).max(200),
         description: z.string().max(4000).optional(),
         durationMin: z.number().min(1).max(180),
@@ -364,6 +365,18 @@ export const appRouter = router({
         try { await db.updatePlan(plan.id, { notes: input.summary.slice(0, 500) } as any); } catch {}
       }
       await db.logAudit({ actorOpenId: ctx.user?.openId, actorName: ctx.user?.name, entityType: "block", entityId: created[0] ?? plan.id, action: "create", summary: `AI-generated ${input.blocks.length} blocks for ${input.date}` });
+      // Auto-inject a spaced-repetition review block if one isn't already present
+      try {
+        const existingTypes = input.blocks.map((b: any) => b.blockType as string);
+        await injectReviewBlockIfNeeded({
+          planId: plan.id,
+          dateISO: input.date,
+          dayType: input.dayLength || "full",
+          existingBlockTypes: existingTypes,
+        });
+      } catch (e) {
+        console.warn("[aiCommit] review block injection failed (non-fatal):", e);
+      }
       return { planId: plan.id, blockCount: created.length };
     }),
 
@@ -442,7 +455,7 @@ export const appRouter = router({
           kind: z.literal("modify"),
           existingBlockId: z.number().int().positive(),
           after: z.object({
-            blockType: z.enum(["morning_warmup","math","adventure","read_aloud","choice","catch_up","appointment","custom"]),
+            blockType: z.enum(["morning_warmup","math","adventure","read_aloud","choice","catch_up","appointment","custom","review"]),
             title: z.string().min(1).max(200),
             description: z.string().max(4000).optional(),
             durationMin: z.number().min(1).max(180),
@@ -455,7 +468,7 @@ export const appRouter = router({
           kind: z.literal("add"),
           insertAfterSortOrder: z.number().int().nullable().optional(),
           after: z.object({
-            blockType: z.enum(["morning_warmup","math","adventure","read_aloud","choice","catch_up","appointment","custom"]),
+            blockType: z.enum(["morning_warmup","math","adventure","read_aloud","choice","catch_up","appointment","custom","review"]),
             title: z.string().min(1).max(200),
             description: z.string().max(4000).optional(),
             durationMin: z.number().min(1).max(180),
@@ -1810,6 +1823,30 @@ export const appRouter = router({
       parentNote: z.string().optional(),
     })).mutation(({ input }) => db.recordSkillPractice(input as any)),
     summary: publicProcedure.query(() => db.subjectLevelSummary()),
+    /**
+     * "Ready for 6th Grade" indicator.
+     * Returns true when all 4 core subjects (math, ela, science, ss) have
+     * pctMastered >= 75 based on the skillLadder progress.
+     */
+    readyFor6th: publicProcedure.query(async () => {
+      const summary = await db.subjectLevelSummary();
+      const coreSubjects = ["math", "ela", "science", "ss"];
+      const threshold = 75;
+      const bySubject: Record<string, number> = {};
+      for (const s of summary as any[]) {
+        bySubject[s.subjectSlug] = s.pctMastered ?? 0;
+      }
+      const results = coreSubjects.map(slug => ({
+        subjectSlug: slug,
+        pctMastered: bySubject[slug] ?? 0,
+        ready: (bySubject[slug] ?? 0) >= threshold,
+      }));
+      const allReady = results.every(r => r.ready);
+      const avgPct = results.length
+        ? Math.round(results.reduce((s, r) => s + r.pctMastered, 0) / results.length)
+        : 0;
+      return { allReady, avgPct, threshold, subjects: results };
+    }),
   }),
 
   /* =================== PROUD MOMENTS (Confidence Engine) =================== */
@@ -2587,6 +2624,9 @@ export const appRouter = router({
       userMessage: z.string(),
       adultPresent: z.boolean().default(false),
       currentBlockTitle: z.string().optional(),
+      currentBlockType: z.string().optional(),
+      // quizPayload: JSON string of ReviewBlockPayload when blockType=review
+      quizPayload: z.string().optional(),
       // v2.87 (2026-05-21) — Mom asked for more sliders to fine-tune Kiwi.
       // These three personality knobs (0..1) ride on the chat call so the
       // slider state can live entirely in the client (localStorage) and
@@ -2684,8 +2724,21 @@ export const appRouter = router({
         }
         return lines.length === 0 ? "" : `\n\nTONE TUNING (from Mom's sliders):\n${lines.map(l => "\u2022 " + l).join("\n")}`;
       })();
-      const tunedSystemPrompt = systemPrompt + tone;
-
+       // Quiz mode: when the active block is a review block, inject quiz instructions
+      let quizModeContext = "";
+      if (input.currentBlockType === "review" && input.quizPayload) {
+        try {
+          const quiz = JSON.parse(input.quizPayload);
+          const questions: any[] = quiz.questions ?? [];
+          if (questions.length > 0) {
+            const qList = questions.map((q: any, i: number) =>
+              `Q${i+1}: ${q.question}\n  Options: ${(q.choices ?? []).map((c: string, ci: number) => `${String.fromCharCode(65+ci)}) ${c}`).join(" | ")}\n  Correct: ${String.fromCharCode(65+(q.correctIndex??0))} — ${q.explanation}`
+            ).join("\n\n");
+            quizModeContext = `\n\nQUIZ MODE — ACTIVE:\nReagan is doing a spaced-repetition review block. Your job is to be her quiz partner.\nRules:\n• Ask questions ONE AT A TIME. Start with Q1.\n• After she answers, tell her if she got it right (plain, no fanfare). Give the explanation only if she got it wrong.\n• Track which questions are done in your head. After all questions, give a short summary (e.g. "3 out of 4 — solid").\n• If she's frustrated, pause the quiz and check in first.\n• Do NOT give all questions at once.\n\nQUESTIONS:\n${qList}`;
+          }
+        } catch { /* ignore parse errors */ }
+      }
+      const tunedSystemPrompt = systemPrompt + tone + quizModeContext;
       // Build chat history (most recent 10 turns, in chronological order)
       const history = recentMessages.slice().reverse().slice(-10).map(m => ({
         role: m.role as any,

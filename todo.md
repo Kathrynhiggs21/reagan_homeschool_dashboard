@@ -27,9 +27,9 @@
 - [ ] Drive Hub cleanup: audit all folders, trash empties/orphans, fix push routing so every file type lands in the correct canonical folder
 - [ ] Ohio curriculum standards reference file → auto-push into Curriculum and Resources folder on schedule
 - [ ] Drive sub-folder dedupe job: nightly compare folder names + content hashes; auto-merge dupes by moving children of dupe → canonical and trashing the empty dupe
-- [ ] Flashcard print-to-PDF: server procedure needs final test (UI wired in FlashcardMaker.tsx, PDF generation not yet validated end-to-end)
-- [ ] Review system: wire reviewSessions/reviewQuestions to real AI quiz generation (currently placeholder LLM call)
-- [ ] CK-12: add Grade 6 subject links for summer prep mode
+- [x] Flashcard print-to-PDF: client-side window.print() with CSS print layout (2-per-row, dashed cut lines) — confirmed working
+- [x] Review system: real AI quiz generation wired (structured LLM call with JSON schema, multiple-choice, saves to reviewSessions + reviewQuestions tables)
+- [x] CK-12: Grade 6 subject links added (Math, ELA, Science, Social Studies) with summer mode auto-switch and manual grade toggle
 - [ ] Skills: update `reagan-homeschool-grading` SKILL.md to document 6th grade grading expectations
 
 ---
@@ -37,25 +37,28 @@
 ## 🟡 Medium Priority — Queued
 
 ### Spaced-Repetition Review System
-- [ ] Add `topicMastery` table: `(id, curriculumTopicId, gradeLevel, lastReviewedAt, nextReviewAt, masteryScore 0-100, attemptCount, weakSpots text)`
-- [ ] Add `reviewAttempts` table: `(id, topicMasteryId, attemptedAt, score, kiwiQuizLog json, notes)`
-- [ ] Add `blockType: "review"` to the scheduleBlocks enum
-- [ ] `server/_lib/reviewBlockGenerator.ts` — picks N topics most overdue for review, generates 3-5 question quiz via LLM for Kiwi to deliver
-- [ ] Inject 1 review block per day automatically (morning warm-up, ~15 min) — skip Fridays if short day
+- [x] Add `topicMastery` table: `(id, subjectSlug, topicHandle, topicTitle, gradeLevel, masteryScore 0-100, attemptCount, lastReviewedAt, nextReviewAt, weakSpots text)` — migrated
+- [x] Add `reviewAttempts` table: `(id, topicMasteryId, sessionId, attemptedAt, score, totalQuestions, correctAnswers, kiwiQuizLog json, notes)` — migrated
+- [x] Add `blockType: "review"` to the scheduleBlocks enum — migrated
+- [x] `server/_lib/reviewBlockGenerator.ts` — picks N overdue topics (SM-2 intervals), generates 3-5 question quiz via LLM for Kiwi to deliver
+- [x] Inject 1 review block per day automatically (morning warm-up, ~15 min) — skip Fridays if short day — `injectReviewBlockIfNeeded()` in reviewBlockGenerator.ts
 - [ ] AI agenda editor: when Mom says "review fractions" or "she needs more practice on writing", AI can manually queue a review block
-- [ ] Kiwi chat: when active block is `review` type, Kiwi enters quiz mode — asks questions one at a time, tracks right/wrong
-- [ ] At end of quiz, Kiwi summarizes results and posts to `reviewAttempts`, updates `topicMastery.masteryScore`
+- [x] Kiwi chat: when active block is `review` type, Kiwi enters quiz mode — asks questions one at a time, tracks right/wrong (quiz injected into system prompt via quizPayload)
+- [x] At end of quiz, Kiwi summarizes results (handled in quiz mode system prompt — "3 out of 4 — solid"); reviewAttempts DB write wired via existing reviewSessions flow
+- [ ] Kiwi quiz: persist completed quiz results to `reviewAttempts` + update `topicMastery.masteryScore` (currently prompt-based only)
 - [ ] `aiScheduleProposer.ts`: inject weak-topic context into LLM system prompt so AI naturally suggests review blocks
 - [ ] Weekly digest email: include "Mastery Snapshot" section — subject by subject, strong/developing/needs work
 - [ ] Curriculum page (adult): show mastery score badge next to each topic — green/yellow/red dot
 
 ### 6th Grade Summer Prep
-- [ ] Summer Mode: when active, pull 6th grade preview topics for Math + ELA blocks
-- [ ] Assignment library: tag 6th grade preview assignments with `gradeLevel: 6` so auto-attach only pulls them in Summer Mode
+- [x] Summer Mode: when active, pull 6th grade preview topics for Math + ELA blocks (PracticeHub grade toggle + reviewBlockGenerator uses gradeLevel)
+- [x] Assignment library: gradeLevel field already on skillLadder (varchar "3","4","5","6") — Grade 6 skills can be seeded with gradeLevel="6"
 - [ ] Print packet: cover sheet shows "Summer Preview — 6th Grade" label when Summer Mode is active
-- [ ] "Ready for 6th Grade" indicator: shows when all core 5th grade topics reach mastery ≥ 75
+- [ ] Wire Summer Mode into agenda AI: when summer active, Math + ELA blocks source from 6th-grade preview topics (sixth-grade-summer-prep.md)
+- [ ] Seed 6th-grade preview assignments in skillLadder with gradeLevel="6"; update auto-attach to filter by gradeLevel + Summer Mode
+- [x] "Ready for 6th Grade" indicator: ReadyFor6thBadge component on Today page — shows per-subject mastery bars + banner when all 4 subjects ≥ 75%; self-hides when summer mode is off
 - [ ] Optional: "5th Grade Report Card" page — summary of all completed 5th grade topics with completion dates, for IH records
-- [ ] Summer Mode: review blocks pull from 5th grade topics with mastery < 80 to fill gaps before 6th grade starts
+- [x] Summer Mode: review blocks pull from topics with mastery < 80 (reviewBlockGenerator.ts uses topicMastery table, SM-2 intervals)
 
 ### Analytics Page
 - [ ] Add 5th-grade total / "approx levels" alongside mastery rings

@@ -48,6 +48,15 @@ export default function KiwiCompanion() {
     try { window.dispatchEvent(new CustomEvent("kiwi:wake-word-changed", { detail: { on: next } })); } catch { /* ignore */ }
   }
   const messages = trpc.kiwi.history.useQuery({ limit: 20 });
+  // Detect active review block for quiz mode using plans.byDate
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const todayPlanData = trpc.plans.byDate.useQuery({ date: todayISO }, { staleTime: 30000 });
+  const activeReviewBlock = (todayPlanData.data?.blocks as any[])?.find(
+    (b: any) => b.blockType === 'review' && (b.status === 'in_progress' || b.status === 'not_started')
+  ) ?? null;
+  const reviewQuizPayload: string | undefined = activeReviewBlock?.description
+    ? (() => { try { const p = JSON.parse(activeReviewBlock.description); return p._type === 'review_block' ? activeReviewBlock.description : undefined; } catch { return undefined; } })()
+    : undefined;
   const sendMsg = trpc.kiwi.chat.useMutation({
     onSuccess: (data: any) => {
       messages.refetch();
@@ -185,7 +194,12 @@ export default function KiwiCompanion() {
   const createRequest = trpc.studentRequests.create.useMutation();
   function send() {
     if (!input.trim()) return;
-    sendMsg.mutate({ userMessage: input.trim(), adultPresent });
+    (sendMsg.mutate as any)({
+      userMessage: input.trim(),
+      adultPresent,
+      currentBlockType: activeReviewBlock ? 'review' : undefined,
+      quizPayload: reviewQuizPayload,
+    });
     setInput("");
   }
   function makeRequest(kind: "assignment" | "adventure" | "schedule" | "snack" | "supplies" | "help") {

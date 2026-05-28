@@ -33,6 +33,7 @@ import KidHeaderStrips from "@/components/KidHeaderStrips";
 import MoodTimelineStrip from "@/components/MoodTimelineStrip";
 import { SlayChargeCard } from "@/components/SlayChargeCard";
 import SummerModeBadge from "@/components/SummerModeBadge";
+import ReadyFor6thBadge from "@/components/ReadyFor6thBadge";
 import CatchUpNextDayCard from "@/components/CatchUpNextDayCard";
 import { TomorrowChoiceCard } from "@/components/TomorrowChoiceCard";
 import TodayClassroomCard from "@/components/TodayClassroomCard";
@@ -369,58 +370,34 @@ export default function Today() {
               </h1>
             </div>
           </div>
-          <div className="flex items-center gap-2 flex-wrap mt-1">
-            {/* Ask Kiwi — chunky amber press-down chip */}
+          <div className="flex items-center gap-1.5 flex-wrap mt-2">
+            {/* Ask Kiwi — simple subtle pill */}
             <button
               onClick={() => setOpen(true)}
-              style={{
-                background: "linear-gradient(135deg, #fde68a 0%, #fbbf24 50%, #f59e0b 100%)",
-                boxShadow: "0 5px 0 #92400e, 0 0 18px rgba(251,191,36,0.35)",
-                border: "2px solid rgba(180,83,9,0.5)",
-              }}
-              onMouseDown={e => (e.currentTarget.style.transform = "translateY(3px)", e.currentTarget.style.boxShadow = "0 2px 0 #92400e")}
-              onMouseUp={e => (e.currentTarget.style.transform = "", e.currentTarget.style.boxShadow = "0 5px 0 #92400e, 0 0 18px rgba(251,191,36,0.35)")}
-              onMouseLeave={e => (e.currentTarget.style.transform = "", e.currentTarget.style.boxShadow = "0 5px 0 #92400e, 0 0 18px rgba(251,191,36,0.35)")}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl font-display text-sm font-bold text-amber-950 transition-[box-shadow,transform] duration-75 select-none"
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-white/10 hover:bg-white/20 text-white/80 hover:text-white border border-white/15 hover:border-white/30 transition-all duration-150 select-none"
             >
-              <span className="text-base">✨</span> Ask {companionName}
+              ✨ Ask {companionName}
             </button>
             {/* Make a request */}
             <MakeRequestButton />
-            {/* Practice for Coins — mint-green press-down chip */}
+            {/* Practice for Coins — simple subtle pill */}
             <button
               onClick={() => { window.location.href = "/practice"; }}
-              style={{
-                background: "linear-gradient(135deg, #6ee7b7 0%, #34d399 50%, #10b981 100%)",
-                boxShadow: "0 5px 0 #065f46, 0 0 14px rgba(52,211,153,0.3)",
-                border: "2px solid rgba(6,95,70,0.45)",
-              }}
-              onMouseDown={e => (e.currentTarget.style.transform = "translateY(3px)", e.currentTarget.style.boxShadow = "0 2px 0 #065f46")}
-              onMouseUp={e => (e.currentTarget.style.transform = "", e.currentTarget.style.boxShadow = "0 5px 0 #065f46, 0 0 14px rgba(52,211,153,0.3)")}
-              onMouseLeave={e => (e.currentTarget.style.transform = "", e.currentTarget.style.boxShadow = "0 5px 0 #065f46, 0 0 14px rgba(52,211,153,0.3)")}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl font-display text-sm font-bold text-white transition-[box-shadow,transform] duration-75 select-none"
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-white/10 hover:bg-white/20 text-white/80 hover:text-white border border-white/15 hover:border-white/30 transition-all duration-150 select-none"
               title="Earn extra Kiwi Coins by doing fun practice drills outside school hours"
             >
-              <span className="text-base">🪙</span> Practice for Coins
+              🪙 Practice for Coins
             </button>
-            {/* Tour — violet press-down chip */}
+            {/* Tour — simple subtle pill */}
             <button
               onClick={() => {
                 try { window.localStorage?.removeItem("kiwiTourSeen"); } catch {}
                 setTourOpen(true);
               }}
-              style={{
-                background: "linear-gradient(135deg, #c4b5fd 0%, #a78bfa 50%, #8b5cf6 100%)",
-                boxShadow: "0 5px 0 #4c1d95, 0 0 14px rgba(139,92,246,0.3)",
-                border: "2px solid rgba(76,29,149,0.45)",
-              }}
-              onMouseDown={e => (e.currentTarget.style.transform = "translateY(3px)", e.currentTarget.style.boxShadow = "0 2px 0 #4c1d95")}
-              onMouseUp={e => (e.currentTarget.style.transform = "", e.currentTarget.style.boxShadow = "0 5px 0 #4c1d95, 0 0 14px rgba(139,92,246,0.3)")}
-              onMouseLeave={e => (e.currentTarget.style.transform = "", e.currentTarget.style.boxShadow = "0 5px 0 #4c1d95, 0 0 14px rgba(139,92,246,0.3)")}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl font-display text-sm font-bold text-white transition-[box-shadow,transform] duration-75 select-none"
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-white/10 hover:bg-white/20 text-white/80 hover:text-white border border-white/15 hover:border-white/30 transition-all duration-150 select-none"
               title="Watch Kiwi's intro tour again"
             >
-              <span className="text-base">🐤</span> Tour
+              🐤 Tour
             </button>
             {/* v2.87 (2026-05-21) — Print Daily Agenda. Mom asked for the
                 FULL agenda printout (every block's title, time, subject,
@@ -446,8 +423,9 @@ export default function Today() {
       <NoSchoolBanner className="mb-1" />
       {/* Tutor of the day strip — "With Reagan today: <Name> · <arrival>–<departure>".
           Mom-only days quietly say "Mom-only day today" so Reagan still gets a clear cue. */}
-      <TutorOfDayStrip />
-
+       <TutorOfDayStrip />
+      {/* 6th Grade Readiness — self-hides when summer mode is not active */}
+      <ReadyFor6thBadge />
       {/* Daily tip strip + Fresh-start button — deterministic by date so the tip stays stable all day */}
       <DailyTipAndFreshStart />
 

@@ -1,0 +1,1 @@
+ALTER TABLE `scheduleBlocks` MODIFY COLUMN `blockType` enum('morning_warmup','math','adventure','read_aloud','choice','catch_up','appointment','custom','review') NOT NULL;
