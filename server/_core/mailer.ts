@@ -1,18 +1,16 @@
 /**
  * server/_core/mailer.ts
  *
- * Email sender via Zapier webhook.
- * The Zapier Zap receives a POST with { to, subject, body, attachments[] }
- * and sends the email via Gmail (spear.cpt@gmail.com).
+ * Email sender via Make webhook → Gmail (spear.cpt@gmail.com).
+ * Sends one webhook call per recipient so Make receives a plain string
+ * in the "to" field.
  *
- * No SMTP app passwords needed. Fully automated — no confirmation required.
+ * Webhook payload per call:
+ *   { to: string, subject: string, body: string, body_plain: string,
+ *     attachments: Array<{url, filename}>, attachment_count: number }
  *
- * Required env var:
- *   ZAPIER_EMAIL_WEBHOOK_URL — Zapier "Catch Hook" webhook URL
- *
- * Attachments: PDF buffers are uploaded to public CDN URLs via
- * manus-upload-file, then passed as attachment URLs in the webhook payload.
- * Zapier's Gmail action supports attachment URLs natively.
+ * Attachments: PDF Buffers are uploaded to public CDN URLs via
+ * manus-upload-file, then passed as URL objects in the webhook payload.
  */
 
 import { execFile } from "child_process";
@@ -47,23 +45,25 @@ export interface SendEmailResult {
   error?: string;
 }
 
-const ZAPIER_WEBHOOK_URL =
-  process.env.ZAPIER_EMAIL_WEBHOOK_URL ||
-  "https://hooks.zapier.com/hooks/catch/11025978/4b2jboq/";
+const MAKE_WEBHOOK_URL =
+  process.env.EMAIL_WEBHOOK_URL ||
+  "https://hook.us2.make.com/blmt1yp55lri3e884ahpmwum9k3ynecz";
 
 /**
  * Upload a Buffer to a public CDN URL using manus-upload-file.
  * Returns the CDN URL or null on failure.
  */
-async function uploadBufferToPublicUrl(buf: Buffer, filename: string): Promise<string | null> {
-  const tmpPath = join(
-    tmpdir(),
-    `mailer_${randomBytes(8).toString("hex")}_${filename.replace(/[^A-Za-z0-9._-]/g, "_")}`,
-  );
+async function uploadBufferToPublicUrl(
+  buf: Buffer,
+  filename: string,
+): Promise<string | null> {
+  const safe = filename.replace(/[^A-Za-z0-9._-]/g, "_");
+  const tmpPath = join(tmpdir(), `mailer_${randomBytes(8).toString("hex")}_${safe}`);
   try {
     await writeFile(tmpPath, buf);
-    const { stdout } = await execFileAsync("manus-upload-file", [tmpPath], { timeout: 30_000 });
-    // Extract CDN URL from output like: "CDN URL: https://files.manuscdn.com/..."
+    const { stdout } = await execFileAsync("manus-upload-file", [tmpPath], {
+      timeout: 30_000,
+    });
     const match = stdout.match(/CDN URL:\s*(https?:\/\/\S+)/);
     return match ? match[1].trim() : null;
   } catch (e: any) {
@@ -79,8 +79,8 @@ async function uploadBufferToPublicUrl(buf: Buffer, filename: string): Promise<s
 }
 
 /**
- * Send an email via Zapier webhook → Gmail.
- * Fully automated — no confirmation required.
+ * Send an email via Make webhook → Gmail.
+ * One webhook call per recipient (plain string "to" field).
  */
 export async function sendEmail(opts: SendEmailOptions): Promise<SendEmailResult> {
   const toArray = Array.isArray(opts.to) ? opts.to : [opts.to];
@@ -99,55 +99,60 @@ export async function sendEmail(opts: SendEmailOptions): Promise<SendEmailResult
   const plainText =
     opts.text ?? opts.html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
 
-  const payload = {
-    to: toArray.join(", "),
-    subject: opts.subject,
-    body: opts.html,
-    body_plain: plainText,
-    attachments: attachmentUrls,
-    attachment_count: attachmentUrls.length,
-  };
-
-  try {
-    const response = await fetch(ZAPIER_WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(30_000),
-    });
-
-    if (!response.ok) {
-      const body = await response.text().catch(() => "");
-      const msg = `Zapier webhook returned ${response.status}: ${body.slice(0, 200)}`;
-      console.error(`[mailer] ${msg}`);
-      return { ok: false, error: msg };
+  // Send one webhook call per recipient
+  const results: SendEmailResult[] = [];
+  for (const recipient of toArray) {
+    const payload = {
+      to: recipient,
+      subject: opts.subject,
+      body: opts.html,
+      body_plain: plainText,
+      attachments: attachmentUrls,
+      attachment_count: attachmentUrls.length,
+    };
+    try {
+      const response = await fetch(MAKE_WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(30_000),
+      });
+      if (!response.ok) {
+        const body = await response.text().catch(() => "");
+        const msg = `Make webhook returned ${response.status} for ${recipient}: ${body.slice(0, 200)}`;
+        console.error(`[mailer] ${msg}`);
+        results.push({ ok: false, error: msg });
+      } else {
+        const respText = await response.text().catch(() => "");
+        console.log(
+          `[mailer] Make webhook sent to ${recipient} — status ${response.status} — ${respText.slice(0, 100)}`,
+        );
+        results.push({ ok: true, messageId: `make-${Date.now()}` });
+      }
+    } catch (e: any) {
+      const msg = String(e?.message ?? e);
+      console.error(`[mailer] Make webhook failed for ${recipient}: ${msg}`);
+      results.push({ ok: false, error: msg });
     }
-
-    const respText = await response.text().catch(() => "");
-    console.log(
-      `[mailer] Zapier webhook sent to ${toArray.join(", ")} — status ${response.status} — ${respText.slice(0, 100)}`,
-    );
-    return { ok: true, messageId: `zapier-${Date.now()}` };
-  } catch (e: any) {
-    const msg = String(e?.message ?? e);
-    console.error(`[mailer] Zapier webhook failed: ${msg}`);
-    return { ok: false, error: msg };
   }
+
+  const allOk = results.every((r) => r.ok);
+  const firstError = results.find((r) => !r.ok)?.error;
+  return allOk
+    ? { ok: true, messageId: results[0]?.messageId }
+    : { ok: false, error: firstError };
 }
 
-/** Smoke-test: verify the Zapier webhook URL is reachable. */
+/** Smoke-test: verify the Make webhook URL is reachable. */
 export async function verifySmtpConnection(): Promise<{ ok: boolean; error?: string }> {
   try {
-    const response = await fetch(ZAPIER_WEBHOOK_URL, {
+    const response = await fetch(MAKE_WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ _test: true, to: "", subject: "ping", body: "ping" }),
       signal: AbortSignal.timeout(10_000),
     });
-    // Zapier returns 200 even for test pings
-    return response.ok
-      ? { ok: true }
-      : { ok: false, error: `HTTP ${response.status}` };
+    return response.ok ? { ok: true } : { ok: false, error: `HTTP ${response.status}` };
   } catch (e: any) {
     return { ok: false, error: String(e?.message ?? e) };
   }
