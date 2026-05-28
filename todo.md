@@ -67,7 +67,7 @@
 ### Analytics Page
 - [x] Add approx level + pctMastered under each arc in CurriculumProgressArcs (skillLadder.summary query)
 - [x] Apps usage card (top 10 apps by launch count, last 30 days) — appLaunches table + launchStats procedure + AppsUsageCard component in Analytics
-- [ ] Behavior & Learning Insights section (Day Summary, Voice Mood, focus%, trends, learning style profile, recommendations)
+- [x] Behavior & Learning Insights section: BehaviorInsightsCard — mood arc (7-day), anxiety/mood-stability bars, focus% bar (blockCompletionStats), struggle trends by subject, learning profile (strengths/accommodations/preferences from knowledge), weekly focus recommendations; Voice Mood deferred (no voice-signal data source yet)
 
 ### Curriculum Hub Visual
 - [x] Change font + color + box treatment: chalk-green header bar, subject-tinted left border on topic rows, better padding/spacing
@@ -78,9 +78,10 @@
 - [ ] AI agenda chat: file/image upload (assignment, worksheet) and "create custom worksheet" op
 
 ### Google Calendar Sync
-- [ ] One-way sync: each auto-built daily block written as a timed event
-- [ ] Today + Schedule pages embed a read-only Google Calendar widget
-- [ ] When a tutor is on the day, their email is added as a guest on that day's events
+- [x] ICS feed: /api/calendar.ics exports all blocks + timeline events; Mom subscribes in Google Calendar (auto-refreshes every few hours)
+- [ ] True one-way API write sync: when blocks are committed, create/update timed Google Calendar events via Calendar API (BLOCKED: requires Google Calendar OAuth credentials or service account — not yet configured)
+- [ ] Today + Schedule pages embed a read-only Google Calendar widget (iframe embed of Mom's calendar)
+- [ ] When a tutor is on the day, their email is added as a guest on that day's events (requires Google Calendar API OAuth — deferred until credentials available)
 
 ### Apps & Integrations Page
 - [ ] Per-app card supports BOTH Student (reaganhiggs910@gmail.com) and Parent (spear.cpt@gmail.com) Google sign-in buttons; default = Student

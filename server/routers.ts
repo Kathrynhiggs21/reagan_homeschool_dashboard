@@ -2574,6 +2574,19 @@ export const appRouter = router({
       const recent = plans.filter(p => (p.date as any as string) >= since);
       return { recentPlans: recent.length };
     }),
+    blockCompletionStats: publicProcedure.input(z.object({ daysBack: z.number().default(7) })).query(async ({ input }) => {
+      const since = new Date(Date.now() - input.daysBack * 86400000).toISOString().slice(0, 10);
+      const plans = await db.listPlans(input.daysBack + 2);
+      const recentPlans = plans.filter((p: any) => (p.date as any as string) >= since);
+      let total = 0, completed = 0;
+      for (const plan of recentPlans) {
+        const blocks = await db.listBlocksForPlan(plan.id);
+        total += blocks.length;
+        completed += blocks.filter((b: any) => b.status === "complete" || b.status === "done").length;
+      }
+      const focusPct = total > 0 ? Math.round((completed / total) * 100) : null;
+      return { total, completed, focusPct, daysBack: input.daysBack };
+    }),
   }),
 
   /* =================== KNOWLEDGE (Gmail/Drive insights about Reagan) ============ */

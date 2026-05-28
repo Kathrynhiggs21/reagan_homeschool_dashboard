@@ -34,6 +34,7 @@ import SubjectSparklines from "@/components/SubjectSparklines";
 import CurriculumCoverageArcs from "@/components/CurriculumCoverageArcs";
 import CurriculumProgressArcs from "@/components/CurriculumProgressArcs";
 import WeeklyDigestCard from "@/components/WeeklyDigestCard";
+import BehaviorInsightsCard from "@/components/BehaviorInsightsCard";
 import { MoodRing } from "@/components/MoodRing";
 
 function MoodArcChart({ moods }: { moods: any[] }) {
@@ -638,6 +639,9 @@ export default function Analytics() {
 
       {/* Apps Usage Card */}
       <AppsUsageCard />
+
+      {/* Behavior & Learning Insights */}
+      <BehaviorInsightsCard />
     </div>
   );
 }
