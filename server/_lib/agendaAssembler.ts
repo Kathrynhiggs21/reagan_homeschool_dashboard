@@ -2,6 +2,11 @@
  * Assemble a `AgendaPdfInput` payload for a given school date by reading
  * the daily plan, blocks, book assignments, tutor of day, and yesterday's
  * tutor notes. Pure read; no side effects.
+ *
+ * v3.10 additions:
+ *   - Detect summer mode via summerMode.ts and pass it to the PDF builder
+ *   - Resolve /manus-storage/ relative URLs to absolute signed URLs
+ *   - Fetch image worksheet bytes for inline embedding in the PDF
  */
 import * as db from "../db";
 import { resolveTutorOfDay } from "./tutorOfDay";
@@ -25,6 +30,57 @@ function formatDayLabel(dateStr: string): string {
     });
   } catch {
     return dateStr;
+  }
+}
+
+/**
+ * Resolve a printableUrl to an absolute URL.
+ * - Already-absolute URLs (http/https) are returned as-is.
+ * - /manus-storage/KEY paths are resolved to signed S3 URLs.
+ * - Anything else is returned as-is (best-effort).
+ */
+async function resolveWorksheetUrl(url: string | null | undefined): Promise<string | null> {
+  if (!url) return null;
+  const trimmed = url.trim();
+  if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) {
+    return trimmed;
+  }
+  if (trimmed.startsWith("/manus-storage/")) {
+    try {
+      const { storageGetSignedUrl } = await import("../storage");
+      const key = trimmed.replace(/^\/manus-storage\//, "");
+      return await storageGetSignedUrl(key);
+    } catch {
+      // If signing fails, return the relative path — better than nothing
+      return trimmed;
+    }
+  }
+  return trimmed;
+}
+
+/**
+ * Try to fetch image bytes for a worksheet URL.
+ * Returns { bytes, mimeType } if the resource is a PNG or JPEG image,
+ * null otherwise (PDF, HTML, or fetch failure).
+ */
+async function tryFetchImageBytes(
+  absoluteUrl: string | null,
+): Promise<{ bytes: Buffer; mimeType: string } | null> {
+  if (!absoluteUrl || !absoluteUrl.startsWith("http")) return null;
+  try {
+    const resp = await fetch(absoluteUrl, {
+      signal: AbortSignal.timeout(8000),
+      headers: { Accept: "image/*" },
+    });
+    if (!resp.ok) return null;
+    const ct = resp.headers.get("content-type") ?? "";
+    if (!ct.startsWith("image/jpeg") && !ct.startsWith("image/png")) return null;
+    const buf = Buffer.from(await resp.arrayBuffer());
+    // Sanity check: images should be at least 1 KB
+    if (buf.length < 1024) return null;
+    return { bytes: buf, mimeType: ct.split(";")[0].trim() };
+  } catch {
+    return null;
   }
 }
 
@@ -90,6 +146,62 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
       }
     }),
   );
+
+  // v3.10: Resolve worksheet URLs and try to fetch image bytes in parallel
+  // Build a flat list of all (blockId, worksheetIndex, url) tuples
+  type WsRef = { blockId: number; wsIdx: number; rawUrl: string | null };
+  const wsRefs: WsRef[] = [];
+  for (const b of blocksRaw) {
+    const lesson = lessonByBlockId.get(b.id);
+    if (lesson?.worksheets) {
+      lesson.worksheets.forEach((w, idx) => {
+        wsRefs.push({ blockId: b.id, wsIdx: idx, rawUrl: w.printableUrl ?? null });
+      });
+    }
+  }
+
+  // Resolve + fetch in parallel (cap concurrency at 6)
+  type WsResolved = { blockId: number; wsIdx: number; resolvedUrl: string | null; imageBytes: Buffer | null; mimeType: string | null };
+  const resolvedMap = new Map<string, WsResolved>();
+
+  const CONCURRENCY = 6;
+  for (let i = 0; i < wsRefs.length; i += CONCURRENCY) {
+    const chunk = wsRefs.slice(i, i + CONCURRENCY);
+    const results = await Promise.all(
+      chunk.map(async (ref) => {
+        const resolvedUrl = await resolveWorksheetUrl(ref.rawUrl);
+        const imgResult = await tryFetchImageBytes(resolvedUrl);
+        return {
+          blockId: ref.blockId,
+          wsIdx: ref.wsIdx,
+          resolvedUrl,
+          imageBytes: imgResult?.bytes ?? null,
+          mimeType: imgResult?.mimeType ?? null,
+        };
+      }),
+    );
+    for (const r of results) {
+      resolvedMap.set(`${r.blockId}:${r.wsIdx}`, r);
+    }
+  }
+
+  // Merge resolved data back into lessons
+  for (const b of blocksRaw) {
+    const lesson = lessonByBlockId.get(b.id);
+    if (lesson?.worksheets) {
+      lesson.worksheets = lesson.worksheets.map((w, idx) => {
+        const key = `${b.id}:${idx}`;
+        const resolved = resolvedMap.get(key);
+        if (!resolved) return w;
+        return {
+          ...w,
+          resolvedUrl: resolved.resolvedUrl,
+          imageBytes: resolved.imageBytes,
+          mimeType: resolved.mimeType,
+        };
+      });
+    }
+  }
 
   const blocks: AgendaPdfBlock[] = blocksRaw.map((b, i) => {
     const refs = bookRefsByBlockId.get(b.id) ?? [];
@@ -158,6 +270,30 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
     // ignore
   }
 
+  // v3.10: Detect summer mode for the cover page banner
+  let summerMode = false;
+  try {
+    const { summerSettingsFromKv, effectiveSummerActive } = await import("../summerMode");
+    const [autoFlip, start, end, override, vacJson] = await Promise.all([
+      db.getAppSetting("summer.autoFlipEnabled"),
+      db.getAppSetting("summer.start"),
+      db.getAppSetting("summer.end"),
+      db.getAppSetting("summer.override"),
+      db.getAppSetting("summer.vacationRanges"),
+    ]);
+    const settings = summerSettingsFromKv({
+      "summer.autoFlipEnabled": autoFlip,
+      "summer.start": start,
+      "summer.end": end,
+      "summer.override": override,
+      "summer.vacationRanges": vacJson,
+    });
+    const status = effectiveSummerActive(dateStr, settings);
+    summerMode = status.active;
+  } catch {
+    // optional — summer mode banner is cosmetic
+  }
+
   return {
     forDate: dateStr,
     dayLabel: formatDayLabel(dateStr),
@@ -169,5 +305,6 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
     tutorNotesYesterday,
     schoolDayWindow: { start: "09:00", end: "13:00" },
     devotionText: (plan as any).devotionText ?? null,
+    summerMode,
   };
 }

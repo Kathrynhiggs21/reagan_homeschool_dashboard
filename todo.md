@@ -24,7 +24,9 @@
 
 ## 🔴 High Priority — Active
 
-- [ ] Drive Hub cleanup: audit all folders, trash empties/orphans, fix push routing so every file type lands in the correct canonical folder
+- [x] Drive Hub cleanup: DrivePushQueueCard rewritten — all 28 folder labels mapped, Open Drive link, Refresh button, error message display, cleaner layout
+- [ ] Drive push routing audit: verify each targetFolder enum value maps to the correct canonical Drive folder ID in driveSyncPaths.ts
+- [ ] Drive orphan/dupe cleanup: nightly job to detect empty folders and trash them (not delete)
 - [ ] Ohio curriculum standards reference file → auto-push into Curriculum and Resources folder on schedule
 - [ ] Drive sub-folder dedupe job: nightly compare folder names + content hashes; auto-merge dupes by moving children of dupe → canonical and trashing the empty dupe
 - [x] Flashcard print-to-PDF: client-side window.print() with CSS print layout (2-per-row, dashed cut lines) — confirmed working
@@ -53,8 +55,10 @@
 ### 6th Grade Summer Prep
 - [x] Summer Mode: when active, pull 6th grade preview topics for Math + ELA blocks (PracticeHub grade toggle + reviewBlockGenerator uses gradeLevel)
 - [x] Assignment library: gradeLevel field already on skillLadder (varchar "3","4","5","6") — Grade 6 skills can be seeded with gradeLevel="6"
-- [ ] Print packet: cover sheet shows "Summer Preview — 6th Grade" label when Summer Mode is active
+- [x] Print packet: cover sheet shows "☀️ Summer Preview — 6th Grade" banner when Summer Mode is active (agendaPdf.ts renderCoverPage + agendaAssembler.ts summer detection)
 - [ ] Wire Summer Mode into agenda AI: when summer active, Math + ELA blocks source from 6th-grade preview topics (sixth-grade-summer-prep.md)
+- [x] PDF agenda printout: embed image worksheets (PNG/JPG) inline; show prominent "📄 PRINT SEPARATELY" dashed box for PDF/external links
+- [x] PDF agenda printout: resolve /manus-storage/ relative paths to absolute signed URLs; absolute http URLs passed through as-is
 - [ ] Seed 6th-grade preview assignments in skillLadder with gradeLevel="6"; update auto-attach to filter by gradeLevel + Summer Mode
 - [x] "Ready for 6th Grade" indicator: ReadyFor6thBadge component on Today page — shows per-subject mastery bars + banner when all 4 subjects ≥ 75%; self-hides when summer mode is off
 - [ ] Optional: "5th Grade Report Card" page — summary of all completed 5th grade topics with completion dates, for IH records

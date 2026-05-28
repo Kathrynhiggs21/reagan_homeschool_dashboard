@@ -1,5 +1,5 @@
 /**
- * Nightly Agenda PDF builder — v2.98 "Print-and-Go" Packet.
+ * Nightly Agenda PDF builder — v3.10 "Print-and-Go" Packet.
  *
  * Produces a self-contained daily packet that lets Mom, Grandma, or a tutor
  * run the entire school day without logging into the dashboard:
@@ -7,14 +7,21 @@
  *   Page 1  — Cover sheet: date, student, tutor, school-day window, block list
  *              with start times, durations, subjects, book page refs, and a
  *              "What's in this packet" summary.
+ *              When summerMode is true: "☀ Summer Preview — 6th Grade" banner.
  *   Page 2  — Devotion / scripture / reflection (if set for the day).
  *   Pages … — One full page per block that has ANY content attached:
  *              lesson instructions, objectives, materials, videos (with URLs),
- *              worksheets (with writable answer lines), answer key (adult-only),
- *              uploaded PDFs / camera photos / custom lessons, and clickable
+ *              worksheets (embedded images when available, prominent print-box
+ *              for PDF/external links), answer key (adult-only), and clickable
  *              links to every external resource.
  *
- * No external services here — purely PDF bytes + a canonical text snapshot.
+ * v3.10 changes:
+ *   - summerMode flag → "☀ Summer Preview — 6th Grade" cover banner
+ *   - resolvedWorksheets: pre-resolved absolute URLs passed in by caller
+ *   - Worksheet rendering: try to embed image bytes inline; fall back to a
+ *     prominent "PRINT SEPARATELY" box with the absolute URL
+ *   - URL fix: /manus-storage/ relative paths resolved to absolute URLs
+ *     by the caller (assembleAgendaForDate) before reaching this builder
  */
 import PDFDocument from "pdfkit";
 import { createHash } from "node:crypto";
@@ -41,7 +48,18 @@ export type AgendaPdfBlock = {
     objectives?: string[] | null;
     materials?: string[] | null;
     videos?: Array<{ title: string; url: string; description?: string | null; transcript?: string | null }>;
-    worksheets?: Array<{ title: string; description?: string | null; questions?: string[] | null; printableUrl?: string | null }>;
+    worksheets?: Array<{
+      title: string;
+      description?: string | null;
+      questions?: string[] | null;
+      printableUrl?: string | null;
+      /** v3.10: resolved absolute URL (may differ from printableUrl if it was relative) */
+      resolvedUrl?: string | null;
+      /** v3.10: fetched image bytes for inline embedding (PNG/JPG only) */
+      imageBytes?: Buffer | null;
+      /** v3.10: mime type of the fetched resource */
+      mimeType?: string | null;
+    }>;
     answerKey?: string | null;
   } | null;
   /**
@@ -69,6 +87,8 @@ export type AgendaPdfInput = {
   /** Optional devotion / scripture / reflection for the day. Prints as its
    *  own page in the print-and-go packet before the block pages. */
   devotionText?: string | null;
+  /** v3.10: when true, show "☀ Summer Preview — 6th Grade" banner on cover */
+  summerMode?: boolean | null;
 };
 
 export type AgendaPdfResult = {
@@ -123,15 +143,16 @@ export function hashAgenda(canonical: string): string {
 
 /* ----------------------------- helpers ------------------------------------ */
 
-const BRAND_GREEN = "#1f3a2e";
-const BRAND_BLUE  = "#0a66c2";
-const BRAND_WARM  = "#7a4d00";
-const GRAY_DARK   = "#222222";
-const GRAY_MED    = "#444444";
-const GRAY_LIGHT  = "#888888";
-const RULE_COLOR  = "#dddddd";
-const PAGE_W      = 564; // 8.5in × 72 - 2×48 margin
-const MARGIN      = 48;
+const BRAND_GREEN  = "#1f3a2e";
+const BRAND_BLUE   = "#0a66c2";
+const BRAND_WARM   = "#7a4d00";
+const BRAND_SUMMER = "#b45309"; // amber-700 — summer banner accent
+const GRAY_DARK    = "#222222";
+const GRAY_MED     = "#444444";
+const GRAY_LIGHT   = "#888888";
+const RULE_COLOR   = "#dddddd";
+const PAGE_W       = 564; // 8.5in × 72 - 2×48 margin
+const MARGIN       = 48;
 
 function rule(doc: PDFKit.PDFDocument) {
   doc.strokeColor(RULE_COLOR).moveTo(MARGIN, doc.y).lineTo(PAGE_W + MARGIN, doc.y).stroke();
@@ -173,9 +194,54 @@ function formatTime(t: string | null | undefined): string {
   return `${h}:${min} ${ampm}`;
 }
 
+/**
+ * Render a prominent "PRINT SEPARATELY" box for worksheets that are PDFs
+ * or external URLs that can't be embedded inline.
+ */
+function renderPrintSeparatelyBox(
+  doc: PDFKit.PDFDocument,
+  title: string,
+  absoluteUrl: string,
+) {
+  const boxX = MARGIN;
+  const boxY = doc.y;
+  const boxW = PAGE_W;
+  const boxH = 54;
+
+  // Dashed border box
+  doc.save()
+    .rect(boxX, boxY, boxW, boxH)
+    .dash(4, { space: 3 })
+    .strokeColor("#f59e0b")
+    .stroke()
+    .undash()
+    .restore();
+
+  doc.y = boxY + 8;
+  doc.fillColor(BRAND_SUMMER).fontSize(10).font("Helvetica-Bold")
+    .text("📄  PRINT THIS WORKSHEET SEPARATELY", { indent: 8, width: PAGE_W - 16 });
+  doc.font("Helvetica");
+  doc.fillColor(BRAND_BLUE).fontSize(8)
+    .text(absoluteUrl, {
+      link: absoluteUrl,
+      underline: true,
+      indent: 8,
+      width: PAGE_W - 16,
+    });
+  doc.y = boxY + boxH + 6;
+  doc.moveDown(0.2);
+}
+
 /* ========================= COVER PAGE ==================================== */
 
 function renderCoverPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, agendaHash: string) {
+  // Summer mode banner — shown ABOVE the title when active
+  if (input.summerMode) {
+    doc.fillColor(BRAND_SUMMER).fontSize(13).font("Helvetica-Bold")
+      .text("☀  Summer Preview — 6th Grade", { align: "center" });
+    doc.moveDown(0.15);
+  }
+
   // Title bar
   doc.fillColor(BRAND_GREEN).fontSize(22).font("Helvetica-Bold")
     .text(`${input.studentName}'s School Day`, { align: "center" });
@@ -390,7 +456,7 @@ function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: Age
       }
     }
 
-    // Worksheets — with writable answer lines
+    // Worksheets — embed images inline; show print-box for PDFs/external links
     if (L.worksheets && L.worksheets.length > 0) {
       sectionHead(doc, "Worksheets & Activities");
       for (const w of L.worksheets) {
@@ -399,16 +465,33 @@ function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: Age
         if (w.description) {
           doc.fillColor(GRAY_MED).fontSize(9).text(w.description.trim(), { width: PAGE_W, indent: 4 });
         }
-        // Clickable link to the external/uploaded resource
-        if (w.printableUrl) {
-          doc.fillColor(BRAND_BLUE).fontSize(9)
-            .text(`Open / print: ${w.printableUrl}`, {
-              link: w.printableUrl,
-              underline: true,
-              indent: 4,
-              width: PAGE_W,
+
+        // v3.10: Try to embed image inline; fall back to print-separately box
+        const displayUrl = w.resolvedUrl || w.printableUrl || null;
+        if (w.imageBytes && w.mimeType && (w.mimeType.startsWith("image/jpeg") || w.mimeType.startsWith("image/png"))) {
+          // Embed the image directly — scale to fit page width
+          try {
+            doc.moveDown(0.2);
+            const maxImgW = PAGE_W;
+            const maxImgH = 500; // max height before it overflows
+            doc.image(w.imageBytes, MARGIN, doc.y, {
+              fit: [maxImgW, maxImgH],
+              align: "center",
             });
+            doc.moveDown(0.3);
+            if (displayUrl) {
+              doc.fillColor(GRAY_LIGHT).fontSize(7)
+                .text(`Source: ${displayUrl}`, { indent: 4, width: PAGE_W });
+            }
+          } catch {
+            // If image embedding fails, fall back to print-separately box
+            if (displayUrl) renderPrintSeparatelyBox(doc, w.title, displayUrl);
+          }
+        } else if (displayUrl) {
+          // PDF or external URL — show prominent print-separately box
+          renderPrintSeparatelyBox(doc, w.title, displayUrl);
         }
+
         // Inline questions with writable answer lines
         if (w.questions && w.questions.length > 0) {
           doc.moveDown(0.2);
@@ -416,7 +499,7 @@ function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: Age
             doc.fillColor(GRAY_DARK).fontSize(10).text(`${i + 1}. ${w.questions[i]}`, { width: PAGE_W, indent: 4 });
             answerLine(doc);
           }
-        } else if (!w.printableUrl) {
+        } else if (!displayUrl && !w.imageBytes) {
           // No URL and no questions — add a few blank answer lines so the
           // block is still writable on paper.
           doc.moveDown(0.1);
