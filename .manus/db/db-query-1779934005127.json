@@ -1,0 +1,28 @@
+{
+  "query": "SELECT name, url, category, emoji FROM appLinks ORDER BY category ASC, sortOrder ASC, name ASC LIMIT 3 OFFSET 40;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT name, url, category, emoji FROM appLinks ORDER BY category ASC, sortOrder ASC, name ASC LIMIT 3 OFFSET 40;",
+  "rows": [
+    {
+      "name": "Math Antics",
+      "url": "https://www.mathantics.com",
+      "category": "video",
+      "emoji": "🧮"
+    },
+    {
+      "name": "Crash Course Kids",
+      "url": "https://www.youtube.com/c/crashcoursekids",
+      "category": "video",
+      "emoji": "📺"
+    },
+    {
+      "name": "Mystery Doug",
+      "url": "https://mysteryscience.com/mystery-doug",
+      "category": "video",
+      "emoji": "🤔"
+    }
+  ],
+  "messages": [],
+  "stdout": "name\turl\tcategory\temoji\nMath Antics\thttps://www.mathantics.com\tvideo\t🧮\nCrash Course Kids\thttps://www.youtube.com/c/crashcoursekids\tvideo\t📺\nMystery Doug\thttps://mysteryscience.com/mystery-doug\tvideo\t🤔\n",
+  "stderr": "",
+  "execution_time_ms": 553
+}

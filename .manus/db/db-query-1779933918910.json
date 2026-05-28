@@ -1,0 +1,9 @@
+{
+  "query": "UPDATE appLinks \nSET name = 'Education.com', \n    accountInfo = 'Sign in with Google (spear.cpt@gmail.com). Free worksheets, games, and activities for K-8.',\n    emoji = '🏫'\nWHERE id = 630001;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute UPDATE appLinks \nSET name = 'Education.com', \n    accountInfo = 'Sign in with Google (spear.cpt@gmail.com). Free worksheets, games, and activities for K-8.',\n    emoji = '🏫'\nWHERE id = 630001;",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 603
+}

@@ -404,15 +404,25 @@ export default function KiwiPerch() {
       <div className="relative">
         {bubbleText && (
           <div
-            className="absolute bg-white text-slate-800 border-2 border-amber-200 rounded-2xl px-3 py-2 text-xs font-medium shadow-lg max-w-[180px]"
             style={{
+              position: "absolute",
               bottom: size + 4,
               left: "50%",
               transform: "translateX(-50%)",
               fontFamily: "'Patrick Hand','Comic Sans MS',cursive",
               fontSize: 13,
-              lineHeight: 1.2,
+              lineHeight: 1.3,
               whiteSpace: "nowrap",
+              backgroundColor: "#fffbeb",
+              color: "#1e293b",
+              border: "2px solid #fbbf24",
+              borderRadius: "1rem",
+              padding: "6px 12px",
+              fontWeight: 600,
+              boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
+              maxWidth: 200,
+              zIndex: 9999,
+              pointerEvents: "none",
             }}
           >
             {bubbleText}

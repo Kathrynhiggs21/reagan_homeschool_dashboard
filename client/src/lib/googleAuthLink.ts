@@ -110,6 +110,7 @@ const SSO_HINT_HOSTS: ReadonlyArray<string> = [
   "khanmigo.ai",
   "kahoot.it",
   "kahoot.com",
+  "education.com",
 ];
 
 function hostMatchesSsoAllowlist(host: string): boolean {

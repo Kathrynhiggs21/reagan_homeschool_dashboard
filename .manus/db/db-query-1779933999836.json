@@ -1,0 +1,148 @@
+{
+  "query": "SELECT name, url, category, emoji FROM appLinks ORDER BY category ASC, sortOrder ASC, name ASC LIMIT 23 OFFSET 20;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT name, url, category, emoji FROM appLinks ORDER BY category ASC, sortOrder ASC, name ASC LIMIT 23 OFFSET 20;",
+  "rows": [
+    {
+      "name": "Edpuzzle",
+      "url": "https://edpuzzle.com",
+      "category": "school",
+      "emoji": "🎬"
+    },
+    {
+      "name": "Vocabulary.com",
+      "url": "https://www.vocabulary.com",
+      "category": "school",
+      "emoji": "🔤"
+    },
+    {
+      "name": "iCivics",
+      "url": "https://www.icivics.org",
+      "category": "school",
+      "emoji": "🧠"
+    },
+    {
+      "name": "Quizlet",
+      "url": "https://quizlet.com",
+      "category": "school",
+      "emoji": "🧠"
+    },
+    {
+      "name": "Adobe Spark",
+      "url": "https://adobeid-na1.services.adobe.com/renga-idprovider/pages/login_t2",
+      "category": "school",
+      "emoji": "✨"
+    },
+    {
+      "name": "Aimswebplus",
+      "url": "https://clever.com/oauth/instant-login?client_id=b1309677686faf239365&district_id=51e40d3b80da621055000c50",
+      "category": "school",
+      "emoji": "📊"
+    },
+    {
+      "name": "Merlin Bird ID",
+      "url": "https://merlin.allaboutbirds.org",
+      "category": "nature",
+      "emoji": "🐦"
+    },
+    {
+      "name": "iNaturalist",
+      "url": "https://www.inaturalist.org",
+      "category": "nature",
+      "emoji": "🌿"
+    },
+    {
+      "name": "Starfall",
+      "url": "https://www.starfall.com",
+      "category": "reading",
+      "emoji": "⭐"
+    },
+    {
+      "name": "Epic! Books",
+      "url": "https://www.getepic.com",
+      "category": "reading",
+      "emoji": "📖"
+    },
+    {
+      "name": "CommonLit",
+      "url": "https://www.commonlit.org/en/library?grade=5",
+      "category": "reading",
+      "emoji": "📰"
+    },
+    {
+      "name": "Storyline Online",
+      "url": "https://storylineonline.net",
+      "category": "reading",
+      "emoji": "📚"
+    },
+    {
+      "name": "ReadWorks",
+      "url": "https://www.readworks.org",
+      "category": "reading",
+      "emoji": "📖"
+    },
+    {
+      "name": "Google Classroom",
+      "url": "https://classroom.google.com",
+      "category": "google",
+      "emoji": "🏫"
+    },
+    {
+      "name": "Google Docs",
+      "url": "https://docs.google.com",
+      "category": "google",
+      "emoji": "📝"
+    },
+    {
+      "name": "Google Drive",
+      "url": "https://drive.google.com",
+      "category": "google",
+      "emoji": "📁"
+    },
+    {
+      "name": "Google Slides",
+      "url": "https://slides.google.com",
+      "category": "google",
+      "emoji": "🎞️"
+    },
+    {
+      "name": "Gmail",
+      "url": "https://mail.google.com",
+      "category": "google",
+      "emoji": "✉️"
+    },
+    {
+      "name": "YouTube Kids",
+      "url": "https://www.youtubekids.com",
+      "category": "video",
+      "emoji": "📺"
+    },
+    {
+      "name": "Generation Genius",
+      "url": "https://www.generationgenius.com",
+      "category": "video",
+      "emoji": "🧪"
+    },
+    {
+      "name": "Math Antics",
+      "url": "https://www.mathantics.com",
+      "category": "video",
+      "emoji": "🧮"
+    },
+    {
+      "name": "Crash Course Kids",
+      "url": "https://www.youtube.com/c/crashcoursekids",
+      "category": "video",
+      "emoji": "📺"
+    },
+    {
+      "name": "Mystery Doug",
+      "url": "https://mysteryscience.com/mystery-doug",
+      "category": "video",
+      "emoji": "🤔"
+    }
+  ],
+  "messages": [],
+  "stdout": "name\turl\tcategory\temoji\nEdpuzzle\thttps://edpuzzle.com\tschool\t🎬\nVocabulary.com\thttps://www.vocabulary.com\tschool\t🔤\niCivics\thttps://www.icivics.org\tschool\t🧠\nQuizlet\thttps://quizlet.com\tschool\t🧠\nAdobe Spark\thttps://adobeid-na1.services.adobe.com/renga-idprovider/pages/login_t2\tschool\t✨\nAimswebplus\thttps://clever.com/oauth/instant-login?client_id=b1309677686faf239365&district_id=51e40d3b80da621055000c50\tschool\t📊\nMerlin Bird ID\thttps://merlin.allaboutbirds.org\tnature\t🐦\niNaturalist\thttps://www.inaturalist.org\tnature\t🌿\nStarfall\thttps://www.starfall.com\treading\t⭐\nEpic! Books\thttps://www.getepic.com\treading\t📖\nCommonLit\thttps://www.commonlit.org/en/library?grade=5\treading\t📰\nStoryline Online\thttps://storylineonline.net\treading\t📚\nReadWorks\thttps://www.readworks.org\treading\t📖\nGoogle Classroom\thttps://classroom.google.com\tgoogle\t🏫\nGoogle Docs\thttps://docs.google.com\tgoogle\t📝\nGoogle Drive\thttps://drive.google.com\tgoogle\t📁\nGoogle Slides\thttps://slides.google.com\tgoogle\t🎞️\nGmail\thttps://mail.google.com\tgoogle\t✉️\nYouTube Kids\thttps://www.youtubekids.com\tvideo\t📺\nGeneration Genius\thttps://www.generationgenius.com\tvideo\t🧪\nMath Antics\thttps://www.mathantics.com\tvideo\t🧮\nCrash Course Kids\thttps://www.youtube.com/c/crashcoursekids\tvideo\t📺\nMystery Doug\thttps://mysteryscience.com/mystery-doug\tvideo\t🤔\n",
+  "stderr": "",
+  "execution_time_ms": 606
+}

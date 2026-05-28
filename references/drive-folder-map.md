@@ -1,5 +1,5 @@
 # Reagan School Hub — Google Drive Folder Map
-*Last updated: 2026-05-27 (live audit)*
+*Last updated: 2026-05-28 (canonical update — all 7 content folders added)*
 
 ## Root
 **Reagan School Hub** `1r3bJacPLJN7VHI8y72rcx1-GRxspqo1r`
@@ -24,7 +24,7 @@
 | Tutor | `1sQo9UeY04B5wsniTSupMdLJJClLNg3Wu` | Tutor session files |
 | Tutor Handoffs | `1hUcPZTEZ_0J3aFswJmGBZf7YexT2zbDL` | Tutor handoff docs |
 | Daily Schedule | `1oIVBTO1jCKFj6azIA5HjNFh3q3vp` | Schedule exports |
-| Daily Agendas | `1c4sohGpCpe4iQtP0STmRQLwvladozz7B` | Agenda snapshots |
+| Daily Agendas | `1c4sohGpCpe4iQtP0STmRQLwvladozz7B` | Agenda snapshots ✅ CANONICAL |
 
 ---
 
@@ -77,7 +77,7 @@
 | Bookshelf | `1sEROZFs4d1pol8bFCJgZLHu8w_Psmpxa` | Book reports, reading logs |
 | Printables | `1UxqumEtHKucybapWNaNttaDGNg_0QQCH` | Flashcard PDFs, coloring pages |
 | Reference Materials | `1xiEdaL9Jnval_dTO9E0ZbzsUkoOFzGWU` | Reference docs (3 subfolders) |
-| Lesson Plans | `1n8LSDFIbkHWmmwTAVfGqPQpdCuYOtj9c` | Lesson plan files |
+| Lesson Plans | `1n8LSDFIbkHWmmwTAVfGqPQpdCuYOtj9c` | Lesson plan files ✅ CANONICAL |
 | Master Worksheet Library | `1NXKoIBOn8zAuoBKfW8BnJ0-g2qA-eKpU` | Empty |
 | Reward Charts | `1kyQ_TNxBdFpXIkjZe2AVvaDefVd6he5D` | Empty |
 | Coloring Pages | `1AgsfEe_KeIFLd6_Yt8WrWerhLCp9B1Ch` | Empty |
@@ -93,10 +93,10 @@
 
 | Subfolder | ID | Push what here |
 |---|---|---|
-| Analytics | `1CcVVIW5jgza4qnyKm4dtSESg5MKziX2j` | Analytics exports (17 subfolders) |
+| Analytics | `1CcVVIW5jgza4qnyKm4dtSESg5MKziX2j` | Analytics exports ✅ CANONICAL |
 | Report Cards | `1JPA47TlKyPcDbcNgplrqClKIBZYY3rf5` | Term report cards |
-| Behavior Analytics | `1fYM_vVXAmJGSYYWVSAdJEY3gCKnaKPSw` | Behavior data (5 subfolders) |
-| Snapshots | `1Mbx5efaCkEu22ilN72xrx_Sn4jjBZ7mD` | DB snapshots |
+| Behavior Analytics | `1fYM_vVXAmJGSYYWVSAdJEY3gCKnaKPSw` | Behavior data ✅ CANONICAL |
+| Snapshots | `1Mbx5efaCkEu22ilN72xrx_Sn4jjBZ7mD` | DB snapshots ✅ CANONICAL |
 | Analytics CSV Exports | `1At3j0pA5v94z2plIM0Ve_DpPGQ7ERsWs` | CSV exports |
 | Absences and Sick Days | `1LYO3NynaJy3v0nhoUMIkNLib9ueN3_5J` | Absence logs |
 | Term Summaries | `1HUP-umga_91xCpDTx8fOd5Cp0oESCcqr` | Term summary docs |
@@ -118,7 +118,10 @@ Contains 4 files needing manual routing:
 
 ## Archive
 `1kbBUq5HdQ71S6R3CORW63X4Nu9_72__O`
-- `2026/` subfolder
+
+| Subfolder | ID | Contents |
+|---|---|---|
+| 2026 | `1FVsrsLuXj89Izhemrj_` | Archived files ✅ CANONICAL |
 
 ---
 

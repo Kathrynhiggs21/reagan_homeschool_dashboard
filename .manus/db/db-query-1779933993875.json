@@ -1,0 +1,311 @@
+{
+  "query": "SELECT name, url, category, emoji, accountInfo FROM appLinks ORDER BY category ASC, sortOrder ASC, name ASC;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute SELECT name, url, category, emoji, accountInfo FROM appLinks ORDER BY category ASC, sortOrder ASC, name ASC;",
+  "rows": [
+    {
+      "name": "Education.com",
+      "url": "https://www.education.com/",
+      "category": "learning",
+      "emoji": "🏫",
+      "accountInfo": "Sign in with Google (spear.cpt@gmail.com). Free worksheets, games, and activities for K-8."
+    },
+    {
+      "name": "Kimi AI",
+      "url": "https://kimi.com",
+      "category": "learning",
+      "emoji": "🤖",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "Ohio Learning Standards",
+      "url": "https://education.ohio.gov/Topics/Learning-in-Ohio/Learning-Standards",
+      "category": "learning",
+      "emoji": "🏛️",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "Planets Recap Video",
+      "url": "https://youtu.be/fajsyiKRfxI?si=y_Tenb3-MT5Auwot",
+      "category": "learning",
+      "emoji": "",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "Khanmigo (Khan Academy AI tutor)",
+      "url": "https://www.khanmigo.ai",
+      "category": "learning",
+      "emoji": "📖",
+      "accountInfo": "school — 1:1 tutor for stuck moments — voice OK"
+    },
+    {
+      "name": "Mystery Science",
+      "url": "https://mysteryscience.com",
+      "category": "learning",
+      "emoji": "🔬",
+      "accountInfo": "school (school subscription) — 5th-grade Mysteries — Chemical Magic, Force Olympics, Watery Planet"
+    },
+    {
+      "name": "Stellarium Mobile",
+      "url": "https://stellarium-web.org",
+      "category": "learning",
+      "emoji": "🔬",
+      "accountInfo": "personal — Sky watching for moon phases + meteor shower"
+    },
+    {
+      "name": "Roblox",
+      "url": "https://www.roblox.com",
+      "category": "creativity",
+      "emoji": "🟥",
+      "accountInfo": "personal (Family Link supervised)"
+    },
+    {
+      "name": "Minecraft",
+      "url": "https://www.minecraft.net",
+      "category": "creativity",
+      "emoji": "🟩",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "Toca Boca",
+      "url": "https://tocaboca.com/apps/",
+      "category": "creativity",
+      "emoji": "🌈",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "Pinterest",
+      "url": "https://www.pinterest.com",
+      "category": "creativity",
+      "emoji": "🎨",
+      "accountInfo": "personal (reaganhiggs910@gmail.com) — Craft + makeup + animal inspiration boards. Approved boards only — Mom curates."
+    },
+    {
+      "name": "Adobe Apps",
+      "url": "https://adobeid-na1.services.adobe.com/renga-idprovider/pages/login",
+      "category": "creativity",
+      "emoji": "🎨",
+      "accountInfo": ""
+    },
+    {
+      "name": "Class Dojo",
+      "url": "https://www.classdojo.com",
+      "category": "school",
+      "emoji": "👋",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "Clever",
+      "url": "https://clever.com",
+      "category": "school",
+      "emoji": "🍀",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "Kahoot!",
+      "url": "https://kahoot.com",
+      "category": "school",
+      "emoji": "🎯",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "Photomath",
+      "url": "https://photomath.com",
+      "category": "school",
+      "emoji": "📷",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "Khan Academy",
+      "url": "https://www.khanacademy.org",
+      "category": "school",
+      "emoji": "📚",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "IXL",
+      "url": "https://www.ixl.com/signin",
+      "category": "school",
+      "emoji": "🧠",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "Prodigy Math",
+      "url": "https://play.prodigygame.com",
+      "category": "school",
+      "emoji": "🐉",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "BrainPOP",
+      "url": "https://www.brainpop.com",
+      "category": "school",
+      "emoji": "🤖",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "Edpuzzle",
+      "url": "https://edpuzzle.com",
+      "category": "school",
+      "emoji": "🎬",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "Vocabulary.com",
+      "url": "https://www.vocabulary.com",
+      "category": "school",
+      "emoji": "🔤",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "iCivics",
+      "url": "https://www.icivics.org",
+      "category": "school",
+      "emoji": "🧠",
+      "accountInfo": "school — Branches of Power, Do I Have a Right?, Map It"
+    },
+    {
+      "name": "Quizlet",
+      "url": "https://quizlet.com",
+      "category": "school",
+      "emoji": "🧠",
+      "accountInfo": "school — Spelling + vocab flashcards"
+    },
+    {
+      "name": "Adobe Spark",
+      "url": "https://adobeid-na1.services.adobe.com/renga-idprovider/pages/login_t2",
+      "category": "school",
+      "emoji": "✨",
+      "accountInfo": ""
+    },
+    {
+      "name": "Aimswebplus",
+      "url": "https://clever.com/oauth/instant-login?client_id=b1309677686faf239365&district_id=51e40d3b80da621055000c50",
+      "category": "school",
+      "emoji": "📊",
+      "accountInfo": "Auto-signs in via Clever (use school Google acct)"
+    },
+    {
+      "name": "Merlin Bird ID",
+      "url": "https://merlin.allaboutbirds.org",
+      "category": "nature",
+      "emoji": "🐦",
+      "accountInfo": "personal — Bird identification on hikes — pairs with Adventures library"
+    },
+    {
+      "name": "iNaturalist",
+      "url": "https://www.inaturalist.org",
+      "category": "nature",
+      "emoji": "🌿",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "Starfall",
+      "url": "https://www.starfall.com",
+      "category": "reading",
+      "emoji": "⭐",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "Epic! Books",
+      "url": "https://www.getepic.com",
+      "category": "reading",
+      "emoji": "📖",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "CommonLit",
+      "url": "https://www.commonlit.org/en/library?grade=5",
+      "category": "reading",
+      "emoji": "📰",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "Storyline Online",
+      "url": "https://storylineonline.net",
+      "category": "reading",
+      "emoji": "📚",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "ReadWorks",
+      "url": "https://www.readworks.org",
+      "category": "reading",
+      "emoji": "📖",
+      "accountInfo": "school (Reagan.higgs33@ihsd.us) — Article-a-day. Pick animal-themed."
+    },
+    {
+      "name": "Google Classroom",
+      "url": "https://classroom.google.com",
+      "category": "google",
+      "emoji": "🏫",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "Google Docs",
+      "url": "https://docs.google.com",
+      "category": "google",
+      "emoji": "📝",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "Google Drive",
+      "url": "https://drive.google.com",
+      "category": "google",
+      "emoji": "📁",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "Google Slides",
+      "url": "https://slides.google.com",
+      "category": "google",
+      "emoji": "🎞️",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "Gmail",
+      "url": "https://mail.google.com",
+      "category": "google",
+      "emoji": "✉️",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "YouTube Kids",
+      "url": "https://www.youtubekids.com",
+      "category": "video",
+      "emoji": "📺",
+      "accountInfo": "personal (Family Link supervised)"
+    },
+    {
+      "name": "Generation Genius",
+      "url": "https://www.generationgenius.com",
+      "category": "video",
+      "emoji": "🧪",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "Math Antics",
+      "url": "https://www.mathantics.com",
+      "category": "video",
+      "emoji": "🧮",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "Crash Course Kids",
+      "url": "https://www.youtube.com/c/crashcoursekids",
+      "category": "video",
+      "emoji": "📺",
+      "accountInfo": "NULL"
+    },
+    {
+      "name": "Mystery Doug",
+      "url": "https://mysteryscience.com/mystery-doug",
+      "category": "video",
+      "emoji": "🤔",
+      "accountInfo": "NULL"
+    }
+  ],
+  "messages": [],
+  "stdout": "name\turl\tcategory\temoji\taccountInfo\nEducation.com\thttps://www.education.com/\tlearning\t🏫\tSign in with Google (spear.cpt@gmail.com). Free worksheets, games, and activities for K-8.\nKimi AI\thttps://kimi.com\tlearning\t🤖\tNULL\nOhio Learning Standards\thttps://education.ohio.gov/Topics/Learning-in-Ohio/Learning-Standards\tlearning\t🏛️\tNULL\nPlanets Recap Video\thttps://youtu.be/fajsyiKRfxI?si=y_Tenb3-MT5Auwot\tlearning\t\tNULL\nKhanmigo (Khan Academy AI tutor)\thttps://www.khanmigo.ai\tlearning\t📖\tschool — 1:1 tutor for stuck moments — voice OK\nMystery Science\thttps://mysteryscience.com\tlearning\t🔬\tschool (school subscription) — 5th-grade Mysteries — Chemical Magic, Force Olympics, Watery Planet\nStellarium Mobile\thttps://stellarium-web.org\tlearning\t🔬\tpersonal — Sky watching for moon phases + meteor shower\nRoblox\thttps://www.roblox.com\tcreativity\t🟥\tpersonal (Family Link supervised)\nMinecraft\thttps://www.minecraft.net\tcreativity\t🟩\tNULL\nToca Boca\thttps://tocaboca.com/apps/\tcreativity\t🌈\tNULL\nPinterest\thttps://www.pinterest.com\tcreativity\t🎨\tpersonal (reaganhiggs910@gmail.com) — Craft + makeup + animal inspiration boards. Approved boards only — Mom curates.\nAdobe Apps\thttps://adobeid-na1.services.adobe.com/renga-idprovider/pages/login\tcreativity\t🎨\t\nClass Dojo\thttps://www.classdojo.com\tschool\t👋\tNULL\nClever\thttps://clever.com\tschool\t🍀\tNULL\nKahoot!\thttps://kahoot.com\tschool\t🎯\tNULL\nPhotomath\thttps://photomath.com\tschool\t📷\tNULL\nKhan Academy\thttps://www.khanacademy.org\tschool\t📚\tNULL\nIXL\thttps://www.ixl.com/signin\tschool\t🧠\tNULL\nProdigy Math\thttps://play.prodigygame.com\tschool\t🐉\tNULL\nBrainPOP\thttps://www.brainpop.com\tschool\t🤖\tNULL\nEdpuzzle\thttps://edpuzzle.com\tschool\t🎬\tNULL\nVocabulary.com\thttps://www.vocabulary.com\tschool\t🔤\tNULL\niCivics\thttps://www.icivics.org\tschool\t🧠\tschool — Branches of Power, Do I Have a Right?, Map It\nQuizlet\thttps://quizlet.com\tschool\t🧠\tschool — Spelling + vocab flashcards\nAdobe Spark\thttps://adobeid-na1.services.adobe.com/renga-idprovider/pages/login_t2\tschool\t✨\t\nAimswebplus\thttps://clever.com/oauth/instant-login?client_id=b1309677686faf239365&district_id=51e40d3b80da621055000c50\tschool\t📊\tAuto-signs in via Clever (use school Google acct)\nMerlin Bird ID\thttps://merlin.allaboutbirds.org\tnature\t🐦\tpersonal — Bird identification on hikes — pairs with Adventures library\niNaturalist\thttps://www.inaturalist.org\tnature\t🌿\tNULL\nStarfall\thttps://www.starfall.com\treading\t⭐\tNULL\nEpic! Books\thttps://www.getepic.com\treading\t📖\tNULL\nCommonLit\thttps://www.commonlit.org/en/library?grade=5\treading\t📰\tNULL\nStoryline Online\thttps://storylineonline.net\treading\t📚\tNULL\nReadWorks\thttps://www.readworks.org\treading\t📖\tschool (Reagan.higgs33@ihsd.us) — Article-a-day. Pick animal-themed.\nGoogle Classroom\thttps://classroom.google.com\tgoogle\t🏫\tNULL\nGoogle Docs\thttps://docs.google.com\tgoogle\t📝\tNULL\nGoogle Drive\thttps://drive.google.com\tgoogle\t📁\tNULL\nGoogle Slides\thttps://slides.google.com\tgoogle\t🎞️\tNULL\nGmail\thttps://mail.google.com\tgoogle\t✉️\tNULL\nYouTube Kids\thttps://www.youtubekids.com\tvideo\t📺\tpersonal (Family Link supervised)\nGeneration Genius\thttps://www.generationgenius.com\tvideo\t🧪\tNULL\nMath Antics\thttps://www.mathantics.com\tvideo\t🧮\tNULL\nCrash Course Kids\thttps://www.youtube.com/c/crashcoursekids\tvideo\t📺\tNULL\nMystery Doug\thttps://mysteryscience.com/mystery-doug\tvideo\t🤔\tNULL\n",
+  "stderr": "",
+  "execution_time_ms": 590
+}

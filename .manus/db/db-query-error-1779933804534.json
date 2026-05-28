@@ -1,0 +1,8 @@
+{
+  "query": "INSERT INTO appAccounts (appKey, appName, appUrl, signupUrl, emoji, category, isPaid, hasFamilyTier, sortOrder, notes, createdAt)\nVALUES (\n  'education_com',\n  'Education.com',\n  'https://www.education.com',\n  'https://www.education.com/join/',\n  '🏫',\n  'learning',\n  0,\n  1,\n  15,\n  'Worksheets, games, and activities for K-8. Sign in with Google (spear.cpt@gmail.com). Free tier includes printable worksheets and online games.',\n  NOW()\n)\nON DUPLICATE KEY UPDATE\n  appName = VALUES(appName),\n  appUrl = VALUES(appUrl),\n  signupUrl = VALUES(signupUrl),\n  emoji = VALUES(emoji),\n  notes = VALUES(notes);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway03.us-east-1.prod.aws.tidbcloud.com --port 4000 --user ZHgHA7566FjgCYD.51c539e8d5ba --database mm3swGictQLHDWKPJCGiHp --execute INSERT INTO appAccounts (appKey, appName, appUrl, signupUrl, emoji, category, isPaid, hasFamilyTier, sortOrder, notes, createdAt)\nVALUES (\n  'education_com',\n  'Education.com',\n  'https://www.education.com',\n  'https://www.education.com/join/',\n  '🏫',\n  'learning',\n  0,\n  1,\n  15,\n  'Worksheets, games, and activities for K-8. Sign in with Google (spear.cpt@gmail.com). Free tier includes printable worksheets and online games.',\n  NOW()\n)\nON DUPLICATE KEY UPDATE\n  appName = VALUES(appName),\n  appUrl = VALUES(appUrl),\n  signupUrl = VALUES(signupUrl),\n  emoji = VALUES(emoji),\n  notes = VALUES(notes);",
+  "returncode": 1,
+  "logs": [
+    "ERROR 1146 (42S02) at line 1: Table 'mm3swgictqlhdwkpjcgihp.appAccounts' doesn't exist"
+  ]
+}
