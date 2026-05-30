@@ -164,7 +164,16 @@
 - [x] 12-hour AM/PM time in Agenda Editor
 - [x] Schedule page legend with calendar colors
 
-## 🔴 Active Bugs — 2026-05-29
+## Active Bugs — 2026-05-29 (round 2)
+
+- [ ] Replace Make webhook for nightly agenda email with direct server-side Gmail SMTP send (nodemailer + GMAIL_APP_PASSWORD + GMAIL_SMTP_USER). Removes 403 OAuth scope failure mode. Update scheduled-task playbook Job A accordingly.
+- [ ] BUG: Quiz Generator fails with same drizzle/TiDB insertId shape bug — `insert into 'reviewQuestions' values (default, default, ?, ?, ?, ?, ?, ?, default)` (sessionId=default). Apply same defensive read-back pattern in `createReviewSession` / question insert helper.
+- [ ] Drive routing audit: every Drive-bound file (worksheets, lessons, submissions, snapshots) lands in the correct canonical Reagan School Hub subfolder. Cross-check `drive_push_queue` rows against the canonical folder map; emit warnings for rows with no target.
+- [ ] Drive dedupe job: hash files before push; skip when an identical hash already lives in the target folder; record dedupe outcome in the queue row.
+- [ ] Print Daily PDF (round 2): user reports it's still 'not quite right' — confirm specific issues against latest generated PDF and fix.
+- [ ] Wix is not operable — user reported. Diagnose (likely Wix MCP token / scopes); document or implement a fix.
+
+## Active Bugs — 2026-05-29 round 1 (RESOLVED in checkpoint v68135eea, PENDING PUBLISH)
 
 - [x] BUG: Flashcard Maker AI Generate failed because `db.createFlashcardDeck` returned `id: undefined` on TiDB (drizzle MySQL `insertId` shape). Fix in `server/db.ts`: read back the inserted deck row by `(title, createdAt)` to confirm the id; same defensive read-back in `addFlashcardCard`. New tests: locked in via `server/agendaPdf.printDaily.test.ts` companion (flashcard tests already in `flashcardDb.test.ts`).
 - [x] BUG: Print Daily PDF rendered emoji as garbled WinAnsi glyphs (🧩 → Ø>Ýé) AND only generated a cover page (no per-block writable space). Fix in `server/_lib/agendaPdf.ts`: `cleanForPdf()` strips supplementary-plane code points + dingbats and transliterates smart punctuation; every block now renders a detail page with description + 10 full-width writing lines. Notes lines are now real horizontal rules (was: truncated underscore text). Verified visually on Monday June 1 plan — went from 1 page/3KB → 5 pages/7.6KB.

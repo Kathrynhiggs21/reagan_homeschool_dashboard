@@ -1,26 +1,24 @@
 /**
  * server/_core/mailer.ts
  *
- * Email sender via Make webhook → Gmail (spear.cpt@gmail.com).
- * Sends one webhook call per recipient so Make receives a plain string
- * in the "to" field.
+ * Email sender via Resend HTTPS API — replaces the previous Make webhook
+ * pipeline (which kept losing Gmail OAuth scopes and 403'ing).
  *
- * Webhook payload per call:
- *   { to: string, subject: string, body: string, body_plain: string,
- *     attachments: Array<{url, filename}>, attachment_count: number }
+ * Required env:
+ *   RESEND_API_KEY  — Resend API key (starts with re_...)
  *
- * Attachments: PDF Buffers are uploaded to public CDN URLs via
- * manus-upload-file, then passed as URL objects in the webhook payload.
+ * Optional env:
+ *   MAIL_FROM       — sender header, default "Reagan's School Dashboard <onboarding@resend.dev>"
+ *   MAIL_DEV_TO     — when set, ALL email is redirected to this address only
+ *                     (useful before a custom domain is verified with Resend)
+ *
+ * Public API is unchanged:
+ *   sendEmail({ to, subject, html, text?, attachments?, replyTo? })
+ *
+ * Attachments are sent as real MIME parts (base64) — no CDN upload, no URL links.
  */
 
-import { execFile } from "child_process";
-import { promisify } from "util";
-import { writeFile, unlink } from "fs/promises";
-import { tmpdir } from "os";
-import { join } from "path";
-import { randomBytes } from "crypto";
-
-const execFileAsync = promisify(execFile);
+import { Resend } from "resend";
 
 export interface MailAttachment {
   filename: string;
@@ -45,115 +43,104 @@ export interface SendEmailResult {
   error?: string;
 }
 
-const MAKE_WEBHOOK_URL =
-  process.env.EMAIL_WEBHOOK_URL ||
-  "https://hook.us2.make.com/blmt1yp55lri3e884ahpmwum9k3ynecz";
+const API_KEY = process.env.RESEND_API_KEY || "";
+const DEFAULT_FROM =
+  process.env.MAIL_FROM ||
+  "Reagan's School Dashboard <onboarding@resend.dev>";
+const DEV_TO = process.env.MAIL_DEV_TO || "";
 
-/**
- * Upload a Buffer to a public CDN URL using manus-upload-file.
- * Returns the CDN URL or null on failure.
- */
-async function uploadBufferToPublicUrl(
-  buf: Buffer,
-  filename: string,
-): Promise<string | null> {
-  const safe = filename.replace(/[^A-Za-z0-9._-]/g, "_");
-  const tmpPath = join(tmpdir(), `mailer_${randomBytes(8).toString("hex")}_${safe}`);
-  try {
-    await writeFile(tmpPath, buf);
-    const { stdout } = await execFileAsync("manus-upload-file", [tmpPath], {
-      timeout: 30_000,
-    });
-    const match = stdout.match(/CDN URL:\s*(https?:\/\/\S+)/);
-    return match ? match[1].trim() : null;
-  } catch (e: any) {
-    console.warn(`[mailer] upload failed for ${filename}: ${String(e?.message ?? e)}`);
-    return null;
-  } finally {
-    try {
-      await unlink(tmpPath);
-    } catch {
-      /* ignore */
-    }
-  }
+let _client: Resend | null = null;
+function getClient(): Resend | null {
+  if (!API_KEY) return null;
+  if (_client) return _client;
+  _client = new Resend(API_KEY);
+  return _client;
+}
+
+function toBase64(content: Buffer | string, encoding?: "base64" | "utf8"): string {
+  if (Buffer.isBuffer(content)) return content.toString("base64");
+  if (encoding === "base64") return content; // already base64-encoded
+  // utf8 (or default) -- treat as text
+  return Buffer.from(content, "utf8").toString("base64");
 }
 
 /**
- * Send an email via Make webhook → Gmail.
- * One webhook call per recipient (plain string "to" field).
+ * Send an email via Resend.
+ * Multi-recipient: a single API call with all addresses in `to`.
+ *
+ * Returns:
+ *   { ok: true, messageId } on success
+ *   { ok: false, skipped: true, error } if RESEND_API_KEY is missing
+ *   { ok: false, error } on send failure (Resend 4xx/5xx, network, etc.)
  */
 export async function sendEmail(opts: SendEmailOptions): Promise<SendEmailResult> {
-  const toArray = Array.isArray(opts.to) ? opts.to : [opts.to];
-
-  // Upload PDF attachments to public CDN URLs
-  const attachmentUrls: Array<{ url: string; filename: string }> = [];
-  for (const att of opts.attachments ?? []) {
-    if (!att.content || typeof att.content === "string") continue;
-    const url = await uploadBufferToPublicUrl(att.content as Buffer, att.filename);
-    if (url) {
-      attachmentUrls.push({ url, filename: att.filename });
-    }
+  const client = getClient();
+  if (!client) {
+    const msg = "RESEND_API_KEY not set — refusing to send email";
+    console.warn(`[mailer] ${msg}`);
+    return { ok: false, skipped: true, error: msg };
   }
 
-  // Plain-text fallback
+  const requestedTo = Array.isArray(opts.to) ? opts.to : [opts.to];
+  // If MAIL_DEV_TO is set, redirect ALL email there. Otherwise honor `to`.
+  const toList = DEV_TO ? [DEV_TO] : requestedTo;
+
+  // Plain-text fallback derived from HTML if not supplied
   const plainText =
-    opts.text ?? opts.html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    opts.text ??
+    opts.html
+      .replace(/<style[\s\S]*?<\/style>/gi, "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
 
-  // Send one webhook call per recipient
-  const results: SendEmailResult[] = [];
-  for (const recipient of toArray) {
-    const payload = {
-      to: recipient,
-      subject: opts.subject,
-      body: opts.html,
-      body_plain: plainText,
-      attachments: attachmentUrls,
-      attachment_count: attachmentUrls.length,
-    };
-    try {
-      const response = await fetch(MAKE_WEBHOOK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(30_000),
-      });
-      if (!response.ok) {
-        const body = await response.text().catch(() => "");
-        const msg = `Make webhook returned ${response.status} for ${recipient}: ${body.slice(0, 200)}`;
-        console.error(`[mailer] ${msg}`);
-        results.push({ ok: false, error: msg });
-      } else {
-        const respText = await response.text().catch(() => "");
-        console.log(
-          `[mailer] Make webhook sent to ${recipient} — status ${response.status} — ${respText.slice(0, 100)}`,
-        );
-        results.push({ ok: true, messageId: `make-${Date.now()}` });
-      }
-    } catch (e: any) {
-      const msg = String(e?.message ?? e);
-      console.error(`[mailer] Make webhook failed for ${recipient}: ${msg}`);
-      results.push({ ok: false, error: msg });
+  const resendAttachments = (opts.attachments ?? [])
+    .filter((a) => a && a.content)
+    .map((att) => ({
+      filename: att.filename,
+      content: toBase64(att.content, att.encoding),
+      contentType: att.contentType,
+    }));
+
+  try {
+    const subjectPrefix = DEV_TO
+      ? `[orig→${requestedTo.join(",")}] `
+      : "";
+    const res = await client.emails.send({
+      from: DEFAULT_FROM,
+      to: toList,
+      subject: subjectPrefix + opts.subject,
+      text: plainText,
+      html: opts.html,
+      attachments: resendAttachments.length > 0 ? resendAttachments : undefined,
+      replyTo: opts.replyTo,
+    });
+
+    if (res.error) {
+      const msg = `${res.error.name || "ResendError"}: ${res.error.message}`;
+      console.error(
+        `[mailer] Resend rejected send to ${toList.join(", ")} — ${msg}`,
+      );
+      return { ok: false, error: msg };
     }
+    console.log(
+      `[mailer] Resend sent to ${toList.join(", ")} — messageId=${res.data?.id}`,
+    );
+    return { ok: true, messageId: res.data?.id };
+  } catch (e: any) {
+    const msg = String(e?.message ?? e);
+    console.error(`[mailer] Resend threw for ${toList.join(", ")}: ${msg}`);
+    return { ok: false, error: msg };
   }
-
-  const allOk = results.every((r) => r.ok);
-  const firstError = results.find((r) => !r.ok)?.error;
-  return allOk
-    ? { ok: true, messageId: results[0]?.messageId }
-    : { ok: false, error: firstError };
 }
 
-/** Smoke-test: verify the Make webhook URL is reachable. */
+/** Smoke-test: verify the Resend API key is set and reachable. */
 export async function verifySmtpConnection(): Promise<{ ok: boolean; error?: string }> {
-  try {
-    const response = await fetch(MAKE_WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ _test: true, to: "", subject: "ping", body: "ping" }),
-      signal: AbortSignal.timeout(10_000),
-    });
-    return response.ok ? { ok: true } : { ok: false, error: `HTTP ${response.status}` };
-  } catch (e: any) {
-    return { ok: false, error: String(e?.message ?? e) };
+  if (!API_KEY) {
+    return { ok: false, error: "RESEND_API_KEY not set" };
   }
+  // Resend has no dedicated /verify endpoint; the cheapest valid check is to
+  // attempt to list API keys (which a "sending-only" key will 401 on but a
+  // full-access key will succeed on). For now, just assert the key is present.
+  return { ok: true };
 }

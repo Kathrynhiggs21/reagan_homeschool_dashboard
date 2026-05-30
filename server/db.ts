@@ -8876,14 +8876,57 @@ export async function deleteFlashcardCard(id: number) {
 
 export async function createReviewSession(input: { dateStr: string; subjectSlug: string; topicHandle?: string; topicTitle?: string; totalQuestions: number }) {
   const db = getDb();
-  const res: any = await db.insert(reviewSessions).values({ dateStr: input.dateStr, subjectSlug: input.subjectSlug, topicHandle: input.topicHandle ?? null, topicTitle: input.topicTitle ?? null, totalQuestions: input.totalQuestions, correctAnswers: 0 });
-  return { id: res.insertId as number };
+  const res: any = await db.insert(reviewSessions).values({
+    dateStr: input.dateStr,
+    subjectSlug: input.subjectSlug,
+    topicHandle: input.topicHandle ?? null,
+    topicTitle: input.topicTitle ?? null,
+    totalQuestions: input.totalQuestions,
+    correctAnswers: 0,
+  });
+  let insertId: number | undefined =
+    typeof res?.insertId === "number" ? res.insertId :
+    Array.isArray(res) && typeof (res[0] as any)?.insertId === "number" ? (res[0] as any).insertId :
+    typeof (res as any)?.[0]?.insertId === "bigint" ? Number((res as any)[0].insertId) :
+    typeof (res as any)?.insertId === "bigint" ? Number((res as any).insertId) :
+    undefined;
+  if (!insertId) {
+    // Fall back: read the most-recent matching row by (dateStr, subjectSlug, topicTitle).
+    const back = await db
+      .select({ id: reviewSessions.id })
+      .from(reviewSessions)
+      .where(and(
+        eq(reviewSessions.dateStr, input.dateStr),
+        eq(reviewSessions.subjectSlug, input.subjectSlug),
+      ))
+      .orderBy(desc(reviewSessions.id))
+      .limit(1);
+    insertId = back?.[0]?.id;
+  }
+  if (!insertId) throw new Error("createReviewSession: could not resolve insertId");
+  return { id: insertId };
 }
 
 export async function addReviewQuestion(input: { sessionId: number; questionType: "multiple-choice" | "short-answer" | "flashcard" | "ck12-practice"; question: string; correctAnswer: string; choices?: string[] }) {
+  if (!input.sessionId || !Number.isFinite(input.sessionId)) {
+    throw new Error(`addReviewQuestion: invalid sessionId (${input.sessionId})`);
+  }
   const db = getDb();
-  const res: any = await db.insert(reviewQuestions).values({ sessionId: input.sessionId, questionType: input.questionType, question: input.question, correctAnswer: input.correctAnswer, choices: input.choices ? JSON.stringify(input.choices) : null });
-  return { id: res.insertId as number };
+  const res: any = await db.insert(reviewQuestions).values({
+    sessionId: input.sessionId,
+    questionType: input.questionType,
+    question: input.question,
+    correctAnswer: input.correctAnswer,
+    choices: input.choices ? JSON.stringify(input.choices) : null,
+  });
+  const insertId: number | undefined =
+    typeof res?.insertId === "number" ? res.insertId :
+    Array.isArray(res) && typeof (res[0] as any)?.insertId === "number" ? (res[0] as any).insertId :
+    typeof (res as any)?.[0]?.insertId === "bigint" ? Number((res as any)[0].insertId) :
+    typeof (res as any)?.insertId === "bigint" ? Number((res as any).insertId) :
+    undefined;
+  // No read-back required for questions — callers don't need the id; just return 0 on miss.
+  return { id: insertId ?? 0 };
 }
 
 export async function submitReviewAnswer(input: { questionId: number; studentAnswer: string; isCorrect: boolean; timeSpentMs?: number }) {

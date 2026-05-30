@@ -148,7 +148,31 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
         // v2.98: pass curriculumTopicId so uploaded PDFs, camera photos, and
         // custom lessons from BlockResourcesPanel also flow into the packet.
         const lesson = await hydrateLessonForBlock(b.id, dateStr, b.curriculumTopicId ?? null);
-        if (lesson) lessonByBlockId.set(b.id, lesson);
+        if (lesson) {
+          lessonByBlockId.set(b.id, lesson);
+        } else {
+          // v3.12 (2026-05-29): AI-generated blocks with no curated lesson,
+          // no daily printable, and no topic resources used to print as a
+          // bare title + blank Notes lines. The user requires every block in
+          // the packet to include the worksheet content inline so Reagan can
+          // do the whole day offline. Synthesize a tiny worksheet via LLM
+          // and cache it. Failures are silent.
+          try {
+            const { synthesizeLessonForBlock } = await import("./synthesizeLessonForBlock");
+            const synth = await synthesizeLessonForBlock({
+              blockId: b.id,
+              blockTitle: b.title,
+              blockDescription: b.description ?? null,
+              subjectSlug: (b.subjectSlug ?? null) as string | null,
+              subjectName: b.subjectName ?? null,
+              durationMin: b.durationMin ?? 30,
+              dateStr,
+            });
+            if (synth) lessonByBlockId.set(b.id, synth);
+          } catch {
+            // synthesizer failure must not block the packet
+          }
+        }
       } catch {
         // ignore
       }

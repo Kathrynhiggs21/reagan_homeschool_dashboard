@@ -273,10 +273,10 @@ function renderPrintSeparatelyBox(
 
   doc.y = boxY + 8;
   doc.fillColor(BRAND_SUMMER).fontSize(10).font("Helvetica-Bold")
-    .text("PRINT THIS WORKSHEET SEPARATELY", { indent: 8, width: PAGE_W - 16 });
+    .text(cleanForPdf("PRINT THIS WORKSHEET SEPARATELY"), { indent: 8, width: PAGE_W - 16 });
   doc.font("Helvetica");
   doc.fillColor(BRAND_BLUE).fontSize(8)
-    .text(absoluteUrl, {
+    .text(cleanForPdf(absoluteUrl), {
       link: absoluteUrl,
       underline: true,
       indent: 8,
@@ -315,7 +315,7 @@ function renderCoverPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, agendaH
   // School-day window
   if (input.schoolDayWindow) {
     doc.fillColor(GRAY_LIGHT).fontSize(10).text(
-      `School day: ${formatTime(input.schoolDayWindow.start)} – ${formatTime(input.schoolDayWindow.end)}`,
+      cleanForPdf(`School day: ${formatTime(input.schoolDayWindow.start)} – ${formatTime(input.schoolDayWindow.end)}`),
       { align: "center" },
     );
     doc.moveDown(0.2);
@@ -339,7 +339,7 @@ function renderCoverPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, agendaH
     return s + vids;
   }, 0);
 
-  doc.fillColor(BRAND_GREEN).fontSize(11).font("Helvetica-Bold").text("What's in this packet:");
+  doc.fillColor(BRAND_GREEN).fontSize(11).font("Helvetica-Bold").text(cleanForPdf("What's in this packet:"));
   doc.font("Helvetica").moveDown(0.15);
   const packetSummary: string[] = [];
   if (hasDevotionPage) packetSummary.push("Devotion / reflection page");
@@ -358,7 +358,7 @@ function renderCoverPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, agendaH
   doc.font("Helvetica").moveDown(0.3);
 
   if (input.blocks.length === 0) {
-    doc.fillColor(GRAY_LIGHT).fontSize(11).text("No blocks scheduled.");
+    doc.fillColor(GRAY_LIGHT).fontSize(11).text(cleanForPdf("No blocks scheduled."));
   }
 
   for (const b of input.blocks) {
@@ -424,7 +424,7 @@ function renderDevotionPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput) {
   doc.fillColor(GRAY_DARK).fontSize(12).font("Helvetica").text(cleanForPdf(input.devotionText.trim()), { width: PAGE_W });
   doc.moveDown(0.8);
   rule(doc);
-  doc.fillColor(GRAY_LIGHT).fontSize(9).text("Reflection space:", { indent: 0 });
+  doc.fillColor(GRAY_LIGHT).fontSize(9).text(cleanForPdf("Reflection space:"), { indent: 0 });
   doc.moveDown(0.2);
   for (let i = 0; i < 6; i++) answerLine(doc);
 }
@@ -493,16 +493,16 @@ function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: Age
       sectionHead(doc, "Videos");
       for (const v of L.videos) {
         doc.fillColor(GRAY_DARK).fontSize(11).font("Helvetica-Bold")
-          .text(`▶ ${v.title}`, { link: v.url || undefined, underline: !!v.url });
+          .text(cleanForPdf(`> ${v.title}`), { link: v.url || undefined, underline: !!v.url });
         doc.font("Helvetica");
         if (v.url) {
-          doc.fillColor(BRAND_BLUE).fontSize(8).text(v.url, { link: v.url, underline: true, indent: 8, width: PAGE_W });
+          doc.fillColor(BRAND_BLUE).fontSize(8).text(cleanForPdf(v.url), { link: v.url, underline: true, indent: 8, width: PAGE_W });
         }
         if (v.description) {
-          doc.fillColor(GRAY_MED).fontSize(9).text(v.description.trim(), { indent: 8, width: PAGE_W });
+          doc.fillColor(GRAY_MED).fontSize(9).text(cleanForPdf(v.description.trim()), { indent: 8, width: PAGE_W });
         }
         if (v.transcript) {
-          doc.fillColor(GRAY_LIGHT).fontSize(8).text(`Transcript: ${v.transcript.trim().slice(0, 300)}…`, { indent: 8, width: PAGE_W });
+          doc.fillColor(GRAY_LIGHT).fontSize(8).text(cleanForPdf(`Transcript: ${v.transcript.trim().slice(0, 300)}...`), { indent: 8, width: PAGE_W });
         }
         doc.moveDown(0.2);
       }
@@ -513,10 +513,10 @@ function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: Age
     if (L.worksheets && L.worksheets.length > 0) {
       sectionHead(doc, "Worksheets & Activities");
       for (const w of L.worksheets) {
-        doc.fillColor(GRAY_DARK).fontSize(12).font("Helvetica-Bold").text(w.title);
+        doc.fillColor(GRAY_DARK).fontSize(12).font("Helvetica-Bold").text(cleanForPdf(w.title));
         doc.font("Helvetica");
         if (w.description) {
-          doc.fillColor(GRAY_MED).fontSize(9).text(w.description.trim(), { width: PAGE_W, indent: 4 });
+          doc.fillColor(GRAY_MED).fontSize(9).text(cleanForPdf(w.description.trim()), { width: PAGE_W, indent: 4 });
         }
         // v3.11: Try to embed image inline; PDF bytes are merged after pdfkit finishes
         const displayUrl = w.resolvedUrl || w.printableUrl || null;
@@ -533,7 +533,7 @@ function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: Age
             doc.moveDown(0.3);
             if (displayUrl) {
               doc.fillColor(GRAY_LIGHT).fontSize(7)
-                .text(`Source: ${displayUrl}`, { indent: 4, width: PAGE_W });
+                .text(cleanForPdf(`Source: ${displayUrl}`), { indent: 4, width: PAGE_W });
             }
           } catch {
             // If image embedding fails, fall back to print-separately box
@@ -558,10 +558,10 @@ function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: Age
             .restore();
           doc.y = boxY + 8;
           doc.fillColor("#16a34a").fontSize(10).font("Helvetica-Bold")
-            .text("📄  Worksheet pages follow immediately after this block", { indent: 8, width: PAGE_W - 16 });
+            .text(cleanForPdf("Worksheet pages follow immediately after this block"), { indent: 8, width: PAGE_W - 16 });
           doc.font("Helvetica");
           doc.fillColor(GRAY_MED).fontSize(8)
-            .text(w.title, { indent: 8, width: PAGE_W - 16 });
+            .text(cleanForPdf(w.title), { indent: 8, width: PAGE_W - 16 });
           doc.y = boxY + boxH + 6;
           doc.moveDown(0.2);
         } else if (displayUrl) {
@@ -572,7 +572,7 @@ function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: Age
         if (w.questions && w.questions.length > 0) {
           doc.moveDown(0.2);
           for (let i = 0; i < w.questions.length; i++) {
-            doc.fillColor(GRAY_DARK).fontSize(10).text(`${i + 1}. ${w.questions[i]}`, { width: PAGE_W, indent: 4 });
+            doc.fillColor(GRAY_DARK).fontSize(10).text(cleanForPdf(`${i + 1}. ${w.questions[i]}`), { width: PAGE_W, indent: 4 });
             answerLine(doc);
           }
         } else if (!displayUrl && !w.imageBytes && !w.pdfBytes) {
@@ -590,9 +590,9 @@ function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: Age
       doc.moveDown(0.2);
       rule(doc);
       doc.fillColor(GRAY_LIGHT).fontSize(8).font("Helvetica-Bold")
-        .text("ANSWER KEY (for adult use only)");
+        .text(cleanForPdf("ANSWER KEY (for adult use only)"));
       doc.font("Helvetica");
-      doc.fillColor(GRAY_MED).fontSize(8).text(L.answerKey.trim(), { width: PAGE_W });
+      doc.fillColor(GRAY_MED).fontSize(8).text(cleanForPdf(L.answerKey.trim()), { width: PAGE_W });
       doc.moveDown(0.2);
     }
   }
@@ -623,7 +623,7 @@ function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: Age
   if (G && !L) {
     if (G.kind === "adventure" && G.instructions[0]) {
       doc.fillColor(BRAND_WARM).fontSize(10).font("Helvetica-Bold")
-        .text(`Safety: ${G.instructions[0]}`, { width: PAGE_W });
+        .text(cleanForPdf(`Safety: ${G.instructions[0]}`), { width: PAGE_W });
       doc.font("Helvetica");
       doc.moveDown(0.2);
     }
