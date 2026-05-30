@@ -13,11 +13,20 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const sendMock = vi.fn();
+const smtpSendMailMock = vi.fn();
 
 vi.mock("resend", () => ({
   Resend: vi.fn().mockImplementation(() => ({
     emails: { send: sendMock },
   })),
+}));
+
+vi.mock("nodemailer", () => ({
+  default: {
+    createTransport: vi.fn().mockImplementation(() => ({
+      sendMail: smtpSendMailMock,
+    })),
+  },
 }));
 
 async function freshMailer() {
@@ -28,9 +37,12 @@ async function freshMailer() {
 
 beforeEach(() => {
   sendMock.mockReset();
+  smtpSendMailMock.mockReset();
   delete process.env.MAIL_DEV_TO;
   delete process.env.MAIL_FROM;
   delete process.env.MAIL_ALLOWED_RECIPIENTS;
+  delete process.env.GMAIL_SMTP_USER;
+  delete process.env.GMAIL_APP_PASSWORD;
   process.env.RESEND_API_KEY = "re_test_key";
 });
 
@@ -166,8 +178,9 @@ describe("mailer (Resend)", () => {
     expect(res.droppedRecipients).toEqual(["marcy.spear@gmail.com"]);
   });
 
-  it("returns skipped when MAIL_ALLOWED_RECIPIENTS strips every requested address", async () => {
+  it("returns skipped when MAIL_ALLOWED_RECIPIENTS strips every requested address AND no SMTP fallback configured", async () => {
     process.env.MAIL_ALLOWED_RECIPIENTS = "someone-else@gmail.com";
+    // No GMAIL_SMTP_USER/PASSWORD set — SMTP fallback disabled.
     const { sendEmail } = await freshMailer();
     const res = await sendEmail({
       to: ["marcy.spear@gmail.com", "spear.cpt@gmail.com"],
@@ -175,13 +188,79 @@ describe("mailer (Resend)", () => {
       html: "<p>hi</p>",
     });
     expect(res.ok).toBe(false);
-    expect(res.skipped).toBe(true);
     expect(res.acceptedRecipients).toEqual([]);
-    expect(res.droppedRecipients).toEqual([
-      "marcy.spear@gmail.com",
-      "spear.cpt@gmail.com",
-    ]);
+    // The fallback was attempted (and rejected for both addresses since SMTP
+    // creds are absent); Resend was never called.
     expect(sendMock).not.toHaveBeenCalled();
+    expect(res.droppedRecipients).toEqual(
+      expect.arrayContaining([
+        "marcy.spear@gmail.com",
+        "spear.cpt@gmail.com",
+      ]),
+    );
+  });
+
+  it("falls back to Gmail SMTP for recipients dropped by MAIL_ALLOWED_RECIPIENTS", async () => {
+    process.env.MAIL_ALLOWED_RECIPIENTS = "spear.cpt@gmail.com";
+    process.env.GMAIL_SMTP_USER = "sender@gmail.com";
+    process.env.GMAIL_APP_PASSWORD = "app-password";
+    sendMock.mockResolvedValueOnce({ data: { id: "resend_msg_1" }, error: null });
+    smtpSendMailMock.mockResolvedValueOnce({ messageId: "smtp_msg_1" });
+    const { sendEmail } = await freshMailer();
+    const res = await sendEmail({
+      to: ["marcy.spear@gmail.com", "spear.cpt@gmail.com"],
+      subject: "Both should land",
+      html: "<p>body</p>",
+    });
+    expect(res.ok).toBe(true);
+    // Resend got the verified address only.
+    expect(sendMock.mock.calls[0][0].to).toEqual(["spear.cpt@gmail.com"]);
+    // SMTP fallback got the dropped address.
+    expect(smtpSendMailMock).toHaveBeenCalledTimes(1);
+    expect(smtpSendMailMock.mock.calls[0][0].to).toBe("marcy.spear@gmail.com");
+    expect(res.acceptedRecipients).toEqual(
+      expect.arrayContaining(["spear.cpt@gmail.com", "marcy.spear@gmail.com"]),
+    );
+  });
+
+  it("goes straight to SMTP fallback when ALL recipients are dropped by allow-list", async () => {
+    process.env.MAIL_ALLOWED_RECIPIENTS = "someone-else@gmail.com";
+    process.env.GMAIL_SMTP_USER = "sender@gmail.com";
+    process.env.GMAIL_APP_PASSWORD = "app-password";
+    smtpSendMailMock.mockResolvedValue({ messageId: "smtp_msg_only" });
+    const { sendEmail } = await freshMailer();
+    const res = await sendEmail({
+      to: ["marcy.spear@gmail.com", "spear.cpt@gmail.com"],
+      subject: "All via SMTP",
+      html: "<p>body</p>",
+    });
+    expect(res.ok).toBe(true);
+    // Resend was never called — nothing in finalList.
+    expect(sendMock).not.toHaveBeenCalled();
+    // Both addresses went through SMTP.
+    expect(smtpSendMailMock).toHaveBeenCalledTimes(2);
+    expect(res.acceptedRecipients).toEqual(
+      expect.arrayContaining(["marcy.spear@gmail.com", "spear.cpt@gmail.com"]),
+    );
+  });
+
+  it("reports SMTP failures in droppedRecipients when fallback can't deliver", async () => {
+    process.env.MAIL_ALLOWED_RECIPIENTS = "spear.cpt@gmail.com";
+    process.env.GMAIL_SMTP_USER = "sender@gmail.com";
+    process.env.GMAIL_APP_PASSWORD = "app-password";
+    sendMock.mockResolvedValueOnce({ data: { id: "resend_msg_2" }, error: null });
+    smtpSendMailMock.mockRejectedValueOnce(new Error("connection refused"));
+    const { sendEmail } = await freshMailer();
+    const res = await sendEmail({
+      to: ["marcy.spear@gmail.com", "spear.cpt@gmail.com"],
+      subject: "SMTP fails",
+      html: "<p>body</p>",
+    });
+    // Resend send to verified address still succeeded so overall ok=true,
+    // but Marcy is reported as dropped (SMTP failed).
+    expect(res.ok).toBe(true);
+    expect(res.acceptedRecipients).toEqual(["spear.cpt@gmail.com"]);
+    expect(res.droppedRecipients).toEqual(["marcy.spear@gmail.com"]);
   });
 
   it("derives a plain-text fallback from HTML when text is not provided", async () => {
