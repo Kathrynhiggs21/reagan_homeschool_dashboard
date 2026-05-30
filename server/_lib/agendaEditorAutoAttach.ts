@@ -35,6 +35,14 @@ export type FinderFn = (args: {
   query: string;
   subjectSlug?: string | null;
   kidSafe?: boolean;
+  /**
+   * v3.16 (2026-05-30) — grade-level hint for Summer Mode.
+   * When set, the underlying finder MAY weight matches whose ladder/library
+   * gradeLevel equals this string higher, so Summer Mode pulls 6th-grade
+   * preview content instead of 5th-grade review. Optional; finders that
+   * ignore it must continue to work unchanged.
+   */
+  gradeLevel?: string | null;
 }) => Promise<FinderResultLike[]>;
 
 /**

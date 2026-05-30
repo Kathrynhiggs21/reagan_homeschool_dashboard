@@ -2968,6 +2968,151 @@ export async function listSkillsWithProgress(subjectSlug?: string) {
   }));
 }
 
+/* ============================================================== */
+/*  6th-grade ladder seed + 5th-grade report card                  */
+/* ============================================================== */
+
+import {
+  seedSixthGradeLadder,
+  SIXTH_GRADE_LADDER_ROWS,
+} from "./_lib/seedSixthGradeLadder.js";
+
+export async function seedSixthGradeLadderInDb() {
+  const db = getDb();
+  return seedSixthGradeLadder({
+    lookupExisting: async () => {
+      const codes = SIXTH_GRADE_LADDER_ROWS.map((r) => r.skillCode);
+      const rows: any[] = await db
+        .select({ skillCode: (skillLadder as any).skillCode })
+        .from(skillLadder)
+        .where(inArray((skillLadder as any).skillCode, codes as any));
+      return new Set(rows.map((r) => r.skillCode));
+    },
+    insertRow: async (row) => {
+      await db.insert(skillLadder).values({
+        subjectSlug: row.subjectSlug,
+        strand: row.strand,
+        skillCode: row.skillCode,
+        title: row.title,
+        kidFriendly: row.kidFriendly,
+        gradeLevel: "6",
+        ladderOrder: row.ladderOrder,
+        estMinutes: row.estMinutes,
+        active: true,
+      } as any);
+    },
+  });
+}
+
+export interface FifthGradeReportCardRow {
+  skillId: number;
+  skillCode: string;
+  title: string;
+  strand: string;
+  level: number;
+  confidence: number;
+  evidenceCount: number;
+  lastPracticedAt: Date | null;
+  band: "mastered" | "on track" | "working on it" | "not yet";
+}
+
+export interface FifthGradeReportCardSummary {
+  bySubject: Record<string, FifthGradeReportCardRow[]>;
+  /** Mastered rows (level >= 4) flat list, sorted newest-first by lastPracticedAt. */
+  completedTopics: FifthGradeReportCardRow[];
+  totals: {
+    mastered: number;
+    onTrack: number;
+    workingOnIt: number;
+    notYet: number;
+    overall: number;
+    pctMastered: number;
+  };
+  generatedAt: Date;
+}
+
+function levelToBand(level: number): FifthGradeReportCardRow["band"] {
+  if (level >= 4) return "mastered";
+  if (level >= 3) return "on track";
+  if (level >= 1) return "working on it";
+  return "not yet";
+}
+
+export async function fifthGradeReportCard(): Promise<FifthGradeReportCardSummary> {
+  const db = getDb();
+  const ladder: any[] = await db
+    .select()
+    .from(skillLadder)
+    .where(
+      and(
+        eq(skillLadder.active, true),
+        eq((skillLadder as any).gradeLevel, "5"),
+      ) as any,
+    );
+  const progress: any[] = await db.select().from(skillProgress);
+  const byLadderId = new Map(progress.map((p: any) => [p.skillLadderId, p]));
+
+  const bySubject: Record<string, FifthGradeReportCardRow[]> = {};
+  let mastered = 0;
+  let onTrack = 0;
+  let workingOnIt = 0;
+  let notYet = 0;
+
+  for (const s of ladder) {
+    const p = byLadderId.get(s.id) ?? {
+      level: 0,
+      confidence: 0,
+      evidenceCount: 0,
+      lastPracticedAt: null,
+    };
+    const band = levelToBand(p.level);
+    if (band === "mastered") mastered += 1;
+    else if (band === "on track") onTrack += 1;
+    else if (band === "working on it") workingOnIt += 1;
+    else notYet += 1;
+
+    const row: FifthGradeReportCardRow = {
+      skillId: s.id,
+      skillCode: (s as any).skillCode,
+      title: s.title,
+      strand: s.strand,
+      level: p.level,
+      confidence: p.confidence,
+      evidenceCount: p.evidenceCount,
+      lastPracticedAt: p.lastPracticedAt ?? null,
+      band,
+    };
+    if (!bySubject[s.subjectSlug]) bySubject[s.subjectSlug] = [];
+    bySubject[s.subjectSlug].push(row);
+  }
+
+  const overall = ladder.length;
+  const pctMastered = overall ? Math.round((mastered / overall) * 100) : 0;
+
+  // v3.16 (2026-05-30) — surface a flat list of mastered topics with their
+  // completion date (lastPracticedAt at the moment they hit level >= 4) so
+  // Mom can include it in the IH (Ohio Independent Homeschool) annual report.
+  // Sorted newest-first so the most-recent mastery shows at the top.
+  const completedTopics: FifthGradeReportCardRow[] = [];
+  for (const subjectRows of Object.values(bySubject)) {
+    for (const row of subjectRows) {
+      if (row.band === "mastered") completedTopics.push(row);
+    }
+  }
+  completedTopics.sort((a, b) => {
+    const at = a.lastPracticedAt ? new Date(a.lastPracticedAt).getTime() : 0;
+    const bt = b.lastPracticedAt ? new Date(b.lastPracticedAt).getTime() : 0;
+    return bt - at;
+  });
+
+  return {
+    bySubject,
+    completedTopics,
+    totals: { mastered, onTrack, workingOnIt, notYet, overall, pctMastered },
+    generatedAt: new Date(),
+  };
+}
+
 /** The next-up skill: lowest-level skill in the requested subject (or any) */
 export async function nextSkillForToday(subjectSlug?: string) {
   const all: any[] = await listSkillsWithProgress(subjectSlug);
@@ -5868,6 +6013,7 @@ export async function computeReaganProfileSnapshot(windowDays = 14): Promise<Rea
 
 // ----- DAILY PRINTABLES -----
 import { dailyPrintables } from "../drizzle/schema";
+import { prefetchWorksheet } from "./_lib/worksheetPrefetch.js";
 
 export type PrintableSyncInput = {
   forDate: string; // YYYY-MM-DD
@@ -5981,6 +6127,22 @@ export async function attachPrintableToBlock(input: {
     estMinutes: input.estMinutes ?? null,
     coinReward: input.coinReward ?? 5,
   } as any;
+
+  // 2026-05-30 — Worksheet pre-fetch. Best-effort fetch+store so print day
+  // doesn't depend on the upstream URL still serving. Failures fall back to
+  // the original URL silently.
+  if (row.sourceUrl) {
+    try {
+      const pf = await prefetchWorksheet(row.sourceUrl, row.title);
+      if (pf.stored) {
+        row.sourceUrl = pf.url;
+        row.source = row.source === "manual" ? "prefetched" : row.source;
+      }
+    } catch {
+      /* best-effort — leave row.sourceUrl as the original */
+    }
+  }
+
   await d.insert(dailyPrintables).values(row);
   // Return the freshly-inserted row by re-reading the latest match;
   // simpler than wiring `lastInsertId` for the typical happy path.

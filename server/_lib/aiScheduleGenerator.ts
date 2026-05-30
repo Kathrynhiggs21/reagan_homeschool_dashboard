@@ -119,6 +119,7 @@ export function sanitizeBlocks(
   raw: any,
   validSlugs: Set<string>,
   validTopicCodes?: Set<string>,
+  dayLength?: "full" | "half" | "off",
 ): { blocks: AIBlockDraft[]; warnings: string[] } {
   const warnings: string[] = [];
   if (!Array.isArray(raw)) return { blocks: [], warnings: ["LLM returned non-array"] };
@@ -165,7 +166,44 @@ export function sanitizeBlocks(
     }
     out.push({ blockType, title, description, durationMin, startTime, subjectSlug, curriculumTopicCode });
   }
-  return { blocks: out, warnings };
+
+  // 2026-05-30 — Day-length aware bounds. A homeschool day is 2–5 hours
+  // / 4–10 blocks for a full day; half days run smaller; off days are empty.
+  // Upper bound: hard cap (the LLM occasionally emits 16+ blocks despite the
+  // seasonal hint). Lower bound: warning-only — we don't synthesize blocks,
+  // we just flag so callers (or the user) can re-roll.
+  const MAX_BLOCKS = 10;
+  const MAX_TOTAL_MIN = 300; // 5 hours
+  const capped: AIBlockDraft[] = [];
+  let totalMin = 0;
+  for (const b of out) {
+    if (capped.length >= MAX_BLOCKS) {
+      warnings.push(`dropped extra block "${b.title}" — day cap of ${MAX_BLOCKS} blocks reached`);
+      continue;
+    }
+    if (totalMin + b.durationMin > MAX_TOTAL_MIN) {
+      warnings.push(`dropped extra block "${b.title}" — day cap of ${MAX_TOTAL_MIN} min (5h) reached`);
+      continue;
+    }
+    capped.push(b);
+    totalMin += b.durationMin;
+  }
+
+  // Lower-bound advisory — only applies on full days. Off days are empty by
+  // design; half days are intentionally smaller. We warn (not throw) so the
+  // caller can decide whether to re-roll or accept a thin day.
+  if (dayLength === "full" || dayLength === undefined) {
+    const MIN_BLOCKS = 4;
+    const MIN_TOTAL_MIN = 120; // 2 hours
+    if (capped.length > 0 && capped.length < MIN_BLOCKS) {
+      warnings.push(`thin day — only ${capped.length} block(s); a full day expects at least ${MIN_BLOCKS}`);
+    }
+    if (capped.length > 0 && totalMin < MIN_TOTAL_MIN) {
+      warnings.push(`thin day — total ${totalMin} min; a full day expects at least ${MIN_TOTAL_MIN} min (2h)`);
+    }
+  }
+
+  return { blocks: capped, warnings };
 }
 
 /** Build the LLM messages array. Exported so tests can pin the prompt shape. */
@@ -317,7 +355,7 @@ export async function generateScheduleDraft(input: AIGenerateInput): Promise<AIG
   let parsed: any = {};
   try { parsed = typeof raw === "string" ? JSON.parse(raw) : raw; } catch { parsed = {}; }
   const validTopicCodes = new Set((input.topicCatalog || []).map(t => t.code.toUpperCase()));
-  let { blocks, warnings } = sanitizeBlocks(parsed?.blocks, validSlugs, validTopicCodes);
+  let { blocks, warnings } = sanitizeBlocks(parsed?.blocks, validSlugs, validTopicCodes, input.dayLength);
 
   // Push 33 — hard-reject + retry path.
   if (enforceTopic) {
@@ -375,7 +413,7 @@ export async function generateScheduleDraft(input: AIGenerateInput): Promise<AIG
       const retryRaw = (retryResp as any)?.choices?.[0]?.message?.content ?? "{}";
       let retryParsed: any = {};
       try { retryParsed = typeof retryRaw === "string" ? JSON.parse(retryRaw) : retryRaw; } catch { retryParsed = {}; }
-      const retried = sanitizeBlocks(retryParsed?.blocks, validSlugs, validTopicCodes);
+      const retried = sanitizeBlocks(retryParsed?.blocks, validSlugs, validTopicCodes, input.dayLength);
       blocks = retried.blocks;
       warnings = [...warnings, "hard-reject retry triggered: " + untagged.length + " academic block(s) lacked topicCode on first pass", ...retried.warnings];
       // Drop any academic blocks that STILL lack a topicCode after the retry.

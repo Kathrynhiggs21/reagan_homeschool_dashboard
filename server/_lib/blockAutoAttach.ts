@@ -217,7 +217,7 @@ export async function runAutoAttachForBlock(
   block: AutoAttachBlock,
   date: string,
   deps: AutoAttachDeps,
-  opts: { kidSafe?: boolean } = {},
+  opts: { kidSafe?: boolean; gradeLevel?: string | null } = {},
 ): Promise<AutoAttachBlockReport> {
   const blockTitle = block.title ?? "(untitled)";
   // 1. Skip if already populated.
@@ -257,6 +257,7 @@ export async function runAutoAttachForBlock(
       query,
       subjectSlug: block.subjectSlug ?? null,
       kidSafe: opts.kidSafe !== false,
+      gradeLevel: opts.gradeLevel ?? null,
     });
   } catch (err: any) {
     return {
@@ -318,7 +319,7 @@ export async function runAutoAttachForBlocks(
   blocks: AutoAttachBlock[],
   date: string,
   deps: AutoAttachDeps,
-  opts: { kidSafe?: boolean } = {},
+  opts: { kidSafe?: boolean; gradeLevel?: string | null } = {},
 ): Promise<AutoAttachResult> {
   const reports: AutoAttachBlockReport[] = [];
   let attached = 0;
@@ -356,10 +357,43 @@ export async function runAutoAttachForBlocks(
  */
 export async function runAutoAttachForDate(
   date: string,
-  opts: { kidSafe?: boolean } = {},
+  opts: { kidSafe?: boolean; gradeLevel?: string | null } = {},
 ): Promise<AutoAttachResult> {
+  // v3.16 (2026-05-30) — derive gradeLevel from Summer Mode when caller
+  // didn't supply one. Active summer mode → "6" (preview content); off →
+  // "5" (current grade). Lazy-imported so this file stays unit-testable.
   const db = await import("../db");
   const { findAssignments } = await import("./assignmentFinder");
+
+  // v3.16 (2026-05-30) — derive gradeLevel from Summer Mode when caller
+  // didn't supply one. Active summer mode → "6" (preview content); off →
+  // "5" (current grade). Fail-safe to "5" on any read error.
+  let resolvedGrade: string | null = opts.gradeLevel ?? null;
+  if (resolvedGrade == null) {
+    try {
+      const { summerSettingsFromKv, effectiveSummerActive } = await import(
+        "../summerMode"
+      );
+      const [autoFlip, start, end, override, vacJson] = await Promise.all([
+        db.getAppSetting("summer.autoFlipEnabled"),
+        db.getAppSetting("summer.start"),
+        db.getAppSetting("summer.end"),
+        db.getAppSetting("summer.override"),
+        db.getAppSetting("summer.vacationRanges"),
+      ]);
+      const settings = summerSettingsFromKv({
+        "summer.autoFlipEnabled": autoFlip,
+        "summer.start": start,
+        "summer.end": end,
+        "summer.override": override,
+        "summer.vacationRanges": vacJson,
+      });
+      const status = effectiveSummerActive(date, settings);
+      resolvedGrade = status.active ? "6" : "5";
+    } catch {
+      resolvedGrade = "5";
+    }
+  }
 
   const plan = await db.getPlanByDate(date);
   if (!plan) {
@@ -401,5 +435,8 @@ export async function runAutoAttachForDate(
     },
   };
 
-  return runAutoAttachForBlocks(blocks, date, deps, opts);
+  return runAutoAttachForBlocks(blocks, date, deps, {
+    ...opts,
+    gradeLevel: resolvedGrade,
+  });
 }

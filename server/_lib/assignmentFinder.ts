@@ -150,6 +150,14 @@ export async function findAssignments(args: {
   kidSafe?: boolean;            // forced true for kid sessions
   includeWeb?: boolean;         // default true
   includeLibrary?: boolean;     // default true
+  /**
+   * v3.16 (2026-05-30) — grade-level hint. When set, library matches whose
+   * own gradeLevel equals this string are sorted to the front of the result
+   * list, so Summer Mode (gradeLevel="6") pulls 6th-grade preview content
+   * before 5th-grade review. Optional; when null/undefined, ranking is
+   * unchanged.
+   */
+  gradeLevel?: string | null;
 }): Promise<FinderResult[]> {
   let q = args.query.trim();
   if (args.imageUrl) {
@@ -180,5 +188,25 @@ export async function findAssignments(args: {
   );
 
   // Drop kid-unsafe results entirely when kidSafe is on.
-  return all.filter((r) => (kidSafe ? r.ageAppropriate : true));
+  const safe = all.filter((r) => (kidSafe ? r.ageAppropriate : true));
+
+  // v3.16 (2026-05-30) — stable grade-level boost. When the caller supplied
+  // a target grade, partition results so library rows whose own gradeLevel
+  // matches come first (preserving relative order within each partition).
+  // Sonar / web rows (which never carry a gradeLevel) keep their original
+  // position relative to one another. This is a non-breaking re-rank: every
+  // result that would have been returned before is still returned now.
+  const targetGrade = args.gradeLevel ?? null;
+  if (!targetGrade) return safe;
+  const matches: FinderResult[] = [];
+  const rest: FinderResult[] = [];
+  for (const r of safe) {
+    const rg = (r as any).gradeLevel;
+    if (typeof rg === "string" && rg === targetGrade) {
+      matches.push(r);
+    } else {
+      rest.push(r);
+    }
+  }
+  return [...matches, ...rest];
 }

@@ -1956,6 +1956,23 @@ export const appRouter = router({
       );
       return subjects.sort((a, b) => a.pctMastered - b.pctMastered); // weakest first
     }),
+    /**
+     * Idempotent seed of the 6th-grade Ohio-aligned skill ladder rows.
+     * Admin-only. Returns inserted/skipped counts.
+     */
+    seedSixthGrade: adminProcedure.mutation(async () => {
+      return db.seedSixthGradeLadderInDb();
+    }),
+
+    /**
+     * 5th-Grade Report Card. Returns Reagan's mastery state across every
+     * 5th-grade ladder row, grouped by subject, with kid-friendly mastery
+     * bands and (parent-only) raw level numbers.
+     */
+    reportCardFifth: adminProcedure.query(async () => {
+      return db.fifthGradeReportCard();
+    }),
+
     readyFor6th: publicProcedure.query(async () => {
       const summary = await db.subjectLevelSummary();
       const coreSubjects = ["math", "ela", "science", "ss"];
