@@ -1423,6 +1423,24 @@ export const drivePushQueue = mysqlTable("drive_push_queue", {
   status: mysqlEnum("status", ["pending", "pushed", "skipped", "failed"]).default("pending").notNull(),
   driveFileId: varchar("drive_file_id", { length: 200 }),
   errorMessage: text("error_message"),
+  // Phase 5.5 (2026-05-29) routing audit — byte-level dedupe support.
+  //   contentHash:  hex-encoded SHA-256 of the file bytes the caller intends
+  //                 to push. Lets the dedupe gate catch the case where the
+  //                 same bytes are re-enqueued under a different fileKey.
+  //                 64 chars for SHA-256 hex; nullable for legacy rows that
+  //                 predate this column.
+  //   dedupeOutcome: what the queue-side or push-side dedupe decided about
+  //                  this row. "new" = fresh insert; "dup_pending" = matched a
+  //                  pending row by key+folder; "dup_pushed" = matched a
+  //                  pushed row by key+folder; "dup_hash" = matched by content
+  //                  hash inside the target folder; null on legacy rows.
+  contentHash: varchar("content_hash", { length: 64 }),
+  dedupeOutcome: mysqlEnum("dedupe_outcome", [
+    "new",
+    "dup_pending",
+    "dup_pushed",
+    "dup_hash",
+  ]),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   pushedAt: timestamp("pushed_at"),
 });

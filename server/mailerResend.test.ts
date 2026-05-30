@@ -30,6 +30,7 @@ beforeEach(() => {
   sendMock.mockReset();
   delete process.env.MAIL_DEV_TO;
   delete process.env.MAIL_FROM;
+  delete process.env.MAIL_ALLOWED_RECIPIENTS;
   process.env.RESEND_API_KEY = "re_test_key";
 });
 
@@ -115,6 +116,72 @@ describe("mailer (Resend)", () => {
     expect(res.skipped).toBeFalsy();
     expect(res.error).toMatch(/validation_error/);
     expect(res.error).toMatch(/Bad recipient/);
+  });
+
+  it("falls back to per-recipient send when Resend free-tier rejects multi-recipient", async () => {
+    // First call: multi-recipient send rejected with the free-tier error.
+    sendMock.mockResolvedValueOnce({
+      data: null,
+      error: {
+        name: "validation_error",
+        message:
+          "You can only send testing emails to your own email address (spear.cpt@gmail.com). To send emails to other recipients, please verify a domain at resend.com/domains, and change the `from` address to an email using this domain.",
+      },
+    });
+    // Per-recipient retry: marcy rejected, spear accepted.
+    sendMock.mockResolvedValueOnce({
+      data: null,
+      error: {
+        name: "validation_error",
+        message: "You can only send testing emails to your own email address",
+      },
+    });
+    sendMock.mockResolvedValueOnce({ data: { id: "msg_partial" }, error: null });
+
+    const { sendEmail } = await freshMailer();
+    const res = await sendEmail({
+      to: ["marcy.spear@gmail.com", "spear.cpt@gmail.com"],
+      subject: "Plan",
+      html: "<p>hi</p>",
+    });
+    expect(res.ok).toBe(true);
+    expect(res.messageId).toBe("msg_partial");
+    expect(res.acceptedRecipients).toEqual(["spear.cpt@gmail.com"]);
+    expect(res.droppedRecipients).toEqual(["marcy.spear@gmail.com"]);
+    expect(sendMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("drops recipients not in MAIL_ALLOWED_RECIPIENTS before sending", async () => {
+    process.env.MAIL_ALLOWED_RECIPIENTS = "spear.cpt@gmail.com";
+    sendMock.mockResolvedValueOnce({ data: { id: "msg_allow" }, error: null });
+    const { sendEmail } = await freshMailer();
+    const res = await sendEmail({
+      to: ["marcy.spear@gmail.com", "spear.cpt@gmail.com"],
+      subject: "Filtered",
+      html: "<p>hi</p>",
+    });
+    expect(res.ok).toBe(true);
+    const call = sendMock.mock.calls[0][0];
+    expect(call.to).toEqual(["spear.cpt@gmail.com"]);
+    expect(res.droppedRecipients).toEqual(["marcy.spear@gmail.com"]);
+  });
+
+  it("returns skipped when MAIL_ALLOWED_RECIPIENTS strips every requested address", async () => {
+    process.env.MAIL_ALLOWED_RECIPIENTS = "someone-else@gmail.com";
+    const { sendEmail } = await freshMailer();
+    const res = await sendEmail({
+      to: ["marcy.spear@gmail.com", "spear.cpt@gmail.com"],
+      subject: "None allowed",
+      html: "<p>hi</p>",
+    });
+    expect(res.ok).toBe(false);
+    expect(res.skipped).toBe(true);
+    expect(res.acceptedRecipients).toEqual([]);
+    expect(res.droppedRecipients).toEqual([
+      "marcy.spear@gmail.com",
+      "spear.cpt@gmail.com",
+    ]);
+    expect(sendMock).not.toHaveBeenCalled();
   });
 
   it("derives a plain-text fallback from HTML when text is not provided", async () => {

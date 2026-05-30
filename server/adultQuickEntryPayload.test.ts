@@ -43,7 +43,8 @@ describe("Push 158 — buildAdultQuickEntryPayload", () => {
       { rawLine: "Math: page 42, 25 min, did great" },
       { rawLine: "Reading: chapter 4, 20 min, did fine" },
     ]);
-    expect(p.driveEnqueue.targetFolder).toBe("day_logs");
+    // Routing audit 2026-05-29 — must match drivePushQueue enum exactly (singular).
+    expect(p.driveEnqueue.targetFolder).toBe("day_log");
     expect(p.driveEnqueue.fileBaseName).toBe(`Reagan-day-log-${DAY}`);
     expect(p.driveEnqueue.markdownBody).toContain(`# Reagan's day — ${DAY}`);
     expect(p.driveEnqueue.markdownBody).toContain("Math · 25 min · did great");

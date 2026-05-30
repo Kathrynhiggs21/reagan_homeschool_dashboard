@@ -498,6 +498,13 @@
       "when": 1779948087971,
       "tag": "0070_overconfident_vermin",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "5",
+      "when": 1780109272214,
+      "tag": "0071_remarkable_spencer_smythe",
+      "breakpoints": true
     }
   ]
 }

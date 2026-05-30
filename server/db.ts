@@ -4554,14 +4554,89 @@ export async function enqueueDrivePush(args: {
   fileName: string;
   mimeType?: string | null;
   targetFolder: DrivePushTarget;
-}) {
-  const db = getDb();
+  /** Optional SHA-256 hex of the file bytes — enables content-hash dedupe. */
+  contentHash?: string | null;
+}, options?: { dbOverride?: any }): Promise<{
+  id: number;
+  deduplicated?: boolean;
+  /** Why we did/didn't insert. Mirrors the column on the queue row. */
+  outcome?: "new" | "dup_pending" | "dup_pushed" | "dup_hash";
+}> {
+  // Optional dbOverride is purely for vitest dedupe-gate tests (drivePushDedupe.test.ts).
+  // Production callers never pass it; getDb() returns the real TiDB pool.
+  const db = options?.dbOverride ?? getDb();
+
+  // ------------------------------------------------------------------
+  // Routing audit (Phase 5, 2026-05-29) — dedupe gate (two passes).
+  //
+  // Pass 1 — (fileKey, targetFolder) compound match:
+  //   Same file routed to the same folder twice = obvious duplicate.
+  //   We short-circuit with outcome="dup_pending" / "dup_pushed".
+  //
+  // Pass 2 — (contentHash, targetFolder) match (Phase 5.5):
+  //   Same bytes routed to the same folder under a DIFFERENT fileKey =
+  //   still a duplicate from a Drive-folder perspective. Catches the
+  //   case where re-saving a worksheet generates a new S3 key but the
+  //   content didn't change. Only runs when the caller supplies a hash.
+  //
+  // Both passes are best-effort: if the lookup fails (schema mid-migration,
+  // legacy nullable columns) we silently fall through and insert a fresh row.
+  // ------------------------------------------------------------------
+  try {
+    const [existing] = (await db
+      .select()
+      .from(drivePushQueue)
+      .where(
+        and(
+          eq(drivePushQueue.fileKey, args.fileKey),
+          eq(drivePushQueue.targetFolder as any, args.targetFolder as any),
+        ),
+      )
+      .orderBy(desc(drivePushQueue.id))
+      .limit(1)) as any[];
+    if (existing && (existing.status === "pending" || existing.status === "pushed")) {
+      return {
+        id: existing.id,
+        deduplicated: true,
+        outcome: existing.status === "pending" ? "dup_pending" : "dup_pushed",
+      };
+    }
+  } catch {
+    // Best-effort dedupe; if the lookup fails we fall through and insert.
+  }
+
+  if (args.contentHash) {
+    try {
+      const [hashMatch] = (await db
+        .select()
+        .from(drivePushQueue)
+        .where(
+          and(
+            eq(drivePushQueue.contentHash as any, args.contentHash),
+            eq(drivePushQueue.targetFolder as any, args.targetFolder as any),
+          ),
+        )
+        .orderBy(desc(drivePushQueue.id))
+        .limit(1)) as any[];
+      if (
+        hashMatch &&
+        (hashMatch.status === "pending" || hashMatch.status === "pushed")
+      ) {
+        return { id: hashMatch.id, deduplicated: true, outcome: "dup_hash" };
+      }
+    } catch {
+      /* swallow — best-effort */
+    }
+  }
+
   const r = await db.insert(drivePushQueue).values({
     fileKey: args.fileKey,
     fileUrl: args.fileUrl,
     fileName: args.fileName,
     mimeType: args.mimeType ?? null,
     targetFolder: args.targetFolder,
+    contentHash: args.contentHash ?? null,
+    dedupeOutcome: "new",
     status: "pending",
   } as any);
   let id = Number((r as any)?.[0]?.insertId ?? (r as any)?.insertId ?? 0);
@@ -4575,7 +4650,7 @@ export async function enqueueDrivePush(args: {
       .limit(1)) as any[];
     id = row?.id ?? 0;
   }
-  return { id };
+  return { id, outcome: "new" };
 }
 
 export async function listPendingDrivePushes(limit = 100): Promise<DrivePushQueueRow[]> {

@@ -58,8 +58,15 @@ export interface ActualAgendaEntry {
 }
 
 export interface DriveDayLogEnqueue {
-  /** Drive-side target folder name (caller routes via DrivePushTarget). */
-  targetFolder: "day_logs";
+  /**
+   * Drive-side target folder name. MUST match the `drivePushQueue.target_folder`
+   * MySQL enum exactly (see drizzle/schema.ts) and the DRIVE_FOLDER_NAMES map
+   * in server/db.ts. The string is the SINGULAR `day_log` — the human-facing
+   * Drive subfolder name is `"Day Logs"` and is derived from this routing key.
+   * The plural form was a typo (2026-05-14) — fixed 2026-05-29 during routing
+   * audit so payloads that flow through routers never get rejected by the enum.
+   */
+  targetFolder: "day_log";
   /** Filename without extension; route adds `.md`. */
   fileBaseName: string;
   /** Markdown body (kid + Grandma readable, no jargon, no internal ids). */
@@ -230,7 +237,7 @@ export function buildAdultQuickEntryPayload(
     });
   }
   const driveEnqueue: DriveDayLogEnqueue = {
-    targetFolder: "day_logs",
+    targetFolder: "day_log",
     fileBaseName: `Reagan-day-log-${schoolDayISO}`,
     markdownBody: buildMarkdownBody(schoolDayISO, actualEntries),
   };

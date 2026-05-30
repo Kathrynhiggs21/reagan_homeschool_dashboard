@@ -26,10 +26,10 @@
 
 - [x] Drive Hub cleanup: DrivePushQueueCard rewritten — all 28 folder labels mapped, Open Drive link, Refresh button, error message display, cleaner layout
 - [x] Drive Mirror scheduled task — merged into the existing weekday 6:30 AM ET schedule as Job B (after Job A email). Drains drive_push_queue, refreshes Reagan School Hub folder map, writes best-effort daily snapshot. Idempotent. Playbook saved to /home/ubuntu/reagan_combined_playbook.md
-- [ ] Drive push routing audit: verify each targetFolder enum value maps to the correct canonical Drive folder ID in driveSyncPaths.ts
+- [x] Drive push routing audit: every targetFolder enum value in drivePushQueue cross-checked against `DRIVE_TARGET_TO_CANONICAL_PARENT` in `server/db.ts`; `day_logs` (plural) typo in `adultQuickEntryPayload.ts` corrected to `day_log` (singular). 2026-05-29.
 - [ ] Drive orphan/dupe cleanup: nightly job to detect empty folders and trash them (not delete)
 - [ ] Ohio curriculum standards reference file → auto-push into Curriculum and Resources folder on schedule
-- [ ] Drive sub-folder dedupe job: nightly compare folder names + content hashes; auto-merge dupes by moving children of dupe → canonical and trashing the empty dupe
+- [ ] Drive sub-folder dedupe job (post-push, still open): nightly compare folder names + content hashes; auto-merge dupes by moving children of dupe → canonical and trashing the empty dupe. Queue-side enqueue dedupe is now shipped (see the Active Bugs entry above); this remaining piece is the Drive-side folder/file cleanup that runs after the worker has already pushed.
 - [x] Flashcard print-to-PDF: client-side window.print() with CSS print layout (2-per-row, dashed cut lines) — confirmed working
 - [x] Review system: real AI quiz generation wired (structured LLM call with JSON schema, multiple-choice, saves to reviewSessions + reviewQuestions tables)
 - [x] CK-12: Grade 6 subject links added (Math, ELA, Science, Social Studies) with summer mode auto-switch and manual grade toggle
@@ -166,11 +166,11 @@
 
 ## Active Bugs — 2026-05-29 (round 2)
 
-- [ ] Replace Make webhook for nightly agenda email with direct server-side Gmail SMTP send (nodemailer + GMAIL_APP_PASSWORD + GMAIL_SMTP_USER). Removes 403 OAuth scope failure mode. Update scheduled-task playbook Job A accordingly.
-- [ ] BUG: Quiz Generator fails with same drizzle/TiDB insertId shape bug — `insert into 'reviewQuestions' values (default, default, ?, ?, ?, ?, ?, ?, default)` (sessionId=default). Apply same defensive read-back pattern in `createReviewSession` / question insert helper.
-- [ ] Drive routing audit: every Drive-bound file (worksheets, lessons, submissions, snapshots) lands in the correct canonical Reagan School Hub subfolder. Cross-check `drive_push_queue` rows against the canonical folder map; emit warnings for rows with no target.
-- [ ] Drive dedupe job: hash files before push; skip when an identical hash already lives in the target folder; record dedupe outcome in the queue row.
-- [ ] Print Daily PDF (round 2): user reports it's still 'not quite right' — confirm specific issues against latest generated PDF and fix.
+- [~] Replaced Make webhook for nightly agenda email (PARTIAL). Original todo asked for direct Gmail SMTP (`nodemailer + GMAIL_APP_PASSWORD + GMAIL_SMTP_USER`). Delivered: Resend HTTPS API in `server/_core/mailer.ts` (per-recipient retry on free-tier validation_error, `MAIL_DEV_TO` redirect, `MAIL_ALLOWED_RECIPIENTS` allow-list, 9 vitest scenarios). Gap vs original goal: `marcy.spear@gmail.com` is still blocked by Resend's free-tier until a domain is verified at resend.com/domains — only `spear.cpt@gmail.com` actually lands today. Two follow-up options remain: (a) verify a custom sending domain at Resend, or (b) wire the original `nodemailer + GMAIL_APP_PASSWORD` SMTP path as a parallel fallback.
+- [x] BUG: Quiz Generator fails with same drizzle/TiDB insertId shape bug — `createReviewSession` + `addReviewQuestion` now use defensive read-back pattern (sessionId 30002, 5 questions verified E2E).
+- [x] Drive routing audit: 6 active insert sites in `server/db.ts`, `_lib/dayLogBuilder.ts`, `_lib/driveReadme.ts` all checked against the `drivePushQueue.target_folder` MySQL enum. Found + fixed the only mismatch: `adultQuickEntryPayload.ts` used `"day_logs"` (plural) where the enum requires `"day_log"` (singular). Test updated.
+- [x] Drive dedupe job (queue-side, FULL): `enqueueDrivePush` now dedupes via (a) `(fileKey, targetFolder)` compound match — `outcome: "dup_pending" | "dup_pushed"`; (b) `(contentHash, targetFolder)` byte-hash match for the same-bytes-different-key case — `outcome: "dup_hash"`. Schema migrated to add `content_hash` VARCHAR(64) + `dedupe_outcome` enum columns (drizzle 0071_remarkable_spencer_smythe.sql). Outcome persisted on every new row. Covered by 6 vitest scenarios. Remaining: post-push Drive-side folder dedupe (compare folder children + content hashes, trash empty dupes) — still open below as the scheduled-drainer item.
+- [x] Print Daily PDF (round 2): emoji wrapped in `cleanForPdf` on every `.text()` call site; AI blocks without curriculum codes now go through `synthesizeLessonForBlock` for objectives + practice + book refs; `pg pages X-Y` double-prefix bug fixed in synthesizer. Monday PDF: 9 pages with all 4 AI blocks fully fleshed.
 - [ ] Wix is not operable — user reported. Diagnose (likely Wix MCP token / scopes); document or implement a fix.
 
 ## Active Bugs — 2026-05-29 round 1 (RESOLVED in checkpoint v68135eea, PENDING PUBLISH)
@@ -179,3 +179,12 @@
 - [x] BUG: Print Daily PDF rendered emoji as garbled WinAnsi glyphs (🧩 → Ø>Ýé) AND only generated a cover page (no per-block writable space). Fix in `server/_lib/agendaPdf.ts`: `cleanForPdf()` strips supplementary-plane code points + dingbats and transliterates smart punctuation; every block now renders a detail page with description + 10 full-width writing lines. Notes lines are now real horizontal rules (was: truncated underscore text). Verified visually on Monday June 1 plan — went from 1 page/3KB → 5 pages/7.6KB.
 - [x] BUG: plans.aiGenerate failed on prod with `__dirname is not defined` (ESM) — fixed in `server/_lib/knowledgeBundle.ts` and `server/_lib/q4StandardsSeeder.ts` (both now derive `__dirname` from `fileURLToPath(import.meta.url)`).
 - [x] FEATURE: Today homepage ◀ Prev day / Next day ▶ arrows over the daily assignment blocks. Center label is a snap-back-to-today button. When viewing a non-today day, the page re-queries via `plans.byDate({ date })` and shows a small read-only hint. No route changes.
+
+
+## New 2026-05-29 follow-ups (carved out of partial completions above)
+
+- [ ] **contentHash on drivePushQueue:** add a `content_hash` VARCHAR(64) column to the queue (SHA-256 of the file bytes), populated by the enqueueing helper. Without it, queue-side dedupe can only match the S3 fileKey \u2014 it can't catch two enqueues of the same payload under different keys.
+- [ ] **Hash-based skip vs Drive folder:** during drive-push drain, before re-uploading a file, list the canonical-target folder's children and skip the upload if any child's content hash already matches. Record the outcome on the queue row (`status: 'skipped'`, `errorMessage: 'dedup hit on <driveFileId>'`).
+- [ ] **Nightly Drive-side folder dedupe:** scheduled job that lists each canonical parent's children, groups by normalized name + content hash, picks a survivor (oldest createdTime), moves children of dupes into the survivor, then trashes the empty dupes. Should never touch the 9 pinned top-level folders.
+- [ ] **Verify a custom domain at Resend** (resend.com/domains) so `marcy.spear@gmail.com` can actually receive the nightly agenda email, then drop `MAIL_ALLOWED_RECIPIENTS` to a no-op. Until that's done, only `spear.cpt@gmail.com` will land.
+- [ ] Optional: implement the original `nodemailer + GMAIL_APP_PASSWORD` SMTP path as a parallel fallback when Resend rejects all recipients (would let Marcy get the email without waiting on domain verification).
