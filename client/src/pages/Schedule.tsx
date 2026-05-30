@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Calendar, ChevronLeft, ChevronRight, MapPin, Sun, ExternalLink } from "lucide-react";
 import GoogleCalendarEmbed from "@/components/GoogleCalendarEmbed";
+import { AgendaCalendarStrip } from "@/components/AgendaCalendarStrip";
+import { subjectTint } from "@/lib/subjectColors";
 import TopicLabel from "@/components/TopicLabel";
 import ActivityOptionsPanel from "@/components/ActivityOptionsPanel";
 
@@ -233,6 +235,18 @@ function DayView({
           Open agenda
         </Button>
       </div>
+      {/* 2026-05-30 — "Surface the day's planned blocks as a calendar layer" */}
+      {blocks.length > 0 && (
+        <div className="mb-4">
+          <AgendaCalendarStrip
+            date={date}
+            blocks={blocks as any}
+            isOff={!!off}
+            offLabel={off?.label || null}
+            onBlockClick={(b) => navigate(`/agenda-editor?date=${dateStr}#block-${b.id}`)}
+          />
+        </div>
+      )}
       {blocks.length === 0 ? (
         <div className="text-sm text-muted-foreground italic">
           {off ? "Day off — no school blocks planned. Maybe a fun adventure today?" : "Nothing scheduled yet for this day."}
@@ -325,12 +339,18 @@ function WeekView({
 }: { cursor: Date; today: Date; offByDate: Record<string, { label: string; source?: string | null }>; onOpenAgenda: (d: Date) => void; }) {
   const start = startOfWeek(cursor);
   const days = Array.from({ length: 7 }, (_, i) => addDays(start, i));
+  // 2026-05-30 — fetch all 7 days of blocks in one shot for the agenda-as-calendar overlay.
+  const startStr = ymd(start);
+  const endStr = ymd(days[6]);
+  const weekBlocksQ = trpc.blocks.weekRange.useQuery({ startDate: startStr, endDate: endStr });
+  const blocksByDate: Record<string, any[]> = weekBlocksQ.data?.byDate ?? {};
   return (
     <div className="grid grid-cols-1 md:grid-cols-7 gap-2">
       {days.map((d, i) => {
         const dateStr = ymd(d);
         const off = offByDate[dateStr];
         const isToday = isSameDay(d, today);
+        const dayBlocks = blocksByDate[dateStr] || [];
         return (
           <button
             key={dateStr}
@@ -341,8 +361,31 @@ function WeekView({
           >
             <div className="text-[11px] uppercase tracking-wide opacity-70">{DOW[i]}</div>
             <div className="text-2xl font-display font-bold">{d.getDate()}</div>
-            <div className="text-xs mt-1 line-clamp-2 min-h-[2.25rem]">
-              {off ? off.label : isToday ? "Today" : "Tap to view"}
+            {/* Subject-dot strip: agenda blocks shown as colored chips so the */}
+            {/* week reads as a calendar, not just a date pad. */}
+            {dayBlocks.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                {dayBlocks.slice(0, 6).map((b: any, idx: number) => {
+                  const tint = subjectTint(b.subjectSlug);
+                  return (
+                    <span
+                      key={`${dateStr}-${b.id}-${idx}`}
+                      className="inline-flex items-center gap-0.5 rounded px-1 py-[1px] text-[9px] font-semibold leading-none"
+                      style={{ background: `${tint.border}33`, color: tint.border, border: `1px solid ${tint.border}80` }}
+                      title={b.title}
+                    >
+                      <span aria-hidden>{tint.emoji}</span>
+                      <span className="max-w-[55px] truncate">{b.title}</span>
+                    </span>
+                  );
+                })}
+                {dayBlocks.length > 6 && (
+                  <span className="inline-block rounded px-1 py-[1px] text-[9px] bg-amber-200/60 text-amber-900">+{dayBlocks.length - 6}</span>
+                )}
+              </div>
+            )}
+            <div className="text-xs mt-1 line-clamp-2 min-h-[1.5rem]">
+              {off ? off.label : isToday && dayBlocks.length === 0 ? "Today" : dayBlocks.length === 0 ? "" : `${dayBlocks.length} block${dayBlocks.length === 1 ? "" : "s"} planned`}
             </div>
           </button>
         );
@@ -359,6 +402,19 @@ function MonthView({
   const monthStart = startOfMonth(cursor);
   const gridStart = startOfWeek(monthStart);
   const cells = Array.from({ length: 42 }, (_, i) => addDays(gridStart, i));
+  // 2026-05-30 — fetch the whole 6-week grid (capped at 31 days server-side)
+  // so each cell can show subject-tinted block dots. We fire 2 calls when the
+  // grid spans a 42-day window (>31 days) so we still get full coverage.
+  const firstHalfStart = ymd(cells[0]);
+  const firstHalfEnd = ymd(cells[Math.min(20, cells.length - 1)]);
+  const secondHalfStart = ymd(cells[Math.min(21, cells.length - 1)]);
+  const secondHalfEnd = ymd(cells[cells.length - 1]);
+  const monthBlocksAQ = trpc.blocks.weekRange.useQuery({ startDate: firstHalfStart, endDate: firstHalfEnd });
+  const monthBlocksBQ = trpc.blocks.weekRange.useQuery({ startDate: secondHalfStart, endDate: secondHalfEnd });
+  const blocksByDate: Record<string, any[]> = {
+    ...(monthBlocksAQ.data?.byDate ?? {}),
+    ...(monthBlocksBQ.data?.byDate ?? {}),
+  };
   return (
     <div className="space-y-2">
       <div className="grid grid-cols-7 text-[11px] uppercase tracking-wide text-muted-foreground">
@@ -370,6 +426,11 @@ function MonthView({
           const off = offByDate[dateStr];
           const inMonth = d.getMonth() === cursor.getMonth();
           const isToday = isSameDay(d, today);
+          const dayBlocks = blocksByDate[dateStr] || [];
+          // De-duplicate dots by subject so a day with 4 math blocks shows ONE math dot.
+          const subjectsForDay = Array.from(new Set(
+            dayBlocks.map((b: any) => (b.subjectSlug || "other") as string)
+          ));
           return (
             <button
               key={dateStr}
@@ -380,6 +441,22 @@ function MonthView({
                 ${off ? "bg-pink-100 border border-pink-300 text-pink-900" : "bg-amber-50 border border-amber-200 text-amber-900 dark:bg-amber-950/40 dark:text-amber-100"}`}
             >
               <div className="font-display font-semibold">{d.getDate()}</div>
+              {/* Subject-tinted dots: 1 dot per unique subject scheduled that day. */}
+              {subjectsForDay.length > 0 && (
+                <div className="flex flex-wrap gap-0.5 mt-0.5">
+                  {subjectsForDay.slice(0, 5).map((slug, idx) => {
+                    const t = subjectTint(slug);
+                    return (
+                      <span
+                        key={`${dateStr}-dot-${idx}`}
+                        className="inline-block w-1.5 h-1.5 rounded-full"
+                        style={{ background: t.border }}
+                        title={t.label}
+                      />
+                    );
+                  })}
+                </div>
+              )}
               {off && <div className="text-[10px] line-clamp-2 leading-tight mt-auto">{off.label}</div>}
             </button>
           );

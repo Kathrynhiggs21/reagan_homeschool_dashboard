@@ -614,6 +614,54 @@ export const appRouter = router({
   blocks: router({
     list: publicProcedure.input(z.object({ planId: z.number() })).query(({ input }) => db.listBlocksForPlan(input.planId)),
     /**
+     * 2026-05-30 — added for the Schedule page's agenda-as-calendar feature.
+     *
+     * Returns every block whose plan falls inside the date window
+     * `[startDate, endDate]` (inclusive, ISO YYYY-MM-DD), grouped by date so
+     * the WeekView and AgendaCalendarStrip can render them all without
+     * issuing 7 separate per-day queries.
+     *
+     * Plans are NOT auto-created here — the read is non-mutating, so
+     * `ensurePlanForDate` does not run. Days with no plan return an empty
+     * array.
+     */
+    weekRange: publicProcedure
+      .input(z.object({
+        startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      }))
+      .query(async ({ input }) => {
+        const out: Record<string, any[]> = {};
+        const start = new Date(input.startDate + "T00:00:00");
+        const end = new Date(input.endDate + "T00:00:00");
+        if (isNaN(start.getTime()) || isNaN(end.getTime()) || end < start) {
+          return { byDate: {} };
+        }
+        const MS_PER_DAY = 86400000;
+        const totalDays = Math.min(
+          Math.round((end.getTime() - start.getTime()) / MS_PER_DAY) + 1,
+          31, // hard cap so we never iterate more than a month per call
+        );
+        for (let i = 0; i < totalDays; i++) {
+          const d = new Date(start.getTime() + i * MS_PER_DAY);
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, "0");
+          const day = String(d.getDate()).padStart(2, "0");
+          const dateStr = `${y}-${m}-${day}`;
+          out[dateStr] = [];
+          try {
+            const plan: any = await db.getPlanByDate(dateStr);
+            if (plan?.id) {
+              const blocks: any[] = await db.listBlocksForPlan(plan.id);
+              out[dateStr] = blocks ?? [];
+            }
+          } catch {
+            /* missing plan or transient — leave empty for that date */
+          }
+        }
+        return { byDate: out };
+      }),
+    /**
      * Push 87 (2026-05-13) — kid-safe gate for inline tap-edit.
      *
      * Mirrors familyAdminProcedure logic but returns a flag rather than
