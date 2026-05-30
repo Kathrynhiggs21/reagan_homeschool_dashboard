@@ -1,5 +1,5 @@
 /**
- * Tests for the 12 canonical Drive reference Markdown docs.
+ * Tests for the 13 canonical Drive reference Markdown docs.
  *
  * The pure builder is exhaustively tested (count, slugs, target folders,
  * subpaths, filenames, body shape, footer, deterministic output). The
@@ -11,13 +11,13 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { buildDriveReferenceDocs, enqueueDriveReferenceDocs } from "./_lib/driveReferenceDocs";
 
 describe("buildDriveReferenceDocs (pure)", () => {
-  it("returns exactly 12 docs", () => {
-    expect(buildDriveReferenceDocs().length).toBe(12);
+  it("returns exactly 13 docs", () => {
+    expect(buildDriveReferenceDocs().length).toBe(13);
   });
 
-  it("uses unique slugs across all 12 docs", () => {
+  it("uses unique slugs across all 13 docs", () => {
     const slugs = buildDriveReferenceDocs().map((d) => d.slug);
-    expect(new Set(slugs).size).toBe(12);
+    expect(new Set(slugs).size).toBe(13);
   });
 
   it("uses only valid drivePushQueue.target_folder enum values", () => {
@@ -106,6 +106,27 @@ describe("buildDriveReferenceDocs (pure)", () => {
     const folders = new Set(buildDriveReferenceDocs().map((d) => d.targetFolder));
     expect(folders.size).toBeGreaterThanOrEqual(8);
   });
+
+  it("Ohio standards full reference doc covers all 4 subjects with code-level detail", () => {
+    const ref = buildDriveReferenceDocs().find((d) => d.slug === "ohio-standards-full-reference")!;
+    expect(ref).toBeDefined();
+    // Must use the official Ohio standard code format (e.g. 5.NBT.7), not
+    // the dashboard's internal OH.5.* ladder codes.
+    expect(ref.content).toMatch(/5\.NBT\.\d+/);
+    expect(ref.content).toMatch(/5\.NF\.\d+/);
+    expect(ref.content).toMatch(/RL\.5\.\d+/);
+    expect(ref.content).toMatch(/RI\.5\.\d+/);
+    expect(ref.content).toMatch(/W\.5\.\d+/);
+    expect(ref.content).toMatch(/5\.PS\.\d+/);
+    expect(ref.content).toMatch(/5\.LS\.\d+/);
+    expect(ref.content).toMatch(/5\.HIS\.\d+/);
+    expect(ref.content).toMatch(/5\.GEO\.\d+/);
+    // Mentions the IHES portfolio + Ohio Revised Code as guidance.
+    expect(ref.content).toMatch(/3321\.042/);
+    expect(ref.content).toMatch(/portfolio/i);
+    // Body should be substantial — this is the full standards reference.
+    expect(ref.content.length).toBeGreaterThanOrEqual(3500);
+  });
 });
 
 describe("enqueueDriveReferenceDocs (DB integration)", () => {
@@ -124,16 +145,16 @@ describe("enqueueDriveReferenceDocs (DB integration)", () => {
     });
   });
 
-  it("first run reports ok=true and enqueued + skipped sums to 12", () => {
+  it("first run reports ok=true and enqueued + skipped sums to 13", () => {
     expect(firstRun.ok).toBe(true);
-    expect(firstRun.enqueued + firstRun.skippedAlreadyQueued).toBe(12);
+    expect(firstRun.enqueued + firstRun.skippedAlreadyQueued).toBe(13);
     expect(firstRun.failed).toBe(0);
   });
 
-  it("second run is a no-op: nothing newly enqueued, all 12 skipped", () => {
+  it("second run is a no-op: nothing newly enqueued, all 13 skipped", () => {
     expect(secondRun.ok).toBe(true);
     expect(secondRun.enqueued).toBe(0);
-    expect(secondRun.skippedAlreadyQueued).toBe(12);
+    expect(secondRun.skippedAlreadyQueued).toBe(13);
     expect(secondRun.failed).toBe(0);
   });
 });

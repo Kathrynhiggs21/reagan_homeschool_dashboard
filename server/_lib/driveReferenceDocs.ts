@@ -22,6 +22,7 @@
  *   10. Tutor Handoff Template (tutor)
  *   11. Bookshelf & Reading Log Conventions (bookshelf)
  *   12. Adventures: Outdoor Block Playbook (adventures)
+ *   13. Ohio Curriculum Standards — Full Reference (curriculum_checklist)
  */
 
 export type DriveReferenceDoc = {
@@ -369,6 +370,164 @@ The Day Log auto-fills time spent reading from any \`reading\` block + any Books
 Run "Export Reading Log" on the Bookshelf page; it produces a CSV + Markdown summary in this folder, ready for the IH portfolio.${f}`,
     },
     // 12. Adventures
+    // 13. Ohio Curriculum Standards — Full Reference
+    //     Distinct from doc #1 (Ohio 5th-Grade Scope and Sequence): #1 is the
+    //     high-level strand list (one line per strand). This one is the
+    //     line-by-line standards reference Mom + tutors quote when filling
+    //     out the IHES portfolio narrative or aligning a custom worksheet.
+    {
+      slug: "ohio-standards-full-reference",
+      targetFolder: "curriculum_checklist",
+      targetSubpath: "Reference",
+      fileName: "Ohio Curriculum Standards — Full Reference.md",
+      content:
+`# Ohio Curriculum Standards — Full Reference (Grade 5)
+
+This is the line-by-line standards reference. Pair it with the *Ohio 5th-Grade Scope and Sequence* doc (which gives the high-level strand list).
+
+For IHES portfolio narrative, quote the standard CODE (e.g. \`5.NBT.7\`) plus a one-line description — the assessor wants to see specific standards covered, not just "math".
+
+## Math — Ohio Learning Standards (Grade 5)
+
+### Number & Operations in Base Ten (5.NBT)
+- **5.NBT.1** Place value: a digit in one place is 10× the place to its right and 1/10 the place to its left.
+- **5.NBT.2** Powers of 10 patterns when multiplying / dividing whole numbers and decimals.
+- **5.NBT.3** Read, write, compare decimals to thousandths.
+- **5.NBT.4** Round decimals to any place.
+- **5.NBT.5** Multi-digit multiplication using the standard algorithm.
+- **5.NBT.6** Divide up to 4-digit by 2-digit using strategies / standard algorithm.
+- **5.NBT.7** Add, subtract, multiply, divide decimals to hundredths.
+
+### Number & Operations — Fractions (5.NF)
+- **5.NF.1** Add / subtract fractions with unlike denominators (incl. mixed numbers) using equivalent fractions.
+- **5.NF.2** Word problems involving addition / subtraction of fractions; benchmark estimation.
+- **5.NF.3** Interpret a fraction as division (a/b = a ÷ b).
+- **5.NF.4** Multiply a fraction or whole number by a fraction.
+- **5.NF.5** Interpret multiplication as scaling (resizing).
+- **5.NF.6** Real-world problems multiplying fractions / mixed numbers.
+- **5.NF.7** Divide unit fractions by whole numbers and whole numbers by unit fractions.
+
+### Operations & Algebraic Thinking (5.OA)
+- **5.OA.1** Use parentheses, brackets, braces; evaluate numerical expressions.
+- **5.OA.2** Write simple expressions that record calculations with numbers.
+- **5.OA.3** Generate two numerical patterns; identify relationships; graph as ordered pairs.
+
+### Measurement & Data (5.MD)
+- **5.MD.1** Convert standard measurement units within a system.
+- **5.MD.2** Make line plots with fractional measurements; use data to solve problems.
+- **5.MD.3** Recognize volume; cubic-unit measurement.
+- **5.MD.4** Measure volume by counting unit cubes.
+- **5.MD.5** Apply V = l×w×h and V = b×h; additive volume of composite figures.
+
+### Geometry (5.G)
+- **5.G.1** Use a coordinate system; first quadrant.
+- **5.G.2** Real-world problems using the first quadrant.
+- **5.G.3** Attributes of categories of two-dimensional figures.
+- **5.G.4** Classify two-dimensional figures in a hierarchy.
+
+## English Language Arts — Ohio Learning Standards (Grade 5)
+
+### Reading: Literature (RL.5)
+- **RL.5.1** Quote accurately when explaining and drawing inferences.
+- **RL.5.2** Determine theme; summarize.
+- **RL.5.3** Compare and contrast two or more characters / settings / events.
+- **RL.5.4** Determine word meaning, including figurative language.
+- **RL.5.5** Explain how chapters / scenes / stanzas fit together.
+- **RL.5.6** Describe how narrator's point of view influences events.
+- **RL.5.7** Analyze visual / multimedia elements (e.g. graphic novel, multimedia).
+- **RL.5.9** Compare / contrast stories in the same genre on similar themes.
+- **RL.5.10** Read and comprehend literature at the high end of the 4-5 band by year-end.
+
+### Reading: Informational Text (RI.5)
+- **RI.5.1** Quote accurately when drawing inferences.
+- **RI.5.2** Determine two or more main ideas; explain support.
+- **RI.5.3** Explain relationships between individuals / events / ideas / concepts.
+- **RI.5.4** Determine word meaning relevant to a Grade 5 topic.
+- **RI.5.5** Compare / contrast overall structure of two or more texts.
+- **RI.5.6** Analyze multiple accounts of the same event.
+- **RI.5.7** Locate information from multiple sources.
+- **RI.5.8** Explain how an author uses reasons / evidence to support points.
+- **RI.5.9** Integrate information from several texts to write or speak knowledgeably.
+- **RI.5.10** Read and comprehend informational texts at the high end of the 4-5 band.
+
+### Writing (W.5)
+- **W.5.1** Opinion pieces with reasons and evidence.
+- **W.5.2** Informative / explanatory texts.
+- **W.5.3** Narratives with descriptive details.
+- **W.5.4** Produce clear, coherent writing appropriate to task.
+- **W.5.5** Plan, revise, edit, rewrite.
+- **W.5.6** Use technology to produce / publish writing.
+- **W.5.7** Conduct short research projects.
+- **W.5.8** Recall / gather information from print and digital sources.
+- **W.5.9** Draw evidence from texts to support analysis.
+- **W.5.10** Write routinely over extended and shorter time frames.
+
+### Speaking & Listening (SL.5)
+- **SL.5.1** Engage effectively in collaborative discussions.
+- **SL.5.2** Summarize information presented in diverse media / formats.
+- **SL.5.3** Summarize points a speaker makes; explain reasoning.
+- **SL.5.4** Report on a topic or text; sequence ideas logically.
+- **SL.5.5** Include multimedia / visual displays in presentations.
+- **SL.5.6** Adapt speech to a variety of contexts.
+
+### Language (L.5)
+- **L.5.1** Conventions of standard English grammar.
+- **L.5.2** Conventions of capitalization, punctuation, spelling.
+- **L.5.3** Use knowledge of language and conventions when writing / speaking.
+- **L.5.4** Determine / clarify meaning of unknown words via context, affixes, reference materials.
+- **L.5.5** Demonstrate understanding of figurative language, word relationships, nuance.
+- **L.5.6** Use general academic and domain-specific words / phrases.
+
+## Science — Ohio's Learning Standards (Grade 5)
+
+### Physical Science (5.PS)
+- **5.PS.1** Light — reflection, refraction, properties of light.
+- **5.PS.2** Sound — vibrations, pitch, volume.
+- **5.PS.3** Properties of matter; mixtures and solutions.
+
+### Life Science (5.LS)
+- **5.LS.1** Interactions in ecosystems — producers, consumers, decomposers.
+- **5.LS.2** Energy and matter flow through ecosystems.
+- **5.LS.3** Adaptations and survival.
+
+### Earth & Space Science (5.ESS)
+- **5.ESS.1** Sun, Earth, Moon system; rotation, revolution, seasons.
+- **5.ESS.2** Weather patterns and climate.
+- **5.ESS.3** Water cycle and the role of water on Earth's surface.
+
+### Engineering, Technology & Applications of Science (5.ETS)
+- **5.ETS.1** Define a simple problem; identify criteria and constraints.
+- **5.ETS.2** Generate and compare multiple possible solutions.
+- **5.ETS.3** Plan and carry out fair tests; identify failure points.
+
+## Social Studies — Ohio's Learning Standards (Grade 5)
+
+Grade 5 = **Regions and People of the Western Hemisphere**.
+
+### History (5.HIS)
+- **5.HIS.1** Multiple perspectives on early peoples of the Western Hemisphere.
+- **5.HIS.2** Cultural practices and products of Mesoamerica / South America / North America.
+- **5.HIS.3** European exploration and colonization — motivation and impact.
+
+### Geography (5.GEO)
+- **5.GEO.1** Use latitude / longitude to find locations.
+- **5.GEO.2** Physical and human characteristics of regions.
+- **5.GEO.3** Movement of people, products, ideas — cause / effect.
+- **5.GEO.4** Cultural diffusion across regions.
+
+### Government (5.GOV)
+- **5.GOV.1** Basic principles — democracy, monarchy, dictatorship.
+- **5.GOV.2** Cooperation and conflict among countries.
+
+### Economics (5.ECO)
+- **5.ECO.1** Trade among regions — imports / exports / interdependence.
+- **5.ECO.2** Specialization, productive resources, trade-offs.
+
+## How to use this for the IHES portfolio
+1. **Quote the code.** When you write the year-end narrative, name the standards you covered (e.g. "5.NBT.7 — added decimals to hundredths").
+2. **Pull from the dashboard.** Each ladder row's \`curriculumTopicCode\` maps to a code on this list. The annual report is auto-generated under */report-card/5*; this doc is the human-readable cross-reference.
+3. **Don't worry about every code.** Mom isn't a public-school teacher — the IH statute (Ohio Revised Code 3321.042) requires a *narrative* + *evidence*, not full coverage.${f}`,
+    },
     {
       slug: "adventures-playbook",
       targetFolder: "adventures",
