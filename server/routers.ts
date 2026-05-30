@@ -1484,6 +1484,26 @@ export const appRouter = router({
             }
             shifted++; break;
           }
+          case "generate_worksheet": {
+            // v3.16 (2026-05-30) — attach a freshly generated custom worksheet
+            // to a block (or create a new block to host it).
+            const { handleGenerateWorksheet } = await import("./_lib/agendaEditorWorksheetOp");
+            const result = await handleGenerateWorksheet({
+              planId: plan.id,
+              targetBlockId: op.targetBlockId ?? null,
+              topic: op.topic,
+              subjectSlug: op.subjectSlug ?? null,
+              gradeLevel: op.gradeLevel ?? planCtx.gradeLevel,
+              questionCount: op.questionCount ?? 8,
+              style: op.style ?? "practice",
+              sourceAttachmentUrl: op.sourceAttachmentUrl ?? null,
+              subjectIdBySlug,
+              liveBlockCount: (live as any[]).length + inserted,
+            });
+            if (result.createdNewBlock) inserted++;
+            else updated++;
+            break;
+          }
         }
       }
       await db.logAudit({

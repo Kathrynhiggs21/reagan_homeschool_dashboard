@@ -74,7 +74,26 @@ export type AgendaEditOp =
       afterBlockId?: number | null;
     }
   | { kind: "reorder"; orderedIds: number[] }
-  | { kind: "shiftAll"; minutes: number };
+  | { kind: "shiftAll"; minutes: number }
+  /**
+   * v3.16 (2026-05-30) — Custom worksheet attachment.
+   * Triggered when the adult asks the chat to "make a worksheet about X"
+   * or attaches a reference image and asks for a practice sheet to match.
+   * The handler calls the same worksheet-generation pipeline used by the
+   * curriculum builder, then attaches the resulting URL to `targetBlockId`.
+   * If `targetBlockId` is null, the handler creates a new block and
+   * attaches the worksheet to it.
+   */
+  | {
+      kind: "generate_worksheet";
+      targetBlockId: number | null;
+      topic: string;            // e.g. "long division with remainders"
+      subjectSlug?: string | null;
+      gradeLevel?: string | null;
+      questionCount?: number;   // default 8
+      style?: "practice" | "quiz" | "review" | "writing-prompt";
+      sourceAttachmentUrl?: string | null; // when generating from an image/PDF
+    };
 
 export type AgendaEditPlan = {
   summary: string;             // 1-sentence plain-English description
@@ -108,10 +127,11 @@ The adult may attach a file (image or PDF). When attached, treat it as either:
       adding one. Add a warning citing the page if obvious ("Looks like
       Spectrum Math pg 148").
 
-When the adult asks you to *create* a worksheet, emit one insert op with
-blockType="custom", title="Custom worksheet: <topic>", durationMin=20–30,
-and put the worksheet body (3–6 questions) into description as plain text.
-Do NOT generate file URLs.
+When the adult asks you to *create* a worksheet, prefer the
+generate_worksheet op (see operation types below) so the system can
+author the questions properly. Fall back to a plain insert op with
+blockType="custom" only if the adult explicitly says "just add a
+placeholder" or similar. Do NOT generate file URLs.
 
 You receive (1) the current day's blocks as JSON, (2) the adult instruction,
 and optionally (3) an attached file.
@@ -130,6 +150,13 @@ Operation types:
 - {"kind":"insert","title":"...","blockType":"...","durationMin":N, ...}
 - {"kind":"reorder","orderedIds":[id1,id2,...]}
 - {"kind":"shiftAll","minutes":N}  (negative = earlier)
+- {"kind":"generate_worksheet","targetBlockId":N|null,"topic":"...","questionCount":8,"style":"practice"|"quiz"|"review"|"writing-prompt","subjectSlug":"..."}
+  Use this when the adult asks you to *create* a real worksheet ("make a
+  worksheet on X", "build a quick quiz on Y", "give her 10 problems on Z").
+  Set targetBlockId to an existing block id when the worksheet should
+  attach to that block; set targetBlockId=null to create a new custom
+  block to host the worksheet. Prefer this op over insert+description when
+  the adult specifically wants graded-style content.
 
 Allowed blockType values: morning_warmup, math, adventure, read_aloud, choice,
 catch_up, appointment, custom.
@@ -395,6 +422,38 @@ export function validateEditPlan(
         }
         cleanOps.push(op);
         break;
+      case "generate_worksheet": {
+        // v3.16 (2026-05-30) — custom worksheet attachment.
+        if (!op.topic || op.topic.trim().length < 3) {
+          warnings.push("Dropped generate_worksheet op missing `topic`.");
+          continue;
+        }
+        if (op.targetBlockId != null && !blockIds.has(op.targetBlockId)) {
+          warnings.push(
+            `generate_worksheet targetBlockId ${op.targetBlockId} not found — will create a new block.`,
+          );
+          (op as any).targetBlockId = null;
+        }
+        if (op.subjectSlug && !subjectSlugs.has(op.subjectSlug)) {
+          warnings.push(`Dropped unknown subject "${op.subjectSlug}" on generate_worksheet.`);
+          (op as any).subjectSlug = null;
+        }
+        if (op.questionCount != null) {
+          const n = Math.floor(op.questionCount);
+          if (!Number.isFinite(n) || n < 1 || n > 50) {
+            warnings.push(`Clamped generate_worksheet questionCount ${op.questionCount} into [1,50].`);
+            (op as any).questionCount = Math.max(1, Math.min(50, Number.isFinite(n) ? n : 8));
+          } else {
+            (op as any).questionCount = n;
+          }
+        }
+        if (op.style && !["practice", "quiz", "review", "writing-prompt"].includes(op.style)) {
+          warnings.push(`Dropped invalid style "${op.style}" on generate_worksheet.`);
+          (op as any).style = "practice";
+        }
+        cleanOps.push(op);
+        break;
+      }
     }
   }
 
