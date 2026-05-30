@@ -32,6 +32,7 @@
  */
 import PDFDocument from "pdfkit";
 import { createHash } from "node:crypto";
+import QRCode from "qrcode";
 
 type TocEntry = { blockTitle: string; subjectName: string | null; pageIndex: number };
 
@@ -77,7 +78,7 @@ export type AgendaPdfBlock = {
    * Push 74 (2026-05-13) — operable + printable per-type block payload.
    */
   generated?: {
-    kind: "reading" | "adventure" | "practice";
+    kind: "reading" | "adventure" | "practice" | "video";
     title: string;
     instructions: string[];
     printable: string;
@@ -497,6 +498,47 @@ function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: Age
         bullet(doc, `${r.bookTitle} — pages ${r.fromPage}–${r.toPage}`);
       }
       doc.moveDown(0.3);
+    }
+
+    // v3.16 (2026-05-30) — Per-type video block: render QR + description.
+    // Triggered when the assembler attached `generated.kind === "video"`.
+    if (b.generated && b.generated.kind === "video" && b.generated.operable?.url) {
+      sectionHead(doc, "Watch this video");
+      const url = b.generated.operable.url;
+      // Description from the generator’s instructions[1] (the "why" line).
+      const desc = b.generated.instructions[1] ?? "";
+      if (desc) {
+        doc.fillColor(GRAY_MED).fontSize(10).text(cleanForPdf(desc), { width: PAGE_W, indent: 4 });
+        doc.moveDown(0.2);
+      }
+      // Render the QR code as a PNG buffer and place it on the page.
+      try {
+        const qrPng = (b.generated as any).__qrPngBuffer as Buffer | undefined;
+        if (qrPng) {
+          const qrSize = 110;
+          const qrX = MARGIN;
+          const qrY = doc.y;
+          doc.image(qrPng, qrX, qrY, { width: qrSize, height: qrSize });
+          // Caption + clickable URL beside the QR.
+          const textX = qrX + qrSize + 12;
+          const textW = PAGE_W - qrSize - 12;
+          doc.fillColor(GRAY_DARK).fontSize(10).font("Helvetica-Bold")
+            .text(cleanForPdf("Scan with a phone camera"), textX, qrY + 4, { width: textW });
+          doc.font("Helvetica").fillColor(BRAND_BLUE).fontSize(9)
+            .text(cleanForPdf(url), textX, qrY + 22, { width: textW, link: url, underline: true });
+          doc.fillColor(GRAY_LIGHT).fontSize(8)
+            .text(cleanForPdf("or type the URL above into a browser."), textX, qrY + 60, { width: textW });
+          doc.y = qrY + qrSize + 8;
+        } else {
+          // Fall back to a clickable URL line if QR generation failed upstream.
+          doc.fillColor(BRAND_BLUE).fontSize(10)
+            .text(cleanForPdf(url), { link: url, underline: true, indent: 4, width: PAGE_W });
+        }
+      } catch {
+        doc.fillColor(BRAND_BLUE).fontSize(10)
+          .text(cleanForPdf(url), { link: url, underline: true, indent: 4, width: PAGE_W });
+      }
+      doc.moveDown(0.4);
     }
 
     // Videos — with clickable URLs

@@ -8770,6 +8770,21 @@ export const appRouter = router({
       .input(z.object({ limit: z.number().int().min(1).max(200).default(50) }).optional())
       .query(({ input }) => db.listRecentApprovals(input?.limit ?? 50)),
 
+    /**
+     * v3.16 (2026-05-30) — "AI auto-approved last 24h" feed.
+     * Window defaults to 24 hours but adjustable up to 7 days.
+     * Limit defaults to 100 (these can pile up overnight).
+     */
+    listAutoApprovedRecent: adminOrTutorProcedure
+      .input(z.object({
+        hours: z.number().int().min(1).max(168).default(24),
+        limit: z.number().int().min(1).max(500).default(100),
+      }).optional())
+      .query(({ input }) => db.listAutoApprovedSince(
+        (input?.hours ?? 24) * 60 * 60 * 1000,
+        input?.limit ?? 100
+      )),
+
     resolve: adminOrTutorProcedure
       .input(z.object({
         id: z.number().int().positive(),

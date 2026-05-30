@@ -24,6 +24,7 @@ import Bookshelf from "./pages/Bookshelf";
 import Apps from "./pages/Apps";
 import Settings from "@/pages/Settings";
 import ReportCardFifth from "@/pages/ReportCardFifth";
+import ApprovalsPage from "@/pages/Approvals";
 import Onboarding from "./pages/Onboarding";
 import TakeNotes from "./pages/TakeNotes";
 import Schedule from "./pages/Schedule";
@@ -93,6 +94,9 @@ function Router() {
         </Route>
         <Route path="/settings">
           <AdultGate><Settings /></AdultGate>
+        </Route>
+        <Route path="/approvals">
+          <AdultGate><ApprovalsPage /></AdultGate>
         </Route>
         <Route path="/report-card/5">
           <AdultGate><ReportCardFifth /></AdultGate>

@@ -239,19 +239,49 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
     }
   }
 
-  const blocks: AgendaPdfBlock[] = blocksRaw.map((b, i) => {
-    const refs = bookRefsByBlockId.get(b.id) ?? [];
-    const firstRef = refs[0] ?? null;
-    const generated = deriveGeneratedForBlock(
-      {
-        id: b.id,
-        blockType: b.blockType,
-        subjectName: b.subjectName,
-        durationMin: b.durationMin,
-        description: b.description,
-      },
-      firstRef,
-    );
+  // Lazy-import QR codec only here (server-side only).
+  // v3.16 (2026-05-30) — hydrate a PNG buffer for video blocks so the
+  // PDF builder can stamp a scannable QR onto the lesson page.
+  let qrCodec: typeof import("qrcode") | null = null;
+  try {
+    qrCodec = (await import("qrcode")) as any;
+  } catch {
+    qrCodec = null;
+  }
+
+  const blocksRawWithGenerated = await Promise.all(
+    blocksRaw.map(async (b: any, i: number) => {
+      const refs = bookRefsByBlockId.get(b.id) ?? [];
+      const firstRef = refs[0] ?? null;
+      const generated = deriveGeneratedForBlock(
+        {
+          id: b.id,
+          blockType: b.blockType,
+          subjectName: b.subjectName,
+          durationMin: b.durationMin,
+          description: b.description,
+        },
+        firstRef,
+      ) as any;
+      // For video kind, pre-render the QR PNG so the PDF builder doesn't
+      // need to do async work mid-render.
+      if (generated && generated.kind === "video" && generated.operable?.url && qrCodec) {
+        try {
+          generated.__qrPngBuffer = await qrCodec.toBuffer(generated.operable.url, {
+            type: "png",
+            errorCorrectionLevel: "M",
+            margin: 1,
+            width: 220,
+          });
+        } catch {
+          generated.__qrPngBuffer = undefined;
+        }
+      }
+      return { b, i, refs, generated };
+    }),
+  );
+
+  const blocks: AgendaPdfBlock[] = blocksRawWithGenerated.map(({ b, i, refs, generated }) => {
     return {
       sortOrder: (b.sortOrder ?? i) + 1, // 1-indexed for printout
       startTime: b.startTime ?? null,

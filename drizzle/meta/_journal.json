@@ -505,6 +505,13 @@
       "when": 1780109272214,
       "tag": "0071_remarkable_spencer_smythe",
       "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "5",
+      "when": 1780121599713,
+      "tag": "0072_steep_deadpool",
+      "breakpoints": true
     }
   ]
 }

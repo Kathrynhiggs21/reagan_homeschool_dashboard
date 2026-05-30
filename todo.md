@@ -98,18 +98,18 @@
 - [ ] Per-app card supports BOTH Student (reaganhiggs910@gmail.com) and Parent (spear.cpt@gmail.com) Google sign-in buttons; default = Student
 
 ### Block Resource Generators
-- [ ] Video link + description + QR (printable + tap-to-play)
-- [ ] Adventure: numbered steps + materials list + outdoor option
-- [ ] Practice: primary problems + backup pool (for re-roll without burning the day)
-- [ ] Per-type generator wired into PDF builder + Reagan-side block view
+- [x] Video link + description + QR (printable + tap-to-play) — SHIPPED 2026-05-30. New `buildVideoBlock()` in `server/_lib/blockGenerators.ts` returns the same rectangular `GeneratedBlock` shape as the other three generators plus `qrTarget` (URL the QR encodes) and `qrCaption` (printed below the QR). Printable line always contains the trimmed URL so the print-and-go packet works without a QR scanner; instructions end with a debrief prompt. `BlockKind` widened to `"reading" | "adventure" | "practice" | "video"` and `AgendaPdfBlock.generated.kind` widened to match so the agenda PDF can carry it. 10 vitest scenarios in `server/buildVideoBlock.test.ts` (8 video-specific + 2 cross-generator rectangle contract).
+- [x] Adventure: numbered steps + materials list + outdoor option — already SHIPPED in `buildAdventureBlock()` (Push 67, 2026-05-13). Re-verified 2026-05-30 by the cross-generator rectangle test.
+- [x] Practice: primary problems + backup pool (for re-roll without burning the day) — already SHIPPED in `buildPracticeBlock()` (Push 67, 2026-05-13). Re-verified 2026-05-30 by the cross-generator rectangle test.
+- [x] Per-type generator wired into PDF builder + Reagan-side block view — SHIPPED 2026-05-30. PDF builder: `agendaPdf.ts` `renderLessonPage()` now renders a "Watch this video" section for `generated.kind === "video"` blocks: description line + scannable QR PNG (left) + clickable URL + caption (right), with graceful fallback to a plain clickable link when QR generation fails. QR PNGs are pre-rendered server-side in `agendaAssembler.ts` via `qrcode.toBuffer()` (errorCorrectionLevel "M", margin 1, width 220px) and attached to the generated payload. Reagan-side: `GeneratedBlockHint` now branches on `generated.kind` — video blocks get a rose color treatment + "▶ Tap to play" CTA (vs the standard amber "Open↗" for the other three kinds); `data-kind` attribute exposed for testing. Locked by 3 integration tests in `server/agendaPdfVideoBlock.test.ts` (real PDF bytes, %PDF- signature verified, valid PNG QR signature verified, fallback path verified).
 
 ### Summer / Catch-up
 - [x] Catch-up engine: CatchupEngineCard on Analytics page — per-subject mastery % bar, traffic-light (green/amber/red), next-3 topics (not yet mastered, ordered by sortOrder); catchupEngine tRPC procedure
 - [x] Weekly summer digest email (Sunday evenings) — same as weekly digest above; build a Sunday-only scheduled job that sends the full week summary + mastery snapshot + catch-up recommendations
 
 ### SMS Approvals (deferred)
-- [ ] `pendingApprovals` table (id, kind, payload, requestedBy, requestedAt, smsTo[], status, approvedBy, approvedAt, expiresAt)
-- [ ] Pending tab in adult area (2 sub-tabs: AI auto-approved last 24h, Needs your review)
+- [x] `pendingApprovals` table — SHIPPED. Existing Slice 3.5 schema (id, kind, summary, payloadJson, requestedBy, requestedAt, status, aiDecision, aiReason, decidedBy, decidedAt, expiresAt) extended 2026-05-30 with the `sms_to` JSON column via migration 0072_steep_deadpool.sql so the original todo's `smsTo[]` field is now persisted (forward-compat with the deferred Twilio SMS flow). Note: the original todo named the decision-tracking columns `approvedBy/approvedAt`; this codebase already settled on the broader `decidedBy/decidedAt` naming (so a Reject path is also captured) which the existing helpers + UI rely on. No rename needed.
+- [x] Pending tab in adult area — SHIPPED 2026-05-30. Dedicated `/approvals` route added to `App.tsx` (gated by `<AdultGate>`). New `client/src/pages/Approvals.tsx` page hosts the redesigned `ApprovalsAdminCard`, which now uses shadcn `Tabs` for the two required sub-tabs: "Needs your review" (pending rows with Approve/Reject buttons) and "AI auto-approved (24h)" (visibility-only feed). New tRPC procedure `approvals.listAutoApprovedRecent` (status=auto_approved AND requestedAt >= now−24h, newest-first, limit 100) backed by `db.listAutoApprovedSince()`. Window/filter contract locked by 9 vitest scenarios in `server/approvalsAutoApprovedWindow.test.ts`. The card also remains embedded on `/settings` for backward compat.
 
 ---
 

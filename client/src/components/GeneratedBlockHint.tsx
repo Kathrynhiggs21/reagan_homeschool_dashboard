@@ -32,25 +32,32 @@ export default function GeneratedBlockHint({
   const gen = q.data.byBlockId?.[blockId];
   if (!gen) return null;
 
+  // v3.16 (2026-05-30) — video kind gets a Tap-to-play CTA + film emoji.
+  const isVideo = (gen as any).kind === "video";
+  const wrapClass = isVideo
+    ? "mt-1.5 flex items-center gap-2 rounded-md bg-rose-300/15 border border-rose-300/35 px-2.5 py-1 text-[11px] text-rose-50"
+    : "mt-1.5 flex items-center gap-2 rounded-md bg-amber-300/15 border border-amber-300/35 px-2.5 py-1 text-[11px] text-amber-50";
+  const btnClass = isVideo
+    ? "h-6 px-2 text-[10px] font-bold bg-rose-300 text-rose-950 hover:bg-rose-200 ml-auto"
+    : "h-6 px-2 text-[10px] font-bold bg-amber-300 text-amber-950 hover:bg-amber-200 ml-auto";
+  const ctaLabel = isVideo ? "▶ Tap to play" : "Open ↗";
+
   return (
     <div
       data-testid={`generated-hint-${blockId}`}
-      className="mt-1.5 flex items-center gap-2 rounded-md bg-amber-300/15 border border-amber-300/35 px-2.5 py-1 text-[11px] text-amber-50"
+      data-kind={(gen as any).kind ?? "unknown"}
+      className={wrapClass}
     >
       <span className="font-semibold truncate">{gen.printable}</span>
       {gen.operable?.url ? (
-        <Button
-          asChild
-          size="sm"
-          className="h-6 px-2 text-[10px] font-bold bg-amber-300 text-amber-950 hover:bg-amber-200 ml-auto"
-        >
+        <Button asChild size="sm" className={btnClass}>
           <a
             href={gen.operable.url}
             target="_blank"
             rel="noopener noreferrer"
             data-testid={`generated-open-${blockId}`}
           >
-            Open ↗
+            {ctaLabel}
           </a>
         </Button>
       ) : null}

@@ -1,0 +1,1 @@
+ALTER TABLE `pendingApprovals` ADD `sms_to` json;

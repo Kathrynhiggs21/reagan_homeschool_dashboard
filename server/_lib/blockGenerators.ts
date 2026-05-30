@@ -29,7 +29,7 @@
 
 import { PRACTICE_LIBRARY, type PracticeDrill, type PracticeSubject } from "./practiceLibrary";
 
-export type BlockKind = "reading" | "adventure" | "practice";
+export type BlockKind = "reading" | "adventure" | "practice" | "video";
 
 export interface GeneratedBlock {
   kind: BlockKind;
@@ -258,5 +258,87 @@ export function buildPracticeBlock(input: PracticeBlockInput): PracticeBlockOutp
     operable: { url: primary.url },
     primary,
     backups,
+  };
+}
+
+
+// ────────────────────────────────────────────────────────────────────────────
+// 4) Video block — v3.16 (2026-05-30)
+// ────────────────────────────────────────────────────────────────────────────
+//
+// A video block needs three things on paper so Reagan can use it without
+// the dashboard:
+//   - A short description Mom or the tutor can read aloud (so the kid
+//     knows *why* she's watching).
+//   - The full URL spelled out (so it can be typed if the QR fails).
+//   - A scannable QR code reference (the actual PNG is rendered by the
+//     PDF builder at print time; this generator just emits the canonical
+//     `qrTarget` URL it should encode).
+//
+// Standing rule: video blocks ALWAYS surface a transcript or lesson plan
+// in the printed packet (handled by the PDF assembler — this generator
+// just exposes the link + description + QR target).
+
+export interface VideoBlockInput {
+  /** Direct video URL (YouTube, Edpuzzle, BrainPOP, etc.). */
+  url: string;
+  /** Title of the video — shown above the description. */
+  title: string;
+  /** 1–3 sentence "why are we watching this" blurb for Mom/tutor to read. */
+  description: string;
+  /** Optional minutes — used for the printable line and instructions. */
+  minutes?: number;
+  /** Optional subject tag for the schedule chip (Birds, Math, etc.). */
+  subjectTag?: string;
+}
+
+export interface VideoBlockOutput extends GeneratedBlock {
+  /** URL the QR code should encode. Same as `url` unless rewriting. */
+  qrTarget: string;
+  /** Bottom-of-card caption hint for the printed page. */
+  qrCaption: string;
+}
+
+/**
+ * Trim a URL into a short readable form for the printed line.
+ * Strips protocol + trailing slash so the page looks clean.
+ */
+function shortenUrl(url: string): string {
+  return url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+}
+
+export function buildVideoBlock(input: VideoBlockInput): VideoBlockOutput {
+  const url = (input.url ?? "").trim();
+  if (!url) throw new Error("buildVideoBlock: url is required");
+  const title = (input.title ?? "").trim() || "Video";
+  const description = (input.description ?? "").trim() || "Short video for today's block.";
+  const minutes = typeof input.minutes === "number" && input.minutes > 0 ? input.minutes : null;
+  const subjectTag = (input.subjectTag ?? "").trim();
+
+  const minutesLine = minutes ? `~${minutes} min watch.` : null;
+  const instructions: string[] = [
+    `Watch: ${title}`,
+    description,
+    minutesLine ?? "",
+    `Open the link or scan the QR code: ${shortenUrl(url)}`,
+    "After watching, tell Mom or your tutor one new thing you learned.",
+  ].filter((s) => s.length > 0);
+
+  const printablePieces = [
+    "🎬",
+    title,
+    minutes ? `(~${minutes}m)` : "",
+    subjectTag ? `[${subjectTag}]` : "",
+    `— ${shortenUrl(url)}`,
+  ].filter((p) => p.length > 0);
+
+  return {
+    kind: "video",
+    title: `Video: ${title}`,
+    instructions,
+    printable: printablePieces.join(" "),
+    operable: { url },
+    qrTarget: url,
+    qrCaption: `Scan to play: ${shortenUrl(url)}`,
   };
 }

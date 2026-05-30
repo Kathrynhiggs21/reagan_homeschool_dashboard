@@ -7155,6 +7155,31 @@ export async function listRecentApprovals(
     .limit(limit)) as PendingApproval[];
 }
 
+/**
+ * v3.16 (2026-05-30) — List rows the AI auto-approved within the last
+ * `windowMs` milliseconds. Powers the "AI auto-approved last 24h" sub-tab
+ * of the Pending Approvals card so Mom can see what shipped overnight
+ * without any human in the loop.
+ */
+export async function listAutoApprovedSince(
+  windowMs: number = 24 * 60 * 60 * 1000,
+  limit: number = 100,
+  nowMs: number = Date.now()
+): Promise<PendingApproval[]> {
+  const cutoff = nowMs - windowMs;
+  return (await getDb()
+    .select()
+    .from(pendingApprovals)
+    .where(
+      and(
+        eq(pendingApprovals.status, "auto_approved"),
+        gte(pendingApprovals.requestedAt, cutoff)
+      )
+    )
+    .orderBy(desc(pendingApprovals.requestedAt))
+    .limit(limit)) as PendingApproval[];
+}
+
 /** Mark an approval decided (approved or rejected). Returns true on success. */
 export async function decidePendingApproval(
   id: number,

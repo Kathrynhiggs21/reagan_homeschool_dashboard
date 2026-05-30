@@ -2101,6 +2101,11 @@ export const pendingApprovals = mysqlTable("pendingApprovals", {
   decidedBy: varchar("decided_by", { length: 255 }),
   decidedAt: bigint("decided_at", { mode: "number" }),
   expiresAt: bigint("expires_at", { mode: "number" }).notNull(),
+  // v3.16 (2026-05-30) — list of SMS / push recipients for this approval.
+  // Optional: kept here for forward-compat with the SMS approval flow that
+  // is still deferred behind Twilio credentials. JSON array of E.164 phone
+  // numbers OR opaque target ids (resolved by recipientPushTargets).
+  smsTo: json("sms_to"),
 });
 export type PendingApproval = typeof pendingApprovals.$inferSelect;
 export type InsertPendingApproval = typeof pendingApprovals.$inferInsert;
@@ -2409,3 +2414,4 @@ export const appLaunches = mysqlTable("appLaunches", {
 });
 export type AppLaunch = typeof appLaunches.$inferSelect;
 export type InsertAppLaunch = typeof appLaunches.$inferInsert;
+
