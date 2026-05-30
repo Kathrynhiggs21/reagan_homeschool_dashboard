@@ -233,6 +233,35 @@ export default function KiwiPerch() {
     return () => { if (timer) window.clearTimeout(timer); };
   }, [enabled, adultPresent, dragging, flying]);
 
+  // Reusable fly-across action. Used by both the 90-150s timer and the
+  // tap-to-fly trigger (double-tap on Kiwi or programmatic flyKiwi() call).
+  // Exposed via ref so the imperative tap handler can call it.
+  const flyAcrossRef = useRef<(() => void) | null>(null);
+  flyAcrossRef.current = () => {
+    if (dragging || flying) return;
+    setFlying(true);
+    setPose("flap");
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    const startX = pos.x > w / 2 ? -size : w + size;
+    const endX = pos.x > w / 2 ? w + size : -size;
+    const midY = 80 + Math.random() * (h - 200);
+    setPos({ x: startX, y: midY });
+    window.setTimeout(() => setPos({ x: endX, y: midY }), 100);
+    window.setTimeout(() => {
+      setFlying(false);
+      setPose("idle");
+      setPos(clamp({ x: w - size - 40, y: h - size - 120 }, size, open));
+    }, 2400);
+  };
+
+  // Programmatic trigger: window.flyKiwi() lets ANY page call it (e.g. from
+  // a celebration toast "Kiwi flew across the room!").
+  useEffect(() => {
+    (window as any).flyKiwi = () => flyAcrossRef.current?.();
+    return () => { try { delete (window as any).flyKiwi; } catch {} };
+  }, []);
+
   // Full fly-across every 90-150s
   useEffect(() => {
     if (!enabled || adultPresent) return;
@@ -240,22 +269,7 @@ export default function KiwiPerch() {
     const schedule = () => {
       const delay = 90_000 + Math.random() * 60_000;
       timer = window.setTimeout(() => {
-        if (!dragging && !flying) {
-          setFlying(true);
-          setPose("flap");
-          const w = window.innerWidth;
-          const h = window.innerHeight;
-          const startX = pos.x > w / 2 ? -size : w + size;
-          const endX = pos.x > w / 2 ? w + size : -size;
-          const midY = 80 + Math.random() * (h - 200);
-          setPos({ x: startX, y: midY });
-          window.setTimeout(() => setPos({ x: endX, y: midY }), 100);
-          window.setTimeout(() => {
-            setFlying(false);
-            setPose("idle");
-            setPos(clamp({ x: w - size - 40, y: h - size - 120 }, size, open));
-          }, 2400);
-        }
+        flyAcrossRef.current?.();
         schedule();
       }, delay);
     };
@@ -360,6 +374,9 @@ export default function KiwiPerch() {
     setPos(clamp({ x: e.clientX - dx, y: e.clientY - dy }, size, open));
   }, [dragging, size, open]);
 
+  // Double-tap detection — second tap within 350ms triggers fly-across
+  // instead of opening the chat.
+  const lastTapAtRef = useRef<number>(0);
   const onPointerUp = useCallback((e: React.PointerEvent) => {
     if (!dragging) return;
     setDragging(false);
@@ -367,6 +384,19 @@ export default function KiwiPerch() {
     setPose("idle");
     const moved = Math.abs((e.clientX - (pos.x + 48))) + Math.abs((e.clientY - (pos.y + 48)));
     if (moved < 10) {
+      const now = Date.now();
+      const sinceLast = now - lastTapAtRef.current;
+      lastTapAtRef.current = now;
+      if (sinceLast > 0 && sinceLast < 350) {
+        // Double-tap → fly across the screen instead of opening chat.
+        if (bubbleTimeoutRef.current) window.clearTimeout(bubbleTimeoutRef.current);
+        setBubbleText("Wheee! ✈️");
+        setPopBurst((n) => n + 1);
+        bubbleTimeoutRef.current = window.setTimeout(() => setBubbleText(null), 800);
+        flyAcrossRef.current?.();
+        lastInteractRef.current = now;
+        return;
+      }
       // Direct tap on Kiwi — this IS the user click, so opening + bubble is fine.
       setPose("chirp");
       setBubbleText("Hi! 💛");
@@ -477,6 +507,31 @@ export default function KiwiPerch() {
           }}
           title={micActive ? 'Listening for "Hi Kiwi"' : "Wake word off"}
         />
+
+        {/* Single-tap fly trigger — always-visible accessible button next to
+            Kiwi. Avoids the double-tap-only path so a single intentional tap
+            on this control reliably starts a fly-across animation. */}
+        {!flying && !dragging && !adultPresent && (
+          <button
+            type="button"
+            data-kiwi-fly-button
+            aria-label="Make Kiwi fly across the screen"
+            title="Tap to make Kiwi fly!"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (bubbleTimeoutRef.current) window.clearTimeout(bubbleTimeoutRef.current);
+              setBubbleText("Wheee! ✈️");
+              setPopBurst((n) => n + 1);
+              bubbleTimeoutRef.current = window.setTimeout(() => setBubbleText(null), 800);
+              flyAcrossRef.current?.();
+            }}
+            className="absolute -bottom-1 -right-1 rounded-full bg-amber-400 hover:bg-amber-500 active:scale-95 border-2 border-white shadow text-[12px] leading-none flex items-center justify-center transition-transform"
+            style={{ width: 24, height: 24, padding: 0 }}
+          >
+            ✈️
+          </button>
+        )}
       </div>
 
       <style>{`

@@ -177,19 +177,42 @@ export default function Apps() {
                       >🗑</button>
                     </div>
                   )}
-                  {/* Dual-identity launcher: only on Google apps, only when adult-unlocked + dad email known */}
-                  {unlocked && dadEmail && isGoogleUrl(a.url) && (
-                    <a
-                      href={withGoogleSsoHint(a.url, dadEmail)}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={(e) => { e.stopPropagation(); try { openEng.mutate({ id: a.id }); trackLaunch.mutate({ id: a.id, name: a.name, category: a.category }); } catch {} }}
-                      className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded-md bg-purple-600 text-white text-[10px] font-semibold opacity-0 group-hover:opacity-100 transition-opacity"
-                      title={`Open as Dad (${dadEmail})`}
-                      aria-label={`Open ${a.name} as Dad`}
+                  {/* Dual-identity launcher: per-app card always shows BOTH a
+                      Student (default, full-card tap above) and a Parent
+                      button on Google apps when both emails are configured.
+                      Default = Student (the wide card area). Parent is a
+                      labeled chip pinned to the bottom of the card so it's
+                      always discoverable, not hover-gated. */}
+                  {dadEmail && reaganEmail && isGoogleUrl(a.url) && (
+                    <div
+                      className="absolute bottom-1 left-1 right-1 flex justify-between gap-1 pointer-events-none"
+                      data-dual-signin
                     >
-                      Open as Dad
-                    </a>
+                      <a
+                        href={withGoogleSsoHint(a.url, reaganEmail)}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => { e.stopPropagation(); try { openEng.mutate({ id: a.id }); trackLaunch.mutate({ id: a.id, name: a.name, category: a.category }); } catch {} }}
+                        className="px-1.5 py-0.5 rounded-md bg-emerald-600 text-white text-[10px] font-semibold pointer-events-auto hover:bg-emerald-700 transition-colors"
+                        title={`Open as Student (${reaganEmail}) — default`}
+                        aria-label={`Open ${a.name} as Student`}
+                        data-student-signin
+                      >
+                        Student
+                      </a>
+                      <a
+                        href={withGoogleSsoHint(a.url, dadEmail)}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={(e) => { e.stopPropagation(); try { openEng.mutate({ id: a.id }); trackLaunch.mutate({ id: a.id, name: a.name, category: a.category }); } catch {} }}
+                        className="px-1.5 py-0.5 rounded-md bg-purple-600 text-white text-[10px] font-semibold pointer-events-auto hover:bg-purple-700 transition-colors"
+                        title={`Open as Parent (${dadEmail})`}
+                        aria-label={`Open ${a.name} as Parent`}
+                        data-parent-signin
+                      >
+                        Parent
+                      </a>
+                    </div>
                   )}
                 </div>
               ))}

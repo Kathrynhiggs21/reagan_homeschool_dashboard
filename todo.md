@@ -95,7 +95,7 @@
 - [ ] When a tutor is on the day, their email is added as a guest on that day's events (requires Google Calendar API OAuth — deferred until credentials available)
 
 ### Apps & Integrations Page
-- [ ] Per-app card supports BOTH Student (reaganhiggs910@gmail.com) and Parent (spear.cpt@gmail.com) Google sign-in buttons; default = Student
+- [x] Per-app card supports BOTH Student (reaganhiggs910@gmail.com) and Parent (spear.cpt@gmail.com) Google sign-in buttons; default = Student — SHIPPED 2026-05-30. Apps page now renders **two interactive `<a>` links** on the bottom of every Google-URL card when both emails are configured: a green **Student** link (`data-student-signin`) and a purple **Parent** link (`data-parent-signin`). Student appears FIRST in DOM source order, locking it as the default primary action; the wide whole-card tap also still routes to Student so muscle memory is preserved. Both links open in a new tab and route through `withGoogleSsoHint()` so Chrome's account picker pre-fills the right Google account. Previously the parent action was hover-only and adult-unlock-gated; both are now always-visible and instantly tappable so Reagan can hand the iPad to Dad without first unlocking the adult area. Locked by 7 URL-contract tests in `server/appsDualSignIn.test.ts` (null/empty/whitespace passthrough, distinct wrappers per email, non-SSO + malformed URL passthrough, host-allowlist detection) + 7 source-introspection tests in `server/uiContractsKiwiAndApps.test.ts` (real `<a>` elements for both Student + Parent, Student-first DOM order, aria-labels, both `withGoogleSsoHint()` calls, dual-email gating).
 
 ### Block Resource Generators
 - [x] Video link + description + QR (printable + tap-to-play) — SHIPPED 2026-05-30. New `buildVideoBlock()` in `server/_lib/blockGenerators.ts` returns the same rectangular `GeneratedBlock` shape as the other three generators plus `qrTarget` (URL the QR encodes) and `qrCaption` (printed below the QR). Printable line always contains the trimmed URL so the print-and-go packet works without a QR scanner; instructions end with a debrief prompt. `BlockKind` widened to `"reading" | "adventure" | "practice" | "video"` and `AgendaPdfBlock.generated.kind` widened to match so the agenda PDF can carry it. 10 vitest scenarios in `server/buildVideoBlock.test.ts` (8 video-specific + 2 cross-generator rectangle contract).
@@ -115,7 +115,7 @@
 
 ## 🟢 Low Priority / Nice to Have
 
-- [ ] Kiwi: "fly across" animation on tap
+- [x] Kiwi: "fly across" animation on tap — SHIPPED 2026-05-30. Three trigger paths into a single shared `flyAcrossRef.current()` helper (extracted from the existing 90-150s timer to eliminate duplicate logic): (a) **dedicated single-tap ✈️ button** pinned to Kiwi's bottom-right corner with `data-kiwi-fly-button` + `aria-label="Make Kiwi fly across the screen"` + amber/white shadow styling — hidden during flight, drag, or adult presence to avoid spam, (b) double-tap on Kiwi sprite (second tap within 350ms), (c) imperative `window.flyKiwi()` for celebration moments. Single-tap on Kiwi sprite itself still opens chat (unchanged). Locked by 6 source-introspection vitest scenarios in `server/uiContractsKiwiAndApps.test.ts` covering button presence, real `<button>` element, aria-label, hidden-states gating, shared helper invocation, and chat-open preservation.
 - [ ] Drive: 12 reference Markdown docs uploaded to canonical Drive subfolders
 - [ ] Drive: full two-way sync for ALL canonical subfolders — scheduled poll every 10 min + immediate push on every dashboard write
 
