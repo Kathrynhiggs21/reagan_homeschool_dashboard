@@ -1317,6 +1317,38 @@ export const appRouter = router({
             shifted++;
             break;
           }
+          case "queue_review_block": {
+            // v3.17 (2026-05-30) — manually queue a catch-up review block.
+            const opR = op as any;
+            const subjectName = opR.subjectSlug
+              ? (planCtx.subjects.find((s: any) => s.slug === opR.subjectSlug)?.name ?? opR.subjectSlug)
+              : null;
+            const topicLabel = opR.topic ?? opR.curriculumTopicCode ?? subjectName ?? "this material";
+            const title = `Review: ${topicLabel}`;
+            const desc = [
+              `Catch-up review on ${topicLabel}.`,
+              opR.reason ? `Why: ${opR.reason}.` : null,
+              "Pull a few practice problems from her current ladder row and check her work together.",
+            ].filter(Boolean).join(" ");
+            const subjectId = opR.subjectSlug ? (subjectIdBySlug.get(opR.subjectSlug) ?? null) : null;
+            const code = (opR.curriculumTopicCode || "").trim().toUpperCase();
+            const topicId = code ? (codeMap.get(code) ?? null) : null;
+            const maxSort = Math.max(0, ...(live as any[]).map((b: any) => b.sortOrder || 0)) + inserted + 1;
+            await db.createBlock({
+              planId: plan.id,
+              blockType: "catch_up" as any,
+              subjectId,
+              title,
+              description: desc,
+              durationMin: opR.durationMin ?? 25,
+              startTime: null,
+              sortOrder: maxSort,
+              status: "not_started" as any,
+              curriculumTopicId: topicId,
+            } as any);
+            inserted++;
+            break;
+          }
         }
       }
 
@@ -1483,6 +1515,31 @@ export const appRouter = router({
               await db.updateBlock(b.id, { startTime: `${hh}:${mm2}` } as any);
             }
             shifted++; break;
+          }
+          case "queue_review_block": {
+            // v3.17 (2026-05-30) — manually queue a catch-up review block via chat.
+            const opR = op as any;
+            const subjectName = opR.subjectSlug
+              ? (planCtx.subjects.find((s: any) => s.slug === opR.subjectSlug)?.name ?? opR.subjectSlug)
+              : null;
+            const topicLabel = opR.topic ?? opR.curriculumTopicCode ?? subjectName ?? "this material";
+            const title = `Review: ${topicLabel}`;
+            const desc = [
+              `Catch-up review on ${topicLabel}.`,
+              opR.reason ? `Why: ${opR.reason}.` : null,
+              "Pull a few practice problems from her current ladder row and check her work together.",
+            ].filter(Boolean).join(" ");
+            const subjectId = opR.subjectSlug ? (subjectIdBySlug.get(opR.subjectSlug) ?? null) : null;
+            const code2 = (opR.curriculumTopicCode || "").trim().toUpperCase();
+            const topicId2 = code2 ? (codeMap.get(code2) ?? null) : null;
+            const maxSort2 = Math.max(0, ...(live as any[]).map((b: any) => b.sortOrder || 0)) + inserted + 1;
+            await db.createBlock({
+              planId: plan.id, blockType: "catch_up" as any, subjectId,
+              title, description: desc,
+              durationMin: opR.durationMin ?? 25, startTime: null,
+              sortOrder: maxSort2, status: "not_started" as any, curriculumTopicId: topicId2,
+            } as any);
+            inserted++; break;
           }
           case "generate_worksheet": {
             // v3.16 (2026-05-30) — attach a freshly generated custom worksheet
@@ -4937,6 +4994,32 @@ export const appRouter = router({
           "./_lib/driveReadme"
         );
         return enqueueDriveRootReadme({
+          dashboardUrl: input?.dashboardUrl,
+          generatedAtISO: input?.generatedAtISO,
+        });
+      }),
+    /**
+     * v3.17 (2026-05-30) — enqueue the 12 canonical reference Markdown
+     * docs that ship to Mom's Drive subfolders. Idempotent: re-running
+     * is a safe no-op as long as the body hasn't changed. Admin only.
+     */
+    enqueueReferenceDocs: adminProcedure
+      .input(
+        z
+          .object({
+            dashboardUrl: z.string().url().optional(),
+            generatedAtISO: z
+              .string()
+              .regex(/^\d{4}-\d{2}-\d{2}$/)
+              .optional(),
+          })
+          .optional(),
+      )
+      .mutation(async ({ input }) => {
+        const { enqueueDriveReferenceDocs } = await import(
+          "./_lib/driveReferenceDocs"
+        );
+        return enqueueDriveReferenceDocs({
           dashboardUrl: input?.dashboardUrl,
           generatedAtISO: input?.generatedAtISO,
         });

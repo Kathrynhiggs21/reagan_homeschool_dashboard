@@ -93,6 +93,24 @@ export type AgendaEditOp =
       questionCount?: number;   // default 8
       style?: "practice" | "quiz" | "review" | "writing-prompt";
       sourceAttachmentUrl?: string | null; // when generating from an image/PDF
+    }
+  /**
+   * v3.17 (2026-05-30) — manually queue a review block for a subject
+   * or skill code. Triggered when Mom says "review fractions" or
+   * "she needs more practice on writing". The handler synthesizes an
+   * insert op with blockType="catch_up", an explanatory description
+   * naming the strand being reviewed, and slots it after the current
+   * day's last block by default. Pure logic in memory; the apply path
+   * just turns this into a regular insert with sensible defaults.
+   */
+  | {
+      kind: "queue_review_block";
+      subjectSlug?: string | null;       // "math", "ela", etc — either this OR topic must be set
+      topic?: string | null;             // free-form topic e.g. "fractions" / "opinion writing"
+      curriculumTopicCode?: string | null; // optional precise ladder code (e.g. "OH.5.NF.1")
+      durationMin?: number;              // default 25
+      afterBlockId?: number | null;      // null = append (slot at end of day)
+      reason?: string | null;            // optional plain-English reason that goes into the block description
     };
 
 export type AgendaEditPlan = {
@@ -157,6 +175,13 @@ Operation types:
   attach to that block; set targetBlockId=null to create a new custom
   block to host the worksheet. Prefer this op over insert+description when
   the adult specifically wants graded-style content.
+- {"kind":"queue_review_block","subjectSlug":"math"|null,"topic":"fractions"|null,"curriculumTopicCode":"OH.5.NF.1"|null,"durationMin":25,"reason":"..."}
+  Use this when the adult says "review X", "she needs more practice on Y",
+  "loop back on Z", "give her another go at X". You MUST set EITHER
+  subjectSlug OR topic (not necessarily both). The handler picks the right
+  ladder row to review and slots a catch-up block at the end of the day.
+  Prefer this over a plain insert when the adult's intent is clearly
+  remediation rather than adding new content.
 
 Allowed blockType values: morning_warmup, math, adventure, read_aloud, choice,
 catch_up, appointment, custom.
@@ -422,6 +447,52 @@ export function validateEditPlan(
         }
         cleanOps.push(op);
         break;
+      case "queue_review_block": {
+        // v3.17 (2026-05-30) — manual review-queue op.
+        const opR = op as any;
+        const hasSubject = opR.subjectSlug && subjectSlugs.has(opR.subjectSlug);
+        const hasTopic = typeof opR.topic === "string" && opR.topic.trim().length >= 2;
+        const hasCode =
+          typeof opR.curriculumTopicCode === "string" &&
+          topicCodes.has(opR.curriculumTopicCode.toUpperCase());
+        if (!hasSubject && !hasTopic && !hasCode) {
+          warnings.push(
+            "Dropped queue_review_block op: must specify subjectSlug, topic, or curriculumTopicCode.",
+          );
+          continue;
+        }
+        if (opR.subjectSlug && !subjectSlugs.has(opR.subjectSlug)) {
+          warnings.push(
+            `Dropped unknown subject "${opR.subjectSlug}" on queue_review_block.`,
+          );
+          opR.subjectSlug = null;
+        }
+        if (opR.curriculumTopicCode && !hasCode) {
+          warnings.push(
+            `Dropped unknown topic code "${opR.curriculumTopicCode}" on queue_review_block.`,
+          );
+          opR.curriculumTopicCode = null;
+        }
+        if (opR.durationMin != null) {
+          const n = Math.floor(opR.durationMin);
+          if (!Number.isFinite(n) || n < 5 || n > 90) {
+            warnings.push(
+              `Clamped queue_review_block durationMin ${opR.durationMin} into [5,90].`,
+            );
+            opR.durationMin = Math.max(5, Math.min(90, Number.isFinite(n) ? n : 25));
+          } else {
+            opR.durationMin = n;
+          }
+        }
+        if (opR.afterBlockId != null && !blockIds.has(opR.afterBlockId)) {
+          warnings.push(
+            `queue_review_block afterBlockId ${opR.afterBlockId} not found — will append at end of day.`,
+          );
+          opR.afterBlockId = null;
+        }
+        cleanOps.push(op);
+        break;
+      }
       case "generate_worksheet": {
         // v3.16 (2026-05-30) — custom worksheet attachment.
         if (!op.topic || op.topic.trim().length < 3) {
@@ -573,6 +644,40 @@ export function applyEditPlanInMemory(
           const mm = (total % 60).toString().padStart(2, "0");
           return { ...b, startTime: `${hh}:${mm}` };
         });
+        break;
+      }
+      case "queue_review_block": {
+        // v3.17 (2026-05-30) — synthesize a catch-up block for review.
+        const opR = op as any;
+        const subjectName = opR.subjectSlug
+          ? (ctx.subjects.find((s) => s.slug === opR.subjectSlug)?.name ?? opR.subjectSlug)
+          : null;
+        const topicLabel = opR.topic ?? opR.curriculumTopicCode ?? subjectName ?? "this material";
+        const title = `Review: ${topicLabel}`;
+        const descParts = [
+          `Catch-up review on ${topicLabel}.`,
+          opR.reason ? `Why: ${opR.reason}.` : null,
+          "Pull a few practice problems from her current ladder row and check her work together.",
+        ].filter(Boolean);
+        const fresh: AgendaBlockSnapshot = {
+          id: nextSyntheticId--,
+          title,
+          description: descParts.join(" "),
+          blockType: "catch_up",
+          startTime: null,
+          durationMin: opR.durationMin ?? 25,
+          sortOrder: 0,
+          status: "not_started",
+          subjectSlug: opR.subjectSlug ?? null,
+          curriculumTopicCode: opR.curriculumTopicCode ?? null,
+        };
+        if (opR.afterBlockId == null) {
+          next.push(fresh);
+        } else {
+          const idx = next.findIndex((b) => b.id === opR.afterBlockId);
+          if (idx < 0) next.push(fresh);
+          else next.splice(idx + 1, 0, fresh);
+        }
         break;
       }
     }

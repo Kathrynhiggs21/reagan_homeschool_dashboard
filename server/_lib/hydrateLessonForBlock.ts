@@ -230,6 +230,28 @@ export async function hydrateLessonForBlock(
     lesson.answerKey = answerKeyParts.join(" | ");
   }
 
+  // Hydrate transcripts for any video without one. Best-effort: failures
+  // are silent so the packet still ships even if YouTube is unreachable.
+  // We attach a `transcript` field that the PDF builder already renders.
+  if (lesson.videos && lesson.videos.length > 0) {
+    try {
+      const { fetchYoutubeTranscript } = await import("./youtubeTranscript");
+      await Promise.all(
+        lesson.videos.map(async (v: any) => {
+          if (v.transcript || !v.url) return;
+          try {
+            const t = await fetchYoutubeTranscript(v.url, { maxChars: 8_000 });
+            if (t) v.transcript = t;
+          } catch {
+            // ignore per-video failure
+          }
+        }),
+      );
+    } catch {
+      // module load failure: skip transcript hydration entirely
+    }
+  }
+
   // If after grouping we still have no lesson content, return null so the
   // PDF skips the per-block lesson page entirely.
   const hasContent =
