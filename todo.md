@@ -61,16 +61,14 @@
 - [x] Wire Summer Mode into agenda AI: when summer active, Math + ELA blocks source from 6th-grade preview topics (sixth-grade-summer-prep.md)
 - [x] PDF agenda printout: embed image worksheets (PNG/JPG) inline; PDF worksheets merged inline via pdf-lib; show "📄 PRINT SEPARATELY" box only for unfetchable external links
 - [x] PDF agenda printout: resolve /manus-storage/ relative paths to absolute signed URLs; absolute http URLs passed through as-is; PDF bytes fetched and merged via pdf-lib
-- [ ] PDF agenda: add page numbers (bottom-center, "Page X of Y") to every page
-- [ ] PDF agenda: add Table of Contents page (after cover, before devotion) listing each block with its page number
-- [ ] PDF agenda: embed ALL worksheet content inline (no "print separately" box for any stored worksheet — PDF pages merged via pdf-lib, images embedded via pdfkit)
-- [ ] PDF agenda: fix emoji rendering (replace Unicode emoji with ASCII equivalents — PDFKit Helvetica can't render emoji)
-- [ ] PDF agenda: add page numbers (bottom-center, "Page X of Y") to every page
-- [ ] PDF agenda: add Table of Contents page listing each block with its page number
+- [x] PDF agenda: page numbers — SHIPPED 2026-05-30. Every page now stamped "Page X of Y" bottom-center via pdf-lib post-processing, applied AFTER worksheet merges so worksheet pages are also numbered.
+- [x] PDF agenda: Table of Contents — SHIPPED 2026-05-30. Inserted at position 1 (right after cover) listing each block title + subject + final page number. Block-to-page mapping tracked during pdfkit render via `bufferedPageRange()`, then shifted +1 to account for the inserted ToC.
+- [x] PDF agenda: worksheet inlining — already shipped in v3.11 (pdf-lib merge for PDFs + pdfkit image embed for PNG/JPG). Print-separately box only appears for fetch failures.
+- [x] PDF agenda: emoji — already shipped (cleanForPdf ASCII transliteration, 9 vitest scenarios).
 - [ ] Worksheet pre-fetch: download and store external worksheet PDFs/images in S3 at assignment time so they are always available for the printout
 - [ ] Daily schedule: cap total school day at 2–5 hours (4–10 blocks max); AI schedule proposer should not generate 16-block days
 - [x] Nightly email: rebuilt to use Zapier webhook (hooks.zapier.com) instead of SMTP — fully automated, no confirmation needed, sends to marcy.spear@gmail.com + spear.cpt@gmail.com
-- [ ] PDF agenda: for video blocks, fetch/generate transcript or AI lesson plan and print it inline instead of just the URL
+- [~] PDF agenda: video block transcripts — PARTIAL 2026-05-30. Transcript-rendering cap of 300 chars lifted; full-length transcripts now render inline under each video. Upstream transcript hydration (fetching the transcript when missing — youtube-transcript or similar) still TODO, but the PDF builder is no longer the bottleneck. Tracked separately if user wants the upstream fetch.
 - [ ] Seed 6th-grade preview assignments in skillLadder with gradeLevel="6"; update auto-attach to filter by gradeLevel + Summer Mode
 - [x] "Ready for 6th Grade" indicator: ReadyFor6thBadge component on Today page — shows per-subject mastery bars + banner when all 4 subjects ≥ 75%; self-hides when summer mode is off
 - [ ] Optional: "5th Grade Report Card" page — summary of all completed 5th grade topics with completion dates, for IH records
@@ -187,13 +185,13 @@
 - [ ] **Hash-based skip vs Drive folder:** during drive-push drain, before re-uploading a file, list the canonical-target folder's children and skip the upload if any child's content hash already matches. Record the outcome on the queue row (`status: 'skipped'`, `errorMessage: 'dedup hit on <driveFileId>'`).
 - [ ] **Nightly Drive-side folder dedupe:** scheduled job that lists each canonical parent's children, groups by normalized name + content hash, picks a survivor (oldest createdTime), moves children of dupes into the survivor, then trashes the empty dupes. Should never touch the 9 pinned top-level folders.
 - [ ] **Verify a custom domain at Resend** (resend.com/domains) so `marcy.spear@gmail.com` can actually receive the nightly agenda email, then drop `MAIL_ALLOWED_RECIPIENTS` to a no-op. Until that's done, only `spear.cpt@gmail.com` will land.
-- [ ] Optional: implement the original `nodemailer + GMAIL_APP_PASSWORD` SMTP path as a parallel fallback when Resend rejects all recipients (would let Marcy get the email without waiting on domain verification).
+- [x] SMTP parallel fallback shipped 2026-05-30 (see EMAIL row above).
 
 
 ## Active Bugs — 2026-05-30
 
 - [x] BUG: PDF link in nightly agenda email returns "AccessDenied" — FIXED 2026-05-30. Removed the signed-URL "Download today's agenda PDF" button from `scheduledSync.ts` and the owner notification. PDF is still attached as a MIME part on every send. Footer text now reads "📎 The full agenda PDF is attached to this email — no link needed." Contract test rewritten (5 tests assert no clickable link + attachment intact).
-- [ ] BUG: Marcy still doesn't receive the nightly agenda email. Resend free tier blocks all addresses except the verified `spear.cpt@gmail.com`. `MAIL_ALLOWED_RECIPIENTS=spear.cpt@gmail.com` is now set so we don't waste sends. Add a Gmail-SMTP fallback (using GMAIL_SMTP_USER + GMAIL_APP_PASSWORD already in env) that picks up the addresses Resend's policy filter dropped, so Marcy lands until a Resend domain is verified.
+- [x] BUG: Marcy didn't receive the nightly agenda email — FIXED 2026-05-30. Added Gmail SMTP fallback in `server/_core/mailer.ts` that picks up any address Resend's allow-list filter drops. Marcy now lands via SMTP (using GMAIL_SMTP_USER + GMAIL_APP_PASSWORD already in env), spear.cpt@gmail.com still goes via Resend. 12 mailer tests pass (4 new for SMTP path).
 - [x] BUG: Route `/calendars` returns 404 — FIXED 2026-05-30. Added redirect route `/calendars` → `/settings` in App.tsx (CalendarSyncCard lives in Settings) and updated Schedule.tsx link text to point directly at `/settings` so it never even hits the redirect.
 - [x] BUG: Homepage agenda block opener — FIXED 2026-05-30. Surfaced `dailyPrintables.block_id` on the wire (`TodayPrintableItem.blockId`); added `findBestPrintableForBlock` + `findAllPrintablesForBlock` helpers (block-pinned matches first, subject-only fallback); rewrote `Today.tsx` so every per-block opener (Open button, thumbnail strip, "printable ready" pill, library fallback) routes through them. 9 vitest scenarios in `server/matchPrintable.blockPinned.test.ts`.
 
@@ -204,4 +202,4 @@
 - [x] BUG: Email "Download today's agenda PDF" button opened to an S3 `AccessDenied` XML page because the presigned URL had expired. Per user direction "fi not want url just auto on pdf", removed the link entirely from `scheduledSync.ts`; PDF is still attached as a MIME part. Footer text now reads "📎 The full agenda PDF is attached to this email — no link needed." Contract test rewritten (5 tests assert no clickable link + attachment intact).
 - [x] BUG: `/calendars` route returned 404. Fixed both ways: (a) redirect route `/calendars` → `/settings` registered in App.tsx (CalendarSyncCard lives there), (b) `Schedule.tsx` link text updated to point directly at `/settings` so it never hits the redirect.
 - [x] FEATURE: Surface the day's planned blocks as a calendar layer on Schedule — SHIPPED 2026-05-30. New `AgendaCalendarStrip` component renders a 7AM–6PM vertical timeline with subject-tinted block bars (timed blocks placed exactly, untimed flow sequentially from 9 AM, "now" line for today, tap-to-edit deep-link to the AgendaEditor). Embedded in Day view above the existing block list. New `blocks.weekRange` tRPC procedure (capped at 31 days) feeds Week view (subject-tinted block chips per day, count of blocks planned) and Month view (subject-color dots per day). External calendar export already covered by `/api/calendar.ics` which includes the next 14 days of agenda blocks with start/end times. 13 new vitest scenarios (6 weekRange + 7 layoutBlocks).
-- [ ] EMAIL: Add a Gmail-SMTP fallback to `server/_core/mailer.ts` so recipients Resend rejects (free-tier 422) get the email via `nodemailer + GMAIL_APP_PASSWORD + GMAIL_SMTP_USER`. Falls back to SMTP only when Resend `validation_error` lists an address that doesn't match the verified Resend domain. Once a Resend domain is verified, the fallback becomes a no-op.
+- [x] EMAIL: Gmail-SMTP fallback shipped 2026-05-30. SMTP fallback runs after Resend whenever the allow-list dropped recipients OR Resend's per-address retry rejected them. Resend domain verification still TBD by user; once verified, drop MAIL_ALLOWED_RECIPIENTS and the fallback becomes a no-op.

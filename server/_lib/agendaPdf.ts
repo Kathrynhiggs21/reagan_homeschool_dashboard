@@ -33,6 +33,8 @@
 import PDFDocument from "pdfkit";
 import { createHash } from "node:crypto";
 
+type TocEntry = { blockTitle: string; subjectName: string | null; pageIndex: number };
+
 export type AgendaPdfBlock = {
   sortOrder: number;
   startTime?: string | null;
@@ -431,8 +433,17 @@ function renderDevotionPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput) {
 
 /* ========================= BLOCK LESSON PAGES ============================ */
 
-function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: AgendaPdfBlock) {
+function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: AgendaPdfBlock, tocSink?: TocEntry[]) {
   doc.addPage();
+  // Track which pdfkit page index this block's lesson page lives on. After
+  // pdf-lib insertion of the ToC page (position 1) all of these get +1.
+  if (tocSink) {
+    // pdfkit doesn't expose a stable page-index counter — we count by tracking
+    // doc.bufferedPageRange() at the moment we addPage above.
+    const range = doc.bufferedPageRange();
+    const pageIndex = range.start + range.count - 1; // 0-based
+    tocSink.push({ blockTitle: `${b.sortOrder}. ${b.title}`, subjectName: b.subjectName ?? null, pageIndex });
+  }
 
   // Page header
   doc.fillColor(BRAND_GREEN).fontSize(18).font("Helvetica-Bold").text(cleanForPdf(`${b.sortOrder}. ${b.title}`));
@@ -502,7 +513,9 @@ function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: Age
           doc.fillColor(GRAY_MED).fontSize(9).text(cleanForPdf(v.description.trim()), { indent: 8, width: PAGE_W });
         }
         if (v.transcript) {
-          doc.fillColor(GRAY_LIGHT).fontSize(8).text(cleanForPdf(`Transcript: ${v.transcript.trim().slice(0, 300)}...`), { indent: 8, width: PAGE_W });
+          doc.fillColor(GRAY_DARK).fontSize(9).font("Helvetica-Bold").text(cleanForPdf("Transcript:"), { indent: 8 });
+          doc.font("Helvetica").fillColor(GRAY_MED).fontSize(8).text(cleanForPdf(v.transcript.trim()), { indent: 8, width: PAGE_W });
+          doc.moveDown(0.15);
         }
         doc.moveDown(0.2);
       }
@@ -680,7 +693,8 @@ export async function buildAgendaPdf(input: AgendaPdfInput): Promise<AgendaPdfRe
   const canonical = canonicalize(input);
   const agendaHash = hashAgenda(canonical);
 
-  const doc = new PDFDocument({ size: "LETTER", margin: MARGIN });
+  // bufferPages:true — lets us walk all pages later for page-number stamping.
+  const doc = new PDFDocument({ size: "LETTER", margin: MARGIN, bufferPages: true });
   const chunks: Buffer[] = [];
   doc.on("data", (c: Buffer) => chunks.push(c));
   const done = new Promise<void>((resolve) => doc.on("end", () => resolve()));
@@ -693,12 +707,11 @@ export async function buildAgendaPdf(input: AgendaPdfInput): Promise<AgendaPdfRe
     renderDevotionPage(doc, input);
   }
 
-  // 2026-05-29 — Per-block detail pages for ALL blocks. The renderer now
-  // includes a fallback path that prints the description + Notes lines for
-  // blocks without a curated lesson payload, so Mom and Reagan always have
-  // writable space on paper.
+  // 2026-05-29 — Per-block detail pages for ALL blocks.
+  // 2026-05-30 — Track block-to-page mapping for ToC.
+  const tocEntries: TocEntry[] = [];
   for (const b of input.blocks) {
-    renderLessonPage(doc, input, b);
+    renderLessonPage(doc, input, b, tocEntries);
   }
 
   doc.end();
@@ -706,29 +719,85 @@ export async function buildAgendaPdf(input: AgendaPdfInput): Promise<AgendaPdfRe
 
   let pdfBuffer = Buffer.concat(chunks);
 
-  // v3.11: Merge worksheet PDF pages into the agenda PDF using pdf-lib
-  const pdfWorksheets = collectPdfWorksheets(input);
-  if (pdfWorksheets.length > 0) {
-    try {
-      const { PDFDocument: PdfLib } = await import("pdf-lib");
-      const mainDoc = await PdfLib.load(pdfBuffer);
-      for (const ws of pdfWorksheets) {
-        try {
-          const wsDoc = await PdfLib.load(ws.pdfBytes);
-          const pageCount = wsDoc.getPageCount();
-          if (pageCount === 0) continue;
-          const copiedPages = await mainDoc.copyPages(wsDoc, wsDoc.getPageIndices());
-          for (const page of copiedPages) {
-            mainDoc.addPage(page);
-          }
-        } catch {
-          // If a specific worksheet PDF fails to merge, skip it silently
-        }
+  // ----------------------- pdf-lib post-processing -----------------------
+  // 1) merge worksheet PDF pages, 2) insert ToC after cover, 3) stamp page numbers.
+  try {
+    const { PDFDocument: PdfLib, StandardFonts, rgb } = await import("pdf-lib");
+    const mainDoc = await PdfLib.load(pdfBuffer);
+
+    // 1) Merge worksheet PDFs (existing behavior; appended to end)
+    const pdfWorksheets = collectPdfWorksheets(input);
+    for (const ws of pdfWorksheets) {
+      try {
+        const wsDoc = await PdfLib.load(ws.pdfBytes);
+        const pageCount = wsDoc.getPageCount();
+        if (pageCount === 0) continue;
+        const copiedPages = await mainDoc.copyPages(wsDoc, wsDoc.getPageIndices());
+        for (const page of copiedPages) mainDoc.addPage(page);
+      } catch {
+        // skip a bad worksheet silently
       }
-      pdfBuffer = Buffer.from(await mainDoc.save());
-    } catch {
-      // If pdf-lib merge fails entirely, return the original pdfkit PDF
     }
+
+    // 2) Insert ToC page right after the cover (page index 1).
+    if (tocEntries.length > 0) {
+      // After ToC insert, every existing page (including blocks) shifts +1.
+      const tocFont = await mainDoc.embedFont(StandardFonts.HelveticaBold);
+      const bodyFont = await mainDoc.embedFont(StandardFonts.Helvetica);
+      const tocPage = mainDoc.insertPage(1); // LETTER by default
+      const { width, height } = tocPage.getSize();
+      const left = MARGIN;
+      const right = width - MARGIN;
+      let y = height - MARGIN;
+      tocPage.drawText("Table of Contents", {
+        x: left, y: y - 18,
+        size: 20, font: tocFont, color: rgb(0.18, 0.42, 0.32), // BRAND_GREEN-ish
+      });
+      y -= 40;
+      tocPage.drawText(`${input.studentName} — ${input.forDate}`, {
+        x: left, y, size: 10, font: bodyFont, color: rgb(0.4, 0.4, 0.4),
+      });
+      y -= 24;
+      // Each entry: title (left), dotted leader, page number (right)
+      // Block lesson pages are at tocEntries[i].pageIndex + 1 (because we
+      // inserted the ToC page at position 1, shifting them).
+      const lineHeight = 16;
+      for (const e of tocEntries) {
+        if (y < MARGIN + 30) break; // ToC > 1 page is rare; truncate gracefully
+        const finalPageNum = e.pageIndex + 1 + 1; // 0-based pdfkit index + 1 (ToC shift) + 1 (1-based for humans)
+        const title = e.subjectName ? `${e.blockTitle}  ·  ${e.subjectName}` : e.blockTitle;
+        tocPage.drawText(title.slice(0, 70), {
+          x: left, y, size: 11, font: bodyFont, color: rgb(0.2, 0.2, 0.2),
+        });
+        const pageStr = String(finalPageNum);
+        const pageStrWidth = bodyFont.widthOfTextAtSize(pageStr, 11);
+        tocPage.drawText(pageStr, {
+          x: right - pageStrWidth, y, size: 11, font: bodyFont, color: rgb(0.2, 0.2, 0.2),
+        });
+        y -= lineHeight;
+      }
+    }
+
+    // 3) Stamp "Page X of Y" footer on every page (after all merges/inserts).
+    const totalPages = mainDoc.getPageCount();
+    const footerFont = await mainDoc.embedFont(StandardFonts.Helvetica);
+    for (let i = 0; i < totalPages; i++) {
+      const page = mainDoc.getPage(i);
+      const { width } = page.getSize();
+      const label = `Page ${i + 1} of ${totalPages}`;
+      const textWidth = footerFont.widthOfTextAtSize(label, 8);
+      page.drawText(label, {
+        x: (width - textWidth) / 2,
+        y: 18,
+        size: 8,
+        font: footerFont,
+        color: rgb(0.55, 0.55, 0.55),
+      });
+    }
+
+    pdfBuffer = Buffer.from(await mainDoc.save());
+  } catch {
+    // If pdf-lib post-processing fails entirely, fall back to the raw pdfkit PDF.
   }
 
   return { pdfBuffer, canonicalText: canonical, agendaHash };
