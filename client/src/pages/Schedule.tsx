@@ -472,7 +472,7 @@ function GoogleCalendarOverlayStub() {
               </li>
             ))}
           </ul>
-          <div className="mt-2 text-xs text-blue-800/80">Manage in <a href="/calendars" className="underline">Settings &rarr; Calendars</a>.</div>
+          <div className="mt-2 text-xs text-blue-800/80">Manage in <a href="/settings" className="underline">Settings &rarr; Calendars</a>.</div>
         </div>
       </div>
     </Card>

@@ -1145,8 +1145,8 @@ export function registerScheduledSync(app: Express) {
 ${tutorLine}
 ${kidSummaryLine}
 <div style=\"margin:20px 0;padding:14px 16px;border-left:4px solid #1f3a2e;background:#fafafa;border-radius:8px;\">${blockListHtml || '<div style=\"color:#888;\">No blocks scheduled.</div>'}</div>
-${absolutePdfUrl ? `<p style=\"text-align:center;margin:24px 0;\"><a href=\"${absolutePdfUrl}\" style=\"display:inline-block;padding:10px 20px;background:#1f3a2e;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;\">Download today's agenda PDF</a></p>` : ''}
-<p style=\"font-size:12px;color:#888;text-align:center;margin-top:24px;\">PDF agenda attached. If anything changes before school start, this email will be re-sent automatically.</p>
+<p style=\"font-size:13px;color:#1f3a2e;text-align:center;margin:24px 0;font-weight:600;\">📎 The full agenda PDF is attached to this email — no link needed.</p>
+<p style=\"font-size:12px;color:#888;text-align:center;margin-top:8px;\">If anything changes before school start, this email will be re-sent automatically.</p>
 </body></html>`;
 
       // Build the attachments[] array the scheduled-task agent will pass to

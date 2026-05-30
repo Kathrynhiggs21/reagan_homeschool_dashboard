@@ -83,6 +83,10 @@ function Router() {
         {/* /agendas (Daily Schedule) page deleted 2026-05-05; tutor day
             notes now live in the global NotebookDrawer (mid-right pill). */}
         <Route path="/agendas"><Redirect to="/agenda-editor" /></Route>
+        {/* 2026-05-30 — /calendars 404 fix. The text "Settings → Calendars"
+            in Schedule.tsx pointed at `/calendars`, which had no route.
+            Settings hosts `CalendarSyncCard`, so we redirect through there. */}
+        <Route path="/calendars"><Redirect to="/settings" /></Route>
         <Route path="/library">
           <AdultGate><AssignmentsLibrary /></AdultGate>
         </Route>

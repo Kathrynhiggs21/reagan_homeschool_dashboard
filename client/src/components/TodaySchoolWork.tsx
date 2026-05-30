@@ -23,6 +23,15 @@ export type TodayPrintableItem = {
   status: string;
   subjectSlug?: string | null;
   bucket?: Bucket;
+  /**
+   * 2026-05-30 — surface the row's `block_id` (varchar) so the homepage
+   * agenda can deep-link a tapped block to the printable that was actually
+   * pinned to THAT block, rather than the first subject-matching printable
+   * for the day. The server already returns this column via the unfiltered
+   * select in `listDailyPrintables`; it was being silently dropped because
+   * the wire-shape type didn't include it.
+   */
+  blockId?: string | null;
 };
 
 export type TodaySchoolWorkHandle = {
@@ -144,6 +153,7 @@ const TodaySchoolWork = forwardRef<TodaySchoolWorkHandle, { onItemsChanged?: (it
           status: item.status ?? "pending",
           subjectSlug: item.subjectSlug ?? null,
           bucket: item.bucket,
+          blockId: (item as any).blockId ?? null,
         };
         setOpen(it);
         setPhotoDataUrl(null);

@@ -98,3 +98,69 @@ export function findAllPrintablesForSubject(
     .sort((a, b) => b.score - a.score);
   return scored.slice(0, limit).map(s => s.it);
 }
+
+
+/**
+ * 2026-05-30 — block-pinned matchers (preferred over subject-only).
+ *
+ * The homepage agenda was opening the first subject-matching printable for
+ * the day (e.g., any Math worksheet) instead of the worksheet pinned to the
+ * specific block the user tapped. These helpers compare the tapped block's
+ * id against `TodayPrintableItem.blockId` (which is a varchar on the server
+ * side, so we coerce both sides to string before comparing) and only fall
+ * through to the subject-slug helpers when no pinned row exists.
+ */
+function sameBlockId(
+  itemBlockId: string | null | undefined,
+  blockId: number | string | null | undefined,
+): boolean {
+  if (itemBlockId == null || blockId == null) return false;
+  return String(itemBlockId).trim() === String(blockId).trim();
+}
+
+export function findBestPrintableForBlock(
+  items: TodayPrintableItem[],
+  block: { id?: number | string | null; subjectSlug?: string | null; title?: string | null; blockType?: string | null },
+): TodayPrintableItem | null {
+  if (items.length === 0) return null;
+  if (block.id != null) {
+    const pinned = items.filter((it) => sameBlockId(it.blockId, block.id));
+    if (pinned.length > 0) {
+      // Prefer non-done pinned rows; otherwise return the most recent one.
+      const live = pinned.filter((it) => it.status !== "done");
+      return (live[0] ?? pinned[pinned.length - 1]) ?? null;
+    }
+  }
+  // Fall back to subject-slug ranking when nothing is pinned to the block.
+  const slug = detectSubjectSlug(block);
+  return findBestPrintableForSubject(items, slug);
+}
+
+export function findAllPrintablesForBlock(
+  items: TodayPrintableItem[],
+  block: { id?: number | string | null; subjectSlug?: string | null; title?: string | null; blockType?: string | null },
+  limit = 3,
+): TodayPrintableItem[] {
+  if (items.length === 0) return [];
+  const pinned = block.id != null
+    ? items.filter((it) => sameBlockId(it.blockId, block.id))
+    : [];
+  if (pinned.length >= limit) {
+    // Pinned rows are the truth for this block; do not pad with subject-only
+    // rows that may belong to a different worksheet.
+    return pinned
+      .slice()
+      .sort((a, b) => Number(a.status === "done") - Number(b.status === "done"))
+      .slice(0, limit);
+  }
+  const slug = detectSubjectSlug(block);
+  const subjectMatches = findAllPrintablesForSubject(items, slug, limit);
+  // Pinned first, then de-duped subject matches up to the limit.
+  const out: TodayPrintableItem[] = [...pinned];
+  for (const m of subjectMatches) {
+    if (out.find((x) => x.id === m.id)) continue;
+    out.push(m);
+    if (out.length >= limit) break;
+  }
+  return out.slice(0, limit);
+}

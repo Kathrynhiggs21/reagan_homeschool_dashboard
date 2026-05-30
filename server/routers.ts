@@ -4687,9 +4687,15 @@ export const appRouter = router({
           })
           .join("\n");
 
-        const linkLine = signedUrl
-          ? `\n\nDownload PDF: ${signedUrl}`
-          : `\n\n(PDF stored at ${key}; presign failed — refresh in the dashboard.)`;
+        // 2026-05-30: dropped the signed-URL line from the owner notification.
+        // The presigned CloudFront URL would expire before anyone clicked it,
+        // surfacing as an XML "AccessDenied" page in the inbox. The PDF is
+        // attached to the email itself, so the link was redundant anyway.
+        // The dashboard always has a fresh signed URL via /manus-storage/.
+        const linkLine = `\n\nPDF attached. (Stored at ${key}.)`;
+        // signedUrl is intentionally unused; kept the storageGetSignedUrl call
+        // above so a presign failure still gets logged for diagnostics.
+        void signedUrl;
 
         // Mastery Snapshot — per-subject mastery % for the weekly digest
         let masterySection = "";
@@ -4749,8 +4755,8 @@ export const appRouter = router({
           const html = `<!doctype html><html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#222;max-width:680px;margin:0 auto;padding:20px;">
 <div style="text-align:center;margin-bottom:8px;"><div style="font-size:22px;font-weight:800;color:#1f3a2e;">${payload.studentName}'s School Plan</div><div style="color:#666;font-size:14px;">${payload.dayLabel}</div></div>
 <div style="margin:20px 0;padding:14px 16px;border-left:4px solid #1f3a2e;background:#fafafa;border-radius:8px;">${blockListHtml || '<div style="color:#888;">No blocks scheduled.</div>'}</div>
-${signedUrl ? `<p style="text-align:center;margin:24px 0;"><a href="${signedUrl}" style="display:inline-block;padding:10px 20px;background:#1f3a2e;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;">Download agenda PDF</a></p>` : ""}
-<p style="font-size:12px;color:#888;text-align:center;margin-top:24px;">PDF agenda attached.</p>
+<p style="text-align:center;margin:24px 0;color:#1f3a2e;font-weight:600;">→ PDF agenda attached to this email.</p>
+<p style="font-size:12px;color:#888;text-align:center;margin-top:8px;">Per-block worksheets are also attached as separate PDFs.</p>
 </body></html>`;
           // Build worksheet attachments
           const emailAtts: Array<{ filename: string; content: Buffer; contentType: string }> = [

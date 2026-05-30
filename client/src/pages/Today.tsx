@@ -58,7 +58,7 @@ import AIScheduleGeneratorCard from "@/components/AIScheduleGeneratorCard";
 import BrainBreakTvBox from "@/components/BrainBreakTvBox";
 import MascotGreeting from "@/components/MascotGreeting";
 import TodaySchoolWork, { type TodaySchoolWorkHandle, type TodayPrintableItem } from "@/components/TodaySchoolWork";
-import { detectSubjectSlug, findBestPrintableForSubject, findAllPrintablesForSubject } from "@/lib/matchPrintable";
+import { detectSubjectSlug, findBestPrintableForBlock, findAllPrintablesForBlock } from "@/lib/matchPrintable";
 import { fallbackActivityFor } from "@/lib/subjectFallbackActivity";
 import { useRef } from "react";
 import { dailyTipForDate, localDateKey } from "@/lib/dailyTips";
@@ -222,11 +222,18 @@ export default function Today() {
 
   async function openPrintableForBlock(block: { id?: number; title?: string | null; blockType?: string | null; subjectSlug?: string | null }) {
     const slug = detectSubjectSlug(block);
-    // 1. Today's printables (Morning Brief)
+    // 2026-05-30 — priority order rewritten so a tapped agenda block opens
+    // the worksheet pinned to THAT block, not the first subject-matching
+    // printable for the day. Previously "Math block" → any math worksheet
+    // for today; now "Math block #42" → the row whose block_id is 42, then
+    // any Math worksheet, then the curated fallback.
+
+    // 1. Today's printables — prefer the row pinned to this exact block,
+    //    fall back to subject-slug ranking inside the helper.
     const items = todaySchoolWorkRef.current?.getItems() ?? printableItems;
-    const match = findBestPrintableForSubject(items, slug);
+    const match = findBestPrintableForBlock(items, block);
     if (match && todaySchoolWorkRef.current?.openById(match.id)) return;
-    // 2a. Adult Library — prefer rows pinned to this exact block first
+    // 2a. Adult Library — same precedence: block-pinned rows first.
     const allLibRows = libraryToday.data ?? [];
     const blockPinned = block.id != null
       ? allLibRows.filter((r) => (r as any).blockId === block.id)
@@ -723,8 +730,11 @@ export default function Today() {
                     </div>
                   )}
                   {(() => {
-                    const slug2 = detectSubjectSlug(b);
-                    const matches = findAllPrintablesForSubject(printableItems, slug2, 3);
+                    // 2026-05-30 — use the block-pinned matcher so the
+                    // thumbnail strip on each block shows the worksheet that
+                    // was actually pinned to THIS block (block_id match)
+                    // before falling back to subject-only rows.
+                    const matches = findAllPrintablesForBlock(printableItems, b, 3);
                     if (matches.length === 0) return null;
                     return (
                       <div className="mt-1.5 flex gap-1.5 flex-wrap" aria-label="Files attached to this block">
@@ -765,8 +775,9 @@ export default function Today() {
                   />
                   <div className="flex gap-1.5 mt-2 flex-wrap">
                     {(() => {
-                      const slug = detectSubjectSlug(b);
-                      const match = findBestPrintableForSubject(printableItems, slug);
+                      // 2026-05-30 — also use the block-pinned matcher
+                      // for the "printable ready" pill / Open button hint.
+                      const match = findBestPrintableForBlock(printableItems, b);
                       return (
                         <>
                           <Button

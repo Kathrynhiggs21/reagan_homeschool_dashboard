@@ -3,48 +3,52 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 /**
- * Bug fix 2026-05-12 — shared task iPcHx9de76R5UjfLq8xZrH:
- * the nightly-agenda-email PDF link was previously embedded as the relative
- * `/manus-storage/{key}` path, which requires a dashboard cookie to follow
- * the 307 redirect. Mom and Grandma clicking from Gmail had no cookie and
- * landed on a login redirect.
+ * Bug fix 2026-05-30 — user reported that the "Download today's agenda PDF"
+ * button in the nightly-agenda email was opening to an S3/CloudFront
+ * "AccessDenied" XML page. Root cause: presigned URLs expire (~1h default)
+ * and the email is opened hours / a day later, so by the time the recipient
+ * clicks the link, the signature is dead.
  *
- * Fix: call `storageGetSignedUrl(key)` to get an absolute presigned S3 GET
- * URL, embed THAT in the email body, and return it from the endpoint as
- * `pdfDownloadUrl` so the gmail MCP uses it.
+ * User direction was explicit: "fi not want url just auto on pdf" — drop
+ * the URL entirely, deliver the PDF as a MIME attachment so it just opens
+ * from the inbox.
  *
- * This is a source-level contract test (no live HTTP) so it is hermetic.
+ * Earlier-2026 fix (cookie-gated link → absolute presigned URL) is now
+ * obsolete; this contract test was rewritten to lock the new contract:
+ *   1. The email HTML body MUST NOT contain a clickable PDF download link.
+ *   2. The PDF MUST be in the attachments[] array passed to sendEmail.
+ *   3. The HTML body MUST tell recipients the PDF is attached.
  */
-describe("nightly-agenda-email — PDF link cookie fix", () => {
+describe("nightly-agenda-email — attachment-only contract (2026-05-30)", () => {
   const src = fs.readFileSync(
     path.join(__dirname, "scheduledSync.ts"),
     "utf8",
   );
 
-  it("imports storageGetSignedUrl alongside storagePut", () => {
-    expect(src).toContain('const { storagePut, storageGetSignedUrl }');
+  it("does NOT render a 'Download today's agenda PDF' anchor in the email body", () => {
+    // The old text was literally that string inside an <a>. Make sure it's
+    // gone from the HTML body builder.
+    expect(src).not.toContain("Download today's agenda PDF");
   });
 
-  it("calls storageGetSignedUrl(key) on the just-uploaded PDF", () => {
-    expect(src).toContain("storageGetSignedUrl(key)");
+  it("does NOT inject the absolutePdfUrl into the email HTML as a clickable link", () => {
+    // The previous version had `${absolutePdfUrl ? `<a href="${absolutePdfUrl}"…` : ''}`
+    // pattern. Search for the old pattern explicitly.
+    expect(src).not.toMatch(/<a href=\\"\$\{absolutePdfUrl\}\\"/);
   });
 
-  it("renders an absolute download link inside the HTML email body", () => {
-    expect(src).toContain("absolutePdfUrl");
-    expect(src).toContain("Download today's agenda PDF");
+  it("tells the recipient that the PDF is attached", () => {
+    // Body should make the attachment obvious.
+    expect(src).toContain("PDF is attached");
   });
 
-  it("returns pdfDownloadUrl (absolute) alongside pdfUrl (relative) so gmail MCP can pick the right one", () => {
-    expect(src).toContain("pdfDownloadUrl: absolutePdfUrl");
+  it("still attaches the agenda PDF to the email's attachments[] array", () => {
+    // Attachment build path must remain intact: agenda first, then worksheets.
+    expect(src).toContain('kind: "agenda"');
+    expect(src).toContain("contentBase64: pdfBuffer.toString(\"base64\")");
   });
 
-  it("falls back gracefully when presign fails (still sends email with attachment)", () => {
-    expect(src).toContain("absolutePdfUrl = null");
-    expect(src).toContain("attachment-only delivery");
-  });
-
-  it("explicitly notes WHY the fix exists (cookie not available to email recipients)", () => {
-    expect(src).toContain("dashboard cookie to follow");
-    expect(src).toContain("Mom and Grandma do");
+  it("still passes attachments to the mailer's sendEmail call", () => {
+    expect(src).toMatch(/sendEmail\(\s*\{[\s\S]+?attachments:\s*emailAttachments/);
   });
 });
