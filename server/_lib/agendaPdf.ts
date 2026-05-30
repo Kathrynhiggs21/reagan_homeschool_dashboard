@@ -163,31 +163,76 @@ const RULE_COLOR   = "#dddddd";
 const PAGE_W       = 564; // 8.5in × 72 - 2×48 margin
 const MARGIN       = 48;
 
+/**
+ * 2026-05-29 — cleanForPdf: PDFKit's built-in Helvetica font is WinAnsi-
+ * encoded and renders any code point ≥ U+0100 (and most emoji) as garbled
+ * glyphs (e.g. 🧩 → "Ø>Ýé"). Embedding a Unicode font would balloon
+ * the PDF size and require shipping font files in the Cloud Run image, which
+ * is fragile on a Node-only runtime. Instead we strip the emoji and replace
+ * a few common typographic characters with ASCII equivalents the Helvetica
+ * WinAnsi table covers cleanly.
+ *
+ * Applied to every .text() call site below.
+ */
+export function cleanForPdf(s: string | null | undefined): string {
+  if (s === null || s === undefined) return "";
+  let out = String(s);
+  // Replace common typographic chars with WinAnsi-safe equivalents
+  out = out
+    .replace(/[\u2018\u2019\u201A\u201B]/g, "'")
+    .replace(/[\u201C\u201D\u201E\u201F]/g, '"')
+    .replace(/[\u2013\u2014\u2015]/g, "-")
+    .replace(/\u2026/g, "...")
+    .replace(/\u00A0/g, " ")
+    .replace(/[\u2192\u27A4\u27A1]/g, "->")
+    .replace(/[\u25B6\u25BA\u25B8]/g, ">")
+    .replace(/[\u2022\u00B7]/g, "\u00b7");
+  // Strip variation selectors, zero-width joiners, regional indicators
+  out = out.replace(/[\u200B-\u200D\uFE0E\uFE0F]/g, "");
+  // Strip all surrogate pairs (covers ≥ U+10000 — every emoji)
+  out = out.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, "");
+  // Strip remaining symbols/pictograph BMP ranges (misc symbols, dingbats,
+  // misc-symbols-and-arrows, transport, geometric shapes, enclosed alphanum)
+  out = out.replace(/[\u2300-\u23FF\u2460-\u24FF\u2600-\u27BF\u2900-\u29FF\u2B00-\u2BFF\u3000-\u303F]/g, "");
+  // Collapse the double-space artefacts left behind by removals
+  out = out.replace(/ {2,}/g, " ").trim();
+  return out;
+}
+
 function rule(doc: PDFKit.PDFDocument) {
   doc.strokeColor(RULE_COLOR).moveTo(MARGIN, doc.y).lineTo(PAGE_W + MARGIN, doc.y).stroke();
   doc.moveDown(0.4);
 }
 
 function sectionHead(doc: PDFKit.PDFDocument, text: string) {
-  doc.fillColor(BRAND_GREEN).fontSize(12).font("Helvetica-Bold").text(text.toUpperCase(), { characterSpacing: 0.5 });
+  doc.fillColor(BRAND_GREEN).fontSize(12).font("Helvetica-Bold").text(cleanForPdf(text).toUpperCase(), { characterSpacing: 0.5 });
   doc.font("Helvetica");
   doc.moveDown(0.2);
 }
 
 function bodyText(doc: PDFKit.PDFDocument, text: string, opts?: PDFKit.Mixins.TextOptions) {
-  doc.fillColor(GRAY_DARK).fontSize(10).font("Helvetica").text(text, { width: PAGE_W, ...opts });
+  doc.fillColor(GRAY_DARK).fontSize(10).font("Helvetica").text(cleanForPdf(text), { width: PAGE_W, ...opts });
 }
 
 function bullet(doc: PDFKit.PDFDocument, text: string) {
-  doc.fillColor(GRAY_DARK).fontSize(10).font("Helvetica").text(`• ${text}`, { width: PAGE_W, indent: 8 });
+  doc.fillColor(GRAY_DARK).fontSize(10).font("Helvetica").text(`· ${cleanForPdf(text)}`, { width: PAGE_W, indent: 8 });
 }
 
 function answerLine(doc: PDFKit.PDFDocument) {
-  doc.fillColor("#cccccc").fontSize(10).text(
-    "___________________________________________",
-    { width: PAGE_W, indent: 8 },
-  );
-  doc.moveDown(0.1);
+  // 2026-05-29 — draw a real horizontal rule across the writable width
+  // instead of underscore characters, which were getting truncated at
+  // smaller widths and looked broken. We move down a fixed line height
+  // after each rule so Reagan has consistent paper-feel rows.
+  const x = MARGIN + 8;
+  const y = doc.y + 10;
+  doc.save()
+    .strokeColor("#bbbbbb")
+    .lineWidth(0.6)
+    .moveTo(x, y)
+    .lineTo(MARGIN + PAGE_W, y)
+    .stroke()
+    .restore();
+  doc.y = y + 8;
 }
 
 function formatTime(t: string | null | undefined): string {
@@ -228,7 +273,7 @@ function renderPrintSeparatelyBox(
 
   doc.y = boxY + 8;
   doc.fillColor(BRAND_SUMMER).fontSize(10).font("Helvetica-Bold")
-    .text("📄  PRINT THIS WORKSHEET SEPARATELY", { indent: 8, width: PAGE_W - 16 });
+    .text("PRINT THIS WORKSHEET SEPARATELY", { indent: 8, width: PAGE_W - 16 });
   doc.font("Helvetica");
   doc.fillColor(BRAND_BLUE).fontSize(8)
     .text(absoluteUrl, {
@@ -247,15 +292,15 @@ function renderCoverPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, agendaH
   // Summer mode banner — shown ABOVE the title when active
   if (input.summerMode) {
     doc.fillColor(BRAND_SUMMER).fontSize(13).font("Helvetica-Bold")
-      .text("☀  Summer Preview — 6th Grade", { align: "center" });
+      .text(cleanForPdf("Summer Preview - 6th Grade"), { align: "center" });
     doc.moveDown(0.15);
   }
 
   // Title bar
   doc.fillColor(BRAND_GREEN).fontSize(22).font("Helvetica-Bold")
-    .text(`${input.studentName}'s School Day`, { align: "center" });
+    .text(cleanForPdf(`${input.studentName}'s School Day`), { align: "center" });
   doc.moveDown(0.15);
-  doc.fillColor(GRAY_MED).fontSize(14).font("Helvetica").text(input.dayLabel, { align: "center" });
+  doc.fillColor(GRAY_MED).fontSize(14).font("Helvetica").text(cleanForPdf(input.dayLabel), { align: "center" });
   doc.moveDown(0.3);
 
   // Tutor line
@@ -263,7 +308,7 @@ function renderCoverPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, agendaH
     const tutorLine = `Tutor: ${input.tutorName}` +
       (input.tutorArrival ? `  ·  Arrives ${formatTime(input.tutorArrival)}` : "") +
       (input.tutorDeparture ? `  ·  Leaves ${formatTime(input.tutorDeparture)}` : "");
-    doc.fillColor(BRAND_BLUE).fontSize(11).font("Helvetica").text(tutorLine, { align: "center" });
+    doc.fillColor(BRAND_BLUE).fontSize(11).font("Helvetica").text(cleanForPdf(tutorLine), { align: "center" });
     doc.moveDown(0.2);
   }
 
@@ -281,7 +326,10 @@ function renderCoverPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, agendaH
 
   // What's in this packet summary
   const hasDevotionPage = !!input.devotionText;
-  const blocksWithContent = input.blocks.filter((b) => !!b.lesson || !!b.generated);
+  // 2026-05-29 — Every block now gets a per-block page (with description +
+  // Notes lines) even if it has no curated lesson payload, so the printed
+  // packet always has writable space for Reagan to work on offline.
+  const detailPageCount = input.blocks.length;
   const totalWorksheets = input.blocks.reduce((s, b) => {
     const ws = b.lesson?.worksheets?.length ?? 0;
     return s + ws;
@@ -294,11 +342,11 @@ function renderCoverPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, agendaH
   doc.fillColor(BRAND_GREEN).fontSize(11).font("Helvetica-Bold").text("What's in this packet:");
   doc.font("Helvetica").moveDown(0.15);
   const packetSummary: string[] = [];
-  if (hasDevotionPage) packetSummary.push("📖 Devotion / reflection page");
-  packetSummary.push(`📋 Cover sheet (this page) with today's full schedule`);
-  if (blocksWithContent.length > 0) packetSummary.push(`📄 ${blocksWithContent.length} detailed lesson page${blocksWithContent.length === 1 ? "" : "s"} (one per block)`);
-  if (totalWorksheets > 0) packetSummary.push(`✏️  ${totalWorksheets} worksheet${totalWorksheets === 1 ? "" : "s"} embedded in packet`);
-  if (totalVideos > 0) packetSummary.push(`▶  ${totalVideos} video link${totalVideos === 1 ? "" : "s"} with descriptions`);
+  if (hasDevotionPage) packetSummary.push("Devotion / reflection page");
+  packetSummary.push("Cover sheet (this page) with today's full schedule");
+  if (detailPageCount > 0) packetSummary.push(`${detailPageCount} detail page${detailPageCount === 1 ? "" : "s"} (one per block, with notes space)`);
+  if (totalWorksheets > 0) packetSummary.push(`${totalWorksheets} worksheet${totalWorksheets === 1 ? "" : "s"} embedded in packet`);
+  if (totalVideos > 0) packetSummary.push(`${totalVideos} video link${totalVideos === 1 ? "" : "s"} with descriptions`);
   for (const line of packetSummary) {
     bullet(doc, line);
   }
@@ -306,7 +354,7 @@ function renderCoverPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, agendaH
   rule(doc);
 
   // Block list
-  doc.fillColor(BRAND_GREEN).fontSize(13).font("Helvetica-Bold").text("Today's Schedule");
+  doc.fillColor(BRAND_GREEN).fontSize(13).font("Helvetica-Bold").text(cleanForPdf("Today's Schedule"));
   doc.font("Helvetica").moveDown(0.3);
 
   if (input.blocks.length === 0) {
@@ -321,30 +369,26 @@ function renderCoverPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, agendaH
           ? `  ·  ${b.curriculumTopicCode}: ${b.curriculumTopicTitle}`
           : `  ·  ${b.curriculumTopicCode}`)
       : "";
-    const hasPage = !!b.lesson || !!b.generated;
 
     // Block header row
     doc.fillColor(GRAY_DARK).fontSize(10).font("Helvetica-Bold")
-      .text(`${b.sortOrder}.  ${timeStr}  ·  ${b.durationMin} min${subj}${topicStr}`, { continued: false });
+      .text(cleanForPdf(`${b.sortOrder}.  ${timeStr}  ·  ${b.durationMin} min${subj}${topicStr}`), { continued: false });
     doc.font("Helvetica");
-    doc.fillColor(GRAY_DARK).fontSize(11).text(`   ${b.title}`, { indent: 4 });
+    doc.fillColor(GRAY_DARK).fontSize(11).text(cleanForPdf(`   ${b.title}`), { indent: 4 });
 
     if (b.description) {
-      doc.fillColor(GRAY_MED).fontSize(9).text(`   ${b.description.trim()}`, { width: PAGE_W, indent: 4 });
+      doc.fillColor(GRAY_MED).fontSize(9).text(cleanForPdf(`   ${b.description.trim()}`), { width: PAGE_W, indent: 4 });
     }
     if (b.bookPageRefs?.length) {
       for (const r of b.bookPageRefs) {
-        doc.fillColor(BRAND_BLUE).fontSize(9).text(`   📖 ${r.bookTitle} — pg. ${r.fromPage}–${r.toPage}`, { indent: 4 });
+        doc.fillColor(BRAND_BLUE).fontSize(9).text(cleanForPdf(`   ${r.bookTitle} - pg. ${r.fromPage}-${r.toPage}`), { indent: 4 });
       }
     }
-    if (hasPage) {
-      doc.fillColor(GRAY_LIGHT).fontSize(8).text(`   → See lesson page in this packet`, { indent: 4 });
-    }
+    // Every block gets a per-block detail page; cover always points to it.
+    doc.fillColor(GRAY_LIGHT).fontSize(8).text(cleanForPdf(`   -> Detail page in this packet (notes space below)`), { indent: 4 });
     // Surface generated payload hint on cover
     if (b.generated && !b.description && !(b.bookPageRefs && b.bookPageRefs.length > 0)) {
-      const kindIcon = b.generated.kind === "reading" ? "📖" :
-                       b.generated.kind === "adventure" ? "🌟" : "🎯";
-      doc.fillColor(BRAND_WARM).fontSize(9).text(`   ${kindIcon} ${b.generated.printable}`, { indent: 4 });
+      doc.fillColor(BRAND_WARM).fontSize(9).text(cleanForPdf(`   ${b.generated.printable}`), { indent: 4 });
     }
     doc.moveDown(0.4);
   }
@@ -353,17 +397,17 @@ function renderCoverPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, agendaH
   if (input.tutorNotesYesterday) {
     doc.moveDown(0.2);
     rule(doc);
-    doc.fillColor(BRAND_GREEN).fontSize(11).font("Helvetica-Bold").text("From yesterday's tutor");
+    doc.fillColor(BRAND_GREEN).fontSize(11).font("Helvetica-Bold").text(cleanForPdf("From yesterday's tutor"));
     doc.font("Helvetica");
     doc.fillColor(GRAY_DARK).fontSize(10)
-      .text(`${input.tutorNotesYesterday.tutorName}: ${input.tutorNotesYesterday.notes.trim()}`, { width: PAGE_W });
+      .text(cleanForPdf(`${input.tutorNotesYesterday.tutorName}: ${input.tutorNotesYesterday.notes.trim()}`), { width: PAGE_W });
     doc.moveDown(0.3);
   }
 
   // Footer
   doc.moveDown(0.4);
   doc.fillColor(GRAY_LIGHT).fontSize(7)
-    .text(`Packet hash: ${agendaHash.slice(0, 16)}…  ·  Generated for ${input.forDate}  ·  If anything changes before school, this packet will be re-sent.`);
+    .text(cleanForPdf(`Packet hash: ${agendaHash.slice(0, 16)}...  ·  Generated for ${input.forDate}  ·  If anything changes before school, this packet will be re-sent.`));
 }
 
 /* ========================= DEVOTION PAGE ================================== */
@@ -371,13 +415,13 @@ function renderCoverPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, agendaH
 function renderDevotionPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput) {
   if (!input.devotionText) return;
   doc.addPage();
-  doc.fillColor(BRAND_GREEN).fontSize(20).font("Helvetica-Bold").text("Today's Devotion", { align: "center" });
+  doc.fillColor(BRAND_GREEN).fontSize(20).font("Helvetica-Bold").text(cleanForPdf("Today's Devotion"), { align: "center" });
   doc.moveDown(0.2);
-  doc.fillColor(GRAY_MED).fontSize(11).font("Helvetica").text(input.dayLabel, { align: "center" });
+  doc.fillColor(GRAY_MED).fontSize(11).font("Helvetica").text(cleanForPdf(input.dayLabel), { align: "center" });
   doc.moveDown(0.5);
   rule(doc);
   doc.moveDown(0.3);
-  doc.fillColor(GRAY_DARK).fontSize(12).font("Helvetica").text(input.devotionText.trim(), { width: PAGE_W });
+  doc.fillColor(GRAY_DARK).fontSize(12).font("Helvetica").text(cleanForPdf(input.devotionText.trim()), { width: PAGE_W });
   doc.moveDown(0.8);
   rule(doc);
   doc.fillColor(GRAY_LIGHT).fontSize(9).text("Reflection space:", { indent: 0 });
@@ -391,17 +435,17 @@ function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: Age
   doc.addPage();
 
   // Page header
-  doc.fillColor(BRAND_GREEN).fontSize(18).font("Helvetica-Bold").text(`${b.sortOrder}. ${b.title}`);
+  doc.fillColor(BRAND_GREEN).fontSize(18).font("Helvetica-Bold").text(cleanForPdf(`${b.sortOrder}. ${b.title}`));
   doc.font("Helvetica");
   doc.fillColor(GRAY_LIGHT).fontSize(10).text(
-    [
+    cleanForPdf([
       formatTime(b.startTime),
       `${b.durationMin} min`,
       b.subjectName ?? null,
       b.curriculumTopicCode
         ? (b.curriculumTopicTitle ? `${b.curriculumTopicCode}: ${b.curriculumTopicTitle}` : b.curriculumTopicCode)
         : null,
-    ].filter(Boolean).join("  ·  "),
+    ].filter(Boolean).join("  ·  ")),
   );
   doc.moveDown(0.3);
   rule(doc);
@@ -553,6 +597,27 @@ function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: Age
     }
   }
 
+  // 2026-05-29 — fallback per-block detail when no curated lesson and no
+  // generated payload: render the AI-written description + Notes lines so
+  // there's always writable space on paper. This also ensures the cover
+  // sheet's "X detail pages" count is always accurate.
+  if (!L && !b.generated) {
+    if (b.description) {
+      bodyText(doc, b.description.trim());
+      doc.moveDown(0.3);
+    }
+    if (b.bookPageRefs && b.bookPageRefs.length > 0) {
+      sectionHead(doc, "Reading Assignment");
+      for (const r of b.bookPageRefs) {
+        bullet(doc, `${r.bookTitle} - pages ${r.fromPage}-${r.toPage}`);
+      }
+      doc.moveDown(0.3);
+    }
+    sectionHead(doc, "Notes / Work Space");
+    for (let i = 0; i < 10; i++) answerLine(doc);
+    doc.moveDown(0.3);
+  }
+
   // Generated payload (adventure / practice / reading)
   const G = b.generated;
   if (G && !L) {
@@ -582,14 +647,14 @@ function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: Age
     if (G.operable.url) {
       doc.moveDown(0.2);
       doc.fillColor(BRAND_BLUE).fontSize(9)
-        .text(`Open online: ${G.operable.url}`, { link: G.operable.url, underline: true });
+        .text(cleanForPdf(`Open online: ${G.operable.url}`), { link: G.operable.url, underline: true });
     }
   }
 
   // Page footer
   doc.moveDown(0.4);
   doc.fillColor(GRAY_LIGHT).fontSize(7)
-    .text(`Block ${b.sortOrder} of ${input.blocks.length}  ·  ${input.studentName}  ·  ${input.forDate}`);
+    .text(cleanForPdf(`Block ${b.sortOrder} of ${input.blocks.length}  ·  ${input.studentName}  ·  ${input.forDate}`));
 }
 
 /* ========================= MAIN BUILDER ================================== */
@@ -628,9 +693,11 @@ export async function buildAgendaPdf(input: AgendaPdfInput): Promise<AgendaPdfRe
     renderDevotionPage(doc, input);
   }
 
-  // Per-block lesson pages — blocks that have lesson OR generated content
-  const contentBlocks = input.blocks.filter((b) => !!b.lesson || !!b.generated);
-  for (const b of contentBlocks) {
+  // 2026-05-29 — Per-block detail pages for ALL blocks. The renderer now
+  // includes a fallback path that prints the description + Notes lines for
+  // blocks without a curated lesson payload, so Mom and Reagan always have
+  // writable space on paper.
+  for (const b of input.blocks) {
     renderLessonPage(doc, input, b);
   }
 

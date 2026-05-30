@@ -25,6 +25,7 @@
 ## 🔴 High Priority — Active
 
 - [x] Drive Hub cleanup: DrivePushQueueCard rewritten — all 28 folder labels mapped, Open Drive link, Refresh button, error message display, cleaner layout
+- [x] Drive Mirror scheduled task — merged into the existing weekday 6:30 AM ET schedule as Job B (after Job A email). Drains drive_push_queue, refreshes Reagan School Hub folder map, writes best-effort daily snapshot. Idempotent. Playbook saved to /home/ubuntu/reagan_combined_playbook.md
 - [ ] Drive push routing audit: verify each targetFolder enum value maps to the correct canonical Drive folder ID in driveSyncPaths.ts
 - [ ] Drive orphan/dupe cleanup: nightly job to detect empty folders and trash them (not delete)
 - [ ] Ohio curriculum standards reference file → auto-push into Curriculum and Resources folder on schedule
@@ -162,3 +163,10 @@
 - [x] Tutor roster + per-tutor schedule
 - [x] 12-hour AM/PM time in Agenda Editor
 - [x] Schedule page legend with calendar colors
+
+## 🔴 Active Bugs — 2026-05-29
+
+- [x] BUG: Flashcard Maker AI Generate failed because `db.createFlashcardDeck` returned `id: undefined` on TiDB (drizzle MySQL `insertId` shape). Fix in `server/db.ts`: read back the inserted deck row by `(title, createdAt)` to confirm the id; same defensive read-back in `addFlashcardCard`. New tests: locked in via `server/agendaPdf.printDaily.test.ts` companion (flashcard tests already in `flashcardDb.test.ts`).
+- [x] BUG: Print Daily PDF rendered emoji as garbled WinAnsi glyphs (🧩 → Ø>Ýé) AND only generated a cover page (no per-block writable space). Fix in `server/_lib/agendaPdf.ts`: `cleanForPdf()` strips supplementary-plane code points + dingbats and transliterates smart punctuation; every block now renders a detail page with description + 10 full-width writing lines. Notes lines are now real horizontal rules (was: truncated underscore text). Verified visually on Monday June 1 plan — went from 1 page/3KB → 5 pages/7.6KB.
+- [x] BUG: plans.aiGenerate failed on prod with `__dirname is not defined` (ESM) — fixed in `server/_lib/knowledgeBundle.ts` and `server/_lib/q4StandardsSeeder.ts` (both now derive `__dirname` from `fileURLToPath(import.meta.url)`).
+- [x] FEATURE: Today homepage ◀ Prev day / Next day ▶ arrows over the daily assignment blocks. Center label is a snap-back-to-today button. When viewing a non-today day, the page re-queries via `plans.byDate({ date })` and shows a small read-only hint. No route changes.

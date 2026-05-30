@@ -164,6 +164,16 @@ export default function Today() {
     }
   }, [profile.data]);
   const today = trpc.plans.today.useQuery();
+  // 2026-05-29 — day-navigation: arrows over the schedule strip let Mom
+  // and Reagan scrub backward/forward through any day's plan without leaving
+  // Today. `viewDate` defaults to actual today; tapping the centred label
+  // snaps back. We re-query via plans.byDate so we don't break any of the
+  // dozens of other `new Date().toISOString().slice(0,10)` hard-codes on
+  // this page — those keep showing real-today's mood/library/tutor strips.
+  const [viewDate, setViewDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
+  const realTodayStr = new Date().toISOString().slice(0, 10);
+  const isToday = viewDate === realTodayStr;
+  const byDateQ = trpc.plans.byDate.useQuery({ date: viewDate }, { enabled: !isToday });
   const struggleM = trpc.struggles.log.useMutation({ onSuccess: () => toast.success("Logged.") });
   const moodM = trpc.mood.log.useMutation({ onSuccess: () => toast.success("Got it.") });
   const completeM = trpc.blocks.complete.useMutation();
@@ -276,12 +286,16 @@ export default function Today() {
   // We use a permissive title-pattern filter so it works whatever blockType was assigned upstream.
   // Adults can still see/manage these from the Schedule page (we only filter Reagan's primary view).
   const TEST_PATTERNS = /\b(test|quiz|screener|screening|placement|assessment|benchmark)\b/i;
-  const allBlocks = today.data?.blocks ?? [];
+  // When scrubbing to a non-today date, source blocks from byDateQ instead
+  // of today's live query. Falls back to today's blocks when isToday=true.
+  const allBlocks: any[] = isToday
+    ? (today.data?.blocks ?? [])
+    : (byDateQ.data?.blocks ?? []);
   const blocks = unlocked
     ? allBlocks
     : allBlocks.filter((b: any) => !TEST_PATTERNS.test(`${b.title ?? ""} ${b.description ?? ""}`));
   const hiddenTestCount = allBlocks.length - blocks.length;
-  const planId = today.data?.plan?.id;
+  const planId = isToday ? today.data?.plan?.id : (byDateQ.data?.plan?.id as number | undefined);
   const done = blocks.filter((b: any) => b.status === "complete").length;
   const total = blocks.length;
 
@@ -565,8 +579,50 @@ export default function Today() {
 
       {/* Today's Schedule sits near the top so it's always visible quickly */}
       <section>
+        {/* Day-nav strip (2026-05-29) — ◄ / centred date / ►.
+            Center label snaps back to real Today. */}
+        <div className="flex items-center justify-between gap-2 mb-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="bg-transparent h-8 px-2 text-xs"
+            onClick={() => {
+              const d = new Date(viewDate + "T12:00:00");
+              d.setDate(d.getDate() - 1);
+              setViewDate(d.toISOString().slice(0, 10));
+            }}
+            aria-label="Previous day"
+          >
+            ◀ Prev day
+          </Button>
+          <button
+            type="button"
+            onClick={() => setViewDate(realTodayStr)}
+            className={`text-xs font-medium px-2 py-1 rounded ${isToday ? "text-muted-foreground" : "chalk-white underline"}`}
+            title={isToday ? "You're on today" : "Snap back to today"}
+          >
+            {(() => {
+              const d = new Date(viewDate + "T12:00:00");
+              const label = d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
+              return isToday ? `Today · ${label}` : `Viewing ${label} · tap to return to Today`;
+            })()}
+          </button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="bg-transparent h-8 px-2 text-xs"
+            onClick={() => {
+              const d = new Date(viewDate + "T12:00:00");
+              d.setDate(d.getDate() + 1);
+              setViewDate(d.toISOString().slice(0, 10));
+            }}
+            aria-label="Next day"
+          >
+            Next day ▶
+          </Button>
+        </div>
         <div className="flex items-baseline justify-between mb-3">
-          <h2 className="font-display text-xl font-semibold chalk-white">Today's Schedule</h2>
+          <h2 className="font-display text-xl font-semibold chalk-white">{isToday ? "Today's Schedule" : "Schedule"}</h2>
           <div className="flex items-center gap-2">
             {hiddenTestCount > 0 && unlocked === false && (
               <span

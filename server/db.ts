@@ -8789,8 +8789,39 @@ export async function getFlashcardDeck(id: number) {
 
 export async function createFlashcardDeck(input: { title: string; subjectSlug: string; topicHandle?: string; gradeLevel?: number; description?: string; isAiGenerated?: boolean }) {
   const db = getDb();
-  const res: any = await db.insert(flashcardDecks).values({ title: input.title, subjectSlug: input.subjectSlug, topicHandle: input.topicHandle ?? null, gradeLevel: input.gradeLevel ?? 5, description: input.description ?? null, isAiGenerated: input.isAiGenerated ?? false, cardCount: 0 });
-  return { id: res.insertId as number };
+  // Drizzle's mysql adapter sometimes returns the ResultSetHeader inside an array
+  // ([header, fields]) instead of as the top-level object, so res.insertId can be
+  // undefined even though the row was written. Fall back to reading the most
+  // recently inserted row that matches our title+subjectSlug fingerprint.
+  const res: any = await db.insert(flashcardDecks).values({
+    title: input.title,
+    subjectSlug: input.subjectSlug,
+    topicHandle: input.topicHandle ?? null,
+    gradeLevel: input.gradeLevel ?? 5,
+    description: input.description ?? null,
+    isAiGenerated: input.isAiGenerated ?? false,
+    cardCount: 0,
+  });
+  let insertId: number | undefined =
+    typeof res?.insertId === "number" ? res.insertId :
+    Array.isArray(res) && typeof (res[0] as any)?.insertId === "number" ? (res[0] as any).insertId :
+    typeof (res as any)?.[0]?.insertId === "bigint" ? Number((res as any)[0].insertId) :
+    typeof (res as any)?.insertId === "bigint" ? Number((res as any).insertId) :
+    undefined;
+  if (!insertId) {
+    const rows = await db
+      .select({ id: flashcardDecks.id })
+      .from(flashcardDecks)
+      .where(and(
+        eq(flashcardDecks.title, input.title),
+        eq(flashcardDecks.subjectSlug, input.subjectSlug),
+      ))
+      .orderBy(desc(flashcardDecks.id))
+      .limit(1);
+    insertId = rows[0]?.id;
+  }
+  if (!insertId) throw new Error("Failed to determine new flashcard deck id after insert");
+  return { id: insertId };
 }
 
 export async function deleteFlashcardDeck(id: number) {
@@ -8806,11 +8837,27 @@ export async function listFlashcardCards(deckId: number) {
 
 export async function addFlashcardCard(input: { deckId: number; front: string; back: string; hint?: string; imageUrl?: string }) {
   const db = getDb();
+  if (!input.deckId || !Number.isFinite(input.deckId)) {
+    throw new Error(`addFlashcardCard called with invalid deckId: ${input.deckId}`);
+  }
   const existing = await db.select({ sortOrder: flashcardCards.sortOrder }).from(flashcardCards).where(eq(flashcardCards.deckId, input.deckId)).orderBy(desc(flashcardCards.sortOrder)).limit(1);
   const nextSort = existing.length > 0 ? (existing[0].sortOrder ?? 0) + 1 : 0;
-  const res: any = await db.insert(flashcardCards).values({ deckId: input.deckId, front: input.front, back: input.back, hint: input.hint ?? null, imageUrl: input.imageUrl ?? null, sortOrder: nextSort });
+  const res: any = await db.insert(flashcardCards).values({
+    deckId: input.deckId,
+    front: input.front,
+    back: input.back,
+    hint: input.hint ?? null,
+    imageUrl: input.imageUrl ?? null,
+    sortOrder: nextSort,
+  });
   await db.update(flashcardDecks).set({ cardCount: nextSort + 1 }).where(eq(flashcardDecks.id, input.deckId));
-  return { id: res.insertId as number };
+  const insertId: number | undefined =
+    typeof res?.insertId === "number" ? res.insertId :
+    Array.isArray(res) && typeof (res[0] as any)?.insertId === "number" ? (res[0] as any).insertId :
+    typeof (res as any)?.[0]?.insertId === "bigint" ? Number((res as any)[0].insertId) :
+    typeof (res as any)?.insertId === "bigint" ? Number((res as any).insertId) :
+    undefined;
+  return { id: insertId ?? 0 };
 }
 
 export async function deleteFlashcardCard(id: number) {

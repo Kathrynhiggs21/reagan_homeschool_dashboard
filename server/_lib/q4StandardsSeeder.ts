@@ -18,6 +18,18 @@
 
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
+
+// __dirname does not exist in ESM. Recover it from import.meta.url when
+// the runtime supports it, else fall back to the legacy global (when this
+// file is loaded by a CommonJS shim such as our test runner).
+let __thisDir: string;
+try {
+  const url = (typeof import.meta !== "undefined" && (import.meta as any)?.url) || null;
+  __thisDir = url ? path.dirname(fileURLToPath(url)) : (typeof __dirname !== "undefined" ? __dirname : process.cwd());
+} catch {
+  __thisDir = typeof __dirname !== "undefined" ? __dirname : process.cwd();
+}
 
 export interface Q4Standard {
   subject: "Math" | "ELA" | "Science";
@@ -26,7 +38,7 @@ export interface Q4Standard {
   standardRef: string; // ohio standard ref (same as code for these)
 }
 
-const STANDARDS_FILE = path.join(__dirname, "..", "_knowledge", "q4_standards.txt");
+const STANDARDS_FILE = path.join(__thisDir, "..", "_knowledge", "q4_standards.txt");
 
 let cachedStandards: Q4Standard[] | null = null;
 

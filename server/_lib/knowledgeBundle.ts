@@ -48,13 +48,26 @@ function safeRead(p: string, max = 40000): string {
  */
 function knowledgeDir(): string {
   // ESM module path → server/_lib/, knowledge dir is sibling: server/_knowledge/
-  let here: string;
+  // We avoid referencing __dirname directly because under prod ESM it is not
+  // defined and even the catch branch was throwing ReferenceError at runtime.
+  let here: string | null = null;
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const url = (eval("import.meta") as any)?.url as string | undefined;
-    here = url ? dirname(fileURLToPath(url)) : __dirname;
-  } catch {
-    here = __dirname;
+    if (url) here = dirname(fileURLToPath(url));
+  } catch { /* swallow */ }
+  if (!here) {
+    try {
+      // typeof guard so referencing the symbol never throws.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const maybe = (globalThis as any).__dirname as string | undefined;
+      if (typeof maybe === "string") here = maybe;
+    } catch { /* swallow */ }
+  }
+  if (!here) {
+    // Last-ditch: assume the build keeps _knowledge under server/. Resolve
+    // against the process CWD when neither ESM nor CJS metadata is present.
+    here = join(process.cwd(), "server", "_lib");
   }
   return join(here, "..", "_knowledge");
 }
