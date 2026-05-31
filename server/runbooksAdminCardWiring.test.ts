@@ -40,7 +40,11 @@ describe("RunbooksAdminCard component", () => {
   });
 
   it("self-hides when registry is empty (returns null)", () => {
-    expect(cardSource).toMatch(/if \(runbooks\.length === 0\) return null;/);
+    // v3.20 renamed `runbooks` -> `allRunbooks` (since we now split by
+    // dismissed). The self-hide still keys off the *total* registry size.
+    expect(cardSource).toMatch(
+      /if \(allRunbooks\.length === 0\) return null;/,
+    );
   });
 
   it("self-hides when the trpc procedure is unavailable", () => {

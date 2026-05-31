@@ -208,3 +208,17 @@
 ## v3.19 — Runbooks admin card (2026-05-30)
 
 - [x] Runbooks admin card in Settings — SHIPPED 2026-05-30. New `server/_lib/runbooks.ts` ships a typed registry of the user-action runbooks (Resend custom domain verification, SKILL.md 6th-grade update) with inlined Markdown bodies so the runtime never depends on the `references/` folder being bundled. New admin-only `trpc.runbooks.list` + `trpc.runbooks.get` procedures (lazy-imported so cold-start budget stays low). New `client/src/components/RunbooksAdminCard.tsx` renders the list with category badges (email/drive/calendar/skills/other) + estimated-minutes pill, and a back-able detail view that renders the body via `Streamdown` (no `dangerouslySetInnerHTML`). Mounted in `Settings.tsx` **outside** the 5-tab streamlined layout so it doesn't clutter Mom's daily tabs. Self-hides when registry is empty (so once Resend + SKILL.md are both done and removed from the registry, the card vanishes). Locked by 14 registry tests (`server/runbooks.test.ts`) + 13 wiring tests (`server/runbooksAdminCardWiring.test.ts`) for a total of 27 new tests.
+
+## v3.20 — Runbooks polish (planned 2026-05-31)
+
+- [ ] Per-runbook dismissedAt — admins can hide finished runbooks without a code change. New `runbookDismissals` table (slug + dismissedAt), `runbooks.dismiss` admin mutation, `runbooks.list` returns `dismissed` field, RunbooksAdminCard hides dismissed by default with a "show dismissed" toggle + undismiss.
+- [ ] Third runbook: `google-drive-oauth-setup` — Google Cloud project, enable Drive API, OAuth credentials, GOOGLE_DRIVE_OAUTH_TOKEN env var, verify push worker goes live.
+- [ ] "Runbooks (N)" badge in Settings header — count undismissed runbooks, smooth-scroll anchor to the RunbooksAdminCard.
+
+## v3.20 — Runbooks polish (2026-05-31)
+
+- [x] Per-runbook Dismiss + Restore (appSettings KV backed, no new table) — `runbooks.dismiss` / `runbooks.undismiss` admin-only mutations; UI shows `Dismiss` on active runbooks, `Restore` + dimmed style on dismissed ones, plus a `Show dismissed (N)` toggle
+- [x] Add 3rd runbook: `google-drive-oauth-setup` — full walkthrough (Cloud project, Drive API enable, OAuth consent, OAuth playground for refresh token, env var drop-in, service-account alternative with folder-level share, verification via Automation Health, rollback by deleting env)
+- [x] Settings header `Runbooks (N)` badge — only renders when undismissed count > 0; smooth-scrolls to `#runbooks-admin-card` anchor on click
+- [x] 28 new vitest scenarios in `server/runbooksDismissals.test.ts` + updated `server/runbooks.test.ts` (3 runbooks; Drive runbook contents) + `server/runbooksAdminCardWiring.test.ts` (allRunbooks rename). 56/56 runbook tests pass.
+- [x] Verified that the 70 unrelated failing tests are PRE-EXISTING on the v3.19 baseline (re-ran 4 of them with my changes stashed — same failures).

@@ -5035,8 +5035,22 @@ export const appRouter = router({
    */
   runbooks: router({
     list: adminProcedure.query(async () => {
-      const { listRunbookSummaries } = await import("./_lib/runbooks");
-      return listRunbookSummaries();
+      const {
+        buildRunbookSummariesWithDismissals,
+        RUNBOOK_DISMISSAL_KEY_PREFIX,
+        parseRunbookDismissalKey,
+      } = await import("./_lib/runbooks");
+      // Pull every dismissal flag from the generic appSettings KV in one query
+      // so the list endpoint stays a single roundtrip even as dismissals grow.
+      const rows = await db.listAppSettings(RUNBOOK_DISMISSAL_KEY_PREFIX);
+      const dismissed: Record<string, string> = {};
+      for (const row of rows) {
+        const slug = parseRunbookDismissalKey(row.key);
+        if (slug && row.value) {
+          dismissed[slug] = row.value;
+        }
+      }
+      return buildRunbookSummariesWithDismissals(dismissed);
     }),
     get: adminProcedure
       .input(z.object({ slug: z.string().min(1).max(120) }))
@@ -5047,6 +5061,41 @@ export const appRouter = router({
           throw new TRPCError({ code: "NOT_FOUND", message: `Runbook not found: ${input.slug}` });
         }
         return rb;
+      }),
+    /**
+     * v3.20 (2026-05-31) — admins can dismiss a runbook so it stops cluttering
+     * the Settings card after they finish the action. Persisted via appSettings
+     * KV so we don't need a new table. Idempotent: dismissing an already-
+     * dismissed slug just refreshes the timestamp.
+     */
+    dismiss: adminProcedure
+      .input(z.object({ slug: z.string().min(1).max(120) }))
+      .mutation(async ({ input }) => {
+        const { getRunbookBySlug, runbookDismissalSettingKey } = await import(
+          "./_lib/runbooks"
+        );
+        const rb = getRunbookBySlug(input.slug);
+        if (!rb) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: `Cannot dismiss unknown runbook: ${input.slug}`,
+          });
+        }
+        const iso = new Date().toISOString();
+        await db.setAppSetting(runbookDismissalSettingKey(input.slug), iso);
+        return { slug: input.slug, dismissedAtISO: iso };
+      }),
+    /**
+     * v3.20 (2026-05-31) — inverse of dismiss. Clears the KV entry so the
+     * runbook reappears in the default list. Safe to call when the slug is
+     * not currently dismissed (no-op).
+     */
+    undismiss: adminProcedure
+      .input(z.object({ slug: z.string().min(1).max(120) }))
+      .mutation(async ({ input }) => {
+        const { runbookDismissalSettingKey } = await import("./_lib/runbooks");
+        await db.setAppSetting(runbookDismissalSettingKey(input.slug), null);
+        return { slug: input.slug, dismissedAtISO: null };
       }),
   }),
 

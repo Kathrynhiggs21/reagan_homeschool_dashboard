@@ -15,12 +15,13 @@ import {
 } from "./_lib/runbooks";
 
 describe("runbooks registry", () => {
-  it("ships at least the 2 user-action runbooks from v3.18", () => {
+  it("ships at least the 3 user-action runbooks (v3.18 pair + v3.20 Drive OAuth)", () => {
     const all = listRunbooks();
-    expect(all.length).toBeGreaterThanOrEqual(2);
+    expect(all.length).toBeGreaterThanOrEqual(3);
     const slugs = all.map((r) => r.slug);
     expect(slugs).toContain("resend-custom-domain");
     expect(slugs).toContain("skill-md-sixth-grade-update");
+    expect(slugs).toContain("google-drive-oauth-setup");
   });
 
   it("returns entries sorted by (category, title) for stable UI ordering", () => {
@@ -140,5 +141,21 @@ describe("runbooks registry", () => {
       expect(rb.slug).not.toMatch(/\s/);
       expect(rb.slug).not.toMatch(/_/);
     }
+  });
+
+  it("Google Drive OAuth runbook surfaces the key user actions (v3.20)", () => {
+    const drive = getRunbookBySlug("google-drive-oauth-setup");
+    expect(drive).not.toBeNull();
+    expect(drive?.category).toBe("drive");
+    // Must name both supported credential paths.
+    expect(drive?.body).toContain("GOOGLE_DRIVE_OAUTH_TOKEN");
+    expect(drive?.body).toContain("GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON");
+    // Must reference the credential-gated worker so the user can verify success.
+    expect(drive?.body).toContain("drivePushWorker");
+    // Must walk the user through Cloud Console + OAuth playground.
+    expect(drive?.body).toMatch(/console\.cloud\.google\.com/);
+    expect(drive?.body).toMatch(/oauthplayground/);
+    // Must reference rollback / safety.
+    expect(drive?.body).toMatch(/Rollback|skipped_no_credentials/);
   });
 });

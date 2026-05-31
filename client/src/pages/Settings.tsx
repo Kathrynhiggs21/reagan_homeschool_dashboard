@@ -39,13 +39,50 @@ import { Slider } from "@/components/ui/slider";
  *   - separate "Requests" tab → folded into Kid Stuff with Prizes
  */
 export default function Settings() {
+  // v3.20 (2026-05-31) — pull the runbooks list at the top so we can render
+  // a "Runbooks (N)" badge in the page header that links down to the
+  // RunbooksAdminCard. Falls back to a 0-count gracefully when the procedure
+  // isn't wired (e.g. non-admin viewing). staleTime aligned with the card's
+  // own query so we only fetch once per 5 min.
+  const runbooksListQ = (trpc as any).runbooks?.list?.useQuery?.(undefined, {
+    staleTime: 5 * 60_000,
+  });
+  const undismissedRunbookCount: number = Array.isArray(runbooksListQ?.data)
+    ? (runbooksListQ.data as Array<{ dismissed?: boolean }>).filter(
+        (r) => !r.dismissed,
+      ).length
+    : 0;
+
+  const scrollToRunbooks = () => {
+    const el = document.getElementById("runbooks-admin-card");
+    if (el && typeof el.scrollIntoView === "function") {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   return (
     <div className="container max-w-4xl py-6 space-y-4">
-      <header>
-        <h1 className="font-display text-3xl">Settings</h1>
-        <p className="text-sm text-muted-foreground">
-          Everything that controls how the dashboard runs.
-        </p>
+      <header className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="font-display text-3xl">Settings</h1>
+          <p className="text-sm text-muted-foreground">
+            Everything that controls how the dashboard runs.
+          </p>
+        </div>
+        {undismissedRunbookCount > 0 && (
+          <button
+            type="button"
+            onClick={scrollToRunbooks}
+            className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900 hover:bg-amber-100 transition-colors"
+            data-testid="settings-runbooks-badge"
+            aria-label={`Jump to ${undismissedRunbookCount} pending runbook${undismissedRunbookCount === 1 ? "" : "s"}`}
+          >
+            <span aria-hidden="true">⚠️</span>
+            <span>
+              Runbooks ({undismissedRunbookCount})
+            </span>
+          </button>
+        )}
       </header>
 
       <SettingsAIHelperCard />

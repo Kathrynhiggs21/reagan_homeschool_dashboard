@@ -186,7 +186,163 @@ standards. Once Drive credentials land, this doc gets pushed into
 `,
 };
 
-const ALL_RUNBOOKS: Runbook[] = [resendRunbook, skillSixthGradeRunbook];
+/** Google Drive OAuth setup runbook (v3.20 — 2026-05-31). */
+const googleDriveOAuthRunbook: Runbook = {
+  slug: "google-drive-oauth-setup",
+  title: "Set up Google Drive OAuth so the push worker + folder dedupe go live",
+  category: "drive",
+  oneLineSummary:
+    "Create a Google Cloud project, enable Drive API, generate an OAuth token (or service account JSON), and drop it into the project env.",
+  estimatedMinutes: 45,
+  lastUpdatedISO: "2026-05-31",
+  body: `# Google Drive OAuth Setup — Runbook
+
+**Why this matters:** The dashboard already enqueues \`drive_push_queue\`
+rows from a dozen places (day logs, recap replies, 13 reference Markdown
+docs, future-worksheet imports). The credential-gated worker in
+\`server/_lib/drivePushWorker.ts\` short-circuits with
+\`status: "skipped_no_credentials"\` until a Drive credential lands in env.
+The same applies to \`driveFolderDedupeJob.ts\` and \`googleCalendarSync.ts\`.
+
+The moment you set **either** \`GOOGLE_DRIVE_OAUTH_TOKEN\` **or**
+\`GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON\`, all three workers flip live on the
+next heartbeat tick with zero callsite changes.
+
+## What's already in place
+
+- \`getDriveCredentialStatus()\` in \`server/_lib/drivePushWorker.ts\` reads
+  both env vars and returns either
+  \`{ kind: "ready", source: "oauth_token" | "service_account" }\` or
+  \`{ kind: "not_configured", reason: ... }\`. Today it returns
+  \`not_configured\`.
+- \`runDrivePushWorker()\` drains \`drive_push_queue\` rows, performs
+  hash-based skip against target-folder children, uploads anything new,
+  and marks each row \`pushed\` / \`skipped\` / \`failed\`.
+- \`runDriveFolderDedupeJob()\` walks the 9 canonical hub folders for
+  duplicate sub-folders (groups by name + content hash, picks the oldest
+  by \`createdTime\`, trashes the others — **never** the 9 canonical
+  top-level folders).
+- \`runGoogleCalendarSync()\` does one-way push of scheduled blocks to a
+  Google Calendar id when the same credential is available.
+
+All three workers fail closed (no DB writes, no errors) until credentials
+land — so it's safe to keep the heartbeat schedules running today.
+
+## Steps for the user (OAuth token path — preferred for personal use)
+
+1. Go to \`https://console.cloud.google.com/\` and either pick an existing
+   project or click **New Project** (name suggestion: \`reagan-school-hub\`).
+2. In the search bar, type \`Drive API\` and click **Enable**. (Optional:
+   also enable \`Google Calendar API\` if you want the calendar sync
+   worker to come online at the same time.)
+3. Go to **APIs & Services → OAuth consent screen**:
+   - User type: **External**
+   - App name: \`Reagan School Hub\`
+   - User support email: \`spear.cpt@gmail.com\`
+   - Developer contact: \`spear.cpt@gmail.com\`
+   - Scopes: add
+     \`https://www.googleapis.com/auth/drive\` (full Drive — needed to
+     create folders + upload + trash) and optionally
+     \`https://www.googleapis.com/auth/calendar\` for calendar sync.
+   - Test users: add \`spear.cpt@gmail.com\` (and \`marcy.spear@gmail.com\`
+     if you want Grandma to also be able to grant the token).
+4. Go to **APIs & Services → Credentials → Create Credentials → OAuth
+   client ID**:
+   - Application type: **Desktop app**
+   - Name: \`Reagan School Hub CLI\`
+   - Click **Create**, then download the \`client_secret_*.json\`.
+5. On any machine with Node, run the OAuth playground or a one-liner to
+   exchange the client secret for a refresh token. The quickest path is
+   \`https://developers.google.com/oauthplayground/\`:
+   - Click the gear icon → **Use your own OAuth credentials** → paste
+     client id + client secret from step 4.
+   - In the left scope list pick
+     \`https://www.googleapis.com/auth/drive\` and click **Authorize APIs**.
+   - Sign in as \`spear.cpt@gmail.com\`.
+   - On the next screen click **Exchange authorization code for tokens**.
+   - Copy the **refresh token** (long string starting with \`1//\`).
+6. The full token blob the worker expects is a JSON object with shape:
+   ~~~json
+   {
+     "client_id": "...apps.googleusercontent.com",
+     "client_secret": "...",
+     "refresh_token": "1//...",
+     "type": "authorized_user"
+   }
+   ~~~
+   Save that JSON as a single line.
+7. In the **adult Settings → Secrets** panel of this project, add a new
+   env var:
+   - Key: \`GOOGLE_DRIVE_OAUTH_TOKEN\`
+   - Value: the single-line JSON from step 6.
+8. (Optional, if you also want the calendar sync worker to come online)
+   add a second env var:
+   - Key: \`GOOGLE_CALENDAR_ID\`
+   - Value: the calendar id (\`primary\` works; or a dedicated calendar
+     id from Google Calendar settings).
+
+## Alternative: service account path (better for unattended/server use)
+
+1. Same Cloud project as steps 1-2 above.
+2. Go to **IAM & Admin → Service Accounts → Create Service Account**:
+   - Name: \`reagan-school-hub-bot\`
+   - Role: leave blank (no project-level role needed; we grant access at
+     folder level instead).
+3. Open the new service account, go to **Keys → Add Key → JSON**.
+   Download the \`reagan-school-hub-bot-*.json\`.
+4. In Google Drive, navigate to the **"Reagan School Hub"** root folder.
+   Right-click → **Share**. Paste the service account email
+   (\`...iam.gserviceaccount.com\`) and grant **Editor** access. This is
+   the magic step — without it the service account can see nothing.
+5. In the project Secrets panel, add:
+   - Key: \`GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON\`
+   - Value: the **entire** JSON file contents (paste as one line; the
+     credential gate accepts multi-line too but single-line is safer).
+
+## Verification (after either path)
+
+1. Open the **adult Settings → Automation Health** card. Within ~60s
+   the next heartbeat tick will run the Drive push worker. The card
+   should flip from \`skipped_no_credentials\` to \`drained\` (or
+   \`drained_with_errors\` if any single row failed — check the
+   per-row error message).
+2. Open Google Drive and confirm the 13 reference Markdown docs landed
+   in their canonical folders (Curriculum and Standards, Adventures and
+   Enrichment, Daily Operations, etc.).
+3. Pick any day log from the past week and click **Push to Drive** on
+   the Day Log card — the row should turn \`pushed\` within one
+   heartbeat tick.
+4. Mark this runbook **Dismiss** in the Settings card so it stops
+   showing in the runbooks list.
+
+## Rollback / safety
+
+- If the worker uploads something you didn't expect, **delete the env
+  var** in Secrets. The next heartbeat tick will return to
+  \`skipped_no_credentials\` and stop touching Drive.
+- The folder dedupe job has a **pinned-folder allow-list** of the 9
+  canonical hub roots (\`Adventures and Enrichment\`, \`Assignments and
+  Work\`, \`Curriculum and Standards\`, \`Daily Operations\`,
+  \`Inbox Unsorted\`, \`Printables and Resources\`, \`Progress and
+  Reports\`, \`Reagan School Hub\`, \`TODO\`). The job **will not**
+  trash any of those even when running live, by design — see
+  \`isPinnedHubRoot()\` in \`driveFolderDedupeJob.ts\`.
+- The push worker **never** deletes — it only creates new files and
+  skips duplicates. The dedupe job is the only thing that trashes (and
+  it trashes, not permanently deletes; recoverable for 30 days from
+  Drive trash).
+
+## Cross-reference
+
+The live API path notes for each worker are inlined at the top of
+\`drivePushWorker.ts\`, \`driveFolderDedupeJob.ts\`, and
+\`googleCalendarSync.ts\` so the next implementer doesn't have to
+re-derive them. Hash-based skip is via Drive's \`md5Checksum\` field;
+folder resolution is lazy and cached process-lifetime.
+`,
+};
+
+const ALL_RUNBOOKS: Runbook[] = [resendRunbook, skillSixthGradeRunbook, googleDriveOAuthRunbook];
 
 /**
  * Return the runbook registry as a sorted, defensive copy. Sorted by
@@ -211,8 +367,54 @@ export function getRunbookBySlug(slug: string): Runbook | null {
 }
 
 /** Convenience summary used by the list endpoint (no body, for payload size). */
-export type RunbookSummary = Omit<Runbook, "body">;
+export type RunbookSummary = Omit<Runbook, "body"> & {
+  /**
+   * v3.20 (2026-05-31) — true if an admin has clicked "Dismiss" on this
+   * runbook so it no longer shows in the default list. Persisted via the
+   * generic `appSettings` KV table under key
+   * `runbooks.dismissed.<slug>` = ISO date string. Surfacing the flag in
+   * the summary lets the UI filter without a second roundtrip.
+   */
+  dismissed: boolean;
+  /** ISO date string when the runbook was dismissed (null when active). */
+  dismissedAtISO: string | null;
+};
 
+/**
+ * Build the summary list with dismissed state attached. Pure — the caller
+ * passes the set of dismissed slugs (read from the KV store by the tRPC
+ * procedure). Tests can call this directly without touching the DB.
+ */
+export function buildRunbookSummariesWithDismissals(
+  dismissedSlugToISO: Record<string, string>,
+): RunbookSummary[] {
+  return listRunbooks().map(({ body: _body, ...rest }) => {
+    const iso = dismissedSlugToISO[rest.slug];
+    return {
+      ...rest,
+      dismissed: !!iso,
+      dismissedAtISO: iso ?? null,
+    };
+  });
+}
+
+/** Legacy zero-arg form retained for callers that don't have a dismissals map. */
 export function listRunbookSummaries(): RunbookSummary[] {
-  return listRunbooks().map(({ body: _body, ...rest }) => rest);
+  return buildRunbookSummariesWithDismissals({});
+}
+
+/** Stable KV key used by appSettings to persist a per-slug dismissal ISO. */
+export function runbookDismissalSettingKey(slug: string): string {
+  return `runbooks.dismissed.${slug}`;
+}
+
+/** Prefix for `listAppSettings` scans. */
+export const RUNBOOK_DISMISSAL_KEY_PREFIX = "runbooks.dismissed.";
+
+/** Inverse of `runbookDismissalSettingKey` — returns slug or null when prefix doesn't match. */
+export function parseRunbookDismissalKey(key: string): string | null {
+  if (!key.startsWith(RUNBOOK_DISMISSAL_KEY_PREFIX)) return null;
+  const slug = key.slice(RUNBOOK_DISMISSAL_KEY_PREFIX.length);
+  if (slug.length === 0) return null;
+  return slug;
 }
