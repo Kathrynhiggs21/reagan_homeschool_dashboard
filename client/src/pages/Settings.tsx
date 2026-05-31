@@ -14,6 +14,7 @@ import IepReferencePanel from "@/components/IepReferencePanel";
 import TutorsManager from "@/components/TutorsManager";
 import CalendarSyncCard from "@/components/CalendarSyncCard";
 import ApprovalsAdminCard from "@/components/ApprovalsAdminCard";
+import RunbooksAdminCard from "@/components/RunbooksAdminCard";
 import AppointmentsCardLite from "@/components/AppointmentsCardLite";
 import SummerModeSettingsCard from "@/components/SummerModeSettingsCard";
 import CatchUpQueueSettingsCard from "@/components/CatchUpQueueSettingsCard";
@@ -98,6 +99,10 @@ export default function Settings() {
           <DashboardObjectsCard />
         </TabsContent>
       </Tabs>
+
+      {/* Runbooks — meta admin tool below the 5 user-facing tabs.
+          Self-hides when registry is empty. */}
+      <RunbooksAdminCard />
 
       {/* IEP reference moved to /curriculum — it lives next to the actual
           learning data instead of being buried in Settings. The link below

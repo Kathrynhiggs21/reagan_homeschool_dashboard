@@ -5026,6 +5026,30 @@ export const appRouter = router({
       }),
   }),
 
+  /* =================== RUNBOOKS (Settings card for blocked-item runbooks) =================== */
+  /**
+   * v3.19 (2026-05-30) — surfaces the user-action runbooks (Resend custom
+   * domain verification + SKILL.md 6th-grade update) inside the adult
+   * Settings panel so the next person who picks up the project can
+   * execute the remaining blocked items without re-reading session notes.
+   */
+  runbooks: router({
+    list: adminProcedure.query(async () => {
+      const { listRunbookSummaries } = await import("./_lib/runbooks");
+      return listRunbookSummaries();
+    }),
+    get: adminProcedure
+      .input(z.object({ slug: z.string().min(1).max(120) }))
+      .query(async ({ input }) => {
+        const { getRunbookBySlug } = await import("./_lib/runbooks");
+        const rb = getRunbookBySlug(input.slug);
+        if (!rb) {
+          throw new TRPCError({ code: "NOT_FOUND", message: `Runbook not found: ${input.slug}` });
+        }
+        return rb;
+      }),
+  }),
+
   /* =================== CLASSROOM AGENDAS (Daily Agendas) =================== */
   classroom: router({
     list: protectedProcedure
