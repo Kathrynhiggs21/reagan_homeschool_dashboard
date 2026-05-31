@@ -260,9 +260,19 @@ Closes the last v3.21 deferred item: first live drainer run end-to-end against M
 - [x] **v3.24 (2026-05-31)** Drained 134 pending queue rows. Final: 2 newly pushed, 187 dedupe-skipped (already in Drive), 63 failed with separate folder-map staleness bug — see v3.25 follow-up.
 - [x] **v3.24 (2026-05-31)** Drainer temp-dir bug fixed: `gws files create --upload <path>` was rejecting `/tmp/*` paths as "outside the current directory". Switched drainer to repo-local `.drainer-tmp/` (git-ignored).
 
-## v3.25 — Follow-ups (separate sessions)
+## v3.25 — gws --params/--json bug fix [DONE 2026-05-31]
 
-- [ ] Fix the 63 "specified parent is not a folder" drainer failures. Investigation path: (a) inspect `app_settings.drive.folder.*` keys; (b) compare against `gws drive ls` of the Reagan School Hub root; (c) refresh the folder-map cache; (d) re-run drainer for the 63 failed rows.
+**Root cause** (single bug behind two long-standing symptoms): The drainer's `ensureChildFolder` and `ensureHubRoot` wrapped folder metadata inside a `requestBody` key and passed it through `--params` to `gws drive files create`. `gws` silently ignored the unknown property and created a 0-byte "Untitled" *file* (NOT a folder) at the user's root. The drainer then used that file's ID as `parentId` for subsequent ensureChildFolder/upload calls, surfacing as "The specified parent is not a folder."
+
+This single bug explains BOTH the 63 "parent is not a folder" failures we saw across v3.24 drainer passes AND the 182 "Untitled" leaked files Mom saw at the Drive root in v3.23.
+
+- [x] Reproduced bug deterministically: `gws drive files create --params '{"requestBody":{...}}'` returns `{name:"Untitled"}` with no parents.
+- [x] Verified fix: passing metadata via `--json '{...}'` (flat, no `requestBody` wrapper) creates a real folder with the right name, mime, and parents.
+- [x] Patched `ensureChildFolder` and `ensureHubRoot` in `scripts/drive-connector-drainer.mjs` to use `--json` for body data.
+- [x] Reset all failed rows back to pending; re-ran drainer.
+- [x] Final drainer pass: pushed=35, skipped=1, **failed=0**.
+- [x] **Total queue state across the v3.23–v3.25 cleanup: pushed=51, skipped=201, failed=0** — every row has a terminal outcome.
+- [x] Trashed 2 stray test folders + 1 "Untitled" file from this session's diagnosis.
 
 ## v3.24 — S3-403 storage-proxy fix [DONE 2026-05-31]
 

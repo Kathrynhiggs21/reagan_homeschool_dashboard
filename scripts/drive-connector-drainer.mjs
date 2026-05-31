@@ -214,14 +214,25 @@ function ensureChildFolder(parentId, name) {
     "application/vnd.google-apps.folder",
   );
   if (existing) return existing.id;
-  const created = gws("files create", {
-    requestBody: {
-      name,
-      mimeType: "application/vnd.google-apps.folder",
-      parents: [parentId],
+  // v3.25 (2026-05-31): the file metadata MUST go through `--json`, not
+  // `--params`. When metadata was wrapped in `requestBody` and passed via
+  // `--params`, `gws` silently dropped the body and created an empty
+  // "Untitled" file (NOT a folder) at the user's root. Subsequent
+  // ensureChildFolder / upload calls that used the returned ID hit the
+  // cryptic "The specified parent is not a folder" error. This was the
+  // single root cause of every "specified parent is not a folder"
+  // failure AND the 182 "Untitled" leaked files Mom saw in v3.23.
+  const created = gws(
+    "files create",
+    { fields: "id,name" },
+    {
+      json: {
+        name,
+        mimeType: "application/vnd.google-apps.folder",
+        parents: [parentId],
+      },
     },
-    fields: "id,name",
-  });
+  );
   return created.id;
 }
 
@@ -252,14 +263,26 @@ function resolveHubRoot(hubRootId, canonicalParentDriveId, displayName) {
   return ensureChildFolder(hubRootId, displayName);
 }
 
+/**
+ * v3.25 (2026-05-31): three display names were wrong, causing the
+ * `resolveHubRoot` rebuild path to either find a stale/non-folder match
+ * by name OR to create a parallel folder under a wrong name. The next
+ * `ensureChildFolder` step then surfaced as the cryptic
+ * "The specified parent is not a folder" error.
+ *
+ * Verified against the live Hub root contents on 2026-05-31:
+ *   adminAndHomeschoolRecords → "Admin and Homeschool Records" (NOT "Admin and Records")
+ *   curriculumAndStandards    → "Curriculum and Standards"     (NOT "Curriculum and Resources")
+ *   printablesAndResources    → "Printables and Resources"    (NOT "Printables")
+ */
 const CANONICAL_DISPLAY_NAMES = {
-  adminAndHomeschoolRecords: "Admin and Records",
+  adminAndHomeschoolRecords: "Admin and Homeschool Records",
   adventuresAndEnrichment: "Adventures and Enrichment",
   assignmentsAndWork: "Assignments and Work",
-  curriculumAndStandards: "Curriculum and Resources",
+  curriculumAndStandards: "Curriculum and Standards",
   dailyOperations: "Daily Operations",
   inboxUnsorted: "Inbox (Unsorted)",
-  printablesAndResources: "Printables",
+  printablesAndResources: "Printables and Resources",
   progressAndReports: "Progress and Reports",
   todo: "Todo",
 };
@@ -278,14 +301,18 @@ function ensureHubRoot() {
   });
   let id = res?.files?.[0]?.id ?? null;
   if (!id) {
-    const created = gws("files create", {
-      requestBody: {
-        name: HUB_ROOT_NAME,
-        mimeType: "application/vnd.google-apps.folder",
-        parents: ["root"],
+    // v3.25: see ensureChildFolder for why metadata goes through --json.
+    const created = gws(
+      "files create",
+      { fields: "id,name" },
+      {
+        json: {
+          name: HUB_ROOT_NAME,
+          mimeType: "application/vnd.google-apps.folder",
+          parents: ["root"],
+        },
       },
-      fields: "id,name",
-    });
+    );
     id = created.id;
   }
   _hubRootIdCache = id;
