@@ -222,3 +222,12 @@
 - [x] Settings header `Runbooks (N)` badge — only renders when undismissed count > 0; smooth-scrolls to `#runbooks-admin-card` anchor on click
 - [x] 28 new vitest scenarios in `server/runbooksDismissals.test.ts` + updated `server/runbooks.test.ts` (3 runbooks; Drive runbook contents) + `server/runbooksAdminCardWiring.test.ts` (allRunbooks rename). 56/56 runbook tests pass.
 - [x] Verified that the 70 unrelated failing tests are PRE-EXISTING on the v3.19 baseline (re-ran 4 of them with my changes stashed — same failures).
+
+## v3.21 — Drive connector drainer (sandbox-only mirror path) [2026-05-31]
+- [x] Pure plan/report module `server/_lib/driveConnectorPlan.ts` with v1 protocol versioning
+- [x] tRPC procs: `drive.connectorPlan` (admin), `drive.connectorReport` (admin), `drive.connectorLastRun` (admin)
+- [x] Sandbox script `scripts/drive-connector-drainer.mjs` + `pnpm drive:drain`
+- [x] Settings card `ConnectorPushCard.tsx` with queue depth, last-run summary, copy-command, recent rows
+- [x] 20 vitest specs in `server/driveConnectorPlan.test.ts` (all passing)
+- [x] Mom's Drive structure verified; trashed canonical parents (Adventures/Printables) self-heal on first run
+- [ ] First live drainer run end-to-end (deferred — needs desktop browser to copy session bearer)

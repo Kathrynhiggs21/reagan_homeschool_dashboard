@@ -4999,6 +4999,68 @@ export const appRouter = router({
         });
       }),
     /**
+     * v3.21 (2026-05-31) — Drive Connector handshake.
+     *
+     * `connectorPlan` returns the up-to-`limit` pending rows the sandbox
+     * drainer should process, plus the canonical Hub folder map. Admin
+     * only because the payload includes inline content (day logs / recap
+     * replies) which we don't want public.
+     */
+    connectorPlan: adminProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(500).optional() }).optional())
+      .query(async ({ input }) => {
+        const { buildConnectorPlan } = await import("./_lib/driveConnectorPlan");
+        return buildConnectorPlan({ limit: input?.limit });
+      }),
+    /**
+     * v3.21 (2026-05-31) — drainer reports its outcome list back. Each
+     * result becomes one `markDrivePushResult` write, and the run summary
+     * is stamped into appSettings so the Settings card can show "last
+     * run". Admin only.
+     */
+    connectorReport: adminProcedure
+      .input(
+        z.object({
+          protocolVersion: z.literal(1),
+          finishedAtISO: z.string().min(1),
+          byUser: z.string().min(1),
+          results: z.array(
+            z.union([
+              z.object({
+                id: z.number().int(),
+                outcome: z.literal("pushed"),
+                driveFileId: z.string().min(1),
+                bytes: z.number().int().nonnegative().optional(),
+              }),
+              z.object({
+                id: z.number().int(),
+                outcome: z.literal("skipped"),
+                reason: z.string(),
+                driveFileId: z.string().optional(),
+              }),
+              z.object({
+                id: z.number().int(),
+                outcome: z.literal("failed"),
+                error: z.string(),
+              }),
+            ]),
+          ),
+        }),
+      )
+      .mutation(async ({ input }) => {
+        const { applyConnectorReport } = await import("./_lib/driveConnectorPlan");
+        return applyConnectorReport(input as any);
+      }),
+    /**
+     * v3.21 (2026-05-31) — Settings card reads the last-run summary so
+     * Mom can see "Last drained 2026-05-31 04:12 UTC — pushed 14, skipped
+     * 2, failed 0" without having to re-run anything.
+     */
+    connectorLastRun: adminProcedure.query(async () => {
+      const { readLastConnectorRun } = await import("./_lib/driveConnectorPlan");
+      return readLastConnectorRun();
+    }),
+    /**
      * v3.17 (2026-05-30) — enqueue the 12 canonical reference Markdown
      * docs that ship to Mom's Drive subfolders. Idempotent: re-running
      * is a safe no-op as long as the body hasn't changed. Admin only.

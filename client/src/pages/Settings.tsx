@@ -15,6 +15,7 @@ import TutorsManager from "@/components/TutorsManager";
 import CalendarSyncCard from "@/components/CalendarSyncCard";
 import ApprovalsAdminCard from "@/components/ApprovalsAdminCard";
 import RunbooksAdminCard from "@/components/RunbooksAdminCard";
+import ConnectorPushCard from "@/components/ConnectorPushCard";
 import AppointmentsCardLite from "@/components/AppointmentsCardLite";
 import SummerModeSettingsCard from "@/components/SummerModeSettingsCard";
 import CatchUpQueueSettingsCard from "@/components/CatchUpQueueSettingsCard";
@@ -136,6 +137,10 @@ export default function Settings() {
           <DashboardObjectsCard />
         </TabsContent>
       </Tabs>
+
+      {/* v3.21 (2026-05-31) — Drive Connector status + drain command.
+          Sandbox-only mirror path; admin-only display. */}
+      <ConnectorPushCard />
 
       {/* Runbooks — meta admin tool below the 5 user-facing tabs.
           Self-hides when registry is empty. */}
