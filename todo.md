@@ -209,12 +209,6 @@
 
 - [x] Runbooks admin card in Settings — SHIPPED 2026-05-30. New `server/_lib/runbooks.ts` ships a typed registry of the user-action runbooks (Resend custom domain verification, SKILL.md 6th-grade update) with inlined Markdown bodies so the runtime never depends on the `references/` folder being bundled. New admin-only `trpc.runbooks.list` + `trpc.runbooks.get` procedures (lazy-imported so cold-start budget stays low). New `client/src/components/RunbooksAdminCard.tsx` renders the list with category badges (email/drive/calendar/skills/other) + estimated-minutes pill, and a back-able detail view that renders the body via `Streamdown` (no `dangerouslySetInnerHTML`). Mounted in `Settings.tsx` **outside** the 5-tab streamlined layout so it doesn't clutter Mom's daily tabs. Self-hides when registry is empty (so once Resend + SKILL.md are both done and removed from the registry, the card vanishes). Locked by 14 registry tests (`server/runbooks.test.ts`) + 13 wiring tests (`server/runbooksAdminCardWiring.test.ts`) for a total of 27 new tests.
 
-## v3.20 — Runbooks polish (planned 2026-05-31)
-
-- [ ] Per-runbook dismissedAt — admins can hide finished runbooks without a code change. New `runbookDismissals` table (slug + dismissedAt), `runbooks.dismiss` admin mutation, `runbooks.list` returns `dismissed` field, RunbooksAdminCard hides dismissed by default with a "show dismissed" toggle + undismiss.
-- [ ] Third runbook: `google-drive-oauth-setup` — Google Cloud project, enable Drive API, OAuth credentials, GOOGLE_DRIVE_OAUTH_TOKEN env var, verify push worker goes live.
-- [ ] "Runbooks (N)" badge in Settings header — count undismissed runbooks, smooth-scroll anchor to the RunbooksAdminCard.
-
 ## v3.20 — Runbooks polish (2026-05-31)
 
 - [x] Per-runbook Dismiss + Restore (appSettings KV backed, no new table) — `runbooks.dismiss` / `runbooks.undismiss` admin-only mutations; UI shows `Dismiss` on active runbooks, `Restore` + dimmed style on dismissed ones, plus a `Show dismissed (N)` toggle
@@ -231,3 +225,12 @@
 - [x] 20 vitest specs in `server/driveConnectorPlan.test.ts` (all passing)
 - [x] Mom's Drive structure verified; trashed canonical parents (Adventures/Printables) self-heal on first run
 - [ ] First live drainer run end-to-end (deferred — needs desktop browser to copy session bearer)
+
+## v3.22 — Cleanup sweep [2026-05-31]
+- [x] Audited 8 surfaces (todo, code, drive_push_queue, Drive, knowledge, skills, tasks, loose files); dry-run report at `CLEANUP_DRYRUN.md`
+- [x] Deleted 3 duplicate v3.20 entries from todo.md
+- [x] Deleted 17 orphan code files (1 server _lib + 16 client components, 1,992 lines); TS/LSP clean; 4,398/4,468 tests passing (same pre-existing 70 failures)
+- [x] Fixed Drive Hub root structural drift: renamed `Admin and Records` → `Admin and Homeschool Records`, renamed `Curriculum and Resources` → `Curriculum and Standards`, created 3 missing canonical folders (Adventures and Enrichment, Printables and Resources, Todo), archived 2021 `Classroom` folder
+- [x] Quarantined 6 duplicate copies + 4 stale shortcuts in new `Cleanup Review (2026-05-31)/` subfolder (nothing trashed)
+- [x] Moved 17 loose Reagan files from Drive root into Hub/Inbox (Unsorted) for classifier sort
+- [x] Final after-action report at `CLEANUP_DONE.md` with knowledge-entry + Manus-task cleanup candidates for user review
