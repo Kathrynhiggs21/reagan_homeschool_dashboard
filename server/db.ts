@@ -4712,6 +4712,28 @@ export async function enqueueDrivePush(args: {
   const db = options?.dbOverride ?? getDb();
 
   // ------------------------------------------------------------------
+  // v3.24 (2026-05-31) — Placeholder-URL guard.
+  //
+  // History: a pre-dbOverride version of `drivePushDedupe.test.ts` once
+  // ran against the live TiDB pool and inserted 4 rows whose `fileUrl`
+  // was the literal placeholder string `/manus-storage/<dir>/...` (the
+  // URL ends in three dots). The drainer then 403'd trying to fetch
+  // those non-existent S3 objects.
+  //
+  // Belt-and-suspenders: even though the test now passes a mock db, we
+  // refuse to insert any row whose fileUrl ends in `/...` (the only way
+  // a real upload would produce that suffix is if the caller forgot to
+  // resolve the real key). Throw early so the bug is loud.
+  // ------------------------------------------------------------------
+  if (typeof args.fileUrl === "string" && /\/\.\.\.$/.test(args.fileUrl.trim())) {
+    throw new Error(
+      `enqueueDrivePush: refused placeholder fileUrl "${args.fileUrl}" — ` +
+        `caller must resolve the real S3 path before enqueueing. ` +
+        `(fileKey=${args.fileKey} targetFolder=${args.targetFolder})`,
+    );
+  }
+
+  // ------------------------------------------------------------------
   // Routing audit (Phase 5, 2026-05-29) — dedupe gate (two passes).
   //
   // Pass 1 — (fileKey, targetFolder) compound match:

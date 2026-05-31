@@ -74,7 +74,7 @@ describe("enqueueDrivePush dedupe gate", () => {
     const out = await enqueueDrivePush(
       {
         fileKey: "agendas/2026-06-01/v1.pdf",
-        fileUrl: "/manus-storage/agendas/...",
+        fileUrl: "/manus-storage/agendas/2026-06-01/v1.pdf",
         fileName: "2026-06-01 - Reagan - Agenda.pdf",
         targetFolder: "agenda_pdf" as any,
       },
@@ -127,7 +127,7 @@ describe("enqueueDrivePush dedupe gate", () => {
     const out = await enqueueDrivePush(
       {
         fileKey: "new/key/different/path.pdf",
-        fileUrl: "/manus-storage/new/...",
+        fileUrl: "/manus-storage/new/key/different/path.pdf",
         fileName: "2026-06-01 - Reagan - Agenda.pdf",
         targetFolder: "agenda_pdf" as any,
         contentHash: sha,
@@ -150,7 +150,7 @@ describe("enqueueDrivePush dedupe gate", () => {
     const out = await enqueueDrivePush(
       {
         fileKey: "daylogs/2026-05-30.md",
-        fileUrl: "/manus-storage/daylogs/...",
+        fileUrl: "/manus-storage/daylogs/2026-05-30.md",
         fileName: "2026-05-30 - Day Log.md",
         targetFolder: "day_log" as any,
       },
@@ -171,7 +171,7 @@ describe("enqueueDrivePush dedupe gate", () => {
     const out = await enqueueDrivePush(
       {
         fileKey: "topics/2026-05-30/math-fractions.md",
-        fileUrl: "/manus-storage/topics/...",
+        fileUrl: "/manus-storage/topics/2026-05-30/math-fractions.md",
         fileName: "math-fractions.md",
         targetFolder: "topics_covered" as any,
       },
@@ -188,7 +188,7 @@ describe("enqueueDrivePush dedupe gate", () => {
     const out = await enqueueDrivePush(
       {
         fileKey: "recap/2026-05-30/marcy.md",
-        fileUrl: "/manus-storage/recap/...",
+        fileUrl: "/manus-storage/recap/2026-05-30/marcy.md",
         fileName: "2026-05-30 - marcy.spear - Recap.md",
         targetFolder: "recap_reply" as any,
       },

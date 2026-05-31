@@ -251,10 +251,21 @@ Closes the last v3.21 deferred item: first live drainer run end-to-end against M
 
 ## v3.23 — Follow-ups (not blocking)
 
-- [ ] Fix the 4 S3-403 fetches (storage-proxy can't reach the keys for `topics/2026-05-30/math-fractions.md`, `daylogs/2026-05-30.md`, `recap/2026-05-30/marcy.md`, `agendas/2026-06-01/v1.pdf`). Investigate storage-proxy auth.
+- [x] **v3.24 (2026-05-31)** Resolved — see v3.24 section below.
 - [x] **PAUSED stale-email scheduler** (Manus scheduled task `iP0L47OuLe9zo7Hh7hY4Kp`, projectUid `TZRtW4sYh3EsW28QNqK5ii`) on 2026-05-31. The weekday 6:30 AM ET job had been sending duplicate "Reagan's school plan" emails with dead/expired CloudFront PDF URLs. Status now `pause` per `manus-config schedule status`. Will not re-fire until explicitly re-enabled. Future replacement (if any) needs fresh-content email regeneration on each run, not stale signed-URL replay.
 - [x] Drive root cleanup: trashed 182 polluted "Untitled" 0-byte files left behind by early broken drainer iterations. Real content in canonical subfolders untouched.
 - [x] 13 reference docs successfully pushed to Drive via the cookieless drainer (Ohio standards full reference + 12 others). Verified end-to-end against Mom's Drive (`spear.cpt@gmail.com`).
 - [x] Recovery admin mutations added to `routers.ts`: `resetRowsWithToken` (revert pushed→pending for retry), `enqueueReferenceDocsWithToken` (idempotent re-enqueue of all 13 reference docs).
 - [ ] **Decide whether to rebuild the email scheduler** with fresh content per run (regenerate PDF + signed URLs at send-time, not at task-definition-time). Currently paused; resurrect only after a fresh-content rewrite — never as a task that replays stale URLs.
 - [ ] Drain remaining ~152 pending rows (cosmetic; all will be dedupe-skipped since drivePushWorker.ts already pushed them).
+
+## v3.24 — S3-403 storage-proxy fix [DONE 2026-05-31]
+
+**Root cause** (not a storage-proxy auth bug): a pre-`dbOverride` iteration of `server/drivePushDedupe.test.ts` (before commit `97b528c` on 2026-05-30 02:42:54 UTC) was hitting the live TiDB pool and inserted 4 fixture rows whose `fileUrl` was the literal placeholder `/manus-storage/<dir>/...` (URL ends in three dots). The drainer correctly returned 403/404 fetching non-existent S3 objects. Mislabeled as "S3-403" in v3.23.
+
+- [x] Investigated all 4 rows (ids 2340001–2340004) — confirmed identical insert timestamp (2026-05-30 02:42:54), `content_text` length 0, `file_url` ending in `/...`
+- [x] Marked all 4 rows as `skipped` with a clear `error_message` so they leave the pending queue
+- [x] Added defensive guard in `enqueueDrivePush` (`server/db.ts`) — throws on any `fileUrl` ending in `/...` so a future regression is loud
+- [x] Updated 5 placeholder URLs in `drivePushDedupe.test.ts` to real-looking values
+- [x] Added 6 new vitest specs in `server/drivePushPlaceholderGuard.test.ts` covering the 4 historical URL shapes, mid-path `...`, whitespace, and a real-looking URL passing through
+- [x] Verified: 12/12 dedupe+guard tests passing; full suite 4454/4524 (70 failures all pre-existing, unrelated)
