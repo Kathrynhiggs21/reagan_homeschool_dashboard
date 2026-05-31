@@ -33,9 +33,25 @@
 
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { writeFileSync, unlinkSync, existsSync } from "node:fs";
+import { writeFileSync, unlinkSync, existsSync, mkdirSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
+
+/**
+ * v3.24 (2026-05-31): the `gws files create --upload` flag rejects any
+ * path that resolves outside the current working directory. Older runs
+ * wrote temp files into `/tmp/...` and every upload failed validation.
+ * We now write into a repo-local `.drainer-tmp/` directory so `gws`
+ * accepts the path. The folder is git-ignored and cleaned up after
+ * each upload.
+ */
+const DRAINER_TMP_DIR = resolve(process.cwd(), ".drainer-tmp");
+try {
+  mkdirSync(DRAINER_TMP_DIR, { recursive: true });
+} catch {
+  // best-effort; if mkdir fails the writeFileSync below will surface it
+}
+void tmpdir; // intentionally unused after v3.24
 import { argv, env, stdout, stderr, exit } from "node:process";
 
 /* =====================================================================
@@ -411,7 +427,10 @@ async function processRow(row, targetMap, hubRootId) {
   // Upload via gws files create. The CLI takes metadata via --json (body),
   // the media file path via --upload, and content-type via --upload-content-type.
   // --params is reserved for URL/query params only (here: fields + uploadType).
-  const tmp = join(tmpdir(), `drive-drain-${row.id}-${Date.now()}`);
+  // v3.24: repo-local .drainer-tmp/ instead of os.tmpdir() so `gws files
+  // create --upload <path>` does not reject the path as "outside the
+  // current directory".
+  const tmp = join(DRAINER_TMP_DIR, `drive-drain-${row.id}-${Date.now()}`);
   writeFileSync(tmp, bytes);
   try {
     const created = gws(

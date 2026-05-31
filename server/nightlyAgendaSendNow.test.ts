@@ -74,7 +74,9 @@ describe("nightlyAgenda.sendNow — manual send contract (v2.89)", () => {
 
   it("sendNow calls the canonical pipeline in the right order", () => {
     const idx = src.indexOf("sendNow:");
-    const slice = src.slice(idx, idx + 8000);
+    // v3.24 (2026-05-31): slice grew because sendEmail call lives lower
+    // in the body now (after the notifyOwner/HTML composition block).
+    const slice = src.slice(idx, idx + 16000);
     // The mutation has a dynamic-import block at the top that mentions
     // every helper name, then the runtime call sequence below. Skip past
     // the imports by anchoring on `const today = (() =>`, which sits
@@ -89,6 +91,9 @@ describe("nightlyAgenda.sendNow — manual send contract (v2.89)", () => {
       "storageGetSignedUrl",
       "insertNightlyAgendaEmail",
       "notifyOwner",
+      // v3.24 (2026-05-31): Resend send happens BEFORE the status mark
+      // and is the load-bearing channel; pin its position.
+      "sendEmail",
       "markNightlyAgendaEmailStatus",
     ];
     let lastPos = -1;
@@ -101,30 +106,38 @@ describe("nightlyAgenda.sendNow — manual send contract (v2.89)", () => {
     }
   });
 
-  it("sendNow marks the row 'sent' on success and 'failed' on notify failure", () => {
+  it("sendNow marks the row 'sent' on success and 'failed' on notify+email failure", () => {
+    // v3.24 (2026-05-31): the row now succeeds if EITHER `notifyOwner` OR
+    // the Resend send (`sendEmail`) returns truthy. So a single failure of
+    // either channel no longer fails the run. Pin the new compound logic.
     const idx = src.indexOf("sendNow:");
-    const slice = src.slice(idx, idx + 8000);
-    expect(slice).toContain("status: notified ? \"sent\" : \"failed\"");
-  });
-
-  it("sendNow targets spear.cpt@gmail.com only this week (per Mom's instructions)", () => {
-    const idx = src.indexOf("sendNow:");
-    const slice = src.slice(idx, idx + 8000);
-    expect(slice).toMatch(/recipients = \["spear\.cpt@gmail\.com"\]/);
-    // Marcy is intentionally NOT included this week.
-    expect(slice).not.toMatch(
-      /recipients = \[[^\]]*marcy\.spear@gmail\.com/,
+    const slice = src.slice(idx, idx + 12000);
+    expect(slice).toContain(
+      "status: (notified || emailSent) ? \"sent\" : \"failed\"",
     );
   });
 
-  it("response shape returns { ok, forDate, recordId, notified, signedUrl, ... }", () => {
+  it("sendNow notifyOwner audit recipient is spear.cpt@gmail.com (notification ping only)", () => {
+    // The `recipients` array near the top of `sendNow` is the audit-row
+    // ping list; the actual Resend send list is hard-coded in the
+    // `sendEmail({ to: ["marcy.spear@gmail.com", "spear.cpt@gmail.com"] })`
+    // call lower in the body (covered by the v3.24 freshContent test).
     const idx = src.indexOf("sendNow:");
-    const slice = src.slice(idx, idx + 8000);
+    const slice = src.slice(idx, idx + 12000);
+    expect(slice).toMatch(/recipients = \["spear\.cpt@gmail\.com"\]/);
+  });
+
+  it("response shape returns { ok, forDate, recordId, notified, emailSent, signedUrl, ... }", () => {
+    // v3.24 (2026-05-31): `emailSent` is now a separate boolean alongside
+    // `notified` so the agent-cron task can tell which channel succeeded.
+    const idx = src.indexOf("sendNow:");
+    const slice = src.slice(idx, idx + 12000);
     for (const key of [
       "ok: true as const",
       "forDate,",
       "recordId,",
       "notified,",
+      "emailSent,",
       "signedUrl,",
       "blockCount: payload.blocks.length,",
     ]) {

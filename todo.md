@@ -256,8 +256,13 @@ Closes the last v3.21 deferred item: first live drainer run end-to-end against M
 - [x] Drive root cleanup: trashed 182 polluted "Untitled" 0-byte files left behind by early broken drainer iterations. Real content in canonical subfolders untouched.
 - [x] 13 reference docs successfully pushed to Drive via the cookieless drainer (Ohio standards full reference + 12 others). Verified end-to-end against Mom's Drive (`spear.cpt@gmail.com`).
 - [x] Recovery admin mutations added to `routers.ts`: `resetRowsWithToken` (revert pushed→pending for retry), `enqueueReferenceDocsWithToken` (idempotent re-enqueue of all 13 reference docs).
-- [ ] **Decide whether to rebuild the email scheduler** with fresh content per run (regenerate PDF + signed URLs at send-time, not at task-definition-time). Currently paused; resurrect only after a fresh-content rewrite — never as a task that replays stale URLs.
-- [ ] Drain remaining ~152 pending rows (cosmetic; all will be dedupe-skipped since drivePushWorker.ts already pushed them).
+- [x] **v3.24 (2026-05-31)** Email scheduler rebuild verified: confirmed `nightlyAgenda.sendNow` already does fresh-content-per-run (re-assemble agenda, rebuild PDF in-band, attach as file, no signed URL in email body). Locked in with 13 new vitest specs in `server/nightlyAgendaFreshContent.test.ts` + 4 repaired specs in `server/nightlyAgendaSendNow.test.ts`. 25/25 passing. Scheduler will be re-enabled at task close.
+- [x] **v3.24 (2026-05-31)** Drained 134 pending queue rows. Final: 2 newly pushed, 187 dedupe-skipped (already in Drive), 63 failed with separate folder-map staleness bug — see v3.25 follow-up.
+- [x] **v3.24 (2026-05-31)** Drainer temp-dir bug fixed: `gws files create --upload <path>` was rejecting `/tmp/*` paths as "outside the current directory". Switched drainer to repo-local `.drainer-tmp/` (git-ignored).
+
+## v3.25 — Follow-ups (separate sessions)
+
+- [ ] Fix the 63 "specified parent is not a folder" drainer failures. Investigation path: (a) inspect `app_settings.drive.folder.*` keys; (b) compare against `gws drive ls` of the Reagan School Hub root; (c) refresh the folder-map cache; (d) re-run drainer for the 63 failed rows.
 
 ## v3.24 — S3-403 storage-proxy fix [DONE 2026-05-31]
 
