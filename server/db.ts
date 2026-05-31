@@ -4817,6 +4817,55 @@ export async function listRecentDrivePushes(limit = 20): Promise<DrivePushQueueR
     .limit(limit) as any;
 }
 
+/**
+ * v3.23 (2026-05-31) — One-shot recovery helper. Resets every row whose
+ * created_at is >= the given epoch ms AND whose status is one of the
+ * provided non-pending statuses back to `pending`, clearing
+ * pushed_at / drive_file_id / error_message / attempts so the drainer
+ * picks them up again on the next run. Returns the number of rows updated.
+ *
+ * Why this exists: a broken drainer between v3.21 and v3.23 marked rows
+ * `pushed` with a driveFileId pointing at malformed 0-byte "Untitled"
+ * files. After cleanup, the queue believes the work is done but Drive
+ * doesn't have it. This helper unwinds that.
+ */
+export async function resetDrivePushRowsSince(args: {
+  createdAtMsGte: number;
+  fromStatuses?: Array<"pushed" | "skipped" | "failed">;
+}): Promise<number> {
+  const db = getDb();
+  const fromStatuses = args.fromStatuses ?? ["pushed", "skipped", "failed"];
+  // drizzle's mysql layer doesn't expose .rowsAffected on update consistently,
+  // so we count before-state and use that as the upper bound for the report.
+  const before: any[] = (await db
+    .select({ id: drivePushQueue.id })
+    .from(drivePushQueue)
+    .where(
+      and(
+        gte(drivePushQueue.createdAt as any, new Date(args.createdAtMsGte)),
+        // status IN (…)
+        inArray(drivePushQueue.status as any, fromStatuses as any),
+      ),
+    )) as any[];
+  if (before.length === 0) return 0;
+  await db
+    .update(drivePushQueue)
+    .set({
+      status: "pending" as any,
+      pushedAt: null as any,
+      driveFileId: null as any,
+      errorMessage: null as any,
+      attempts: 0 as any,
+    } as any)
+    .where(
+      and(
+        gte(drivePushQueue.createdAt as any, new Date(args.createdAtMsGte)),
+        inArray(drivePushQueue.status as any, fromStatuses as any),
+      ),
+    );
+  return before.length;
+}
+
 export async function markDrivePushResult(args: {
   id: number;
   status: "pushed" | "skipped" | "failed";

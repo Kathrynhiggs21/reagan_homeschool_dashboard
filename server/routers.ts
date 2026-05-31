@@ -5182,6 +5182,71 @@ export const appRouter = router({
           generatedAtISO: input?.generatedAtISO,
         });
       }),
+    /**
+     * v3.23 (2026-05-31) — Cookieless variant. Same drainer-token gate as
+     * connectorPlanWithToken so a sandbox shell can refresh the 12 reference
+     * docs without a session cookie.
+     */
+    /**
+     * v3.23 (2026-05-31) — One-shot recovery mutation. Resets every row whose
+     * createdAt is >= the given epoch ms AND whose current status is in
+     * fromStatuses back to `pending`. Used to recover after the broken
+     * v3.21 → v3.23 drainer wrote ghost `pushed` rows. Drainer-token gated.
+     */
+    resetRowsWithToken: publicProcedure
+      .input(
+        z.object({
+          token: z.string().min(8),
+          createdAtMsGte: z.number().int().nonnegative(),
+          fromStatuses: z
+            .array(z.enum(["pushed", "skipped", "failed"]))
+            .min(1)
+            .optional(),
+        }),
+      )
+      .mutation(async ({ input }) => {
+        const { verifyDrainerToken } = await import("./_lib/drainerToken");
+        const v = verifyDrainerToken(input.token);
+        if (!v.ok) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: `drainer-token: ${v.reason}`,
+          });
+        }
+        const reset = await db.resetDrivePushRowsSince({
+          createdAtMsGte: input.createdAtMsGte,
+          fromStatuses: input.fromStatuses,
+        });
+        return { ok: true, reset };
+      }),
+    enqueueReferenceDocsWithToken: publicProcedure
+      .input(
+        z.object({
+          token: z.string().min(8),
+          dashboardUrl: z.string().url().optional(),
+          generatedAtISO: z
+            .string()
+            .regex(/^\d{4}-\d{2}-\d{2}$/)
+            .optional(),
+        }),
+      )
+      .mutation(async ({ input }) => {
+        const { verifyDrainerToken } = await import("./_lib/drainerToken");
+        const v = verifyDrainerToken(input.token);
+        if (!v.ok) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: `drainer-token: ${v.reason}`,
+          });
+        }
+        const { enqueueDriveReferenceDocs } = await import(
+          "./_lib/driveReferenceDocs"
+        );
+        return enqueueDriveReferenceDocs({
+          dashboardUrl: input.dashboardUrl,
+          generatedAtISO: input.generatedAtISO,
+        });
+      }),
   }),
 
   /* =================== RUNBOOKS (Settings card for blocked-item runbooks) =================== */

@@ -132,8 +132,21 @@ async function trpcMutation(procedure, input) {
    gws helpers
    ===================================================================== */
 
-function gws(method, params) {
+function gws(method, params, opts = {}) {
+  // params  -> --params (URL/query parameters)
+  // opts.json   -> --json (request body for create/update metadata)
+  // opts.upload -> --upload (path to media file for create with media)
+  // opts.uploadMime -> --upload-content-type
   const args = ["drive", ...method.split(" "), "--params", JSON.stringify(params)];
+  if (opts.json !== undefined) {
+    args.push("--json", JSON.stringify(opts.json));
+  }
+  if (opts.upload) {
+    args.push("--upload", opts.upload);
+  }
+  if (opts.uploadMime) {
+    args.push("--upload-content-type", opts.uploadMime);
+  }
   const proc = spawnSync("gws", args, {
     encoding: "utf8",
     maxBuffer: 1024 * 1024 * 64,
@@ -395,16 +408,21 @@ async function processRow(row, targetMap, hubRootId) {
     };
   }
 
-  // Upload via gws files create with a temp file (gws expects a path).
+  // Upload via gws files create. The CLI takes metadata via --json (body),
+  // the media file path via --upload, and content-type via --upload-content-type.
+  // --params is reserved for URL/query params only (here: fields + uploadType).
   const tmp = join(tmpdir(), `drive-drain-${row.id}-${Date.now()}`);
   writeFileSync(tmp, bytes);
   try {
-    const created = gws("files create", {
-      requestBody: { name: row.fileName, parents: [parentId], mimeType: mime },
-      media_body: tmp,
-      media_mime_type: mime,
-      fields: "id,name,size",
-    });
+    const created = gws(
+      "files create",
+      { uploadType: "multipart", fields: "id,name,size" },
+      {
+        json: { name: row.fileName, parents: [parentId], mimeType: mime },
+        upload: tmp,
+        uploadMime: mime,
+      },
+    );
     return {
       id: row.id,
       outcome: "pushed",
@@ -450,13 +468,38 @@ async function main() {
   const hubRootId = ensureHubRoot();
   stdout.write(`[drainer] hub root: ${hubRootId}\n`);
 
-  const results = [];
+  const reportProc =
+    AUTH_MODE === "token" ? "drive.connectorReportWithToken" : "drive.connectorReport";
+  const reportBody = AUTH_MODE === "token" ? { token: DRAINER_TOKEN } : {};
+
+  async function reportOne(out) {
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      try {
+        await trpcMutation(reportProc, {
+          ...reportBody,
+          protocolVersion: PROTOCOL_VERSION,
+          finishedAtISO: new Date().toISOString(),
+          byUser: env.USER || "sandbox",
+          results: [out],
+        });
+        return;
+      } catch (e) {
+        if (attempt === 3) {
+          stderr.write(
+            `[drainer] report write failed for #${out.id} after 3 attempts: ${e?.message ?? e}\n`,
+          );
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 250 * attempt));
+      }
+    }
+  }
+
   let pushed = 0;
   let skipped = 0;
   let failed = 0;
   for (const row of plan.rows) {
     const out = await processRow(row, plan.targetMap, hubRootId);
-    results.push(out);
     if (out.outcome === "pushed") pushed += 1;
     else if (out.outcome === "skipped") skipped += 1;
     else failed += 1;
@@ -467,21 +510,11 @@ async function main() {
         out.outcome === "skipped" ? ` reason=${out.reason}` : ""
       }\n`,
     );
+    await reportOne(out);
   }
 
-  const reportProc =
-    AUTH_MODE === "token" ? "drive.connectorReportWithToken" : "drive.connectorReport";
-  const reportBody = AUTH_MODE === "token" ? { token: DRAINER_TOKEN } : {};
-  await trpcMutation(reportProc, {
-    ...reportBody,
-    protocolVersion: PROTOCOL_VERSION,
-    finishedAtISO: new Date().toISOString(),
-    byUser: env.USER || "sandbox",
-    results,
-  });
-
   stdout.write(
-    `[drainer] done — pushed=${pushed} skipped=${skipped} failed=${failed} total=${results.length}\n`,
+    `[drainer] done — pushed=${pushed} skipped=${skipped} failed=${failed} total=${pushed + skipped + failed}\n`,
   );
 }
 

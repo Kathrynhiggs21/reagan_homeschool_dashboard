@@ -235,14 +235,6 @@
 - [x] Moved 17 loose Reagan files from Drive root into Hub/Inbox (Unsorted) for classifier sort
 - [x] Final after-action report at `CLEANUP_DONE.md` with knowledge-entry + Manus-task cleanup candidates for user review
 
-## v3.23 — Cookieless drainer + connector table polish [planned 2026-05-31]
-- [ ] Drainer-token system — admin `drive.connectorMintToken` mutation returns a short-lived (15 min) HMAC-signed token; new bearer header `X-Drainer-Token` accepted by `connectorPlan` / `connectorReport`
-- [ ] Drainer script accepts `DRAINER_TOKEN` env var as an alternative to `DASHBOARD_BEARER`
-- [ ] ConnectorPushCard "Copy drain command" button — mints a token via the new mutation and copies a ready-to-paste one-liner including the token
-- [ ] ConnectorPushCard recent-rows table — filter chips (status), folder dropdown, search box, sort toggle, result count, clear-filters link, bump server ceiling 10 → 50
-- [ ] Vitest specs: token mint/verify, drainer auth gate, filter/sort pure logic
-- [ ] Close the deferred "first live drainer run end-to-end" item from v3.21 by minting a token in-sandbox and draining the queue
-
 ## v3.23 — Cookieless drainer + filter/sort + live drain [2026-05-31, shipped]
 
 - [x] Drainer-token mint/verify module (HMAC-SHA256, 15-min default TTL, 60-min cap) with 23 vitest specs
@@ -260,3 +252,9 @@ Closes the last v3.21 deferred item: first live drainer run end-to-end against M
 ## v3.23 — Follow-ups (not blocking)
 
 - [ ] Fix the 4 S3-403 fetches (storage-proxy can't reach the keys for `topics/2026-05-30/math-fractions.md`, `daylogs/2026-05-30.md`, `recap/2026-05-30/marcy.md`, `agendas/2026-06-01/v1.pdf`). Investigate storage-proxy auth.
+- [x] **PAUSED stale-email scheduler** (Manus scheduled task `iP0L47OuLe9zo7Hh7hY4Kp`, projectUid `TZRtW4sYh3EsW28QNqK5ii`) on 2026-05-31. The weekday 6:30 AM ET job had been sending duplicate "Reagan's school plan" emails with dead/expired CloudFront PDF URLs. Status now `pause` per `manus-config schedule status`. Will not re-fire until explicitly re-enabled. Future replacement (if any) needs fresh-content email regeneration on each run, not stale signed-URL replay.
+- [x] Drive root cleanup: trashed 182 polluted "Untitled" 0-byte files left behind by early broken drainer iterations. Real content in canonical subfolders untouched.
+- [x] 13 reference docs successfully pushed to Drive via the cookieless drainer (Ohio standards full reference + 12 others). Verified end-to-end against Mom's Drive (`spear.cpt@gmail.com`).
+- [x] Recovery admin mutations added to `routers.ts`: `resetRowsWithToken` (revert pushed→pending for retry), `enqueueReferenceDocsWithToken` (idempotent re-enqueue of all 13 reference docs).
+- [ ] **Decide whether to rebuild the email scheduler** with fresh content per run (regenerate PDF + signed URLs at send-time, not at task-definition-time). Currently paused; resurrect only after a fresh-content rewrite — never as a task that replays stale URLs.
+- [ ] Drain remaining ~152 pending rows (cosmetic; all will be dedupe-skipped since drivePushWorker.ts already pushed them).
