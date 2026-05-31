@@ -224,7 +224,7 @@
 - [x] Settings card `ConnectorPushCard.tsx` with queue depth, last-run summary, copy-command, recent rows
 - [x] 20 vitest specs in `server/driveConnectorPlan.test.ts` (all passing)
 - [x] Mom's Drive structure verified; trashed canonical parents (Adventures/Printables) self-heal on first run
-- [ ] First live drainer run end-to-end (deferred — needs desktop browser to copy session bearer)
+- [x] First live drainer run end-to-end — closed by v3.23 cookieless path 2026-05-31
 
 ## v3.22 — Cleanup sweep [2026-05-31]
 - [x] Audited 8 surfaces (todo, code, drive_push_queue, Drive, knowledge, skills, tasks, loose files); dry-run report at `CLEANUP_DRYRUN.md`
@@ -234,3 +234,29 @@
 - [x] Quarantined 6 duplicate copies + 4 stale shortcuts in new `Cleanup Review (2026-05-31)/` subfolder (nothing trashed)
 - [x] Moved 17 loose Reagan files from Drive root into Hub/Inbox (Unsorted) for classifier sort
 - [x] Final after-action report at `CLEANUP_DONE.md` with knowledge-entry + Manus-task cleanup candidates for user review
+
+## v3.23 — Cookieless drainer + connector table polish [planned 2026-05-31]
+- [ ] Drainer-token system — admin `drive.connectorMintToken` mutation returns a short-lived (15 min) HMAC-signed token; new bearer header `X-Drainer-Token` accepted by `connectorPlan` / `connectorReport`
+- [ ] Drainer script accepts `DRAINER_TOKEN` env var as an alternative to `DASHBOARD_BEARER`
+- [ ] ConnectorPushCard "Copy drain command" button — mints a token via the new mutation and copies a ready-to-paste one-liner including the token
+- [ ] ConnectorPushCard recent-rows table — filter chips (status), folder dropdown, search box, sort toggle, result count, clear-filters link, bump server ceiling 10 → 50
+- [ ] Vitest specs: token mint/verify, drainer auth gate, filter/sort pure logic
+- [ ] Close the deferred "first live drainer run end-to-end" item from v3.21 by minting a token in-sandbox and draining the queue
+
+## v3.23 — Cookieless drainer + filter/sort + live drain [2026-05-31, shipped]
+
+- [x] Drainer-token mint/verify module (HMAC-SHA256, 15-min default TTL, 60-min cap) with 23 vitest specs
+- [x] Three with-token tRPC procs (`connectorPlanWithToken`, `connectorReportWithToken`, `connectorLastRunWithToken`) — cookieless path verified end-to-end
+- [x] `connectorMintToken` admin mutation (browser-side) for the Settings card
+- [x] Dev-only `POST /api/dev/mint-drainer-token` localhost-only bootstrap (NODE_ENV=development only)
+- [x] Drainer script accepts `DRAINER_TOKEN` env var with friendly hint when missing
+- [x] ConnectorPushCard: "Copy drain command" button (mints + copies one-liner with token)
+- [x] ConnectorPushCard: filter chips (status), folder dropdown, search box, sort toggle, result-count, clear-filters
+- [x] driveConnectorTable pure helpers with 27 vitest specs
+- [x] **LIVE DRAIN RAN** — 17 pushed, 8 dedupe-skipped, 4 S3-403 fails (pre-existing storage-proxy issue, separate from drainer)
+
+Closes the last v3.21 deferred item: first live drainer run end-to-end against Mom's Drive as `spear.cpt@gmail.com`.
+
+## v3.23 — Follow-ups (not blocking)
+
+- [ ] Fix the 4 S3-403 fetches (storage-proxy can't reach the keys for `topics/2026-05-30/math-fractions.md`, `daylogs/2026-05-30.md`, `recap/2026-05-30/marcy.md`, `agendas/2026-06-01/v1.pdf`). Investigate storage-proxy auth.

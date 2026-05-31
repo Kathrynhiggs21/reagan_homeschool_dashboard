@@ -7,6 +7,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { registerCalendarFeed } from "../calendarFeed";
 import { registerScheduledSync } from "../scheduledSync";
+import { registerDevDrainer } from "./devDrainer";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
@@ -40,6 +41,7 @@ async function startServer() {
   registerOAuthRoutes(app);
   registerCalendarFeed(app);
   registerScheduledSync(app);
+  registerDevDrainer(app);
   // tRPC API
   app.use(
     "/api/trpc",

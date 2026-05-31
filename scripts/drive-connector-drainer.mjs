@@ -50,15 +50,25 @@ const DASHBOARD_BEARER =
   env.DASHBOARD_BEARER ||
   argv.find((a) => a.startsWith("--bearer="))?.slice(9) ||
   "";
+const DRAINER_TOKEN =
+  env.DRAINER_TOKEN ||
+  argv.find((a) => a.startsWith("--token="))?.slice(8) ||
+  "";
 const PROTOCOL_VERSION = 1;
 const HUB_ROOT_NAME = "Reagan School Hub (Dashboard)";
 
-if (!DASHBOARD_BEARER) {
+const AUTH_MODE = DRAINER_TOKEN ? "token" : DASHBOARD_BEARER ? "bearer" : null;
+if (!AUTH_MODE) {
   stderr.write(
-    "[drainer] DASHBOARD_BEARER required (export DASHBOARD_BEARER=… or pass --bearer=…). Visit Settings → Drive Connector for a one-tap copy.\n",
+    [
+      "[drainer] No auth provided. Pick one of:",
+      "  • export DRAINER_TOKEN=…  (preferred — grab it from Settings → Drive Connector → Copy drain command)",
+      "  • export DASHBOARD_BEARER=…  (fallback — admin session cookie value)",
+    ].join("\n") + "\n",
   );
   exit(2);
 }
+stdout.write(`[drainer] auth mode: ${AUTH_MODE}\n`);
 
 /* =====================================================================
    Tiny tRPC client (no extra deps; we only need two endpoints)
@@ -74,15 +84,12 @@ async function trpcQuery(procedure, input = undefined) {
   if (input !== undefined) {
     url.searchParams.set("input", JSON.stringify({ json: input }));
   }
-  const resp = await fetch(url, {
-    headers: {
-      "Content-Type": "application/json",
-      // Use the dashboard's standard cookie auth via Authorization
-      // bearer (the dashboard's auth middleware accepts both).
-      Authorization: `Bearer ${DASHBOARD_BEARER}`,
-      Cookie: `__Host-msession=${DASHBOARD_BEARER}`,
-    },
-  });
+  const headers = { "Content-Type": "application/json" };
+  if (AUTH_MODE === "bearer") {
+    headers.Authorization = `Bearer ${DASHBOARD_BEARER}`;
+    headers.Cookie = `__Host-msession=${DASHBOARD_BEARER}`;
+  }
+  const resp = await fetch(url, { headers });
   if (!resp.ok) {
     const body = await resp.text().catch(() => "");
     throw new Error(`tRPC ${procedure} ${resp.status}: ${body.slice(0, 400)}`);
@@ -98,13 +105,14 @@ async function trpcQuery(procedure, input = undefined) {
 
 async function trpcMutation(procedure, input) {
   const url = new URL(`/api/trpc/${procedure}`, DASHBOARD_URL);
+  const headers = { "Content-Type": "application/json" };
+  if (AUTH_MODE === "bearer") {
+    headers.Authorization = `Bearer ${DASHBOARD_BEARER}`;
+    headers.Cookie = `__Host-msession=${DASHBOARD_BEARER}`;
+  }
   const resp = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${DASHBOARD_BEARER}`,
-      Cookie: `__Host-msession=${DASHBOARD_BEARER}`,
-    },
+    headers,
     body: JSON.stringify({ json: input }),
   });
   if (!resp.ok) {
@@ -425,7 +433,9 @@ async function processRow(row, targetMap, hubRootId) {
 async function main() {
   stdout.write(`[drainer] dashboard=${DASHBOARD_URL}\n`);
 
-  const plan = await trpcQuery("drive.connectorPlan", { limit: 100 });
+  const plan = await (AUTH_MODE === "token"
+    ? trpcQuery("drive.connectorPlanWithToken", { token: DRAINER_TOKEN, limit: 100 })
+    : trpcQuery("drive.connectorPlan", { limit: 100 }));
   if (!plan || plan.protocolVersion !== PROTOCOL_VERSION) {
     throw new Error(
       `Plan protocolVersion mismatch — drainer is v${PROTOCOL_VERSION}, server returned v${plan?.protocolVersion}.`,
@@ -459,7 +469,11 @@ async function main() {
     );
   }
 
-  await trpcMutation("drive.connectorReport", {
+  const reportProc =
+    AUTH_MODE === "token" ? "drive.connectorReportWithToken" : "drive.connectorReport";
+  const reportBody = AUTH_MODE === "token" ? { token: DRAINER_TOKEN } : {};
+  await trpcMutation(reportProc, {
+    ...reportBody,
     protocolVersion: PROTOCOL_VERSION,
     finishedAtISO: new Date().toISOString(),
     byUser: env.USER || "sandbox",

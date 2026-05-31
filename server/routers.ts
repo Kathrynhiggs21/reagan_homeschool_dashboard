@@ -5061,6 +5061,102 @@ export const appRouter = router({
       return readLastConnectorRun();
     }),
     /**
+     * v3.23 (2026-05-31) — Mint a short-lived signed drainer token.
+     * Admin-only. Returns the opaque token + matching exp so the
+     * Settings card can render it in the copy-paste command line.
+     */
+    connectorMintToken: adminProcedure
+      .input(
+        z
+          .object({ ttlSeconds: z.number().int().min(60).max(60 * 60).optional() })
+          .optional(),
+      )
+      .mutation(async ({ ctx, input }) => {
+        const { mintDrainerToken, DRAINER_TOKEN_DEFAULT_TTL_SECONDS } =
+          await import("./_lib/drainerToken");
+        const ttlSeconds = input?.ttlSeconds ?? DRAINER_TOKEN_DEFAULT_TTL_SECONDS;
+        const token = mintDrainerToken(ctx.user.openId, { ttlSeconds });
+        return {
+          token,
+          expiresAtISO: new Date(Date.now() + ttlSeconds * 1000).toISOString(),
+          ttlSeconds,
+        };
+      }),
+    /**
+     * v3.23 (2026-05-31) — Cookieless variant of connectorPlan. The
+     * drainer script posts the token as an input field instead of
+     * needing a session cookie. Token must be valid + unexpired +
+     * audience-tagged for the drainer.
+     */
+    connectorPlanWithToken: publicProcedure
+      .input(
+        z.object({
+          token: z.string().min(8),
+          limit: z.number().int().min(1).max(500).optional(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { verifyDrainerToken } = await import("./_lib/drainerToken");
+        const v = verifyDrainerToken(input.token);
+        if (!v.ok) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: `drainer-token: ${v.reason}`,
+          });
+        }
+        const { buildConnectorPlan } = await import("./_lib/driveConnectorPlan");
+        return buildConnectorPlan({ limit: input.limit });
+      }),
+    /**
+     * v3.23 (2026-05-31) — Cookieless variant of connectorReport. The
+     * drainer posts the token in the input alongside the results array.
+     */
+    connectorReportWithToken: publicProcedure
+      .input(
+        z.object({
+          token: z.string().min(8),
+          protocolVersion: z.literal(1),
+          finishedAtISO: z.string().min(1),
+          byUser: z.string().min(1),
+          results: z.array(
+            z.union([
+              z.object({
+                id: z.number().int(),
+                outcome: z.literal("pushed"),
+                driveFileId: z.string().min(1),
+                bytes: z.number().int().nonnegative().optional(),
+              }),
+              z.object({
+                id: z.number().int(),
+                outcome: z.literal("skipped"),
+                reason: z.string(),
+                driveFileId: z.string().optional(),
+              }),
+              z.object({
+                id: z.number().int(),
+                outcome: z.literal("failed"),
+                error: z.string(),
+              }),
+            ]),
+          ),
+        }),
+      )
+      .mutation(async ({ input }) => {
+        const { verifyDrainerToken } = await import("./_lib/drainerToken");
+        const v = verifyDrainerToken(input.token);
+        if (!v.ok) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: `drainer-token: ${v.reason}`,
+          });
+        }
+        const { applyConnectorReport } = await import(
+          "./_lib/driveConnectorPlan"
+        );
+        const { token: _token, ...report } = input;
+        return applyConnectorReport(report as any);
+      }),
+    /**
      * v3.17 (2026-05-30) — enqueue the 12 canonical reference Markdown
      * docs that ship to Mom's Drive subfolders. Idempotent: re-running
      * is a safe no-op as long as the body hasn't changed. Admin only.

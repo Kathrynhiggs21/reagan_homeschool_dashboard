@@ -1,19 +1,21 @@
 /**
- * ConnectorPushCard (v3.21, 2026-05-31)
+ * ConnectorPushCard (v3.23, 2026-05-31)
  * =====================================
  *
  * Renders the Drive Connector status panel inside Settings. Surfaces:
  *
  *   - Queue depth (rows in `drive_push_queue` with `status='pending'`)
  *   - Last drainer run summary (when, by whom, pushed/skipped/failed counts)
- *   - One-click "copy command" line so the admin can paste into the
- *     project shell to drain the queue
- *   - A short table of the most recent 10 queue rows (status + folder
- *     + filename) for quick "did my upload land?" verification
+ *   - v3.23: One-click "Copy drain command" button — mints a short-lived
+ *     drainer token via `drive.connectorMintToken`, copies the full
+ *     ready-to-paste shell line (no DevTools required). Falls back to a
+ *     bearer-cookie command if the mint mutation fails or isn't loaded.
+ *   - v3.23: Recent-rows table with status chips, folder dropdown,
+ *     filename search, sort toggle, result count, and clear-filters
+ *     link. Server ceiling raised to 50 rows.
  *
  * The card is admin-only — it short-circuits to a friendly stub for
- * non-admin viewers since `trpc.drive.connectorLastRun` requires
- * adminProcedure on the server.
+ * non-admin viewers since the underlying procs require adminProcedure.
  *
  * NOTE: the actual gws upload work happens in
  * `scripts/drive-connector-drainer.mjs` (Manus sandbox shell only).
@@ -25,9 +27,28 @@ import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { toast } from "sonner";
+import {
+  applyFiltersAndSort,
+  EMPTY_FILTERS,
+  filtersAreActive,
+  formatResultCount,
+  listKnownFolders,
+  type ConnectorSortKey,
+  type ConnectorStatusFilter,
+  type ConnectorTableFilters,
+  type RecentRow,
+} from "@/lib/driveConnectorTable";
 
 /** ISO → "May 31, 2026 00:14 UTC" rendering in the user's locale */
 function fmtISO(iso: string | null): string {
@@ -45,6 +66,22 @@ function truncate(s: string, n = 48): string {
   return s.length > n ? `${s.slice(0, n - 1)}…` : s;
 }
 
+const STATUS_OPTIONS: { value: ConnectorStatusFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "pushed", label: "Pushed" },
+  { value: "pending", label: "Pending" },
+  { value: "skipped", label: "Skipped" },
+  { value: "failed", label: "Failed" },
+];
+
+const SORT_OPTIONS: { value: ConnectorSortKey; label: string }[] = [
+  { value: "newest", label: "Newest" },
+  { value: "oldest", label: "Oldest" },
+  { value: "status", label: "Status" },
+  { value: "folder", label: "Folder" },
+  { value: "id", label: "ID" },
+];
+
 export default function ConnectorPushCard() {
   const auth = useAuth?.();
   const isAdmin = (auth as any)?.user?.role === "admin";
@@ -58,11 +95,15 @@ export default function ConnectorPushCard() {
     enabled: isAdmin,
   });
   const recentQ = (trpc as any).drive?.recent?.useQuery?.(
-    { limit: 10 },
+    { limit: 50 },
     { staleTime: 30_000, enabled: isAdmin },
   );
 
+  const mintTokenM = (trpc as any).drive?.connectorMintToken?.useMutation?.();
+
   const [copied, setCopied] = useState<string | null>(null);
+  const [filters, setFilters] =
+    useState<ConnectorTableFilters>(EMPTY_FILTERS);
 
   const lastRun = (lastRunQ?.data ?? null) as null | {
     atISO: string | null;
@@ -77,16 +118,64 @@ export default function ConnectorPushCard() {
     ? (pendingQ.data as any[]).length
     : 0;
 
+  const rawRows: RecentRow[] = Array.isArray(recentQ?.data)
+    ? ((recentQ.data as any[]).map((r) => ({
+        id: r.id,
+        fileName: r.fileName,
+        status: r.status,
+        targetFolder: r.targetFolder,
+        targetSubpath: r.targetSubpath ?? null,
+        createdAt: r.createdAt ?? null,
+      })) as RecentRow[])
+    : [];
+
+  const folderOptions = useMemo(() => listKnownFolders(rawRows), [rawRows]);
+  const filteredRows = useMemo(
+    () => applyFiltersAndSort(rawRows, filters),
+    [rawRows, filters],
+  );
+  const isFiltered = filtersAreActive(filters);
+  const countLine = formatResultCount(
+    filteredRows.length,
+    rawRows.length,
+    isFiltered,
+  );
+
   /**
-   * The shell command the admin will paste into the sandbox terminal.
-   * The bearer is intentionally NOT printed in the card — the admin
-   * already has it in their browser cookie store; we surface a tip for
-   * pulling it out via DevTools instead. (Surfacing a long-lived bearer
-   * in a static card is a footgun.)
+   * Mint a fresh drainer token and copy a ready-to-paste shell line.
+   * Falls back to the bearer-cookie command if the mint fails for any
+   * reason (offline, server out of date, etc.) so the card still works.
    */
-  const drainCommand = useMemo(() => {
-    return `cd /home/ubuntu/reagan_homeschool_dashboard \\\n  && DASHBOARD_BEARER=$(echo "$YOUR_DASHBOARD_COOKIE") \\\n  pnpm drive:drain`;
-  }, []);
+  const onCopyCommand = async () => {
+    try {
+      if (mintTokenM?.mutateAsync) {
+        const res = await mintTokenM.mutateAsync({ ttlSeconds: 15 * 60 });
+        const dashboardUrl = window.location.origin;
+        const cmd = `cd /home/ubuntu/reagan_homeschool_dashboard \\\n  && DASHBOARD_URL='${dashboardUrl}' \\\n  DRAINER_TOKEN='${res.token}' \\\n  pnpm drive:drain`;
+        await navigator.clipboard.writeText(cmd);
+        setCopied("ok");
+        toast.success(
+          `Command copied — token expires ${new Date(res.expiresAtISO).toLocaleTimeString()}`,
+        );
+        setTimeout(() => setCopied(null), 2_500);
+        return;
+      }
+    } catch (e) {
+      // fall through to bearer fallback
+      // eslint-disable-next-line no-console
+      console.warn("[ConnectorPushCard] mint failed, using bearer fallback", e);
+    }
+    const fallback = `cd /home/ubuntu/reagan_homeschool_dashboard \\\n  && DASHBOARD_BEARER='paste-__Host-msession-cookie-here' \\\n  pnpm drive:drain`;
+    try {
+      await navigator.clipboard.writeText(fallback);
+      setCopied("fallback");
+      toast.warning("Token mint unavailable — copied bearer-cookie command instead");
+      setTimeout(() => setCopied(null), 3_000);
+    } catch {
+      setCopied("err");
+      toast.error("Couldn't copy — paste manually from the box below");
+    }
+  };
 
   if (!isAdmin) {
     return (
@@ -122,7 +211,7 @@ export default function ConnectorPushCard() {
           )}
         </CardTitle>
         <div className="text-xs text-muted-foreground">
-          v3.21 · sandbox-only
+          v3.23 · sandbox-only
         </div>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
@@ -190,57 +279,155 @@ export default function ConnectorPushCard() {
               variant="outline"
               className="bg-background"
               onClick={() => {
-                void navigator.clipboard
-                  .writeText(drainCommand)
-                  .then(() => {
-                    setCopied("ok");
-                    toast.success("Command copied");
-                    setTimeout(() => setCopied(null), 2_000);
-                  })
-                  .catch(() => {
-                    setCopied("err");
-                    toast.error(
-                      "Couldn't copy — paste manually from the box below",
-                    );
-                  });
+                void onCopyCommand();
               }}
+              disabled={mintTokenM?.isPending}
               data-testid="connector-copy-command"
             >
-              {copied === "ok" ? "Copied" : "Copy"}
+              {mintTokenM?.isPending
+                ? "Minting…"
+                : copied === "ok"
+                  ? "Copied"
+                  : copied === "fallback"
+                    ? "Copied (fallback)"
+                    : "Copy drain command"}
             </Button>
           </div>
-          <pre className="mt-2 whitespace-pre-wrap break-all text-[11px] leading-snug bg-background border rounded p-2 font-mono">
-            {drainCommand}
-          </pre>
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Click <span className="font-semibold">Copy drain command</span> to
+            mint a 15-minute drainer token and copy the ready-to-paste shell
+            line. Paste into the project shell and press Enter — no DevTools,
+            no cookie hunting.
+          </p>
           <details className="mt-2 text-xs text-muted-foreground">
             <summary className="cursor-pointer">
-              Where do I get the dashboard bearer?
+              Token didn't work? Use the cookie-fallback path.
             </summary>
             <div className="mt-1 space-y-1">
               <p>
                 In your dashboard browser tab open DevTools → Application →
                 Cookies → choose this site → copy the value of the
                 <code className="mx-1 rounded bg-muted px-1">__Host-msession</code>
-                cookie. That string is what goes into{" "}
-                <code className="mx-1 rounded bg-muted px-1">DASHBOARD_BEARER</code>.
+                cookie. Then run:
               </p>
-              <p>
-                The cookie is short-lived (~30 days). When the drainer fails
-                with a 401 or 403, refresh this page (which refreshes the
-                cookie) and re-copy.
-              </p>
+              <pre className="mt-1 whitespace-pre-wrap break-all text-[11px] leading-snug bg-background border rounded p-2 font-mono">
+                {`cd /home/ubuntu/reagan_homeschool_dashboard \\\n  && DASHBOARD_BEARER='paste-cookie-value' \\\n  pnpm drive:drain`}
+              </pre>
             </div>
           </details>
         </div>
 
-        {/* Recent rows */}
+        {/* Recent rows with filter/sort */}
         <div className="rounded-md border">
-          <div className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground border-b bg-muted/40">
-            Recent queue rows (10 most recent)
+          <div className="px-3 py-2 border-b bg-muted/40 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Recent queue rows
+              </div>
+              <div
+                className="text-[11px] text-muted-foreground"
+                data-testid="connector-result-count"
+              >
+                {countLine}
+              </div>
+            </div>
+            {/* Status chips */}
+            <div
+              className="flex flex-wrap items-center gap-1.5"
+              data-testid="connector-status-chips"
+            >
+              {STATUS_OPTIONS.map((opt) => {
+                const active = filters.status === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() =>
+                      setFilters((f) => ({ ...f, status: opt.value }))
+                    }
+                    className={
+                      "rounded-full border px-2.5 py-0.5 text-[11px] transition " +
+                      (active
+                        ? "bg-foreground text-background border-foreground"
+                        : "bg-background hover:bg-muted")
+                    }
+                    data-testid={`connector-status-chip-${opt.value}`}
+                  >
+                    {opt.label}
+                  </button>
+                );
+              })}
+              {isFiltered ? (
+                <button
+                  type="button"
+                  onClick={() => setFilters(EMPTY_FILTERS)}
+                  className="ml-auto text-[11px] underline text-muted-foreground hover:text-foreground"
+                  data-testid="connector-clear-filters"
+                >
+                  Clear filters
+                </button>
+              ) : null}
+            </div>
+            {/* Folder + search + sort */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Select
+                value={filters.folder || "_all"}
+                onValueChange={(v) =>
+                  setFilters((f) => ({ ...f, folder: v === "_all" ? "" : v }))
+                }
+              >
+                <SelectTrigger
+                  className="h-8 w-[160px] text-xs"
+                  data-testid="connector-folder-select"
+                >
+                  <SelectValue placeholder="All folders" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="_all">All folders</SelectItem>
+                  {folderOptions.map((f) => (
+                    <SelectItem key={f} value={f}>
+                      {f}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input
+                value={filters.search}
+                onChange={(e) =>
+                  setFilters((f) => ({ ...f, search: e.target.value }))
+                }
+                placeholder="Search file name…"
+                className="h-8 max-w-[220px] text-xs"
+                data-testid="connector-search-input"
+              />
+              <Select
+                value={filters.sortBy}
+                onValueChange={(v) =>
+                  setFilters((f) => ({
+                    ...f,
+                    sortBy: v as ConnectorSortKey,
+                  }))
+                }
+              >
+                <SelectTrigger
+                  className="h-8 w-[120px] text-xs ml-auto"
+                  data-testid="connector-sort-select"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SORT_OPTIONS.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          {Array.isArray(recentQ?.data) && (recentQ.data as any[]).length > 0 ? (
-            <div className="divide-y">
-              {(recentQ.data as any[]).slice(0, 10).map((r) => (
+          {filteredRows.length > 0 ? (
+            <div className="divide-y" data-testid="connector-recent-rows">
+              {filteredRows.map((r) => (
                 <div
                   key={r.id}
                   className="grid grid-cols-[auto,1fr,auto] gap-3 px-3 py-2 text-xs items-center"
@@ -275,8 +462,26 @@ export default function ConnectorPushCard() {
                 </div>
               ))}
             </div>
+          ) : rawRows.length > 0 ? (
+            <div
+              className="px-3 py-3 text-xs text-muted-foreground"
+              data-testid="connector-recent-empty-filtered"
+            >
+              No rows match the current filters.{" "}
+              <button
+                type="button"
+                className="underline"
+                onClick={() => setFilters(EMPTY_FILTERS)}
+              >
+                Clear filters
+              </button>
+              .
+            </div>
           ) : (
-            <div className="px-3 py-3 text-xs text-muted-foreground">
+            <div
+              className="px-3 py-3 text-xs text-muted-foreground"
+              data-testid="connector-recent-empty"
+            >
               Queue history is empty. Once the dashboard enqueues files (day
               logs, recap replies, agenda PDFs, classifier-routed uploads)
               they'll show here.
