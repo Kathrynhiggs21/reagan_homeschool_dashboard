@@ -5030,6 +5030,9 @@ export const appRouter = router({
                 id: z.number().int(),
                 outcome: z.literal("pushed"),
                 driveFileId: z.string().min(1),
+                // v3.26 — optional Drive-side name for Untitled-leak
+                // detection. Older drainers may omit it; that's fine.
+                driveFileName: z.string().optional(),
                 bytes: z.number().int().nonnegative().optional(),
               }),
               z.object({
@@ -5037,6 +5040,7 @@ export const appRouter = router({
                 outcome: z.literal("skipped"),
                 reason: z.string(),
                 driveFileId: z.string().optional(),
+                driveFileName: z.string().optional(),
               }),
               z.object({
                 id: z.number().int(),
@@ -5124,6 +5128,9 @@ export const appRouter = router({
                 id: z.number().int(),
                 outcome: z.literal("pushed"),
                 driveFileId: z.string().min(1),
+                // v3.26 — optional Drive-side name for Untitled-leak
+                // detection. Older drainers may omit it; that's fine.
+                driveFileName: z.string().optional(),
                 bytes: z.number().int().nonnegative().optional(),
               }),
               z.object({
@@ -5131,6 +5138,7 @@ export const appRouter = router({
                 outcome: z.literal("skipped"),
                 reason: z.string(),
                 driveFileId: z.string().optional(),
+                driveFileName: z.string().optional(),
               }),
               z.object({
                 id: z.number().int(),

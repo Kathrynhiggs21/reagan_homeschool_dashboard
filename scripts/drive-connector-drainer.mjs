@@ -441,6 +441,9 @@ async function processRow(row, targetMap, hubRootId) {
         outcome: "skipped",
         reason: `Already present in Drive as ${existingMatch.id} (matching contentHash)`,
         driveFileId: existingMatch.id,
+        // v3.26: forward the Drive-side name so the dashboard's
+        // Untitled-leak detector can flag any "Untitled" leaks.
+        driveFileName: existingMatch.name,
       };
     }
     return {
@@ -448,6 +451,9 @@ async function processRow(row, targetMap, hubRootId) {
       outcome: "skipped",
       reason: `A file named "${row.fileName}" already exists at ${existingMatch.id} — skipping to avoid Drive's auto-rename. If this is wrong, rename or delete the existing file in Drive.`,
       driveFileId: existingMatch.id,
+      // v3.26: forward the Drive-side name so the dashboard's
+      // Untitled-leak detector can flag any "Untitled" leaks.
+      driveFileName: existingMatch.name,
     };
   }
 
@@ -473,6 +479,11 @@ async function processRow(row, targetMap, hubRootId) {
       id: row.id,
       outcome: "pushed",
       driveFileId: created.id,
+      // v3.26: forward the actual Drive-side name. If gws ever
+      // silently drops our metadata again (the v3.25 bug class), the
+      // name comes back as "Untitled" and the dashboard logs a
+      // warning to app_settings via isUntitledLeakName().
+      driveFileName: created.name,
       bytes: bytes.length,
     };
   } catch (e) {

@@ -129,9 +129,49 @@ export type ConnectorPlan = {
    ===================================================================== */
 
 export type ConnectorReportOutcome =
-  | { id: number; outcome: "pushed"; driveFileId: string; bytes?: number }
-  | { id: number; outcome: "skipped"; reason: string; driveFileId?: string }
+  | {
+      id: number;
+      outcome: "pushed";
+      driveFileId: string;
+      /**
+       * v3.26 (2026-05-31) — the Drive-side name the drainer actually
+       * created. Used by the Untitled-leak detector in applyConnectorReport
+       * to flag the v3.25-class bug (gws silently dropping a folder body
+       * and creating an "Untitled" file at the user's root). Optional for
+       * back-compat with older drainers.
+       */
+      driveFileName?: string;
+      bytes?: number;
+    }
+  | {
+      id: number;
+      outcome: "skipped";
+      reason: string;
+      driveFileId?: string;
+      driveFileName?: string;
+    }
   | { id: number; outcome: "failed"; error: string };
+
+/**
+ * v3.26 (2026-05-31) — the prefix every Untitled-leak warning key is
+ * stamped under in `appSettings`. The Settings card can render any keys
+ * under this namespace as recent warnings.
+ */
+export const CONNECTOR_WARNING_KEY_PREFIX =
+  "drive.connector.warnings.untitledLeak." as const;
+
+/**
+ * v3.26 (2026-05-31) — returns true if the Drive-side name looks like a
+ * leaked "Untitled" file. Case-insensitive, trims whitespace, accepts
+ * both bare "Untitled" and the "Untitled (1)" auto-rename variant that
+ * Drive emits when multiple unnamed files collide.
+ */
+export function isUntitledLeakName(name: string | null | undefined): boolean {
+  if (!name) return false;
+  const trimmed = name.trim();
+  if (trimmed.length === 0) return false;
+  return /^untitled(\s*\(\d+\))?$/i.test(trimmed);
+}
 
 export type ConnectorReport = {
   protocolVersion: typeof CONNECTOR_PROTOCOL_VERSION;
@@ -335,39 +375,117 @@ export async function buildConnectorPlan(
  *
  * Returns the same summary so the caller can show it in the response.
  */
+/**
+ * v3.26 (2026-05-31) — the minimal DB surface applyConnectorReport
+ * touches. Extracted so test specs (and any future report applier in
+ * a worker context) can pass a fluent mock instead of needing a live
+ * connection. Mirrors the `dbOverride` pattern already used by
+ * `enqueueDrivePush`'s dedupe specs.
+ */
+export type ConnectorReportDbSurface = Pick<
+  typeof db,
+  "markDrivePushResult" | "setAppSetting"
+>;
+
 export async function applyConnectorReport(
   report: ConnectorReport,
+  opts: { dbOverride?: ConnectorReportDbSurface } = {},
 ): Promise<{
   pushed: number;
   skipped: number;
   failed: number;
   scanned: number;
 }> {
+  const dbi: ConnectorReportDbSurface = opts.dbOverride ?? db;
   // Validate first — if anything throws we don't write any partial state.
   assertValidReport(report);
 
+  // v3.26 (2026-05-31) — Untitled-leak detector. We collect any push
+  // outcomes whose Drive-side name matches the leak shape so we can
+  // stamp a warning to appSettings after the result writes succeed.
+  // We intentionally do not let leak-stamping failures abort the
+  // primary report-application loop; the queue updates are the
+  // truth-of-record.
+  const untitledLeaks: Array<{
+    queueId: number;
+    driveFileId: string;
+    driveFileName: string;
+    outcome: "pushed" | "skipped";
+  }> = [];
+
   for (const r of report.results) {
     if (r.outcome === "pushed") {
-      await db.markDrivePushResult({
+      await dbi.markDrivePushResult({
         id: r.id,
         status: "pushed",
         driveFileId: r.driveFileId,
         errorMessage: null,
       });
+      if (isUntitledLeakName(r.driveFileName)) {
+        untitledLeaks.push({
+          queueId: r.id,
+          driveFileId: r.driveFileId,
+          driveFileName: r.driveFileName as string,
+          outcome: "pushed",
+        });
+      }
     } else if (r.outcome === "skipped") {
-      await db.markDrivePushResult({
+      await dbi.markDrivePushResult({
         id: r.id,
         status: "skipped",
         driveFileId: r.driveFileId ?? null,
         errorMessage: r.reason,
       });
+      if (r.driveFileId && isUntitledLeakName(r.driveFileName)) {
+        untitledLeaks.push({
+          queueId: r.id,
+          driveFileId: r.driveFileId,
+          driveFileName: r.driveFileName as string,
+          outcome: "skipped",
+        });
+      }
     } else {
-      await db.markDrivePushResult({
+      await dbi.markDrivePushResult({
         id: r.id,
         status: "failed",
         driveFileId: null,
         errorMessage: r.error,
       });
+    }
+  }
+
+  // Stamp any Untitled leaks. Each leak is a separate key so we can
+  // page through history and the Settings card can render them as a
+  // list. Best-effort — see the try/catch around setAppSetting calls
+  // below.
+  if (untitledLeaks.length > 0) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[driveConnectorPlan] v3.26 untitled-leak detector tripped on ${untitledLeaks.length} row(s):`,
+      untitledLeaks,
+    );
+    try {
+      for (const leak of untitledLeaks) {
+        // Key shape: drive.connector.warnings.untitledLeak.<atISO>.<queueId>
+        // Including queueId guarantees uniqueness if multiple leaks
+        // happen in the same finishedAtISO (millisecond ties).
+        const key = `${CONNECTOR_WARNING_KEY_PREFIX}${report.finishedAtISO}.${leak.queueId}`;
+        const value = JSON.stringify({
+          queueId: leak.queueId,
+          driveFileId: leak.driveFileId,
+          driveFileName: leak.driveFileName,
+          outcome: leak.outcome,
+          finishedAtISO: report.finishedAtISO,
+          byUser: report.byUser,
+        });
+        await dbi.setAppSetting(key, value);
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        "[driveConnectorPlan] failed to stamp untitled-leak warnings",
+        e,
+      );
     }
   }
 
@@ -378,24 +496,24 @@ export async function applyConnectorReport(
   // failures here don't throw because the queue updates above are the
   // truth-of-record.
   try {
-    await db.setAppSetting(CONNECTOR_LAST_RUN_KEYS.atISO, report.finishedAtISO);
-    await db.setAppSetting(
+    await dbi.setAppSetting(CONNECTOR_LAST_RUN_KEYS.atISO, report.finishedAtISO);
+    await dbi.setAppSetting(
       CONNECTOR_LAST_RUN_KEYS.pushed,
       String(summary.pushed),
     );
-    await db.setAppSetting(
+    await dbi.setAppSetting(
       CONNECTOR_LAST_RUN_KEYS.skipped,
       String(summary.skipped),
     );
-    await db.setAppSetting(
+    await dbi.setAppSetting(
       CONNECTOR_LAST_RUN_KEYS.failed,
       String(summary.failed),
     );
-    await db.setAppSetting(
+    await dbi.setAppSetting(
       CONNECTOR_LAST_RUN_KEYS.scanned,
       String(summary.scanned),
     );
-    await db.setAppSetting(CONNECTOR_LAST_RUN_KEYS.byUser, report.byUser);
+    await dbi.setAppSetting(CONNECTOR_LAST_RUN_KEYS.byUser, report.byUser);
   } catch (e) {
     // eslint-disable-next-line no-console
     console.warn("[driveConnectorPlan] failed to stamp run summary", e);

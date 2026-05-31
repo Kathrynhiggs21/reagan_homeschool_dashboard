@@ -284,3 +284,23 @@ This single bug explains BOTH the 63 "parent is not a folder" failures we saw ac
 - [x] Updated 5 placeholder URLs in `drivePushDedupe.test.ts` to real-looking values
 - [x] Added 6 new vitest specs in `server/drivePushPlaceholderGuard.test.ts` covering the 4 historical URL shapes, mid-path `...`, whitespace, and a real-looking URL passing through
 - [x] Verified: 12/12 dedupe+guard tests passing; full suite 4454/4524 (70 failures all pre-existing, unrelated)
+
+
+## v3.26 — Drainer regression-proofing + sanity-check schedule [DONE 2026-05-31]
+
+- [x] **Drainer `--json` contract test** (`server/driveDrainerContract.test.ts`, 4 specs): regex-asserts that `ensureChildFolder` and `ensureHubRoot` in `scripts/drive-connector-drainer.mjs` use `--json` (flat body) and NEVER pass a `requestBody` wrapper inside `--params`. The v3.25 bug shape would fail this test loudly.
+- [x] **Untitled-leak detector in `applyConnectorReport`** (`server/_lib/driveConnectorPlan.ts`): added `driveFileName?: string` to the `pushed` and `skipped` outcome variants of `ConnectorReport`; when a report row arrives with `driveFileName` matching `isUntitledLeakName(...)` (case-insensitive, tolerates whitespace, matches `Untitled` and `Untitled (n)`), `applyConnectorReport` stamps a warning row to `app_settings` under `drive.connector.warnings.untitledLeak.<finishedAtISO>.<queueId>`. Best-effort write — a stamp failure cannot abort the queue update.
+- [x] **Drainer forwards `driveFileName`** in pushed/skipped outcomes so the detector sees it.
+- [x] **Mutation schemas** in `server/routers.ts` updated for both `drive.connectorReport` (cookie auth) and `drive.connectorReportWithToken` (drainer-token auth).
+- [x] **Vitest spec for detector** (`server/driveConnectorUntitledLeak.test.ts`, 13 specs): covers (a) `isUntitledLeakName` name-shape matching, (b) warning stamped on pushed leak, (c) warning stamped on skipped leak, (d) no warning for normal names, (e) no warning when name omitted (back-compat), (f) one warning per leaked row in a multi-leak report, (g) ordering: queue mark → warning stamp → summary stamp, (h) stamp failures don't throw out of `applyConnectorReport`.
+- [x] All 76/76 drive-connector tests passing (contract + dedupe + placeholder-guard + untitled-leak).
+- [x] **Manual sanity check** for tomorrow 6:31 AM ET (the scheduled-cron route was blocked — platform allows only one scheduled task per session, and we already own the weekday 6:30 AM email scheduler). Documented as a 30-second check Katy can run from any device:
+
+  ### Sanity check — Mon 2026-06-01 around 6:31 AM ET
+
+  1. **Email landed?** Open Mom's inbox (`marcy.spear@gmail.com`) and look for an email subject containing "Reagan" + "agenda" or "school plan" timestamped around 6:30 AM ET. Confirm PDF attachment is present. Confirm body does NOT contain `cloudfront.net` signed URLs or `/manus-storage/.../...` literals.
+  2. **Scheduler fired?** Run from any sandbox: `manus-config schedule status` and find the entry with `taskUid=iP0L47OuLe9zo7Hh7hY4Kp`. Inspect `lastExecutedAt` — expect a timestamp within the last few minutes (~`2026-06-01T10:30:00Z`).
+  3. **No Untitled leaks?** Visit `https://reagan-homeschool-dashboard.manus.space/admin/drive` (or wherever the Settings card lives) and confirm no new `drive.connector.warnings.untitledLeak.*` rows appeared overnight. Alternatively SQL: `SELECT k FROM app_settings WHERE k LIKE 'drive.connector.warnings.untitledLeak.%' ORDER BY k DESC LIMIT 5;`.
+  4. **Drainer queue clean?** Same admin page, or SQL: `SELECT status, COUNT(*) FROM drive_push_queue GROUP BY status;`. Expect `failed = 0`.
+
+  If any of the four fails, the v3.25/v3.26 fixes need a follow-up. If all four pass, the rebuild is fully verified live.
