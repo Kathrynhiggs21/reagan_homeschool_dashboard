@@ -16,6 +16,7 @@ import CalendarSyncCard from "@/components/CalendarSyncCard";
 import ApprovalsAdminCard from "@/components/ApprovalsAdminCard";
 import RunbooksAdminCard from "@/components/RunbooksAdminCard";
 import ConnectorPushCard from "@/components/ConnectorPushCard";
+import ConnectorWarningsCard from "@/components/ConnectorWarningsCard";
 import AppointmentsCardLite from "@/components/AppointmentsCardLite";
 import SummerModeSettingsCard from "@/components/SummerModeSettingsCard";
 import CatchUpQueueSettingsCard from "@/components/CatchUpQueueSettingsCard";
@@ -141,6 +142,11 @@ export default function Settings() {
       {/* v3.21 (2026-05-31) — Drive Connector status + drain command.
           Sandbox-only mirror path; admin-only display. */}
       <ConnectorPushCard />
+
+      {/* v3.27 (2026-05-31) — Surface Untitled-leak warnings stamped
+          by `applyConnectorReport` so admins see + dismiss them without
+          dropping into SQL. */}
+      <ConnectorWarningsCard />
 
       {/* Runbooks — meta admin tool below the 5 user-facing tabs.
           Self-hides when registry is empty. */}

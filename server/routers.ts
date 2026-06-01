@@ -5065,6 +5065,62 @@ export const appRouter = router({
       return readLastConnectorRun();
     }),
     /**
+     * v3.27 (2026-05-31) — List recent Untitled-leak warnings stamped
+     * by `applyConnectorReport`. Returns rows in reverse-chronological
+     * order (newest first). Each row is parsed from the JSON value of
+     * an `app_settings` key matching `drive.connector.warnings.untitledLeak.*`.
+     * Admin-only.
+     */
+    listConnectorWarnings: adminProcedure
+      .input(z.object({ limit: z.number().int().min(1).max(200).optional() }).optional())
+      .query(async ({ input }) => {
+        const limit = input?.limit ?? 50;
+        const rawRows = await db.listAppSettings("drive.connector.warnings.untitledLeak.");
+        // v3.27: `setAppSetting(key, null)` (used by clearConnectorWarning)
+        // sets the row's value to NULL rather than deleting it, so we treat
+        // null-value rows as dismissed and exclude them from the response.
+        const rows = rawRows.filter((r) => r.value !== null && r.value !== "");
+        const parsed = rows
+          .map((r) => {
+            let parsed: Record<string, unknown> | null = null;
+            try {
+              parsed = r.value ? (JSON.parse(r.value) as Record<string, unknown>) : null;
+            } catch {
+              parsed = null;
+            }
+            return {
+              key: r.key,
+              raw: r.value,
+              queueId: typeof parsed?.queueId === "number" ? (parsed.queueId as number) : null,
+              driveFileId: typeof parsed?.driveFileId === "string" ? (parsed.driveFileId as string) : null,
+              driveFileName: typeof parsed?.driveFileName === "string" ? (parsed.driveFileName as string) : null,
+              targetFolder: typeof parsed?.targetFolder === "string" ? (parsed.targetFolder as string) : null,
+              status: typeof parsed?.status === "string" ? (parsed.status as string) : null,
+              atISO: typeof parsed?.atISO === "string" ? (parsed.atISO as string) : null,
+            };
+          })
+          .sort((a, b) => b.key.localeCompare(a.key))
+          .slice(0, limit);
+        return { warnings: parsed, total: rows.length };  // total = active (non-null) rows after dismiss filter
+      }),
+    /**
+     * v3.27 (2026-05-31) — Dismiss a single warning row by its full
+     * `app_settings.key`. Admin-only. Idempotent: dismissing an absent
+     * key is a no-op success.
+     */
+    clearConnectorWarning: adminProcedure
+      .input(z.object({ key: z.string().min(1).max(512) }))
+      .mutation(async ({ input }) => {
+        if (!input.key.startsWith("drive.connector.warnings.untitledLeak.")) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "key must be a drive.connector.warnings.untitledLeak.* row",
+          });
+        }
+        await db.setAppSetting(input.key, null);
+        return { dismissed: input.key };
+      }),
+    /**
      * v3.23 (2026-05-31) — Mint a short-lived signed drainer token.
      * Admin-only. Returns the opaque token + matching exp so the
      * Settings card can render it in the copy-paste command line.
