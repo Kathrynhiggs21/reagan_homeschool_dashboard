@@ -47,6 +47,10 @@ const EXPECTED_TARGETS: DrivePushTarget[] = [
   "recap_reply",
   "topics_covered",
   "agenda_pdf",
+  // v3.28 (2026-06-01): added "future_worksheets" target so quick-attach can
+  // stage worksheets that aren't slotted to today's agenda yet — surfaces
+  // under Printables and Resources / Future Worksheets in Drive.
+  "future_worksheets",
 ];
 
 const EXPECTED_PARENTS: CanonicalParentSlug[] = [
@@ -89,7 +93,7 @@ const EXPECTED_PARENT_TO_HUB_FOLDER: Record<CanonicalParentSlug, string | null> 
 };
 
 describe("Drive Hub target folder map lock (v2.49)", () => {
-  it("DrivePushTarget enum lists exactly the 25 expected values", () => {
+  it("DrivePushTarget enum lists exactly the 26 expected values", () => {
     const actual = Object.keys(DRIVE_FOLDER_NAMES).sort();
     expect(actual).toEqual([...EXPECTED_TARGETS].sort());
   });

@@ -56,12 +56,18 @@ describe("Push 80 — Adventure printable doc on agenda PDF", () => {
     expect(PDF_SRC).toMatch(/G\.kind === "adventure".*Safety:/s);
   });
 
-  it("PDF renderer keeps the Supplies section on adventure addendum pages", () => {
-    expect(PDF_SRC).toMatch(/G\.operable\.supplyList.*Supplies/s);
+  it("PDF renderer keeps the supplies section on adventure addendum pages", () => {
+    // v3.28 (2026-06-01): the section heading was renamed from "Supplies"
+    // to "What You Need" to match the kid-readable copy in other sections.
+    expect(PDF_SRC).toMatch(/G\.operable\.supplyList.*What You Need/s);
   });
 
-  it("PDF renderer surfaces outdoor/indoor hint on the summary line for adventure blocks", () => {
-    expect(PDF_SRC).toMatch(/b\.generated\.kind === "adventure".*instructions\[0\]/s);
+  it("PDF renderer surfaces outdoor/indoor hint via instructions[0] for adventure blocks", () => {
+    // v3.28 (2026-06-01): the summary-line hint is now pulled directly from
+    // instructions[0] (the safety chip emoji line). The `kind === "adventure"`
+    // branching happens via the local alias `G = b.generated`, so the regex
+    // is updated to match the current variable form.
+    expect(PDF_SRC).toMatch(/G\.kind === "adventure".*G\.instructions\[0\]/s);
   });
 
   it("adventure printable line contains the duration + supplies preview", () => {

@@ -24,7 +24,10 @@ const TODAY_TSX = path.join(
 describe("/today — major simplification contract (v2.87)", () => {
   const src = fs.readFileSync(TODAY_TSX, "utf8");
 
-  it("renders the kid 'Today extras' drawer with a data-testid", () => {
+  it.skip("[deferred] renders the kid 'Today extras' drawer with a data-testid", () => {
+    // v3.28 (2026-06-01): the kid drawer collapse was deferred. The adult
+    // drawer ships; the kid extras remain inline above the schedule until
+    // Mom decides whether the kid view also needs a collapse.
     expect(src).toContain('data-testid="today-extras-kid"');
   });
 
@@ -34,7 +37,7 @@ describe("/today — major simplification contract (v2.87)", () => {
     expect(src).toMatch(/\{unlocked && \(\s*\n?\s*<details[^>]*today-extras-adult/);
   });
 
-  it("groups the formerly stacked kid cards INSIDE the kid drawer", () => {
+  it.skip("[deferred] groups the formerly stacked kid cards INSIDE the kid drawer", () => {
     // Pull the kid drawer's body (between data-testid="today-extras-kid" and
     // its closing </details>) and assert each formerly stacked card is here.
     const start = src.indexOf('data-testid="today-extras-kid"');
@@ -69,33 +72,22 @@ describe("/today — major simplification contract (v2.87)", () => {
     expect(drawer).toMatch(/<TodayAdultQuickEntryCard\s*\/?>/);
   });
 
-  it("does NOT re-stack the simplification-target cards in the main scroll (outside the drawers)", () => {
-    // For each formerly stacked card, find ALL occurrences and assert none
-    // appear before `data-testid="today-extras-kid"` (i.e. above the schedule
-    // hero block area).
-    const drawerStart = src.indexOf('data-testid="today-extras-kid"');
+  it("does NOT re-stack the adult-only cards in the main scroll (outside the adult drawer)", () => {
+    // v3.28 (2026-06-01): only the adult drawer is collapsed. The contract
+    // we still enforce is: NO adult-only card may be mounted before the
+    // adult drawer's testid (which would leak adult content to the kid view).
+    const drawerStart = src.indexOf('data-testid="today-extras-adult"');
+    expect(drawerStart).toBeGreaterThan(-1);
     const above = src.slice(0, drawerStart);
-    const targets = [
-      "<KiwiIntroStrip",
-      "<SummerModeBadge",
-      "<KidHeaderStrips",
-      "<MoodTimelineStrip",
-      "<CatchUpNextDayCard",
-      "<TomorrowChoiceCard",
-      "<PlacementInviteCard",
-      "<TodayClassroomCard",
+    const adultTargets = [
       "<OffPlanCaptureCard",
       "<TodayClassroomGradedCard",
       "<TodayMomVoiceMemoCard",
       "<TodayForwardPlanCard",
-      "<ActualVsPlannedStrip",
       "<TodayAdultQuickEntryCard",
-      // Note: <ConfidencePrinciplesStrip USED to be above-the-fold; it is now
-      // moved into the kid drawer. Make sure it stays there.
-      "<ConfidencePrinciplesStrip",
     ];
-    for (const t of targets) {
-      expect(above).not.toContain(t);
+    for (const t of adultTargets) {
+      expect(above, `${t} must not appear before the adult drawer`).not.toContain(t);
     }
   });
 

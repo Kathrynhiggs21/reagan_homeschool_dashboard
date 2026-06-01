@@ -30,8 +30,12 @@ describe("TodayForwardPlanCard wiring", () => {
     );
   });
 
-  it("Today.tsx mounts the card behind the unlocked gate", () => {
+  it("Today.tsx mounts the card inside the {unlocked && (...)} drawer", () => {
+    // v3.28 (2026-06-01): adult cards moved into a single drawer slice.
     const src = readFileSync(todayPath, "utf8");
-    expect(src).toMatch(/\{unlocked\s*&&\s*<TodayForwardPlanCard\s*\/>\}/);
+    const gateIdx = src.indexOf("{unlocked && (");
+    expect(gateIdx).toBeGreaterThan(0);
+    const slice = src.slice(gateIdx, gateIdx + 8000);
+    expect(slice).toContain("<TodayForwardPlanCard");
   });
 });

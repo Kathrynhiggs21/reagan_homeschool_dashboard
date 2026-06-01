@@ -65,17 +65,29 @@ describe("v2.14 TodayAdultQuickEntryCard wiring", () => {
     );
   });
 
-  it("Today.tsx mounts the card adult-only via {unlocked && <TodayAdultQuickEntryCard ...>}", () => {
-    expect(TODAY).toMatch(
-      /\{unlocked\s*&&\s*<TodayAdultQuickEntryCard\s*\/>\}/,
-    );
+  it("Today.tsx mounts the card adult-only inside the {unlocked && ...} drawer", () => {
+    // v3.28 (2026-06-01): the adult-only cards moved inside a single
+    // {unlocked && (<details>...</details>)} drawer rather than each having
+    // its own per-card unlocked gate. The semantic contract still holds:
+    // <TodayAdultQuickEntryCard /> must mount inside an unlocked-gated slice.
+    const gateIdx = TODAY.indexOf("{unlocked && (");
+    expect(gateIdx).toBeGreaterThan(0);
+    const slice = TODAY.slice(gateIdx, gateIdx + 8000);
+    expect(slice).toContain("<TodayAdultQuickEntryCard");
   });
 
   it("the kid view (no unlocked gate) does NOT render the card", () => {
-    // Verify there is no unguarded mount line elsewhere.
-    const unguarded =
-      /(?:^|\n)\s*<TodayAdultQuickEntryCard\s*\/>/m.test(TODAY) === false ||
-      /\{unlocked\s*&&\s*<TodayAdultQuickEntryCard\s*\/>\}/.test(TODAY);
-    expect(unguarded).toBe(true);
+    // The card must NOT appear outside any {unlocked && (...)} gate.
+    // Find every mount and ensure each lives inside an unlocked-gated slice.
+    const mounts = [...TODAY.matchAll(/<TodayAdultQuickEntryCard\b/g)];
+    expect(mounts.length).toBeGreaterThan(0);
+    for (const m of mounts) {
+      const mIdx = m.index ?? 0;
+      const priorGate = TODAY.lastIndexOf("{unlocked && (", mIdx);
+      expect(priorGate).toBeGreaterThan(0);
+      // The mount must be within ~8000 chars of the gate opening; if it's
+      // further, it's almost certainly outside the gated slice.
+      expect(mIdx - priorGate).toBeLessThan(8000);
+    }
   });
 });

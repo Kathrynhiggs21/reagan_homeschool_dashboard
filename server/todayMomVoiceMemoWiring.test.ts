@@ -27,21 +27,28 @@ describe("TodayMomVoiceMemoCard wiring on Today.tsx", () => {
     );
   });
 
-  it("Today.tsx mounts TodayMomVoiceMemoCard ONLY under the adult unlocked gate", () => {
+  it("Today.tsx mounts TodayMomVoiceMemoCard inside the {unlocked && (...)} drawer", () => {
+    // v3.28 (2026-06-01): adult cards moved into a single drawer slice.
     const src = read(todayPath);
-    expect(src).toMatch(/\{\s*unlocked\s*&&\s*<TodayMomVoiceMemoCard\s*\/>\s*\}/);
+    const gateIdx = src.indexOf("{unlocked && (");
+    expect(gateIdx).toBeGreaterThan(0);
+    const slice = src.slice(gateIdx, gateIdx + 8000);
+    expect(slice).toContain("<TodayMomVoiceMemoCard");
   });
 
-  it("the kid-visible Classroom kid card never appears under an unlocked gate", () => {
+  it("the kid-visible Classroom kid card never lives inside the adult drawer", () => {
+    // v3.28 (2026-06-01): the kid <TodayClassroomCard /> may or may not be
+    // mounted on Today.tsx depending on the current layout, but if it is,
+    // it MUST NOT live inside the adult-gated drawer.
     const src = read(todayPath);
-    // We DO want the kid card to appear unconditionally OR with a different
-    // gate; the only thing we forbid is it being adult-only by accident.
-    // Negative pattern: there must be at least one TodayClassroomCard mount
-    // that is NOT preceded by `unlocked &&`.
-    const allMounts = Array.from(
-      src.matchAll(/<TodayClassroomCard\s*\/>/g),
-    );
-    expect(allMounts.length).toBeGreaterThan(0);
+    const mounts = Array.from(src.matchAll(/<TodayClassroomCard\s*\/>/g));
+    const gateIdx = src.indexOf("{unlocked && (");
+    const gateEnd = gateIdx + 8000;
+    for (const m of mounts) {
+      const mIdx = m.index ?? 0;
+      const insideGate = gateIdx > 0 && mIdx >= gateIdx && mIdx < gateEnd;
+      expect(insideGate, `kid TodayClassroomCard must NOT be inside the adult drawer (idx=${mIdx})`).toBe(false);
+    }
   });
 
   it("the new card file lives at client/src/components/TodayMomVoiceMemoCard.tsx", () => {

@@ -93,12 +93,15 @@ describe("v2.16 — FreeFormPromptPanel wiring", () => {
     expect(src).toMatch(/agendaEditor\.snapshot\.invalidate/);
   });
 
-  it("AgendaEditor.tsx imports and mounts <FreeFormPromptPanel forwarding date", () => {
-    const src = read(EDITOR_PATH);
-    expect(src).toMatch(/from\s+["']@\/components\/FreeFormPromptPanel["']/);
-    expect(src).toMatch(/import\s*\{\s*FreeFormPromptPanel\s*\}/);
-    expect(src).toMatch(/<FreeFormPromptPanel\b/);
-    expect(src).toMatch(/<FreeFormPromptPanel\s+date=\{\s*date\s*\}/);
+  it("FreeFormPromptPanel component file ships at the expected path (mount in AgendaEditor deferred)", () => {
+    // v3.28 (2026-06-01): the AgendaEditor was simplified per Mom's
+    // homepage cleanup; FreeFormPromptPanel.tsx still ships and the tRPC
+    // procedures are still wired, but it is not currently mounted in
+    // AgendaEditor.tsx. Re-mounting is a one-line change if the panel
+    // becomes useful again.
+    const panelSrc = read(PANEL_PATH);
+    expect(panelSrc).toMatch(/export\s+function\s+FreeFormPromptPanel/);
+    expect(panelSrc).toMatch(/export\s+default\s+FreeFormPromptPanel/);
   });
 
   it("routers.ts still gates plans.aiPropose + plans.aiApplyProposal with familyAdminProcedure", () => {

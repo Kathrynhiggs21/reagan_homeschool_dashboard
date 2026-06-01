@@ -54,10 +54,14 @@ describe("Push 51 — Recap request admin surface", () => {
     expect(slice).toMatch(/length: 16/);
   });
 
-  it("Settings.tsx mounts RecapRequestCard above DailyRecapCard inside the recap tab", () => {
-    const idx = settingsSrc.indexOf("TabsContent value=\"recap\"");
+  it("Settings.tsx mounts RecapRequestCard above DailyRecapCard inside the email tab", () => {
+    // v3.28 (2026-06-01): the standalone Recap tab was folded into the
+    // Email tab so all email-related controls (recipients, agenda toggle,
+    // recap, catch-up) live in one place. RecapRequestCard still mounts
+    // immediately above DailyRecapCard.
+    const idx = settingsSrc.indexOf("TabsContent value=\"email\"");
     expect(idx).toBeGreaterThan(0);
-    const slice = settingsSrc.slice(idx, idx + 400);
+    const slice = settingsSrc.slice(idx, idx + 800);
     const r = slice.indexOf("<RecapRequestCard");
     const d = slice.indexOf("<DailyRecapCard");
     expect(r).toBeGreaterThan(0);

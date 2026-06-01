@@ -71,8 +71,12 @@ describe("Mood timeline strip — push 41", () => {
     expect(slice).toContain("db.buildMoodTimelineForDate(input.date, input.binCount)");
   });
 
-  it("Today.tsx mounts TodayMoodTimelineStrip only when adult is unlocked", () => {
-    expect(todaySrc).toMatch(/\{unlocked && <TodayMoodTimelineStrip \/>\}/);
+  it("Today.tsx mounts TodayMoodTimelineStrip inside the {unlocked && (...)} drawer", () => {
+    // v3.28 (2026-06-01): adult cards moved into a single drawer slice.
+    const gateIdx = todaySrc.indexOf("{unlocked && (");
+    expect(gateIdx).toBeGreaterThan(0);
+    const slice = todaySrc.slice(gateIdx, gateIdx + 8000);
+    expect(slice).toContain("<TodayMoodTimelineStrip");
   });
 
   it("strip uses listening.moodTimeline and hides when no relevant chunks", () => {

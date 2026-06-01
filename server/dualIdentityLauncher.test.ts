@@ -20,8 +20,13 @@ describe("Apps page \u2014 per-app dual identity", () => {
     expect(src).toContain("Open as Dad");
   });
 
-  it("guards the dad launcher behind unlocked + dadEmail + isGoogleUrl", () => {
-    expect(src).toMatch(/unlocked && dadEmail && isGoogleUrl\(a\.url\)/);
+  it("guards the dad launcher behind dadEmail + reaganEmail + isGoogleUrl", () => {
+    // v3.28 (2026-06-01): the gate dropped the `unlocked` prefix because
+    // the dad launcher is now intentionally always discoverable when both
+    // identities are configured (it sits as a small overlay button on the
+    // card, not a hidden control). The gate now requires both Google
+    // emails and a Google-host URL.
+    expect(src).toMatch(/dadEmail && reaganEmail && isGoogleUrl\(a\.url\)/);
   });
 
   it("uses withGoogleSsoHint for both identities (Phase 8 upgrade)", () => {

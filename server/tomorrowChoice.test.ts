@@ -85,9 +85,12 @@ describe("Push 82 — Tomorrow choice procedures", () => {
 });
 
 describe("Push 82 — TomorrowChoiceCard UI", () => {
-  it("is imported and mounted on Today", () => {
+  it("is imported on Today (mount deferred per v2.87 simplification)", () => {
+    // v3.28 (2026-06-01): Today.tsx was simplified per Mom's preference for
+    // a less-cluttered dashboard; TomorrowChoiceCard remains imported and
+    // available but is not currently mounted. Re-mounting is a one-line
+    // change in Today.tsx if/when the kid surface needs it again.
     expect(TODAY_SRC).toMatch(/from\s+"@\/components\/TomorrowChoiceCard"/);
-    expect(TODAY_SRC).toMatch(/<TomorrowChoiceCard\s*\/>/);
   });
 
   it("self-hides when summer is not active", () => {

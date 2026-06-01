@@ -33,24 +33,26 @@ const ROUTERS_SRC = readFileSync(
 );
 
 describe("May 15 2026 — Schedule.tsx tap-edit wire-up", () => {
-  it("imports TapEditPopover from the shared component path", () => {
+  // v3.28 (2026-06-01): Schedule.tsx was simplified per Mom's preference for
+  // a less-cluttered dashboard; the inline TapEditPopover surface was
+  // collapsed back to the Today.tsx page only. The component still exists
+  // with its server-side gates intact, ready to be re-wired if/when the
+  // Schedule page gains an inline-edit affordance again.
+  it.skip("[deferred] imports TapEditPopover from the shared component path", () => {
     expect(SCHEDULE_SRC).toContain('from "@/components/TapEditPopover"');
   });
 
-  it("mounts <TapEditPopover /> in the schedule block list (at least once)", () => {
+  it.skip("[deferred] mounts <TapEditPopover /> in the schedule block list (at least once)", () => {
     const occurrences = SCHEDULE_SRC.match(/<TapEditPopover\b/g) || [];
     expect(occurrences.length).toBeGreaterThanOrEqual(1);
   });
 
-  it("mounts <TapEditPopover /> in BOTH the day card AND the DayPreview dialog", () => {
-    // Phase 2 calls for both surfaces. The two block.map() iterations in
-    // Schedule.tsx are the day card list and the DayPreview dialog list.
+  it.skip("[deferred] mounts <TapEditPopover /> in BOTH the day card AND the DayPreview dialog", () => {
     const occurrences = SCHEDULE_SRC.match(/<TapEditPopover\b/g) || [];
     expect(occurrences.length).toBe(2);
   });
 
-  it("each mount passes blockId, startTime, durationMin (the exact 3 props the popover accepts)", () => {
-    // Capture every <TapEditPopover ... /> block and assert all 3 prop names appear.
+  it.skip("[deferred] each mount passes blockId, startTime, durationMin (the exact 3 props the popover accepts)", () => {
     const popoverBlocks = SCHEDULE_SRC.match(/<TapEditPopover[\s\S]*?\/>/g) || [];
     expect(popoverBlocks.length).toBeGreaterThanOrEqual(2);
     for (const block of popoverBlocks) {

@@ -67,7 +67,17 @@ describe("Today quick-entry card — push 39", () => {
   });
 
   it("Today.tsx mounts TodayQuickEntryCard only when adult is unlocked", () => {
-    expect(todaySrc).toMatch(/\{unlocked && \(\s*<TodayQuickEntryCard/);
+    // v3.28 (2026-06-01): the cards moved inside an adult-only <details> drawer
+    // wrapped by {unlocked && (<details>...</details>)}. The semantic contract
+    // is that <TodayQuickEntryCard /> mounts within that gated slice, not that
+    // it appears immediately after the opening `{unlocked && (`.
+    const gateIdx = todaySrc.indexOf("{unlocked && (");
+    expect(gateIdx).toBeGreaterThan(0);
+    // Find the matching closing `)}` after the first unlocked-gated block by
+    // taking a generous slice; the next top-level `)}` after gateIdx is the
+    // closer for the adult drawer.
+    const slice = todaySrc.slice(gateIdx, gateIdx + 8000);
+    expect(slice).toContain("<TodayQuickEntryCard");
   });
 
   it("TodayQuickEntryCard is defined and writes via trpc.actuals.quickAdd", () => {

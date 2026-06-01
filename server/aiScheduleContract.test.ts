@@ -5,10 +5,14 @@ import { join } from "node:path";
 const root = join(__dirname, "..");
 
 describe("AI Schedule Generator wiring", () => {
-  it("Today.tsx mounts AIScheduleGeneratorCard behind the adult unlock", () => {
+  it("Today.tsx mounts AIScheduleGeneratorCard inside the adult drawer", () => {
+    // v3.28 (2026-06-01): adult cards moved into a single drawer slice.
     const src = readFileSync(join(root, "client/src/pages/Today.tsx"), "utf8");
     expect(src).toContain("AIScheduleGeneratorCard");
-    expect(src).toMatch(/unlocked\s*&&\s*\(\s*<AIScheduleGeneratorCard/);
+    const gateIdx = src.indexOf("{unlocked && (");
+    expect(gateIdx).toBeGreaterThan(0);
+    const slice = src.slice(gateIdx, gateIdx + 8000);
+    expect(slice).toContain("<AIScheduleGeneratorCard");
   });
 
   it("plans router exposes aiGenerate and aiCommit", () => {

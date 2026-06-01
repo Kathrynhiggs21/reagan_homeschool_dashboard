@@ -19,13 +19,12 @@ describe("ConfidencePrinciplesStrip contract", () => {
     for (const s of shorts) expect(src).toContain(`short: "${s}"`);
   });
 
-  it("is mounted on Today below the daily tip strip", () => {
+  it("is imported on Today (mount deferred per v2.87 simplification)", () => {
+    // v3.28 (2026-06-01): Today.tsx was simplified per Mom's preference for
+    // a less-cluttered dashboard. ConfidencePrinciplesStrip remains imported
+    // and ready, but is not currently rendered.
     const src = fs.readFileSync(TODAY, "utf8");
     expect(src).toContain("ConfidencePrinciplesStrip");
-    // Must come AFTER DailyTipAndFreshStart in the JSX tree
-    const tipIdx = src.indexOf("<DailyTipAndFreshStart");
-    const stripIdx = src.indexOf("<ConfidencePrinciplesStrip");
-    expect(tipIdx).toBeGreaterThan(0);
-    expect(stripIdx).toBeGreaterThan(tipIdx);
+    expect(src).toMatch(/from\s+"@\/components\/ConfidencePrinciplesStrip"/);
   });
 });

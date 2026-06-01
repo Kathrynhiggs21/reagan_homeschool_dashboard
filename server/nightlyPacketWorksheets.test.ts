@@ -93,18 +93,21 @@ describe("nightly agenda packet — worksheets + answer keys (parsed PDF)", () =
   });
 
   it("renders the adult answer key inline in the PDF", async () => {
+    // v3.28 (2026-06-01): label is rendered as "ANSWER KEY (for adult use only)".
     const r = await buildAgendaPdf(PAYLOAD);
     const text = await extractPdfText(r.pdfBuffer);
     expect(text).toContain("ANSKEY");
-    expect(text).toContain("Answer key (adult)");
+    expect(text).toMatch(/ANSWER KEY/i);
   });
 
   it("renders the worksheet header and lesson page furniture (Materials + Instructions)", async () => {
+    // v3.28 (2026-06-01): section labels are
+    //   "Worksheets & Activities" / "Materials Needed" / "Instructions".
     const r = await buildAgendaPdf(PAYLOAD);
     const text = await extractPdfText(r.pdfBuffer);
-    expect(text).toContain("Worksheet");
-    expect(text).toContain("Materials");
-    expect(text).toContain("Instructions");
+    expect(text).toMatch(/Worksheets?/i);
+    expect(text).toMatch(/Materials/i);
+    expect(text).toMatch(/Instructions/i);
   });
 
   it("packet WITHOUT a lesson does NOT render the worksheet header or answer-key label", async () => {
@@ -112,7 +115,7 @@ describe("nightly agenda packet — worksheets + answer keys (parsed PDF)", () =
     noLesson.blocks[0].lesson = null;
     const r = await buildAgendaPdf(noLesson);
     const text = await extractPdfText(r.pdfBuffer);
-    expect(text).not.toContain("Worksheet");
-    expect(text).not.toContain("Answer key (adult)");
+    expect(text).not.toMatch(/Worksheets?\s*&\s*Activities/i);
+    expect(text).not.toMatch(/ANSWER KEY/i);
   });
 });

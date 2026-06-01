@@ -3,208 +3,164 @@ import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
 /**
- * v2.29 (2026-05-18) — Lock the scheduled-task playbook contract.
+ * v3.28 (2026-06-01) — Lock the v2 (JWT + tRPC) scheduled-task playbook contract.
  *
  * The playbook at references/scheduled-task-playbook.md is the source-of-truth
  * prompt for the Manus AGENT cron that sends Reagan's nightly agenda email and
- * mirrors files into the Google Drive Hub. It MUST stay in sync with the
- * /api/scheduled/* endpoints in server/scheduledSync.ts. If the response shape
- * of /api/scheduled/nightly-agenda-email changes (e.g. pdfDownloadUrl is
- * removed, attachments[] field gets renamed) the playbook needs to change in
- * the same push.
+ * mirrors files into the Google Drive Hub.
  *
- * This file reads the playbook + scheduledSync.ts as plain text and asserts
- * that the load-bearing contract claims still match. It does NOT spin up the
+ * In v2 (2026-05-27 onwards, locked in v3.25/v3.26) the agent stopped using
+ * `/api/scheduled/*` (those endpoints require a CRON_SECRET that the platform
+ * does not inject into agent-cron sessions) and now uses the public tRPC
+ * routes with a long-lived JWT cookie that Mom generated from her own
+ * browser session.
+ *
+ * This file reads the playbook as plain text and asserts that the
+ * load-bearing v2 contract claims still match. It does NOT spin up the
  * server.
  */
 
 const ROOT = "/home/ubuntu/reagan_homeschool_dashboard";
 const PLAYBOOK = join(ROOT, "references", "scheduled-task-playbook.md");
-const SYNC = join(ROOT, "server", "scheduledSync.ts");
 
 function readPlaybook(): string {
   expect(existsSync(PLAYBOOK)).toBe(true);
   return readFileSync(PLAYBOOK, "utf8");
 }
 
-function readSync(): string {
-  expect(existsSync(SYNC)).toBe(true);
-  return readFileSync(SYNC, "utf8");
-}
-
-describe("scheduled-task playbook contract", () => {
+describe("scheduled-task playbook v2 (JWT + tRPC) contract", () => {
   it("playbook file exists at the expected path", () => {
     expect(existsSync(PLAYBOOK)).toBe(true);
   });
 
+  it("declares it is the v2 playbook (JWT + tRPC)", () => {
+    const t = readPlaybook();
+    expect(t).toMatch(/v2.*JWT.*tRPC|JWT.*tRPC/i);
+  });
+
   it("references both Job A and Job B by name", () => {
     const t = readPlaybook();
-    expect(t).toMatch(/Job A — Nightly agenda email/);
-    expect(t).toMatch(/Job B — (Continuous )?Drive Hub mirror/);
+    expect(t).toMatch(/JOB A.*NIGHTLY AGENDA EMAIL|Job A — Nightly agenda email/i);
+    expect(t).toMatch(/JOB B.*DRIVE HUB MIRROR|Job B — (Continuous )?Drive Hub mirror/i);
   });
 
-  it("Job A targets the nightly-agenda-email endpoint", () => {
+  it("documents the JWT app_session_id cookie auth mechanism", () => {
     const t = readPlaybook();
-    expect(t).toContain("/api/scheduled/nightly-agenda-email");
-    expect(t).toContain("/api/scheduled/nightly-agenda-email/result");
+    expect(t).toContain("app_session_id");
+    expect(t).toMatch(/JWT/);
+    // Cookie must be passed via -b flag in curl examples
+    expect(t).toMatch(/-b\s+["']app_session_id=/);
   });
 
-  it("Job B targets the four drive endpoints", () => {
+  it("expires the JWT at a documented future date", () => {
     const t = readPlaybook();
-    expect(t).toContain("/api/scheduled/drive-folder-map");
-    expect(t).toContain("/api/scheduled/drive-folder-map/result");
-    expect(t).toContain("/api/scheduled/drive-push/pending");
-    expect(t).toContain("/api/scheduled/drive-push/result");
-    expect(t).toContain("/api/scheduled/drive-snapshot");
+    // The current cookie expires April 2027; this test pins that we keep
+    // the documentation honest about expiry rather than letting it silently
+    // become a dead token.
+    expect(t).toMatch(/[Ee]xpire/);
+    expect(t).toMatch(/202[6-9]|20[3-9]\d/);
   });
 
-  it("instructs the agent to use pdfDownloadUrl (not pdfUrl) for the email body", () => {
+  it("warns NOT to use /api/scheduled/* (CRON_SECRET unavailable)", () => {
     const t = readPlaybook();
-    // Must explicitly tell the agent to use pdfDownloadUrl
-    expect(t).toMatch(/pdfDownloadUrl/);
-    // And explicitly warn against pdfUrl in the email body
-    expect(t).toMatch(/pdfDownloadUrl[^\n]*not[^\n]*pdfUrl|never[^\n]*pdfUrl/i);
+    expect(t).toMatch(/\/api\/scheduled\/\*/);
+    expect(t).toMatch(/CRON_SECRET|broken|do not use|Do NOT use/i);
   });
 
-  it("instructs the agent to decode contentBase64 to /tmp file paths for Gmail MCP", () => {
+  it("uses /api/trpc/* routes for all dashboard calls", () => {
     const t = readPlaybook();
-    expect(t).toContain("contentBase64");
-    expect(t).toContain("/tmp/agenda-");
-    // Gmail MCP attachments are file paths, not base64
-    expect(t).toMatch(/file path|absolute file path/);
+    expect(t).toContain("/api/trpc/");
   });
 
-  it("explains Gmail MCP accepts plain content (not htmlBody)", () => {
+  it("Job A fetches via agendaEditor.snapshot tRPC route", () => {
     const t = readPlaybook();
-    expect(t).toMatch(/gmail_send_messages/);
-    expect(t).toMatch(/plain[- ]?text|content/);
-    // Calls out that htmlBody is not a separate field
-    expect(t).toMatch(/does not accept .*htmlBody|not[^\n]*htmlBody/i);
+    expect(t).toContain("agendaEditor.snapshot");
   });
 
-  it("acks the agenda email by recordId + status", () => {
+  it("Job A skips the email on Sunday and handles Friday/Saturday rollover", () => {
     const t = readPlaybook();
-    expect(t).toContain("recordId");
-    expect(t).toMatch(/"status":\s*"sent"/);
+    expect(t).toMatch(/Friday/);
+    expect(t).toMatch(/Saturday/);
+    expect(t).toMatch(/Sunday/);
+    expect(t).toMatch(/SKIP|skip/);
   });
 
-  it("warns NEVER to recreate the 9 canonical top-level Drive folders", () => {
+  it("Job A sends to Mom's two emails (spear.cpt + marcy.spear)", () => {
     const t = readPlaybook();
-    expect(t).toMatch(/never recreate the 9 (canonical )?top-level folders|Never recreate the 9/i);
+    expect(t).toContain("spear.cpt@gmail.com");
+    expect(t).toContain("marcy.spear@gmail.com");
   });
 
-  it("documents at least 7 of the 9 canonical top-level Drive parent names", () => {
+  it("Job A handles empty-blocks fallback with a notice email", () => {
+    const t = readPlaybook();
+    expect(t).toMatch(/blocks array is empty|empty blocks/i);
+    expect(t).toMatch(/notice|No plan yet/i);
+  });
+
+  it("Job B documents the Hub root folder ID", () => {
+    const t = readPlaybook();
+    expect(t).toContain("1r3bJacPLJN7VHI8y72rcx1-GRxspqo1r");
+  });
+
+  it("Job B documents the target folder map (at least 6 named folders)", () => {
     const t = readPlaybook();
     const expected = [
-      "Admin and Homeschool Records",
-      "Adventures and Enrichment",
-      "Assignments and Work",
-      "Curriculum and Standards",
-      "Daily Operations",
-      "Inbox (Unsorted)",
-      "Printables and Resources",
-      "Progress and Reports",
-      "Todo",
+      "Finished Work",
+      "Worksheets",
+      "Apps & Tools",
+      "Daily Schedule",
+      "Printables",
+      "Journal",
+      "Notebook",
+      "Bookshelf",
+      "Adventures",
+      "Curriculum Checklist",
     ];
     const hit = expected.filter((p) => t.includes(p));
-    expect(hit.length).toBeGreaterThanOrEqual(7);
+    expect(hit.length).toBeGreaterThanOrEqual(6);
   });
 
-  it("documents the drive-push/pending enrichment fields the agent uses", () => {
+  it("Job B uses submissions.list, notebookAttachments.list, printables.today routes", () => {
     const t = readPlaybook();
-    expect(t).toContain("canonicalParentFolderId");
-    expect(t).toContain("subfolderName");
-    expect(t).toContain("targetSubpath");
+    expect(t).toContain("submissions.list");
+    expect(t).toContain("notebookAttachments.list");
+    expect(t).toContain("printables.today");
   });
 
-  it("documents the drive-push/result status enum", () => {
+  it("Job B documents the daily snapshot folder pattern", () => {
     const t = readPlaybook();
-    expect(t).toContain('"pushed"');
-    expect(t).toContain('"failed"');
-    // skipped is the third valid status
-    expect(t).toMatch(/skipped/);
+    expect(t).toMatch(/Snapshots\//);
+    expect(t).toMatch(/snapshot\.json/);
   });
 
-  it("explicitly says cron auth is automatic (no bearer token)", () => {
+  it("Job B prunes old snapshots (retention policy)", () => {
     const t = readPlaybook();
-    expect(t).toMatch(/sdk\.authenticateRequest|cron caller/i);
-    expect(t).toMatch(/no bearer token|automatic|never[^\n]*Bearer/i);
+    expect(t).toMatch(/[Pp]rune|retention|last \d+ days/);
   });
 
-  it("uses $SCHEDULED_TASK_ENDPOINT_BASE and $SCHEDULED_TASK_COOKIE env vars", () => {
+  it("documents that Drive ops use the gws CLI", () => {
     const t = readPlaybook();
-    expect(t).toContain("$SCHEDULED_TASK_ENDPOINT_BASE");
-    expect(t).toContain("$SCHEDULED_TASK_COOKIE");
-    expect(t).toContain("Cookie: app_session_id=$SCHEDULED_TASK_COOKIE");
+    expect(t).toMatch(/gws CLI|gws/);
   });
 
-  it("references both connector UIDs (Gmail + Google Drive)", () => {
+  it("documents the spear.cpt@gmail.com Drive identity for the gws CLI", () => {
     const t = readPlaybook();
-    expect(t).toContain("9444d960-ab7e-450f-9cb9-b9467fb0adda"); // Gmail
-    expect(t).toContain("f8900a57-4bd7-46cc-83a3-5ebd2420a817"); // Google Drive
+    expect(t).toContain("spear.cpt@gmail.com");
   });
 
-  it("defers schedule registration until the dashboard is published", () => {
+  it("uses the published manus.space base URL for tRPC calls", () => {
     const t = readPlaybook();
-    expect(t).toMatch(/manus\.space/);
-    expect(t).toMatch(/deferred|do not register|until[^\n]*publish/i);
+    expect(t).toMatch(/reaganschool\.manus\.space|reagandash[^.]*\.manus\.space/);
   });
 
-  it("includes a paste-ready cron prompt section", () => {
+  it("includes a SKIP CONDITIONS section so the agent doesn't email on weekends", () => {
     const t = readPlaybook();
-    expect(t).toMatch(/Cron prompt|paste-ready/i);
+    expect(t).toMatch(/SKIP CONDITIONS|skip condition/i);
   });
 
-  // ---------- cross-checks against scheduledSync.ts ----------
-  it("scheduledSync.ts still emits pdfDownloadUrl in the nightly-agenda-email response", () => {
-    const t = readSync();
-    expect(t).toContain("pdfDownloadUrl");
-    // Ensure it's the absolute presigned S3 URL contract (cron-agent contract block)
-    expect(t).toMatch(/CRON USES THIS|absolute presigned S3/);
-  });
-
-  it("scheduledSync.ts still emits attachments[] with contentBase64 + kind", () => {
-    const t = readSync();
-    expect(t).toContain("contentBase64");
-    expect(t).toMatch(/kind:\s*"agenda"/);
-    expect(t).toMatch(/kind:\s*"worksheet"/);
-  });
-
-  it("scheduledSync.ts still emits recordId on the agenda email response", () => {
-    const t = readSync();
-    expect(t).toContain("recordId");
-  });
-
-  it("scheduledSync.ts still emits the unchanged short-circuit status", () => {
-    const t = readSync();
-    expect(t).toMatch(/status:\s*"unchanged"/);
-  });
-
-  it("scheduledSync.ts still emits send_ready / resend_ready on the email response", () => {
-    const t = readSync();
-    expect(t).toMatch(/send_ready/);
-    expect(t).toMatch(/resend_ready/);
-  });
-
-  it("scheduledSync.ts still enriches drive-push/pending with canonicalParentFolderId + subfolderName", () => {
-    const t = readSync();
-    expect(t).toContain("canonicalParentFolderId");
-    expect(t).toContain("subfolderName");
-  });
-
-  it("scheduledSync.ts still validates drive-push/result status as pushed|skipped|failed", () => {
-    const t = readSync();
-    expect(t).toMatch(/"pushed",\s*"skipped",\s*"failed"/);
-  });
-
-  it("scheduledSync.ts still mounts all 7 endpoints the playbook references", () => {
-    const t = readSync();
-    expect(t).toMatch(/app\.post\(\s*"\/api\/scheduled\/nightly-agenda-email"/);
-    expect(t).toMatch(/app\.post\(\s*"\/api\/scheduled\/nightly-agenda-email\/result"/);
-    expect(t).toMatch(/app\.get\(\s*"\/api\/scheduled\/drive-folder-map"/);
-    expect(t).toMatch(/app\.post\(\s*"\/api\/scheduled\/drive-folder-map\/result"/);
-    expect(t).toMatch(/app\.get\(\s*"\/api\/scheduled\/drive-push\/pending"/);
-    expect(t).toMatch(/app\.post\(\s*"\/api\/scheduled\/drive-push\/result"/);
-    expect(t).toMatch(/app\.get\(\s*"\/api\/scheduled\/drive-snapshot"/);
+  it("documents how to refresh the JWT if it stops working", () => {
+    const t = readPlaybook();
+    expect(t).toMatch(/JWT|cookie/i);
+    expect(t).toMatch(/dev tools|browser|generate a new|extract/i);
   });
 });

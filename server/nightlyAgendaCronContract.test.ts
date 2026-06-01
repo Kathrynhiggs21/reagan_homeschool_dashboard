@@ -42,12 +42,18 @@ describe("nightly-agenda-email cron contract", () => {
     expect(src).toMatch(/pdfUrl:\s*url/);
   });
 
-  it("the cron-agent contract block is documented inline in the response builder", () => {
-    expect(src).toMatch(/CRON-AGENT CONTRACT/);
+  it("the cron-agent contract is documented inline in the response builder", () => {
+    // v3.28 (2026-06-01): the inline doc was tightened from a verbose
+    //   /* CRON-AGENT CONTRACT ... */ block to terse end-of-line comments
+    //   on each field (e.g. "DEPRECATED for cron; cookie-gated" and
+    //   "CRON USES THIS — absolute presigned S3"). The contract this test
+    //   enforces is unchanged: the response advertises pdfDownloadUrl as
+    //   the cron-safe absolute presigned URL and explicitly deprecates
+    //   pdfUrl as cookie-gated.
     expect(src).toMatch(/pdfDownloadUrl/);
     expect(src).toMatch(/absolute presigned S3/i);
-    // The deprecation note for pdfUrl must say it's cookie-gated / not cron-safe.
     expect(src).toMatch(/cookie-gated|NOT cron-safe/i);
+    expect(src).toMatch(/CRON USES THIS|CRON-AGENT CONTRACT/);
   });
 
   it("falls back gracefully when storageGetSignedUrl fails (does not throw)", () => {

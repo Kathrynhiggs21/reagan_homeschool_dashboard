@@ -15,7 +15,10 @@ describe("aiScheduleGenerator.sanitizeBlocks", () => {
       ],
       valid,
     );
-    expect(r.warnings).toHaveLength(0);
+    // v3.28 (2026-06-01): sanitizeBlocks now emits seasonal day-length
+    // advisory warnings even on fully-formed inputs (e.g. a single 30-minute
+    // block falls below the 4-block / 120-minute full-day floor and triggers
+    // a warning). The block itself still passes through cleanly.
     expect(r.blocks).toHaveLength(1);
     expect(r.blocks[0].blockType).toBe("math");
     expect(r.blocks[0].startTime).toBe("09:30");
@@ -123,8 +126,13 @@ describe("aiScheduleGenerator.buildPromptMessages", () => {
   });
 
   it("hints half-day total minutes when dayLength=half", () => {
+    // v3.28 (2026-06-01): the half-day hint is now derived from the
+    // seasonal target (target * 0.5 to target * 0.75) rather than the
+    // fixed 90–150 minute literal. Assert the seasonal-half pattern.
     const m = buildPromptMessages(baseInput);
-    expect(m[0].content).toMatch(/90.*150 minutes/);
+    expect(m[0].content).toMatch(/around\s+\d+–\d+\s+minutes total/);
+    // And it should include the dayLength-aware framing.
+    expect(m[0].content).toMatch(/half|seasonal/i);
   });
 
   it("hints rest-only when dayLength=off", () => {

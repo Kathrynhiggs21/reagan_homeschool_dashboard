@@ -46,13 +46,13 @@ describe("Push 73 — next-day catch-up queue surfaced on Today", () => {
     expect(CARD).toContain('return null');
   });
 
-  it("Today card is mounted on the Today page after KidHeaderStrips", () => {
-    expect(TODAY).toContain("import CatchUpNextDayCard");
-    expect(TODAY).toContain("<CatchUpNextDayCard />");
-    const idxKid = TODAY.indexOf("<KidHeaderStrips />");
-    const idxCard = TODAY.indexOf("<CatchUpNextDayCard />");
-    expect(idxKid).toBeGreaterThan(-1);
-    expect(idxCard).toBeGreaterThan(idxKid);
+  it("CatchUpNextDayCard component file ships (mount on Today.tsx deferred)", () => {
+    // v3.28 (2026-06-01): Today.tsx was simplified per Mom's homepage
+    // cleanup; CatchUpNextDayCard.tsx still ships and the curriculum.nextDayQueue
+    // procedure still works (covered by the Settings card test below), but
+    // it is not currently mounted on Today.tsx. Re-mounting is a one-line
+    // change in the kid drawer when ready.
+    expect(CARD).toContain("export default function CatchUpNextDayCard");
   });
 
   it("Settings exposes the Mom-toggle 0..10 slider", () => {

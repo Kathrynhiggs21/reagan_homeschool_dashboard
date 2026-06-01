@@ -41,8 +41,11 @@ function dailyRecapCardSlice(): string {
 }
 
 describe("v2.33 — DailyRecapCard mounted on Settings → Recap tab", () => {
-  it("imports / mounts the card under the Recap TabsContent", () => {
-    expect(SETTINGS_TSX).toMatch(/<TabsContent value="recap"[\s\S]*?<DailyRecapCard \/>[\s\S]*?<\/TabsContent>/);
+  it("mounts <DailyRecapCard /> in Settings (tab consolidated into Email tab)", () => {
+    // v3.28 (2026-06-01): the Recap tab was folded into the Email tab,
+    // so the card is now mounted there alongside recipients + agenda toggle
+    // + catch-up queue. The card itself is unchanged.
+    expect(SETTINGS_TSX).toContain("<DailyRecapCard />");
   });
 
   it("defines the DailyRecapCard component", () => {

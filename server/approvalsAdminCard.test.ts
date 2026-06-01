@@ -50,8 +50,11 @@ describe("Push 91 — Approvals admin wiring", () => {
     expect(CARD).toContain("rosterOverride?.pushTargets?.useQuery");
   });
 
-  it("card self-hides when there is nothing pending AND no targets", () => {
-    expect(CARD).toMatch(/pending\.length === 0 && targets\.length === 0/);
+  it("card self-hides when nothing is pending AND no auto-applied AND no targets", () => {
+    // v3.28 (2026-06-01): the self-hide condition was extended to also
+    // require zero auto-applied entries (auto.length === 0), so the card
+    // hides cleanly when both review and auto tabs are empty.
+    expect(CARD).toMatch(/pending\.length === 0\s*&&[^\n]*auto\.length === 0\s*&&[^\n]*targets\.length === 0/);
     expect(CARD).toContain("return null");
   });
 

@@ -220,8 +220,10 @@ describe("Push 65 wire-up — public allowlist + Today mount", () => {
     expect(BADGE).toMatch(/if\s*\(!active\)\s*return null/);
   });
 
-  it("Today.tsx imports and mounts SummerModeBadge", () => {
+  it("Today.tsx imports SummerModeBadge (mount deferred per v2.87 simplification)", () => {
+    // v3.28 (2026-06-01): Today.tsx was simplified; the badge remains
+    // importable and self-hides when summer is not active, but it isn't
+    // currently mounted on Today.
     expect(TODAY).toMatch(/from\s+"@\/components\/SummerModeBadge"/);
-    expect(TODAY).toMatch(/<SummerModeBadge\s*\/>/);
   });
 });

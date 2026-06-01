@@ -17,10 +17,12 @@ describe("Settings page exposes IEP Ref tab + IepReferencePanel wires to tRPC", 
     expect(settings).toContain('from "@/components/IepReferencePanel"');
   });
 
-  it("Settings.tsx registers the iep TabsTrigger and TabsContent", () => {
-    expect(settings).toContain('value="iep"');
-    expect(settings).toMatch(/<TabsTrigger value="iep"/);
-    expect(settings).toMatch(/<TabsContent value="iep"/);
+  it("Settings.tsx imports IepReferencePanel (tab mount deferred per Settings simplification)", () => {
+    // v3.28 (2026-06-01): Settings.tsx tabs were trimmed to people/kid/
+    // calendar/email/kiwi. The IepReferencePanel component is still imported
+    // and the IEP procedures still exist; re-introducing the IEP tab is a
+    // one-line change in Settings.tsx if/when Mom wants the panel back.
+    expect(settings).toContain('from "@/components/IepReferencePanel"');
   });
 
   it("IepReferencePanel calls all three tRPC procedures", () => {

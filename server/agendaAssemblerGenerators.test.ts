@@ -122,11 +122,14 @@ describe("Push 74 — generators wired into agendaAssembler", () => {
   });
 
   it("deterministic seed: same block id → same primary practice drill across runs", async () => {
+    // v3.28 (2026-06-01): the math-practice generator may now reach into
+    // invokeLLM (not mocked here) which can take several seconds. Bump
+    // the per-test timeout to 60s so two sequential assembles fit.
     const a = await assemble("2026-05-13");
     const b = await assemble("2026-05-13");
     const mathA = a!.blocks.find((b) => b.title === "Math practice")!.generated!;
     const mathB = b!.blocks.find((b) => b.title === "Math practice")!.generated!;
     expect(mathA.title).toBe(mathB.title);
     expect(mathA.operable.url).toBe(mathB.operable.url);
-  });
+  }, 60_000);
 });

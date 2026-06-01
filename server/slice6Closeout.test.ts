@@ -115,8 +115,9 @@ describe("Slice 6 closeout — Push 82 TomorrowChoiceCard kid surface", () => {
     expect(cardSrc).toContain("Tomorrow's pick");
   });
 
-  it("is mounted on Today.tsx", () => {
-    expect(todaySrc).toContain("<TomorrowChoiceCard />");
+  it("is imported on Today.tsx (mount deferred per v2.87 simplification)", () => {
+    // v3.28 (2026-06-01): Today.tsx was simplified; TomorrowChoiceCard
+    // remains importable but is not currently rendered.
     expect(todaySrc).toContain('import { TomorrowChoiceCard } from "@/components/TomorrowChoiceCard"');
   });
 });

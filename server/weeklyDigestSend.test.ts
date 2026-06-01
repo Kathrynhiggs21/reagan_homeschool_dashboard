@@ -38,11 +38,17 @@ describe("weekly-digest-send route contract", () => {
   });
 
   it("dispatches to notifyOwner with a markdown content block and marks the digest sent on success", () => {
-    const idx = src.indexOf("/api/scheduled/weekly-digest-send");
-    const slice = src.slice(idx, idx + 3500);
+    // v3.28 (2026-06-01): the handler grew past 3500 chars; anchor on the
+    // exact app.post() and widen the slice so it reaches the post-notify
+    // markDigestEmailed call.
+    const idx = src.indexOf('app.post("/api/scheduled/weekly-digest-send"');
+    expect(idx).toBeGreaterThan(0);
+    const slice = src.slice(idx, idx + 8000);
     expect(slice).toMatch(/notifyOwner/);
     expect(slice).toMatch(/Reagan\s*—\s*Weekly digest/);
-    expect(slice).toMatch(/markDigestEmailed.*"sent"/s);
+    // markDigestEmailed is invoked through optional chaining so a missing
+    // helper doesn't crash the handler. Status is "sent".
+    expect(slice).toMatch(/markDigestEmailed[\s\S]*?"sent"/);
   });
 
   it("returns JSON shape { ok, digestId, notifyOk, recipientCount, contentBytes }", () => {

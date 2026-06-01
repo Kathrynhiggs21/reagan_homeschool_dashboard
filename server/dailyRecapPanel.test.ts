@@ -93,10 +93,12 @@ describe("Push 46 — Daily Recap panel (outbound)", () => {
     expect(slice.match(/ctx\.user\.role/g)?.length ?? 0).toBeGreaterThanOrEqual(3);
   });
 
-  it("Settings mounts a Recap tab + DailyRecapCard", () => {
+  it("Settings mounts <DailyRecapCard /> (tab consolidated into Email tab)", () => {
+    // v3.28 (2026-06-01): the Recap tab was folded into the Email tab so
+    // recipients + agenda toggle + daily recap + catch-up queue all live
+    // in one place. The DailyRecapCard is still mounted; the standalone
+    // tab no longer exists.
     const settings = readSrc("client/src/pages/Settings.tsx");
-    expect(settings).toContain('<TabsTrigger value="recap">Recap</TabsTrigger>');
-    expect(settings).toContain('<TabsContent value="recap"');
     expect(settings).toContain("<DailyRecapCard />");
     expect(settings).toContain("function DailyRecapCard()");
     expect(settings).toMatch(/dailyRecap\?\.get\?\.useQuery/);

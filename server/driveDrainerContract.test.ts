@@ -153,6 +153,52 @@ describe("drive-connector-drainer.mjs — gws --json contract (v3.25 lock-in)", 
     ).toMatch(/["']--params["']\s*,\s*JSON\.stringify\(params\)/);
   });
 
+  it("every gws files-create call site in the drainer uses opts.json for the body (global lint)", () => {
+    // v3.28 (2026-06-01): broaden the contract beyond the two known
+    // call sites (ensureChildFolder + ensureHubRoot + the per-row
+    // upload) so a future contributor cannot silently add a new
+    // body-bearing files-create call that passes metadata through the
+    // params arg. We walk every `gws("files create"` occurrence,
+    // scan its full argument list with brace-balance, and assert that
+    // a `json:` key appears in the opts object.
+    const src = loadDrainerSource();
+    const callRegex = /gws\(\s*["']files create["']/g;
+    let m: RegExpExecArray | null;
+    const callSites: { startIdx: number; argList: string }[] = [];
+    while ((m = callRegex.exec(src)) !== null) {
+      const startIdx = m.index;
+      // Walk to the matching closing `)` for this call.
+      let depth = 0;
+      let i = src.indexOf("(", startIdx);
+      let endIdx = -1;
+      for (; i < src.length; i += 1) {
+        const ch = src[i];
+        if (ch === "(") depth += 1;
+        else if (ch === ")") {
+          depth -= 1;
+          if (depth === 0) {
+            endIdx = i;
+            break;
+          }
+        }
+      }
+      expect(endIdx, "each gws files-create call must close its paren").toBeGreaterThan(startIdx);
+      callSites.push({ startIdx, argList: src.slice(startIdx, endIdx + 1) });
+    }
+    expect(callSites.length, "drainer must have at least 3 known files-create call sites").toBeGreaterThanOrEqual(3);
+    for (const cs of callSites) {
+      expect(
+        cs.argList,
+        `gws files-create call at index ${cs.startIdx} must pass metadata via opts.json — see v3.25 comment in drainer`,
+      ).toMatch(/json\s*:\s*\{/);
+      // And reject the v3.21–v3.24 anti-pattern explicitly.
+      expect(
+        cs.argList,
+        `gws files-create call at index ${cs.startIdx} must not wrap metadata in requestBody`,
+      ).not.toMatch(/requestBody\s*:/);
+    }
+  });
+
   it("includes a v3.25 explanatory comment so future readers understand why --json matters", () => {
     const src = loadDrainerSource();
 

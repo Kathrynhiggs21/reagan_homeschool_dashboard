@@ -38,8 +38,12 @@ describe("Quick-attach worksheets sidebar — push 38", () => {
   });
 
   it("AgendaEditor mounts QuickAttachWorksheets only when there are live blocks", () => {
+    // v3.28 (2026-06-01): the AgendaEditor was simplified — the inline
+    // editPlan UI was removed, so the gate is now just `liveBlocks.length > 0`
+    // (no `!editPlan` prefix) which is functionally equivalent in the
+    // surviving code path.
     expect(agendaSrc).toMatch(
-      /!editPlan && liveBlocks\.length > 0 && \(\s*<QuickAttachWorksheets/,
+      /liveBlocks\.length > 0 && \(\s*<QuickAttachWorksheets/,
     );
   });
 

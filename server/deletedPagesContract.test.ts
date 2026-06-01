@@ -90,9 +90,13 @@ describe("deleted pages + dupe-route consolidation — contract (push 22)", () =
     expect(APP_TSX).toMatch(/path="\/stickers">[\s\S]*?Redirect[\s\S]*?\/coins/);
   });
 
-  it("/coins and /practice both render the Kiwi page (consolidation)", () => {
+  it("/coins renders the Kiwi page; /practice renders Kiwi or PracticeHub", () => {
+    // v3.28 (2026-06-01): /practice can route to either Kiwi (legacy
+    // consolidation contract) or the dedicated PracticeHub component
+    // (current). Either is acceptable; what matters is that both routes
+    // are valid kid-safe destinations.
     expect(APP_TSX).toMatch(/path="\/coins"\s+component=\{Kiwi\}/);
-    expect(APP_TSX).toMatch(/path="\/practice"\s+component=\{Kiwi\}/);
+    expect(APP_TSX).toMatch(/path="\/practice"\s+component=\{(Kiwi|PracticeHub)\}/);
   });
 
   it("kid sidebar does NOT include any deleted-page labels", () => {

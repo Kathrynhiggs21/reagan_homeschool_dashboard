@@ -31,14 +31,15 @@ describe("/schedule + sidebar Kiwi consolidation — contract", () => {
     expect(SCHEDULE).toMatch(/getMonth\(\)/);
   });
 
-  it("KID_NAV has a single Kiwi leaf and NO separate Coins/Practice entries", () => {
+  it("KID_NAV has a Kiwi leaf and no separate /coins entry", () => {
+    // v3.28 (2026-06-01): /practice came back as its own kid surface
+    // alongside Flashcards + Review. The original "single Kiwi leaf"
+    // contract still applies to /coins (which stays consolidated into
+    // /kiwi), but /practice is now a sibling leaf again.
     const navBlock = SIDEBAR.split("KID_NAV: NavRow[] = [")[1]?.split("];")[0] ?? "";
     expect(navBlock).toContain('to: "/kiwi"');
     expect(navBlock).toContain('label: "Kiwi"');
-    // No standalone Coins / Practice routes.
     expect(navBlock).not.toMatch(/to:\s*"\/coins"/);
-    expect(navBlock).not.toMatch(/to:\s*"\/practice"/);
-    // Should NOT be a NavGroup (no children) — Mom asked for a leaf.
     expect(navBlock).not.toMatch(/kind:\s*"group",[^[]*Kiwi/);
   });
 

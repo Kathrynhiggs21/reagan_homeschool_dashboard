@@ -84,10 +84,13 @@ describe("v2.24 — ActualVsPlannedStrip wired into Today.tsx", () => {
     expect(src).toMatch(/from "@\/components\/ActualVsPlannedStrip"/);
   });
 
-  it("Today.tsx mounts <ActualVsPlannedStrip /> under the same `unlocked` adult gate as the existing quick-entry card", () => {
+  it("Today.tsx mounts <ActualVsPlannedStrip /> inside the {unlocked && (...)} drawer", () => {
+    // v3.28 (2026-06-01): adult cards moved into a single drawer slice.
     const src = read(TODAY_FILE);
-    // Pattern: `{unlocked && <ActualVsPlannedStrip ...`
-    expect(src).toMatch(/\{unlocked\s*&&\s*<ActualVsPlannedStrip/);
+    const gateIdx = src.indexOf("{unlocked && (");
+    expect(gateIdx).toBeGreaterThan(0);
+    const slice = src.slice(gateIdx, gateIdx + 8000);
+    expect(slice).toContain("<ActualVsPlannedStrip");
   });
 
   it("the strip mount precedes the TodayAdultQuickEntryCard mount so the at-a-glance chips come first", () => {

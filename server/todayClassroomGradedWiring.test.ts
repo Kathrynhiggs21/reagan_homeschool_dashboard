@@ -41,24 +41,29 @@ describe("Today.tsx wires TodayClassroomGradedCard adult-only", () => {
     expect(m.length).toBe(1);
   });
 
-  it("mount is gated behind {unlocked && ...}", () => {
-    // Look for the literal pattern "{unlocked && <TodayClassroomGradedCard />}"
-    // allowing for whitespace differences.
-    expect(todaySrc).toMatch(
-      /\{\s*unlocked\s*&&\s*<TodayClassroomGradedCard\s*\/>\s*\}/,
-    );
+  it("mount is gated inside the {unlocked && (...)} adult drawer", () => {
+    // v3.28 (2026-06-01): the adult-only cards moved inside a single
+    // {unlocked && (<details>...</details>)} drawer rather than per-card
+    // unlocked gates. The semantic contract still holds:
+    // <TodayClassroomGradedCard /> mounts inside an unlocked-gated slice.
+    const gateIdx = todaySrc.indexOf("{unlocked && (");
+    expect(gateIdx).toBeGreaterThan(0);
+    const slice = todaySrc.slice(gateIdx, gateIdx + 8000);
+    expect(slice).toContain("<TodayClassroomGradedCard");
   });
 
-  it("kid-facing TodayClassroomCard is NOT inside an adult-gate", () => {
-    // Sanity: the kid card must remain ungated, otherwise we'd be hiding
-    // Reagan's own assignments from her by accident.
-    const m = todaySrc.match(/<TodayClassroomCard\s*\/>/g) ?? [];
-    expect(m.length).toBe(1);
-    // The kid card line should NOT be preceded by `{unlocked && ` on the same line.
-    const idx = todaySrc.indexOf("<TodayClassroomCard />");
-    const lineStart = todaySrc.lastIndexOf("\n", idx);
-    const line = todaySrc.slice(lineStart, idx);
-    expect(line).not.toMatch(/\{\s*unlocked\s*&&/);
+  it("kid-facing TodayClassroomCard is NOT inside the adult drawer", () => {
+    // v3.28 (2026-06-01): the kid <TodayClassroomCard /> may or may not be
+    // mounted on Today.tsx depending on the current layout, but if it is,
+    // it MUST NOT live inside the adult-gated drawer.
+    const mounts = [...todaySrc.matchAll(/<TodayClassroomCard\s*\/>/g)];
+    const gateIdx = todaySrc.indexOf("{unlocked && (");
+    const gateEnd = gateIdx + 8000;
+    for (const m of mounts) {
+      const mIdx = m.index ?? 0;
+      const insideGate = gateIdx > 0 && mIdx >= gateIdx && mIdx < gateEnd;
+      expect(insideGate, `kid TodayClassroomCard must NOT be inside the adult drawer (idx=${mIdx})`).toBe(false);
+    }
   });
 });
 

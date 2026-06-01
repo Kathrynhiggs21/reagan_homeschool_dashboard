@@ -63,12 +63,15 @@ describe("getCurriculumGapBySubject", () => {
     }
   });
 
-  it("Math gap matches the live snapshot Mom Katy ingest produced", async () => {
+  it("Math gap is non-empty (live data drifts as Reagan progresses)", async () => {
+    // v3.28 (2026-06-01): the original snapshot test pinned 3 inProgress
+    // + 9 notStarted from the Mom Katy ingest. Live data drifts as Reagan
+    // covers topics; the contract is now "Math is present and has at
+    // least one row across inProgress + notStarted".
     const gap = await getCurriculumGapBySubject();
     expect(gap.Math).toBeDefined();
-    // From the live SELECT: Math has 3 inProgress + 9 notStarted.
-    expect(gap.Math.inProgress.length).toBeGreaterThanOrEqual(3);
-    expect(gap.Math.notStarted.length).toBeGreaterThanOrEqual(9);
+    const total = gap.Math.inProgress.length + gap.Math.notStarted.length;
+    expect(total).toBeGreaterThan(0);
   });
 
   it("Science still has at least one notStarted (Unit 4 Matter)", async () => {
