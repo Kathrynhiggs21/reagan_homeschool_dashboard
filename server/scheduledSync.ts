@@ -64,6 +64,217 @@ ${section("Extras", "#27ae60", data.extra ?? [])}
  *   errors?: string[]
  * }
  */
+/* ===========================================================
+ * Shared Drive-mirror ("Job B") handlers.
+ *
+ * These four handler bodies back BOTH route surfaces:
+ *   1. /api/scheduled/*       — reachable ONLY by the platform cron gateway
+ *                                (carries the injected scheduled-task identity).
+ *   2. /api/admin/drive-mirror/* — reachable by an admin user-session cookie,
+ *                                so Mom can run Job B manually from the playbook.
+ *
+ * The Manus platform gateway hard-restricts the /api/scheduled/* prefix to cron
+ * callers (a nonexistent /api/scheduled/* path also 403s with "permission error
+ * for cron cookie" — the request never reaches Express). So a user cookie can
+ * never hit the /api/scheduled/* copies; the /api/admin/* copies exist purely so
+ * an authenticated admin can drive the same idempotent work by hand.
+ *
+ * Extracted 2026-06-02 (v3.29). Bodies are byte-identical to the original inline
+ * /api/scheduled/* handlers — only the surrounding auth gate differs per surface.
+ * =========================================================== */
+
+/**
+ * Strict admin-only gate for the /api/admin/* mirror surface. Returns true when
+ * the caller holds an admin user-session cookie; otherwise writes a 403 and
+ * returns false. Stricter than the cron gate (which also allows role==="user").
+ */
+export async function requireAdminSession(req: Request, res: Response): Promise<boolean> {
+  let role: string | null = null;
+  try {
+    const u = await sdk.authenticateRequest(req);
+    role = u?.role ?? null;
+  } catch {
+    role = null;
+  }
+  if (role !== "admin") {
+    res.status(403).json({ ok: false, error: "Admin session required" });
+    return false;
+  }
+  return true;
+}
+
+/** GET handler body for drive-push/pending. Lists up to 100 pending queue rows,
+ * each enriched with its canonical-parent folder id + subfolder name. */
+export async function drivePushPendingHandler(_req: Request, res: Response) {
+  try {
+    const rows = await db.listPendingDrivePushes(100);
+    // Enrich each row with the canonical-parent folder id so the worker
+    // can write the file directly under one of the 9 canonical top-level
+    // folders without rediscovering the structure (added 2026-05-12).
+    const items = await Promise.all(
+      rows.map(async (row: any) => {
+        let canonicalParentSlug: string | null = null;
+        let canonicalParentFolderId: string | null = null;
+        let subfolderName: string | null = null;
+        try {
+          const target = (row.targetFolder ?? row.target_folder) as any;
+          if (target) {
+            const parent = await db.getCanonicalParentForRoutable(target);
+            canonicalParentSlug = parent.slug;
+            canonicalParentFolderId = parent.folderId;
+            subfolderName = (db.DRIVE_FOLDER_NAMES as any)[target] ?? null;
+          }
+        } catch {
+          // best-effort enrichment; never fail the whole list because of one row
+        }
+        return {
+          ...row,
+          canonicalParentSlug,
+          canonicalParentFolderId,
+          subfolderName,
+        };
+      }),
+    );
+    return res.json({ ok: true, count: items.length, items });
+  } catch (e: any) {
+    return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+  }
+}
+
+/** POST handler body for drive-push/result. Marks one queue row pushed/skipped/failed. */
+export async function drivePushResultHandler(req: Request, res: Response) {
+  try {
+    const { id, status, driveFileId, errorMessage } = req.body ?? {};
+    if (typeof id !== "number" || !status) {
+      return res.status(400).json({ ok: false, error: "Expected { id, status, driveFileId?, errorMessage? }" });
+    }
+    const valid = ["pushed", "skipped", "failed"] as const;
+    if (!valid.includes(status)) {
+      return res.status(400).json({ ok: false, error: "status must be pushed|skipped|failed" });
+    }
+    await db.markDrivePushResult({
+      id,
+      status,
+      driveFileId: driveFileId ?? null,
+      errorMessage: errorMessage ?? null,
+    });
+    return res.json({ ok: true });
+  } catch (e: any) {
+    return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+  }
+}
+
+/** GET handler body for drive-folder-map. Returns the canonical hub root id, the
+ * 9 canonical top-level folder ids, and the canonical subfolder names per parent. */
+export async function driveFolderMapHandler(_req: Request, res: Response) {
+  try {
+    const rootFolderId = await db.getAppSetting("drive.rootFolderId");
+    const rootFolderOwner = await db.getAppSetting("drive.rootFolderOwner");
+    const topLevel: Record<string, { id: string | null; subfolders: string[] }> = {
+      "Admin and Homeschool Records": {
+        id: await db.getAppSetting("drive.folder.adminAndHomeschoolRecords"),
+        subfolders: [
+          "IEP Snapshots (preserved)",
+          "504 Plans (preserved)",
+          "Tutor Agreements",
+          "Annual Notice of Intent",
+          "PowerSchool Snapshot (read-only)",
+          "Reagan Health (medical, IEP, 504, anxiety timeline)",
+          "Behavior History (preserved)",
+        ],
+      },
+      "Adventures and Enrichment": {
+        id: await db.getAppSetting("drive.folder.adventuresAndEnrichment"),
+        subfolders: [
+          "Adventures Library",
+          "Field Trip Photos",
+          "Reading Journal (Bookshelf log)",
+        ],
+      },
+      "Assignments and Work": {
+        id: await db.getAppSetting("drive.folder.assignmentsAndWork"),
+        subfolders: [
+          "Worksheets to Do",
+          "Submitted Work",
+          "Photos of Work",
+        ],
+      },
+      "Curriculum and Standards": {
+        id: await db.getAppSetting("drive.folder.curriculumAndStandards"),
+        subfolders: [
+          "Topics Covered",
+          "Coverage Snapshots",
+          "Standards Library",
+        ],
+      },
+      "Daily Operations": {
+        id: await db.getAppSetting("drive.folder.dailyOperations"),
+        subfolders: [
+          "Day Logs",
+          "Daily Agenda PDFs",
+          "Recap Replies",
+        ],
+      },
+      "Inbox (Unsorted)": {
+        id: await db.getAppSetting("drive.folder.inboxUnsorted"),
+        subfolders: [],
+      },
+      "Printables and Resources": {
+        id: await db.getAppSetting("drive.folder.printablesAndResources"),
+        subfolders: [
+          "Coloring Pages",
+          "Reward Charts",
+          "Master Worksheet Library",
+          "Reagan's Books (cover scans + page refs)",
+        ],
+      },
+      "Progress and Reports": {
+        id: await db.getAppSetting("drive.folder.progressAndReports"),
+        subfolders: [
+          "Weekly Digests",
+          "Term Summaries",
+          "Behavior + Mood Timeline",
+          "Absences and Sick Days",
+          "Analytics CSV Exports",
+        ],
+      },
+      "Todo": {
+        id: await db.getAppSetting("drive.folder.todo"),
+        subfolders: [
+          "Mom Todos",
+          "Grandma Todos",
+          "Tutor Todos",
+        ],
+      },
+    };
+    return res.json({ ok: true, rootFolderId, rootFolderOwner, topLevel });
+  } catch (e: any) {
+    return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+  }
+}
+
+/** POST handler body for drive-folder-map/result. Caches resolved subfolder ids
+ * as app_settings['drive.folderMap.<parent>.<sub>']. */
+export async function driveFolderMapResultHandler(req: Request, res: Response) {
+  try {
+    const entries = (req.body?.entries ?? []) as Array<{ parentName?: string; subfolderName?: string; driveFolderId?: string }>;
+    if (!Array.isArray(entries) || entries.length === 0) {
+      return res.status(400).json({ ok: false, error: "Expected { entries: [{ parentName, subfolderName, driveFolderId }, ...] }" });
+    }
+    let saved = 0;
+    for (const e of entries) {
+      if (!e.parentName || !e.subfolderName || !e.driveFolderId) continue;
+      const slugParent = e.parentName.replace(/[^A-Za-z0-9]+/g, "_");
+      const slugSub = e.subfolderName.replace(/[^A-Za-z0-9]+/g, "_");
+      await db.setAppSetting(`drive.folderMap.${slugParent}.${slugSub}`, e.driveFolderId);
+      saved++;
+    }
+    return res.json({ ok: true, saved });
+  } catch (e: any) {
+    return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+  }
+}
+
 export function registerScheduledSync(app: Express) {
   app.post("/api/scheduled/upload-sync", async (req: Request, res: Response) => {
     // ---- Auth gate: must be a logged-in platform session (scheduled task or parent) ----
@@ -233,39 +444,7 @@ export function registerScheduledSync(app: Express) {
     if (!role || (role !== "user" && role !== "admin")) {
       return res.status(401).json({ ok: false, error: "Unauthorized" });
     }
-    try {
-      const rows = await db.listPendingDrivePushes(100);
-      // Enrich each row with the canonical-parent folder id so the worker
-      // can write the file directly under one of the 9 canonical top-level
-      // folders without rediscovering the structure (added 2026-05-12).
-      const items = await Promise.all(
-        rows.map(async (row: any) => {
-          let canonicalParentSlug: string | null = null;
-          let canonicalParentFolderId: string | null = null;
-          let subfolderName: string | null = null;
-          try {
-            const target = (row.targetFolder ?? row.target_folder) as any;
-            if (target) {
-              const parent = await db.getCanonicalParentForRoutable(target);
-              canonicalParentSlug = parent.slug;
-              canonicalParentFolderId = parent.folderId;
-              subfolderName = (db.DRIVE_FOLDER_NAMES as any)[target] ?? null;
-            }
-          } catch {
-            // best-effort enrichment; never fail the whole list because of one row
-          }
-          return {
-            ...row,
-            canonicalParentSlug,
-            canonicalParentFolderId,
-            subfolderName,
-          };
-        }),
-      );
-      return res.json({ ok: true, count: items.length, items });
-    } catch (e: any) {
-      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
-    }
+    return drivePushPendingHandler(req, res);
   });
 
   app.post("/api/scheduled/drive-push/result", async (req: Request, res: Response) => {
@@ -279,25 +458,7 @@ export function registerScheduledSync(app: Express) {
     if (!role || (role !== "user" && role !== "admin")) {
       return res.status(401).json({ ok: false, error: "Unauthorized" });
     }
-    try {
-      const { id, status, driveFileId, errorMessage } = req.body ?? {};
-      if (typeof id !== "number" || !status) {
-        return res.status(400).json({ ok: false, error: "Expected { id, status, driveFileId?, errorMessage? }" });
-      }
-      const valid = ["pushed", "skipped", "failed"] as const;
-      if (!valid.includes(status)) {
-        return res.status(400).json({ ok: false, error: "status must be pushed|skipped|failed" });
-      }
-      await db.markDrivePushResult({
-        id,
-        status,
-        driveFileId: driveFileId ?? null,
-        errorMessage: errorMessage ?? null,
-      });
-      return res.json({ ok: true });
-    } catch (e: any) {
-      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
-    }
+    return drivePushResultHandler(req, res);
   });
 
   /**
@@ -328,90 +489,7 @@ export function registerScheduledSync(app: Express) {
     if (!role || (role !== "user" && role !== "admin")) {
       return res.status(401).json({ ok: false, error: "Unauthorized" });
     }
-    try {
-      const rootFolderId = await db.getAppSetting("drive.rootFolderId");
-      const rootFolderOwner = await db.getAppSetting("drive.rootFolderOwner");
-      const topLevel: Record<string, { id: string | null; subfolders: string[] }> = {
-        "Admin and Homeschool Records": {
-          id: await db.getAppSetting("drive.folder.adminAndHomeschoolRecords"),
-          subfolders: [
-            "IEP Snapshots (preserved)",
-            "504 Plans (preserved)",
-            "Tutor Agreements",
-            "Annual Notice of Intent",
-            "PowerSchool Snapshot (read-only)",
-            "Reagan Health (medical, IEP, 504, anxiety timeline)",
-            "Behavior History (preserved)",
-          ],
-        },
-        "Adventures and Enrichment": {
-          id: await db.getAppSetting("drive.folder.adventuresAndEnrichment"),
-          subfolders: [
-            "Adventures Library",
-            "Field Trip Photos",
-            "Reading Journal (Bookshelf log)",
-          ],
-        },
-        "Assignments and Work": {
-          id: await db.getAppSetting("drive.folder.assignmentsAndWork"),
-          subfolders: [
-            "Worksheets to Do",
-            "Submitted Work",
-            "Photos of Work",
-          ],
-        },
-        "Curriculum and Standards": {
-          id: await db.getAppSetting("drive.folder.curriculumAndStandards"),
-          subfolders: [
-            "Topics Covered",
-            "Coverage Snapshots",
-            "Standards Library",
-          ],
-        },
-        "Daily Operations": {
-          id: await db.getAppSetting("drive.folder.dailyOperations"),
-          subfolders: [
-            "Day Logs",
-            "Daily Agenda PDFs",
-            "Recap Replies",
-          ],
-        },
-        "Inbox (Unsorted)": {
-          id: await db.getAppSetting("drive.folder.inboxUnsorted"),
-          subfolders: [],
-        },
-        "Printables and Resources": {
-          id: await db.getAppSetting("drive.folder.printablesAndResources"),
-          subfolders: [
-            "Coloring Pages",
-            "Reward Charts",
-            "Master Worksheet Library",
-            "Reagan's Books (cover scans + page refs)",
-          ],
-        },
-        "Progress and Reports": {
-          id: await db.getAppSetting("drive.folder.progressAndReports"),
-          subfolders: [
-            "Weekly Digests",
-            "Term Summaries",
-            "Behavior + Mood Timeline",
-            "Absences and Sick Days",
-            "Analytics CSV Exports",
-          ],
-        },
-        "Todo": {
-          id: await db.getAppSetting("drive.folder.todo"),
-          subfolders: [
-            "Mom Todos",
-            "Grandma Todos",
-            "Tutor Todos",
-          ],
-        },
-      };
-      return res.json({ ok: true, rootFolderId, rootFolderOwner, topLevel });
-    } catch (e: any) {
-      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
-    }
+    return driveFolderMapHandler(req, res);
   });
 
   /**
@@ -432,23 +510,36 @@ export function registerScheduledSync(app: Express) {
     if (!role || (role !== "user" && role !== "admin")) {
       return res.status(401).json({ ok: false, error: "Unauthorized" });
     }
-    try {
-      const entries = (req.body?.entries ?? []) as Array<{ parentName?: string; subfolderName?: string; driveFolderId?: string }>;
-      if (!Array.isArray(entries) || entries.length === 0) {
-        return res.status(400).json({ ok: false, error: "Expected { entries: [{ parentName, subfolderName, driveFolderId }, ...] }" });
-      }
-      let saved = 0;
-      for (const e of entries) {
-        if (!e.parentName || !e.subfolderName || !e.driveFolderId) continue;
-        const slugParent = e.parentName.replace(/[^A-Za-z0-9]+/g, "_");
-        const slugSub = e.subfolderName.replace(/[^A-Za-z0-9]+/g, "_");
-        await db.setAppSetting(`drive.folderMap.${slugParent}.${slugSub}`, e.driveFolderId);
-        saved++;
-      }
-      return res.json({ ok: true, saved });
-    } catch (e: any) {
-      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
-    }
+    return driveFolderMapResultHandler(req, res);
+  });
+
+  /* ===========================================================
+   * /api/admin/drive-mirror/* — admin-cookie-runnable mirror of the four Job B
+   * endpoints above. The platform gateway blocks /api/scheduled/* for non-cron
+   * callers, so these admin-prefixed routes are the ONLY way for Mom to run
+   * Job B by hand (e.g. from the nightly playbook). Each route is gated by
+   * requireAdminSession (role==="admin" only) then delegates to the exact same
+   * idempotent handler the cron path uses.
+   *
+   * Added 2026-06-02 (v3.29). Do NOT relax requireAdminSession to allow
+   * role==="user" — the cron gate intentionally protects Reagan's queue, and
+   * this surface is reachable from the open internet.
+   * =========================================================== */
+  app.get("/api/admin/drive-mirror/folder-map", async (req: Request, res: Response) => {
+    if (!(await requireAdminSession(req, res))) return;
+    return driveFolderMapHandler(req, res);
+  });
+  app.post("/api/admin/drive-mirror/folder-map/result", async (req: Request, res: Response) => {
+    if (!(await requireAdminSession(req, res))) return;
+    return driveFolderMapResultHandler(req, res);
+  });
+  app.get("/api/admin/drive-mirror/pending", async (req: Request, res: Response) => {
+    if (!(await requireAdminSession(req, res))) return;
+    return drivePushPendingHandler(req, res);
+  });
+  app.post("/api/admin/drive-mirror/result", async (req: Request, res: Response) => {
+    if (!(await requireAdminSession(req, res))) return;
+    return drivePushResultHandler(req, res);
   });
 
   /* ====================== CLASSROOM-AGENDAS (daily teacher sync) ====================== */
