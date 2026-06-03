@@ -210,8 +210,25 @@ export default function ConnectorPushCard() {
             </Badge>
           )}
         </CardTitle>
-        <div className="text-xs text-muted-foreground">
-          v3.23 · sandbox-only
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="bg-background"
+            onClick={() => {
+              // Re-pull queue depth + last-run summary without a full reload.
+              pendingQ?.refetch?.();
+              lastRunQ?.refetch?.();
+              recentQ?.refetch?.();
+              toast.message("Refreshing queue status…");
+            }}
+            data-testid="connector-refresh-status"
+          >
+            Refresh status
+          </Button>
+          <div className="text-xs text-muted-foreground">
+            v3.30 · sandbox-only
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
@@ -267,6 +284,44 @@ export default function ConnectorPushCard() {
             </div>
           )}
         </div>
+
+        {/* Run drainer now — primary action */}
+        {pendingCount > 0 ? (
+          <div
+            className="rounded-md border border-amber-300 bg-amber-50/60 px-3 py-3"
+            data-testid="connector-run-now-banner"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-amber-900">
+                  {pendingCount} file{pendingCount === 1 ? "" : "s"} waiting to mirror
+                </div>
+                <div className="text-[11px] text-amber-800/80">
+                  Click <span className="font-semibold">Run drainer now</span> to
+                  mint a token and copy the one-line command. Paste it into the
+                  project shell and press Enter.
+                </div>
+              </div>
+              <Button
+                size="sm"
+                className="shrink-0"
+                onClick={() => {
+                  void onCopyCommand();
+                }}
+                disabled={mintTokenM?.isPending}
+                data-testid="connector-run-now"
+              >
+                {mintTokenM?.isPending
+                  ? "Minting…"
+                  : copied === "ok"
+                    ? "Command copied — paste & run"
+                    : copied === "fallback"
+                      ? "Copied (fallback)"
+                      : "Run drainer now"}
+              </Button>
+            </div>
+          </div>
+        ) : null}
 
         {/* Drain command */}
         <div className="rounded-md border bg-muted/30 px-3 py-2">

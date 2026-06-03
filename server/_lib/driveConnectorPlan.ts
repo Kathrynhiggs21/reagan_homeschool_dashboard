@@ -74,6 +74,17 @@ export const CONNECTOR_LAST_RUN_KEYS = {
   byUser: "drive.connector.lastRun.byUser",
 } as const;
 
+/**
+ * v3.30 (2026-06-02) — prefix for the per-run "owner was already notified
+ * about this drain's failures" marker. We stamp
+ * `drive.connector.failureNotified.<finishedAtISO>` after a successful
+ * notifyOwner so that re-applying the *same* report (idempotent retries,
+ * double-clicks, the next weekday re-fire replaying a stuck row) does not
+ * spam Mom with duplicate failure alerts.
+ */
+export const CONNECTOR_FAILURE_NOTIFIED_PREFIX =
+  "drive.connector.failureNotified.";
+
 /* =====================================================================
    Plan — what the drainer needs to do its job
    ===================================================================== */
@@ -384,12 +395,26 @@ export async function buildConnectorPlan(
  */
 export type ConnectorReportDbSurface = Pick<
   typeof db,
-  "markDrivePushResult" | "setAppSetting"
+  "markDrivePushResult" | "setAppSetting" | "getAppSetting"
 >;
+
+/**
+ * v3.30 (2026-06-02) — injectable owner-notification hook. Defaults to
+ * the real `notifyOwner` (lazy-imported so the pure-logic specs that pass
+ * a `dbOverride` don't have to stub the notification module). Tests pass
+ * a spy here to assert the failure-alert contract without sending mail.
+ */
+export type NotifyOwnerFn = (args: {
+  title: string;
+  content: string;
+}) => Promise<boolean>;
 
 export async function applyConnectorReport(
   report: ConnectorReport,
-  opts: { dbOverride?: ConnectorReportDbSurface } = {},
+  opts: {
+    dbOverride?: ConnectorReportDbSurface;
+    notifyOwner?: NotifyOwnerFn;
+  } = {},
 ): Promise<{
   pushed: number;
   skipped: number;
@@ -517,6 +542,67 @@ export async function applyConnectorReport(
   } catch (e) {
     // eslint-disable-next-line no-console
     console.warn("[driveConnectorPlan] failed to stamp run summary", e);
+  }
+
+  // v3.30 (2026-06-02) — owner failure alert. When a drain reports any
+  // failed rows, push a single notifyOwner alert listing the failing row
+  // ids + their error messages. This fires for BOTH manual drains (admin
+  // cookie / drainer token) and the scheduled 6:30 AM heartbeat because
+  // every path funnels through applyConnectorReport. Best-effort and
+  // de-duped by finishedAtISO so idempotent re-applies don't double-send.
+  if (summary.failed > 0) {
+    try {
+      const dedupeKey = `${CONNECTOR_FAILURE_NOTIFIED_PREFIX}${report.finishedAtISO}`;
+      const already = await dbi.getAppSetting(dedupeKey);
+      if (!already) {
+        const failures = report.results.filter(
+          (r): r is Extract<ConnectorReportOutcome, { outcome: "failed" }> =>
+            r.outcome === "failed",
+        );
+        // Cap the body so a mass-failure run doesn't produce a giant email.
+        const MAX_LISTED = 15;
+        const lines = failures
+          .slice(0, MAX_LISTED)
+          .map((f) => `• #${f.id}: ${f.error}`);
+        if (failures.length > MAX_LISTED) {
+          lines.push(`…and ${failures.length - MAX_LISTED} more.`);
+        }
+        const content = [
+          `The Drive mirror finished with ${summary.failed} failed row(s) ` +
+            `(pushed ${summary.pushed}, skipped ${summary.skipped}, ` +
+            `scanned ${summary.scanned}).`,
+          ``,
+          `Run: ${report.finishedAtISO} · by ${report.byUser}`,
+          ``,
+          `Failed rows:`,
+          ...lines,
+          ``,
+          `These rows stay 'failed' in drive_push_queue and will be retried ` +
+            `on the next drain. Open Settings → Drive Connector to inspect.`,
+        ].join("\n");
+        const notify: NotifyOwnerFn =
+          opts.notifyOwner ??
+          (async (a) => {
+            const { notifyOwner } = await import("../_core/notification");
+            return notifyOwner(a);
+          });
+        const delivered = await notify({
+          title: `Drive mirror: ${summary.failed} failed row(s)`,
+          content,
+        });
+        // Only stamp the dedupe marker if the notification actually went
+        // out, so a transient notifyOwner outage retries next drain.
+        if (delivered) {
+          await dbi.setAppSetting(dedupeKey, report.finishedAtISO);
+        }
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.warn(
+        "[driveConnectorPlan] failed to send owner failure alert",
+        e,
+      );
+    }
   }
 
   return summary;

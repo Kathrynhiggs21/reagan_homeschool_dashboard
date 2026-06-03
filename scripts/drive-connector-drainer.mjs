@@ -103,7 +103,9 @@ async function trpcQuery(procedure, input = undefined) {
   const headers = { "Content-Type": "application/json" };
   if (AUTH_MODE === "bearer") {
     headers.Authorization = `Bearer ${DASHBOARD_BEARER}`;
-    headers.Cookie = `__Host-msession=${DASHBOARD_BEARER}`;
+    // Send both cookie names: __Host-msession (dev preview) + app_session_id
+    // (deployed *.manus.space). Harmless to send both; server reads whichever matches.
+    headers.Cookie = `__Host-msession=${DASHBOARD_BEARER}; app_session_id=${DASHBOARD_BEARER}`;
   }
   const resp = await fetch(url, { headers });
   if (!resp.ok) {
@@ -124,7 +126,7 @@ async function trpcMutation(procedure, input) {
   const headers = { "Content-Type": "application/json" };
   if (AUTH_MODE === "bearer") {
     headers.Authorization = `Bearer ${DASHBOARD_BEARER}`;
-    headers.Cookie = `__Host-msession=${DASHBOARD_BEARER}`;
+    headers.Cookie = `__Host-msession=${DASHBOARD_BEARER}; app_session_id=${DASHBOARD_BEARER}`;
   }
   const resp = await fetch(url, {
     method: "POST",
@@ -393,7 +395,7 @@ async function processRow(row, targetMap, hubRootId) {
         {
           headers: {
             Authorization: `Bearer ${DASHBOARD_BEARER}`,
-            Cookie: `__Host-msession=${DASHBOARD_BEARER}`,
+            Cookie: `__Host-msession=${DASHBOARD_BEARER}; app_session_id=${DASHBOARD_BEARER}`,
           },
         },
       );

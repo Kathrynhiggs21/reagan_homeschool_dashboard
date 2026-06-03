@@ -359,3 +359,17 @@ This single bug explains BOTH the 63 "parent is not a folder" failures we saw ac
 - [x] Wrote `adminDriveMirrorRoutes.test.ts` (15 specs): all 4 admin routes registered, each gated by `requireAdminSession`/`role==="admin"`, delegates to the shared handler, `/api/scheduled/*` originals still present + cron-gated, and live anonymous calls 403 on admin routes / 401 on scheduled routes.
 - [x] Full suite green: 510 files, 4569 passed, 7 skipped, 0 failures.
 - [x] Updated Job B playbook block handed to the user (points at `/api/admin/drive-mirror/*`).
+
+
+## v3.30 — Live Job B run + one-click Drive mirror button + failure notification [DONE 2026-06-02]
+
+**Architecture note:** the actual Drive upload requires the sandbox-only `gws` CLI, which does not exist on Cloud Run. A literal "server performs the full mirror" route is therefore not buildable — the drain step must run from a sandbox shell. The in-app button mints a token + copies the one-line drain command (the closest possible one-click affordance), and the owner-failure alert is wired into the shared report path so it fires for BOTH the manual drain and the scheduled heartbeat.
+
+- [x] Ran Job B live against the deployed site (reaganschool.manus.space). Folder-map resolved all 9 canonical Hub folders + subfolders; queue drained via the production `drive.connectorPlan`/`connectorReport` tRPC path (admin `app_session_id` cookie): **pushed 5, skipped 22 (idempotent dedupe), failed 0, scanned 27**. Queue confirmed empty afterward (count=0).
+- [x] Drainer hardened to authenticate against the deployed cookie scheme — sends `app_session_id` alongside the dev `__Host-msession` cookie in all 3 fetch sites (both tRPC clients + the S3 content fetch). Additive; the dev path is unaffected.
+- [x] Owner failure alert wired into `applyConnectorReport` (`server/_lib/driveConnectorPlan.ts`): when `summary.failed > 0`, fires a single `notifyOwner` listing the failing row ids + error messages (capped at 15 + "and N more"). Fires for manual AND scheduled drains because every report funnels through this function.
+- [x] De-dupe: marker `drive.connector.failureNotified.<finishedAtISO>` stamped only after `notifyOwner` returns true, so idempotent re-applies don't double-send and a transient mail outage retries next drain. Best-effort: a thrown notifyOwner never aborts the queue writes (truth-of-record).
+- [x] Added a prominent "Run drainer now" button + amber waiting-files banner (gated on `pendingCount > 0`) and a "Refresh status" button to `ConnectorPushCard`. Run-now reuses the proven mint-token + copy-command flow; Refresh re-fetches pending/last-run/recent without a reload.
+- [x] Tests: `connectorFailureNotify.test.ts` (7 specs) + `connectorPushCardButtons.test.ts` (6 specs).
+- [x] Full suite green: 512 files, 4582 passed, 7 skipped, 0 failures.
+- [x] Checkpoint saved.
