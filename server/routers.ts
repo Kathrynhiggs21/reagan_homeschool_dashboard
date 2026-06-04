@@ -6683,6 +6683,41 @@ export const appRouter = router({
         );
       }),
     /**
+     * v3.31 (2026-06-04) — agendaLinkReadiness.
+     * Fuses the verified Khan/IXL deep-link builder with the sign-in tagger
+     * so every agenda link carries (a) a working URL (verified deep link or
+     * known-good subject root — never a likely-404) and (b) a readiness
+     * label: "Reagan can open this" vs "Grown-up signs in first". Non-Khan/IXL
+     * rows pass their own URL through untouched. Pure; never throws.
+     */
+    agendaLinkReadiness: publicProcedure
+      .input(
+        z.object({
+          rows: z
+            .array(
+              z.object({
+                appKey: z.string(),
+                name: z.string().optional().nullable(),
+                url: z.string().optional().nullable(),
+                provider: z.string().optional().nullable(),
+                subject: z.string().optional().nullable(),
+                topic: z.string().optional().nullable(),
+              }),
+            )
+            .max(100),
+          isReaganView: z.boolean().optional(),
+        }),
+      )
+      .query(async ({ input }) => {
+        const { buildAgendaLinkReadinessBatch } = await import(
+          "./_lib/agendaLinkReadiness"
+        );
+        const isKid = input.isReaganView === true;
+        return buildAgendaLinkReadinessBatch(
+          input.rows.map((row) => ({ ...row, isReaganView: isKid })),
+        );
+      }),
+    /**
      * Wave-15 / Push 187 — today.appAccountVaultBuild
      *
      * Adult-only mutation: takes one appLink tag (already produced by

@@ -373,3 +373,13 @@ This single bug explains BOTH the 63 "parent is not a folder" failures we saw ac
 - [x] Tests: `connectorFailureNotify.test.ts` (7 specs) + `connectorPushCardButtons.test.ts` (6 specs).
 - [x] Full suite green: 512 files, 4582 passed, 7 skipped, 0 failures.
 - [x] Checkpoint saved.
+
+## v3.31 — Packet-never-empty + working agenda links [2026-06-04, shipped]
+
+- [x] Deterministic, no-LLM fallback worksheet generator `server/_lib/fallbackWorksheet.ts` — per-subject (math/ela/reading/writing/science/social-studies/spelling/general) banks, 3-5 seeded items + full answer key, deterministic by (date, blockId, subject), never throws, never empty, Ohio standard-code stamping. 10 vitest specs.
+- [x] `synthesizeLessonForBlock.ts` hardened: one LLM retry on transient failure, then deterministic fallback when the LLM fails twice OR returns empty practice; standard code threaded through both paths; fallback cached in assignmentsLibrary. 5 vitest specs (LLM + db mocked at module boundary).
+- [x] Nightly packet audit `server/_lib/packetAudit.ts` — `blockHasContent` + `auditPacket` (exempts appointment/adventure; unknown types fail-safe to content) + `formatAuditNotification` (date-aware, singular/plural, caps at 10 + overflow). Wired into `agendaAssembler.ts` with per-date de-dupe marker + owner notification. 15 vitest specs.
+- [x] Khan/IXL deep-link reachability: `khanIxlDeeplink.ts` rewritten with a VERIFIED topic-path allow-list per subject/provider + `urlConfidence` (`verified` vs `subject-root-fallback`). Unverified slugs degrade to the known-good subject landing page instead of a likely-404; slug still preserved for telemetry. 15 vitest specs (updated existing contract).
+- [x] Agenda-link readiness joiner `server/_lib/agendaLinkReadiness.ts` — fuses the verified deep-link builder with the sign-in tagger into one agenda-ready descriptor (`url`, `urlConfidence`, `canKidOpenNow`, `kidBadge`, `readinessLabel` = "Reagan can open this" / "Grown-up signs in first"); non-Khan/IXL links pass through untouched; never leaks the blocked ihsd.us address; never throws. Exposed via `today.agendaLinkReadiness` tRPC query. 10 vitest specs.
+- [x] Updated pre-existing `spellingPracticeReward.test.ts` for the new verified-allow-list fallback (unverified "compound-words" → spelling-patterns root, slug preserved).
+- [x] Full suite: 4625/4633 passing (7 skipped); TS/LSP clean. The single failure that surfaced from this work (old deep-link contract) was updated to the new correct behavior.

@@ -147,7 +147,11 @@ describe("Push 137 — decideSpellingPracticeReward", () => {
     if (!out.grant) expect(out.reason).toBe("non-finite-input");
   });
 
-  it("topic flows through to the deeplink (slugified)", () => {
+  it("topic is slugified and preserved, but an UNVERIFIED slug degrades to the known-good spelling root (v3.31)", () => {
+    // v3.31: "compound-words" is not on the verified allow-list for spelling,
+    // so rather than ship a likely-404 deep link, the builder falls back to
+    // the known-good IXL spelling-patterns page. The requested slug is still
+    // preserved on the plan for telemetry/UX.
     const out = decideSpellingPracticeReward({
       subject: "spelling",
       listId: "list-7",
@@ -158,8 +162,11 @@ describe("Push 137 — decideSpellingPracticeReward", () => {
     });
     expect(out.grant).toBe(true);
     if (out.grant) {
+      // Slug is still derived and preserved.
       expect(out.deeplink.topic).toBe("compound-words");
-      expect(out.deeplink.url).toContain("compound-words");
+      // ...but the URL is the verified spelling root, not a guessed segment.
+      expect(out.deeplink.url).toContain("spelling-patterns");
+      expect(out.deeplink.url).not.toContain("compound-words");
     }
   });
 });

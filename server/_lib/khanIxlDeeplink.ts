@@ -1,5 +1,6 @@
 /**
  * Push 116 (2026-05-13) — Khan / IXL deeplink builder pure helper.
+ * v3.31 (2026-06-04) — Verified-path allow-list + urlConfidence.
  *
  * Per project knowledge, the Schedule and Topics pages should provide
  * one-click jump-outs into Khan Academy and IXL, scoped to the canonical
@@ -13,6 +14,19 @@
  * Pure module — no DB, no I/O. URLs are built deterministically so the
  * Adult Topic Page (A.3.ii) and Spelling-practice link can rely on a
  * single source of truth.
+ *
+ * --- v3.31 reachability hardening ---
+ * The previous builder appended `/${topic}` to the subject base for ANY
+ * slug. But Khan's real topic paths look like
+ *   /math/cc-fifth-grade-math/imp-multiplication-and-division
+ * not /math/cc-fifth-grade-math/fractions — so an arbitrary slug produced
+ * URLs that 404 in the agenda. That breaks the "every link opens to the
+ * exact page and actually works" rule.
+ *
+ * Fix: only build a topic-scoped URL when the slug is on a small VERIFIED
+ * allow-list of real path segments per subject/provider. Otherwise fall
+ * back to the known-good subject landing page (always 200, always
+ * sign-in-aware) and report which path was taken via `urlConfidence`.
  */
 
 export type CanonicalSubject =
@@ -49,14 +63,70 @@ const IXL_BASES: Record<CanonicalSubject, string> = {
   spelling: "https://www.ixl.com/ela/grade-5/spelling-patterns",
 };
 
+/**
+ * VERIFIED topic path segments, keyed by `${provider}:${subject}`.
+ *
+ * Each entry maps a friendly topic slug (what callers pass / what the
+ * curriculum stores) → the REAL path segment that exists on the provider.
+ * Only segments confirmed to resolve (not 404) belong here. When a slug is
+ * absent, the builder degrades gracefully to the subject root.
+ *
+ * Conservative on purpose: a short, correct list beats a long, guessed one.
+ * Extend as topics are verified against the live site.
+ */
+const VERIFIED_TOPIC_PATHS: Record<string, Record<string, string>> = {
+  // Khan Academy — 5th-grade math unit slugs (real Khan URL segments).
+  "khan:math": {
+    "decimal-place-value": "imp-decimal-place-value",
+    "decimal-place-value-intro": "imp-decimal-place-value",
+    "add-decimals": "imp-add-and-subtract-decimals",
+    "subtract-decimals": "imp-add-and-subtract-decimals",
+    "add-and-subtract-decimals": "imp-add-and-subtract-decimals",
+    "powers-of-ten": "imp-powers-of-ten",
+    multiplication: "imp-multi-digit-multiplication",
+    "multi-digit-multiplication": "imp-multi-digit-multiplication",
+    division: "imp-division",
+    "multiply-fractions": "imp-multiply-fractions",
+    "divide-fractions": "imp-divide-fractions",
+    "add-and-subtract-fractions": "imp-add-and-subtract-fractions",
+    fractions: "imp-add-and-subtract-fractions",
+    volume: "imp-volume",
+    "coordinate-plane": "imp-coordinate-plane",
+  },
+  // IXL — grade-5 skill-tree categories (stable, well-known segments).
+  "ixl:math": {
+    "place-value": "place-values",
+    "place-values": "place-values",
+    addition: "addition-and-subtraction",
+    subtraction: "addition-and-subtraction",
+    "addition-and-subtraction": "addition-and-subtraction",
+    multiplication: "multiply-whole-numbers",
+    "multiply-whole-numbers": "multiply-whole-numbers",
+    division: "divide-whole-numbers",
+    "divide-whole-numbers": "divide-whole-numbers",
+    decimals: "decimals",
+    fractions: "fractions",
+    geometry: "geometry",
+  },
+};
+
+export type UrlConfidence = "verified" | "subject-root-fallback";
+
 export interface DeeplinkPlan {
   url: string;
   provider: DeeplinkProvider;
   subject: CanonicalSubject;
-  /** Cleaned topic slug, or undefined when no usable topic was provided. */
+  /** Cleaned topic slug as requested, or undefined when none was provided. */
   topic?: string;
   /** True when the URL points to a topic-scoped page (vs. subject root). */
   topicScoped: boolean;
+  /**
+   * v3.31 — how trustworthy the URL is:
+   *  - "verified": topic matched the allow-list, deep URL is known-good
+   *  - "subject-root-fallback": no topic OR unverified slug → subject root
+   * Callers can surface this so the agenda never ships a likely-404 link.
+   */
+  urlConfidence: UrlConfidence;
 }
 
 export type DeeplinkBuildError =
@@ -86,6 +156,20 @@ function slugifyTopic(raw: unknown): string | undefined {
   return slug.length > 0 ? slug : undefined;
 }
 
+/**
+ * Look up the verified real path segment for a (provider, subject, slug).
+ * Returns undefined when the slug is not on the allow-list.
+ */
+function resolveVerifiedSegment(
+  provider: DeeplinkProvider,
+  subject: CanonicalSubject,
+  slug: string,
+): string | undefined {
+  const table = VERIFIED_TOPIC_PATHS[`${provider}:${subject}`];
+  if (!table) return undefined;
+  return table[slug];
+}
+
 export function buildKhanIxlDeeplink(input: {
   subject: CanonicalSubject | string;
   provider: DeeplinkProvider | string;
@@ -105,6 +189,7 @@ export function buildKhanIxlDeeplink(input: {
     provider === "khan" ? KHAN_BASES[subject] : IXL_BASES[subject];
   const topic = slugifyTopic(input.topic);
 
+  // No usable topic → subject root (always known-good).
   if (!topic) {
     return {
       ok: true,
@@ -113,12 +198,29 @@ export function buildKhanIxlDeeplink(input: {
         provider,
         subject,
         topicScoped: false,
+        urlConfidence: "subject-root-fallback",
       },
     };
   }
 
-  // Both providers append a slugged path segment.
-  const url = `${base}/${topic}`;
+  // v3.31 — only deep-link when the slug maps to a VERIFIED real segment.
+  const verifiedSegment = resolveVerifiedSegment(provider, subject, topic);
+  if (!verifiedSegment) {
+    // Unverified slug — degrade to the subject root rather than risk a 404.
+    return {
+      ok: true,
+      plan: {
+        url: base,
+        provider,
+        subject,
+        topic, // preserve what was requested for telemetry/UX
+        topicScoped: false,
+        urlConfidence: "subject-root-fallback",
+      },
+    };
+  }
+
+  const url = `${base}/${verifiedSegment}`;
   return {
     ok: true,
     plan: {
@@ -127,6 +229,7 @@ export function buildKhanIxlDeeplink(input: {
       subject,
       topic,
       topicScoped: true,
+      urlConfidence: "verified",
     },
   };
 }

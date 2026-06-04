@@ -159,6 +159,11 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
           // and cache it. Failures are silent.
           try {
             const { synthesizeLessonForBlock } = await import("./synthesizeLessonForBlock");
+            // v3.31: thread the Ohio standard code (curriculum topic code)
+            // so synthesized/fallback worksheets are stamped "Aligned to 5.NBT.5".
+            const stdCode = b.curriculumTopicId
+              ? topicCodeById.get(b.curriculumTopicId) ?? null
+              : null;
             const synth = await synthesizeLessonForBlock({
               blockId: b.id,
               blockTitle: b.title,
@@ -167,6 +172,7 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
               subjectName: b.subjectName ?? null,
               durationMin: b.durationMin ?? 30,
               dateStr,
+              standardCode: stdCode,
             });
             if (synth) lessonByBlockId.set(b.id, synth);
           } catch {
@@ -358,6 +364,47 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
     summerMode = status.active;
   } catch {
     // optional — summer mode banner is cosmetic
+  }
+
+  // v3.31: audit the assembled packet. Every content-bearing block should
+  // now carry real work (synth + deterministic fallback guarantee it). If a
+  // gap slips through, log it and notify Katy that night so she can patch the
+  // block. Best-effort: the audit never blocks the packet from shipping.
+  try {
+    const { auditPacket, formatAuditNotification } = await import("./packetAudit");
+    const blockTypeBySortOrder = new Map<number, string>();
+    blocksRaw.forEach((b: any, i: number) => {
+      blockTypeBySortOrder.set((b.sortOrder ?? i) + 1, String(b.blockType ?? ""));
+    });
+    const audit = auditPacket(dateStr, blocks, blockTypeBySortOrder);
+    if (!audit.ok) {
+      // De-dupe per date so re-assembling the same day doesn't re-notify.
+      const marker = `packet.audit.notified.${dateStr}`;
+      let already = false;
+      try {
+        already = (await db.getAppSetting(marker)) === "1";
+      } catch {
+        already = false;
+      }
+      if (!already) {
+        try {
+          const { notifyOwner } = await import("../_core/notification");
+          const msg = formatAuditNotification(audit);
+          const sent = await notifyOwner(msg);
+          if (sent) {
+            try {
+              await db.setAppSetting(marker, "1");
+            } catch {
+              /* marker write failure is non-fatal */
+            }
+          }
+        } catch {
+          /* notification failure must not block the packet */
+        }
+      }
+    }
+  } catch {
+    /* audit failure must not block the packet */
   }
 
   return {

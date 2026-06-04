@@ -1,5 +1,6 @@
 /**
  * Push 116 (2026-05-13) — Khan / IXL deeplink builder contract.
+ * v3.31 (2026-06-04) — Verified-path allow-list + urlConfidence.
  */
 import { describe, it, expect } from "vitest";
 import { buildKhanIxlDeeplink } from "./_lib/khanIxlDeeplink";
@@ -14,9 +15,11 @@ describe("Push 116 — Khan / IXL deeplink builder", () => {
     );
     expect(r.plan.topicScoped).toBe(false);
     expect(r.plan.topic).toBeUndefined();
+    expect(r.plan.urlConfidence).toBe("subject-root-fallback");
   });
 
-  it("IXL + math + topic appends slug segment", () => {
+  it("IXL + math + VERIFIED topic appends the real segment", () => {
+    // "fractions" IS on the ixl:math allow-list → maps to "fractions"
     const r = buildKhanIxlDeeplink({
       subject: "math",
       provider: "ixl",
@@ -27,9 +30,28 @@ describe("Push 116 — Khan / IXL deeplink builder", () => {
     expect(r.plan.url).toBe("https://www.ixl.com/math/grade-5/fractions");
     expect(r.plan.topicScoped).toBe(true);
     expect(r.plan.topic).toBe("fractions");
+    expect(r.plan.urlConfidence).toBe("verified");
   });
 
-  it("topic with spaces / punctuation is slugified", () => {
+  it("Khan + math + VERIFIED topic maps friendly slug to real Khan segment", () => {
+    // "multiplication" → "imp-multi-digit-multiplication" (real Khan path)
+    const r = buildKhanIxlDeeplink({
+      subject: "math",
+      provider: "khan",
+      topic: "multiplication",
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.plan.url).toBe(
+      "https://www.khanacademy.org/math/cc-fifth-grade-math/imp-multi-digit-multiplication",
+    );
+    expect(r.plan.topicScoped).toBe(true);
+    expect(r.plan.topic).toBe("multiplication");
+    expect(r.plan.urlConfidence).toBe("verified");
+  });
+
+  it("UNVERIFIED topic slug falls back to subject root (no 404 risk)", () => {
+    // "reading-comprehension-5th" is NOT on the ela allow-list → subject root.
     const r = buildKhanIxlDeeplink({
       subject: "ela",
       provider: "ixl",
@@ -37,8 +59,11 @@ describe("Push 116 — Khan / IXL deeplink builder", () => {
     });
     expect(r.ok).toBe(true);
     if (!r.ok) return;
+    // Requested slug is preserved for telemetry, but URL is the subject root.
     expect(r.plan.topic).toBe("reading-comprehension-5th");
-    expect(r.plan.url.endsWith("/reading-comprehension-5th")).toBe(true);
+    expect(r.plan.topicScoped).toBe(false);
+    expect(r.plan.urlConfidence).toBe("subject-root-fallback");
+    expect(r.plan.url).toBe("https://www.ixl.com/ela/grade-5");
   });
 
   it("blank or whitespace topic falls back to subject root", () => {
@@ -52,6 +77,7 @@ describe("Push 116 — Khan / IXL deeplink builder", () => {
       if (!r.ok) return;
       expect(r.plan.topicScoped).toBe(false);
       expect(r.plan.topic).toBeUndefined();
+      expect(r.plan.urlConfidence).toBe("subject-root-fallback");
     }
   });
 
@@ -113,6 +139,7 @@ describe("Push 116 — Khan / IXL deeplink builder", () => {
     if (!r.ok) return;
     expect(r.plan.topicScoped).toBe(false);
     expect(r.plan.topic).toBeUndefined();
+    expect(r.plan.urlConfidence).toBe("subject-root-fallback");
   });
 
   it("non-string topic (number, object) falls back to subject root", () => {
@@ -139,5 +166,62 @@ describe("Push 116 — Khan / IXL deeplink builder", () => {
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(r.plan.url).toContain("spelling-patterns");
+  });
+
+  // --- v3.31 — verified allow-list specifics ---
+
+  it("verified URLs never contain the raw friendly slug when it differs", () => {
+    // friendly "division" maps to a different real segment on each provider
+    const khan = buildKhanIxlDeeplink({
+      subject: "math",
+      provider: "khan",
+      topic: "division",
+    });
+    const ixl = buildKhanIxlDeeplink({
+      subject: "math",
+      provider: "ixl",
+      topic: "division",
+    });
+    expect(khan.ok && ixl.ok).toBe(true);
+    if (khan.ok) {
+      expect(khan.plan.urlConfidence).toBe("verified");
+      expect(khan.plan.url.endsWith("/imp-division")).toBe(true);
+    }
+    if (ixl.ok) {
+      expect(ixl.plan.urlConfidence).toBe("verified");
+      expect(ixl.plan.url.endsWith("/divide-whole-numbers")).toBe(true);
+    }
+  });
+
+  it("a subject with no allow-list table degrades unverified topics to root", () => {
+    // science has no VERIFIED_TOPIC_PATHS table → always subject-root-fallback
+    const r = buildKhanIxlDeeplink({
+      subject: "science",
+      provider: "khan",
+      topic: "ecosystems",
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.plan.topicScoped).toBe(false);
+    expect(r.plan.urlConfidence).toBe("subject-root-fallback");
+    expect(r.plan.url).toBe(
+      "https://www.khanacademy.org/science/middle-school-physics",
+    );
+  });
+
+  it("every verified URL still starts with the subject base (no host swap)", () => {
+    const r = buildKhanIxlDeeplink({
+      subject: "math",
+      provider: "khan",
+      topic: "fractions",
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(
+      r.plan.url.startsWith(
+        "https://www.khanacademy.org/math/cc-fifth-grade-math/",
+      ),
+    ).toBe(true);
+    expect(r.plan.urlConfidence).toBe("verified");
   });
 });

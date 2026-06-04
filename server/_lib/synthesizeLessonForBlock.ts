@@ -45,6 +45,8 @@ type SynthInput = {
   subjectName?: string | null;
   durationMin: number;
   dateStr: string;
+  /** v3.31: optional Ohio Learning Standard code, e.g. "5.NBT.5". */
+  standardCode?: string | null;
 };
 
 /**
@@ -96,7 +98,10 @@ export async function synthesizeLessonForBlock(
     .filter(Boolean)
     .join("\n");
 
+  // v3.31: one retry. Transient LLM failures used to drop the block to a
+  // blank Notes page; now we retry once, then fall back deterministically.
   let synth: SynthResult | null = null;
+  for (let attempt = 0; attempt < 2 && !synth; attempt++) {
   try {
     const resp = await invokeLLM({
       messages: [
@@ -157,8 +162,51 @@ export async function synthesizeLessonForBlock(
   } catch {
     synth = null;
   }
+  }
 
-  if (!synth) return null;
+  // v3.31: deterministic, no-LLM fallback so a content block is NEVER
+  // pedagogically empty. This always yields >=3 grade-5 items + answer key.
+  if (!synth || !Array.isArray(synth.practice) || synth.practice.length === 0) {
+    try {
+      const { fallbackWorksheetForBlock } = await import("./fallbackWorksheet");
+      const fb = fallbackWorksheetForBlock({
+        blockId: input.blockId,
+        blockTitle: input.blockTitle,
+        subjectSlug: input.subjectSlug,
+        durationMin: input.durationMin,
+        dateStr: input.dateStr,
+        standardCode: input.standardCode ?? null,
+      });
+      // Cache the fallback too (keyed by block) so a later Print Daily is free
+      // and deterministic. Stored in the same SYNTH_TYPE slot.
+      try {
+        await db.addAssignmentLibrary({
+          title: `Fallback: ${input.blockTitle}`.slice(0, 280),
+          type: SYNTH_TYPE,
+          subjectSlug: input.subjectSlug ?? undefined,
+          topic: input.blockTitle.slice(0, 180),
+          fromSource: "deterministic-fallback",
+          dateFor: input.dateStr,
+          dateReceived: input.dateStr,
+          blockId: input.blockId,
+          notes: JSON.stringify({
+            objectives: fb.objectives ?? [],
+            instructions: fb.instructions ?? "",
+            practice: (fb.worksheets?.[0]?.questions ?? []).map((q, i) => ({
+              q,
+              a: (fb.answerKey ?? "").split("\n")[i]?.replace(/^\d+\.\s*/, "") ?? "",
+            })),
+            bookReference: null,
+          }),
+        });
+      } catch {
+        /* caching failure must not block the packet */
+      }
+      return fb;
+    } catch {
+      return null;
+    }
+  }
 
   // 3) Persist to cache (best-effort).
   try {
@@ -177,7 +225,7 @@ export async function synthesizeLessonForBlock(
     /* caching failures must not block the packet */
   }
 
-  return toLessonPayload(synth, input.blockTitle);
+  return toLessonPayload(synth, input.blockTitle, input.standardCode ?? null);
 }
 
 function safeParse(raw: string | null | undefined): SynthResult | null {
@@ -197,7 +245,11 @@ function safeParse(raw: string | null | undefined): SynthResult | null {
   return null;
 }
 
-function toLessonPayload(s: SynthResult, blockTitle: string): LessonPayload {
+function toLessonPayload(
+  s: SynthResult,
+  blockTitle: string,
+  standardCode?: string | null,
+): LessonPayload {
   const answerKeyLines = s.practice.map((p, i) => `${i + 1}. ${p.a}`).join("\n");
   const questions = s.practice.map((p) => p.q);
 
@@ -211,8 +263,14 @@ function toLessonPayload(s: SynthResult, blockTitle: string): LessonPayload {
     descParts.push(`Book: ${s.bookReference.title}, pg ${pageRange}`);
   }
 
+  // v3.31: stamp the Ohio standard onto the worksheet description + instructions.
+  if (standardCode) descParts.unshift(`Aligned to ${standardCode}`);
+  const instructions = standardCode
+    ? `Aligned to Ohio Learning Standard: ${standardCode}. ${s.instructions ?? ""}`.trim()
+    : (s.instructions ?? null);
+
   return {
-    instructions: s.instructions ?? null,
+    instructions,
     objectives: s.objectives ?? null,
     materials: null,
     videos: [],
