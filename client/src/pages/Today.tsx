@@ -33,6 +33,7 @@ import KidHeaderStrips from "@/components/KidHeaderStrips";
 import MoodTimelineStrip from "@/components/MoodTimelineStrip";
 import { SlayChargeCard } from "@/components/SlayChargeCard";
 import SummerModeBadge from "@/components/SummerModeBadge";
+import PacketAuditChip from "@/components/PacketAuditChip";
 import ReadyFor6thBadge from "@/components/ReadyFor6thBadge";
 import CatchUpNextDayCard from "@/components/CatchUpNextDayCard";
 import { TomorrowChoiceCard } from "@/components/TomorrowChoiceCard";
@@ -327,6 +328,12 @@ export default function Today() {
     <div className="space-y-4">
       {/* Theme picker strip — 4 themes Reagan can pick from */}
       <ThemePickerStrip />
+      {/* v3.32 — Packet-audit status chip: at-a-glance "today's packet has
+          work in every block" (green) vs "N blocks need content" (amber,
+          with titles for unlocked adults). */}
+      <div className="flex justify-start">
+        <PacketAuditChip />
+      </div>
       {/* Header — chalkboard slate hero. Chalk-style text on green slate, framed in oak. */}
       <header
         className="greeting-hero relative rounded-2xl p-5 md:p-7 overflow-hidden"

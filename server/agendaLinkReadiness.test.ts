@@ -5,6 +5,9 @@ import { describe, it, expect } from "vitest";
 import {
   buildAgendaLinkReadiness,
   buildAgendaLinkReadinessBatch,
+  readinessLegendText,
+  readinessLegendHtml,
+  READINESS_LABELS,
 } from "./_lib/agendaLinkReadiness";
 
 describe("v3.31 — buildAgendaLinkReadiness", () => {
@@ -116,6 +119,66 @@ describe("v3.31 — buildAgendaLinkReadiness", () => {
     ).not.toThrow();
   });
 
+  // --- v3.32: new IXL subjects deep-link verified; Khan stays at root ---
+  it("IXL ELA + verified topic (reading) → verified deep URL", () => {
+    const r = buildAgendaLinkReadiness({
+      appKey: "ixl",
+      provider: "ixl",
+      subject: "ela",
+      topic: "reading",
+    });
+    expect(r.urlConfidence).toBe("verified");
+    expect(r.isDeeplink).toBe(true);
+    expect(r.url).toContain("/ela/grade-5/reading-strategies");
+    // IXL = dad email/password → grown-up first.
+    expect(r.canKidOpenNow).toBe(false);
+  });
+
+  it("IXL science (earth-science alias) → verified deep URL", () => {
+    const r = buildAgendaLinkReadiness({
+      appKey: "ixl",
+      provider: "ixl",
+      subject: "science",
+      topic: "earth-science",
+    });
+    expect(r.urlConfidence).toBe("verified");
+    expect(r.url).toContain("/science/grade-5/earth-and-space-science");
+  });
+
+  it("IXL social-studies (us-history alias) → verified deep URL", () => {
+    const r = buildAgendaLinkReadiness({
+      appKey: "ixl",
+      provider: "ixl",
+      subject: "social-studies",
+      topic: "us-history",
+    });
+    expect(r.urlConfidence).toBe("verified");
+    expect(r.url).toContain("/social-studies/grade-5/history");
+  });
+
+  it("Khan ELA topic stays at subject root (opaque hash slugs, never 404)", () => {
+    const r = buildAgendaLinkReadiness({
+      appKey: "khan_academy",
+      provider: "khan",
+      subject: "ela",
+      topic: "reading",
+    });
+    expect(r.urlConfidence).toBe("subject-root-fallback");
+    expect(r.isDeeplink).toBe(true);
+    expect(r.url).toBe("https://www.khanacademy.org/ela/cc-5th-reading-vocab");
+  });
+
+  it("IXL ELA + UNVERIFIED topic → subject-root-fallback (no 404)", () => {
+    const r = buildAgendaLinkReadiness({
+      appKey: "ixl",
+      provider: "ixl",
+      subject: "ela",
+      topic: "some-made-up-ela-topic",
+    });
+    expect(r.urlConfidence).toBe("subject-root-fallback");
+    expect(r.url).toBe("https://www.ixl.com/ela/grade-5");
+  });
+
   it("batch maps every row and tolerates a non-array", () => {
     const rows = buildAgendaLinkReadinessBatch([
       { appKey: "khan_academy", provider: "khan", subject: "math", topic: "fractions" },
@@ -123,5 +186,29 @@ describe("v3.31 — buildAgendaLinkReadiness", () => {
     ]);
     expect(rows.length).toBe(2);
     expect(buildAgendaLinkReadinessBatch(null as any)).toEqual([]);
+  });
+});
+
+describe("v3.32 — shared readiness legend (email/PDF vocabulary)", () => {
+  it("labels match the per-link readinessLabel vocabulary", () => {
+    const kid = buildAgendaLinkReadiness({ appKey: "blooket", url: "https://blooket.com/" });
+    const adult = buildAgendaLinkReadiness({ appKey: "ixl", url: "https://www.ixl.com/" });
+    expect(READINESS_LABELS.kid).toBe(kid.readinessLabel);
+    expect(READINESS_LABELS.adult).toBe(adult.readinessLabel);
+  });
+
+  it("text legend carries both states", () => {
+    const t = readinessLegendText();
+    expect(t).toContain(READINESS_LABELS.kid);
+    expect(t).toContain(READINESS_LABELS.adult);
+    expect(t).toContain("Opening today's links");
+  });
+
+  it("html legend carries both states and is a single block", () => {
+    const h = readinessLegendHtml();
+    expect(h).toContain(READINESS_LABELS.kid);
+    expect(h).toContain(READINESS_LABELS.adult);
+    expect(h.startsWith("<div")).toBe(true);
+    expect(h.trim().endsWith("</div>")).toBe(true);
   });
 });

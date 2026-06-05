@@ -172,3 +172,35 @@ export function buildAgendaLinkReadinessBatch(
   if (!Array.isArray(rows)) return [];
   return rows.map((r) => buildAgendaLinkReadiness(r));
 }
+
+/* ----------------------------- shared legend ----------------------------- */
+/**
+ * v3.32 — single source of truth for the "how to open today's links" legend.
+ * Used in BOTH the nightly agenda email (plain-text owner note + HTML body)
+ * and anywhere else the same two-state vocabulary should appear, so the
+ * dashboard chip, the email, and the PDF all speak identically.
+ */
+export const READINESS_LABELS = {
+  kid: READY_LABEL, // "Reagan can open this"
+  adult: ADULT_LABEL, // "Grown-up signs in first"
+} as const;
+
+/** Plain-text legend for email/notification bodies. */
+export function readinessLegendText(): string {
+  return (
+    `Opening today's links:\n` +
+    `  \u2713 "${READY_LABEL}" \u2014 tap and go (her Google sign-in or a class code).\n` +
+    `  \u{1F510} "${ADULT_LABEL}" \u2014 an adult logs in (password in the adult-only vault), then hands it over.`
+  );
+}
+
+/** HTML legend block for the agenda email body. */
+export function readinessLegendHtml(): string {
+  return (
+    `<div style="margin:20px 0 4px;padding:12px 14px;background:#f5f8f6;border-radius:8px;font-size:12px;color:#555;">` +
+    `<b style="color:#1f3a2e;">Opening today's links</b>` +
+    `<div style="margin-top:6px;"><span style="display:inline-block;background:#d1fae5;color:#065f46;border-radius:999px;padding:1px 8px;font-weight:600;">&#10003; ${READY_LABEL}</span> &mdash; tap and go (Reagan's Google sign-in or a class code).</div>` +
+    `<div style="margin-top:4px;"><span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:999px;padding:1px 8px;font-weight:600;">&#128274; ${ADULT_LABEL}</span> &mdash; an adult logs in (password saved in the adult-only vault), then hands it to Reagan.</div>` +
+    `</div>`
+  );
+}

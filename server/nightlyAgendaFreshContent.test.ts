@@ -97,8 +97,12 @@ describe("nightlyAgenda.sendNow — fresh-content-per-run (v3.24)", () => {
     const body = getSendNowBody();
     // The owner-notification body must reference the attachment, not a URL.
     expect(body).toMatch(/PDF attached\./);
-    // And the linkLine variable must be the no-URL string introduced 2026-05-30.
-    expect(body).toMatch(/const linkLine = `\\n\\nPDF attached\./);
+    // And the linkLine variable must still be the no-URL string introduced
+    // 2026-05-30. v3.32 appends the readiness legend via readinessLegendText(),
+    // so the assignment now starts the same way but is concatenated.
+    expect(body).toMatch(/const linkLine =\s*`\\n\\nPDF attached\./);
+    // v3.32: the readiness legend is appended (single source of truth helper).
+    expect(body).toContain("readinessLegendText()");
   });
 
   it("Resend send list targets BOTH Marcy and Mom (no fallback to old single-recipient path)", () => {

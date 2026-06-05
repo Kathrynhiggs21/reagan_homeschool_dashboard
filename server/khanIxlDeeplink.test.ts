@@ -224,4 +224,104 @@ describe("Push 116 — Khan / IXL deeplink builder", () => {
     ).toBe(true);
     expect(r.plan.urlConfidence).toBe("verified");
   });
+
+  // --- v3.32 — expanded IXL allow-list for ELA / science / social studies ---
+
+  it("IXL ELA verified topics deep-link to the real category segment", () => {
+    const cases: Array<[string, string]> = [
+      ["reading", "reading-strategies"],
+      ["Reading Comprehension", "reading-strategies"],
+      ["grammar", "grammar"],
+      ["vocabulary", "vocabulary"],
+      ["writing", "writing-strategies"],
+    ];
+    for (const [topic, seg] of cases) {
+      const r = buildKhanIxlDeeplink({ subject: "ela", provider: "ixl", topic });
+      expect(r.ok).toBe(true);
+      if (!r.ok) continue;
+      expect(r.plan.urlConfidence).toBe("verified");
+      expect(r.plan.url).toBe(`https://www.ixl.com/ela/grade-5/${seg}`);
+    }
+  });
+
+  it("IXL science verified topics deep-link (earth-science aliases too)", () => {
+    const earth = buildKhanIxlDeeplink({
+      subject: "science",
+      provider: "ixl",
+      topic: "Earth Science",
+    });
+    expect(earth.ok).toBe(true);
+    if (earth.ok) {
+      expect(earth.plan.urlConfidence).toBe("verified");
+      expect(earth.plan.url).toBe(
+        "https://www.ixl.com/science/grade-5/earth-and-space-science",
+      );
+    }
+    const life = buildKhanIxlDeeplink({
+      subject: "science",
+      provider: "ixl",
+      topic: "life-science",
+    });
+    if (life.ok) {
+      expect(life.plan.url).toBe(
+        "https://www.ixl.com/science/grade-5/life-science",
+      );
+    }
+  });
+
+  it("IXL social-studies verified topics deep-link (us-history → history)", () => {
+    const r = buildKhanIxlDeeplink({
+      subject: "social-studies",
+      provider: "ixl",
+      topic: "US History",
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.plan.urlConfidence).toBe("verified");
+    expect(r.plan.url).toBe(
+      "https://www.ixl.com/social-studies/grade-5/history",
+    );
+  });
+
+  it("IXL spelling verified topic deep-links to spelling-patterns", () => {
+    const r = buildKhanIxlDeeplink({
+      subject: "spelling",
+      provider: "ixl",
+      topic: "spelling",
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.plan.urlConfidence).toBe("verified");
+    expect(r.plan.url).toBe(
+      "https://www.ixl.com/ela/grade-5/spelling-patterns/spelling-patterns",
+    );
+  });
+
+  it("Khan ELA/science/social-studies stay at subject root (hashes not guessed)", () => {
+    // We deliberately did NOT add Khan hash segments for these subjects.
+    for (const subject of ["ela", "science", "social-studies"] as const) {
+      const r = buildKhanIxlDeeplink({
+        subject,
+        provider: "khan",
+        topic: "reading",
+      });
+      expect(r.ok).toBe(true);
+      if (!r.ok) continue;
+      expect(r.plan.urlConfidence).toBe("subject-root-fallback");
+      expect(r.plan.topicScoped).toBe(false);
+    }
+  });
+
+  it("unverified IXL ELA/science/social-studies topics still degrade to root", () => {
+    const r = buildKhanIxlDeeplink({
+      subject: "science",
+      provider: "ixl",
+      topic: "volcano-diorama-day",
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.plan.urlConfidence).toBe("subject-root-fallback");
+    expect(r.plan.url).toBe("https://www.ixl.com/science/grade-5");
+    expect(r.plan.topic).toBe("volcano-diorama-day");
+  });
 });

@@ -370,6 +370,9 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
   // now carry real work (synth + deterministic fallback guarantee it). If a
   // gap slips through, log it and notify Katy that night so she can patch the
   // block. Best-effort: the audit never blocks the packet from shipping.
+  let packetAuditResult:
+    | import("./packetAudit").PacketAuditResult
+    | null = null;
   try {
     const { auditPacket, formatAuditNotification } = await import("./packetAudit");
     const blockTypeBySortOrder = new Map<number, string>();
@@ -377,6 +380,7 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
       blockTypeBySortOrder.set((b.sortOrder ?? i) + 1, String(b.blockType ?? ""));
     });
     const audit = auditPacket(dateStr, blocks, blockTypeBySortOrder);
+    packetAuditResult = audit;
     if (!audit.ok) {
       // De-dupe per date so re-assembling the same day doesn't re-notify.
       const marker = `packet.audit.notified.${dateStr}`;
@@ -419,5 +423,6 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
     schoolDayWindow: { start: "09:00", end: "13:00" },
     devotionText: (plan as any).devotionText ?? null,
     summerMode,
+    packetAudit: packetAuditResult,
   };
 }

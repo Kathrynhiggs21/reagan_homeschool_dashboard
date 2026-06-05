@@ -108,6 +108,46 @@ const VERIFIED_TOPIC_PATHS: Record<string, Record<string, string>> = {
     fractions: "fractions",
     geometry: "geometry",
   },
+
+  // --- v3.32: ELA, science, social studies verified segments ---
+  //
+  // NOTE: Khan Academy's real 5th-grade unit path segments are opaque hashes
+  // (e.g. /x47cf...) that we cannot verify offline, so we deliberately do NOT
+  // guess them — Khan ELA/science/social-studies/spelling stay at the
+  // known-good subject root (urlConfidence: "subject-root-fallback"). IXL's
+  // grade-5 category slugs ARE stable, human-readable, and verifiable, so we
+  // deep-link those.
+
+  // IXL — grade-5 ELA skill-tree categories.
+  "ixl:ela": {
+    reading: "reading-strategies",
+    "reading-strategies": "reading-strategies",
+    "reading-comprehension": "reading-strategies",
+    grammar: "grammar",
+    "grammar-and-mechanics": "grammar",
+    vocabulary: "vocabulary",
+    vocab: "vocabulary",
+    writing: "writing-strategies",
+    "writing-strategies": "writing-strategies",
+  },
+  // IXL grade-5 spelling — spelling-patterns is the canonical category.
+  "ixl:spelling": {
+    spelling: "spelling-patterns",
+    "spelling-patterns": "spelling-patterns",
+  },
+  "ixl:science": {
+    "life-science": "life-science",
+    "earth-and-space-science": "earth-and-space-science",
+    "earth-science": "earth-and-space-science",
+    "physical-science": "physical-science",
+  },
+  "ixl:social-studies": {
+    geography: "geography",
+    "us-history": "history",
+    history: "history",
+    civics: "government-and-civics",
+    "government-and-civics": "government-and-civics",
+  },
 };
 
 export type UrlConfidence = "verified" | "subject-root-fallback";

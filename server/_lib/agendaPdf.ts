@@ -101,6 +101,25 @@ export type AgendaPdfInput = {
   devotionText?: string | null;
   /** v3.10: when true, show "☀ Summer Preview — 6th Grade" banner on cover */
   summerMode?: boolean | null;
+  /**
+   * v3.32: result of the nightly packet audit (computed by the assembler).
+   * Surfaced so the dashboard can show a "today's packet" status chip
+   * without re-assembling. Shape mirrors PacketAuditResult; kept loosely
+   * typed here to avoid a circular import with packetAudit.ts.
+   */
+  packetAudit?: {
+    forDate: string;
+    totalBlocks: number;
+    contentBlocks: number;
+    emptyBlocks: Array<{
+      blockId: number;
+      sortOrder: number;
+      title: string;
+      blockType: string;
+      reason: string;
+    }>;
+    ok: boolean;
+  } | null;
 };
 
 export type AgendaPdfResult = {

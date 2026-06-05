@@ -383,3 +383,18 @@ This single bug explains BOTH the 63 "parent is not a folder" failures we saw ac
 - [x] Agenda-link readiness joiner `server/_lib/agendaLinkReadiness.ts` — fuses the verified deep-link builder with the sign-in tagger into one agenda-ready descriptor (`url`, `urlConfidence`, `canKidOpenNow`, `kidBadge`, `readinessLabel` = "Reagan can open this" / "Grown-up signs in first"); non-Khan/IXL links pass through untouched; never leaks the blocked ihsd.us address; never throws. Exposed via `today.agendaLinkReadiness` tRPC query. 10 vitest specs.
 - [x] Updated pre-existing `spellingPracticeReward.test.ts` for the new verified-allow-list fallback (unverified "compound-words" → spelling-patterns root, slug preserved).
 - [x] Full suite: 4625/4633 passing (7 skipped); TS/LSP clean. The single failure that surfaced from this work (old deep-link contract) was updated to the new correct behavior.
+
+## v3.32 — Readiness badges + bigger allow-list + audit chip [2026-06-04, in progress]
+
+- [x] Grow verified Khan/IXL deep-link allow-list for ELA, science, and social studies (math already well-covered); add tests confirming verified deep links + unverified fallback for the new subjects. DONE: added IXL ela/science/social-studies/spelling category segments (human-readable, stable). Khan ELA/science/social-studies intentionally stay at subject root (opaque hash slugs not guessable offline → never 404). 7 new deeplink tests, 21/21 pass.
+- [ ] Render agenda-link readiness badges ("Reagan can open this" / "Grown-up signs in first") in the Today/Schedule UI next to each app link, using the today.agendaLinkReadiness query.
+- [ ] Include readiness labels next to working links in the agenda email/PDF.
+- [ ] Surface the nightly packet-audit result as a small admin-only status chip on the dashboard ("Today's packet: all blocks have work" vs "N blocks need content").
+- [ ] Full suite green + TS/LSP clean + checkpoint.
+
+## v3.32 — completion notes (2026-06-04)
+
+- [x] Readiness badges rendered in the Apps page (per-tile chip from the readiness joiner) and a shared readiness legend added to the nightly agenda email (plain-text owner note + HTML body) via a single-source-of-truth helper (`readinessLegendText` / `readinessLegendHtml` in `agendaLinkReadiness.ts`).
+- [x] Grew verified IXL deep-link allow-list for ELA, science, social-studies, spelling (human-readable grade-5 category slugs). Khan ELA/science/social-studies intentionally stay at known-good subject root (opaque hash slugs → never 404).
+- [x] Packet-audit status chip on Today: new `nightlyAgenda.packetAuditStatus` query (assembler now returns `packetAudit` on the payload); `PacketAuditChip` shows green "all blocks have work", amber "N blocks need content" (titles for unlocked adults), or neutral "no plan".
+- [x] Tests: deeplink 21, readiness 18 (incl. legend), full suite 516 files / 4640 passing, 7 skipped. TS/LSP clean.

@@ -4683,6 +4683,81 @@ export const appRouter = router({
         return { ok: true as const, payload, agendaHash: hash, blockCount: payload.blocks.length };
       }),
     /**
+     * v3.32 (2026-06-04) — packetAuditStatus.
+     * Lightweight, public read used by the dashboard "today's packet" chip.
+     * Assembles the requested date (defaults to local-ET today), runs the
+     * same packet audit the nightly assembler runs, and returns a compact
+     * status. Reagan can see the green "all set" chip; the empty-block
+     * details are only meaningful to adults but are harmless to expose
+     * (titles only, no answers). Never throws — returns ok:false on any gap.
+     */
+    packetAuditStatus: publicProcedure
+      .input(
+        z
+          .object({
+            forDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+          })
+          .optional(),
+      )
+      .query(async ({ input }) => {
+        const today = (() => {
+          const d = new Date();
+          const y = d.getFullYear();
+          const m = String(d.getMonth() + 1).padStart(2, "0");
+          const day = String(d.getDate()).padStart(2, "0");
+          return `${y}-${m}-${day}`;
+        })();
+        const forDate = input?.forDate ?? today;
+        try {
+          const { assembleAgendaForDate } = await import(
+            "./_lib/agendaAssembler"
+          );
+          const payload = await assembleAgendaForDate(forDate);
+          if (!payload) {
+            return {
+              status: "no_plan" as const,
+              forDate,
+              totalBlocks: 0,
+              contentBlocks: 0,
+              emptyCount: 0,
+              emptyBlocks: [] as Array<{ sortOrder: number; title: string }>,
+            };
+          }
+          const audit = payload.packetAudit ?? null;
+          if (!audit) {
+            // Audit not computed (e.g. older payload) — treat as unknown.
+            return {
+              status: "unknown" as const,
+              forDate,
+              totalBlocks: payload.blocks.length,
+              contentBlocks: payload.blocks.length,
+              emptyCount: 0,
+              emptyBlocks: [] as Array<{ sortOrder: number; title: string }>,
+            };
+          }
+          return {
+            status: audit.ok ? ("ok" as const) : ("gaps" as const),
+            forDate: audit.forDate,
+            totalBlocks: audit.totalBlocks,
+            contentBlocks: audit.contentBlocks,
+            emptyCount: audit.emptyBlocks.length,
+            emptyBlocks: audit.emptyBlocks.map((e) => ({
+              sortOrder: e.sortOrder,
+              title: e.title,
+            })),
+          };
+        } catch {
+          return {
+            status: "unknown" as const,
+            forDate,
+            totalBlocks: 0,
+            contentBlocks: 0,
+            emptyCount: 0,
+            emptyBlocks: [] as Array<{ sortOrder: number; title: string }>,
+          };
+        }
+      }),
+    /**
      * v2.87 (2026-05-21) — On-demand printable agenda PDF for the homepage
      * Print button. Wraps the same `assembleAgendaForDate` + `buildAgendaPdf`
      * pipeline the nightly 8 PM cron uses, so what Mom prints from the
@@ -4834,7 +4909,11 @@ export const appRouter = router({
         // surfacing as an XML "AccessDenied" page in the inbox. The PDF is
         // attached to the email itself, so the link was redundant anyway.
         // The dashboard always has a fresh signed URL via /manus-storage/.
-        const linkLine = `\n\nPDF attached. (Stored at ${key}.)`;
+        const { readinessLegendText, readinessLegendHtml } = await import(
+          "./_lib/agendaLinkReadiness"
+        );
+        const linkLine =
+          `\n\nPDF attached. (Stored at ${key}.)\n\n` + readinessLegendText();
         // signedUrl is intentionally unused; kept the storageGetSignedUrl call
         // above so a presign failure still gets logged for diagnostics.
         void signedUrl;
@@ -4899,6 +4978,7 @@ export const appRouter = router({
 <div style="margin:20px 0;padding:14px 16px;border-left:4px solid #1f3a2e;background:#fafafa;border-radius:8px;">${blockListHtml || '<div style="color:#888;">No blocks scheduled.</div>'}</div>
 <p style="text-align:center;margin:24px 0;color:#1f3a2e;font-weight:600;">→ PDF agenda attached to this email.</p>
 <p style="font-size:12px;color:#888;text-align:center;margin-top:8px;">Per-block worksheets are also attached as separate PDFs.</p>
+${readinessLegendHtml()}
 </body></html>`;
           // Build worksheet attachments
           const emailAtts: Array<{ filename: string; content: Buffer; contentType: string }> = [
