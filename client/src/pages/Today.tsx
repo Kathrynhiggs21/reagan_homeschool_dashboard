@@ -59,6 +59,7 @@ import AIScheduleGeneratorCard from "@/components/AIScheduleGeneratorCard";
 import BrainBreakTvBox from "@/components/BrainBreakTvBox";
 import MascotGreeting from "@/components/MascotGreeting";
 import TodaySchoolWork, { type TodaySchoolWorkHandle, type TodayPrintableItem } from "@/components/TodaySchoolWork";
+import WorksheetRunner, { type WorksheetRunnerSeed } from "@/components/WorksheetRunner";
 import { detectSubjectSlug, findBestPrintableForBlock, findAllPrintablesForBlock } from "@/lib/matchPrintable";
 import { fallbackActivityFor } from "@/lib/subjectFallbackActivity";
 import { useRef } from "react";
@@ -216,6 +217,29 @@ export default function Today() {
   const utils = trpc.useUtils();
 
   const todaySchoolWorkRef = useRef<TodaySchoolWorkHandle>(null);
+  // 2026-06-16 — WorksheetRunner: tapping a block opens the full in-app
+  // worksheet (with IXL/Khan deep links + PDF download). Non-academic blocks
+  // (lunch/breaks) are exempted inside the runner via worksheets.forBlock.
+  const [worksheetSeed, setWorksheetSeed] = useState<WorksheetRunnerSeed | null>(null);
+  const [worksheetOpen, setWorksheetOpen] = useState(false);
+  function openWorksheetForBlock(block: any) {
+    const slug = detectSubjectSlug(block);
+    const bookRef = Array.isArray(block?.pageRefs) && block.pageRefs.length > 0
+      ? block.pageRefs
+          .map((p: any) => `${p.bookTitle ?? "Book"} pg ${p.fromPage}${p.toPage && p.toPage !== p.fromPage ? `-${p.toPage}` : ""}`)
+          .join("; ")
+      : null;
+    setWorksheetSeed({
+      date: todayDate,
+      blockId: String(block?.id ?? ""),
+      title: block?.title ?? "Worksheet",
+      subjectSlug: slug ?? block?.subjectSlug ?? null,
+      blockType: block?.blockType ?? null,
+      topicHint: block?.curriculumTopicName || block?.description || block?.title || null,
+      bookRef,
+    });
+    setWorksheetOpen(true);
+  }
   const [printableItems, setPrintableItems] = useState<TodayPrintableItem[]>([]);
   const [flashTile, setFlashTile] = useState<number | null>(null);
 
@@ -822,9 +846,9 @@ export default function Today() {
                           <Button
                             size="sm"
                             className="h-8 px-3 text-xs font-bold bg-amber-300 text-amber-950 hover:bg-amber-200"
-                            onClick={() => openPrintableForBlock(b)}
+                            onClick={() => openWorksheetForBlock(b)}
                           >
-                            📄 Open{match ? "" : " …"}
+                            📄 Open
                           </Button>
                           {match && (
                             <span className="h-8 inline-flex items-center px-2 rounded-md bg-emerald-400/20 border border-emerald-300/40 text-emerald-50 text-[10px] font-semibold">
@@ -1086,6 +1110,7 @@ export default function Today() {
 
       {/* Today's School Work — three-bucket printables from morning brief */}
       <TodaySchoolWork ref={todaySchoolWorkRef} onItemsChanged={setPrintableItems} />
+      <WorksheetRunner seed={worksheetSeed} open={worksheetOpen} onOpenChange={setWorksheetOpen} />
 
       {/* Daily 15-min Skill Builder — next-up skill from her ladder */}
       <SkillBuilderTile />

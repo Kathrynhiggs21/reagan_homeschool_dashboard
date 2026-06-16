@@ -9384,3 +9384,83 @@ export async function persistQuizResult(input: {
 
   return { ok: true as const, topicMasteryId, intervalDays };
 }
+
+
+/* -------------------------------------------------------------------------- */
+/*  WORKSHEET CONTENT (2026-06-16) — full in-app worksheets                   */
+/* -------------------------------------------------------------------------- */
+
+/** Fetch a single printable row by id (null if missing). */
+export async function getPrintableById(id: number) {
+  const d = getDb();
+  const rows = await d
+    .select()
+    .from(dailyPrintables)
+    .where(eq(dailyPrintables.id, id))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/**
+ * Cache generated full worksheet content on a printable row so it's stable
+ * (same content for the online fill-in page and the printable PDF) and we
+ * don't re-call the LLM every open.
+ */
+export async function setWorksheetContent(id: number, content: unknown) {
+  const d = getDb();
+  await d
+    .update(dailyPrintables)
+    .set({ worksheetContent: content as any } as any)
+    .where(eq(dailyPrintables.id, id));
+}
+
+/**
+ * Persist Reagan's typed answers. We store them inside the same
+ * worksheet_content JSON under an `answers` map ({ itemId: value }) plus a
+ * `submittedAt` ISO string. Non-destructive: we read the row, merge, write.
+ */
+export async function saveWorksheetAnswers(
+  id: number,
+  answers: Record<string, string>,
+  opts: { submitted?: boolean } = {},
+) {
+  const d = getDb();
+  const row = await getPrintableById(id);
+  if (!row) return null;
+  const existing = ((row as any).worksheetContent ?? {}) as Record<string, any>;
+  const merged = {
+    ...existing,
+    answers: { ...(existing.answers ?? {}), ...answers },
+    ...(opts.submitted ? { submittedAt: new Date().toISOString() } : {}),
+  };
+  await d
+    .update(dailyPrintables)
+    .set({ worksheetContent: merged as any } as any)
+    .where(eq(dailyPrintables.id, id));
+  return merged;
+}
+
+/**
+ * Find or create the printable row for a given (date, block) so every
+ * academic block has a backing row to hold its worksheet content. Returns
+ * the row. Caller passes block metadata used to seed a row if none exists.
+ */
+export async function ensurePrintableForBlock(input: {
+  forDate: string;
+  blockId: string;
+  title: string;
+  subjectSlug?: string | null;
+  description?: string | null;
+}) {
+  const existing = await listDailyPrintablesForBlock(input.forDate, input.blockId);
+  if (existing && existing.length > 0) return existing[0];
+  return attachPrintableToBlock({
+    forDate: input.forDate,
+    blockId: input.blockId,
+    bucket: "have_to_do",
+    title: input.title,
+    source: "kiwi-built",
+    description: input.description ?? null,
+    subjectSlug: input.subjectSlug ?? null,
+  });
+}

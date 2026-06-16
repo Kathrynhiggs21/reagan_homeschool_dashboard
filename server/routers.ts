@@ -11,6 +11,10 @@ import { transcribeAudio } from "./_core/voiceTranscription";
 import { notifyOwner } from "./_core/notification";
 import { findFreeLinks } from "./freeLinkFinder";
 import { storagePut } from "./storage";
+import { generateWorksheet, buildDeterministicWorksheet, isNonAcademicBlock, type WorksheetSeed } from "./_lib/worksheetGenerator";
+import { renderAndStoreWorksheetPdf } from "./_lib/worksheetPdf";
+import { subjectAppLink } from "./_lib/subjectAppLinks";
+import { isUsableWorksheet, type WorksheetContent } from "@shared/worksheetTypes";
 import { generateScheduleDraft, type AIBlockDraft } from "./_lib/aiScheduleGenerator";
 import { proposeScheduleEdit, type ExistingBlockSnapshot } from "./_lib/aiScheduleProposer";
 import { describeUser, roleForEmail, capabilitiesFor, type HomeRole } from "./_lib/permissions";
@@ -4266,6 +4270,141 @@ export const appRouter = router({
           } catch {}
         }
         return { ok: true, photoUrl: stored.url, autoGrade, coins, absent: isAbsent };
+      }),
+  }),
+  /* =================== FULL IN-APP WORKSHEETS (2026-06-16) =================== */
+  worksheets: router({
+    /**
+     * Fetch (or generate + cache) the FULL worksheet content for a block, so
+     * Reagan can work on it online. Returns:
+     *  - nonAcademic: true for lunch/breaks/appointments (no work to open)
+     *  - content: full structured worksheet (sections + answerable items)
+     *  - appLink: primary "open in the real app" deep link (+ alt)
+     *  - printableId: the backing row id (for saving answers / making PDF)
+     */
+    forBlock: protectedProcedure
+      .input(z.object({
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        blockId: z.string().min(1).max(64),
+        title: z.string().min(1).max(200),
+        subjectSlug: z.string().max(64).optional(),
+        blockType: z.string().max(40).optional(),
+        topicHint: z.string().max(2000).optional(),
+        bookRef: z.string().max(300).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        // 1. Non-academic blocks never open work.
+        if (isNonAcademicBlock({ title: input.title, blockType: input.blockType })) {
+          return { nonAcademic: true as const, content: null, appLink: null, printableId: null };
+        }
+        // 2. Ensure a backing printable row exists for this block.
+        const row = await db.ensurePrintableForBlock({
+          forDate: input.date,
+          blockId: input.blockId,
+          title: input.title,
+          subjectSlug: input.subjectSlug ?? null,
+          description: input.topicHint ?? null,
+        });
+        const printableId = Number((row as any)?.id);
+        const seed: WorksheetSeed = {
+          blockTitle: input.title,
+          subjectSlug: input.subjectSlug ?? null,
+          topicHint: input.topicHint ?? null,
+          bookRef: input.bookRef ?? null,
+        };
+        // 3. Use cached content if it's already a usable worksheet.
+        let content = (row as any)?.worksheetContent as WorksheetContent | null | undefined;
+        if (!isUsableWorksheet(content)) {
+          // Generate (LLM with deterministic fallback). Never throws empty.
+          try {
+            content = (await generateWorksheet(seed)).content;
+          } catch (e) {
+            console.warn("[worksheets] generate failed, using deterministic", e);
+            content = buildDeterministicWorksheet(seed);
+          }
+          if (!isUsableWorksheet(content)) content = buildDeterministicWorksheet(seed);
+          // Preserve any previously saved answers.
+          const prevAnswers = (row as any)?.worksheetContent?.answers;
+          if (prevAnswers) (content as any).answers = prevAnswers;
+          if (printableId) await db.setWorksheetContent(printableId, content);
+        }
+        const appLink = subjectAppLink({
+          subjectSlug: input.subjectSlug ?? null,
+          title: input.title,
+          topicHint: input.topicHint ?? null,
+        });
+        return { nonAcademic: false as const, content, appLink, printableId };
+      }),
+    /** Force a fresh regeneration (familyAdmin only). */
+    regenerate: familyAdminProcedure
+      .input(z.object({
+        printableId: z.number().int().positive(),
+        blockTitle: z.string().min(1).max(200),
+        subjectSlug: z.string().max(64).optional(),
+        topicHint: z.string().max(2000).optional(),
+        bookRef: z.string().max(300).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const seed: WorksheetSeed = {
+          blockTitle: input.blockTitle,
+          subjectSlug: input.subjectSlug ?? null,
+          topicHint: input.topicHint ?? null,
+          bookRef: input.bookRef ?? null,
+        };
+        let content: WorksheetContent;
+        try { content = (await generateWorksheet(seed)).content; }
+        catch { content = buildDeterministicWorksheet(seed); }
+        if (!isUsableWorksheet(content)) content = buildDeterministicWorksheet(seed);
+        await db.setWorksheetContent(input.printableId, content);
+        return { ok: true, content };
+      }),
+    /** Autosave / submit Reagan's typed answers. */
+    saveAnswers: protectedProcedure
+      .input(z.object({
+        printableId: z.number().int().positive(),
+        answers: z.record(z.string(), z.string()),
+        submitted: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const merged = await db.saveWorksheetAnswers(input.printableId, input.answers, { submitted: input.submitted });
+        return { ok: true, saved: merged != null };
+      }),
+    /**
+     * Render the full worksheet to a PDF, return a signed download URL, and
+     * file the PDF to Google Drive (reagan_assignments). This is the
+     * "download from the site" + "ends up in Drive" path.
+     */
+    makePdf: protectedProcedure
+      .input(z.object({
+        printableId: z.number().int().positive(),
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        withAnswerKey: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const row = await db.getPrintableById(input.printableId);
+        if (!row) throw new TRPCError({ code: "NOT_FOUND", message: "Worksheet not found." });
+        const content = (row as any)?.worksheetContent as WorksheetContent | null;
+        if (!isUsableWorksheet(content)) {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: "This block has no worksheet content yet. Open it once to generate it." });
+        }
+        const forDate = input.date ?? new Date().toISOString().slice(0, 10);
+        const { key, url, contentHash, fileName } = await renderAndStoreWorksheetPdf(content, {
+          forDate,
+          printableId: input.printableId,
+          withAnswerKey: input.withAnswerKey ?? true,
+        });
+        // File to Drive (best-effort; dedupes by content hash).
+        try {
+          await db.enqueueDrivePush({
+            fileKey: key,
+            fileUrl: url,
+            fileName,
+            mimeType: "application/pdf",
+            targetFolder: "reagan_assignments",
+            contentHash,
+          });
+        } catch (e) { console.warn("[worksheets] drive enqueue failed", e); }
+        return { ok: true, url, fileName };
       }),
   }),
   /* =================== UPLOAD OR SYNC =================== */

@@ -489,3 +489,9 @@ for a future in-site token; this session just RAN the work.
 - [ ] All academic blocks open IN-APP full worksheet (fillable) + printable PDF; owned-book page refs OK
 - [ ] Generated worksheet PDFs served via signed /manus-storage path and pushed to Drive (reagan_assignments)
 - [ ] Pull latest from GitHub (checkpoint sync) before building
+
+## IXL specific-skill deep links + no-password launch (2026-06-16)
+- [ ] Map each block topic -> SPECIFIC IXL grade-5 skill URL (land on the activity, not /math/grade-5 topic list)
+- [ ] Confirmed IXL Family active: Math, Language Arts, Science, Social Studies (signed in as kathrynmarsh / spear.cpt@gmail.com)
+- [ ] No-password auto-launch: wire IXL student sign-in code (QuickStart) as a protected secret, ready when Katy provides it
+- [ ] Keep Khan + Prodigy(math) as alternates; in-app worksheet always as no-login fallback
