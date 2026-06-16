@@ -299,19 +299,18 @@ export default function Today() {
   const saveGoodWorkM = trpc.prefs.set.useMutation();
 
   const today_str = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
-  // Hide test/quiz/screener/placement-style blocks from Reagan's Today list per parent request.
-  // We use a permissive title-pattern filter so it works whatever blockType was assigned upstream.
-  // Adults can still see/manage these from the Schedule page (we only filter Reagan's primary view).
-  const TEST_PATTERNS = /\b(test|quiz|screener|screening|placement|assessment|benchmark)\b/i;
+  // 2026-06-16 — Per parent request: DO NOT hide any blocks from Reagan.
+  // Previously a title/description word filter (test|quiz|screener|...) hid
+  // real lessons whose descriptions merely mentioned "no quiz today", which
+  // is why 3 of today's 4 blocks vanished. Reagan now sees her full schedule,
+  // quizzes included.
   // When scrubbing to a non-today date, source blocks from byDateQ instead
   // of today's live query. Falls back to today's blocks when isToday=true.
   const allBlocks: any[] = isToday
     ? (today.data?.blocks ?? [])
     : (byDateQ.data?.blocks ?? []);
-  const blocks = unlocked
-    ? allBlocks
-    : allBlocks.filter((b: any) => !TEST_PATTERNS.test(`${b.title ?? ""} ${b.description ?? ""}`));
-  const hiddenTestCount = allBlocks.length - blocks.length;
+  const blocks = allBlocks;
+  const hiddenTestCount = 0;
   const planId = isToday ? today.data?.plan?.id : (byDateQ.data?.plan?.id as number | undefined);
   const done = blocks.filter((b: any) => b.status === "complete").length;
   const total = blocks.length;

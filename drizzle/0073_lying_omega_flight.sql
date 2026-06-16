@@ -1,0 +1,1 @@
+ALTER TABLE `daily_printables` ADD `worksheet_content` json;

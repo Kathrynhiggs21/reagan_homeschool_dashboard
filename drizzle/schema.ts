@@ -1703,6 +1703,14 @@ export const dailyPrintables = mysqlTable("daily_printables", {
    * UUID-shaped strings, not bigints.
    */
   blockId: varchar("block_id", { length: 64 }),
+  /**
+   * 2026-06-16 — FULL structured worksheet content so a tapped block opens a
+   * REAL fill-in-online worksheet (and renders a matching full printable PDF),
+   * not just a link/to-do. Shape: { intro?, sections: [{ heading?, instructions?,
+   * items: [{ id, kind: "short"|"long"|"mc"|"passage"|"prompt", prompt, choices?,
+   * lines?, answer? }] }] }. Null for legacy/link-only rows.
+   */
+  worksheetContent: json("worksheet_content"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow().onUpdateNow(),
 });

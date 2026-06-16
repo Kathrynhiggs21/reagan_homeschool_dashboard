@@ -447,3 +447,45 @@ for a future in-site token; this session just RAN the work.
 - [x] Kiwi: wake word now captures Reagan's sentence after her name and sends it to kiwi.chat; reply speaks in voice mode (shared/wakeWord.ts + KiwiCompanion onresult)
 - [x] Kiwi: added Voice/Text toggle button in the chat header (one tap; Voice = listen on name + talk back, Text = type/read, mic off)
 - [x] Tests (vitest 4658 passed / 0 failed incl 11 new wakeWord) + live verify (prod plans.today returns 4 blocks, 200) + checkpoint
+
+## Today blocks: open/links + hidden (this session)
+- [ ] Blocks don't open or show links when Reagan taps them — find click/open handler and link rendering
+- [ ] "3 hidden" badge — determine why 3 of today's 4 blocks are hidden from Reagan and fix gating
+- [ ] Test (vitest + live) + checkpoint
+
+## Refinement: every academic block must open real content
+- [x] Stop hiding blocks (removed test/quiz word filter) — Reagan sees all blocks
+- [ ] Guarantee EVERY academic block opens a fillable PDF / video / worksheet / lesson on tap
+- [ ] Exempt non-academic blocks (lunch, break, recess, snack, free play) from the must-open rule
+- [ ] Find where fallbackActivityFor + lesson hydration live; ensure Open never dead-ends for academic blocks
+- [ ] Test (vitest + live) + checkpoint
+- [ ] Opened content must be READY TO START — no sign-in/login wall, no generic subject homepage; deep-link to exact resource or fillable PDF
+
+## 2-week pilot + Google Calendar sync (this session)
+- [x] Chain shift: 6/16->Wed 6/17 (Ali 11, lunch 12, classes 1pm); old Wed -> Thu 6/18
+- [ ] Finish block-content fix: every academic block opens ready-to-start PDF/video/worksheet/lesson; exempt lunch/breaks; no sign-in walls
+- [ ] Plan 2-week 5th-grade curriculum scope (subjects, sequence, owned-book page refs, daily structure)
+- [ ] Build 2-week plan into dashboard (10 school days of blocks with content)
+- [ ] Sync full 2-week schedule to Google Calendar
+- [ ] Test (vitest + live) + checkpoint + report
+
+## REFINED (parent): full workable worksheets, not stubs
+- [ ] Every academic block opens a REAL full worksheet/lesson Reagan can work on ONLINE (interactive fill-in fields), not a to-do list or short summary
+- [ ] Matching FULL printable PDF (actual problems/passages/prompts), savable, offline-answerable
+- [ ] Lunch/breaks/Ali exempt from must-open
+- [ ] Build 2-week curriculum with this full content per block
+
+## Worksheet engine (full content) + Drive sync
+- [x] Add worksheet_content JSON column to daily_printables (migration 0073)
+- [x] shared/worksheetTypes.ts + server/_lib/worksheetGenerator.ts (LLM + deterministic fallback, non-academic guard)
+- [ ] db helpers: getPrintableById, setWorksheetContent, saveWorksheetAnswers
+- [ ] tRPC worksheets router: forBlock (fetch-or-generate full content), saveAnswers
+- [ ] Generate FULL printable PDF from worksheet content
+- [ ] Push generated worksheet PDFs to Google Drive (replace old filing); subject folder
+- [ ] Interactive WorksheetRunner fill-in page; wire block Open -> runner; exempt lunch/breaks
+
+## No-paywall sourcing (2026-06-16)
+- [ ] Do NOT route Reagan's Open to Khan Academy / Prodigy / IXL / any login-or-paywall site
+- [ ] All academic blocks open IN-APP full worksheet (fillable) + printable PDF; owned-book page refs OK
+- [ ] Generated worksheet PDFs served via signed /manus-storage path and pushed to Drive (reagan_assignments)
+- [ ] Pull latest from GitHub (checkpoint sync) before building
