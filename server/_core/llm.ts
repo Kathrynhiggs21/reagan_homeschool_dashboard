@@ -277,6 +277,8 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     output_schema,
     responseFormat,
     response_format,
+    maxTokens,
+    max_tokens,
   } = params;
 
   const payload: Record<string, unknown> = {
@@ -296,7 +298,16 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     payload.tool_choice = normalizedToolChoice;
   }
 
-  payload.max_tokens = 32768
+  // Respect a caller-supplied output cap when provided; otherwise keep the
+  // historical default of 32768. A smaller cap dramatically reduces latency
+  // for short structured responses (e.g. the AI Agenda Editor's compact JSON
+  // edit plan), which previously timed out because the model was free to
+  // generate up to 32k tokens for what is really a tiny payload.
+  const requestedMax = maxTokens ?? max_tokens;
+  payload.max_tokens =
+    typeof requestedMax === "number" && requestedMax > 0
+      ? Math.floor(requestedMax)
+      : 32768;
   payload.thinking = {
     "budget_tokens": 128
   }

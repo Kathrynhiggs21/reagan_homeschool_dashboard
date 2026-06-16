@@ -12,6 +12,10 @@
  */
 import { invokeLLM } from "../_core/llm";
 import { whatWorksPromptAddendum } from "./whatWorks";
+import {
+  parseAgendaPromptToDirectives,
+  type Directive,
+} from "./agendaPromptParser";
 
 export type AgendaBlockSnapshot = {
   id: number;
@@ -721,9 +725,11 @@ export async function generateAgendaEditPlan(
       ]
     : userMsg;
 
-  // 50-second hard timeout so the UI spinner can never hang forever.
-  // If the gateway / model takes longer, we surface a friendly fallback plan.
-  const TIMEOUT_MS = 50_000;
+  // 45-second hard timeout so the UI spinner can never hang forever.
+  // If the gateway / model takes longer, we fall back to the deterministic
+  // keyword planner so common requests STILL apply instead of returning a
+  // "took too long" no-op (the root cause of "the editor never works").
+  const TIMEOUT_MS = 45_000;
   let resp: any;
   try {
     resp = await Promise.race([
@@ -732,6 +738,10 @@ export async function generateAgendaEditPlan(
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: userContent },
         ],
+        // CRITICAL latency fix: the edit plan is a tiny JSON payload, but the
+        // shared invokeLLM helper otherwise lets the model emit up to 32k
+        // output tokens, which routinely blew past the timeout. Cap it small.
+        max_tokens: 1500,
         response_format: {
           type: "json_schema",
           json_schema: {
@@ -791,9 +801,22 @@ export async function generateAgendaEditPlan(
     ]);
   } catch (err: any) {
     const isTimeout = String(err?.message || "").includes("LLM_TIMEOUT");
+    // Don't give up — try the deterministic planner so the request still lands.
+    const fb = buildDeterministicEditPlan(ctx, instruction);
+    if (fb.ops.length > 0) {
+      return {
+        ...fb,
+        warnings: [
+          ...(fb.warnings ?? []),
+          isTimeout
+            ? "The AI was slow, so I applied this with the built-in planner."
+            : "The AI was unreachable, so I applied this with the built-in planner.",
+        ],
+      };
+    }
     return {
       summary: isTimeout
-        ? "The AI took too long to answer (>50s). Try a shorter, more specific instruction — or use the manual editor below."
+        ? "The AI took too long and I couldn't map that request automatically. Try naming the block or subject (e.g. \"add a 30 min math block at 9am\")."
         : `The AI couldn't be reached (${String(err?.message || err).slice(0, 120)}). Try again, or use the manual editor below.`,
       intent: "vibe",
       ops: [],
@@ -806,6 +829,8 @@ export async function generateAgendaEditPlan(
     const content = (resp as any)?.choices?.[0]?.message?.content ?? "{}";
     parsed = JSON.parse(typeof content === "string" ? content : JSON.stringify(content));
   } catch (e) {
+    const fb = buildDeterministicEditPlan(ctx, instruction);
+    if (fb.ops.length > 0) return fb;
     return {
       summary: "Could not understand instruction.",
       intent: "vibe",
@@ -814,5 +839,236 @@ export async function generateAgendaEditPlan(
     };
   }
   const validated = validateEditPlan(parsed, ctx);
-  return annotateNoOpDiff(validated, parsed);
+  const annotated = annotateNoOpDiff(validated, parsed);
+  // Final safety net: if the LLM came back with zero usable ops but the
+  // instruction clearly maps to a deterministic edit, apply that instead of
+  // surfacing an empty diff. This is what makes the editor feel like it
+  // "always works" for everyday requests.
+  if ((annotated.ops?.length ?? 0) === 0) {
+    const fb = buildDeterministicEditPlan(ctx, instruction);
+    if (fb.ops.length > 0) {
+      return {
+        ...fb,
+        warnings: [...(fb.warnings ?? []), ...(annotated.warnings ?? [])].slice(0, 12),
+      };
+    }
+  }
+  return annotated;
+}
+
+/**
+ * Deterministic, no-LLM agenda editor used as a fallback when the model times
+ * out, errors, or returns zero usable ops. It covers the everyday requests
+ * Mom/Grandma actually type, so the editor never silently does nothing:
+ *   - "shorter / lighter", "longer"            -> proportional durationMin updates
+ *   - "more math", "less science", "+10 to ela" -> subject-targeted updates
+ *   - "no science today", "drop math"          -> delete matching blocks
+ *   - "start at 9", "begin 9:30"               -> shiftAll to that start
+ *   - "push everything 15 min later/earlier"    -> shiftAll by minutes
+ *   - "add a 30 min math block at 9am"          -> insert op
+ * Every op is run back through validateEditPlan by the caller path's apply
+ * logic, but we also build legal ops here so they pass validation directly.
+ */
+export function buildDeterministicEditPlan(
+  ctx: AgendaPlanContext,
+  instruction: string,
+): AgendaEditPlan {
+  const text = (instruction || "").trim();
+  const lower = text.toLowerCase();
+  const ops: AgendaEditOp[] = [];
+  const warnings: string[] = [];
+  const editable = ctx.blocks.filter((b) => b.status !== "complete");
+
+  const SUBJECT_WORD_TO_SLUG: Record<string, string> = {
+    math: "math", mathematics: "math", arithmetic: "math",
+    ela: "ela", reading: "ela", writing: "ela", language: "ela",
+    spelling: "ela", grammar: "ela", phonics: "ela",
+    science: "science",
+    social: "social-studies", history: "social-studies", geography: "social-studies",
+    art: "specials", music: "specials", pe: "specials", movement: "specials",
+  };
+  const knownSlugs = new Set(ctx.subjects.map((s) => s.slug));
+  const resolveSlug = (word?: string): string | null => {
+    if (!word) return null;
+    const slug = SUBJECT_WORD_TO_SLUG[word.toLowerCase()] ?? word.toLowerCase();
+    return slug;
+  };
+
+  const blockMatchesSubject = (b: AgendaBlockSnapshot, slug: string): boolean => {
+    if (b.subjectSlug === slug) return true;
+    // Fall back to blockType heuristics when subjectSlug isn't set.
+    if (slug === "math" && b.blockType === "math") return true;
+    if (slug === "ela" && (b.blockType === "read_aloud")) return true;
+    return false;
+  };
+
+  // ---- 1. Explicit "add a block" --------------------------------------
+  // e.g. "add a 30 minute math block at 9am about fractions"
+  const addMatch = /\b(add|insert|create|put in)\b/.test(lower);
+  if (addMatch) {
+    const durMatch = lower.match(/(\d{1,3})\s*(?:min|minute|minutes|m)\b/);
+    const dur = durMatch ? Math.max(5, Math.min(180, parseInt(durMatch[1], 10))) : 30;
+    // start time like "9am", "9:30", "at 14:00"
+    let startTime: string | null = null;
+    const t12 = lower.match(/\bat\s*(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/);
+    if (t12) {
+      let hh = parseInt(t12[1], 10);
+      const mm = t12[2] ? parseInt(t12[2], 10) : 0;
+      const mer = t12[3];
+      if (mer === "pm" && hh < 12) hh += 12;
+      if (mer === "am" && hh === 12) hh = 0;
+      if (hh >= 0 && hh < 24 && mm < 60) {
+        startTime = `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+      }
+    }
+    // subject / block type
+    let subjectSlug: string | null = null;
+    for (const word of Object.keys(SUBJECT_WORD_TO_SLUG)) {
+      if (new RegExp(`\\b${word}\\b`).test(lower)) { subjectSlug = resolveSlug(word); break; }
+    }
+    let blockType = "custom";
+    if (subjectSlug === "math") blockType = "math";
+    else if (subjectSlug === "ela") blockType = "read_aloud";
+    else if (/\b(adventure|walk|nature|outdoor|outside|explore)\b/.test(lower)) blockType = "adventure";
+    else if (/\b(read aloud|story|book|reading)\b/.test(lower)) blockType = "read_aloud";
+    else if (/\b(break|snack|free|choice|rest)\b/.test(lower)) blockType = "choice";
+    else if (/\b(warm.?up|morning)\b/.test(lower)) blockType = "morning_warmup";
+    // crude topic: text after "about" / "on"
+    const topicM = text.match(/\b(?:about|on|for)\s+([^.,;]{3,60})/i);
+    const topic = topicM ? topicM[1].trim() : null;
+    const subjName = subjectSlug
+      ? (ctx.subjects.find((s) => s.slug === subjectSlug)?.name ?? subjectSlug)
+      : null;
+    const title = topic
+      ? `${subjName ? subjName + ": " : ""}${topic.charAt(0).toUpperCase()}${topic.slice(1)}`
+      : `${subjName ?? "New"} block`;
+    ops.push({
+      kind: "insert",
+      title,
+      description: topic ? `Work on ${topic}.` : null,
+      blockType,
+      startTime,
+      durationMin: dur,
+      subjectSlug,
+      afterBlockId: null,
+    });
+  }
+
+  // ---- 2. Start-at / shift everything ---------------------------------
+  const startAt = lower.match(/\b(?:start|begin|starts?|beginning)\b[^0-9]*?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/);
+  if (startAt && editable.some((b) => b.startTime)) {
+    let hh = parseInt(startAt[1], 10);
+    const mm = startAt[2] ? parseInt(startAt[2], 10) : 0;
+    const mer = startAt[3];
+    if (mer === "pm" && hh < 12) hh += 12;
+    if (mer === "am" && hh === 12) hh = 0;
+    if (hh >= 0 && hh < 24 && mm < 60) {
+      const timed = editable.filter((b) => b.startTime).map((b) => b.startTime!);
+      const earliest = timed.sort()[0];
+      const em = earliest.match(/^(\d{1,2}):(\d{2})$/);
+      if (em) {
+        const earliestMin = parseInt(em[1], 10) * 60 + parseInt(em[2], 10);
+        const targetMin = hh * 60 + mm;
+        const delta = targetMin - earliestMin;
+        if (delta !== 0) ops.push({ kind: "shiftAll", minutes: delta });
+      }
+    }
+  } else {
+    const shiftM = lower.match(/\b(?:push|move|shift|everything|all)\b[^0-9]*?(\d{1,3})\s*(?:min|minute|minutes|m)\s*(later|earlier)?/);
+    if (shiftM) {
+      const mins = parseInt(shiftM[1], 10);
+      const dir = shiftM[2] === "earlier" ? -1 : 1;
+      if (mins > 0) ops.push({ kind: "shiftAll", minutes: mins * dir });
+    }
+  }
+
+  // ---- 3. Drop a subject ----------------------------------------------
+  const dropM = lower.match(/\b(?:no|skip|drop|cancel|remove)\s+(math|ela|reading|writing|science|social|history|art|music|pe)\b/);
+  if (dropM) {
+    const slug = resolveSlug(dropM[1]);
+    if (slug) {
+      for (const b of editable) {
+        if (blockMatchesSubject(b, slug)) ops.push({ kind: "delete", id: b.id });
+      }
+      if (!ops.some((o) => o.kind === "delete")) {
+        warnings.push(`No ${slug} block found to remove.`);
+      }
+    }
+  }
+
+  // ---- 4. Vibe / subject duration changes (keyword parser) ------------
+  // Run these UNLESS we already produced a shift or delete op (those are
+  // structurally incompatible with simultaneous proportional reshaping in a
+  // single deterministic pass). An `insert` from step 1 is fine to combine
+  // with "shorter"/"more math" so multi-part requests like "make today
+  // shorter and add a nature walk" apply BOTH parts.
+  const hasShiftOrDelete = ops.some((o) => o.kind === "shiftAll" || o.kind === "delete");
+  if (!hasShiftOrDelete) {
+    const directives: Directive[] = parseAgendaPromptToDirectives(text);
+    for (const dir of directives) {
+      switch (dir.kind) {
+        case "shortenAll":
+          for (const b of editable) {
+            const after = Math.max(10, Math.round(b.durationMin * 0.75));
+            if (after !== b.durationMin) ops.push({ kind: "update", id: b.id, durationMin: after });
+          }
+          break;
+        case "lengthenAll":
+          for (const b of editable) {
+            const after = Math.min(120, Math.round(b.durationMin * 1.25));
+            if (after !== b.durationMin) ops.push({ kind: "update", id: b.id, durationMin: after });
+          }
+          break;
+        case "bumpDurationFor":
+        case "focusSubject": {
+          const slug = dir.subjectSlug!;
+          const delta = dir.deltaMin ?? 10;
+          for (const b of editable) {
+            if (!blockMatchesSubject(b, slug)) continue;
+            const after = Math.min(120, b.durationMin + delta);
+            if (after !== b.durationMin) ops.push({ kind: "update", id: b.id, durationMin: after });
+          }
+          break;
+        }
+        case "trimDurationFor":
+        case "deprioritizeSubject": {
+          const slug = dir.subjectSlug!;
+          const delta = dir.deltaMin ?? 10;
+          for (const b of editable) {
+            if (!blockMatchesSubject(b, slug)) continue;
+            const after = Math.max(10, b.durationMin - delta);
+            if (after !== b.durationMin) ops.push({ kind: "update", id: b.id, durationMin: after });
+          }
+          break;
+        }
+        case "removeSubjectToday": {
+          const slug = dir.subjectSlug!;
+          for (const b of editable) {
+            if (blockMatchesSubject(b, slug)) ops.push({ kind: "delete", id: b.id });
+          }
+          break;
+        }
+        case "easeUp":
+        case "amplifyFun":
+          // No structural change we can make safely without the LLM; trim
+          // academic blocks a touch so the day feels lighter.
+          for (const b of editable) {
+            if (b.blockType === "math" || b.blockType === "read_aloud" || b.blockType === "custom") {
+              const after = Math.max(10, Math.round(b.durationMin * 0.85));
+              if (after !== b.durationMin) ops.push({ kind: "update", id: b.id, durationMin: after });
+            }
+          }
+          break;
+      }
+    }
+  }
+
+  const summary = ops.length === 0
+    ? "I couldn't map that to an automatic edit — try naming a block, subject, time, or duration."
+    : `Applied ${ops.length} change${ops.length === 1 ? "" : "s"} with the built-in planner.`;
+  const validated = validateEditPlan(
+    { summary, intent: "mixed", ops, warnings },
+    ctx,
+  );
+  return validated;
 }

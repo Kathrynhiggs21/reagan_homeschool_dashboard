@@ -387,10 +387,10 @@ This single bug explains BOTH the 63 "parent is not a folder" failures we saw ac
 ## v3.32 — Readiness badges + bigger allow-list + audit chip [2026-06-04, in progress]
 
 - [x] Grow verified Khan/IXL deep-link allow-list for ELA, science, and social studies (math already well-covered); add tests confirming verified deep links + unverified fallback for the new subjects. DONE: added IXL ela/science/social-studies/spelling category segments (human-readable, stable). Khan ELA/science/social-studies intentionally stay at subject root (opaque hash slugs not guessable offline → never 404). 7 new deeplink tests, 21/21 pass.
-- [ ] Render agenda-link readiness badges ("Reagan can open this" / "Grown-up signs in first") in the Today/Schedule UI next to each app link, using the today.agendaLinkReadiness query.
-- [ ] Include readiness labels next to working links in the agenda email/PDF.
-- [ ] Surface the nightly packet-audit result as a small admin-only status chip on the dashboard ("Today's packet: all blocks have work" vs "N blocks need content").
-- [ ] Full suite green + TS/LSP clean + checkpoint.
+- [x] Render agenda-link readiness badges ("Reagan can open this" / "Grown-up signs in first") in the Today/Schedule UI next to each app link, using the today.agendaLinkReadiness query. SHIPPED v3.32 — per-tile chip on Apps.tsx fed by batched today.agendaLinkReadiness.
+- [x] Include readiness labels next to working links in the agenda email/PDF. SHIPPED v3.32 — shared READINESS_LEGEND_TEXT/readinessLegendHtml() helper used in both notification text + email HTML (single source of truth).
+- [x] Surface the nightly packet-audit result as a small admin-only status chip on the dashboard ("Today's packet: all blocks have work" vs "N blocks need content"). SHIPPED v3.32 — PacketAuditChip on Today, fed by nightlyAgenda.packetAuditStatus query.
+- [x] Full suite green + TS/LSP clean + checkpoint. SHIPPED v3.32 — 516 files / 4640 passing, 7 skipped; checkpoint aa421d89.
 
 ## v3.32 — completion notes (2026-06-04)
 
@@ -398,3 +398,44 @@ This single bug explains BOTH the 63 "parent is not a folder" failures we saw ac
 - [x] Grew verified IXL deep-link allow-list for ELA, science, social-studies, spelling (human-readable grade-5 category slugs). Khan ELA/science/social-studies intentionally stay at known-good subject root (opaque hash slugs → never 404).
 - [x] Packet-audit status chip on Today: new `nightlyAgenda.packetAuditStatus` query (assembler now returns `packetAudit` on the payload); `PacketAuditChip` shows green "all blocks have work", amber "N blocks need content" (titles for unlocked adults), or neutral "no plan".
 - [x] Tests: deeplink 21, readiness 18 (incl. legend), full suite 516 files / 4640 passing, 7 skipped. TS/LSP clean.
+
+## v3.33 — Credential-gated Drive jobs RAN LIVE via sandbox gws path [2026-06-04]
+
+Context: the in-site workers (drivePushWorker.ts, driveFolderDedupeJob.ts) can't reach
+Google Drive from the Node-only Cloud Run runtime (no gws/MCP, no OAuth token there).
+So these jobs were executed from the sandbox using gws authed as spear.cpt@gmail.com
+(Hub owner) against the deployed admin routes (/api/admin/drive-mirror/*). This is the
+same operational path Job B uses nightly. The scaffolded code + tests remain in place
+for a future in-site token; this session just RAN the work.
+
+- [x] (was line 032) Ohio curriculum standards reference doc auto-push — RAN LIVE. The
+  "Ohio Curriculum Standards — Full Reference.md" (8,100 bytes, text/markdown) plus the
+  full reference-doc set drained from the push queue into their canonical subfolders.
+- [x] (was line 030) Drive orphan/empty-folder trash — RAN (dry-run + guarded). Result:
+  0 folders trashed. The naive "empty=trash" rule would have wrongly trashed 24
+  intentionally-empty canonical subfolders (504 Plans, Worksheets to Do, Submitted Work,
+  Coloring Pages, Standards Library, Weekly Digests, Mom/Grandma/Tutor Todos, etc.).
+  Added a canonical-subfolder allow-list guard (31 names from the live folder map) so
+  pre-seeded structure is never trashed. After the guard: zero true orphans \u2192 no-op.
+- [x] (was lines 033/186/187) Drive sub-folder dedupe (post-push) — RAN (dry-run). Result:
+  0 duplicates found, 0 children moved. Hub is already clean; nothing to merge.
+- [x] Queue drain this session: 24 pending rows \u2192 24 pushed, 0 skipped, 0 failed.
+  (First attempt failed all 24 on a gws --upload path guard: gws rejects paths outside
+  CWD. Fixed by writing temp upload files to ./gws_uploads/ relative path; re-ran clean.
+  No partial/duplicate Drive writes occurred \u2014 failures happened before any file create.)
+- [~] (line 037) reagan-homeschool-grading SKILL.md 6th-grade section — STILL NEEDS USER.
+  The skill is not mounted in this sandbox (it's a user-managed Skill), so it cannot be
+  edited from here. Paste-ready "6th Grade Adjustments" content delivered to the user in
+  the session summary; content also lives in
+  references/skill-md-sixth-grade-update-runbook.md.
+
+## 2026-06-17 plan + 06-16 printables (this session)
+- [x] Build June 17 plan: metric units intro (continue conversions) -> volume; ELA poetry intro -> haiku; fun closing activity (~2.5 hrs)
+- [x] Make downloadable printable PDFs for June 16: conversion cheat-sheet, practice pages, Duck Pool/Bathtub Lab fun-activity instructions
+- [ ] Deliver plan confirmation + PDFs to user
+
+## AI Agenda Editor fix (this session)
+- [x] Reproduce the failure: live agendaEditor.chat returned ">50s timeout, 0 ops" warning=["timeout"] every time
+- [x] Diagnose root cause: invokeLLM hardcoded max_tokens=32768 so the model generated far longer than needed and blew past the 50s race; the editor never applied anything
+- [x] Fix: (1) invokeLLM now respects caller max_tokens (default 32768); (2) agenda call caps output at 1500 tokens; (3) added buildDeterministicEditPlan fallback (add/shorten/lengthen/focus/less/drop/start-at/shift) that runs on timeout, error, or 0-ops so common requests ALWAYS apply
+- [x] vitest: server/agendaEditor.fallback.test.ts (7 tests) + full suite 4647 passed/0 failed; live verified (add=10s, shiftAll=3.4s, combined add+shorten=8 changes); cleaned up test dates 06-18/19/23
