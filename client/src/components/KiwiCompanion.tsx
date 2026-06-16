@@ -3,15 +3,16 @@ import { useKiwi } from "@/contexts/KiwiContext";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Send, Mic, MicOff, X, Volume2, VolumeX, MessageCircle } from "lucide-react";
+import { Send, Mic, MicOff, X, Volume2, VolumeX, MessageCircle, MessageSquareText } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import KiwiSprite from "./KiwiSprite";
 import FlockSprite, { type FlockMember } from "./FlockSprite";
 import { speakLikeBird } from "@/lib/birdVoice";
 import { speakAs, getActiveCompanionId, type CompanionId } from "@/lib/companionVoices";
+import { transcriptHasWakeWord, extractQuestionAfterWake } from "@shared/wakeWord";
 
 export default function KiwiCompanion() {
-  const { open, setOpen, enabled, mode, voiceMode, adultPresent, companionName, companionAvatar, setCompanionName } = useKiwi();
+  const { open, setOpen, enabled, mode, voiceMode, setVoiceMode, adultPresent, companionName, companionAvatar, setCompanionName } = useKiwi();
   const [input, setInput] = useState("");
   const [muted, setMuted] = useState(false);
   const [lastInteractionAt, setLastInteractionAt] = useState<number>(Date.now());
@@ -138,6 +139,15 @@ export default function KiwiCompanion() {
   //      Auto-restart only fires on benign `no-speech` / natural ends and only
   //      when permission stays `granted`.
   const recognitionRef = useRef<any>(null);
+  // Refs so the wake-word listener (built once per effect run) can reach the
+  // latest mutation + active-block values without re-subscribing the mic.
+  const lastWakeAtRef = useRef<number>(0);
+  const sendMsgRef = useRef<any>(null);
+  const activeReviewBlockRef = useRef<any>(null);
+  const reviewQuizPayloadRef = useRef<string | undefined>(undefined);
+  useEffect(() => { sendMsgRef.current = sendMsg.mutate; }, [sendMsg.mutate]);
+  useEffect(() => { activeReviewBlockRef.current = activeReviewBlock; }, [activeReviewBlock]);
+  useEffect(() => { reviewQuizPayloadRef.current = reviewQuizPayload; }, [reviewQuizPayload]);
   useEffect(() => {
     if (!enabled || mode !== "wake" || adultPresent || open) return;
     if (typeof window === "undefined") return;
@@ -163,19 +173,31 @@ export default function KiwiCompanion() {
       r.interimResults = true;
       r.lang = "en-US";
       r.onresult = (e: any) => {
+        // Only act on FINAL results so we don't fire on every interim word.
         const last = e.results[e.results.length - 1];
-        const text = (last[0]?.transcript || "").toLowerCase();
-        const name = (companionName || "kiwi").toLowerCase();
-        if (
-          text.includes(`hi ${name}`) ||
-          text.includes(`hey ${name}`) ||
-          text.includes(`ok ${name}`) ||
-          text.includes(name) ||
-          text.includes("hi kiwi") ||
-          text.includes("hey kiwi") ||
-          text.includes("kiwi")
-        ) {
-          setOpen(true);
+        if (!last || last.isFinal === false) return;
+        const rawText = (last[0]?.transcript || "").trim();
+        if (!rawText) return;
+        if (!transcriptHasWakeWord(rawText, companionName)) return;
+
+        // Debounce: ignore if we just handled an identical/utterance recently.
+        const now = Date.now();
+        if (now - lastWakeAtRef.current < 1500) return;
+        lastWakeAtRef.current = now;
+
+        // Reagan said the wake word. Open the panel...
+        setOpen(true);
+        // ...and if she included a question after the name, send it straight
+        // to Kiwi so the answer comes back without a second step.
+        const question = extractQuestionAfterWake(rawText, companionName);
+        if (question && question.length >= 2) {
+          try { r.stop(); } catch {}
+          (sendMsgRef.current as any)?.({
+            userMessage: question,
+            adultPresent,
+            currentBlockType: activeReviewBlockRef.current ? "review" : undefined,
+            quizPayload: reviewQuizPayloadRef.current,
+          });
         }
       };
       r.onerror = (e: any) => {
@@ -296,6 +318,18 @@ export default function KiwiCompanion() {
               </div>
             </div>
             <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setVoiceMode(voiceMode === "voice" ? "text" : "voice")}
+                title={voiceMode === "voice" ? "Voice mode ON — I talk back out loud. Tap for Text mode." : "Text mode — type and read. Tap for Voice mode (I talk back)."}
+                aria-pressed={voiceMode === "voice"}
+                data-testid="kiwi-voice-mode-toggle"
+                className={`gap-1 px-2 ${voiceMode === "voice" ? "text-sky-500" : "text-muted-foreground"}`}
+              >
+                {voiceMode === "voice" ? <Volume2 className="w-4 h-4"/> : <MessageSquareText className="w-4 h-4"/>}
+                <span className="text-[11px] font-medium">{voiceMode === "voice" ? "Voice" : "Text"}</span>
+              </Button>
               <Button
                 variant="ghost"
                 size="icon"

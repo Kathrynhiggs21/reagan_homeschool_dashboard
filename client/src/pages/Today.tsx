@@ -164,7 +164,16 @@ export default function Today() {
       setTourOpen(false);
     }
   }, [profile.data]);
-  const today = trpc.plans.today.useQuery();
+  const today = trpc.plans.today.useQuery(undefined, {
+    // Resilience: a stuck "Loading..." was caused by the query failing
+    // silently (expired session / proxy 403) with no error surface. Retry a
+    // few times and refetch when the tab regains focus or the network
+    // reconnects so a transient blip recovers on its own.
+    retry: 3,
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 8000),
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+  });
   // 2026-05-29 — day-navigation: arrows over the schedule strip let Mom
   // and Reagan scrub backward/forward through any day's plan without leaving
   // Today. `viewDate` defaults to actual today; tapping the centred label
@@ -652,7 +661,31 @@ export default function Today() {
           </div>
         </div>
         {today.isLoading && <div className="text-muted-foreground text-sm">Loading...</div>}
-        {!today.isLoading && blocks.length === 0 && (
+        {/* Error state — never let a failed/denied request look like infinite
+            loading. Most often this means the session expired; offer a reload
+            and a re-login path. */}
+        {!today.isLoading && isToday && today.isError && (
+          <Card className="classroom-card p-6 text-center">
+            <p className="font-display text-base mb-1">Couldn't load today's schedule.</p>
+            <p className="text-sm text-muted-foreground mb-3">
+              This usually means you got signed out. Try reloading — your work is saved.
+            </p>
+            <div className="flex items-center justify-center gap-2">
+              <Button size="sm" onClick={() => today.refetch()} disabled={today.isFetching}>
+                {today.isFetching ? "Reloading…" : "Reload schedule"}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="bg-transparent"
+                onClick={() => window.location.reload()}
+              >
+                Refresh page
+              </Button>
+            </div>
+          </Card>
+        )}
+        {!today.isLoading && !today.isError && blocks.length === 0 && (
           <Card className="classroom-card p-6 text-center">
             <p className="font-display text-base mb-1">No blocks for today.</p>
             <p className="text-sm text-muted-foreground">Adults can build today's plan from the Tutor Handoff page.</p>

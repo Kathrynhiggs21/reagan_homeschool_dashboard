@@ -432,10 +432,18 @@ for a future in-site token; this session just RAN the work.
 ## 2026-06-17 plan + 06-16 printables (this session)
 - [x] Build June 17 plan: metric units intro (continue conversions) -> volume; ELA poetry intro -> haiku; fun closing activity (~2.5 hrs)
 - [x] Make downloadable printable PDFs for June 16: conversion cheat-sheet, practice pages, Duck Pool/Bathtub Lab fun-activity instructions
-- [ ] Deliver plan confirmation + PDFs to user
+- [x] Deliver plan confirmation + PDFs to user
 
 ## AI Agenda Editor fix (this session)
 - [x] Reproduce the failure: live agendaEditor.chat returned ">50s timeout, 0 ops" warning=["timeout"] every time
 - [x] Diagnose root cause: invokeLLM hardcoded max_tokens=32768 so the model generated far longer than needed and blew past the 50s race; the editor never applied anything
 - [x] Fix: (1) invokeLLM now respects caller max_tokens (default 32768); (2) agenda call caps output at 1500 tokens; (3) added buildDeterministicEditPlan fallback (add/shorten/lengthen/focus/less/drop/start-at/shift) that runs on timeout, error, or 0-ops so common requests ALWAYS apply
 - [x] vitest: server/agendaEditor.fallback.test.ts (7 tests) + full suite 4647 passed/0 failed; live verified (add=10s, shiftAll=3.4s, combined add+shorten=8 changes); cleaned up test dates 06-18/19/23
+
+## Today schedule "Loading..." + Kiwi voice (this session)
+- [x] Diagnose stuck "Today's Schedule: Loading..." — live /api/* returns gateway 403 (HTML) in some sessions so plans.today never resolves; data itself correct (4 blocks)
+- [x] Add resilient Today query (retry + refetchOnFocus/Reconnect) + visible error/reload state instead of infinite "Loading..."
+- [x] Kiwi: root cause — saying her name only opened the panel (threw away the question); wake word + reply-voice gated by adult-only settings defaulting OFF; no kid-reachable Voice/Text switch
+- [x] Kiwi: wake word now captures Reagan's sentence after her name and sends it to kiwi.chat; reply speaks in voice mode (shared/wakeWord.ts + KiwiCompanion onresult)
+- [x] Kiwi: added Voice/Text toggle button in the chat header (one tap; Voice = listen on name + talk back, Text = type/read, mic off)
+- [x] Tests (vitest 4658 passed / 0 failed incl 11 new wakeWord) + live verify (prod plans.today returns 4 blocks, 200) + checkpoint
