@@ -26,6 +26,26 @@ const CAL_SCOPE = "https://www.googleapis.com/auth/calendar";
 
 type ResolvedToken = { accessToken: string; source: string };
 
+/**
+ * Heuristic: is a BARE string plausibly a real Google OAuth access token?
+ * Google access tokens are long (ya29.* are 100+ chars). A short value
+ * (e.g. a 40-char placeholder typed into the secrets card) will only ever
+ * yield a 401 UNAUTHENTICATED, and because the OAuth env is checked BEFORE
+ * the service account, a bad bare token would otherwise SHADOW a working
+ * service-account credential and break sync entirely. So we treat an
+ * implausible bare token as "absent" and fall through to the SA path.
+ *
+ * Note: this only applies to BARE token strings. JSON blobs (with
+ * access_token / refresh_token) are honored as-is, since the caller
+ * clearly intends an OAuth credential there.
+ */
+export function isPlausibleBareOAuthToken(raw: string): boolean {
+  const t = (raw || "").trim();
+  if (t.length < 60) return false; // real access tokens are long
+  if (/\s/.test(t)) return false; // tokens never contain whitespace
+  return true;
+}
+
 function base64url(input: Buffer | string): string {
   return Buffer.from(input)
     .toString("base64")
@@ -137,8 +157,13 @@ export async function resolveCalendarAccessToken(
         return { accessToken: parsed.access_token, source: "oauth_token_json" };
       }
     }
-    // Bare token string.
-    return { accessToken: rawOAuth, source: "oauth_token_bare" };
+    // Bare token string — only honor it if it's plausibly a real token.
+    // An implausible placeholder is ignored so we can fall through to the
+    // service-account credential below instead of breaking sync with a 401.
+    if (isPlausibleBareOAuthToken(rawOAuth)) {
+      return { accessToken: rawOAuth, source: "oauth_token_bare" };
+    }
+    // else: fall through to service account.
   }
 
   // 2. Service-account JSON.

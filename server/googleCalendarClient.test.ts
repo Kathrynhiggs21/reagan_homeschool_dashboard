@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import crypto from "node:crypto";
 import { GoogleCalendarClient } from "./_lib/googleCalendarClient";
-import { resolveCalendarAccessToken } from "./_lib/googleCalendarAuth";
+import {
+  resolveCalendarAccessToken,
+  isPlausibleBareOAuthToken,
+} from "./_lib/googleCalendarAuth";
 
 function jsonResponse(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -80,15 +84,59 @@ describe("resolveCalendarAccessToken", () => {
     }
   });
 
-  it("returns a bare OAuth token verbatim (no network)", async () => {
-    process.env.GOOGLE_CALENDAR_OAUTH_TOKEN = "ya29.bare-token";
+  // A realistic-length bare access token (ya29.* tokens are 100+ chars).
+  const LONG_BARE = "ya29." + "A".repeat(120);
+
+  it("returns a plausible bare OAuth token verbatim (no network)", async () => {
+    process.env.GOOGLE_CALENDAR_OAUTH_TOKEN = LONG_BARE;
     const fakeFetch = vi.fn();
     const { accessToken, source } = await resolveCalendarAccessToken(
       fakeFetch as unknown as typeof fetch,
     );
-    expect(accessToken).toBe("ya29.bare-token");
+    expect(accessToken).toBe(LONG_BARE);
     expect(source).toBe("oauth_token_bare");
     expect(fakeFetch).not.toHaveBeenCalled();
+  });
+
+  it("ignores an implausibly-short bare OAuth token and falls through to the service account", async () => {
+    // 40-char placeholder that Google rejects with 401 — must NOT shadow the SA.
+    process.env.GOOGLE_CALENDAR_OAUTH_TOKEN = "x".repeat(40);
+    // Generate a real RSA key so the JWT-bearer assertion can actually sign.
+    const { privateKey } = crypto.generateKeyPairSync("rsa", {
+      modulusLength: 2048,
+      privateKeyEncoding: { type: "pkcs8", format: "pem" },
+      publicKeyEncoding: { type: "spki", format: "pem" },
+    });
+    process.env.GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON = JSON.stringify({
+      client_email: "sa@example.iam.gserviceaccount.com",
+      private_key: privateKey,
+    });
+    // The SA path tries to mint a token; stub fetch to return one so we can
+    // assert the resolver chose the service account rather than the bad token.
+    const fakeFetch = vi.fn(async () => jsonResponse({ access_token: "ya29.sa-minted" }));
+    const { accessToken, source } = await resolveCalendarAccessToken(
+      fakeFetch as unknown as typeof fetch,
+    );
+    expect(source).toBe("service_account");
+    expect(accessToken).toBe("ya29.sa-minted");
+  });
+
+  it("throws (no usable cred) when the only OAuth token is an implausible placeholder and no SA is set", async () => {
+    process.env.GOOGLE_CALENDAR_OAUTH_TOKEN = "short-placeholder";
+    await expect(
+      resolveCalendarAccessToken((async () => jsonResponse({})) as unknown as typeof fetch),
+    ).rejects.toThrow(/No Calendar credentials configured/);
+  });
+
+  describe("isPlausibleBareOAuthToken", () => {
+    it("rejects empty / short / whitespace-bearing strings", () => {
+      expect(isPlausibleBareOAuthToken("")).toBe(false);
+      expect(isPlausibleBareOAuthToken("x".repeat(40))).toBe(false);
+      expect(isPlausibleBareOAuthToken("ya29 has a space " + "a".repeat(80))).toBe(false);
+    });
+    it("accepts a long whitespace-free token", () => {
+      expect(isPlausibleBareOAuthToken("ya29." + "A".repeat(120))).toBe(true);
+    });
   });
 
   it("extracts access_token from a JSON blob without refresh data", async () => {
@@ -118,11 +166,12 @@ describe("resolveCalendarAccessToken", () => {
   });
 
   it("falls back to the unified Drive OAuth token", async () => {
-    process.env.GOOGLE_DRIVE_OAUTH_TOKEN = "ya29.drive-unified";
+    const driveTok = "ya29.drive-unified-" + "B".repeat(80);
+    process.env.GOOGLE_DRIVE_OAUTH_TOKEN = driveTok;
     const { accessToken } = await resolveCalendarAccessToken(
       (async () => jsonResponse({})) as unknown as typeof fetch,
     );
-    expect(accessToken).toBe("ya29.drive-unified");
+    expect(accessToken).toBe(driveTok);
   });
 
   it("throws a clear error when nothing is configured", async () => {

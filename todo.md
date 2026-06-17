@@ -547,3 +547,9 @@ for a future in-site token; this session just RAN the work.
 - [x] Vitest: 5 probe scenarios (stubbed fetch) — writable, read_only 403, no_credentials, unreachable, SA email surfaced
 - [x] Full suite green: 523 files / 4715 pass / 7 skipped / 0 fail; TypeScript clean
 - [ ] LIVE: Katy grants the service account "Make changes to events" on the Reagan calendar, then clicks Re-check -> Sync 2-week pilot (currently read-only)
+
+## Calendar auth resolver guard (2026-06-17)
+- [x] resolveCalendarAccessToken: added isPlausibleBareOAuthToken() guard so a short/whitespace bare OAuth token (e.g. a 40-char placeholder typed into the secrets card) is IGNORED and the resolver falls through to the working service-account credential instead of shadowing it and 401-breaking sync. JSON blobs (access_token/refresh_token) still honored as-is.
+- [x] Live-verified: with the 40-char placeholder in GOOGLE_CALENDAR_OAUTH_TOKEN present, resolver source resolves to "service_account" (not the bad token)
+- [x] Tests: 4 new auth-resolver scenarios (plausible-long bare token honored; short placeholder falls through to SA; placeholder-only + no SA throws; isPlausibleBareOAuthToken unit) + lengthened the legit bare-token + unified-Drive + probe fixtures to plausible lengths
+- [x] Full suite green: 523 files / 4719 pass / 7 skipped / 0 fail; TypeScript clean

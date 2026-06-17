@@ -13,7 +13,10 @@ const ORIGINAL_ENV = { ...process.env };
 
 function setBareToken() {
   // Bare token => resolver returns it directly, no network mint.
-  process.env.GOOGLE_CALENDAR_OAUTH_TOKEN = "ya29.fake-access-token";
+  // Must be long enough (>=60 chars, no whitespace) to pass the resolver's
+  // plausibility check (isPlausibleBareOAuthToken), which guards against
+  // short placeholder tokens shadowing a real credential.
+  process.env.GOOGLE_CALENDAR_OAUTH_TOKEN = "ya29.fake-access-token-" + "A".repeat(80);
   delete process.env.GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON;
 }
 
