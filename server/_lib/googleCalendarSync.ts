@@ -62,7 +62,7 @@
 import { getDriveCredentialStatus } from "./drivePushWorker";
 import { GoogleCalendarClient, type GCalEventResource } from "./googleCalendarClient";
 import { resolveCalendarAccessToken } from "./googleCalendarAuth";
-import { listBlocksForPlan, getPlanByDate, getAppSetting } from "../db";
+import { listBlocksForPlan, getPlanByDate, getAppSetting, setAppSetting } from "../db";
 
 /* =====================================================================
    Credential gate
@@ -572,4 +572,72 @@ export async function probeCalendarConnection(
       message: `Write probe failed: ${e?.message || "unknown error"}.`,
     };
   }
+}
+
+/* =====================================================================
+   Auto-pilot: one-time back-dated pilot push the moment write access lands
+   =====================================================================
+
+   The 2-week pilot (6/17–6/30) is a back-dated, one-time push. Future days
+   already auto-sync via the applyPlan commit hook, so the ONLY thing left
+   to automate is this one historical range. Rather than stand up a polling
+   cron, we fold it into the connection probe: whenever the dashboard
+   confirms the calendar is WRITABLE and the pilot hasn't been pushed yet,
+   we push it once and stamp a durable flag so it never double-pushes.
+
+   Idempotent on two levels:
+     1. The `calendar.pilotPushedAt` app-setting flag short-circuits repeats.
+     2. runCalendarSyncForDate upserts by dashboardBlockId, so even if the
+        flag were lost the events would not duplicate.
+*/
+
+export const PILOT_RANGE = { startISO: "2026-06-17", endISO: "2026-06-30" } as const;
+export const PILOT_FLAG_KEY = "calendar.pilotPushedAt";
+
+export type AutoPilotResult =
+  | { ran: false; reason: "not_writable" | "already_pushed" }
+  | { ran: true; totals: CalendarSyncSummary };
+
+/**
+ * If the probe says the calendar is writable AND the one-time pilot hasn't
+ * been pushed yet, push the 6/17–6/30 range once and record the flag.
+ * Pure-ish: callers inject the probe status + a fetchImpl for tests.
+ * Never throws — a sync failure leaves the flag UNSET so it retries next time.
+ */
+export async function maybeAutoPushPilotOnWritable(
+  probeStatus: CalendarConnectionProbe["status"],
+  opts: {
+    fetchImpl?: typeof fetch;
+    /**
+     * Injectable seams, for tests. All default to the real implementations.
+     * (Intra-module named-import calls can't be reliably spied on, so DI is
+     * the clean way to assert gating/idempotency without a live DB.)
+     */
+    syncRange?: typeof runCalendarSyncForRange;
+    getFlag?: (key: string) => Promise<string | null>;
+    setFlag?: (key: string, value: string) => Promise<void>;
+  } = {},
+): Promise<AutoPilotResult> {
+  if (probeStatus !== "writable") {
+    return { ran: false, reason: "not_writable" };
+  }
+  const getFlag = opts.getFlag ?? getAppSetting;
+  const setFlag =
+    opts.setFlag ?? ((k: string, v: string) => setAppSetting(k, v));
+  const already = (await getFlag(PILOT_FLAG_KEY).catch(() => null)) || null;
+  if (already && already.trim()) {
+    return { ran: false, reason: "already_pushed" };
+  }
+  const syncRange = opts.syncRange ?? runCalendarSyncForRange;
+  const { totals } = await syncRange(
+    PILOT_RANGE.startISO,
+    PILOT_RANGE.endISO,
+    { fetchImpl: opts.fetchImpl },
+  );
+  // Only stamp the flag on a clean (non-error) sync, so a partial failure
+  // gets retried on the next writable probe instead of being marked done.
+  if (totals.status === "synced") {
+    await setFlag(PILOT_FLAG_KEY, new Date().toISOString()).catch(() => {});
+  }
+  return { ran: true, totals };
 }

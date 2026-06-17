@@ -553,3 +553,9 @@ for a future in-site token; this session just RAN the work.
 - [x] Live-verified: with the 40-char placeholder in GOOGLE_CALENDAR_OAUTH_TOKEN present, resolver source resolves to "service_account" (not the bad token)
 - [x] Tests: 4 new auth-resolver scenarios (plausible-long bare token honored; short placeholder falls through to SA; placeholder-only + no SA throws; isPlausibleBareOAuthToken unit) + lengthened the legit bare-token + unified-Drive + probe fixtures to plausible lengths
 - [x] Full suite green: 523 files / 4719 pass / 7 skipped / 0 fail; TypeScript clean
+
+## Calendar auto-pilot (2026-06-17)
+- [x] Add `maybeAutoPushPilotOnWritable()` — fires the one-time back-dated 6/17–6/30 pilot the moment the calendar probe reports `writable`; idempotent via `calendar.pilotPushedAt` flag + per-block upsert; flag only stamped on a clean (non-error) sync so partial failures retry. Injectable seams (syncRange/getFlag/setFlag) for deterministic tests.
+- [x] Wire it into the `calendar.connectionStatus` admin procedure as fire-and-forget after a writable probe (never blocks/throws the status query).
+- [x] 9 new vitest cases (server/googleCalendarAutoPilot.test.ts) — gating, idempotency, error-no-stamp, empty-flag, best-effort setFlag. Full suite green (524 files / 4,728 pass / 7 skip), TypeScript clean.
+- [ ] LIVE pilot push — STILL pending the service account being granted "Make changes to events" on the Reagan calendar (write probe still 403 READ_ONLY_NEEDS_SHARING as of 2026-06-17). Auto-pilot will push automatically once that share is set; no app click needed.

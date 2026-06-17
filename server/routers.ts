@@ -208,8 +208,20 @@ export const appRouter = router({
     // Live probe: can we actually WRITE to the target calendar right now?
     // Used by the Settings connect panel to confirm sharing without guesswork.
     connectionStatus: adminProcedure.query(async () => {
-      const { probeCalendarConnection } = await import("./_lib/googleCalendarSync");
-      return probeCalendarConnection();
+      const { probeCalendarConnection, maybeAutoPushPilotOnWritable } = await import(
+        "./_lib/googleCalendarSync"
+      );
+      const probe = await probeCalendarConnection();
+      // The moment the calendar becomes writable, auto-push the one-time
+      // back-dated 2-week pilot (6/17–6/30) exactly once. Fire-and-forget
+      // and fully idempotent (flag + per-block upsert) so this never blocks
+      // the status response or double-creates events.
+      if (probe.status === "writable") {
+        maybeAutoPushPilotOnWritable(probe.status).catch(() => {
+          /* never let the auto-pilot break the status query */
+        });
+      }
+      return probe;
     }),
     // Sync one day's blocks to Google Calendar (one-way, idempotent).
     syncDay: adminProcedure
