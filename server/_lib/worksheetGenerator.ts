@@ -224,7 +224,7 @@ function scienceWorksheet(seed: WorksheetSeed): WorksheetSection[] {
     {
       heading: "Try it (hands-on)",
       items: [
-        { id: "q4", kind: "long", lines: 3, prompt: "Write down one question you still have. We can test or look it up together." },
+        { id: "q4", kind: "long", lines: 3, prompt: "Write down one question you still have. We can explore it or look it up together." },
       ],
     },
   ];

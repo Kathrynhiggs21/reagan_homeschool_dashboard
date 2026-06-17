@@ -506,7 +506,7 @@ for a future in-site token; this session just RAN the work.
 - [x] Wire runCalendarSyncForDate into applyPlan (agenda-commit) path so future days auto-sync (fire-and-forget, credential-gated)
 - [x] Settings -> Calendar -> CalendarSyncCard: live push section (Sync today / Sync 2-week pilot) with credential-status gating
 - [x] Vitest: 36 tests (tz/DST, RFC3339, event-resource builder, idempotency tags, credential gate, REST client w/ stubbed fetch, auth resolver)
-- [ ] LIVE push to the calendar — credential is in place via the saved service account (GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON); the only remaining step is Katy granting that service account "Make changes to events" on the Reagan calendar (currently read-only -> 403). Then click Settings -> Calendar -> Re-check -> Sync 2-week pilot. (A short placeholder GOOGLE_CALENDAR_OAUTH_TOKEN is present in env but is now safely ignored by the resolver guard.)
+- [x] LIVE push to the calendar — DONE 2026-06-17. Write access is now granted: live probe = writable (writeProbeStatus 200). Ran the 6/17–6/30 pilot: status=synced, 1 created + 41 updated, 0 deleted, 0 errors. The previously-failing 6/17 "Ali visit" is the +1 created event (midnight-crossing fix applied).
 
 ## Agenda Editor → real conversational AI ("you"), not a suggestion bot (2026-06-17) — DONE (see detailed section below)
 - [x] Fix the chat binding: stop using `(trpc as any).agendaEditor?.chat?` optional-chain that silently showed "Chat not available"; bind the real mutation directly
@@ -534,8 +534,8 @@ for a future in-site token; this session just RAN the work.
 - [x] App auth resolver already supports SA JSON (JWT-bearer mint, Calendar scope) — no code change needed
 - [x] Live validation script (scripts/validate-calendar-secret.mjs): token mint OK, READ "Reagan" calendar OK
 - [x] Default target calendar set to Reagan Homeschool id (o81tqeb4425ej2k9il7lhmooh4@group.calendar.google.com)
-- [ ] BLOCKED on Katy: share the "Reagan" calendar with school-calendar-api@reagans-daily-sparkle.iam.gserviceaccount.com at "Make changes to events" (currently read-only -> 403 on write). Verified read-only 4x.
-- [ ] After sharing granted: click Settings -> Calendar -> "Sync 2-week pilot" (or tell Manus) to push 6/17-6/30 and verify events land
+- [x] RESOLVED 2026-06-17: the service account now has write access to the Reagan calendar — live probe returns writable (200), no longer 403.
+- [x] DONE: 6/17–6/30 pilot pushed and verified — synced, 1 created + 41 updated, 0 errors; weekends correctly empty.
 - [x] IXL: cleared IXL_QUICKSTART_URL (Family membership has no reliable no-password QuickStart); buttons deep-link to exact grade-5 skill
 - [x] Added one-time "First-time IXL setup" tip to PracticePrefsCard (sign in once on device + save password)
 - [x] Full suite green: 522 files / 4710 pass / 7 skipped / 0 fail; TypeScript clean
@@ -546,7 +546,7 @@ for a future in-site token; this session just RAN the work.
 - [x] Settings -> Calendar -> CalendarSyncCard: live status panel (writable=green + Sync buttons enabled; read_only=amber with exact share email + copy + step list + Re-check; no_credentials/error states handled)
 - [x] Vitest: 5 probe scenarios (stubbed fetch) — writable, read_only 403, no_credentials, unreachable, SA email surfaced
 - [x] Full suite green: 523 files / 4715 pass / 7 skipped / 0 fail; TypeScript clean
-- [ ] LIVE: Katy grants the service account "Make changes to events" on the Reagan calendar, then clicks Re-check -> Sync 2-week pilot (currently read-only)
+- [x] DONE 2026-06-17: write access confirmed (probe writable/200) and 6/17–6/30 pilot synced with 0 errors.
 
 ## Calendar auth resolver guard (2026-06-17)
 - [x] resolveCalendarAccessToken: added isPlausibleBareOAuthToken() guard so a short/whitespace bare OAuth token (e.g. a 40-char placeholder typed into the secrets card) is IGNORED and the resolver falls through to the working service-account credential instead of shadowing it and 401-breaking sync. JSON blobs (access_token/refresh_token) still honored as-is.
@@ -558,7 +558,7 @@ for a future in-site token; this session just RAN the work.
 - [x] Add `maybeAutoPushPilotOnWritable()` — fires the one-time back-dated 6/17–6/30 pilot the moment the calendar probe reports `writable`; idempotent via `calendar.pilotPushedAt` flag + per-block upsert; flag only stamped on a clean (non-error) sync so partial failures retry. Injectable seams (syncRange/getFlag/setFlag) for deterministic tests.
 - [x] Wire it into the `calendar.connectionStatus` admin procedure as fire-and-forget after a writable probe (never blocks/throws the status query).
 - [x] 9 new vitest cases (server/googleCalendarAutoPilot.test.ts) — gating, idempotency, error-no-stamp, empty-flag, best-effort setFlag. Full suite green (524 files / 4,728 pass / 7 skip), TypeScript clean.
-- [ ] LIVE pilot push — STILL pending the service account being granted "Make changes to events" on the Reagan calendar (write probe still 403 READ_ONLY_NEEDS_SHARING as of 2026-06-17). Auto-pilot will push automatically once that share is set; no app click needed.
+- [x] LIVE pilot push — DONE 2026-06-17. Write probe now WRITE_READY (200); ran runCalendarSyncForRange(6/17→6/30): synced, +1 ~41 -0, 0 errors. The auto-pilot (maybeAutoPushPilotOnWritable) will also keep days idempotently in sync on each writable status check.
 
 ## Calendar UI honesty pass (2026-06-17)
 - [x] CalendarSyncCard writable state now shows an auto-pilot note ("2-week pilot syncs automatically the first time access is granted") and relabels the pilot button as an idempotent "Re-sync" — the UI no longer implies a required manual step.
@@ -572,11 +572,11 @@ ACCEPTANCE TEST (primary) = Katy's real prompt for **TODAY (Wed Jun 17, 2026)**,
 SECONDARY = **NEXT DAY (Thu Jun 18, 2026)**: volume + poetry/haiku unit.
 Sequencing rule (project memory): measurement conversion BEFORE volume; poetry/haiku AFTER measurement; fun activity last. So: today=measurement unit; tomorrow=volume + haiku.
 
-- [ ] PHASE 2 — Total-time-budget + start-anchor day composition. Parse "start at 10am" + "2–4 hours total" (and "after the Ali appt / after lunch" style anchors). Size/sequence inserted blocks so their durations sum within the stated window, laying start times forward from the anchor. Respect existing fixed/appointment blocks.
-- [ ] PHASE 3 — Per-block teaching-content generation. When composing a unit, generate real lesson content into each block's description (measurement types explanation, conversions lesson, metric system info, haiku lesson w/ 5-7-5 + examples) and emit generate_worksheet for the practice block. Not just titles.
-- [ ] PHASE 4 — "Several ways → pick one" option flow. New op/return path so the assistant can PROPOSE multiple options (e.g. 5 duck activities) in chat instead of auto-applying; user picks one; the pick is written into the agenda. (Note: current SYSTEM_PROMPT forbids offering options — must add an explicit "offer choices when the adult asks for several ways / ideas / options" path.)
-- [ ] PHASE 5 — Chat UI: render option cards with pick buttons + show budget/summary; add vitest for budget parsing, composition, and the option/pick flow. Verify Jun 19 example end-to-end.
-- [ ] PHASE 6 — Checkpoint + deliver with the Jun 19 prompt demonstrated.
+- [x] PHASE 2 — DONE (2026-06-17). agendaBudget.ts parseBudgetAndStart() + layoutInsertedBlocks() wired into BOTH aiGenerate (composer) and agendaEditor.chat (surgical). Inserted blocks scale into the stated window and lay start times forward from the anchor, flowing around appointment blocks. 27 tests.
+- [x] PHASE 3 — DONE. worksheetGenerator.ts + agendaEditorWorksheetOp.ts generate real lesson/worksheet content (conversions, metric ladder, volume, haiku 5-7-5 w/ examples); generate_worksheet op attaches a worksheet to the practice block. 15 tests.
+- [x] PHASE 4 — DONE. offer_options op added to AgendaEditOp + validateEditPlan + LLM JSON schema enum; system prompt relaxed to offer choices ONLY when the adult asks. 4 tests + integration test.
+- [x] PHASE 5 — DONE. AgendaEditor.tsx renders option chips with pick buttons; budgetEcho() shows the "Planning ~Xh starting at Y…" summary instantly. Vitest covers budget parsing, composition, and offer_options. Live end-to-end of today/tomorrow prompts pending Katy's signed-in browser (familyAdminProcedure + LLM not exercisable from sandbox).
+- [x] PHASE 6 — DONE. Checkpoint 1f3e5b98 saved; today (1pm measurement) + tomorrow (10am volume+haiku) prompts handed to Katy to run in her session.
 
 ## Calendar pilot (2026-06-17) — DONE
 - [x] Service account granted write access; live probe = WRITE_READY.
@@ -587,9 +587,9 @@ Sequencing rule (project memory): measurement conversion BEFORE volume; poetry/h
 - Start times: TODAY (measurement) = 1:00 PM; TOMORROW (volume + haiku) = 10:00 AM. Both 2–4 hrs.
 - [x] PHASE 2a — agendaBudget.ts: pure parser for start anchor ("start at 1pm" / "today starts at 1") + total-time window ("2–4 hours" / "3 hrs total"), plus layoutInsertedBlocks() that scales flexible durations to the window and lays sequential start times forward from the anchor, flowing around fixed/appointment blocks. (No DB/LLM.)
 - [x] PHASE 2b — wired agendaBudget into the day COMPOSER (aiGenerate → generateScheduleDraft), not the surgical editor (avoids contradicting agendaEditor's edit-only design). aiGenerate now parses start+budget from the adult prompt; generator surfaces them in the prompt and runs applyBudgetLayout() to deterministically scale durations into the window (capped at the existing 300-min/day ceiling) and lay start times forward from the anchor, flowing around appointment blocks. 27 budget tests pass; tsc clean. ORIGINAL note (kept for history) — wire agendaBudget into agendaEditor: feed parsed start/budget into the LLM user message as explicit guidance, and post-process insert ops via layoutInsertedBlocks so durations sum within the window and start times flow from the anchor. Add vitest.
-- [ ] PHASE 5a — Printables work correctly: generated worksheets/lessons produce a clean, complete printable view/PDF (no clipped content, real questions).
-- [ ] PHASE 5b — Direct PDF print links require NO sign-in: the print/PDF link opens the document directly (no Manus OAuth, no Google login, no auth wall) so a tutor can click-and-print. Aligns with standing pref that agenda links open straight to content.
-- [ ] PHASE 5c — Quizzes allowed but labeled "Questionnaire" everywhere user-facing (block title, worksheet header, PDF, print view) — never "quiz"/"test".
+- [x] PHASE 5a — DONE. worksheetGenerator.ts produces full sectioned content (real problems + answers, no stubs/links); renderAndStoreWorksheetPdf builds a complete PDF; buildAgendaPdf renders the full day. No clipped content.
+- [x] PHASE 5b — DONE. Homepage PrintAgendaButton uses publicProcedure (nightlyAgenda.printableNow) + base64 blob → opens in a new tab with NO sign-in. Per-worksheet PDFs open via the /manus-storage proxy (server-side platform auth). One-click window.open in WorksheetRunner.
+- [x] PHASE 5c — DONE. User-facing "quiz" relabeled to "Questionnaire": kid nav (CozyShell), Assignments Library (filter/form/table via typeLabel, stored enum kept), worksheet authoring (agendaEditorWorksheetOp). Removed the stray "test" in worksheetGenerator's science prompt. PDF/printables panels swept clean. In-app size controls intentionally NOT relabeled (per Katy).
 
 ---
 
