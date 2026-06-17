@@ -1618,8 +1618,8 @@ export const appRouter = router({
       }));
       const changeCount = inserted + updated + deleted + reordered + shifted;
       const reply = changeCount === 0
-        ? (editPlan.summary || "No changes needed — the schedule already looks good!")
-        : editPlan.summary || `Done! Made ${changeCount} change${changeCount === 1 ? "" : "s"} to the schedule.`;
+        ? (editPlan.summary || "I read that, but nothing needed to change — the schedule already matches what you asked.")
+        : editPlan.summary || `Done — I made ${changeCount} change${changeCount === 1 ? "" : "s"} to ${input.date}'s schedule. It's live now.`;
       return {
         reply, inserted, updated, deleted, reordered, shifted,
         warnings: validated.warnings, blocks: freshBlocks,

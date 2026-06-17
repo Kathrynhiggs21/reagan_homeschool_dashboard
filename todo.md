@@ -507,3 +507,24 @@ for a future in-site token; this session just RAN the work.
 - [x] Settings -> Calendar -> CalendarSyncCard: live push section (Sync today / Sync 2-week pilot) with credential-status gating
 - [x] Vitest: 36 tests (tz/DST, RFC3339, event-resource builder, idempotency tags, credential gate, REST client w/ stubbed fetch, auth resolver)
 - [ ] LIVE push to the calendar — pending Katy adding GOOGLE_CALENDAR_OAUTH_TOKEN (Settings -> Secrets); then click Sync 2-week pilot
+
+## Agenda Editor → real conversational AI ("you"), not a suggestion bot (2026-06-17)
+- [ ] Fix the chat binding: stop using `(trpc as any).agendaEditor?.chat?` optional-chain that silently shows "Chat not available"; bind the real mutation directly
+- [ ] Rebuild AgendaEditor page as ONE conversational AI that applies edits instantly (drop preview/diff/suggestion-chip clutter feel)
+- [ ] AI talks back in first person ("I moved math to 9am…") and shows the live schedule updating beside the chat
+- [ ] Cover all edit types from plain English: schedule times, durations, order, add/remove blocks, swap subjects, assignments, videos, worksheets
+- [ ] Keep manual block grid available but secondary (advanced/collapsed), so the AI is the primary surface
+- [ ] Verify chat executes against live DB (not just suggests); confirm reply reflects actual changes made
+- [ ] Test (vitest + live) + checkpoint + report
+
+## Agenda Editor → "it's me, the AI, editing your schedule" (2026-06-16)
+- [x] Root cause: chat bound via `(trpc as any).agendaEditor?.chat?.useMutation?.()` → could be undefined → "Chat not available" dead-end (felt like a confused/suggestion bot)
+- [x] Bind chat mutation DIRECTLY, typed: `trpc.agendaEditor.chat.useMutation(...)`
+- [x] First-person reply composer (states exactly what changed: added/updated/removed/reordered/shifted) + "It's live on the schedule"
+- [x] Server reply rewritten to first person ("Done — I made N changes to <date>'s schedule. It's live now.")
+- [x] Header + empty-state copy rewritten: direct-acting "talk to me, I'll edit it" voice, no preview/confirm framing
+- [x] Suggestion chips demoted to optional "tap an example to fill the box"
+- [x] sendChat guards on chatM.isPending (re-entrancy) instead of missing-mutation toast
+- [x] System prompt: "You ARE the schedule editor, not a suggestion bot" + explicit videos/assignments/lessons handling (update/insert as block content)
+- [x] 10 new wiring tests (server/agendaEditorDirectChatWiring.test.ts): direct binding, no optional chain, no dead-end toast, first-person reply, snapshot refresh, server tally fields, prompt directives
+- [x] Full suite 522 files / 4705 pass / 7 skipped / 0 fail; tsc clean

@@ -96,6 +96,38 @@ function BlockLine({ b, kind }: { b: Snapshot; kind: string }) {
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 
+/**
+ * Turn the chat mutation result into a confident, first-person confirmation of
+ * what the AI actually changed. The server already returns a `reply` summary;
+ * we lead with that, then append a concrete tally so the adult can trust the
+ * edit landed (e.g. "Added 1 · updated 2 · moved the order"). Warnings, if any,
+ * are surfaced plainly so nothing fails silently.
+ */
+function composeFirstPersonReply(data: any): string {
+  const ins = data?.inserted ?? 0;
+  const upd = data?.updated ?? 0;
+  const del = data?.deleted ?? 0;
+  const ord = data?.reordered ?? 0;
+  const sh = data?.shifted ?? 0;
+  const parts: string[] = [];
+  if (ins) parts.push(`added ${ins} block${ins === 1 ? "" : "s"}`);
+  if (upd) parts.push(`updated ${upd} block${upd === 1 ? "" : "s"}`);
+  if (del) parts.push(`removed ${del} block${del === 1 ? "" : "s"}`);
+  if (ord) parts.push(`reordered the day`);
+  if (sh) parts.push(`shifted the times`);
+  const tally = parts.length
+    ? parts.join(" · ").replace(/^./, (c) => c.toUpperCase())
+    : null;
+  const base = (data?.reply && String(data.reply).trim())
+    || (tally ? "Done." : "I read that, but nothing needed to change — the schedule already matches what you asked.");
+  const warn = Array.isArray(data?.warnings) && data.warnings.length
+    ? `\n\n_Heads up: ${data.warnings.join(" ")}_`
+    : "";
+  // Avoid a redundant double-tally if the server reply already reads like one.
+  const showTally = tally && !/\b(added|updated|removed|reorder|shift|change)/i.test(base);
+  return `${base}${showTally ? `\n\n**${tally}.** It's live on the schedule →` : ""}${warn}`;
+}
+
 const SUGGESTED_PROMPTS = [
   "Make it shorter and fun today",
   "Add a 20-min read aloud after lunch",
@@ -143,14 +175,23 @@ export default function AgendaEditor() {
 
   const utils = trpc.useUtils();
 
-  const chatM = (trpc as any).agendaEditor?.chat?.useMutation?.({
+  // Bind the real chat mutation directly — fully typed, NO optional chaining.
+  // The old `(trpc as any).agendaEditor?.chat?.useMutation?.()` could resolve to
+  // undefined in some builds, which made `sendChat` bail with "Chat not
+  // available" and feel like a dead/confused bot. This is the AI talking AND
+  // acting: every reply states, in first person, exactly what it changed.
+  const chatM = trpc.agendaEditor.chat.useMutation({
     onSuccess: (data: any) => {
-      setChatMessages(prev => [...prev, { role: "assistant", content: data.reply }]);
+      const reply = composeFirstPersonReply(data);
+      setChatMessages(prev => [...prev, { role: "assistant", content: reply }]);
       setAttachment(null);
+      // Refresh the live schedule beside the chat so the change is visible at once.
       utils.agendaEditor.snapshot.invalidate({ date });
+      utils.plans?.byDate?.invalidate?.();
+      utils.plans?.today?.invalidate?.();
     },
     onError: (e: any) => {
-      setChatMessages(prev => [...prev, { role: "assistant", content: `❌ Sorry, something went wrong: ${e?.message || "unknown error"}` }]);
+      setChatMessages(prev => [...prev, { role: "assistant", content: `I hit a snag and couldn't make that change: ${e?.message || "unknown error"}. Try rephrasing and I'll get it done.` }]);
     },
   });
 
@@ -181,7 +222,7 @@ export default function AgendaEditor() {
   const sendChat = () => {
     const trimmed = chatInput.trim();
     if (!trimmed && !attachment) return;
-    if (!chatM) { toast.error("Chat not available."); return; }
+    if (chatM.isPending) return;
     const userMsg = trimmed || "(attached file)";
     setChatMessages(prev => [...prev, { role: "user", content: userMsg + (attachment ? `\n\n📎 ${attachment.fileName}` : "") }]);
     setChatInput("");
@@ -288,7 +329,7 @@ export default function AgendaEditor() {
       <header className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Agenda Editor</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">Tell the AI anything — add, remove, reschedule, swap subjects, push the day. Changes apply immediately.</p>
+          <p className="text-sm text-muted-foreground mt-0.5">Just tell me what you want and I'll change the schedule — assignments, videos, worksheets, times, lengths, order, add or remove. Every change is instant.</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-40" />
@@ -333,9 +374,9 @@ export default function AgendaEditor() {
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-primary" />
-              AI Schedule Editor
+              Talk to me — I'll edit the schedule
             </CardTitle>
-            <p className="text-xs text-muted-foreground">Type anything — changes apply immediately to the live schedule on the right.</p>
+            <p className="text-xs text-muted-foreground">I'm your scheduling assistant. Tell me what to change in plain English — times, lengths, order, subjects, assignments, videos, worksheets, add or remove anything — and I make it instantly. No previews, no confirm step.</p>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
 
@@ -365,9 +406,10 @@ export default function AgendaEditor() {
             <div className="rounded-xl border border-border/50 bg-muted/20 flex flex-col" style={{ minHeight: 240 }}>
               <div className="flex-1 p-3 space-y-3 overflow-y-auto" style={{ maxHeight: 360 }}>
                 {chatMessages.length === 0 && (
-                  <div className="text-xs text-muted-foreground text-center py-4">
-                    <Sparkles className="w-6 h-6 mx-auto mb-2 opacity-40" />
-                    Start typing below — or pick a suggestion
+                  <div className="text-sm text-muted-foreground text-center py-5 px-4">
+                    <Sparkles className="w-6 h-6 mx-auto mb-2 text-primary/60" />
+                    <p className="font-medium text-foreground/80">Hi! I'm here to rebuild {date}'s schedule however you want.</p>
+                    <p className="mt-1 text-xs">Just say it the way you'd say it out loud — “move math to 9”, “make today light”, “add Ali therapy at noon”, “swap the science video for a fractions worksheet”. I'll do it right away and the schedule on the right updates live.</p>
                   </div>
                 )}
                 {chatMessages.map((msg, i) => (
@@ -410,7 +452,7 @@ export default function AgendaEditor() {
               {/* Suggestion chips — show when chat is empty */}
               {chatMessages.length === 0 && (
                 <div className="border-t border-border/40 p-3">
-                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Suggestions</div>
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">Or tap an example to fill the box</div>
                   <div className="flex flex-wrap gap-1.5">
                     {SUGGESTED_PROMPTS.map((p) => (
                       <button
