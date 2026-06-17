@@ -1,0 +1,44 @@
+{
+  "events": [
+    {
+      "summary": "[Reagan Homeschool] Warm-up: Perimeter vs. Area",
+      "description": "Perimeter = the fence around (add all sides). Area = the carpet inside (length × width). For a 6 cm × 4 cm rectangle, find BOTH and label the units (cm vs cm²). Draw one more rectangle of your own and do the same. Ohio 5.MD / 5.G.\n\n— dashboardBlockId=3000015 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-24T08:30:00-04:00",
+      "end_time": "2026-06-24T09:10:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Area & Perimeter of Rectangles and Compound Shapes — lesson + practice",
+      "description": "Find area and perimeter of rectangles, then break an L-shaped (compound) figure into two rectangles, find each area, and add them. Work 2 examples, then 5 practice figures with answer space. Watch your units: length is units, area is square units. \n\n— dashboardBlockId=3000016 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-24T09:15:00-04:00",
+      "end_time": "2026-06-24T10:00:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Science: Matter & Its Properties (Spectrum Science Gr 5)",
+      "description": "Read the lesson on properties of matter, then answer the comprehension questions: What are the three states of matter? Give an example of a physical change and a chemical change. Why is mass conserved when ice melts? Write full-sentence answers. Book: Spectrum Science Grade 5 pg 10–13.\n\n— dashboardBlockId=3000017 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-24T10:00:00-04:00",
+      "end_time": "2026-06-24T10:45:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Fun finish: Backyard Matter Hunt",
+      "description": "Go outside (or around the house) and find one solid, one liquid, and one gas you can prove is there (wind moving leaves counts!). Draw each and write one property of each. Real-world science, no timer.\n\n— dashboardBlockId=3000018 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-24T10:45:00-04:00",
+      "end_time": "2026-06-24T11:15:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    }
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "events": [
+    {
+      "summary": "[Reagan Homeschool] Ali visit",
+      "description": "Reagan sees Ali this morning. School work starts after the visit wraps up — no rush.\n\n— dashboardBlockId=2910001 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-17T11:00:00-04:00",
+      "end_time": "2026-06-17T12:00:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Lunch",
+      "description": "Lunch and a little break after Ali. Classes start at 1:00.\n\n— dashboardBlockId=2910002 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-17T12:00:00-04:00",
+      "end_time": "2026-06-17T13:00:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Intro to Measurement Conversions",
+      "description": "Gentle intro to converting between US customary units (no metric today). Watch/work the Khan Academy intro on converting units of measure and learn the key relationships:\n- Length: 12 inches = 1 foot, 3 feet = 1 yard\n- Volume: 8 fluid ounces = 1 cup, 2 cups = 1 pint, 2 pints = 1 quart, 4 quarts = 1 gallon\n- Weight: 16 ounces = 1 pound\n\nKhan Academy 5th grade — Converting units of measure: https://www.khanacademy.org/math/cc-fifth-grade-math/imp-measurement-and-data-3\n\nNo quiz/metrics today — watch, take notes, and say each relationship out loud.\n\n— dashboardBlockId=2790001 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-17T13:00:00-04:00",
+      "end_time": "2026-06-17T13:40:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Converting Units — guided practice",
+      "description": "Guided practice converting bigger units to smaller and back (US customary only). Work simple examples together, e.g. how many cups in 2 quarts? how many inches in 3 feet? how many ounces in 2 pounds?\n\nKhan Academy 5th grade — Converting units of measure: https://www.khanacademy.org/math/cc-fifth-grade-math/imp-measurement-and-data-3\n\nPractice only — no scored quiz today.\n\n— dashboardBlockId=2790002 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-17T13:45:00-04:00",
+      "end_time": "2026-06-17T14:25:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Make a conversion cheat-sheet",
+      "description": "Reagan makes her own one-page conversion cheat-sheet to use in the duck/bathtub activity. Include: length (in/ft/yd), volume (fl oz/cup/pint/quart/gallon), weight (oz/lb). Draw a little ladder or arrows showing which way you multiply vs divide. No metric units yet. Hands-on, no scored quiz.\n\n— dashboardBlockId=2790003 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-17T14:30:00-04:00",
+      "end_time": "2026-06-17T15:10:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Duck Pool / Bathtub Measurement Lab — with Mom",
+      "description": "Hands-on measurement conversions with Mom (~30 min). US customary units only — no metric today. No worksheet.\n\nOUTDOOR (by the pool, with the 3 ducks):\n- Top off the ducks' pool using a measuring cup or quart pitcher: count CUPS, then convert cups -> pints -> quarts -> gallons (8 cups = 2 quarts = 1/2 gallon; 4 quarts = 1 gallon).\n- Measure each of the 3 ducks: body length in INCHES, then convert to FEET/inches (12 in = 1 ft). Make a 3-row chart (Duck 1/2/3) and find the difference between the biggest and smallest.\n- Weigh a scoop of duck feed in OUNCES and convert to POUNDS (16 oz = 1 lb). If each duck eats X oz, how many pounds for all 3 per day? Per week?\n\nINDOOR BACKUP (bathtub — if weather/daylight doesn't cooperate):\n- Fill the tub using a measured container, counting CUPS -> PINTS -> QUARTS -> GALLONS.\n- Predict how many gallons the tub holds, then measure to check.\n\nReagan uses her cheat-sheet and predicts each answer first, then measures to check.\n\n— dashboardBlockId=2790004 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-17T15:15:00-04:00",
+      "end_time": "2026-06-17T15:45:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    }
+  ]
+}

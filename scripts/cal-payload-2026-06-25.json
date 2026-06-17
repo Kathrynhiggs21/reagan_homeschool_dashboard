@@ -1,0 +1,44 @@
+{
+  "events": [
+    {
+      "summary": "[Reagan Homeschool] Warm-up: Equivalent Fractions Ladder",
+      "description": "Build the ladder: write 4 fractions equal to 1/2, then 4 equal to 2/3, by multiplying top and bottom by the same number. Then simplify 6/8, 9/12, and 10/15 back down. Ohio 5.NF.\n\n— dashboardBlockId=3000019 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-25T08:30:00-04:00",
+      "end_time": "2026-06-25T09:10:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Fractions Review: Add, Subtract & Compare — mixed practice",
+      "description": "Mixed review of this week's fraction work: add and subtract fractions with unlike denominators, compare two fractions, and solve 2 word problems (sharing pizza, measuring ribbon). 8 problems with answer space. Show the common denominator step every time. Book backup: Fractions, Decimals, and Percents pg 12–15.\n\n— dashboardBlockId=3000020 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-25T09:15:00-04:00",
+      "end_time": "2026-06-25T10:00:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Social Studies: Regions of the United States",
+      "description": "Using a US map (in the National Geographic Kids Almanac or online), label the 5 regions: Northeast, Southeast, Midwest, Southwest, West. For each region write one state in it and one thing it's known for (landform, climate, or product). Answer space + a blank map to label. Book: National Geographic Kids Almanac 2026 pg 60–63.\n\n— dashboardBlockId=3000021 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-25T10:00:00-04:00",
+      "end_time": "2026-06-25T10:45:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Fun finish: Design a State Postcard",
+      "description": "Pick your favorite US region and draw a postcard 'from' there — show a landmark, an animal, and the weather. Write one sentence on the back about why you'd visit. Just for fun.\n\n— dashboardBlockId=3000022 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-25T10:45:00-04:00",
+      "end_time": "2026-06-25T11:15:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    }
+  ]
+}

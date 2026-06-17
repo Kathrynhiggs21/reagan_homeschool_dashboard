@@ -1,0 +1,422 @@
+[
+  {
+    "date": "2026-06-17",
+    "id": 2910001,
+    "title": "Ali visit",
+    "description": "Reagan sees Ali this morning. School work starts after the visit wraps up — no rush.",
+    "durationMin": 60,
+    "startTime": "11:00",
+    "sortOrder": -1,
+    "blockType": "appointment"
+  },
+  {
+    "date": "2026-06-17",
+    "id": 2910002,
+    "title": "Lunch",
+    "description": "Lunch and a little break after Ali. Classes start at 1:00.",
+    "durationMin": 60,
+    "startTime": "12:00",
+    "sortOrder": 0,
+    "blockType": "choice"
+  },
+  {
+    "date": "2026-06-17",
+    "id": 2790001,
+    "title": "Intro to Measurement Conversions",
+    "description": "Gentle intro to converting between US customary units (no metric today). Watch/work the Khan Academy intro on converting units of measure and learn the key relationships:\n- Length: 12 inches = 1 foot, 3 feet = 1 yard\n- Volume: 8 fluid ounces = 1 cup, 2 cups = 1 pint, 2 pints = 1 quart, 4 quarts = 1 gallon\n- Weight: 16 ounces = 1 pound\n\nKhan Academy 5th grade — Converting units of measure: https://www.khanacademy.org/math/cc-fifth-grade-math/imp-measurement-and-data-3\n\nNo quiz/metrics today — watch, take notes, and say each relationship out loud.",
+    "durationMin": 40,
+    "startTime": "13:00",
+    "sortOrder": 0,
+    "blockType": "math"
+  },
+  {
+    "date": "2026-06-17",
+    "id": 2790002,
+    "title": "Converting Units — guided practice",
+    "description": "Guided practice converting bigger units to smaller and back (US customary only). Work simple examples together, e.g. how many cups in 2 quarts? how many inches in 3 feet? how many ounces in 2 pounds?\n\nKhan Academy 5th grade — Converting units of measure: https://www.khanacademy.org/math/cc-fifth-grade-math/imp-measurement-and-data-3\n\nPractice only — no scored quiz today.",
+    "durationMin": 40,
+    "startTime": "13:45",
+    "sortOrder": 1,
+    "blockType": "math"
+  },
+  {
+    "date": "2026-06-17",
+    "id": 2790003,
+    "title": "Make a conversion cheat-sheet",
+    "description": "Reagan makes her own one-page conversion cheat-sheet to use in the duck/bathtub activity. Include: length (in/ft/yd), volume (fl oz/cup/pint/quart/gallon), weight (oz/lb). Draw a little ladder or arrows showing which way you multiply vs divide. No metric units yet. Hands-on, no scored quiz.",
+    "durationMin": 40,
+    "startTime": "14:30",
+    "sortOrder": 2,
+    "blockType": "math"
+  },
+  {
+    "date": "2026-06-17",
+    "id": 2790004,
+    "title": "Duck Pool / Bathtub Measurement Lab — with Mom",
+    "description": "Hands-on measurement conversions with Mom (~30 min). US customary units only — no metric today. No worksheet.\n\nOUTDOOR (by the pool, with the 3 ducks):\n- Top off the ducks' pool using a measuring cup or quart pitcher: count CUPS, then convert cups -> pints -> quarts -> gallons (8 cups = 2 quarts = 1/2 gallon; 4 quarts = 1 gallon).\n- Measure each of the 3 ducks: body length in INCHES, then convert to FEET/inches (12 in = 1 ft). Make a 3-row chart (Duck 1/2/3) and find the difference between the biggest and smallest.\n- Weigh a scoop of duck feed in OUNCES and convert to POUNDS (16 oz = 1 lb). If each duck eats X oz, how many pounds for all 3 per day? Per week?\n\nINDOOR BACKUP (bathtub — if weather/daylight doesn't cooperate):\n- Fill the tub using a measured container, counting CUPS -> PINTS -> QUARTS -> GALLONS.\n- Predict how many gallons the tub holds, then measure to check.\n\nReagan uses her cheat-sheet and predicts each answer first, then measures to check.",
+    "durationMin": 30,
+    "startTime": "15:15",
+    "sortOrder": 3,
+    "blockType": "adventure"
+  },
+  {
+    "date": "2026-06-18",
+    "id": 2820001,
+    "title": "Metric Units Intro — the base-10 ladder",
+    "description": "New today: METRIC units (we keep yesterday's US customary cheat-sheet handy for comparison). The big idea: metric is base-10 — you multiply or divide by 10, 100, or 1000, never weird numbers like 12 or 16.\n\nLearn the three ladders:\n- Length: millimeter (mm) -> centimeter (cm) -> meter (m) -> kilometer (km). 10 mm = 1 cm, 100 cm = 1 m, 1000 m = 1 km.\n- Mass: milligram (mg) -> gram (g) -> kilogram (kg). 1000 mg = 1 g, 1000 g = 1 kg.\n- Capacity: milliliter (mL) -> liter (L). 1000 mL = 1 L.\n\nKhan Academy 5th grade — Converting metric units: https://www.khanacademy.org/math/cc-fifth-grade-math/imp-measurement-and-data-3\n\nNo quiz — watch, take notes, and add a metric row to yesterday's cheat-sheet. Find one real object near each unit (a paperclip is about 1 g, a water bottle is about 1 L, a doorway is about 2 m).",
+    "durationMin": 40,
+    "startTime": "09:00",
+    "sortOrder": 0,
+    "blockType": "math"
+  },
+  {
+    "date": "2026-06-18",
+    "id": 2820002,
+    "title": "Volume Intro — filling space with cubes",
+    "description": "Step into VOLUME, building on measurement. Volume = how much space something fills, measured in CUBIC units (cubic centimeters cm^3, cubic inches in^3). The key idea: count or calculate unit cubes.\n\n- Count unit cubes in a rectangular prism.\n- Discover the shortcut: Volume = length x width x height (V = l x w x h).\n- Connect to capacity: 1 mL = 1 cubic centimeter (a neat metric bridge to this morning's lesson!).\n\nKhan Academy 5th grade — Volume: https://www.khanacademy.org/math/cc-fifth-grade-math/imp-volume\n\nPractice only — work 3-4 examples together (build with blocks or sketch the prisms). No scored quiz today.",
+    "durationMin": 40,
+    "startTime": "09:40",
+    "sortOrder": 1,
+    "blockType": "math"
+  },
+  {
+    "date": "2026-06-18",
+    "id": 2820003,
+    "title": "Poetry Intro -> Haiku",
+    "description": "Brand-new ELA mini-unit: POETRY. Start gentle.\n\n1) What makes a poem a poem? Poems play with sound, rhythm, and pictures-in-words. They don't have to rhyme. Read 2-3 short kid-friendly poems aloud and notice the feelings and images.\n\n2) Meet the HAIKU — a tiny 3-line nature poem from Japan:\n   - Line 1: 5 syllables\n   - Line 2: 7 syllables\n   - Line 3: 5 syllables\n   Haiku usually capture one small moment in nature (a bird, the pond, the weather).\n\n3) Practice counting syllables by clapping (\"duck\" = 1 clap, \"feather\" = 2 claps, \"water\" = 2 claps).\n\n4) Reagan writes 2-3 of her own haiku — the ducks, the pool, the sky, or the yard are perfect subjects. No wrong answers; we're exploring. Khan Academy ELA (poetry reading): https://www.khanacademy.org/ela",
+    "durationMin": 40,
+    "startTime": "10:20",
+    "sortOrder": 2,
+    "blockType": "read_aloud"
+  },
+  {
+    "date": "2026-06-18",
+    "id": 2820004,
+    "title": "Nature Haiku Walk + Metric Measure — fun finish",
+    "description": "Fun closing activity that ties the whole day together (with Mom). Go outside to the ducks/yard (bathtub + indoor objects as the backup if weather doesn't cooperate).\n\nPART 1 — Metric measure (math): Bring a metric ruler/tape. Measure 3-4 things in CENTIMETERS and METERS (a duck, a stepping stone, the width of the pool). Measure a container of pool water in mL/L. Pick ONE box-shaped thing and estimate its volume (l x w x h) in cubic centimeters.\n\nPART 2 — Nature haiku (ELA): Sit quietly for one minute and notice one small moment (a duck dipping its head, a breeze, a cloud). Write ONE more haiku on the spot about what you saw — 5-7-5, clap the syllables.\n\nShare the favorite haiku out loud with Mom. No worksheet, no quiz — just exploring and creating.",
+    "durationMin": 30,
+    "startTime": "11:00",
+    "sortOrder": 3,
+    "blockType": "adventure"
+  },
+  {
+    "date": "2026-06-19",
+    "id": 3000003,
+    "title": "Warm-up: Fraction Picture Match",
+    "description": "Quick fraction warm-up. Match each picture (a pizza, a chocolate bar, a measuring cup) to the fraction it shows: 1/2, 1/3, 1/4, 2/3, 3/4. Then write each fraction's numerator and denominator and say what each part means. Goal: wake up the fraction brain before the lesson. Ohio 5.NF.",
+    "durationMin": 40,
+    "startTime": "08:30",
+    "sortOrder": 0,
+    "blockType": "morning_warmup"
+  },
+  {
+    "date": "2026-06-19",
+    "id": 3000004,
+    "title": "Adding Fractions with Unlike Denominators — lesson + practice",
+    "description": "Today's big idea: you can only add fractions when the pieces are the SAME size. Step 1: find a common denominator (the smallest number both bottoms divide into). Step 2: rename each fraction. Step 3: add the tops, keep the bottom, simplify. Work through 1/2 + 1/3, 2/3 + 1/4, 3/4 + 1/6, then 5 practice problems with answer space. Book backup: Fractions, Decimals, and Percents pg 8–11.",
+    "durationMin": 45,
+    "startTime": "09:15",
+    "sortOrder": 1,
+    "blockType": "math"
+  },
+  {
+    "date": "2026-06-19",
+    "id": 3000005,
+    "title": "Grammar: Nouns, Verbs & Complete Sentences",
+    "description": "180 Days of Language warm-up. Read each sentence, find and label the noun(s) and verb(s), fix the capitalization and punctuation, and rewrite it correctly. Then write 2 of your own complete sentences about something you did this week. Book: 180 Days of Language for 5th Grade pg 12–13.",
+    "durationMin": 45,
+    "startTime": "10:00",
+    "sortOrder": 2,
+    "blockType": "read_aloud"
+  },
+  {
+    "date": "2026-06-19",
+    "id": 3000006,
+    "title": "Fun finish: Fraction Snack Lab",
+    "description": "Hands-on with Mom: cut a snack (apple, sandwich, or graham crackers) into fourths and thirds. Combine pieces to SHOW 1/2 + 1/4 = 3/4 in real life. Draw what you built and write the matching addition sentence. No timer — just play with the math.",
+    "durationMin": 30,
+    "startTime": "10:45",
+    "sortOrder": 3,
+    "blockType": "adventure"
+  },
+  {
+    "date": "2026-06-22",
+    "id": 3000007,
+    "title": "Warm-up: Place Value to the Thousandths",
+    "description": "Write each number in a place-value chart: 3.4, 0.27, 5.108, 12.6. Say each digit's place (ones, tenths, hundredths, thousandths) and its value. Then read each decimal out loud the right way ('five and one hundred eight thousandths'). Ohio 5.NBT.",
+    "durationMin": 40,
+    "startTime": "08:30",
+    "sortOrder": 0,
+    "blockType": "morning_warmup"
+  },
+  {
+    "date": "2026-06-22",
+    "id": 3000008,
+    "title": "Decimals: Compare, Order & Round — lesson + practice",
+    "description": "Big idea: decimals are just fractions of ten. Line up the decimal points, compare digit by digit from the left, and use <, >, =. Then round 4 decimals to the nearest tenth and hundredth. Work the 6 practice problems with answer space. Book backup: Fractions, Decimals, and Percents pg 20–23.",
+    "durationMin": 45,
+    "startTime": "09:15",
+    "sortOrder": 1,
+    "blockType": "math"
+  },
+  {
+    "date": "2026-06-22",
+    "id": 3000009,
+    "title": "Reading: Tuck Everlasting — Chapters 1–3",
+    "description": "Read chapters 1–3 of Tuck Everlasting (pg 1–18). As you read, answer: (1) Who is Winnie Foster and how does she feel about her family? (2) What is the wood and why won't the Tucks let anyone touch the spring? (3) Describe the man in the yellow suit in one sentence. Write your answers in full sentences. Book: Tuck Everlasting pg 1–18.",
+    "durationMin": 45,
+    "startTime": "10:00",
+    "sortOrder": 2,
+    "blockType": "read_aloud"
+  },
+  {
+    "date": "2026-06-22",
+    "id": 3000010,
+    "title": "Fun finish: Draw the Wood",
+    "description": "Draw the wood at the edge of the Foster property the way you pictured it while reading — the giant tree, the spring, the cow path. Label 3 things from the story. This is just for fun and to picture the setting.",
+    "durationMin": 30,
+    "startTime": "10:45",
+    "sortOrder": 3,
+    "blockType": "adventure"
+  },
+  {
+    "date": "2026-06-23",
+    "id": 3000011,
+    "title": "Warm-up: Decimal × 10, 100, 1000",
+    "description": "Spot the pattern: when you multiply by 10 the decimal point hops RIGHT one place; ÷10 hops LEFT. Solve: 3.5×10, 0.27×100, 48.2÷10, 6÷100. Write the rule in your own words. Ohio 5.NBT.",
+    "durationMin": 40,
+    "startTime": "08:30",
+    "sortOrder": 0,
+    "blockType": "morning_warmup"
+  },
+  {
+    "date": "2026-06-23",
+    "id": 3000012,
+    "title": "Multiplying & Dividing Decimals — lesson + practice",
+    "description": "Multiply decimals like whole numbers, then count the total decimal places to place the point. Divide by making the divisor a whole number first. Work through 2 worked examples, then 6 practice problems (3 multiply, 3 divide) with answer space. Real-world: figure the cost of 3.5 lbs of apples at $1.20/lb. Book backup: Fractions, Decimals, and Percents pg 24–27.",
+    "durationMin": 45,
+    "startTime": "09:15",
+    "sortOrder": 1,
+    "blockType": "math"
+  },
+  {
+    "date": "2026-06-23",
+    "id": 3000013,
+    "title": "Writing: Personal Narrative — A Time I Tried Something New",
+    "description": "Write a personal narrative (1 page) about a time you tried something new. Plan first: beginning (set the scene), middle (what happened, how you felt), end (what you learned). Use at least 3 sensory details and one line of dialogue. Then reread and circle one sentence you can make stronger. Answer space + lines provided.",
+    "durationMin": 45,
+    "startTime": "10:00",
+    "sortOrder": 2,
+    "blockType": "read_aloud"
+  },
+  {
+    "date": "2026-06-23",
+    "id": 3000014,
+    "title": "Fun finish: Grocery Receipt Math",
+    "description": "Grab a real (or pretend) grocery receipt. Pick 4 items, estimate the total to the nearest dollar, then add the exact decimals to check. How close was your estimate? Hands-on decimal addition, no timer.",
+    "durationMin": 30,
+    "startTime": "10:45",
+    "sortOrder": 3,
+    "blockType": "adventure"
+  },
+  {
+    "date": "2026-06-24",
+    "id": 3000015,
+    "title": "Warm-up: Perimeter vs. Area",
+    "description": "Perimeter = the fence around (add all sides). Area = the carpet inside (length × width). For a 6 cm × 4 cm rectangle, find BOTH and label the units (cm vs cm²). Draw one more rectangle of your own and do the same. Ohio 5.MD / 5.G.",
+    "durationMin": 40,
+    "startTime": "08:30",
+    "sortOrder": 0,
+    "blockType": "morning_warmup"
+  },
+  {
+    "date": "2026-06-24",
+    "id": 3000016,
+    "title": "Area & Perimeter of Rectangles and Compound Shapes — lesson + practice",
+    "description": "Find area and perimeter of rectangles, then break an L-shaped (compound) figure into two rectangles, find each area, and add them. Work 2 examples, then 5 practice figures with answer space. Watch your units: length is units, area is square units. ",
+    "durationMin": 45,
+    "startTime": "09:15",
+    "sortOrder": 1,
+    "blockType": "math"
+  },
+  {
+    "date": "2026-06-24",
+    "id": 3000017,
+    "title": "Science: Matter & Its Properties (Spectrum Science Gr 5)",
+    "description": "Read the lesson on properties of matter, then answer the comprehension questions: What are the three states of matter? Give an example of a physical change and a chemical change. Why is mass conserved when ice melts? Write full-sentence answers. Book: Spectrum Science Grade 5 pg 10–13.",
+    "durationMin": 45,
+    "startTime": "10:00",
+    "sortOrder": 2,
+    "blockType": "adventure"
+  },
+  {
+    "date": "2026-06-24",
+    "id": 3000018,
+    "title": "Fun finish: Backyard Matter Hunt",
+    "description": "Go outside (or around the house) and find one solid, one liquid, and one gas you can prove is there (wind moving leaves counts!). Draw each and write one property of each. Real-world science, no timer.",
+    "durationMin": 30,
+    "startTime": "10:45",
+    "sortOrder": 3,
+    "blockType": "adventure"
+  },
+  {
+    "date": "2026-06-25",
+    "id": 3000019,
+    "title": "Warm-up: Equivalent Fractions Ladder",
+    "description": "Build the ladder: write 4 fractions equal to 1/2, then 4 equal to 2/3, by multiplying top and bottom by the same number. Then simplify 6/8, 9/12, and 10/15 back down. Ohio 5.NF.",
+    "durationMin": 40,
+    "startTime": "08:30",
+    "sortOrder": 0,
+    "blockType": "morning_warmup"
+  },
+  {
+    "date": "2026-06-25",
+    "id": 3000020,
+    "title": "Fractions Review: Add, Subtract & Compare — mixed practice",
+    "description": "Mixed review of this week's fraction work: add and subtract fractions with unlike denominators, compare two fractions, and solve 2 word problems (sharing pizza, measuring ribbon). 8 problems with answer space. Show the common denominator step every time. Book backup: Fractions, Decimals, and Percents pg 12–15.",
+    "durationMin": 45,
+    "startTime": "09:15",
+    "sortOrder": 1,
+    "blockType": "math"
+  },
+  {
+    "date": "2026-06-25",
+    "id": 3000021,
+    "title": "Social Studies: Regions of the United States",
+    "description": "Using a US map (in the National Geographic Kids Almanac or online), label the 5 regions: Northeast, Southeast, Midwest, Southwest, West. For each region write one state in it and one thing it's known for (landform, climate, or product). Answer space + a blank map to label. Book: National Geographic Kids Almanac 2026 pg 60–63.",
+    "durationMin": 45,
+    "startTime": "10:00",
+    "sortOrder": 2,
+    "blockType": "custom"
+  },
+  {
+    "date": "2026-06-25",
+    "id": 3000022,
+    "title": "Fun finish: Design a State Postcard",
+    "description": "Pick your favorite US region and draw a postcard 'from' there — show a landmark, an animal, and the weather. Write one sentence on the back about why you'd visit. Just for fun.",
+    "durationMin": 30,
+    "startTime": "10:45",
+    "sortOrder": 3,
+    "blockType": "adventure"
+  },
+  {
+    "date": "2026-06-26",
+    "id": 3000023,
+    "title": "Warm-up: Number of the Day",
+    "description": "Today's number is 4.75. Write it as a fraction, round it to the nearest whole, double it, and write a word problem where the answer is 4.75. Stretch your number sense. Ohio 5.NBT / 5.NF.",
+    "durationMin": 40,
+    "startTime": "08:30",
+    "sortOrder": 0,
+    "blockType": "morning_warmup"
+  },
+  {
+    "date": "2026-06-26",
+    "id": 3000024,
+    "title": "Mixed Math Review: Fractions, Decimals & Measurement",
+    "description": "Two-week checkpoint. 10 mixed problems pulling from everything so far: convert units (cm↔m), add fractions, multiply a decimal, find an area, and one multi-step word problem. Answer space provided. Circle any that felt tricky so we can review them together.",
+    "durationMin": 45,
+    "startTime": "09:15",
+    "sortOrder": 1,
+    "blockType": "math"
+  },
+  {
+    "date": "2026-06-26",
+    "id": 3000025,
+    "title": "ELA: Vocabulary in Context — 8 New Words",
+    "description": "Learn 8 grade-5 words (e.g., reluctant, eternal, peculiar, immense, fragile, ancient, glisten, journey). For each: write what you think it means from the sentence clue, then the real definition, then use it in your own sentence. Many of these come straight from Tuck Everlasting. Book backup: 180 Days of Language for 5th Grade pg 20–21.",
+    "durationMin": 45,
+    "startTime": "10:00",
+    "sortOrder": 2,
+    "blockType": "read_aloud"
+  },
+  {
+    "date": "2026-06-26",
+    "id": 3000026,
+    "title": "Fun finish: Vocabulary Charades",
+    "description": "Act out 4 of your new vocabulary words for Mom and have her guess. Then draw a quick sketch for your 2 favorite words. Words stick when you move and laugh.",
+    "durationMin": 30,
+    "startTime": "10:45",
+    "sortOrder": 3,
+    "blockType": "adventure"
+  },
+  {
+    "date": "2026-06-29",
+    "id": 3000027,
+    "title": "Warm-up: Division Facts & Estimation",
+    "description": "Estimate first, then solve: 84÷4, 96÷6, 125÷5. For each, ask 'about how many?' before the exact answer. Write what the remainder would MEAN if 125 cookies are shared among 5 friends (none!) vs 6 friends. Ohio 5.NBT.",
+    "durationMin": 40,
+    "startTime": "08:30",
+    "sortOrder": 0,
+    "blockType": "morning_warmup"
+  },
+  {
+    "date": "2026-06-29",
+    "id": 3000028,
+    "title": "Long Division with Remainders — lesson + practice",
+    "description": "Use the steps: Divide, Multiply, Subtract, Bring down, Repeat. Solve 5 problems with 1- and 2-digit divisors, writing the remainder two ways (R and as a fraction). Then 2 word problems where you must decide what to do with the remainder (round up for buses, drop for full boxes). Answer space provided.",
+    "durationMin": 45,
+    "startTime": "09:15",
+    "sortOrder": 1,
+    "blockType": "math"
+  },
+  {
+    "date": "2026-06-29",
+    "id": 3000029,
+    "title": "Reading: Tuck Everlasting — Chapters 4–6",
+    "description": "Read chapters 4–6 of Tuck Everlasting (pg 19–36). Answer in full sentences: (1) How did the Tucks become unable to age? (2) Why do they take Winnie with them? (3) Predict: what do you think Winnie will decide about the spring? Book: Tuck Everlasting pg 19–36.",
+    "durationMin": 45,
+    "startTime": "10:00",
+    "sortOrder": 2,
+    "blockType": "read_aloud"
+  },
+  {
+    "date": "2026-06-29",
+    "id": 3000030,
+    "title": "Fun finish: Share-the-Treats Division",
+    "description": "Count out a handful of treats or beads. Share them equally among 3, then 4, then 5 'people' (cups). Write the division sentence and the remainder each time. Real-world remainders, no timer.",
+    "durationMin": 30,
+    "startTime": "10:45",
+    "sortOrder": 3,
+    "blockType": "adventure"
+  },
+  {
+    "date": "2026-06-30",
+    "id": 3000031,
+    "title": "Warm-up: Two-Week Brag Sheet",
+    "description": "Look back at everything you learned in 2 weeks: measurement, metric, volume, fractions, decimals, area, division, Tuck Everlasting, matter, US regions. Write down the 3 things you're proudest of learning. No problems to solve — just celebrate the win.",
+    "durationMin": 40,
+    "startTime": "08:30",
+    "sortOrder": 0,
+    "blockType": "morning_warmup"
+  },
+  {
+    "date": "2026-06-30",
+    "id": 3000032,
+    "title": "Cumulative Math Review — choose-your-challenge",
+    "description": "Final review worksheet with 10 mixed problems across the whole pilot (conversions, fractions, decimals, area, division). Stars mark the 'challenge' problems — try at least 2. Answer space provided. This shows Mom what to keep practicing.",
+    "durationMin": 45,
+    "startTime": "09:15",
+    "sortOrder": 1,
+    "blockType": "math"
+  },
+  {
+    "date": "2026-06-30",
+    "id": 3000033,
+    "title": "ELA: Tuck Everlasting — Write the Ending You Want",
+    "description": "You've read 6 chapters. Write a 1-page prediction or alternate ending: what should Winnie do about the spring, and why? Use at least 3 vocabulary words from this week. Plan, draft, and reread. Lines provided.",
+    "durationMin": 45,
+    "startTime": "10:00",
+    "sortOrder": 2,
+    "blockType": "read_aloud"
+  },
+  {
+    "date": "2026-06-30",
+    "id": 3000034,
+    "title": "Free Choice: Pick Your Own Adventure",
+    "description": "Your pick! Choose ONE: (a) a bird-watching walk with the Merlin Bird ID app and log 3 birds, (b) start growing a crystal or a bean seed and draw day 1, or (c) a nature journal page about your favorite thing outside. Reagan chooses — learning that feels like play.",
+    "durationMin": 30,
+    "startTime": "10:45",
+    "sortOrder": 3,
+    "blockType": "choice"
+  }
+]

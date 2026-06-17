@@ -1,9 +1,78 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Copy, Check, Mail, IdCard, ExternalLink } from "lucide-react";
+import { Calendar, Copy, Check, Mail, IdCard, ExternalLink, UploadCloud, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+
+/**
+ * Live one-way push section: mirrors the dashboard's schedule blocks to
+ * the "Reagan's Homeschool" Google Calendar via the calendar.* tRPC
+ * procedures. Credential-gated server-side — when no Google Calendar
+ * token is configured the buttons stay disabled with a clear note.
+ */
+function CalendarPushSection() {
+  const statusQ = trpc.calendar.credentialStatus.useQuery(undefined, { staleTime: 60_000 });
+  const syncDay = trpc.calendar.syncDay.useMutation();
+  const syncRange = trpc.calendar.syncRange.useMutation();
+  const ready = statusQ.data?.ready === true;
+  const busy = syncDay.isPending || syncRange.isPending;
+  const todayStr = new Date().toISOString().slice(0, 10);
+
+  const pushToday = () =>
+    syncDay.mutate(
+      { dateISO: todayStr },
+      {
+        onSuccess: (r) =>
+          toast.success(`Today synced: ${r.eventsCreated} created, ${r.eventsUpdated} updated, ${r.eventsDeleted} removed${r.errorCount ? `, ${r.errorCount} errors` : ""}`),
+        onError: (e) => toast.error(e.message),
+      },
+    );
+
+  const pushPilot = () =>
+    syncRange.mutate(
+      { startISO: "2026-06-17", endISO: "2026-06-30" },
+      {
+        onSuccess: (r) =>
+          toast.success(`2-week pilot synced: ${r.totals.eventsCreated} created, ${r.totals.eventsUpdated} updated, ${r.totals.eventsDeleted} removed${r.totals.errorCount ? `, ${r.totals.errorCount} errors` : ""}`),
+        onError: (e) => toast.error(e.message),
+      },
+    );
+
+  return (
+    <div className="rounded-lg border border-border/50 bg-muted/30 p-3 space-y-2" data-testid="calendar-push-section">
+      <div className="flex items-center gap-2 text-xs font-semibold text-foreground">
+        <UploadCloud className="w-3.5 h-3.5" />
+        <span>Push schedule to Google Calendar (one-way)</span>
+      </div>
+      <p className="text-[11px] text-muted-foreground">
+        Writes each school block as a timed event on Reagan&apos;s Homeschool calendar.
+        Re-running is safe — events update in place and removed blocks are deleted.
+      </p>
+      {statusQ.isLoading ? (
+        <div className="text-[11px] text-muted-foreground">Checking calendar connection…</div>
+      ) : ready ? (
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" className="h-7" disabled={busy} onClick={pushToday} data-testid="calendar-push-today">
+            {busy ? "Syncing…" : "Sync today"}
+          </Button>
+          <Button size="sm" variant="secondary" className="h-7" disabled={busy} onClick={pushPilot} data-testid="calendar-push-pilot">
+            {busy ? "Syncing…" : "Sync 2-week pilot (Jun 17–30)"}
+          </Button>
+        </div>
+      ) : (
+        <div className="flex items-start gap-2 text-[11px] text-amber-700 dark:text-amber-400" data-testid="calendar-push-disabled">
+          <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+          <span>
+            Not connected yet. Add a Google Calendar credential
+            (<code>GOOGLE_CALENDAR_OAUTH_TOKEN</code>) in Settings → Secrets to enable
+            one-tap pushing. The dashboard also auto-syncs after a planner commit once connected.
+          </span>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function CalendarSyncCard() {
   const [copied, setCopied] = useState(false);
@@ -138,6 +207,8 @@ export default function CalendarSyncCard() {
           mirror. Changing the ID rewires sync — ask before editing.
         </div>
       </div>
+
+      <CalendarPushSection />
 
       <div className="text-xs text-muted-foreground space-y-1">
         <div className="font-semibold text-foreground">How to add in Google Calendar</div>

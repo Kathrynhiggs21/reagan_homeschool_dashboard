@@ -1,0 +1,44 @@
+{
+  "events": [
+    {
+      "summary": "[Reagan Homeschool] Warm-up: Division Facts & Estimation",
+      "description": "Estimate first, then solve: 84÷4, 96÷6, 125÷5. For each, ask 'about how many?' before the exact answer. Write what the remainder would MEAN if 125 cookies are shared among 5 friends (none!) vs 6 friends. Ohio 5.NBT.\n\n— dashboardBlockId=3000027 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-29T08:30:00-04:00",
+      "end_time": "2026-06-29T09:10:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Long Division with Remainders — lesson + practice",
+      "description": "Use the steps: Divide, Multiply, Subtract, Bring down, Repeat. Solve 5 problems with 1- and 2-digit divisors, writing the remainder two ways (R and as a fraction). Then 2 word problems where you must decide what to do with the remainder (round up for buses, drop for full boxes). Answer space provided.\n\n— dashboardBlockId=3000028 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-29T09:15:00-04:00",
+      "end_time": "2026-06-29T10:00:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Reading: Tuck Everlasting — Chapters 4–6",
+      "description": "Read chapters 4–6 of Tuck Everlasting (pg 19–36). Answer in full sentences: (1) How did the Tucks become unable to age? (2) Why do they take Winnie with them? (3) Predict: what do you think Winnie will decide about the spring? Book: Tuck Everlasting pg 19–36.\n\n— dashboardBlockId=3000029 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-29T10:00:00-04:00",
+      "end_time": "2026-06-29T10:45:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Fun finish: Share-the-Treats Division",
+      "description": "Count out a handful of treats or beads. Share them equally among 3, then 4, then 5 'people' (cups). Write the division sentence and the remainder each time. Real-world remainders, no timer.\n\n— dashboardBlockId=3000030 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-29T10:45:00-04:00",
+      "end_time": "2026-06-29T11:15:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    }
+  ]
+}

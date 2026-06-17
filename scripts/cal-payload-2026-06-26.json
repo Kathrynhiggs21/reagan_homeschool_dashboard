@@ -1,0 +1,44 @@
+{
+  "events": [
+    {
+      "summary": "[Reagan Homeschool] Warm-up: Number of the Day",
+      "description": "Today's number is 4.75. Write it as a fraction, round it to the nearest whole, double it, and write a word problem where the answer is 4.75. Stretch your number sense. Ohio 5.NBT / 5.NF.\n\n— dashboardBlockId=3000023 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-26T08:30:00-04:00",
+      "end_time": "2026-06-26T09:10:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Mixed Math Review: Fractions, Decimals & Measurement",
+      "description": "Two-week checkpoint. 10 mixed problems pulling from everything so far: convert units (cm↔m), add fractions, multiply a decimal, find an area, and one multi-step word problem. Answer space provided. Circle any that felt tricky so we can review them together.\n\n— dashboardBlockId=3000024 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-26T09:15:00-04:00",
+      "end_time": "2026-06-26T10:00:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] ELA: Vocabulary in Context — 8 New Words",
+      "description": "Learn 8 grade-5 words (e.g., reluctant, eternal, peculiar, immense, fragile, ancient, glisten, journey). For each: write what you think it means from the sentence clue, then the real definition, then use it in your own sentence. Many of these come straight from Tuck Everlasting. Book backup: 180 Days of Language for 5th Grade pg 20–21.\n\n— dashboardBlockId=3000025 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-26T10:00:00-04:00",
+      "end_time": "2026-06-26T10:45:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Fun finish: Vocabulary Charades",
+      "description": "Act out 4 of your new vocabulary words for Mom and have her guess. Then draw a quick sketch for your 2 favorite words. Words stick when you move and laugh.\n\n— dashboardBlockId=3000026 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-26T10:45:00-04:00",
+      "end_time": "2026-06-26T11:15:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    }
+  ]
+}

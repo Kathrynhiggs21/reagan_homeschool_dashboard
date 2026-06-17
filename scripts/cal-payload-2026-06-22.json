@@ -1,0 +1,44 @@
+{
+  "events": [
+    {
+      "summary": "[Reagan Homeschool] Warm-up: Place Value to the Thousandths",
+      "description": "Write each number in a place-value chart: 3.4, 0.27, 5.108, 12.6. Say each digit's place (ones, tenths, hundredths, thousandths) and its value. Then read each decimal out loud the right way ('five and one hundred eight thousandths'). Ohio 5.NBT.\n\n— dashboardBlockId=3000007 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-22T08:30:00-04:00",
+      "end_time": "2026-06-22T09:10:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Decimals: Compare, Order & Round — lesson + practice",
+      "description": "Big idea: decimals are just fractions of ten. Line up the decimal points, compare digit by digit from the left, and use <, >, =. Then round 4 decimals to the nearest tenth and hundredth. Work the 6 practice problems with answer space. Book backup: Fractions, Decimals, and Percents pg 20–23.\n\n— dashboardBlockId=3000008 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-22T09:15:00-04:00",
+      "end_time": "2026-06-22T10:00:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Reading: Tuck Everlasting — Chapters 1–3",
+      "description": "Read chapters 1–3 of Tuck Everlasting (pg 1–18). As you read, answer: (1) Who is Winnie Foster and how does she feel about her family? (2) What is the wood and why won't the Tucks let anyone touch the spring? (3) Describe the man in the yellow suit in one sentence. Write your answers in full sentences. Book: Tuck Everlasting pg 1–18.\n\n— dashboardBlockId=3000009 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-22T10:00:00-04:00",
+      "end_time": "2026-06-22T10:45:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Fun finish: Draw the Wood",
+      "description": "Draw the wood at the edge of the Foster property the way you pictured it while reading — the giant tree, the spring, the cow path. Label 3 things from the story. This is just for fun and to picture the setting.\n\n— dashboardBlockId=3000010 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-22T10:45:00-04:00",
+      "end_time": "2026-06-22T11:15:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    }
+  ]
+}

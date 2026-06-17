@@ -1,0 +1,44 @@
+{
+  "events": [
+    {
+      "summary": "[Reagan Homeschool] Warm-up: Decimal × 10, 100, 1000",
+      "description": "Spot the pattern: when you multiply by 10 the decimal point hops RIGHT one place; ÷10 hops LEFT. Solve: 3.5×10, 0.27×100, 48.2÷10, 6÷100. Write the rule in your own words. Ohio 5.NBT.\n\n— dashboardBlockId=3000011 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-23T08:30:00-04:00",
+      "end_time": "2026-06-23T09:10:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Multiplying & Dividing Decimals — lesson + practice",
+      "description": "Multiply decimals like whole numbers, then count the total decimal places to place the point. Divide by making the divisor a whole number first. Work through 2 worked examples, then 6 practice problems (3 multiply, 3 divide) with answer space. Real-world: figure the cost of 3.5 lbs of apples at $1.20/lb. Book backup: Fractions, Decimals, and Percents pg 24–27.\n\n— dashboardBlockId=3000012 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-23T09:15:00-04:00",
+      "end_time": "2026-06-23T10:00:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Writing: Personal Narrative — A Time I Tried Something New",
+      "description": "Write a personal narrative (1 page) about a time you tried something new. Plan first: beginning (set the scene), middle (what happened, how you felt), end (what you learned). Use at least 3 sensory details and one line of dialogue. Then reread and circle one sentence you can make stronger. Answer space + lines provided.\n\n— dashboardBlockId=3000013 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-23T10:00:00-04:00",
+      "end_time": "2026-06-23T10:45:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Fun finish: Grocery Receipt Math",
+      "description": "Grab a real (or pretend) grocery receipt. Pick 4 items, estimate the total to the nearest dollar, then add the exact decimals to check. How close was your estimate? Hands-on decimal addition, no timer.\n\n— dashboardBlockId=3000014 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-23T10:45:00-04:00",
+      "end_time": "2026-06-23T11:15:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    }
+  ]
+}

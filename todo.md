@@ -449,49 +449,61 @@ for a future in-site token; this session just RAN the work.
 - [x] Tests (vitest 4658 passed / 0 failed incl 11 new wakeWord) + live verify (prod plans.today returns 4 blocks, 200) + checkpoint
 
 ## Today blocks: open/links + hidden (this session)
-- [ ] Blocks don't open or show links when Reagan taps them — find click/open handler and link rendering
-- [ ] "3 hidden" badge — determine why 3 of today's 4 blocks are hidden from Reagan and fix gating
-- [ ] Test (vitest + live) + checkpoint
+- [x] Blocks now open the WorksheetRunner on tap (openWorksheetForBlock -> worksheets.forBlock)
+- [x] Hidden-block gating removed (TEST_PATTERNS quiz-word filter deleted) — Reagan sees all blocks
+- [x] Test (vitest 4678 pass) + checkpoint 9aace676
 
 ## Refinement: every academic block must open real content
 - [x] Stop hiding blocks (removed test/quiz word filter) — Reagan sees all blocks
-- [ ] Guarantee EVERY academic block opens a fillable PDF / video / worksheet / lesson on tap
-- [ ] Exempt non-academic blocks (lunch, break, recess, snack, free play) from the must-open rule
-- [ ] Find where fallbackActivityFor + lesson hydration live; ensure Open never dead-ends for academic blocks
-- [ ] Test (vitest + live) + checkpoint
-- [ ] Opened content must be READY TO START — no sign-in/login wall, no generic subject homepage; deep-link to exact resource or fillable PDF
+- [x] Guarantee EVERY academic block opens a fillable worksheet (in-app) + printable PDF on tap (worksheets.forBlock)
+- [x] Exempt non-academic blocks (lunch, break, recess, snack, free play, appointment) from the must-open rule (isNonAcademicBlock)
+- [x] Open never dead-ends for academic blocks: forBlock always returns usable content (LLM -> deterministic fallback)
+- [x] Test (vitest 4678 pass) + checkpoint 9aace676
+- [x] Opened content is READY TO START — in-app fillable worksheet (no login); IXL/Khan deep links are optional alts
 
 ## 2-week pilot + Google Calendar sync (this session)
 - [x] Chain shift: 6/16->Wed 6/17 (Ali 11, lunch 12, classes 1pm); old Wed -> Thu 6/18
-- [ ] Finish block-content fix: every academic block opens ready-to-start PDF/video/worksheet/lesson; exempt lunch/breaks; no sign-in walls
-- [ ] Plan 2-week 5th-grade curriculum scope (subjects, sequence, owned-book page refs, daily structure)
-- [ ] Build 2-week plan into dashboard (10 school days of blocks with content)
-- [ ] Sync full 2-week schedule to Google Calendar
-- [ ] Test (vitest + live) + checkpoint + report
+- [x] Finish block-content fix: every academic block opens ready-to-start in-app worksheet + printable PDF; exempt lunch/breaks; no sign-in walls
+- [x] Plan 2-week 5th-grade curriculum scope (subjects, sequence, owned-book page refs, daily structure)
+- [x] Build 2-week plan into dashboard (10 school days of blocks with content) — scripts/seed-two-week-curriculum.mjs; 6/17-6/30, weekends skipped; 32 blocks + 10 page-refs
+- [x] Sync full 2-week schedule to Google Calendar (durable in-app one-way sync built; runs on credential add via Settings card + auto after planner commit)
+- [x] Test (vitest) + checkpoint + report (live push pending Google Calendar credential)
 
 ## REFINED (parent): full workable worksheets, not stubs
-- [ ] Every academic block opens a REAL full worksheet/lesson Reagan can work on ONLINE (interactive fill-in fields), not a to-do list or short summary
-- [ ] Matching FULL printable PDF (actual problems/passages/prompts), savable, offline-answerable
-- [ ] Lunch/breaks/Ali exempt from must-open
-- [ ] Build 2-week curriculum with this full content per block
+- [x] Every academic block opens a REAL full worksheet Reagan can work on ONLINE (interactive fill-in fields via WorksheetRunner)
+- [x] Matching FULL printable PDF (actual problems/passages/prompts), savable, offline-answerable (worksheetPdf.ts)
+- [x] Lunch/breaks/Ali exempt from must-open (isNonAcademicBlock)
+- [x] Build 2-week curriculum with this full content per block (10 school days, each academic block has a real lesson + page refs; lunch/Ali exempt)
 
 ## Worksheet engine (full content) + Drive sync
 - [x] Add worksheet_content JSON column to daily_printables (migration 0073)
 - [x] shared/worksheetTypes.ts + server/_lib/worksheetGenerator.ts (LLM + deterministic fallback, non-academic guard)
-- [ ] db helpers: getPrintableById, setWorksheetContent, saveWorksheetAnswers
-- [ ] tRPC worksheets router: forBlock (fetch-or-generate full content), saveAnswers
-- [ ] Generate FULL printable PDF from worksheet content
-- [ ] Push generated worksheet PDFs to Google Drive (replace old filing); subject folder
-- [ ] Interactive WorksheetRunner fill-in page; wire block Open -> runner; exempt lunch/breaks
+- [x] db helpers: getPrintableById, setWorksheetContent, saveWorksheetAnswers
+- [x] tRPC worksheets router: forBlock (fetch-or-generate full content), saveAnswers, regenerate, makePdf
+- [x] Generate FULL printable PDF from worksheet content (server/_lib/worksheetPdf.ts, pdfkit)
+- [x] Push generated worksheet PDFs to Google Drive (enqueueDrivePush targetFolder=reagan_assignments, content-hash dedupe)
+- [x] Interactive WorksheetRunner fill-in page; wire block Open -> runner; exempt lunch/breaks (isNonAcademicBlock guard)
 
 ## No-paywall sourcing (2026-06-16)
-- [ ] Do NOT route Reagan's Open to Khan Academy / Prodigy / IXL / any login-or-paywall site
-- [ ] All academic blocks open IN-APP full worksheet (fillable) + printable PDF; owned-book page refs OK
-- [ ] Generated worksheet PDFs served via signed /manus-storage path and pushed to Drive (reagan_assignments)
-- [ ] Pull latest from GitHub (checkpoint sync) before building
+- [x] Reagan's Open lands on the IN-APP fillable worksheet first (no login wall); IXL/Khan/Prodigy/Education are optional alt buttons inside the runner
+- [x] All academic blocks open IN-APP full worksheet (fillable) + printable PDF; owned-book page refs OK
+- [x] Generated worksheet PDFs served via signed /manus-storage path and pushed to Drive (reagan_assignments)
+- [x] Pull latest from GitHub (checkpoint sync) before building
 
 ## IXL specific-skill deep links + no-password launch (2026-06-16)
-- [ ] Map each block topic -> SPECIFIC IXL grade-5 skill URL (land on the activity, not /math/grade-5 topic list)
-- [ ] Confirmed IXL Family active: Math, Language Arts, Science, Social Studies (signed in as kathrynmarsh / spear.cpt@gmail.com)
-- [ ] No-password auto-launch: wire IXL student sign-in code (QuickStart) as a protected secret, ready when Katy provides it
-- [ ] Keep Khan + Prodigy(math) as alternates; in-app worksheet always as no-login fallback
+- [x] Map each block topic -> SPECIFIC IXL grade-5 skill URL (subjectAppLinks.ts: slug-first bucketFor + IXL_MATH_SKILLS map; lands on the activity, not the topic list)
+- [x] Confirmed IXL Family active: Math, Language Arts, Science, Social Studies (signed in as kathrynmarsh / spear.cpt@gmail.com)
+- [ ] No-password auto-launch: wire IXL student sign-in code (QuickStart) as a protected secret, ready when Katy provides it (slot wired; not blocking)
+- [x] Keep Khan + Prodigy(math) as alternates; in-app worksheet always as no-login fallback
+
+## Google Calendar sync — durable in-app path (2026-06-16)
+- [x] Built 2-week curriculum 6/17-6/30 (32 new blocks + existing; weekends skipped)
+- [x] Investigated calendar push: manus-mcp-cli only STAGES google-calendar calls ("unfinished tool call"); does not execute -> not a reliable sync path
+- [x] Implement live one-way sync in server/_lib/googleCalendarSync.ts (replace stub): events.list idempotency via dashboardBlockId+reaganHomeschoolSync tag, insert/patch, soft-delete removed blocks; EDT/EST-correct RFC3339; targets Reagan Homeschool calendar id
+- [x] googleCalendarClient.ts (fetch-based REST: list/insert/patch/delete) + googleCalendarAuth.ts (bare token / JSON blob / refresh / service-account JWT)
+- [x] Add tRPC calendar router (admin): credentialStatus, syncDay, syncRange so Mom can sync the 2-week pilot on demand
+- [x] Credential helper reads GOOGLE_CALENDAR_OAUTH_TOKEN / GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON / unified Drive token; documented in Settings card + report
+- [x] Wire runCalendarSyncForDate into applyPlan (agenda-commit) path so future days auto-sync (fire-and-forget, credential-gated)
+- [x] Settings -> Calendar -> CalendarSyncCard: live push section (Sync today / Sync 2-week pilot) with credential-status gating
+- [x] Vitest: 36 tests (tz/DST, RFC3339, event-resource builder, idempotency tags, credential gate, REST client w/ stubbed fetch, auth resolver)
+- [ ] LIVE push to the calendar — pending Katy adding GOOGLE_CALENDAR_OAUTH_TOKEN (Settings -> Secrets); then click Sync 2-week pilot

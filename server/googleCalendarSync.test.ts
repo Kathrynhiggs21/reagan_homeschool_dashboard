@@ -214,3 +214,76 @@ describe("buildCalendarEventPayload (pure)", () => {
     expect(p.description).toBe("");
   });
 });
+
+/* =====================================================================
+   Live-path helpers (2026-06-16): tz/DST, RFC3339, event resource
+   ===================================================================== */
+import {
+  tzOffsetString,
+  buildRfc3339,
+  addMinutesHHMM,
+  buildEventResource,
+  SYNC_TAG_KEY,
+} from "./_lib/googleCalendarSync";
+
+describe("tz + time helpers (live path)", () => {
+  it("returns EDT offset (-04:00) for late June (DST active)", () => {
+    expect(tzOffsetString("2026-06-17", "13:00", "America/New_York")).toBe("-04:00");
+  });
+
+  it("returns EST offset (-05:00) for January (DST inactive)", () => {
+    expect(tzOffsetString("2026-01-15", "13:00", "America/New_York")).toBe("-05:00");
+  });
+
+  it("builds an RFC3339 string with the correct summer offset", () => {
+    expect(buildRfc3339("2026-06-17", "09:05", "America/New_York")).toBe(
+      "2026-06-17T09:05:00-04:00",
+    );
+  });
+
+  it("adds minutes across the hour boundary", () => {
+    expect(addMinutesHHMM("13:40", 40)).toBe("14:20");
+    expect(addMinutesHHMM("09:00", 30)).toBe("09:30");
+  });
+});
+
+describe("buildEventResource (live path)", () => {
+  const block = {
+    id: 4242,
+    title: "Fraction Lesson",
+    description: "Add unlike denominators.",
+    startTime: "09:00",
+    durationMin: 45,
+    blockType: "math",
+  };
+
+  it("stamps the sync marker + dashboardBlockId for idempotency", () => {
+    const ev = buildEventResource(block, "2026-06-19", { timeZone: "America/New_York" });
+    expect(ev.extendedProperties?.private?.[SYNC_TAG_KEY]).toBe("1");
+    expect(ev.extendedProperties?.private?.dashboardBlockId).toBe("4242");
+  });
+
+  it("prefixes the summary and computes the end time in EDT", () => {
+    const ev = buildEventResource(block, "2026-06-19", { timeZone: "America/New_York" });
+    expect(ev.summary).toBe("[Reagan Homeschool] Fraction Lesson");
+    expect(ev.start?.dateTime).toBe("2026-06-19T09:00:00-04:00");
+    expect(ev.end?.dateTime).toBe("2026-06-19T09:45:00-04:00");
+  });
+
+  it("does NOT invite the tutor on a non-tutor block", () => {
+    const ev = buildEventResource(block, "2026-06-19", {
+      timeZone: "America/New_York",
+      tutorEmail: "tutor@example.com",
+    });
+    expect(ev.attendees).toBeUndefined();
+  });
+
+  it("invites the tutor only on a tutor-flavored block", () => {
+    const tutorBlock = { ...block, blockType: "tutor" };
+    const ev = buildEventResource(tutorBlock, "2026-06-19", {
+      timeZone: "America/New_York",
+      tutorEmail: "tutor@example.com",
+    });
+    expect(ev.attendees).toEqual([{ email: "tutor@example.com" }]);
+  });
+});

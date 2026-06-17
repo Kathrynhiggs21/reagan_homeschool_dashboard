@@ -1,0 +1,44 @@
+{
+  "events": [
+    {
+      "summary": "[Reagan Homeschool] Warm-up: Two-Week Brag Sheet",
+      "description": "Look back at everything you learned in 2 weeks: measurement, metric, volume, fractions, decimals, area, division, Tuck Everlasting, matter, US regions. Write down the 3 things you're proudest of learning. No problems to solve — just celebrate the win.\n\n— dashboardBlockId=3000031 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-30T08:30:00-04:00",
+      "end_time": "2026-06-30T09:10:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Cumulative Math Review — choose-your-challenge",
+      "description": "Final review worksheet with 10 mixed problems across the whole pilot (conversions, fractions, decimals, area, division). Stars mark the 'challenge' problems — try at least 2. Answer space provided. This shows Mom what to keep practicing.\n\n— dashboardBlockId=3000032 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-30T09:15:00-04:00",
+      "end_time": "2026-06-30T10:00:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] ELA: Tuck Everlasting — Write the Ending You Want",
+      "description": "You've read 6 chapters. Write a 1-page prediction or alternate ending: what should Winnie do about the spring, and why? Use at least 3 vocabulary words from this week. Plan, draft, and reread. Lines provided.\n\n— dashboardBlockId=3000033 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-30T10:00:00-04:00",
+      "end_time": "2026-06-30T10:45:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Free Choice: Pick Your Own Adventure",
+      "description": "Your pick! Choose ONE: (a) a bird-watching walk with the Merlin Bird ID app and log 3 birds, (b) start growing a crystal or a bean seed and draw day 1, or (c) a nature journal page about your favorite thing outside. Reagan chooses — learning that feels like play.\n\n— dashboardBlockId=3000034 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-30T10:45:00-04:00",
+      "end_time": "2026-06-30T11:15:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    }
+  ]
+}

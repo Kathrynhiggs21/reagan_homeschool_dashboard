@@ -1,0 +1,44 @@
+{
+  "events": [
+    {
+      "summary": "[Reagan Homeschool] Warm-up: Fraction Picture Match",
+      "description": "Quick fraction warm-up. Match each picture (a pizza, a chocolate bar, a measuring cup) to the fraction it shows: 1/2, 1/3, 1/4, 2/3, 3/4. Then write each fraction's numerator and denominator and say what each part means. Goal: wake up the fraction brain before the lesson. Ohio 5.NF.\n\n— dashboardBlockId=3000003 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-19T08:30:00-04:00",
+      "end_time": "2026-06-19T09:10:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Adding Fractions with Unlike Denominators — lesson + practice",
+      "description": "Today's big idea: you can only add fractions when the pieces are the SAME size. Step 1: find a common denominator (the smallest number both bottoms divide into). Step 2: rename each fraction. Step 3: add the tops, keep the bottom, simplify. Work through 1/2 + 1/3, 2/3 + 1/4, 3/4 + 1/6, then 5 practice problems with answer space. Book backup: Fractions, Decimals, and Percents pg 8–11.\n\n— dashboardBlockId=3000004 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-19T09:15:00-04:00",
+      "end_time": "2026-06-19T10:00:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Grammar: Nouns, Verbs & Complete Sentences",
+      "description": "180 Days of Language warm-up. Read each sentence, find and label the noun(s) and verb(s), fix the capitalization and punctuation, and rewrite it correctly. Then write 2 of your own complete sentences about something you did this week. Book: 180 Days of Language for 5th Grade pg 12–13.\n\n— dashboardBlockId=3000005 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-19T10:00:00-04:00",
+      "end_time": "2026-06-19T10:45:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Fun finish: Fraction Snack Lab",
+      "description": "Hands-on with Mom: cut a snack (apple, sandwich, or graham crackers) into fourths and thirds. Combine pieces to SHOW 1/2 + 1/4 = 3/4 in real life. Draw what you built and write the matching addition sentence. No timer — just play with the math.\n\n— dashboardBlockId=3000006 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-19T10:45:00-04:00",
+      "end_time": "2026-06-19T11:15:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    }
+  ]
+}

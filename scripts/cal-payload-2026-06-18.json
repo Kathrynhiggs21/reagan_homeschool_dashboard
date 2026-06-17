@@ -1,0 +1,44 @@
+{
+  "events": [
+    {
+      "summary": "[Reagan Homeschool] Metric Units Intro — the base-10 ladder",
+      "description": "New today: METRIC units (we keep yesterday's US customary cheat-sheet handy for comparison). The big idea: metric is base-10 — you multiply or divide by 10, 100, or 1000, never weird numbers like 12 or 16.\n\nLearn the three ladders:\n- Length: millimeter (mm) -> centimeter (cm) -> meter (m) -> kilometer (km). 10 mm = 1 cm, 100 cm = 1 m, 1000 m = 1 km.\n- Mass: milligram (mg) -> gram (g) -> kilogram (kg). 1000 mg = 1 g, 1000 g = 1 kg.\n- Capacity: milliliter (mL) -> liter (L). 1000 mL = 1 L.\n\nKhan Academy 5th grade — Converting metric units: https://www.khanacademy.org/math/cc-fifth-grade-math/imp-measurement-and-data-3\n\nNo quiz — watch, take notes, and add a metric row to yesterday's cheat-sheet. Find one real object near each unit (a paperclip is about 1 g, a water bottle is about 1 L, a doorway is about 2 m).\n\n— dashboardBlockId=2820001 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-18T09:00:00-04:00",
+      "end_time": "2026-06-18T09:40:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Volume Intro — filling space with cubes",
+      "description": "Step into VOLUME, building on measurement. Volume = how much space something fills, measured in CUBIC units (cubic centimeters cm^3, cubic inches in^3). The key idea: count or calculate unit cubes.\n\n- Count unit cubes in a rectangular prism.\n- Discover the shortcut: Volume = length x width x height (V = l x w x h).\n- Connect to capacity: 1 mL = 1 cubic centimeter (a neat metric bridge to this morning's lesson!).\n\nKhan Academy 5th grade — Volume: https://www.khanacademy.org/math/cc-fifth-grade-math/imp-volume\n\nPractice only — work 3-4 examples together (build with blocks or sketch the prisms). No scored quiz today.\n\n— dashboardBlockId=2820002 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-18T09:40:00-04:00",
+      "end_time": "2026-06-18T10:20:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Poetry Intro -> Haiku",
+      "description": "Brand-new ELA mini-unit: POETRY. Start gentle.\n\n1) What makes a poem a poem? Poems play with sound, rhythm, and pictures-in-words. They don't have to rhyme. Read 2-3 short kid-friendly poems aloud and notice the feelings and images.\n\n2) Meet the HAIKU — a tiny 3-line nature poem from Japan:\n   - Line 1: 5 syllables\n   - Line 2: 7 syllables\n   - Line 3: 5 syllables\n   Haiku usually capture one small moment in nature (a bird, the pond, the weather).\n\n3) Practice counting syllables by clapping (\"duck\" = 1 clap, \"feather\" = 2 claps, \"water\" = 2 claps).\n\n4) Reagan writes 2-3 of her own haiku — the ducks, the pool, the sky, or the yard are perfect subjects. No wrong answers; we're exploring. Khan Academy ELA (poetry reading): https://www.khanacademy.org/ela\n\n— dashboardBlockId=2820003 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-18T10:20:00-04:00",
+      "end_time": "2026-06-18T11:00:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    },
+    {
+      "summary": "[Reagan Homeschool] Nature Haiku Walk + Metric Measure — fun finish",
+      "description": "Fun closing activity that ties the whole day together (with Mom). Go outside to the ducks/yard (bathtub + indoor objects as the backup if weather doesn't cooperate).\n\nPART 1 — Metric measure (math): Bring a metric ruler/tape. Measure 3-4 things in CENTIMETERS and METERS (a duck, a stepping stone, the width of the pool). Measure a container of pool water in mL/L. Pick ONE box-shaped thing and estimate its volume (l x w x h) in cubic centimeters.\n\nPART 2 — Nature haiku (ELA): Sit quietly for one minute and notice one small moment (a duck dipping its head, a breeze, a cloud). Write ONE more haiku on the spot about what you saw — 5-7-5, clap the syllables.\n\nShare the favorite haiku out loud with Mom. No worksheet, no quiz — just exploring and creating.\n\n— dashboardBlockId=2820004 • Reagan Homeschool Dashboard (auto-sync)",
+      "start_time": "2026-06-18T11:00:00-04:00",
+      "end_time": "2026-06-18T11:30:00-04:00",
+      "calendar_id": "primary",
+      "reminders": [
+        10
+      ]
+    }
+  ]
+}

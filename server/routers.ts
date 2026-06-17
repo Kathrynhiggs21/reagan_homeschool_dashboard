@@ -189,6 +189,41 @@ export const appRouter = router({
   system: systemRouter,
   admin: adminRouter,
 
+  calendar: router({
+    // Whether the live Google Calendar sync can run (credentials present).
+    credentialStatus: adminProcedure.query(async () => {
+      const { getCalendarCredentialStatus } = await import("./_lib/googleCalendarSync");
+      const status = getCalendarCredentialStatus();
+      const calSetting = (await db.getAppSetting("calendar.id").catch(() => null)) || null;
+      const targetCalendarId =
+        (process.env.GOOGLE_CALENDAR_TARGET_ID || "").trim() ||
+        (calSetting || "").trim() ||
+        "o81tqeb4425ej2k9il7lhmooh4@group.calendar.google.com";
+      return {
+        ready: status.kind === "ready",
+        reason: status.kind === "ready" ? null : status.reason,
+        targetCalendarId,
+      };
+    }),
+    // Sync one day's blocks to Google Calendar (one-way, idempotent).
+    syncDay: adminProcedure
+      .input(z.object({ dateISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))
+      .mutation(async ({ input }) => {
+        const { runCalendarSyncForDate } = await import("./_lib/googleCalendarSync");
+        return runCalendarSyncForDate(input.dateISO);
+      }),
+    // Sync an inclusive date range (skips weekends automatically).
+    syncRange: adminProcedure
+      .input(z.object({
+        startISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+        endISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+      }))
+      .mutation(async ({ input }) => {
+        const { runCalendarSyncForRange } = await import("./_lib/googleCalendarSync");
+        return runCalendarSyncForRange(input.startISO, input.endISO);
+      }),
+  }),
+
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
@@ -5890,7 +5925,20 @@ ${readinessLegendHtml()}
           }),
         )
         .mutation(async ({ input }) => {
-          return db.applyForwardPlan(input.rows, { source: input.source });
+          const result = await db.applyForwardPlan(input.rows, { source: input.source });
+          // Fire-and-forget calendar sync for each affected date. No-ops
+          // cleanly when no Google Calendar credentials are configured, so
+          // this never blocks or breaks the planner commit.
+          try {
+            const { runCalendarSyncForDate, getCalendarCredentialStatus } = await import("./_lib/googleCalendarSync");
+            if (getCalendarCredentialStatus().kind === "ready") {
+              const dates = Array.from(new Set(input.rows.map((r) => r.date)));
+              void Promise.allSettled(dates.map((d) => runCalendarSyncForDate(d)));
+            }
+          } catch {
+            /* never let calendar sync break the planner commit */
+          }
+          return result;
         }),
     }),
     /**

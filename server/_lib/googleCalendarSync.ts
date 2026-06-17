@@ -60,6 +60,9 @@
  */
 
 import { getDriveCredentialStatus } from "./drivePushWorker";
+import { GoogleCalendarClient, type GCalEventResource } from "./googleCalendarClient";
+import { resolveCalendarAccessToken } from "./googleCalendarAuth";
+import { listBlocksForPlan, getPlanByDate, getAppSetting } from "../db";
 
 /* =====================================================================
    Credential gate
@@ -124,6 +127,7 @@ export type CalendarSyncSummary = {
  */
 export async function runCalendarSyncForDate(
   dateISO: string,
+  opts: { fetchImpl?: typeof fetch } = {},
 ): Promise<CalendarSyncSummary> {
   const cred = getCalendarCredentialStatus();
   if (cred.kind !== "ready") {
@@ -138,18 +142,217 @@ export async function runCalendarSyncForDate(
       reason: cred.reason,
     };
   }
-  // Live path TBD — see module header for the wiring guide.
-  return {
-    status: "synced_with_errors",
+
+  const fetchImpl = opts.fetchImpl ?? fetch;
+  const summary: CalendarSyncSummary = {
+    status: "synced",
     dateISO,
     eventsCreated: 0,
     eventsUpdated: 0,
     eventsDeleted: 0,
     attendeesInvited: 0,
-    errorCount: 1,
-    reason:
-      "googleCalendarSync live path not yet implemented — credentials present but the worker stub is still in place. See googleCalendarSync.ts module header for the wiring guide.",
+    errorCount: 0,
   };
+
+  try {
+    // Target the documented "Reagan's Homeschool" calendar by default
+    // (owner spear.cpt@gmail.com). Env override wins; then app setting; then
+    // the known group-calendar id; "primary" only as a last resort.
+    const calSetting = (await getAppSetting("calendar.id").catch(() => null)) || null;
+    const calendarId =
+      (process.env.GOOGLE_CALENDAR_TARGET_ID || "").trim() ||
+      (calSetting || "").trim() ||
+      "o81tqeb4425ej2k9il7lhmooh4@group.calendar.google.com";
+    const timeZone = (process.env.GOOGLE_CALENDAR_TIME_ZONE || "America/New_York").trim() || "America/New_York";
+    const tutorEmail = (await getAppSetting("tutorEmail").catch(() => null)) || null;
+
+    const { accessToken } = await resolveCalendarAccessToken(fetchImpl);
+    const client = new GoogleCalendarClient(accessToken, fetchImpl);
+
+    // Pull the day's blocks from the dashboard (source of truth).
+    const plan = await getPlanByDate(dateISO);
+    const blocks = plan ? await listBlocksForPlan(plan.id) : [];
+    const timedBlocks = (blocks as any[]).filter((b) => typeof b.startTime === "string" && /^\d{1,2}:\d{2}$/.test(b.startTime));
+
+    // Day window in the target timezone, used for the soft-delete sweep.
+    const dayStart = buildRfc3339(dateISO, "00:00", timeZone);
+    const dayEnd = buildRfc3339(dateISO, "23:59", timeZone);
+
+    // Existing dashboard-owned events on the calendar for this day.
+    const existing = await client.listEvents({
+      calendarId,
+      timeMin: dayStart,
+      timeMax: dayEnd,
+      privateExtendedProperty: `${SYNC_TAG_KEY}=1`,
+    });
+    const existingByBlockId = new Map<string, GCalEventResource>();
+    for (const ev of existing) {
+      const bid = ev.extendedProperties?.private?.dashboardBlockId;
+      if (bid) existingByBlockId.set(bid, ev);
+    }
+
+    const liveBlockIds = new Set<string>();
+
+    for (const b of timedBlocks) {
+      const blockId = String(b.id);
+      liveBlockIds.add(blockId);
+      const resource = buildEventResource(b, dateISO, { timeZone, tutorEmail });
+      if (resource.attendees && resource.attendees.length > 0) summary.attendeesInvited += resource.attendees.length;
+
+      try {
+        const match = existingByBlockId.get(blockId);
+        if (match && match.id) {
+          await client.patchEvent(calendarId, match.id, resource);
+          summary.eventsUpdated += 1;
+        } else {
+          await client.insertEvent(calendarId, resource);
+          summary.eventsCreated += 1;
+        }
+      } catch (err: any) {
+        summary.errorCount += 1;
+        // eslint-disable-next-line no-console
+        console.error(`[calendarSync] block ${blockId} upsert failed:`, err?.message || err);
+      }
+    }
+
+    // Soft-delete: any dashboard-owned event whose block is gone.
+    for (const [bid, ev] of Array.from(existingByBlockId.entries())) {
+      if (!liveBlockIds.has(bid) && ev.id) {
+        try {
+          await client.deleteEvent(calendarId, ev.id);
+          summary.eventsDeleted += 1;
+        } catch (err: any) {
+          summary.errorCount += 1;
+          // eslint-disable-next-line no-console
+          console.error(`[calendarSync] stale event ${ev.id} delete failed:`, err?.message || err);
+        }
+      }
+    }
+  } catch (err: any) {
+    summary.errorCount += 1;
+    summary.reason = err?.message || String(err);
+  }
+
+  summary.status = summary.errorCount > 0 ? "synced_with_errors" : "synced";
+  return summary;
+}
+
+/* =====================================================================
+   Time + event-resource helpers
+   ===================================================================== */
+
+/** Stable marker so the sweep only ever touches events WE created. */
+export const SYNC_TAG_KEY = "reaganHomeschoolSync";
+
+/**
+ * America/New_York UTC offset (in minutes, e.g. -240 for EDT, -300 for
+ * EST) for a given local date+time, derived via Intl so DST is handled
+ * correctly without a tz library. Returns the offset string like
+ * "-04:00".
+ */
+export function tzOffsetString(dateISO: string, hhmm: string, timeZone: string): string {
+  const [h, m] = hhmm.split(":").map(Number);
+  // Construct a UTC date for the wall-clock time, then ask Intl what that
+  // instant looks like in the target zone to recover the offset.
+  const asUtc = new Date(`${dateISO}T${pad2(h)}:${pad2(m)}:00Z`);
+  const dtf = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour12: false,
+    year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", second: "2-digit",
+  });
+  const parts = dtf.formatToParts(asUtc);
+  const get = (t: string) => Number(parts.find((p) => p.type === t)?.value || 0);
+  const localAsUtc = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), get("second"));
+  const offsetMin = Math.round((localAsUtc - asUtc.getTime()) / 60000);
+  const sign = offsetMin >= 0 ? "+" : "-";
+  const abs = Math.abs(offsetMin);
+  return `${sign}${pad2(Math.floor(abs / 60))}:${pad2(abs % 60)}`;
+}
+
+function pad2(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+/** Build an RFC3339 datetime string for date+HH:MM in the given tz. */
+export function buildRfc3339(dateISO: string, hhmm: string, timeZone: string): string {
+  const [h, m] = hhmm.split(":").map(Number);
+  const offset = tzOffsetString(dateISO, hhmm, timeZone);
+  return `${dateISO}T${pad2(h)}:${pad2(m)}:00${offset}`;
+}
+
+/** Add minutes to an HH:MM clock string (wraps within the same day). */
+export function addMinutesHHMM(hhmm: string, mins: number): string {
+  const [h, m] = hhmm.split(":").map(Number);
+  const total = Math.max(0, h * 60 + m + mins);
+  return `${pad2(Math.floor(total / 60) % 24)}:${pad2(total % 60)}`;
+}
+
+/**
+ * Build a Google Calendar event resource from a dashboard block + plan
+ * date. Stamps the sync marker + dashboardBlockId for idempotency and
+ * the soft-delete sweep.
+ */
+export function buildEventResource(
+  block: { id: number; title: string; description?: string | null; startTime: string; durationMin: number; blockType?: string | null; tags?: string[] | null },
+  dateISO: string,
+  opts: { timeZone: string; tutorEmail?: string | null },
+): GCalEventResource {
+  const startHHMM = block.startTime;
+  const endHHMM = addMinutesHHMM(startHHMM, Math.max(1, block.durationMin || 30));
+  const isTutorBlock =
+    block.blockType === "tutor" ||
+    (Array.isArray(block.tags) && block.tags.includes("tutor"));
+
+  const resource: GCalEventResource = {
+    summary: `[Reagan Homeschool] ${block.title}`.slice(0, 250),
+    description: `${(block.description ?? "").slice(0, 3800)}\n\n— Reagan Homeschool Dashboard (auto-sync)`,
+    start: { dateTime: buildRfc3339(dateISO, startHHMM, opts.timeZone), timeZone: opts.timeZone },
+    end: { dateTime: buildRfc3339(dateISO, endHHMM, opts.timeZone), timeZone: opts.timeZone },
+    reminders: { useDefault: false, overrides: [{ method: "popup", minutes: 10 }] },
+    extendedProperties: {
+      private: { [SYNC_TAG_KEY]: "1", dashboardBlockId: String(block.id) },
+    },
+  };
+
+  if (isTutorBlock && opts.tutorEmail) {
+    const trimmed = opts.tutorEmail.trim();
+    if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      resource.attendees = [{ email: trimmed }];
+    }
+  }
+
+  return resource;
+}
+
+/**
+ * Sync an inclusive range of dates [startISO, endISO]. Skips weekends
+ * automatically (the dashboard has no blocks there). Returns a rolled-up
+ * summary plus per-day breakdown.
+ */
+export async function runCalendarSyncForRange(
+  startISO: string,
+  endISO: string,
+  opts: { fetchImpl?: typeof fetch } = {},
+): Promise<{ totals: CalendarSyncSummary; days: CalendarSyncSummary[] }> {
+  const days: CalendarSyncSummary[] = [];
+  const cur = new Date(`${startISO}T00:00:00Z`);
+  const end = new Date(`${endISO}T00:00:00Z`);
+  while (cur.getTime() <= end.getTime()) {
+    const iso = cur.toISOString().slice(0, 10);
+    days.push(await runCalendarSyncForDate(iso, opts));
+    cur.setUTCDate(cur.getUTCDate() + 1);
+  }
+  const totals: CalendarSyncSummary = {
+    status: days.some((d) => d.status === "synced_with_errors") ? "synced_with_errors" : "synced",
+    dateISO: `${startISO}..${endISO}`,
+    eventsCreated: days.reduce((a, d) => a + d.eventsCreated, 0),
+    eventsUpdated: days.reduce((a, d) => a + d.eventsUpdated, 0),
+    eventsDeleted: days.reduce((a, d) => a + d.eventsDeleted, 0),
+    attendeesInvited: days.reduce((a, d) => a + d.attendeesInvited, 0),
+    errorCount: days.reduce((a, d) => a + d.errorCount, 0),
+  };
+  return { totals, days };
 }
 
 /* =====================================================================
