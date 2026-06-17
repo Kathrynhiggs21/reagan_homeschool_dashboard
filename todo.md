@@ -816,3 +816,29 @@ Sequencing rule (project memory): measurement conversion BEFORE volume; poetry/h
 - [x] Remove 15-min skill-builder block from Today/homepage — removed (dated note at Today.tsx:1114; skill ladder still drives review behind the scenes)
 - [x] Remove mom-only/no-tutor notice + lined notebook strip — removed (Today.tsx:1542 renders nothing on no-tutor days; only positive "With Reagan today" strip shows when a tutor is scheduled; no lined notebook strip present)
 - [x] Verify tsc + vitest green, checkpoint — tsc 0 errors, 529 files / 4784 tests pass (7 skipped)
+
+
+## Backlog audit resolution — 2026-06-17 (verified already built in prior sessions; boxes were stale)
+- [x] Coins page rebuild — totals header (today/week/all-time earned + balance), used-coins row, single "Email Mom" button (spear.cpt@gmail.com), expandable ledger table, adult redeem panel; store/practice-browser/voice-sliders removed (Kiwi.tsx header dated 2026-06-17)
+- [x] Coin engine — blocks.complete & blocks.selfComplete use db.computeCoinAward({difficulty, minutes}) (routers.ts:919, :978); no flat coins:1
+- [x] rewards router — coinSummary (routers.ts:4069), myLedger (:4070), redeemCoins (:4122) all exposed
+- [x] Notebook in ResourceDock — dock button + kiwi:open-notebook event; removed from kid sidebar (ResourceDock.tsx dated note)
+- [x] Notebook paper types + tools — blank/lined/graph/dotted/handwriting/cream picker (KidNotebookPopup.tsx:7)
+- [x] Handwriting-to-text — transcription only, NOT read-aloud (KidNotebookPopup.tsx:9,131,203)
+- [x] Notebook saves to Drive journal notes folder (KidNotebookPopup.tsx:11)
+- [x] Kiwi can open the notebook (window event kiwi:open-notebook)
+- [x] Timer lives ONLY in floating dock tray with calculator/dictionary (ResourceDock.tsx:14,37)
+- [x] Time-on-assignment analytics stays always-on regardless of visible timer (KiwiQuietListener.tsx)
+- [x] Settings plain-English; DNS/technical internals hidden (Settings.tsx:144)
+- [x] Left sidebar collapsible (icon-rail <-> labels), remembered per device (CozyShell.tsx:19,52)
+- [x] PWA installable — manifest.webmanifest + sw.js + icons + dismissible install chip (verified earlier; deployed to .manus.space)
+- [x] App icon final pick — option #1 teal Kiwi on roofline + R (confirmed by Katy)
+- [x] Verification — tsc 0 errors, 529 files / 4784 tests pass (7 skipped)
+- [x] Google Calendar de-dup — dedupeIcalEvents() on listIcalEventsBetween (uid+forDate primary, summary+startsAt fallback); data layer confirmed clean
+- [NOTE] Apps prune — Reagan's live launch-tile list kept as source of truth (Option A, per Katy); dead Google Classroom tile removed. Subscription tracker (appAccountVault) is a separate adult-facing table.
+- [NOTE] Theme redesigns (2 modern themes) — deferred design task, not a bug; current 4 themes work. Revisit only if Katy wants the visual refresh.
+- [NOTE] Full audit report + Kiwi capabilities list + analytics list — Katy asked to keep fixing the dashboard rather than produce the report; available on request.
+
+- [x] Theme redesign — catalog rebuilt to 5 themes (ReaganThemes.tsx): Black Chalkboard + White Basic kept; NEW Bubble Glass (colorful glassmorphism/soft 3D), Sunshine (flat minimalist), Galaxy Glow (deep space neon aurora). No tropical themes. Legacy ids migrate cleanly.
+- [x] Theme CSS verified present in index.css (chalkboard 94 / white 83 / glass 27 / sunshine 26 / galaxy 42 rules) — themes actually render, not just picker entries.
+- [x] Collapsible left sidebar kept as default structure across themes.
