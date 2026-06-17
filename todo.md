@@ -506,7 +506,7 @@ for a future in-site token; this session just RAN the work.
 - [x] Wire runCalendarSyncForDate into applyPlan (agenda-commit) path so future days auto-sync (fire-and-forget, credential-gated)
 - [x] Settings -> Calendar -> CalendarSyncCard: live push section (Sync today / Sync 2-week pilot) with credential-status gating
 - [x] Vitest: 36 tests (tz/DST, RFC3339, event-resource builder, idempotency tags, credential gate, REST client w/ stubbed fetch, auth resolver)
-- [ ] LIVE push to the calendar — pending Katy adding GOOGLE_CALENDAR_OAUTH_TOKEN (Settings -> Secrets); then click Sync 2-week pilot
+- [ ] LIVE push to the calendar — credential is in place via the saved service account (GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON); the only remaining step is Katy granting that service account "Make changes to events" on the Reagan calendar (currently read-only -> 403). Then click Settings -> Calendar -> Re-check -> Sync 2-week pilot. (A short placeholder GOOGLE_CALENDAR_OAUTH_TOKEN is present in env but is now safely ignored by the resolver guard.)
 
 ## Agenda Editor → real conversational AI ("you"), not a suggestion bot (2026-06-17) — DONE (see detailed section below)
 - [x] Fix the chat binding: stop using `(trpc as any).agendaEditor?.chat?` optional-chain that silently showed "Chat not available"; bind the real mutation directly
