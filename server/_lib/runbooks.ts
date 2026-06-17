@@ -189,10 +189,10 @@ standards. Once Drive credentials land, this doc gets pushed into
 /** Google Drive OAuth setup runbook (v3.20 — 2026-05-31). */
 const googleDriveOAuthRunbook: Runbook = {
   slug: "google-drive-oauth-setup",
-  title: "Set up Google Drive OAuth so the push worker + folder dedupe go live",
+  title: "Optional: connect Google Drive & Classroom (not required — dashboard works without it)",
   category: "drive",
   oneLineSummary:
-    "Create a Google Cloud project, enable Drive API, generate an OAuth token (or service account JSON), and drop it into the project env.",
+    "Optional. Only needed if you want Drive backup of notes or Classroom assignment import. The dashboard, calendar, coins, and agenda email all work without this. Setup: create a Google Cloud project, enable Drive API, generate an OAuth token, and drop it into the project env.",
   estimatedMinutes: 45,
   lastUpdatedISO: "2026-05-31",
   body: `# Google Drive OAuth Setup — Runbook
