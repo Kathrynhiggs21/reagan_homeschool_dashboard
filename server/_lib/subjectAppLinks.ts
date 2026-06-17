@@ -131,6 +131,36 @@ const PRODIGY_MATH = "https://play.prodigygame.com/";
  * Pick the primary app deep link for a block (IXL specific skill) plus the
  * other paid apps as alternates. Math also offers Prodigy.
  */
+/**
+ * Optional no-password QuickStart auto-launch.
+ *
+ * IXL Family accounts can issue a per-student QuickStart sign-in URL
+ * (Account -> sign-in settings) that logs the student in WITHOUT a password.
+ * When Katy provides it as the `IXL_QUICKSTART_URL` env secret, the IXL button
+ * routes through it so Reagan never hits a sign-in wall. When the secret is
+ * absent (the default), we fall back to the specific grade-5 skill deep link,
+ * which is already a fully working target (it just prompts a one-time sign-in).
+ *
+ * The QuickStart URL is treated as a launcher: if it contains a `{skill}`
+ * placeholder we substitute the resolved skill URL, otherwise we append the
+ * skill as a `?destination=` param when the URL has no query string, so the
+ * student lands on the right activity after the password-less sign-in. If the
+ * launcher format doesn't support a destination, we just use it as-is.
+ */
+function quickStartLauncher(skillUrl: string): string | null {
+  const qs = (typeof process !== "undefined" && process.env && process.env.IXL_QUICKSTART_URL
+    ? String(process.env.IXL_QUICKSTART_URL)
+    : ""
+  ).trim();
+  if (!qs) return null;
+  if (qs.includes("{skill}")) return qs.replace("{skill}", encodeURIComponent(skillUrl));
+  // Append the destination only when it's safe (no existing query/fragment).
+  if (!qs.includes("?") && !qs.includes("#")) {
+    return `${qs}?destination=${encodeURIComponent(skillUrl)}`;
+  }
+  return qs;
+}
+
 export function subjectAppLink(input: {
   subjectSlug?: string | null;
   title?: string | null;
@@ -139,7 +169,13 @@ export function subjectAppLink(input: {
   const b = bucketFor(input.subjectSlug, input.title, input.topicHint);
   const text = `${norm(input.title)} ${norm(input.topicHint)} ${norm(input.subjectSlug)}`;
 
-  const primary: AppOption = { label: "Open in IXL", url: ixlUrl(b, text), app: "ixl" };
+  const skillUrl = ixlUrl(b, text);
+  const launcher = quickStartLauncher(skillUrl);
+  const primary: AppOption = {
+    label: launcher ? "Open in IXL (no sign-in)" : "Open in IXL",
+    url: launcher ?? skillUrl,
+    app: "ixl",
+  };
 
   const alts: AppOption[] = [];
   if (b === "math") alts.push({ label: "Play on Prodigy", url: PRODIGY_MATH, app: "prodigy" });

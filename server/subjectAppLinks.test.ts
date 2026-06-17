@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 import { subjectAppLink } from "./_lib/subjectAppLinks";
 
 describe("subjectAppLink — lands on a SPECIFIC IXL skill, not a topic list", () => {
@@ -47,5 +47,48 @@ describe("subjectAppLink — lands on a SPECIFIC IXL skill, not a topic list", (
   it("social studies -> IXL social-studies grade-5", () => {
     const r = subjectAppLink({ subjectSlug: "social-studies", title: "Early US History" });
     expect(r.url).toContain("social-studies/grade-5");
+  });
+});
+
+describe("subjectAppLink — optional IXL QuickStart no-password launcher", () => {
+  const ORIG = process.env.IXL_QUICKSTART_URL;
+  afterEach(() => {
+    if (ORIG === undefined) delete process.env.IXL_QUICKSTART_URL;
+    else process.env.IXL_QUICKSTART_URL = ORIG;
+  });
+
+  it("falls back to the specific skill deep link when no QuickStart URL is set", () => {
+    delete process.env.IXL_QUICKSTART_URL;
+    const r = subjectAppLink({ subjectSlug: "math", title: "Metric Units Intro", topicHint: "metric" });
+    expect(r.label).toBe("Open in IXL");
+    expect(r.url).toContain("compare-and-convert-metric-units");
+  });
+
+  it("substitutes {skill} placeholder when present", () => {
+    process.env.IXL_QUICKSTART_URL = "https://www.ixl.com/signin/quickstart?code=ABC123&go={skill}";
+    const r = subjectAppLink({ subjectSlug: "math", title: "Metric Units Intro", topicHint: "metric" });
+    expect(r.label).toBe("Open in IXL (no sign-in)");
+    expect(r.url).toContain("quickstart?code=ABC123");
+    expect(r.url).toContain(encodeURIComponent("https://www.ixl.com/math/grade-5/compare-and-convert-metric-units"));
+  });
+
+  it("appends ?destination= when launcher has no existing query string", () => {
+    process.env.IXL_QUICKSTART_URL = "https://www.ixl.com/signin/quickstart/ABC123";
+    const r = subjectAppLink({ subjectSlug: "ela", title: "Reading comprehension" });
+    expect(r.url).toContain("?destination=");
+    expect(r.url).toContain(encodeURIComponent("https://www.ixl.com/ela/grade-5"));
+  });
+
+  it("uses launcher as-is when it already has a query string and no placeholder", () => {
+    process.env.IXL_QUICKSTART_URL = "https://www.ixl.com/signin/quickstart?code=ABC123";
+    const r = subjectAppLink({ subjectSlug: "science", title: "Water cycle" });
+    expect(r.url).toBe("https://www.ixl.com/signin/quickstart?code=ABC123");
+  });
+
+  it("ignores a blank/whitespace QuickStart URL", () => {
+    process.env.IXL_QUICKSTART_URL = "   ";
+    const r = subjectAppLink({ subjectSlug: "math", title: "Fractions" });
+    expect(r.label).toBe("Open in IXL");
+    expect(r.url).toContain("ixl.com/math/grade-5/");
   });
 });

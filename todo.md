@@ -493,7 +493,7 @@ for a future in-site token; this session just RAN the work.
 ## IXL specific-skill deep links + no-password launch (2026-06-16)
 - [x] Map each block topic -> SPECIFIC IXL grade-5 skill URL (subjectAppLinks.ts: slug-first bucketFor + IXL_MATH_SKILLS map; lands on the activity, not the topic list)
 - [x] Confirmed IXL Family active: Math, Language Arts, Science, Social Studies (signed in as kathrynmarsh / spear.cpt@gmail.com)
-- [ ] No-password auto-launch: wire IXL student sign-in code (QuickStart) as a protected secret, ready when Katy provides it (slot wired; not blocking)
+- [x] No-password auto-launch: IXL QuickStart launcher wired in subjectAppLinks.ts — reads optional `IXL_QUICKSTART_URL` secret ({skill} placeholder OR ?destination= append OR as-is), label flips to "Open in IXL (no sign-in)"; falls back to the specific grade-5 skill deep link when unset (no dead-end). 5 vitest scenarios. ACTIVATION (Katy): paste the QuickStart URL from IXL Family → Account → sign-in settings into Settings → Secrets as IXL_QUICKSTART_URL.
 - [x] Keep Khan + Prodigy(math) as alternates; in-app worksheet always as no-login fallback
 
 ## Google Calendar sync — durable in-app path (2026-06-16)
@@ -508,14 +508,14 @@ for a future in-site token; this session just RAN the work.
 - [x] Vitest: 36 tests (tz/DST, RFC3339, event-resource builder, idempotency tags, credential gate, REST client w/ stubbed fetch, auth resolver)
 - [ ] LIVE push to the calendar — pending Katy adding GOOGLE_CALENDAR_OAUTH_TOKEN (Settings -> Secrets); then click Sync 2-week pilot
 
-## Agenda Editor → real conversational AI ("you"), not a suggestion bot (2026-06-17)
-- [ ] Fix the chat binding: stop using `(trpc as any).agendaEditor?.chat?` optional-chain that silently shows "Chat not available"; bind the real mutation directly
-- [ ] Rebuild AgendaEditor page as ONE conversational AI that applies edits instantly (drop preview/diff/suggestion-chip clutter feel)
-- [ ] AI talks back in first person ("I moved math to 9am…") and shows the live schedule updating beside the chat
-- [ ] Cover all edit types from plain English: schedule times, durations, order, add/remove blocks, swap subjects, assignments, videos, worksheets
-- [ ] Keep manual block grid available but secondary (advanced/collapsed), so the AI is the primary surface
-- [ ] Verify chat executes against live DB (not just suggests); confirm reply reflects actual changes made
-- [ ] Test (vitest + live) + checkpoint + report
+## Agenda Editor → real conversational AI ("you"), not a suggestion bot (2026-06-17) — DONE (see detailed section below)
+- [x] Fix the chat binding: stop using `(trpc as any).agendaEditor?.chat?` optional-chain that silently showed "Chat not available"; bind the real mutation directly
+- [x] Rebuild AgendaEditor page as ONE conversational AI that applies edits instantly (suggestion-chip clutter demoted to optional examples)
+- [x] AI talks back in first person ("I moved math to 9am…") and shows the live schedule updating beside the chat (snapshot invalidate)
+- [x] Cover all edit types from plain English: times, durations, order, add/remove, swap subjects, assignments, videos, worksheets (op set + prompt directives)
+- [x] Keep manual block grid available but secondary (advanced grid preserved below the chat surface)
+- [x] Verify chat executes against live DB (not just suggests); reply reflects the real inserted/updated/deleted/reordered/shifted tally
+- [x] Test (vitest 4705 pass) + checkpoint 58418483 + report
 
 ## Agenda Editor → "it's me, the AI, editing your schedule" (2026-06-16)
 - [x] Root cause: chat bound via `(trpc as any).agendaEditor?.chat?.useMutation?.()` → could be undefined → "Chat not available" dead-end (felt like a confused/suggestion bot)
