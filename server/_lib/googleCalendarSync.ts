@@ -420,3 +420,156 @@ export function buildCalendarEventPayload(
 
   return payload;
 }
+
+/* =====================================================================
+   Connection probe — tells the UI exactly where we stand
+   ===================================================================== */
+
+export type CalendarConnectionProbe = {
+  /** "ready" only when we can actually WRITE to the target calendar. */
+  status: "no_credentials" | "calendar_unreachable" | "read_only" | "writable";
+  /** Resolved calendar id we are probing. */
+  targetCalendarId: string;
+  /** The service-account / token identity (email) to share the calendar with, when known. */
+  shareWithEmail: string | null;
+  /** Human-readable summary of the current state. */
+  message: string;
+  /** Raw HTTP status from the write probe, for debugging (null when not attempted). */
+  writeProbeStatus: number | null;
+};
+
+function resolveTargetCalendarIdSync(calSetting: string | null): string {
+  return (
+    (process.env.GOOGLE_CALENDAR_TARGET_ID || "").trim() ||
+    (calSetting || "").trim() ||
+    "o81tqeb4425ej2k9il7lhmooh4@group.calendar.google.com"
+  );
+}
+
+/** Best-effort extraction of the credential's identity email (service account). */
+function credentialIdentityEmail(): string | null {
+  const sa = (process.env.GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON || "").trim();
+  if (sa.includes("client_email")) {
+    try {
+      const parsed = JSON.parse(sa);
+      if (parsed && typeof parsed.client_email === "string") return parsed.client_email;
+    } catch {
+      const m = sa.match(/"client_email"\s*:\s*"([^"]+)"/);
+      if (m) return m[1];
+    }
+  }
+  return null;
+}
+
+/**
+ * Probe whether the configured credential can actually WRITE to the
+ * target calendar. Non-destructive: it reads the calendar metadata, then
+ * inserts a tiny marker event and immediately deletes it. A 403 on
+ * insert means the calendar is shared read-only (the common
+ * service-account case before "Make changes to events" is granted).
+ *
+ * Never throws — always resolves to a structured probe result the UI can
+ * render and poll.
+ */
+export async function probeCalendarConnection(
+  opts: { fetchImpl?: typeof fetch } = {},
+): Promise<CalendarConnectionProbe> {
+  const fetchImpl = opts.fetchImpl ?? fetch;
+  const calSetting = (await getAppSetting("calendar.id").catch(() => null)) || null;
+  const targetCalendarId = resolveTargetCalendarIdSync(calSetting);
+  const shareWithEmail = credentialIdentityEmail();
+
+  const cred = getCalendarCredentialStatus();
+  if (cred.kind !== "ready") {
+    return {
+      status: "no_credentials",
+      targetCalendarId,
+      shareWithEmail,
+      writeProbeStatus: null,
+      message:
+        "No Google Calendar credential is configured yet. Add the service-account JSON or an OAuth token in Settings → Secrets.",
+    };
+  }
+
+  let accessToken: string;
+  try {
+    ({ accessToken } = await resolveCalendarAccessToken(fetchImpl));
+  } catch (e: any) {
+    return {
+      status: "calendar_unreachable",
+      targetCalendarId,
+      shareWithEmail,
+      writeProbeStatus: null,
+      message: `Could not mint a Google access token from the credential: ${e?.message || "unknown error"}.`,
+    };
+  }
+
+  const client = new GoogleCalendarClient(accessToken, fetchImpl);
+  const timeZone = (process.env.GOOGLE_CALENDAR_TIME_ZONE || "America/New_York").trim() || "America/New_York";
+
+  // Step 1: can we READ the calendar at all? (list a tiny window)
+  const today = new Date().toISOString().slice(0, 10);
+  try {
+    await client.listEvents({
+      calendarId: targetCalendarId,
+      timeMin: buildRfc3339(today, "00:00", timeZone),
+      timeMax: buildRfc3339(today, "00:01", timeZone),
+      maxResults: 1,
+    });
+  } catch (e: any) {
+    return {
+      status: "calendar_unreachable",
+      targetCalendarId,
+      shareWithEmail,
+      writeProbeStatus: e?.status ?? null,
+      message: `The credential can't reach calendar "${targetCalendarId}". Make sure the calendar exists and is shared with ${shareWithEmail || "the credential"}.`,
+    };
+  }
+
+  // Step 2: can we WRITE? Insert a throwaway marker event, then delete it.
+  const probeEvent: GCalEventResource = {
+    summary: "[setup check — safe to ignore]",
+    description: "Temporary write-access probe created by Reagan's Homeschool Dashboard. Auto-deleted immediately.",
+    start: { dateTime: buildRfc3339(today, "00:00", timeZone), timeZone },
+    end: { dateTime: buildRfc3339(today, "00:01", timeZone), timeZone },
+    extendedProperties: { private: { [SYNC_TAG_KEY]: "probe" } },
+  };
+  try {
+    const created = await client.insertEvent(targetCalendarId, probeEvent);
+    // Clean up immediately so we never leave a stray event behind.
+    if (created?.id) {
+      try {
+        await client.deleteEvent(targetCalendarId, created.id);
+      } catch {
+        /* best-effort cleanup; ignore */
+      }
+    }
+    return {
+      status: "writable",
+      targetCalendarId,
+      shareWithEmail,
+      writeProbeStatus: 200,
+      message: "Connected. The dashboard can write events to the calendar — you're ready to sync.",
+    };
+  } catch (e: any) {
+    const code = e?.status ?? null;
+    if (code === 403) {
+      return {
+        status: "read_only",
+        targetCalendarId,
+        shareWithEmail,
+        writeProbeStatus: 403,
+        message: shareWithEmail
+          ? `Almost there — the calendar is shared with ${shareWithEmail} as read-only. Change its permission to "Make changes to events" and re-check.`
+          : `Almost there — the credential has read-only access. Grant it "Make changes to events" on the calendar and re-check.`,
+      };
+    }
+    return {
+      status: "calendar_unreachable",
+      targetCalendarId,
+      shareWithEmail,
+      writeProbeStatus: code,
+      message: `Write probe failed: ${e?.message || "unknown error"}.`,
+    };
+  }
+}

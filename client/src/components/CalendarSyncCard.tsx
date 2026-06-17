@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, Copy, Check, Mail, IdCard, ExternalLink, UploadCloud, AlertTriangle } from "lucide-react";
+import { Calendar, Copy, Check, Mail, IdCard, ExternalLink, UploadCloud, AlertTriangle, RefreshCw, CheckCircle2, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 
@@ -12,12 +12,33 @@ import { trpc } from "@/lib/trpc";
  * token is configured the buttons stay disabled with a clear note.
  */
 function CalendarPushSection() {
-  const statusQ = trpc.calendar.credentialStatus.useQuery(undefined, { staleTime: 60_000 });
+  // Live write-access probe — tells us read-only vs. writable, not just
+  // "is a credential present". This is what lets Mom self-serve the
+  // calendar-sharing step and confirm it instantly.
+  const connQ = trpc.calendar.connectionStatus.useQuery(undefined, { staleTime: 30_000 });
   const syncDay = trpc.calendar.syncDay.useMutation();
   const syncRange = trpc.calendar.syncRange.useMutation();
-  const ready = statusQ.data?.ready === true;
+  const [copiedEmail, setCopiedEmail] = useState(false);
+  const conn = connQ.data;
+  const writable = conn?.status === "writable";
   const busy = syncDay.isPending || syncRange.isPending;
   const todayStr = new Date().toISOString().slice(0, 10);
+
+  const recheck = () => {
+    connQ.refetch();
+  };
+
+  const copyShareEmail = async () => {
+    if (!conn?.shareWithEmail) return;
+    try {
+      await navigator.clipboard.writeText(conn.shareWithEmail);
+      setCopiedEmail(true);
+      toast.success("Service-account email copied");
+      setTimeout(() => setCopiedEmail(false), 2000);
+    } catch {
+      toast.error("Couldn't copy — select the email and copy manually");
+    }
+  };
 
   const pushToday = () =>
     syncDay.mutate(
@@ -49,25 +70,71 @@ function CalendarPushSection() {
         Writes each school block as a timed event on Reagan&apos;s Homeschool calendar.
         Re-running is safe — events update in place and removed blocks are deleted.
       </p>
-      {statusQ.isLoading ? (
+
+      {/* Live connection state */}
+      {connQ.isLoading ? (
         <div className="text-[11px] text-muted-foreground">Checking calendar connection…</div>
-      ) : ready ? (
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" className="h-7" disabled={busy} onClick={pushToday} data-testid="calendar-push-today">
-            {busy ? "Syncing…" : "Sync today"}
-          </Button>
-          <Button size="sm" variant="secondary" className="h-7" disabled={busy} onClick={pushPilot} data-testid="calendar-push-pilot">
-            {busy ? "Syncing…" : "Sync 2-week pilot (Jun 17–30)"}
+      ) : writable ? (
+        <>
+          <div className="flex items-center gap-2 text-[11px] text-emerald-700 dark:text-emerald-400" data-testid="calendar-conn-writable">
+            <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+            <span>Connected — the dashboard can write to this calendar.</span>
+            <Button size="sm" variant="ghost" className="h-6 px-2 ml-auto" onClick={recheck} disabled={connQ.isFetching}>
+              <RefreshCw className={`w-3 h-3 ${connQ.isFetching ? "animate-spin" : ""}`} />
+            </Button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" className="h-7" disabled={busy} onClick={pushToday} data-testid="calendar-push-today">
+              {busy ? "Syncing…" : "Sync today"}
+            </Button>
+            <Button size="sm" variant="secondary" className="h-7" disabled={busy} onClick={pushPilot} data-testid="calendar-push-pilot">
+              {busy ? "Syncing…" : "Sync 2-week pilot (Jun 17–30)"}
+            </Button>
+          </div>
+        </>
+      ) : conn?.status === "read_only" ? (
+        <div className="space-y-2 rounded-md border border-amber-300/60 dark:border-amber-700/50 bg-amber-50/60 dark:bg-amber-950/20 p-2.5" data-testid="calendar-conn-readonly">
+          <div className="flex items-start gap-2 text-[11px] text-amber-800 dark:text-amber-300">
+            <ShieldAlert className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+            <span>{conn.message}</span>
+          </div>
+          <div className="text-[11px] text-foreground space-y-1">
+            <div className="font-semibold">One-time step (in Google Calendar, as the calendar owner):</div>
+            <ol className="list-decimal pl-5 space-y-0.5 text-muted-foreground">
+              <li>Open the calendar&apos;s <b>Settings and sharing</b>.</li>
+              <li>Under <b>Share with specific people</b>, find the email below.</li>
+              <li>Change its access to <b>“Make changes to events”</b> and save.</li>
+              <li>Come back and click <b>Re-check</b>.</li>
+            </ol>
+          </div>
+          {conn.shareWithEmail && (
+            <div className="flex flex-wrap items-center gap-2 text-[11px]">
+              <code className="flex-1 min-w-0 px-2 py-1 rounded bg-background/70 break-all">{conn.shareWithEmail}</code>
+              <Button size="sm" variant="secondary" className="h-7" onClick={copyShareEmail} data-testid="calendar-share-email-copy">
+                {copiedEmail ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              </Button>
+            </div>
+          )}
+          <Button size="sm" className="h-7" onClick={recheck} disabled={connQ.isFetching} data-testid="calendar-conn-recheck">
+            <RefreshCw className={`w-3 h-3 mr-1 ${connQ.isFetching ? "animate-spin" : ""}`} />
+            {connQ.isFetching ? "Checking…" : "Re-check access"}
           </Button>
         </div>
-      ) : (
+      ) : conn?.status === "no_credentials" ? (
         <div className="flex items-start gap-2 text-[11px] text-amber-700 dark:text-amber-400" data-testid="calendar-push-disabled">
           <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-          <span>
-            Not connected yet. Add a Google Calendar credential
-            (<code>GOOGLE_CALENDAR_OAUTH_TOKEN</code>) in Settings → Secrets to enable
-            one-tap pushing. The dashboard also auto-syncs after a planner commit once connected.
-          </span>
+          <span>{conn.message}</span>
+        </div>
+      ) : (
+        <div className="space-y-2" data-testid="calendar-conn-error">
+          <div className="flex items-start gap-2 text-[11px] text-amber-700 dark:text-amber-400">
+            <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+            <span>{conn?.message || "Couldn't determine calendar connection status."}</span>
+          </div>
+          <Button size="sm" variant="secondary" className="h-7" onClick={recheck} disabled={connQ.isFetching}>
+            <RefreshCw className={`w-3 h-3 mr-1 ${connQ.isFetching ? "animate-spin" : ""}`} />
+            Re-check
+          </Button>
         </div>
       )}
     </div>

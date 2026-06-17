@@ -205,6 +205,12 @@ export const appRouter = router({
         targetCalendarId,
       };
     }),
+    // Live probe: can we actually WRITE to the target calendar right now?
+    // Used by the Settings connect panel to confirm sharing without guesswork.
+    connectionStatus: adminProcedure.query(async () => {
+      const { probeCalendarConnection } = await import("./_lib/googleCalendarSync");
+      return probeCalendarConnection();
+    }),
     // Sync one day's blocks to Google Calendar (one-way, idempotent).
     syncDay: adminProcedure
       .input(z.object({ dateISO: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))

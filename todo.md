@@ -539,3 +539,11 @@ for a future in-site token; this session just RAN the work.
 - [x] IXL: cleared IXL_QUICKSTART_URL (Family membership has no reliable no-password QuickStart); buttons deep-link to exact grade-5 skill
 - [x] Added one-time "First-time IXL setup" tip to PracticePrefsCard (sign in once on device + save password)
 - [x] Full suite green: 522 files / 4710 pass / 7 skipped / 0 fail; TypeScript clean
+
+## Self-serve Google Calendar connect panel (2026-06-17)
+- [x] Backend probeCalendarConnection() in googleCalendarSync.ts — non-destructive write probe (read calendar, insert+delete throwaway event); classifies no_credentials / calendar_unreachable / read_only(403) / writable; surfaces the service-account email to share with
+- [x] tRPC calendar.connectionStatus admin query
+- [x] Settings -> Calendar -> CalendarSyncCard: live status panel (writable=green + Sync buttons enabled; read_only=amber with exact share email + copy + step list + Re-check; no_credentials/error states handled)
+- [x] Vitest: 5 probe scenarios (stubbed fetch) — writable, read_only 403, no_credentials, unreachable, SA email surfaced
+- [x] Full suite green: 523 files / 4715 pass / 7 skipped / 0 fail; TypeScript clean
+- [ ] LIVE: Katy grants the service account "Make changes to events" on the Reagan calendar, then clicks Re-check -> Sync 2-week pilot (currently read-only)
