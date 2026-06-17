@@ -20,11 +20,11 @@ export default function MascotGreeting() {
   const hasPhoto = !!kiwi?.photoUrl;
 
   const todayISO = useMemo(() => new Date().toISOString().slice(0, 10), []);
-  const appts = trpc.appointments.list.useQuery(undefined, { staleTime: 5 * 60_000 });
-  const dayChar = useMemo(() => {
-    const titles = (appts.data as any[] | undefined)?.map((a) => a?.title as string).filter(Boolean) ?? [];
-    return resolveKiwiDayCharacter(todayISO, { eventTitles: titles });
-  }, [appts.data, todayISO]);
+  const todayChar = trpc.kiwi.today.useQuery(undefined, { staleTime: 10 * 60_000 });
+  const dayChar = useMemo(
+    () => todayChar.data ?? resolveKiwiDayCharacter(todayISO, {}),
+    [todayChar.data, todayISO],
+  );
 
   return (
     <div

@@ -85,7 +85,7 @@ export interface KiwiContext {
  * Katy can change this in one spot. Default kept generic so it's correct
  * whether the show is CBS "Tracker" or anything else.
  */
-export const DEFAULT_FAVORITE_SHOW = "Reagan's favorite show";
+export const DEFAULT_FAVORITE_SHOW = "Tracker"; // Katy: edit this one line to change Reagan's favorite show
 
 /* ------------------------ Costume keyword mapping ------------------------- */
 /**

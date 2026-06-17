@@ -3045,6 +3045,50 @@ export const appRouter = router({
   kiwi: router({
     history: publicProcedure.input(z.object({ limit: z.number().default(50) })).query(({ input }) => db.listKiwiMessages(input.limit)),
     clear: protectedProcedure.input(z.object({}).optional()).mutation(() => db.clearKiwiHistory()),
+    /**
+     * 2026-06-17 (Katy) — Kiwi's reactive "day character". One authoritative
+     * server resolve combining today's appointments, holidays, and the
+     * summer/vacation status (school off-day OR declared vacation range OR
+     * summer window). The client (perch, Today header, companion panel) reads
+     * this so Kiwi's costume + funny line stay consistent everywhere and all
+     * day. Pure engine lives in shared/kiwiCharacter.ts.
+     */
+    today: publicProcedure
+      .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional() }).optional())
+      .query(async ({ input }) => {
+        const iso = input?.date ?? new Date().toISOString().slice(0, 10);
+        // Today's event titles from appointments.
+        const appts = await db.listAppointments();
+        const eventTitles = (appts as any[])
+          .map((a) => a?.title as string)
+          .filter((t): t is string => !!t);
+        // Vacation / break awareness: school off-day OR summer/vacation status.
+        let onVacation = false;
+        try {
+          const schoolOff = await db.isSchoolOff(iso);
+          const [autoFlip, start, end, override, vacJson] = await Promise.all([
+            db.getAppSetting("summer.autoFlipEnabled"),
+            db.getAppSetting("summer.start"),
+            db.getAppSetting("summer.end"),
+            db.getAppSetting("summer.override"),
+            db.getAppSetting("summer.vacationRanges"),
+          ]);
+          const { summerSettingsFromKv, effectiveSummerActive } = await import("./summerMode");
+          const settings = summerSettingsFromKv({
+            "summer.autoFlipEnabled": autoFlip,
+            "summer.start": start,
+            "summer.end": end,
+            "summer.override": override,
+            "summer.vacationRanges": vacJson,
+          });
+          const status = effectiveSummerActive(iso, settings);
+          onVacation = !!schoolOff || status.active;
+        } catch {
+          onVacation = false;
+        }
+        const { resolveKiwiDayCharacter } = await import("../shared/kiwiCharacter");
+        return resolveKiwiDayCharacter(iso, { eventTitles, onVacation });
+      }),
     /** 2026-05-05: Kiwi behavior — today (basic) + all-time aggregate. */
     behaviorToday: protectedProcedure
       .input(z.object({ date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/) }))

@@ -81,12 +81,13 @@ export default function KiwiCompanion() {
     ? (() => { try { const p = JSON.parse(activeReviewBlock.description); return p._type === 'review_block' ? activeReviewBlock.description : undefined; } catch { return undefined; } })()
     : undefined;
   const submitQuizResult = trpc.topicMastery.submitQuizResult.useMutation();
-  // Today's deterministic Kiwi costume (calendar/holiday/vacation aware).
-  const apptsForKiwi = trpc.appointments.list.useQuery(undefined, { staleTime: 5 * 60_000 });
-  const kiwiDayCostume = useMemo(() => {
-    const titles = (apptsForKiwi.data as any[] | undefined)?.map((a) => a?.title as string).filter(Boolean) ?? [];
-    return resolveKiwiDayCharacter(todayISO, { eventTitles: titles }).costume;
-  }, [apptsForKiwi.data, todayISO]);
+  // Today's Kiwi costume from the authoritative server resolver (calendar +
+  // holiday + summer/vacation aware). Falls back to a plain everyday resolve.
+  const kiwiToday = trpc.kiwi.today.useQuery(undefined, { staleTime: 10 * 60_000 });
+  const kiwiDayCostume = useMemo(
+    () => (kiwiToday.data ?? resolveKiwiDayCharacter(todayISO, {})).costume,
+    [kiwiToday.data, todayISO],
+  );
 
   // Detect quiz completion from Kiwi's summary message.
   // Pattern: "X out of Y" — e.g. "3 out of 4 — solid"

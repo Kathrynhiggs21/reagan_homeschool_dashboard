@@ -91,13 +91,17 @@ export default function KiwiPerch() {
   const { enabled, open, setOpen, adultPresent, mode } = useKiwi();
   const [pose, setPose] = useState<KiwiPose>("idle");
 
-  /* ---- Daily costume (deterministic) from today's calendar + holidays ---- */
+  /* ---- Daily costume from the authoritative server resolver ----
+   * kiwi.today combines today's appointments + holidays + summer/vacation
+   * status so the costume is consistent everywhere and stable all day. We keep
+   * a local fallback resolve (no events) so Kiwi still dresses if the query is
+   * still loading or errors. */
   const todayISO = new Date().toISOString().slice(0, 10);
-  const appts = trpc.appointments.list.useQuery(undefined, { staleTime: 5 * 60_000 });
-  const dayChar = useMemo(() => {
-    const titles = (appts.data as any[] | undefined)?.map((a) => a?.title as string).filter(Boolean) ?? [];
-    return resolveKiwiDayCharacter(todayISO, { eventTitles: titles });
-  }, [appts.data, todayISO]);
+  const todayChar = trpc.kiwi.today.useQuery(undefined, { staleTime: 10 * 60_000 });
+  const dayChar = useMemo(
+    () => todayChar.data ?? resolveKiwiDayCharacter(todayISO, {}),
+    [todayChar.data, todayISO],
+  );
   const costume: KiwiCostume = dayChar.costume;
   const [size, setSize] = useState<number>(() => perchSize());
   const [pos, setPos] = useState<Pos>(() => loadPos(perchSize()));

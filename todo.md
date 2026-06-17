@@ -1034,3 +1034,10 @@ Katy clarified: worksheets should look like REAL printable worksheets (NewPath /
 - [x] Droppable props off a branch (fry, berry/fruit) -> Kiwi hops over and eats it
 - [x] Slow long-running ambient projects across a session: build a nest twig-by-twig, do needlework/knitting, etc. (occasional, not constant)
 - [x] World-prop system is extensible (examples, not a fixed list)
+
+## Kiwi day-engine follow-ups (2026-06-17)
+
+- [x] Favorite show set to CBS Tracker (editable one-liner in shared/kiwiCharacter.ts)
+- [x] Vacation awareness: auto from school off-days + summer mode via kiwi.today server resolver
+- [x] kiwi.today authoritative resolver wired to perch + Today header + companion panel
+- [x] Vitest for kiwi.today resolver (shape/holiday/determinism/default-date)
