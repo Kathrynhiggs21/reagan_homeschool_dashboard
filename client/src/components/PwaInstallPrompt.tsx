@@ -114,7 +114,7 @@ export default function PwaInstallPrompt() {
         }}
       >
         <img
-          src="/manus-storage/pwa-icon-192_4e973cc3.png"
+          src="/manus-storage/pwa-icon-192_be871fe0.png"
           alt=""
           width={44}
           height={44}

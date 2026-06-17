@@ -1,6 +1,6 @@
 {
   "name": "Reagan's Homeschool",
-  "short_name": "Reagan",
+  "short_name": "Reagan's Homeschool",
   "description": "Reagan's cozy homeschool dashboard — today's plan, Kiwi, bookshelf, apps, and coins.",
   "id": "/",
   "start_url": "/?source=pwa",
@@ -12,19 +12,19 @@
   "categories": ["education", "kids"],
   "icons": [
     {
-      "src": "/manus-storage/pwa-icon-192_4e973cc3.png",
+      "src": "/manus-storage/pwa-icon-192_be871fe0.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/manus-storage/pwa-icon-512_6949fada.png",
+      "src": "/manus-storage/pwa-icon-512_1b2df46b.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/manus-storage/pwa-icon-maskable-512_0f28943c.png",
+      "src": "/manus-storage/pwa-icon-maskable-512_ff11838b.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

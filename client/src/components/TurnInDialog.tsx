@@ -51,6 +51,13 @@ export interface TurnInDialogProps {
    * If omitted we keep the smart auto-detect (reading-shaped → reading; else → draw).
    */
   initialMode?: Mode;
+  /**
+   * Extra-work mode: a block-less "Something I did on my own" turn-in.
+   * When true, there is no scheduled block — Reagan types a short title for
+   * what she did, then submits a photo / drawing / typed note. Routes to
+   * `submissions.createExtra` instead of `submissions.create`.
+   */
+  extraMode?: boolean;
 }
 
 export type Mode = "reading" | "draw" | "photo" | "typed";
@@ -64,11 +71,14 @@ const DIFFICULTY_OPTIONS: { value: Difficulty; emoji: string; label: string; ton
   { value: "really_hard", emoji: "😣", label: "Really hard", tone: "bg-rose-50 hover:bg-rose-100 border-rose-300 text-rose-900" },
 ];
 
-export default function TurnInDialog({ open, onOpenChange, block, worksheetUrl, initialMode }: TurnInDialogProps) {
+export default function TurnInDialog({ open, onOpenChange, block, worksheetUrl, initialMode, extraMode }: TurnInDialogProps) {
   const utils = trpc.useUtils();
   const createSub = trpc.submissions.create.useMutation();
+  const createExtra = trpc.submissions.createExtra.useMutation();
   const autoGrade = trpc.submissions.autoGrade.useMutation();
   const uploadM = trpc.submissions.upload.useMutation();
+  // Extra-work title (only used when extraMode is on).
+  const [extraTitle, setExtraTitle] = useState("");
 
   // If this block looks like reading, default to the reading checkmark mode.
   const looksLikeReading =
@@ -78,7 +88,7 @@ export default function TurnInDialog({ open, onOpenChange, block, worksheetUrl, 
     block?.subjectSlug === "read_aloud";
 
   const [step, setStep] = useState<Step>("compose");
-  const [mode, setMode] = useState<Mode>(initialMode ?? (looksLikeReading ? "reading" : "draw"));
+  const [mode, setMode] = useState<Mode>(initialMode ?? (extraMode ? "photo" : looksLikeReading ? "reading" : "draw"));
   const [typedAnswers, setTypedAnswers] = useState("");
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -92,12 +102,13 @@ export default function TurnInDialog({ open, onOpenChange, block, worksheetUrl, 
   useEffect(() => {
     if (!open) return;
     setStep("compose");
-    setMode(initialMode ?? (looksLikeReading ? "reading" : "draw"));
+    setMode(initialMode ?? (extraMode ? "photo" : looksLikeReading ? "reading" : "draw"));
     setTypedAnswers("");
     setPhotoDataUrl(null);
     setDifficulty(null);
     setLastSubmission(null);
-  }, [open, block?.id, looksLikeReading, initialMode]);
+    setExtraTitle("");
+  }, [open, block?.id, looksLikeReading, initialMode, extraMode]);
 
   function onPhotoPicked(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
@@ -109,6 +120,10 @@ export default function TurnInDialog({ open, onOpenChange, block, worksheetUrl, 
 
   /** Step 1 → Step 2: stash work locally, then ask difficulty. */
   function continueToDifficulty() {
+    if (extraMode && !extraTitle.trim()) {
+      toast.message("Tell Kiwi what you did first (a few words).");
+      return;
+    }
     if (mode === "draw") {
       // Confirm there's actually ink before continuing.
       const strokes = canvasRef.current?.getStrokes() ?? [];
@@ -129,7 +144,7 @@ export default function TurnInDialog({ open, onOpenChange, block, worksheetUrl, 
   }
 
   async function actuallySubmit(diff: Difficulty) {
-    if (!block?.id) return;
+    if (!extraMode && !block?.id) return;
     setSubmitting(true);
     try {
       let pngDataUrl: string | null = null;
@@ -146,27 +161,42 @@ export default function TurnInDialog({ open, onOpenChange, block, worksheetUrl, 
       if (pngDataUrl) {
         const up = await uploadM.mutateAsync({
           dataUrl: pngDataUrl,
-          fileName: `assignment-${block.id}-${Date.now()}.png`,
+          fileName: extraMode
+            ? `extra-${Date.now()}.png`
+            : `assignment-${block?.id}-${Date.now()}.png`,
         });
         fileKey = (up as any)?.key;
         fileUrl = (up as any)?.url;
       }
 
-      const sub: any = await createSub.mutateAsync({
-        blockId: block.id,
-        mode: mode === "reading" ? "typed" : mode,
-        answersText: mode === "typed" ? typedAnswers : undefined,
-        strokes: strokes ? (strokes as any) : undefined,
-        fileKey,
-        fileUrl,
-        kidDifficulty: diff,
-        readingCheckmark: mode === "reading",
-      });
+      let sub: any;
+      if (extraMode) {
+        sub = await createExtra.mutateAsync({
+          mode: mode === "reading" ? "typed" : mode,
+          title: extraTitle.trim(),
+          answersText: mode === "typed" ? typedAnswers : undefined,
+          strokes: strokes ? (strokes as any) : undefined,
+          fileKey,
+          fileUrl,
+          kidDifficulty: diff,
+        });
+      } else {
+        sub = await createSub.mutateAsync({
+          blockId: block!.id,
+          mode: mode === "reading" ? "typed" : mode,
+          answersText: mode === "typed" ? typedAnswers : undefined,
+          strokes: strokes ? (strokes as any) : undefined,
+          fileKey,
+          fileUrl,
+          kidDifficulty: diff,
+          readingCheckmark: mode === "reading",
+        });
+      }
 
       setLastSubmission({ id: sub?.id, fileUrl });
 
-      // Best-effort auto-grade for non-reading submissions.
-      if (mode !== "reading" && sub?.id) {
+      // Best-effort auto-grade for non-reading, block-tied submissions only.
+      if (!extraMode && mode !== "reading" && sub?.id) {
         try {
           const graded: any = await autoGrade.mutateAsync({ submissionId: sub.id });
           if (graded && graded.autoScore !== null && graded.autoScore !== undefined) {
@@ -177,6 +207,8 @@ export default function TurnInDialog({ open, onOpenChange, block, worksheetUrl, 
         } catch {
           toast.success("Turned in.");
         }
+      } else if (extraMode) {
+        toast.success("Extra work saved — nice! +3 Kiwi Coins \ud83e\udd99");
       } else {
         toast.success(mode === "reading" ? "Marked as done reading. Way to go!" : "Turned in.");
       }
@@ -238,7 +270,24 @@ export default function TurnInDialog({ open, onOpenChange, block, worksheetUrl, 
         {step === "compose" && (
           <div className="rounded-lg bg-neutral-100 dark:bg-neutral-800/60 border border-neutral-200 dark:border-white/10 px-3 py-2 text-[13px] leading-snug text-neutral-800 dark:text-neutral-100">
             <span className="font-semibold">How this works:</span>{" "}
-            Pick the way that feels good — read it, draw, take a photo, or type. Then tap how hard it felt. There's no wrong answer here.
+            {extraMode
+              ? "Did something cool on your own? Tell Kiwi what it was, then add a photo, drawing, or note. You'll earn bonus Kiwi Coins!"
+              : "Pick the way that feels good — read it, draw, take a photo, or type. Then tap how hard it felt. There's no wrong answer here."}
+          </div>
+        )}
+
+        {/* Extra-work title (only in extraMode) */}
+        {step === "compose" && extraMode && (
+          <div className="space-y-1">
+            <Label htmlFor="extra-title">What did you do?</Label>
+            <Input
+              id="extra-title"
+              data-testid="extra-work-title"
+              placeholder='e.g. "Built a volcano", "Read 20 pages of my book", "Drew the solar system"'
+              value={extraTitle}
+              onChange={(e) => setExtraTitle(e.target.value)}
+              autoFocus
+            />
           </div>
         )}
 

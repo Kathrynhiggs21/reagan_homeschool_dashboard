@@ -21,6 +21,8 @@ import AppointmentsCardLite from "@/components/AppointmentsCardLite";
 import SummerModeSettingsCard from "@/components/SummerModeSettingsCard";
 import CatchUpQueueSettingsCard from "@/components/CatchUpQueueSettingsCard";
 import SettingsAIHelperCard from "@/components/SettingsAIHelperCard";
+import AddToHomeScreenCard from "@/components/AddToHomeScreenCard";
+import AdultCoinControlsCard from "@/components/AdultCoinControlsCard";
 import AutomationHealthCard from "@/components/AutomationHealthCard";
 import { useKiwi } from "@/contexts/KiwiContext";
 import { Slider } from "@/components/ui/slider";
@@ -104,11 +106,13 @@ export default function Settings() {
           <AdultPasscodeCard />
           <KiwiListeningCard />
           <CartoonVoiceCard />
+          <AddToHomeScreenCard />
         </TabsContent>
 
         <TabsContent value="kid" className="space-y-4">
           {/* Prizes + Reagan's pending requests in one place — both are
               "things adults do for the kid side". */}
+          <AdultCoinControlsCard />
           <RewardsManagerCard />
           <KidRequestsCard />
           <RequestsInboxCard />

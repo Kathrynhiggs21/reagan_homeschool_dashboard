@@ -2543,6 +2543,255 @@ export async function recentCoinLedger(userId?: number | null, limit = 30) {
 }
 
 /**
+ * Award a small coin bonus for block-less "extra / outside" work.
+ * Writes a single positive ledger entry (kind="earn_bonus").
+ */
+export async function awardExtraWorkCoins(userId: number | null | undefined, delta: number, reasonNote: string) {
+  const db = getDb();
+  await db.insert(coinLedger).values({
+    userId: userId ?? null,
+    delta,
+    kind: "earn_bonus",
+    reasonNote: reasonNote.slice(0, 200),
+  } as any);
+  return { ok: true };
+}
+
+/* ----------------------------------------------------------------------
+ * Coin economy — "coins for everything Reagan does" (2026-06-17).
+ *
+ * Every award is POSITIVE only (never a penalty) and IDEMPOTENT: we encode a
+ * stable source key in reasonNote as `[src=...]` and refuse to insert a second
+ * ledger row with the same key. This avoids a schema migration tonight while
+ * preventing double-pay on re-submit / re-run.
+ * -------------------------------------------------------------------- */
+
+/** True if a ledger row already exists carrying this `[src=KEY]` tag. */
+async function coinLedgerHasSource(sourceKey: string): Promise<boolean> {
+  const db = getDb();
+  const tag = `[src=${sourceKey}]`;
+  const rows: any = await db.select().from(coinLedger);
+  return (rows as any[]).some((r) => typeof r.reasonNote === "string" && r.reasonNote.includes(tag));
+}
+
+/** Sum of positive deltas for a given `[src=KEY]` tag (for adult day-bonus overwrite). */
+async function coinLedgerSourceTotal(sourceKey: string): Promise<number> {
+  const db = getDb();
+  const tag = `[src=${sourceKey}]`;
+  const rows: any = await db.select().from(coinLedger);
+  return (rows as any[])
+    .filter((r) => typeof r.reasonNote === "string" && r.reasonNote.includes(tag))
+    .reduce((s, r) => s + (Number(r.delta) || 0), 0);
+}
+
+/**
+ * Award per-assignment coins on a real turn-in. Scaled by difficulty + minutes
+ * via computeCoinAward. Idempotent per submission so re-grading / re-submitting
+ * the same row never double-pays. Returns the coins awarded (0 if already paid).
+ */
+export async function awardSubmissionCoins(opts: {
+  userId?: number | null;
+  submissionId: number;
+  difficulty?: "easy" | "medium" | "hard" | null;
+  minutes?: number | null;
+  label?: string | null;
+}): Promise<number> {
+  const src = `sub:${opts.submissionId}`;
+  if (await coinLedgerHasSource(src)) return 0;
+  const coins = computeCoinAward({ difficulty: opts.difficulty ?? null, minutes: opts.minutes ?? null });
+  const db = getDb();
+  const label = (opts.label ?? "Finished an assignment").slice(0, 150);
+  await db.insert(coinLedger).values({
+    userId: opts.userId ?? null,
+    delta: coins,
+    kind: "earn_bonus",
+    reasonNote: `${label} [src=${src}]`.slice(0, 200),
+  } as any);
+  return coins;
+}
+
+/**
+ * Award a once-per-day "started on time" bonus. Idempotent per date.
+ * Returns coins awarded (0 if already given today).
+ */
+export async function awardOnTimeBonus(opts: {
+  userId?: number | null;
+  date: string; // YYYY-MM-DD
+  coins?: number;
+}): Promise<number> {
+  const src = `ontime:${opts.date}`;
+  if (await coinLedgerHasSource(src)) return 0;
+  const coins = Math.max(1, Math.min(20, opts.coins ?? 5));
+  const db = getDb();
+  await db.insert(coinLedger).values({
+    userId: opts.userId ?? null,
+    delta: coins,
+    kind: "earn_bonus",
+    reasonNote: `Started school on time! [src=${src}]`.slice(0, 200),
+  } as any);
+  return coins;
+}
+
+/**
+ * Award a once-per-day "finished the whole school day" bonus. Idempotent per
+ * date. Returns coins awarded (0 if already given today).
+ */
+export async function awardFullDayBonus(opts: {
+  userId?: number | null;
+  date: string; // YYYY-MM-DD
+  coins?: number;
+}): Promise<number> {
+  const src = `fullday:${opts.date}`;
+  if (await coinLedgerHasSource(src)) return 0;
+  const coins = Math.max(1, Math.min(40, opts.coins ?? 10));
+  const db = getDb();
+  await db.insert(coinLedger).values({
+    userId: opts.userId ?? null,
+    delta: coins,
+    kind: "earn_bonus",
+    reasonNote: `Finished the whole school day! [src=${src}]`.slice(0, 200),
+  } as any);
+  return coins;
+}
+
+/**
+ * Adult-set end-of-day bonus for concentration + attitude. Each rating is
+ * 0..3 and converts 1:1 to coins (so up to +6/day). Re-runnable: if a bonus
+ * was already set for that date, we award only the positive DIFFERENCE so the
+ * adult can adjust upward without ever subtracting from Reagan's balance.
+ * Returns coins awarded this call (0 if no increase).
+ */
+export async function awardDayBonus(opts: {
+  userId?: number | null;
+  date: string; // YYYY-MM-DD
+  concentration: number; // 0..3
+  attitude: number; // 0..3
+}): Promise<number> {
+  const src = `daybonus:${opts.date}`;
+  const conc = Math.max(0, Math.min(3, Math.round(opts.concentration)));
+  const att = Math.max(0, Math.min(3, Math.round(opts.attitude)));
+  const target = conc + att;
+  const already = await coinLedgerSourceTotal(src);
+  const delta = target - already;
+  if (delta <= 0) return 0; // positive-only; never subtract
+  const db = getDb();
+  await db.insert(coinLedger).values({
+    userId: opts.userId ?? null,
+    delta,
+    kind: "earn_bonus",
+    reasonNote: `Focus ${conc}/3 + attitude ${att}/3 [src=${src}]`.slice(0, 200),
+  } as any);
+  return delta;
+}
+
+/**
+ * Adult manual coin grant (Mom / Grandma "+Coins" button). Always positive.
+ * Optional photo / file already uploaded to S3 by the caller; we just store
+ * the URL inside the reasonNote so it surfaces in coin history. Tagged
+ * `[src=manual:...]` with a timestamp so each grant is its own entry.
+ */
+export async function awardManualCoins(opts: {
+  userId?: number | null;
+  amount: number;
+  reason: string;
+  attachmentUrl?: string | null;
+  grantedByName?: string | null;
+}): Promise<number> {
+  const amount = Math.max(1, Math.min(200, Math.round(opts.amount)));
+  const db = getDb();
+  const who = opts.grantedByName ? ` — ${opts.grantedByName}` : "";
+  const att = opts.attachmentUrl ? ` (photo: ${opts.attachmentUrl})` : "";
+  const stamp = Date.now();
+  const note = `${opts.reason.trim().slice(0, 120)}${who}${att} [src=manual:${stamp}]`;
+  await db.insert(coinLedger).values({
+    userId: opts.userId ?? null,
+    delta: amount,
+    kind: "earn_bonus",
+    reasonNote: note.slice(0, 200),
+  } as any);
+  return amount;
+}
+
+/**
+ * Orchestrator: award everything Reagan earns on a single turn-in.
+ * - per-assignment coins (scaled by difficulty + minutes)
+ * - start-on-time bonus (first turn-in of the day, near first block's start)
+ * - full-day bonus (all of today's non-skipped blocks now submitted)
+ * Positive-only and idempotent. Returns a breakdown for the success toast.
+ */
+export async function awardCoinsForTurnIn(opts: {
+  userId?: number | null;
+  submissionId: number;
+  blockId: number | null;
+  label?: string | null;
+}): Promise<{ assignment: number; onTime: number; fullDay: number; total: number }> {
+  const out = { assignment: 0, onTime: 0, fullDay: 0, total: 0 };
+  try {
+    let difficulty: "easy" | "medium" | "hard" = "easy";
+    let minutes = 0;
+    let planId: number | null = null;
+    let blockStart: string | null = null;
+    if (opts.blockId != null) {
+      const blk: any = await getBlock(opts.blockId);
+      if (blk) {
+        minutes = blk.durationMin ?? 0;
+        blockStart = blk.startTime ?? null;
+        planId = blk.planId ?? null;
+        difficulty = inferDifficulty({ minutes, kind: blk.blockType });
+      }
+    }
+    out.assignment = await awardSubmissionCoins({
+      userId: opts.userId,
+      submissionId: opts.submissionId,
+      difficulty,
+      minutes,
+      label: opts.label ?? "Finished an assignment",
+    });
+
+    // Bonuses need a plan/date context.
+    if (planId != null) {
+      const plan: any = await getPlanByDateById(planId);
+      const dateStr: string | null = plan?.date ? String(plan.date).slice(0, 10) : null;
+      if (dateStr) {
+        const blocks: any[] = await listBlocksForPlan(planId);
+        const active = blocks.filter((b) => b.status !== "skipped");
+        const subs: any[] = await listAssignmentSubmissions(500);
+        const submittedBlockIds = new Set(
+          subs.filter((s) => s.blockId != null).map((s) => s.blockId),
+        );
+        // start-on-time: this is the first active block (lowest sortOrder) and
+        // it's the only / earliest submission today. We keep it generous —
+        // simply being the first turn-in of the day earns it.
+        const firstActive = active.slice().sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))[0];
+        const otherTodaySubs = subs.filter(
+          (s) => s.blockId != null && submittedBlockIds.has(s.blockId) && s.blockId !== opts.blockId
+            && active.some((b) => b.id === s.blockId),
+        );
+        if (firstActive && otherTodaySubs.length === 0) {
+          out.onTime = await awardOnTimeBonus({ userId: opts.userId, date: dateStr });
+        }
+        // full-day: every active block now has a submission.
+        const allDone = active.length > 0 && active.every((b) => submittedBlockIds.has(b.id));
+        if (allDone) {
+          out.fullDay = await awardFullDayBonus({ userId: opts.userId, date: dateStr });
+        }
+      }
+    }
+  } catch {
+    /* best-effort: never block a turn-in on coin math */
+  }
+  out.total = out.assignment + out.onTime + out.fullDay;
+  return out;
+}
+
+/** Fetch a daily plan row by its primary id (for bonus date lookup). */
+export async function getPlanByDateById(planId: number) {
+  const db = getDb();
+  const rows = await db.select().from(dailyPlans).where(eq(dailyPlans.id, planId)).limit(1);
+  return rows[0] || null;
+}
+
+/**
  * Compute an automatic coin award from difficulty + time spent.
  * Base 5 coins. Difficulty multiplier: easy x1, medium x1.5, hard x2.
  * Time bonus: +1 coin per ~10 minutes of effort, capped at +10.

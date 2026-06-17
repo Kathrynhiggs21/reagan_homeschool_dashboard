@@ -316,7 +316,7 @@ export default function Today() {
   const [blockEditor, setBlockEditor] = useState<{ open: boolean; block?: ExistingBlock }>({ open: false });
   const [gradeDialog, setGradeDialog] = useState<{ open: boolean; block?: { id: number; title?: string; subjectSlug?: string | null } }>({ open: false });
   const [keyDialog, setKeyDialog] = useState<{ open: boolean; blockId?: number; title?: string }>({ open: false });
-  const [turnIn, setTurnIn] = useState<{ open: boolean; block?: { id: number; title?: string; subjectSlug?: string | null }; initialMode?: "reading" | "draw" | "photo" | "typed" }>({ open: false });
+  const [turnIn, setTurnIn] = useState<{ open: boolean; block?: { id: number; title?: string; subjectSlug?: string | null }; initialMode?: "reading" | "draw" | "photo" | "typed"; extraMode?: boolean }>({ open: false });
   const [goodWorkDialog, setGoodWorkDialog] = useState<{ open: boolean; blockId?: number; title?: string }>({ open: false });
   const [goodWorkText, setGoodWorkText] = useState("");
   const saveGoodWorkM = trpc.prefs.set.useMutation();
@@ -447,6 +447,15 @@ export default function Today() {
               title="Earn extra Kiwi Coins by doing fun practice drills outside school hours"
             >
               🪙 Practice for Coins
+            </button>
+            {/* I did something extra — block-less turn-in */}
+            <button
+              data-testid="extra-work-pill"
+              onClick={() => setTurnIn({ open: true, extraMode: true })}
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-white/10 hover:bg-white/20 text-white/80 hover:text-white border border-white/15 hover:border-white/30 transition-all duration-150 select-none"
+              title="Turn in something you did on your own — a project, a drawing, extra reading"
+            >
+              ➕ I did something extra
             </button>
             {/* Tour — simple subtle pill */}
             <button
@@ -1283,6 +1292,7 @@ export default function Today() {
         open={turnIn.open}
         block={turnIn.block}
         initialMode={turnIn.initialMode}
+        extraMode={turnIn.extraMode}
         onOpenChange={(v) => setTurnIn((s) => ({ ...s, open: v }))}
       />
 

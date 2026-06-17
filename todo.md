@@ -878,3 +878,159 @@ Sequencing rule (project memory): measurement conversion BEFORE volume; poetry/h
 - [x] Upgrade worksheet PDF renderer (`server/_lib/worksheetPdf.ts`) to the colorful illustrated look from refs (title banner + pencil mascot, confetti, Name/Date box, per-section colored header pills + bordered cards, themed answer boxes / MC bubbles, Skills-Covered footer ribbon, encouraging mascot footer). Grade-appropriate tone (6th in summer mode, else 5th) via existing content.
 - [x] PAGE-PER-ASSIGNMENT: each block/worksheet/assignment starts on its OWN page in the printable; multi-page assignments flow onto extra pages; never pack multiple separate block assignments onto one shared page. Answer key still on its own page(s) at the end.
 - [x] vitest coverage for the renderer (produces a valid non-empty PDF buffer; one page per worksheet/section start) + tsc clean.
+
+
+---
+
+## 📝 Worksheet redesign — clean formatted style (2026-06-17, Katy)
+
+Katy clarified: worksheets should look like REAL printable worksheets (NewPath / SplashLearn style), NOT a colorful cartoon banner + mascot + confetti. Clean header bar + subject tag, Name/Class/Date line, one functional subject accent color, lots of writing space, varied real activity formats. Multi-page assignments are fine; each NEW assignment still starts on its own page.
+
+- [x] Extend WorksheetContent types: add item kinds `matching` (pairs), `scramble`, `fillblank`; add section `wordBank`; add `MatchPair`. All optional/backward-compatible. (done)
+- [ ] Rebuild `server/_lib/worksheetPdf.ts` in clean worksheet style: simple title header bar + subject tag chip (Sci/Math/ELA/auto), Name / Class / Date line, light section dividers, generous answer lines/boxes. Drop mascot/confetti/party banner.
+- [ ] Render new activity types: two-column matching with blank line to connect, numbered word scramble -> answer line, fill-in-the-blank sentences (blanks), boxed WORD BANK, MC with circled letters, reading passage + numbered comprehension lines.
+- [ ] Keep PAGE-PER-ASSIGNMENT: each section starts on its own page; long sections flow onto extra pages; answer key on its own page(s).
+- [ ] Update vitest to cover new kinds + still green; tsc clean.
+- [ ] Visual-check a multi-activity sample PDF (MC + matching + scramble + fillblank/word bank + passage).
+
+
+---
+
+## 🌙 Tonight's run (2026-06-17, Katy)
+
+- [ ] FIX overlap: in the lower-left, Reagan's "💌 Make a request" link overlaps the "Unlock adult area" code button. Separate/stack them so neither is covered, on all themes.
+- [ ] Add per-block "Generate / Print worksheet" button (kid + adult) wired to `worksheets.makePdf`, opens the PDF.
+- [x] Full end-to-end test pass of everything Reagan or Katy would use: theme switching (all 5), Today schedule load, Schedule page, Kiwi (wake/click only), Make-a-request box, Practice for Coins, Print Daily Agenda, per-block worksheet print, adult unlock flow. Note pass/fail.
+- [ ] Generate a REAL test printable for tomorrow's class and deliver it for review.
+
+
+---
+
+## 🐛 Worksheet paging bug (2026-06-17)
+- [ ] FIX: clean renderer emits blank pages (15 pages for 4 sections). Cause: addContentPage + pageFooter(bufferedPageRange) + per-row ensureSpace cascade. Rework paging so exactly one page per section + flow pages only when content overflows.
+
+## 🔎 Full site audit (2026-06-17, Katy)
+- [ ] Inventory every route/page in App.tsx + each page component (kid + adult).
+- [ ] Inspect back end: routers, scheduled jobs/heartbeat, syncing (Drive, Calendar, Gmail, IXL/PowerSchool), notifications.
+- [ ] Check visuals, animations (Kiwi), links + direct-open-to-page + already-signed-in behavior.
+- [ ] Research best practices for 5th-6th grade homeschool dashboards (look/use/work).
+- [ ] Write prioritized recommendations report (changes, extras, alterations, add-ons, removals, syncing) ordered by impact.
+
+- [ ] Name + Date at TOP of EVERY page (already on header bar; ensure on continuation pages too).
+- [ ] Page number at BOTTOM of each page as "Page X of N".
+- [ ] Simple clean page frame/border around each page.
+- [ ] Bold + font-weight hierarchy (bold numbers/key terms, italic directions).
+- [ ] Bottom-of-page directions line incl. "Scan & Submit in the Homeschool dashboard to turn in a photo of your finished work."
+- [ ] Answer key on its OWN separate page(s); student copy defaults to NO key.
+- [ ] Single-sided friendly: generate teacher answer key as a SEPARATE file so it never prints on the back of a worksheet.
+
+---
+
+## 🎨 PDF styled to match the website
+- [ ] Agenda title page: redesign to match site look — site heading font, accent color boxes/cards.
+- [ ] Add Kiwi as a logo in the PDF header next to title "Reagan's Homeschool — Printable Agenda" (matching title font).
+- [ ] Carry the same fonts/colors/box styles through worksheet + answer-key pages (consistent with site).
+- [ ] Fix any TS callers after answer-key API split (routers.ts withAnswerKey path).
+
+- [ ] Use FLAT (less-3D) Kiwi logo for PDF header + confirm flat icon matches site.
+- [ ] Remove inactive orihsd.us school email (CONFIRMED SAFE by Katy) — find all refs first, don't break mail allowlist/defaults.
+- [ ] Audit /api/scheduled/* "orphaned" routes — determine intentional (Heartbeat-invoked) vs dangerous; report honestly.
+
+## 2026-06-17 (PM) — Worksheet redesign back to liked "Summer Adventure" style + tonight items
+- [x] Fix word-scramble arrow tofu glyph (vector-drawn arrow, font-independent)
+- [x] Regenerate Kiwi mascot to match real budgie (pastel yellow head + powder-blue/teal tummy, grad cap, soft 3D)
+- [x] REVERT worksheet renderer to colorful "Summer Adventure" style (per Katy's liked screenshots):
+      gradient header banner + mascot + sparkle stars, dashed Name/Date box, yellow intro ribbon,
+      rounded gradient PART pills, rounded answer boxes, circle MC bubbles, footer pill
+- [x] Add COLOR-PER-SUBJECT theming (Math=purple/indigo, ELA=coral, Science=green/teal, Social=blue, default)
+- [x] Use Kiwi budgie in worksheet header (replace pencil mascot)
+- [x] Keep page-per-assignment rule + separate answer key
+- [ ] Agenda PDF cover redesign to match site (Kiwi + Fredoka/Nunito, subject-tinted)
+- [ ] Per-block "Generate/Print worksheet" button wired to worksheets.makePdf
+- [ ] Fix lower-left overlap (Reagan "Make a request" vs "Unlock adult area" code button)
+- [ ] Remove inactive orihsd.us email references
+- [ ] Audit orphaned /api/scheduled/* routes
+- [x] Full end-to-end test pass (pnpm test + tsc)
+- [x] Generate real test printable for tomorrow's class
+- [ ] Comprehensive site audit report (prioritized recommendations)
+- [ ] Save checkpoint + deliver
+
+## 2026-06-17 (PM v2) — Schedule shift + printable template + tools
+- [x] Rebuild worksheet PDF in colorful "Summer Adventure" template (subject color theming + grad-cap Kiwi header)
+- [x] Shift schedule forward 1 day (today skipped): today->tomorrow, and whole remaining chain +1 day
+- [x] Verify Scan & Submit camera turn-in flow works end-to-end and is easy to reach
+- [x] Add "extra / outside work" upload (separate from printable assignments)
+- [x] Add bottom utility toolbar (calculator, timer, etc.)
+- [x] Generate a real test printable in the new template
+- [ ] Save checkpoint + deliver
+
+## 2026-06-17 (PM cont.) — Auto coins for everything Reagan does
+
+- [x] Auto-award coins on regular block turn-ins (submissions.create) scaled by assignment (difficulty + time)
+- [x] Auto-award coins on reading-done checkmark turn-ins
+- [x] Confirm practice drills already award coins; make consistent
+- [x] Extra/outside work awards coins (+3 flat via createExtra)
+- [x] Surface awarded coins in the turn-in success toast for every path
+- [ ] Vitest coverage for auto coin award on create
+
+## 2026-06-17 (PM cont.) — Coin bonuses (positive only, never penalty)
+
+- [x] Bonus: start-on-time (first block turned in at/near scheduled start) — auto
+- [x] Bonus: finished the whole school day (all day's blocks turned in) — auto
+- [x] Adult day-bonus control: concentration + attitude rating -> coins (adult-set, end of day)
+- [x] All bonuses are additive/positive only; Reagan never sees a penalty
+- [ ] Surface today's earned bonuses on Kiwi/Coins page
+- [ ] Vitest for start-on-time + full-day detection + adult day-bonus
+
+## 2026-06-17 (PM cont.) — Adult manual +Coins grant
+
+- [x] Adult section "+Coins" button: reason (text) + amount (number)
+- [x] Optional camera picture (snap proof) stored to S3
+- [x] Optional file upload stored to S3
+- [x] Writes positive coinLedger entry tagged as manual grant, shows in coin history
+- [ ] Vitest for manual grant (with/without attachment)
+
+## 2026-06-17 (PM cont.) — Add to Home Screen (PWA)
+
+- [x] Web app manifest (name, Kiwi icons, theme/background color, standalone display)
+- [x] Link manifest + apple-touch-icon + meta tags in client/index.html
+- [x] In-app "Add to Home Screen" helper with iOS + Android steps
+- [x] Verify installable (manifest + icons load)
+
+## Kiwi reactive character system (2026-06-17, Katy request)
+
+- [x] Audit existing Kiwi rendering (HelperKiwi/onboarding/dock) + calendar data source
+- [x] Kiwi is FEMALE (she/her) everywhere in copy
+- [x] Funny idle "active states" bank: poop bit, naps, snacks, dancing (girl-11 humor)
+- [x] Costume system: Kiwi wears clothing sometimes (rotating + situational)
+- [x] Calendar-aware: read Reagan's connected Google Calendar, map event keywords to Kiwi costume/state for THAT day
+  - [x] soccer practice/game -> jersey + cleats
+  - [x] doctor/dentist appt -> lab coat / stethoscope (or cast/bandage if injury)
+  - [x] swim -> goggles/swim cap
+  - [x] birthday -> party hat
+  - [x] vacation/travel/trip -> sunglasses + suitcase, "Reagan's on vacation" aware
+- [x] Holiday-aware: Halloween, Christmas, Valentine's, July 4th, Thanksgiving, etc.
+- [x] Friend-bird visit awareness: visiting bird friends event -> Kiwi has a guest
+- [x] "Kiwi cleans up stuff" tidy/chores bit
+- [x] Large bank of hilarious content slots appropriate for an 11-year-old girl
+- [x] Editable keyword->costume mapping + content (so Katy can tweak later)
+- [x] Vitest coverage for the Kiwi state/costume resolver
+- [x] tsc clean + full suite green + checkpoint
+
+## Kiwi personality + perch behavior (2026-06-17, Katy follow-up)
+
+- [x] Kiwi perches/stands ON page elements (top of cards, edges/ledges of boxes & lines), not only floating
+- [x] Kiwi starts her activities while perched on an element
+- [x] Personality: sarcastic, joke-y, kind tween slang (sus, slay, lowkey, no cap, it's giving, bestie, fr) for an 11yo girl
+- [x] Match Kiwi's style/talk/sarcasm to Reagan
+- [x] Tracker / favorite-show tribute: Kiwi wears themed tee + holds fan banner (label editable — default "Reagan's favorite show")
+- [x] Reagan loves baked in: hula hoop (just started), Minecraft, Roblox, cell phone (texting/selfie bit)
+- [x] Animals/pets are her #1 love -> extra pet-themed content + friend-bird visits
+
+## Kiwi "world" props (2026-06-17, Katy follow-up)
+
+- [x] Tree branches sticking out from page edges (top/left/right) Kiwi can land/swing/hang on
+- [x] Branch hammock + swing perch options
+- [x] Droppable props off a branch (fry, berry/fruit) -> Kiwi hops over and eats it
+- [x] Slow long-running ambient projects across a session: build a nest twig-by-twig, do needlework/knitting, etc. (occasional, not constant)
+- [x] World-prop system is extensible (examples, not a fixed list)

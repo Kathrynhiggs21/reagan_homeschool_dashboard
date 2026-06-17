@@ -15,7 +15,13 @@ export type WorksheetItemKind =
   | "long" // multi-line written answer
   | "mc" // multiple choice (pick one of `choices`)
   | "passage" // a reading passage to display (no answer field)
-  | "prompt"; // a writing prompt with `lines` of space
+  | "prompt" // a writing prompt with `lines` of space
+  | "matching" // two-column "draw a line" matching (left `pairs[].left`, right shuffled)
+  | "scramble" // unscramble letters -> blank answer line (`prompt` holds the scrambled letters)
+  | "fillblank"; // fill-in-the-blank sentence; blanks marked with "____" in `prompt`
+
+/** A single left/right pair for a matching item. */
+export type MatchPair = { left: string; right: string };
 
 export type WorksheetItem = {
   /** stable id within the worksheet, e.g. "q1" */
@@ -27,6 +33,8 @@ export type WorksheetItem = {
   choices?: string[];
   /** for kind="long"/"prompt": how many writing lines to show (default 3) */
   lines?: number;
+  /** for kind="matching": the correct left->right pairs (right column is shuffled for display) */
+  pairs?: MatchPair[];
   /** optional teacher answer key (never shown to Reagan; used for grading/PDF key) */
   answer?: string;
 };
@@ -35,6 +43,8 @@ export type WorksheetSection = {
   heading?: string;
   /** short kid-friendly instructions for this section */
   instructions?: string;
+  /** optional WORD BANK words rendered in a boxed list above the items */
+  wordBank?: string[];
   items: WorksheetItem[];
 };
 

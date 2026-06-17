@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import type { KiwiCostume } from "@shared/kiwiCharacter";
 
 // Kiwi's core animation poses (stored on Manus storage CDN)
 export const KIWI_POSES = {
@@ -57,7 +58,38 @@ interface KiwiSpriteProps {
   className?: string;
   onClick?: () => void;
   ariaLabel?: string;
+  /** Optional costume overlay (jersey, lab coat, party hat, holiday hats...). */
+  costume?: KiwiCostume;
 }
+
+/**
+ * Emoji-based costume overlays. Each costume renders one or two emoji glyphs
+ * positioned over the sprite (hat on top, prop to the side). Pure CSS/emoji so
+ * we never have to regenerate the pose art. `top`/`left` are fractions of the
+ * sprite box; `size` is a fraction of the sprite width.
+ */
+type CostumeGlyph = { glyph: string; top: number; left: number; size: number; rotate?: number };
+const COSTUME_GLYPHS: Partial<Record<KiwiCostume, CostumeGlyph[]>> = {
+  jersey:     [{ glyph: "\u{1F455}", top: 0.5, left: 0.28, size: 0.5 }, { glyph: "\u26BD", top: 0.7, left: 0.62, size: 0.34 }],
+  labcoat:    [{ glyph: "\u{1F97C}", top: 0.46, left: 0.26, size: 0.52 }, { glyph: "\u{1FA7A}", top: 0.18, left: 0.6, size: 0.3 }],
+  cast:       [{ glyph: "\u{1FA79}", top: 0.55, left: 0.55, size: 0.4, rotate: 20 }],
+  swim:       [{ glyph: "\u{1F97D}", top: 0.16, left: 0.24, size: 0.5 }],
+  partyhat:   [{ glyph: "\u{1F389}", top: -0.05, left: 0.3, size: 0.46 }],
+  vacation:   [{ glyph: "\u{1F576}\uFE0F", top: 0.18, left: 0.24, size: 0.5 }, { glyph: "\u{1F9F3}", top: 0.62, left: 0.66, size: 0.36 }],
+  showfan:    [{ glyph: "\u{1F4FA}", top: 0.5, left: 0.6, size: 0.36 }, { glyph: "\u{1F38C}", top: 0.05, left: 0.62, size: 0.34 }],
+  minecraft:  [{ glyph: "\u{1F7E9}", top: 0.1, left: 0.3, size: 0.4 }, { glyph: "\u26CF\uFE0F", top: 0.55, left: 0.64, size: 0.36 }],
+  roblox:     [{ glyph: "\u{1F576}\uFE0F", top: 0.18, left: 0.26, size: 0.46 }, { glyph: "\u{1F7E5}", top: 0.04, left: 0.3, size: 0.32 }],
+  hoop:       [{ glyph: "\u2B55", top: 0.42, left: 0.18, size: 0.66 }],
+  cleaning:   [{ glyph: "\u{1F9F9}", top: 0.3, left: 0.66, size: 0.46 }, { glyph: "\u{1F9FC}", top: 0.62, left: 0.2, size: 0.32 }],
+  santa:      [{ glyph: "\u{1F385}", top: -0.04, left: 0.3, size: 0.44 }],
+  witch:      [{ glyph: "\u{1F9D9}\u200D\u2640\uFE0F", top: -0.06, left: 0.3, size: 0.44 }],
+  bunny:      [{ glyph: "\u{1F430}", top: -0.02, left: 0.32, size: 0.4 }],
+  leprechaun: [{ glyph: "\u{1F340}", top: 0.0, left: 0.34, size: 0.38 }, { glyph: "\u{1F3A9}", top: -0.08, left: 0.28, size: 0.42 }],
+  pilgrim:    [{ glyph: "\u{1F983}", top: 0.0, left: 0.32, size: 0.42 }],
+  "turkey-day": [{ glyph: "\u{1F983}", top: 0.0, left: 0.32, size: 0.42 }],
+  firework:   [{ glyph: "\u{1F386}", top: -0.05, left: 0.3, size: 0.46 }],
+  heart:      [{ glyph: "\u2764\uFE0F", top: 0.0, left: 0.34, size: 0.4 }],
+};
 
 /**
  * KiwiSprite — the animated parakeet companion.
@@ -75,6 +107,7 @@ export default function KiwiSprite({
   className = "",
   onClick,
   ariaLabel = "Kiwi the parakeet",
+  costume = "none",
 }: KiwiSpriteProps) {
   const [reduced, setReduced] = useState(false);
   // Track which activity poses have been seen (lazy-load them)
@@ -130,6 +163,25 @@ export default function KiwiSprite({
               filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.25))",
             }}
           />
+        ))}
+        {/* Costume overlay — emoji glyphs layered over the sprite. Hidden while sleeping. */}
+        {costume && costume !== "none" && pose !== "sleep" && (COSTUME_GLYPHS[costume] ?? []).map((g, i) => (
+          <span
+            key={`costume-${costume}-${i}`}
+            aria-hidden
+            className="absolute pointer-events-none select-none"
+            style={{
+              top: `${g.top * 100}%`,
+              left: `${g.left * 100}%`,
+              fontSize: size * g.size,
+              lineHeight: 1,
+              transform: g.rotate ? `rotate(${g.rotate}deg)` : undefined,
+              filter: "drop-shadow(0 2px 3px rgba(0,0,0,0.3))",
+              zIndex: 5,
+            }}
+          >
+            {g.glyph}
+          </span>
         ))}
         {/* Blink overlay — a translucent band that sweeps across eyes occasionally */}
         {effectiveAnimate && pose !== "sleep" && pose !== "hammock" && (

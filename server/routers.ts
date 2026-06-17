@@ -3867,6 +3867,89 @@ export const appRouter = router({
           } catch { /* best-effort */ }
         })();
       }
+      // Auto-award coins for EVERYTHING Reagan does: per-assignment coins plus
+      // start-on-time and full-day bonuses. Positive-only + idempotent, so a
+      // re-submit never double-pays. Synchronous so we can return the breakdown
+      // and show it in the kid's success toast.
+      let coins = { assignment: 0, onTime: 0, fullDay: 0, total: 0 };
+      if (submissionId) {
+        try {
+          coins = await db.awardCoinsForTurnIn({
+            submissionId,
+            blockId: input.blockId,
+            label: input.readingCheckmark
+              ? "Finished reading"
+              : (input.title ?? "Finished an assignment"),
+          });
+        } catch { /* best-effort */ }
+      }
+      return { ...(row as any), coins };
+    }),
+    /**
+     * createExtra — block-less "Something I did on my own" turn-in.
+     * Reagan can submit extra / outside-of-plan work (a drawing, a project
+     * photo, something she read or built) that isn't tied to any scheduled
+     * block. Stored with blockId = null and tagged [extra=1] in adultNotes so
+     * the Adult Library + analytics can surface it as off-plan / bonus work.
+     * Awards a small coin bonus to keep it encouraging.
+     */
+    createExtra: publicProcedure.input(z.object({
+      mode: z.enum(["draw","photo","typed"]),
+      title: z.string().min(1).max(200),
+      subjectSlug: z.string().optional(),
+      answersText: z.string().optional(),
+      strokes: z.any().optional(),
+      fileKey: z.string().optional(),
+      fileUrl: z.string().optional(),
+      kidDifficulty: z.enum(["easy","just_right","tricky","really_hard"]).optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const tags: string[] = ["extra=1"];
+      if (input.kidDifficulty) tags.push(`difficulty=${input.kidDifficulty}`);
+      const adultNotes = `[${tags.join(";")}]`;
+      const row = await db.createAssignmentSubmission({
+        blockId: null,
+        subjectSlug: input.subjectSlug,
+        title: input.title.trim(),
+        submissionType: input.mode === "typed" ? "text" : input.mode === "photo" ? "photo" : "file",
+        contentText: input.answersText,
+        fileKey: input.fileKey,
+        fileUrl: input.fileUrl,
+        adultNotes,
+        kidDifficulty: input.kidDifficulty,
+        readingOnly: false,
+      } as any);
+      // Best-effort: nudge curriculum + award a small bonus, mirror to Drive.
+      try {
+        await db.bumpFromSubmission({
+          subjectSlug: input.subjectSlug ?? null,
+          blockTitle: input.title ?? null,
+          kidDifficulty: input.kidDifficulty ?? null,
+        });
+      } catch { /* best-effort */ }
+      try {
+        const uid = (ctx as any).user?.id ?? null;
+        await db.awardExtraWorkCoins(uid, 3, `Extra work: ${input.title.trim().slice(0, 60)}`);
+      } catch { /* best-effort */ }
+      const submissionId: number | undefined = (row as any)?.id;
+      const fileUrl: string | undefined = (row as any)?.fileUrl ?? input.fileUrl;
+      const fileKey: string | undefined = (row as any)?.fileKey ?? input.fileKey;
+      if (submissionId && fileKey && fileUrl) {
+        void (async () => {
+          try {
+            const today = new Date().toISOString().slice(0, 10);
+            const ym = today.slice(0, 7);
+            const safeTitle = input.title.replace(/[^A-Za-z0-9]+/g, "_").slice(0, 60);
+            await (db as any).enqueueDrivePush?.({
+              fileKey,
+              fileUrl,
+              fileName: `${today} - EXTRA - ${safeTitle} - submission_${submissionId}`,
+              mimeType: null,
+              targetFolder: "finished_work" as any,
+              targetSubpath: ym,
+            } as any);
+          } catch { /* best-effort */ }
+        })();
+      }
       return row;
     }),
     upload: publicProcedure.input(z.object({ dataUrl: z.string(), fileName: z.string() })).mutation(async ({ input }) => {
@@ -3877,6 +3960,47 @@ export const appRouter = router({
       const buf = Buffer.from(m[2], "base64");
       const key = `assignments/${Date.now()}-${input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
       return storagePut(key, buf, mime);
+    }),
+    /**
+     * setDayBonus — adult end-of-day concentration + attitude bonus.
+     * Each rating 0..3 → coins (up to +6/day). Re-runnable: only ever adds the
+     * positive difference, never subtracts. Defaults date to today (local).
+     */
+    setDayBonus: publicProcedure.input(z.object({
+      date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+      concentration: z.number().int().min(0).max(3),
+      attitude: z.number().int().min(0).max(3),
+    })).mutation(async ({ input, ctx }) => {
+      const date = input.date ?? new Date().toISOString().slice(0, 10);
+      const uid = (ctx as any).user?.id ?? null;
+      const awarded = await db.awardDayBonus({
+        userId: uid,
+        date,
+        concentration: input.concentration,
+        attitude: input.attitude,
+      });
+      return { ok: true, awarded };
+    }),
+    /**
+     * grantCoins — adult manual "+Coins" button (Mom / Grandma). Positive only.
+     * Optional photo / file should already be uploaded via submissions.upload;
+     * pass its URL as attachmentUrl so it shows in coin history.
+     */
+    grantCoins: publicProcedure.input(z.object({
+      amount: z.number().int().min(1).max(200),
+      reason: z.string().min(1).max(120),
+      attachmentUrl: z.string().optional(),
+      grantedByName: z.string().max(40).optional(),
+    })).mutation(async ({ input, ctx }) => {
+      const uid = (ctx as any).user?.id ?? null;
+      const awarded = await db.awardManualCoins({
+        userId: uid,
+        amount: input.amount,
+        reason: input.reason,
+        attachmentUrl: input.attachmentUrl ?? null,
+        grantedByName: input.grantedByName ?? null,
+      });
+      return { ok: true, awarded };
     }),
     autoGrade: publicProcedure.input(z.object({ submissionId: z.number() })).mutation(async ({ input }) => {
       // Pull submission + answer key + answers

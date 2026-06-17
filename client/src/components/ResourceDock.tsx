@@ -30,7 +30,8 @@ export default function ResourceDock() {
   return (
     <>
       <div
-        className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 flex flex-row gap-2 px-2 py-1 rounded-full bg-background/70 backdrop-blur border shadow-lg no-print"
+        data-testid="resource-dock"
+        className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 flex flex-row gap-1.5 px-2.5 py-1.5 rounded-2xl bg-background/90 backdrop-blur border-2 border-amber-200/70 shadow-xl no-print"
         style={{ pointerEvents: "auto" }}
       >
         <DockBtn onClick={() => setNotebookOpen(true)} label="Notebook" emoji="📝" />
@@ -62,11 +63,12 @@ function DockBtn({ onClick, label, emoji }: { onClick: () => void; label: string
   return (
     <button
       onClick={onClick}
-      className="w-10 h-10 rounded-full bg-background border flex items-center justify-center text-lg hover:scale-110 transition"
+      className="flex flex-col items-center justify-center gap-0.5 px-2.5 py-1 rounded-xl bg-background border hover:bg-amber-50 hover:border-amber-300 hover:scale-105 transition select-none"
       title={label}
       aria-label={label}
     >
-      {emoji}
+      <span className="text-lg leading-none">{emoji}</span>
+      <span className="text-[10px] font-semibold text-muted-foreground leading-none">{label}</span>
     </button>
   );
 }

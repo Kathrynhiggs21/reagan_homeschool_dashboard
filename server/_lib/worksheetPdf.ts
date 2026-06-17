@@ -1,363 +1,567 @@
 /**
- * 2026-06-17 — Colorful, illustrated worksheet PDF renderer (v2).
+ * 2026-06-17 (v5) — Colorful "Summer Adventure" worksheet PDF renderer.
  *
- * Turns a `WorksheetContent` (the same structure Reagan fills in online) into a
- * bright, kid-friendly printable that matches the reference worksheets Katy
- * shared: a colored title banner with a friendly pencil mascot + confetti, a
- * Name/Date box, per-section colored header "pills" sitting on matching
- * bordered cards, themed answer boxes / multiple-choice bubbles, a
- * "Skills Covered" footer ribbon, and an encouraging mascot footer.
+ * Matches the look Katy approved (the bright, kid-friendly packet — NOT the
+ * plain teacher handout). Each page carries:
+ *   - a big rounded GRADIENT header BANNER with the grad-cap Kiwi mascot, a
+ *     rounded display title + italic subtitle, sparkle stars, and a white
+ *     dashed Name / Date box on the right;
+ *   - a soft pale-yellow rounded INTRO ribbon (first page only);
+ *   - rounded gradient PART pills per section;
+ *   - rounded answer boxes, circle multiple-choice bubbles, ruled lines;
+ *   - a rounded footer pill ("Reagan · Summer Adventure · keep shining!") and
+ *     "Page X of N".
  *
- * PAGE LAYOUT RULE (Katy, 2026-06-17): each *section* (a block's assignment /
- * worksheet) starts on its OWN page. A long section simply flows onto extra
- * pages — but two different sections never share a page. The optional answer
- * key always lands on its own fresh page(s) at the end.
+ * COLOR PER SUBJECT (Katy): the banner gradient, PART pills, chips and footer
+ * tint are all driven by the subject — Math=indigo/purple, ELA=coral,
+ * Science=green, Social=blue, default=teal.
  *
- * Everything is drawn with pdfkit vector primitives (rounded rects, fills,
- * text, simple drawn shapes) so it renders in the Node-only deploy runtime
- * with no headless browser / rasterizer dependency.
+ * PAGE RULE: each section/assignment starts on its OWN page; long sections flow
+ * onto continuation pages. The answer key is a SEPARATE document.
  *
- * Reuses `cleanForPdf` from agendaPdf.ts so glyph handling matches the rest of
- * the printables.
+ * Drawn entirely with pdfkit vector primitives + bundled TTF fonts
+ * (Fredoka/Nunito) so it renders in the Node-only deploy runtime.
  */
 import PDFDocument from "pdfkit";
 import { createHash } from "node:crypto";
+import { readFileSync, existsSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { storagePut } from "../storage";
 import { cleanForPdf } from "./agendaPdf";
-import type { WorksheetContent, WorksheetItem } from "@shared/worksheetTypes";
+import type { WorksheetContent, WorksheetItem, WorksheetSection } from "@shared/worksheetTypes";
+
+// ---- Brand assets (fonts + mascot logo) -----------------------------------
+// __dirname does not exist under prod ESM. Recover it from import.meta.url,
+// falling back to the CJS global (test runner) or cwd.
+let __thisDir: string;
+try {
+  const url = (typeof import.meta !== "undefined" && (import.meta as any)?.url) || null;
+  __thisDir = url ? dirname(fileURLToPath(url)) : (typeof __dirname !== "undefined" ? __dirname : process.cwd());
+} catch {
+  __thisDir = typeof __dirname !== "undefined" ? __dirname : process.cwd();
+}
+const ASSET_CANDIDATES = [
+  join(__thisDir, "_assets"),
+  join(__thisDir, "..", "_assets"),
+  join(process.cwd(), "server", "_assets"),
+  join(process.cwd(), "_assets"),
+];
+function assetPath(name: string): string | null {
+  for (const dir of ASSET_CANDIDATES) {
+    const p = join(dir, name);
+    if (existsSync(p)) return p;
+  }
+  return null;
+}
+let BRAND_FONTS_OK = false;
+let KIWI_LOGO: Buffer | null = null;
+function loadBrand() {
+  if (KIWI_LOGO === null) {
+    const lp = assetPath("kiwi_logo.png");
+    if (lp) { try { KIWI_LOGO = readFileSync(lp); } catch { /* ignore */ } }
+  }
+}
+function registerBrandFonts(doc: PDFKit.PDFDocument) {
+  try {
+    const map: Array<[string, string]> = [
+      ["Fredoka-SemiBold", "Fredoka-SemiBold.ttf"],
+      ["Fredoka-Medium", "Fredoka-Medium.ttf"],
+      ["Nunito", "Nunito-Regular.ttf"],
+      ["Nunito-Bold", "Nunito-Bold.ttf"],
+      ["Nunito-ExtraBold", "Nunito-ExtraBold.ttf"],
+    ];
+    let ok = true;
+    for (const [name, file] of map) {
+      const fp = assetPath(file);
+      if (fp) doc.registerFont(name, fp); else ok = false;
+    }
+    BRAND_FONTS_OK = ok;
+  } catch {
+    BRAND_FONTS_OK = false;
+  }
+  if (BRAND_FONTS_OK) {
+    F_TITLE = "Fredoka-SemiBold";
+    F_DISPLAY = "Fredoka-Medium";
+    F_H = "Nunito-ExtraBold";
+    F_BODY = "Nunito";
+    F_BODY_B = "Nunito-Bold";
+    F_IT = "Nunito"; // italics simulated via oblique skew where needed; keep upright
+  } else {
+    F_TITLE = "Times-Bold";
+    F_DISPLAY = "Helvetica-Bold";
+    F_H = "Helvetica-Bold";
+    F_BODY = "Helvetica";
+    F_BODY_B = "Helvetica-Bold";
+    F_IT = "Helvetica-Oblique";
+  }
+}
 
 // ---- Page geometry ---------------------------------------------------------
+const PAGE_PT = 612; // LETTER width
 const MARGIN = 44;
-const PAGE_W = 612 - MARGIN * 2; // LETTER width (612pt) minus margins => 524
+const PAGE_W = PAGE_PT - MARGIN * 2;
 const CONTENT_LEFT = MARGIN;
 const CONTENT_RIGHT = MARGIN + PAGE_W;
+const HEADER_BAND_INTRO = 188; // banner(84) + chip + intro ribbon space on page 1
+const HEADER_BAND_NOINTRO = 150; // banner(84) + chip, no ribbon
+const HEADER_BAND_CONT = 78; // smaller banner on continuation pages
+const FOOTER_BAND = 40;
+/** Top content margin for the FIRST page, depending on whether an intro shows. */
+function firstTopMargin() { return MARGIN + (CH?.intro ? HEADER_BAND_INTRO : HEADER_BAND_NOINTRO); }
+
+// ---- Fonts (assigned by registerBrandFonts) --------------------------------
+let F_TITLE = "Times-Bold";
+let F_DISPLAY = "Helvetica-Bold";
+let F_H = "Helvetica-Bold";
+let F_BODY = "Helvetica";
+let F_BODY_B = "Helvetica-Bold";
+let F_IT = "Helvetica-Oblique";
 
 // ---- Palette ---------------------------------------------------------------
-// A rotating set of cheerful section colors (header pill bg + card border),
-// mirroring the bright PART 1..N headers in the reference worksheet.
-const SECTION_COLORS = [
-  { pill: "#7c3aed", border: "#c4b5fd", tint: "#f5f1ff" }, // purple
-  { pill: "#2563eb", border: "#bfdbfe", tint: "#eef4ff" }, // blue
-  { pill: "#16a34a", border: "#bbf7d0", tint: "#eefcf2" }, // green
-  { pill: "#ea580c", border: "#fed7aa", tint: "#fff4ea" }, // orange
-  { pill: "#0d9488", border: "#99f6e4", tint: "#ecfdfa" }, // teal
-  { pill: "#db2777", border: "#fbcfe8", tint: "#fff0f7" }, // pink
-];
-const INK = "#1f2640";
-const INK_SOFT = "#4b5168";
-const BANNER_A = "#6366f1";
-const BANNER_B = "#8b5cf6";
-const BOX_STROKE = "#94a3b8";
-const STAR_COLORS = ["#fbbf24", "#f472b6", "#60a5fa", "#34d399", "#a78bfa"];
+const INK = "#27303f";
+const INK_SOFT = "#5b6472";
+const RULE = "#d6dbe4";
+const LINE = "#9aa3b2";
 
-// ===========================================================================
-//  Small vector helpers
-// ===========================================================================
-function roundedFill(
-  doc: PDFKit.PDFDocument,
-  x: number, y: number, w: number, h: number, r: number,
-  fill: string, stroke?: string, lineWidth = 1,
-) {
-  doc.save().roundedRect(x, y, w, h, r);
-  if (stroke) doc.fillAndStroke(fill, stroke);
-  else doc.fill(fill);
-  if (stroke) doc.lineWidth(lineWidth);
-  doc.restore();
+// ---- Subject themes (color per subject) ------------------------------------
+type Theme = {
+  tag: string;
+  g1: string; // banner gradient start
+  g2: string; // banner gradient end
+  accent: string; // pill / chip / heading color
+  boxFill: string; // answer-box soft fill
+  boxStroke: string; // answer-box / bubble stroke
+  footer: string; // footer pill fill
+};
+const THEMES: Record<string, Theme> = {
+  math: { tag: "MATH", g1: "#5b6ef0", g2: "#8b5cf6", accent: "#6d28d9", boxFill: "#eef0ff", boxStroke: "#b9c0f7", footer: "#dfe4ff" },
+  ela: { tag: "ELA", g1: "#fb7a4b", g2: "#f4538a", accent: "#c2410c", boxFill: "#fff0e8", boxStroke: "#f6b79a", footer: "#ffe6d8" },
+  reading: { tag: "READING", g1: "#fb7a4b", g2: "#f4538a", accent: "#c2410c", boxFill: "#fff0e8", boxStroke: "#f6b79a", footer: "#ffe6d8" },
+  writing: { tag: "WRITING", g1: "#fb7a4b", g2: "#f4538a", accent: "#c2410c", boxFill: "#fff0e8", boxStroke: "#f6b79a", footer: "#ffe6d8" },
+  language: { tag: "ELA", g1: "#fb7a4b", g2: "#f4538a", accent: "#c2410c", boxFill: "#fff0e8", boxStroke: "#f6b79a", footer: "#ffe6d8" },
+  science: { tag: "SCIENCE", g1: "#34d399", g2: "#0ea5b7", accent: "#0f766e", boxFill: "#e7f8f1", boxStroke: "#9fe3cd", footer: "#d8f6ec" },
+  social: { tag: "SOCIAL", g1: "#38bdf8", g2: "#4f7ff5", accent: "#1d4ed8", boxFill: "#e8f2ff", boxStroke: "#a8cdf6", footer: "#dcecff" },
+  history: { tag: "HISTORY", g1: "#38bdf8", g2: "#4f7ff5", accent: "#1d4ed8", boxFill: "#e8f2ff", boxStroke: "#a8cdf6", footer: "#dcecff" },
+  geography: { tag: "GEOGRAPHY", g1: "#38bdf8", g2: "#4f7ff5", accent: "#1d4ed8", boxFill: "#e8f2ff", boxStroke: "#a8cdf6", footer: "#dcecff" },
+  bible: { tag: "BIBLE", g1: "#f59e0b", g2: "#f0598a", accent: "#b45309", boxFill: "#fff3df", boxStroke: "#f3cd86", footer: "#ffeecb" },
+};
+const DEFAULT_THEME: Theme = { tag: "LEARN", g1: "#2dd4bf", g2: "#3b82f6", accent: "#0f766e", boxFill: "#e7f6f4", boxStroke: "#9bdcd3", footer: "#d9f3ef" };
+
+function themeFor(slug?: string | null): Theme {
+  if (!slug) return DEFAULT_THEME;
+  const s = slug.toLowerCase();
+  for (const key of Object.keys(THEMES)) if (s.includes(key)) return THEMES[key];
+  return DEFAULT_THEME;
 }
 
-/** A small 5-point star (decorative confetti). */
-function star(doc: PDFKit.PDFDocument, cx: number, cy: number, R: number, color: string) {
-  const pts: [number, number][] = [];
-  for (let i = 0; i < 5; i++) {
-    const aOut = -Math.PI / 2 + (i * 2 * Math.PI) / 5;
-    const aIn = aOut + Math.PI / 5;
-    pts.push([cx + Math.cos(aOut) * R, cy + Math.sin(aOut) * R]);
-    pts.push([cx + Math.cos(aIn) * R * 0.45, cy + Math.sin(aIn) * R * 0.45]);
-  }
-  doc.save().polygon(...pts).fill(color).restore();
-}
+// ===========================================================================
+//  Module state for per-page chrome
+// ===========================================================================
+type Chrome = {
+  title: string;
+  subtitle: string;
+  theme: Theme;
+  dateLabel?: string;
+  footerNote: string;
+  footerPill: string;
+  intro?: string;
+  isKey: boolean;
+};
+let CH: Chrome;
 
-/** A friendly cartoon pencil mascot (drawn), tucked into the banner. */
-function pencilMascot(doc: PDFKit.PDFDocument, x: number, y: number, h: number) {
-  const w = h * 0.42;
+// ---- Vector helpers --------------------------------------------------------
+function rrect(doc: PDFKit.PDFDocument, x: number, y: number, w: number, h: number, r: number, fill?: string, stroke?: string, lw = 1) {
   doc.save();
-  // body
-  roundedFill(doc, x, y + h * 0.18, w, h * 0.66, 4, "#fbbf24");
-  // tip
-  doc.polygon([x, y + h * 0.84], [x + w, y + h * 0.84], [x + w / 2, y + h]).fill("#f59e0b");
-  doc.polygon([x + w * 0.34, y + h * 0.95], [x + w * 0.66, y + h * 0.95], [x + w / 2, y + h]).fill("#1f2937");
-  // eraser
-  roundedFill(doc, x, y, w, h * 0.2, 3, "#f472b6");
-  // face
-  doc.circle(x + w * 0.34, y + h * 0.42, 1.7).fill("#1f2937");
-  doc.circle(x + w * 0.66, y + h * 0.42, 1.7).fill("#1f2937");
-  doc.save().lineWidth(1.1).strokeColor("#1f2937")
-    .moveTo(x + w * 0.32, y + h * 0.54).bezierCurveTo(
-      x + w * 0.42, y + h * 0.6, x + w * 0.58, y + h * 0.6, x + w * 0.68, y + h * 0.54,
-    ).stroke().restore();
+  doc.roundedRect(x, y, w, h, r);
+  if (fill && stroke) doc.lineWidth(lw).fillAndStroke(fill, stroke);
+  else if (fill) doc.fill(fill);
+  else if (stroke) doc.lineWidth(lw).stroke(stroke);
   doc.restore();
 }
 
+/** Horizontal linear-gradient fill inside a rounded rect. */
+function gradientRoundedRect(doc: PDFKit.PDFDocument, x: number, y: number, w: number, h: number, r: number, c1: string, c2: string) {
+  doc.save();
+  const grad = doc.linearGradient(x, y, x + w, y);
+  grad.stop(0, c1).stop(1, c2);
+  doc.roundedRect(x, y, w, h, r).fill(grad);
+  doc.restore();
+}
+
+/** Draw a small 4-point sparkle star. */
+function sparkle(doc: PDFKit.PDFDocument, cx: number, cy: number, s: number, color: string, opacity = 0.85) {
+  doc.save().opacity(opacity).fillColor(color);
+  doc.moveTo(cx, cy - s)
+    .lineTo(cx + s * 0.28, cy - s * 0.28)
+    .lineTo(cx + s, cy)
+    .lineTo(cx + s * 0.28, cy + s * 0.28)
+    .lineTo(cx, cy + s)
+    .lineTo(cx - s * 0.28, cy + s * 0.28)
+    .lineTo(cx - s, cy)
+    .lineTo(cx - s * 0.28, cy - s * 0.28)
+    .closePath().fill();
+  doc.restore();
+}
+
+/** Dashed rounded rectangle (for the Name/Date box). */
+function dashedRoundedRect(doc: PDFKit.PDFDocument, x: number, y: number, w: number, h: number, r: number, color: string, lw = 1) {
+  doc.save().lineWidth(lw).strokeColor(color).dash(3, { space: 2 }).roundedRect(x, y, w, h, r).stroke().undash().restore();
+}
+
+/** Deterministic shuffle (stable) for matching right-column. */
+function stableShuffle<T>(arr: T[]): T[] {
+  const a = arr.slice();
+  let seed = a.length * 2654435761;
+  for (let i = a.length - 1; i > 0; i--) {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+    const j = seed % (i + 1);
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ---- Content cursor / paging ----------------------------------------------
+function bottomLimit(doc: PDFKit.PDFDocument) {
+  return doc.page.height - (MARGIN + FOOTER_BAND);
+}
+function flowPage(doc: PDFKit.PDFDocument) { doc.addPage(); }
+function sectionPage(doc: PDFKit.PDFDocument) { doc.addPage(); }
 function ensureSpace(doc: PDFKit.PDFDocument, needed: number) {
-  const bottom = doc.page.height - doc.page.margins.bottom - 40; // leave room for footer
-  if (doc.y + needed > bottom) {
-    addContentPage(doc);
-  }
-}
-
-/** A faint footer strip drawn on every content page. */
-function pageFooter(doc: PDFKit.PDFDocument, footerNote: string) {
-  const y = doc.page.height - doc.page.margins.bottom - 18;
-  doc.save();
-  roundedFill(doc, CONTENT_LEFT, y, PAGE_W, 16, 8, "#eef2ff");
-  star(doc, CONTENT_LEFT + 12, y + 8, 4, "#fbbf24");
-  doc.fillColor(INK_SOFT).font("Helvetica-Oblique").fontSize(8)
-    .text(cleanForPdf(footerNote), CONTENT_LEFT + 22, y + 4, { width: PAGE_W - 30, lineBreak: false });
-  doc.restore();
-}
-
-let CURRENT_FOOTER = "Keep going — you're doing great!";
-function addContentPage(doc: PDFKit.PDFDocument) {
-  doc.addPage();
-  doc.y = doc.page.margins.top;
-  pageFooter(doc, CURRENT_FOOTER);
-  doc.y = doc.page.margins.top;
+  if (doc.y + needed > bottomLimit(doc)) flowPage(doc);
 }
 
 // ===========================================================================
-//  Banner / cover
+//  Section header (gradient PART pill) + word bank
 // ===========================================================================
-function renderBanner(
-  doc: PDFKit.PDFDocument,
-  content: WorksheetContent,
-  opts: { dateLabel?: string },
-) {
-  const top = doc.page.margins.top;
-  const bannerH = 70;
-  // gradient-ish banner (two stacked rounded rects)
-  roundedFill(doc, CONTENT_LEFT, top, PAGE_W, bannerH, 14, BANNER_A);
-  roundedFill(doc, CONTENT_LEFT, top, PAGE_W, bannerH * 0.55, 14, BANNER_B);
-  // confetti
-  for (let i = 0; i < 7; i++) {
-    star(doc, CONTENT_LEFT + 130 + i * 52, top + 12 + (i % 2) * 40, 4 + (i % 2), STAR_COLORS[i % STAR_COLORS.length]);
+function renderSectionHeader(doc: PDFKit.PDFDocument, idx: number, sec: WorksheetSection, theme: Theme) {
+  const heading = (sec.heading?.trim() || `Part ${idx + 1}`).toUpperCase();
+  doc.font(F_H).fontSize(12.5);
+  const cleanHeading = heading.replace(/^PART\s*\d+\s*/i, "").replace(/^[\s:.\u2013\u2014\-]+/, "");
+  const label = cleanForPdf(`PART ${idx + 1}: ${cleanHeading}`);
+  const textW = Math.min(PAGE_W - 24, doc.widthOfString(label) + 30);
+  const pillH = 26;
+  const y = doc.y;
+  gradientRoundedRect(doc, CONTENT_LEFT, y, textW, pillH, 13, theme.g1, theme.g2);
+  doc.fillColor("#ffffff").font(F_H).fontSize(12).text(label, CONTENT_LEFT + 15, y + 6, { width: textW - 24, lineBreak: false });
+  doc.y = y + pillH + 6;
+
+  if (sec.instructions) {
+    doc.fillColor(INK_SOFT).font(F_IT).fontSize(9.8)
+      .text(cleanForPdf(sec.instructions), CONTENT_LEFT + 2, doc.y, { width: PAGE_W - 4, oblique: BRAND_FONTS_OK ? 8 : 0 } as any);
+    doc.moveDown(0.3);
   }
-  // mascot
-  pencilMascot(doc, CONTENT_LEFT + 14, top + 8, bannerH - 16);
-  // title
-  doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(20)
-    .text(cleanForPdf(content.title), CONTENT_LEFT + 70, top + 14, { width: PAGE_W - 200, lineBreak: true });
-  doc.fillColor("#e9e6ff").font("Helvetica-Oblique").fontSize(10)
-    .text("Let's learn and have fun!", CONTENT_LEFT + 70, top + 44, { width: PAGE_W - 200 });
 
-  // Name / Date box (top-right, dashed)
-  const nbW = 150, nbH = 46, nbX = CONTENT_RIGHT - nbW - 8, nbY = top + 10;
-  doc.save().lineWidth(1).dash(3, { space: 2 }).roundedRect(nbX, nbY, nbW, nbH, 8).stroke("#ffffff").undash().restore();
-  doc.fillColor("#ffffff").font("Helvetica").fontSize(9)
-    .text("Name: ______________", nbX + 8, nbY + 9, { width: nbW - 14 })
-    .text("Date: _______________", nbX + 8, nbY + 26, { width: nbW - 14 });
-
-  doc.y = top + bannerH + 12;
-
-  // meta + intro
-  const meta: string[] = [];
-  if (opts.dateLabel) meta.push(opts.dateLabel);
-  if (content.bookRef) meta.push(String(content.bookRef));
-  if (meta.length) {
-    doc.fillColor(INK_SOFT).font("Helvetica").fontSize(9).text(cleanForPdf(meta.join("   •   ")), CONTENT_LEFT, doc.y, { width: PAGE_W });
-    doc.moveDown(0.2);
-  }
-  if (content.intro) {
-    const introY = doc.y;
-    const introH = doc.heightOfString(cleanForPdf(content.intro), { width: PAGE_W - 24 }) + 14;
-    roundedFill(doc, CONTENT_LEFT, introY, PAGE_W, introH, 10, "#fffbeb", "#fde68a", 1);
-    doc.fillColor(INK).font("Helvetica-Oblique").fontSize(10)
-      .text(cleanForPdf(content.intro), CONTENT_LEFT + 12, introY + 7, { width: PAGE_W - 24 });
-    doc.y = introY + introH + 10;
+  if (sec.wordBank && sec.wordBank.length) {
+    const words = sec.wordBank.map((w) => cleanForPdf(w)).join("        ");
+    const pad = 12;
+    doc.font(F_BODY).fontSize(10);
+    const innerW = PAGE_W - pad * 2;
+    const boxH = doc.heightOfString(words, { width: innerW }) + 28;
+    ensureSpace(doc, boxH + 8);
+    const y2 = doc.y;
+    rrect(doc, CONTENT_LEFT, y2, PAGE_W, boxH, 10, "#fffdf3", "#f0d98a", 1.2);
+    doc.fillColor(theme.accent).font(F_H).fontSize(9).text("WORD BANK", CONTENT_LEFT + pad, y2 + 8);
+    doc.fillColor(INK).font(F_BODY_B).fontSize(10.5).text(words, CONTENT_LEFT + pad, y2 + 21, { width: innerW });
+    doc.y = y2 + boxH + 10;
   }
 }
 
-// ===========================================================================
-//  Items
-// ===========================================================================
-function answerLines(doc: PDFKit.PDFDocument, count: number) {
+// ---- Answer-space helpers --------------------------------------------------
+function ruledLines(doc: PDFKit.PDFDocument, count: number, indent = 26) {
   for (let i = 0; i < count; i++) {
-    ensureSpace(doc, 22);
-    const y = doc.y + 12;
-    doc.save().strokeColor("#cbd5e1").lineWidth(0.8).dash(1.5, { space: 0 })
-      .moveTo(CONTENT_LEFT + 16, y).lineTo(CONTENT_RIGHT - 8, y).stroke().undash().restore();
-    doc.y = y + 6;
+    ensureSpace(doc, 20);
+    const y = doc.y + 13;
+    doc.save().lineWidth(0.8).strokeColor(RULE).moveTo(CONTENT_LEFT + indent, y).lineTo(CONTENT_RIGHT, y).stroke().restore();
+    doc.y = y + 5;
   }
   doc.moveDown(0.2);
 }
 
-/** A small empty answer box (for short answers / equations). */
-function answerBox(doc: PDFKit.PDFDocument, atX: number, atY: number) {
-  doc.save().lineWidth(1).roundedRect(atX, atY, 46, 20, 4).stroke(BOX_STROKE).restore();
+/** A soft rounded answer box (the signature element of this style). */
+function answerBox(doc: PDFKit.PDFDocument, h: number, theme: Theme, w = PAGE_W * 0.52) {
+  ensureSpace(doc, h + 6);
+  const y = doc.y;
+  rrect(doc, CONTENT_LEFT + 26, y, w, h, 9, theme.boxFill, theme.boxStroke, 1.3);
+  doc.y = y + h + 8;
 }
 
-function renderItem(doc: PDFKit.PDFDocument, item: WorksheetItem, n: number, color: typeof SECTION_COLORS[number]) {
-  ensureSpace(doc, 60);
-  const isPassage = item.kind === "passage";
-  const label = isPassage ? "" : `${n}. `;
+// ===========================================================================
+//  Per-item rendering
+// ===========================================================================
+function numLabel(doc: PDFKit.PDFDocument, n: number, theme: Theme, y: number) {
+  doc.fillColor(theme.accent).font(F_H).fontSize(11.5).text(`${n})`, CONTENT_LEFT + 2, y, { width: 24, lineBreak: false });
+}
 
-  if (isPassage) {
-    // passage reads inside a soft tinted callout
-    const txt = cleanForPdf(item.prompt);
-    const h = doc.heightOfString(txt, { width: PAGE_W - 28 }) + 14;
-    ensureSpace(doc, h + 8);
-    const y = doc.y;
-    roundedFill(doc, CONTENT_LEFT + 4, y, PAGE_W - 8, h, 8, color.tint, color.border, 1);
-    doc.fillColor(INK).font("Helvetica-Oblique").fontSize(10).text(txt, CONTENT_LEFT + 16, y + 7, { width: PAGE_W - 28 });
-    doc.y = y + h + 6;
-    return;
-  }
-
-  // numbered prompt
-  doc.fillColor(INK).font("Helvetica").fontSize(11)
-    .text(`${label}${cleanForPdf(item.prompt)}`, CONTENT_LEFT + 6, doc.y, { width: PAGE_W - 60 });
-
+function renderItem(doc: PDFKit.PDFDocument, item: WorksheetItem, n: number, theme: Theme) {
   switch (item.kind) {
-    case "mc":
-      doc.moveDown(0.15);
-      (item.choices ?? []).forEach((c, i) => {
-        ensureSpace(doc, 18);
+    case "passage": {
+      const txt = cleanForPdf(item.prompt);
+      doc.font(F_BODY).fontSize(10.8);
+      const h = doc.heightOfString(txt, { width: PAGE_W - 28 }) + 18;
+      ensureSpace(doc, h + 6);
+      const y = doc.y;
+      rrect(doc, CONTENT_LEFT, y, PAGE_W, h, 10, "#fbfcff", theme.boxStroke, 1.2);
+      doc.fillColor(INK).font(F_BODY).fontSize(10.8).text(txt, CONTENT_LEFT + 14, y + 9, { width: PAGE_W - 28 });
+      doc.y = y + h + 8;
+      return;
+    }
+    case "matching": {
+      const pairs = item.pairs ?? [];
+      ensureSpace(doc, 28 + pairs.length * 20);
+      const y0 = doc.y;
+      numLabel(doc, n, theme, y0);
+      doc.fillColor(INK).font(F_BODY_B).fontSize(11)
+        .text(cleanForPdf(item.prompt || "Draw a line from each word to its match."), CONTENT_LEFT + 26, y0, { width: PAGE_W - 30 });
+      doc.moveDown(0.25);
+      const rights = stableShuffle(pairs.map((p) => p.right));
+      const colL = CONTENT_LEFT + 24;
+      const colR = CONTENT_LEFT + PAGE_W * 0.58;
+      for (let i = 0; i < pairs.length; i++) {
+        ensureSpace(doc, 20);
         const y = doc.y + 2;
-        // bubble
-        doc.save().lineWidth(1).circle(CONTENT_LEFT + 26, y + 5, 5).stroke(color.pill).restore();
-        doc.fillColor(INK).font("Helvetica").fontSize(10)
-          .text(`${String.fromCharCode(65 + i)})  ${cleanForPdf(c)}`, CONTENT_LEFT + 40, y, { width: PAGE_W - 60 });
+        doc.fillColor(theme.accent).font(F_H).fontSize(10.5).text(`${i + 1}.`, colL, y, { width: 16, lineBreak: false });
+        doc.fillColor(INK).font(F_BODY).text(cleanForPdf(pairs[i].left), colL + 18, y, { width: PAGE_W * 0.4 - 40 });
+        doc.save().circle(colR - 16, y + 6, 2).fill(theme.accent).restore();
+        doc.fillColor(theme.accent).font(F_H).fontSize(10.5).text(`${String.fromCharCode(97 + i)}.`, colR, y, { width: 16, lineBreak: false });
+        doc.fillColor(INK).font(F_BODY).text(cleanForPdf(rights[i]), colR + 18, y, { width: PAGE_W * 0.42 - 26 });
+        doc.y = Math.max(doc.y, y + 16);
+      }
+      doc.moveDown(0.3);
+      return;
+    }
+    case "scramble": {
+      ensureSpace(doc, 26);
+      const y = doc.y + 2;
+      numLabel(doc, n, theme, y);
+      doc.fillColor(INK).font(F_BODY_B).fontSize(12.5).text(cleanForPdf(item.prompt), CONTENT_LEFT + 26, y, { width: PAGE_W * 0.46, lineBreak: false });
+      const lineY = y + 14;
+      const arrowX = CONTENT_LEFT + PAGE_W * 0.54;
+      const ay = y + 7;
+      doc.save().lineWidth(1.3).strokeColor(theme.accent)
+        .moveTo(arrowX, ay).lineTo(arrowX + 15, ay).stroke()
+        .moveTo(arrowX + 15, ay).lineTo(arrowX + 10, ay - 4).stroke()
+        .moveTo(arrowX + 15, ay).lineTo(arrowX + 10, ay + 4).stroke()
+        .restore();
+      doc.save().lineWidth(1).strokeColor(theme.boxStroke).moveTo(arrowX + 24, lineY).lineTo(CONTENT_RIGHT, lineY).stroke().restore();
+      doc.y = lineY + 10;
+      return;
+    }
+    case "fillblank": {
+      ensureSpace(doc, 26);
+      const y = doc.y;
+      numLabel(doc, n, theme, y);
+      doc.fillColor(INK).font(F_BODY).fontSize(11.5)
+        .text(cleanForPdf(item.prompt), CONTENT_LEFT + 26, y, { width: PAGE_W - 30, lineGap: 4 });
+      doc.moveDown(0.4);
+      return;
+    }
+    case "mc": {
+      const choices = item.choices ?? [];
+      ensureSpace(doc, 30 + choices.length * 18);
+      const y = doc.y;
+      numLabel(doc, n, theme, y);
+      doc.fillColor(INK).font(F_BODY_B).fontSize(11.5)
+        .text(cleanForPdf(item.prompt), CONTENT_LEFT + 26, y, { width: PAGE_W - 30 });
+      doc.moveDown(0.2);
+      choices.forEach((c, i) => {
+        ensureSpace(doc, 18);
+        const cy = doc.y + 2;
+        doc.save().lineWidth(1.4).circle(CONTENT_LEFT + 32, cy + 6, 6).stroke(theme.boxStroke).restore();
+        doc.fillColor(theme.accent).font(F_H).fontSize(10).text(`${String.fromCharCode(97 + i)}`, CONTENT_LEFT + 28.5, cy + 2, { width: 9, lineBreak: false });
+        doc.fillColor(INK).font(F_BODY).fontSize(11).text(cleanForPdf(c), CONTENT_LEFT + 48, cy + 1, { width: PAGE_W - 72 });
+        doc.y = Math.max(doc.y, cy + 16);
       });
-      doc.moveDown(0.35);
-      break;
+      doc.moveDown(0.3);
+      return;
+    }
     case "long":
-      answerLines(doc, item.lines ?? 3);
-      break;
-    case "prompt":
-      answerLines(doc, item.lines ?? 4);
-      break;
+    case "prompt": {
+      ensureSpace(doc, 28);
+      const y = doc.y;
+      numLabel(doc, n, theme, y);
+      doc.fillColor(INK).font(F_BODY_B).fontSize(11.5)
+        .text(cleanForPdf(item.prompt), CONTENT_LEFT + 26, y, { width: PAGE_W - 30 });
+      doc.moveDown(0.15);
+      ruledLines(doc, item.lines ?? (item.kind === "prompt" ? 4 : 3));
+      return;
+    }
     case "short":
     default: {
-      // a short-answer box on the same baseline as the prompt's end
-      const y = doc.y + 4;
-      answerBox(doc, CONTENT_LEFT + 12, y);
-      doc.y = y + 26;
-      break;
+      // short answer → label + a soft rounded answer box (signature look)
+      ensureSpace(doc, 26);
+      const y = doc.y;
+      numLabel(doc, n, theme, y);
+      doc.fillColor(INK).font(F_BODY_B).fontSize(11.5)
+        .text(cleanForPdf(item.prompt), CONTENT_LEFT + 26, y, { width: PAGE_W - 30 });
+      doc.moveDown(0.15);
+      answerBox(doc, 26, theme);
+      return;
     }
   }
-  doc.moveDown(0.1);
 }
 
 // ===========================================================================
-//  Section (one per page)
+//  Page chrome — stamped ONCE PER PAGE after layout
 // ===========================================================================
-function renderSectionHeader(doc: PDFKit.PDFDocument, idx: number, heading: string, instructions: string | undefined, color: typeof SECTION_COLORS[number]) {
-  const pillLabel = `PART ${idx + 1}${heading ? ":  " + heading.toUpperCase() : ""}`;
-  const y = doc.y;
-  // Auto-size the pill: measure the wrapped text height for the available
-  // width so long headings wrap inside the pill instead of being clipped.
-  doc.font("Helvetica-Bold").fontSize(11);
-  const padX = 14, padY = 6;
-  const textW = doc.widthOfString(cleanForPdf(pillLabel));
-  const oneLineW = Math.min(PAGE_W, textW + padX * 2);
-  const innerW = oneLineW - padX * 2;
-  const textH = doc.heightOfString(cleanForPdf(pillLabel), { width: innerW });
-  const pillH = textH + padY * 2;
-  roundedFill(doc, CONTENT_LEFT, y, oneLineW, pillH, Math.min(12, pillH / 2), color.pill);
-  doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(11)
-    .text(cleanForPdf(pillLabel), CONTENT_LEFT + padX, y + padY, { width: innerW });
-  doc.y = y + pillH + 4;
-  if (instructions) {
-    doc.fillColor(INK_SOFT).font("Helvetica-Oblique").fontSize(9.5)
-      .text(cleanForPdf(instructions), CONTENT_LEFT + 4, doc.y, { width: PAGE_W - 8 });
-    doc.moveDown(0.2);
+function stampChrome(doc: PDFKit.PDFDocument) {
+  const range = doc.bufferedPageRange();
+  const total = range.count;
+  const theme = CH.theme;
+  for (let i = 0; i < total; i++) {
+    doc.switchToPage(range.start + i);
+    const W = doc.page.width;
+    const H = doc.page.height;
+    doc.page.margins = { top: 0, bottom: 0, left: 0, right: 0 };
+
+    const isFirst = i === 0;
+    const bannerH = isFirst ? 84 : 54;
+    const bx = CONTENT_LEFT, by = MARGIN - 6;
+
+    // --- gradient banner ---
+    gradientRoundedRect(doc, bx, by, PAGE_W, bannerH, 16, theme.g1, theme.g2);
+
+    // sparkles
+    sparkle(doc, bx + PAGE_W * 0.46, by + 14, 4, "#ffffff", 0.9);
+    sparkle(doc, bx + PAGE_W * 0.52, by + bannerH - 18, 3, "#ffffff", 0.7);
+    sparkle(doc, bx + PAGE_W * 0.40, by + bannerH - 12, 2.5, "#ffffff", 0.6);
+
+    // Kiwi mascot (left)
+    const logoSize = isFirst ? 70 : 44;
+    const logoY = by + (bannerH - logoSize) / 2;
+    if (KIWI_LOGO) {
+      try { doc.image(KIWI_LOGO, bx + 8, logoY, { fit: [logoSize, logoSize] }); } catch { /* ignore */ }
+    }
+    const textX = bx + (KIWI_LOGO ? logoSize + 16 : 16);
+
+    // title + subtitle — auto-fit the title to ONE line within available width
+    const titleSuffix = total > 1 && i > 0 ? "  (cont.)" : "";
+    const titleStr = cleanForPdf(CH.title + titleSuffix);
+    if (isFirst) {
+      const availW = bx + PAGE_W - 12 - 168 - 16 - textX; // up to the Name/Date box
+      let ts = 21;
+      doc.font(F_TITLE);
+      while (ts > 12 && doc.fontSize(ts).widthOfString(titleStr) > availW) ts -= 1;
+      doc.fillColor("#ffffff").font(F_TITLE).fontSize(ts)
+        .text(titleStr, textX, by + 14, { width: availW, lineBreak: false, ellipsis: true });
+      doc.fillColor("#f6f0ff").font(F_DISPLAY).fontSize(10.5)
+        .text(cleanForPdf(CH.subtitle), textX, by + 14 + ts + 5, { width: availW, lineBreak: false, ellipsis: true });
+    } else {
+      const availW = bx + PAGE_W - 12 - 168 - 16 - textX;
+      let ts = 15;
+      doc.font(F_TITLE);
+      while (ts > 10 && doc.fontSize(ts).widthOfString(titleStr) > availW) ts -= 1;
+      doc.fillColor("#ffffff").font(F_TITLE).fontSize(ts)
+        .text(titleStr, textX, by + (bannerH - ts) / 2 - 2, { width: availW, lineBreak: false, ellipsis: true });
+    }
+
+    // Name / Date dashed box (right) — bigger on first page
+    const ndW = 168, ndH = isFirst ? 52 : 36;
+    const ndX = bx + PAGE_W - ndW - 12, ndY = by + (bannerH - ndH) / 2;
+    rrect(doc, ndX, ndY, ndW, ndH, 8, "#ffffff");
+    dashedRoundedRect(doc, ndX + 3, ndY + 3, ndW - 6, ndH - 6, 6, theme.accent, 1);
+    doc.fillColor(INK).font(F_BODY_B).fontSize(isFirst ? 10 : 9);
+    doc.text("Name:", ndX + 12, ndY + (isFirst ? 10 : 7), { lineBreak: false });
+    doc.save().lineWidth(0.8).strokeColor(LINE).moveTo(ndX + 56, ndY + (isFirst ? 20 : 17)).lineTo(ndX + ndW - 12, ndY + (isFirst ? 20 : 17)).stroke().restore();
+    doc.text("Date:", ndX + 12, ndY + (isFirst ? 30 : 21), { lineBreak: false });
+    doc.save().lineWidth(0.8).strokeColor(LINE).moveTo(ndX + 56, ndY + (isFirst ? 40 : 31)).lineTo(ndX + ndW - 12, ndY + (isFirst ? 40 : 31)).stroke().restore();
+    if (CH.dateLabel) doc.fillColor(INK_SOFT).font(F_BODY).fontSize(8).text(cleanForPdf(CH.dateLabel), ndX + 58, ndY + (isFirst ? 31 : 22), { lineBreak: false });
+
+    // subject chip — sits just below the banner, left-aligned under the title
+    if (isFirst) {
+      const chipW = Math.max(54, doc.font(F_H).fontSize(8).widthOfString(theme.tag) + 22);
+      const chipH = 16, chipX = bx + 14, chipY = by + bannerH + 6;
+      rrect(doc, chipX, chipY, chipW, chipH, 8, theme.accent);
+      doc.fillColor("#ffffff").font(F_H).fontSize(8).text(theme.tag, chipX, chipY + 4.5, { width: chipW, align: "center", lineBreak: false });
+    }
+
+    // --- intro ribbon (first page only) ---
+    if (isFirst && CH.intro) {
+      doc.font(F_IT).fontSize(10);
+      const innerW = PAGE_W - 36;
+      const txt = cleanForPdf(CH.intro);
+      const rh = Math.max(30, doc.heightOfString(txt, { width: innerW }) + 16);
+      const ry = by + bannerH + 28; // below the subject chip row
+      rrect(doc, bx, ry, PAGE_W, rh, 12, "#fff6da", "#f3d98a", 1);
+      doc.fillColor("#6b5320").font(F_IT).fontSize(10)
+        .text(txt, bx + 18, ry + 8, { width: innerW, align: "center", oblique: BRAND_FONTS_OK ? 8 : 0 } as any);
+    }
+
+    // --- footer pill ---
+    const pillW = 280, pillH = 22;
+    const px = bx + (PAGE_W - pillW) / 2;
+    const py = H - MARGIN - pillH + 2;
+    rrect(doc, px, py, pillW, pillH, 11, theme.footer);
+    sparkle(doc, px + 16, py + pillH / 2, 4, theme.accent, 0.9);
+    doc.fillColor(theme.accent).font(F_BODY_B).fontSize(9.5)
+      .text(cleanForPdf(CH.footerPill), px + 26, py + 6, { width: pillW - 36, align: "center", lineBreak: false });
+    // page number bottom-right
+    doc.fillColor(INK_SOFT).font(F_H).fontSize(7.5)
+      .text(`Page ${i + 1} of ${total}`, CONTENT_RIGHT - 70, py + 7, { width: 70, align: "right", lineBreak: false });
+    // scan reminder bottom-left (student worksheet only)
+    if (!CH.isKey) {
+      doc.fillColor(INK_SOFT).font(F_BODY).fontSize(7)
+        .text(cleanForPdf(CH.footerNote), bx, py + 7, { width: 150, lineBreak: false, ellipsis: true });
+    }
   }
 }
 
-// ===========================================================================
-//  Skills-Covered ribbon (drawn once, on the last content page)
-// ===========================================================================
-function renderSkillsRibbon(doc: PDFKit.PDFDocument, content: WorksheetContent) {
-  const skills = content.sections.map((s) => s.heading).filter(Boolean) as string[];
-  if (!skills.length) return;
-  ensureSpace(doc, 56);
-  const y = doc.y + 6;
-  roundedFill(doc, CONTENT_LEFT, y, PAGE_W, 40, 10, "#eef2ff", "#c7d2fe", 1);
-  doc.fillColor(BANNER_A).font("Helvetica-Bold").fontSize(9).text("SKILLS COVERED", CONTENT_LEFT + 12, y + 7);
-  doc.fillColor(INK).font("Helvetica").fontSize(9)
-    .text(cleanForPdf(skills.join("   •   ")), CONTENT_LEFT + 12, y + 21, { width: PAGE_W - 24, lineBreak: false });
-  doc.y = y + 48;
-}
+const SCAN_REMINDER = "Done? Tap Scan & Submit in the dashboard.";
 
 // ===========================================================================
-//  Public: render to Buffer
+//  Public: render student worksheet to Buffer
 // ===========================================================================
 export function renderWorksheetPdfBuffer(
   content: WorksheetContent,
-  opts: { dateLabel?: string; withAnswerKey?: boolean; footerNote?: string } = {},
+  opts: { dateLabel?: string; footerNote?: string } = {},
 ): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     try {
-      CURRENT_FOOTER = opts.footerNote || "Keep going — you're doing great!";
-      const doc = new PDFDocument({ size: "LETTER", margin: MARGIN, bufferPages: true });
+      const theme = themeFor(content.subjectSlug);
+      loadBrand();
+      CH = {
+        title: content.title || "Worksheet",
+        subtitle: "Let's learn and have fun!",
+        theme,
+        dateLabel: opts.dateLabel,
+        footerNote: opts.footerNote || SCAN_REMINDER,
+        footerPill: "Reagan \u00b7 Summer Adventure \u00b7 keep shining!",
+        intro: content.intro ? cleanForPdf(content.intro) : undefined,
+        isKey: false,
+      };
+      const doc = new PDFDocument({
+        size: "LETTER",
+        bufferPages: true,
+        margins: { top: firstTopMargin(), bottom: MARGIN + FOOTER_BAND, left: MARGIN, right: MARGIN },
+      });
+      // continuation pages need a smaller top margin (smaller banner)
+      doc.on("pageAdded", () => { doc.x = CONTENT_LEFT; doc.y = MARGIN + HEADER_BAND_CONT; });
+      registerBrandFonts(doc);
       const chunks: Buffer[] = [];
       doc.on("data", (c) => chunks.push(c as Buffer));
       doc.on("end", () => resolve(Buffer.concat(chunks)));
       doc.on("error", reject);
 
       const sections = Array.isArray(content.sections) ? content.sections : [];
-
-      // First page: banner + the FIRST section (so page 1 isn't a lonely cover).
-      pageFooter(doc, CURRENT_FOOTER);
-      doc.y = doc.page.margins.top;
-      renderBanner(doc, content, { dateLabel: opts.dateLabel });
+      doc.x = CONTENT_LEFT;
+      doc.y = firstTopMargin();
 
       let n = 1;
       sections.forEach((sec, si) => {
-        const color = SECTION_COLORS[si % SECTION_COLORS.length];
-        // PAGE-PER-ASSIGNMENT: every section after the first starts a fresh page.
-        if (si > 0) addContentPage(doc);
-        renderSectionHeader(doc, si, sec.heading ?? "", sec.instructions, color);
+        if (si > 0) sectionPage(doc);
+        if (si === 0 && content.bookRef) {
+          doc.fillColor(INK_SOFT).font(F_BODY).fontSize(8.5).text(cleanForPdf(`Reference: ${content.bookRef}`), CONTENT_LEFT, doc.y, { width: PAGE_W });
+          doc.moveDown(0.3);
+        }
+        renderSectionHeader(doc, si, sec, theme);
         const items = Array.isArray(sec.items) ? sec.items : [];
         for (const item of items) {
-          renderItem(doc, item, n, color);
+          renderItem(doc, item, n, theme);
           if (item.kind !== "passage") n++;
         }
       });
 
-      // Skills ribbon + encouraging close on the final content page.
-      renderSkillsRibbon(doc, content);
-      ensureSpace(doc, 40);
-      const cy = doc.y + 4;
-      roundedFill(doc, CONTENT_LEFT, cy, PAGE_W, 30, 10, "#fffbeb", "#fde68a", 1);
-      star(doc, CONTENT_LEFT + 16, cy + 15, 7, "#fbbf24");
-      doc.fillColor(INK).font("Helvetica-Bold").fontSize(11)
-        .text("Awesome work — you did it!", CONTENT_LEFT + 30, cy + 9, { width: PAGE_W - 40 });
-
-      // Answer key — always its own fresh page(s).
-      if (opts.withAnswerKey) {
-        const keyed = sections.flatMap((s) => (Array.isArray(s.items) ? s.items : []).filter((i) => i.answer));
-        if (keyed.length) {
-          addContentPage(doc);
-          doc.y = doc.page.margins.top;
-          roundedFill(doc, CONTENT_LEFT, doc.y, PAGE_W, 28, 10, "#1f2937");
-          doc.fillColor("#ffffff").font("Helvetica-Bold").fontSize(13)
-            .text("Answer Key  (for grown-ups)", CONTENT_LEFT + 12, doc.y + 7, { width: PAGE_W - 20 });
-          doc.y += 38;
-          let k = 1;
-          for (const sec of sections) {
-            for (const item of (Array.isArray(sec.items) ? sec.items : [])) {
-              if (item.kind === "passage") continue;
-              if (item.answer) {
-                ensureSpace(doc, 18);
-                doc.fillColor(INK).font("Helvetica").fontSize(10)
-                  .text(`${k}. ${cleanForPdf(item.answer)}`, CONTENT_LEFT + 6, doc.y, { width: PAGE_W - 12 });
-              }
-              k++;
-            }
-          }
-        }
-      }
-
+      stampChrome(doc);
       doc.end();
     } catch (e) {
       reject(e as Error);
@@ -365,14 +569,86 @@ export function renderWorksheetPdfBuffer(
   });
 }
 
-/** Render + upload. Returns the signed url, storage key, and content hash. */
+/**
+ * Render the teacher/parent ANSWER KEY as its OWN standalone document.
+ */
+export function renderAnswerKeyPdfBuffer(
+  content: WorksheetContent,
+  opts: { dateLabel?: string } = {},
+): Promise<Buffer> | null {
+  const sections = Array.isArray(content.sections) ? content.sections : [];
+  const hasKey = sections.some((s) => (Array.isArray(s.items) ? s.items : []).some((i) => i.answer || (i.kind === "matching" && i.pairs?.length)));
+  if (!hasKey) return null;
+  return new Promise((resolve, reject) => {
+    try {
+      const theme = themeFor(content.subjectSlug);
+      loadBrand();
+      CH = {
+        title: `${content.title || "Worksheet"} (Key)`,
+        subtitle: "Teacher / parent copy",
+        theme,
+        dateLabel: opts.dateLabel,
+        footerNote: "",
+        footerPill: "Teacher copy \u00b7 keep separate from the student worksheet",
+        intro: undefined,
+        isKey: true,
+      };
+      const doc = new PDFDocument({
+        size: "LETTER",
+        bufferPages: true,
+        margins: { top: firstTopMargin(), bottom: MARGIN + FOOTER_BAND, left: MARGIN, right: MARGIN },
+      });
+      doc.on("pageAdded", () => { doc.x = CONTENT_LEFT; doc.y = MARGIN + HEADER_BAND_CONT; });
+      registerBrandFonts(doc);
+      const chunks: Buffer[] = [];
+      doc.on("data", (c) => chunks.push(c as Buffer));
+      doc.on("end", () => resolve(Buffer.concat(chunks)));
+      doc.on("error", reject);
+
+      doc.x = CONTENT_LEFT; doc.y = firstTopMargin();
+      let k = 1;
+      sections.forEach((sec, si) => {
+        ensureSpace(doc, 26);
+        const hk = (sec.heading?.trim() || `Part ${si + 1}`).replace(/^PART\s*\d+\s*/i, "").replace(/^[\s:.\u2013\u2014\-]+/, "");
+        const label = cleanForPdf(`PART ${si + 1}: ${hk}`);
+        doc.font(F_H).fontSize(11.5);
+        const w = Math.min(PAGE_W - 24, doc.widthOfString(label) + 28);
+        const y = doc.y;
+        gradientRoundedRect(doc, CONTENT_LEFT, y, w, 24, 12, theme.g1, theme.g2);
+        doc.fillColor("#ffffff").font(F_H).fontSize(11).text(label, CONTENT_LEFT + 14, y + 6, { width: w - 22, lineBreak: false });
+        doc.y = y + 30;
+        for (const item of (Array.isArray(sec.items) ? sec.items : [])) {
+          if (item.kind === "passage") continue;
+          let ans = item.answer ?? "";
+          if (!ans && item.kind === "matching" && item.pairs?.length) {
+            ans = item.pairs.map((p, i) => `${i + 1}=${p.left} \u2192 ${p.right}`).join(";  ");
+          }
+          ensureSpace(doc, 16);
+          const ky = doc.y;
+          doc.fillColor(theme.accent).font(F_H).fontSize(10.5).text(`${k}.`, CONTENT_LEFT + 4, ky, { width: 20, lineBreak: false });
+          doc.fillColor(INK).font(F_BODY).fontSize(10.5).text(cleanForPdf(ans || "—"), CONTENT_LEFT + 26, ky, { width: PAGE_W - 30 });
+          k++;
+        }
+        doc.moveDown(0.5);
+      });
+      stampChrome(doc);
+      doc.end();
+    } catch (e) {
+      reject(e as Error);
+    }
+  });
+}
+
+/**
+ * Render + upload. Student worksheet never includes the answer key; a SEPARATE
+ * answer-key PDF is stored when the worksheet has answers.
+ */
 export async function renderAndStoreWorksheetPdf(
   content: WorksheetContent,
   opts: { forDate: string; printableId: number; withAnswerKey?: boolean; footerNote?: string } = { forDate: "", printableId: 0 },
-): Promise<{ key: string; url: string; contentHash: string; fileName: string }> {
+): Promise<{ key: string; url: string; contentHash: string; fileName: string; answerKeyKey?: string; answerKeyUrl?: string }> {
   const buf = await renderWorksheetPdfBuffer(content, {
     dateLabel: opts.forDate || undefined,
-    withAnswerKey: opts.withAnswerKey ?? true,
     footerNote: opts.footerNote,
   });
   const contentHash = createHash("sha256").update(buf).digest("hex");
@@ -380,5 +656,19 @@ export async function renderAndStoreWorksheetPdf(
   const fileName = `${safeTitle}_${opts.forDate || "today"}.pdf`;
   const key = `worksheets/${opts.forDate || "today"}/p${opts.printableId}_${contentHash.slice(0, 8)}.pdf`;
   const { key: storedKey, url } = await storagePut(key, buf, "application/pdf");
-  return { key: storedKey, url, contentHash, fileName };
+
+  let answerKeyKey: string | undefined;
+  let answerKeyUrl: string | undefined;
+  if (opts.withAnswerKey !== false) {
+    const keyPromise = renderAnswerKeyPdfBuffer(content, { dateLabel: opts.forDate || undefined });
+    if (keyPromise) {
+      const keyBuf = await keyPromise;
+      const keyHash = createHash("sha256").update(keyBuf).digest("hex");
+      const akKey = `worksheets/${opts.forDate || "today"}/p${opts.printableId}_${keyHash.slice(0, 8)}_KEY.pdf`;
+      const stored = await storagePut(akKey, keyBuf, "application/pdf");
+      answerKeyKey = stored.key;
+      answerKeyUrl = stored.url;
+    }
+  }
+  return { key: storedKey, url, contentHash, fileName, answerKeyKey, answerKeyUrl };
 }

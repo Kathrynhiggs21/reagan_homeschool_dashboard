@@ -1,7 +1,15 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import KiwiSprite, { type KiwiPose, KIWI_ACTIVITY_POSES, KIWI_ACTIVITY_BUBBLES } from "./KiwiSprite";
 import FlockSprite, { type FlockMember, getFlockMeta } from "./FlockSprite";
 import { useKiwi } from "@/contexts/KiwiContext";
+import { trpc } from "@/lib/trpc";
+import {
+  resolveKiwiDayCharacter,
+  kiwiProjectForTick,
+  ALL_PROJECT_KINDS,
+  type KiwiCostume,
+} from "@shared/kiwiCharacter";
+import { computeBranches, findLedges, makeFallingSnack, type FallingSnack } from "@/lib/kiwiWorld";
 // Kiwi is silent by default. We deliberately do NOT import chirp() here so the
 // perch never makes sound on its own. Voice/chirp only fires through KiwiCompanion
 // (chat reply) and only when Mom has flipped Silent mode off in Settings.
@@ -82,6 +90,15 @@ function clamp(p: Pos, size: number, chatOpen?: boolean): Pos {
 export default function KiwiPerch() {
   const { enabled, open, setOpen, adultPresent, mode } = useKiwi();
   const [pose, setPose] = useState<KiwiPose>("idle");
+
+  /* ---- Daily costume (deterministic) from today's calendar + holidays ---- */
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const appts = trpc.appointments.list.useQuery(undefined, { staleTime: 5 * 60_000 });
+  const dayChar = useMemo(() => {
+    const titles = (appts.data as any[] | undefined)?.map((a) => a?.title as string).filter(Boolean) ?? [];
+    return resolveKiwiDayCharacter(todayISO, { eventTitles: titles });
+  }, [appts.data, todayISO]);
+  const costume: KiwiCostume = dayChar.costume;
   const [size, setSize] = useState<number>(() => perchSize());
   const [pos, setPos] = useState<Pos>(() => loadPos(perchSize()));
   const [dragging, setDragging] = useState(false);
@@ -89,6 +106,11 @@ export default function KiwiPerch() {
   const [bubbleText, setBubbleText] = useState<string | null>(null);
   const [popBurst, setPopBurst] = useState<number>(0);
   const [tilt, setTilt] = useState(0); // degrees
+  // World: a snack falling from a branch that Kiwi hops over to eat.
+  const [snack, setSnack] = useState<FallingSnack | null>(null);
+  // Slow ambient project (nest / needlework / ...) that advances over a session.
+  const [projectTick, setProjectTick] = useState(0);
+  const projectKindRef = useRef(ALL_PROJECT_KINDS[Math.floor(Math.random() * ALL_PROJECT_KINDS.length)]!);
   // Flock cameo: occasionally, Blue / Daffy / Honk fly in for ~6s and hover
   // near Kiwi, then fade away. Silent, visual-only.
   const [cameo, setCameo] = useState<FlockMember | null>(null);
@@ -308,7 +330,124 @@ export default function KiwiPerch() {
     return () => { if (timer) window.clearTimeout(timer); };
   }, [enabled, adultPresent, dragging, flying]);
 
-  // (Removed: timed friendly-bubble. Kiwi's bubble now only opens on tap or wake word.)
+  /* ====================== PERCH ON A PAGE LEDGE/CARD =======================
+   * Every 30-60s Kiwi hops up onto the top edge of a real card on the page
+   * (instead of free-floating) and does a little activity there. Falls back to
+   * a branch tip if no cards are visible. Skipped while dragging/flying.
+   */
+  useEffect(() => {
+    if (!enabled || adultPresent) return;
+    let timer: number;
+    const schedule = () => {
+      const delay = 30_000 + Math.random() * 30_000;
+      timer = window.setTimeout(() => {
+        if (!dragging && !flying) {
+          const ledges = findLedges();
+          const branches = computeBranches();
+          let target: { x: number; y: number } | null = null;
+          if (ledges.length && Math.random() < 0.7) {
+            const l = ledges[Math.floor(Math.random() * ledges.length)]!;
+            // Stand on the card's top edge (sprite sits just above it).
+            target = { x: l.x - size / 2, y: l.y - size + 8 };
+          } else if (branches.length) {
+            const b = branches[Math.floor(Math.random() * branches.length)]!;
+            target = { x: b.x - size / 2, y: b.y + b.length * 0.45 };
+          }
+          if (target) {
+            setPose("flap");
+            setPos(clamp(target, size, open));
+            window.setTimeout(() => {
+              // Start a little activity on the ledge.
+              const act = KIWI_ACTIVITY_POSES[Math.floor(Math.random() * KIWI_ACTIVITY_POSES.length)]!;
+              setPose(act);
+              const msg = KIWI_ACTIVITY_BUBBLES[act];
+              if (msg) {
+                setBubbleText(msg);
+                if (bubbleTimeoutRef.current) window.clearTimeout(bubbleTimeoutRef.current);
+                bubbleTimeoutRef.current = window.setTimeout(() => setBubbleText(null), 4000);
+              }
+              window.setTimeout(() => setPose("idle"), 7000 + Math.random() * 4000);
+            }, 700);
+          }
+        }
+        schedule();
+      }, delay);
+    };
+    schedule();
+    return () => { if (timer) window.clearTimeout(timer); };
+  }, [enabled, adultPresent, dragging, flying, size, open]);
+
+  /* ======================== SNACK DROPS FROM A BRANCH =====================
+   * Every 45-90s a snack (fry/berry) falls from a branch; Kiwi notices, hops
+   * over, and "eats" it (eating pose). Pure visual sugar, silent.
+   */
+  useEffect(() => {
+    if (!enabled || adultPresent) return;
+    let timer: number;
+    const schedule = () => {
+      const delay = 45_000 + Math.random() * 45_000;
+      timer = window.setTimeout(() => {
+        if (!dragging && !flying) {
+          const branches = computeBranches();
+          const b = branches[Math.floor(Math.random() * branches.length)];
+          if (b) {
+            const landY = Math.min(window.innerHeight - size - 24, b.y + b.length + 120);
+            const s = makeFallingSnack(b, landY);
+            setSnack(s);
+            // After the snack "lands", Kiwi hops over and eats it.
+            window.setTimeout(() => {
+              setPose("flap");
+              setPos(clamp({ x: s.landX - size / 2, y: s.landY }, size, open));
+              window.setTimeout(() => {
+                setPose("eating");
+                setBubbleText("snack o'clock \u{1F60B}");
+                if (bubbleTimeoutRef.current) window.clearTimeout(bubbleTimeoutRef.current);
+                bubbleTimeoutRef.current = window.setTimeout(() => setBubbleText(null), 2600);
+                setSnack(null);
+                window.setTimeout(() => setPose("idle"), 2600);
+              }, 900);
+            }, 1100);
+          }
+        }
+        schedule();
+      }, delay);
+    };
+    schedule();
+    return () => { if (timer) window.clearTimeout(timer); };
+  }, [enabled, adultPresent, dragging, flying, size, open]);
+
+  /* ===================== SLOW AMBIENT PROJECT (over time) ==================
+   * Kiwi slowly works on a long project (nest, needlework, book tower) across
+   * a session, advancing one stage every ~2-3 min with a quiet bubble.
+   */
+  useEffect(() => {
+    if (!enabled || adultPresent) return;
+    let timer: number;
+    const schedule = () => {
+      const delay = 120_000 + Math.random() * 60_000;
+      timer = window.setTimeout(() => {
+        if (!dragging && !flying) {
+          setProjectTick((t) => {
+            const next = t + 1;
+            const proj = kiwiProjectForTick(projectKindRef.current, next);
+            setBubbleText(proj.line);
+            if (bubbleTimeoutRef.current) window.clearTimeout(bubbleTimeoutRef.current);
+            bubbleTimeoutRef.current = window.setTimeout(() => setBubbleText(null), 4500);
+            // When a project finishes, pick a new one next time.
+            if (next >= proj.totalStages - 1) {
+              projectKindRef.current = ALL_PROJECT_KINDS[Math.floor(Math.random() * ALL_PROJECT_KINDS.length)]!;
+              return 0;
+            }
+            return next;
+          });
+        }
+        schedule();
+      }, delay);
+    };
+    schedule();
+    return () => { if (timer) window.clearTimeout(timer); };
+  }, [enabled, adultPresent, dragging, flying]);
+  void projectTick;
 
   // React to user activity — flap briefly when mouse/touch moves
   useEffect(() => {
@@ -461,6 +600,26 @@ export default function KiwiPerch() {
 
         {popBurst > 0 && <PopBurst key={popBurst} size={size} />}
 
+        {/* Falling snack from a branch — drops then disappears when Kiwi eats it. */}
+        {snack && (
+          <span
+            aria-hidden
+            className="fixed pointer-events-none no-print"
+            style={{
+              left: snack.fromX,
+              top: snack.fromY,
+              fontSize: 24,
+              zIndex: 25,
+              animation: "kiwiSnackFall 1.1s cubic-bezier(0.4,0,0.6,1) forwards",
+              // @ts-expect-error CSS custom props
+              "--snack-dx": `${snack.landX - snack.fromX}px`,
+              "--snack-dy": `${snack.landY - snack.fromY}px`,
+            }}
+          >
+            {snack.glyph}
+          </span>
+        )}
+
         {cameo && (
           <div
             aria-hidden
@@ -494,7 +653,7 @@ export default function KiwiPerch() {
           }}
           title="Drag Kiwi anywhere — tap to chat"
         >
-          <KiwiSprite pose={pose} size={size} animate ariaLabel="Kiwi the parakeet — drag me or tap to chat" />
+          <KiwiSprite pose={pose} size={size} animate costume={costume} ariaLabel={`Kiwi the parakeet — ${dayChar.costumeLabel}. Drag me or tap to chat`} />
         </div>
 
         <div
@@ -542,6 +701,10 @@ export default function KiwiPerch() {
         @keyframes kiwiPop {
           0% { transform: translate(0,0) scale(0.6); opacity: 0.9; }
           100% { transform: translate(var(--kx), var(--ky)) scale(1.1); opacity: 0; }
+        }
+        @keyframes kiwiSnackFall {
+          0% { transform: translate(0,0) rotate(0deg); opacity: 1; }
+          100% { transform: translate(var(--snack-dx), var(--snack-dy)) rotate(180deg); opacity: 1; }
         }
         @keyframes kiwiCameo {
           0%   { transform: translate(20px, 10px) scale(0.4); opacity: 0; }

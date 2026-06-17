@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useKiwi } from "@/contexts/KiwiContext";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,9 @@ import { speakAs, getActiveCompanionId, type CompanionId } from "@/lib/companion
 import { transcriptHasWakeWord, extractQuestionAfterWake } from "@shared/wakeWord";
 import KiwiPerch from "./KiwiPerch";
 import KiwiQuietListener from "./KiwiQuietListener";
+import KiwiBranches from "./KiwiBranches";
 import CompanionBelt from "./CompanionBelt";
+import { resolveKiwiDayCharacter } from "@shared/kiwiCharacter";
 
 /**
  * KiwiCompanion is now the SINGLE Kiwi entry point (2026-06-17, Katy:
@@ -79,6 +81,12 @@ export default function KiwiCompanion() {
     ? (() => { try { const p = JSON.parse(activeReviewBlock.description); return p._type === 'review_block' ? activeReviewBlock.description : undefined; } catch { return undefined; } })()
     : undefined;
   const submitQuizResult = trpc.topicMastery.submitQuizResult.useMutation();
+  // Today's deterministic Kiwi costume (calendar/holiday/vacation aware).
+  const apptsForKiwi = trpc.appointments.list.useQuery(undefined, { staleTime: 5 * 60_000 });
+  const kiwiDayCostume = useMemo(() => {
+    const titles = (apptsForKiwi.data as any[] | undefined)?.map((a) => a?.title as string).filter(Boolean) ?? [];
+    return resolveKiwiDayCharacter(todayISO, { eventTitles: titles }).costume;
+  }, [apptsForKiwi.data, todayISO]);
 
   // Detect quiz completion from Kiwi's summary message.
   // Pattern: "X out of Y" — e.g. "3 out of 4 — solid"
@@ -315,6 +323,7 @@ export default function KiwiCompanion() {
       {/* The roaming animated bird + the invisible quiet listener now render
           from inside this single companion, so App.tsx has exactly ONE Kiwi
           mount. Both keep all their original behavior. */}
+      {showKiwiPerch && <KiwiBranches />}
       {showKiwiPerch && <KiwiPerch />}
       <KiwiQuietListener />
 
@@ -325,7 +334,7 @@ export default function KiwiCompanion() {
             <div className="flex items-center gap-2">
               <div className="w-10 h-10">
                 {activeCompanion === "kiwi" ? (
-                  <KiwiSprite pose={adultPresent ? "sleep" : "idle"} size={40} />
+                  <KiwiSprite pose={adultPresent ? "sleep" : "idle"} size={40} costume={kiwiDayCostume} />
                 ) : (
                   <FlockSprite member={activeCompanion as FlockMember} size={40} />
                 )}

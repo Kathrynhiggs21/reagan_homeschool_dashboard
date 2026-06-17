@@ -1,14 +1,16 @@
 /**
- * 2026-06-17 — Coverage for the colorful worksheet PDF renderer.
+ * 2026-06-17 (v3) — Coverage for the clean, formatted worksheet PDF renderer.
  *
  * Verifies:
  *  - a valid, non-empty PDF buffer is produced;
  *  - the page-per-assignment rule holds: N sections => at least N pages
  *    (each section after the first opens a fresh page), plus the answer key
- *    lands on its own additional page.
+ *    on its own additional page;
+ *  - all activity kinds (mc, short, long, prompt, passage, matching,
+ *    scramble, fillblank) render without throwing, including a word bank.
  */
 import { describe, it, expect } from "vitest";
-import { renderWorksheetPdfBuffer } from "./_lib/worksheetPdf";
+import { renderWorksheetPdfBuffer, renderAnswerKeyPdfBuffer } from "./_lib/worksheetPdf";
 import type { WorksheetContent } from "@shared/worksheetTypes";
 
 function countPdfPages(buf: Buffer): number {
@@ -49,24 +51,96 @@ const THREE_SECTIONS: WorksheetContent = {
   ],
 };
 
-describe("colorful worksheet PDF renderer", () => {
+const ALL_KINDS: WorksheetContent = {
+  title: "ELA Mixed Practice",
+  intro: "A little of everything.",
+  subjectSlug: "ela",
+  sections: [
+    {
+      heading: "Vocabulary Match",
+      instructions: "Draw a line from each word to its definition.",
+      wordBank: ["conduct", "evident", "passage", "concept"],
+      items: [
+        {
+          id: "m1",
+          kind: "matching",
+          prompt: "Match the word to its meaning.",
+          pairs: [
+            { left: "conduct", right: "to lead or guide" },
+            { left: "evident", right: "easily seen" },
+            { left: "passage", right: "a section of text" },
+          ],
+        },
+      ],
+    },
+    {
+      heading: "Word Scramble",
+      instructions: "Unscramble each word about winter.",
+      items: [
+        { id: "s1", kind: "scramble", prompt: "o w n s", answer: "snow" },
+        { id: "s2", kind: "scramble", prompt: "c i e", answer: "ice" },
+      ],
+    },
+    {
+      heading: "Fill in the Blank",
+      instructions: "Choose the correct homophone.",
+      items: [
+        { id: "f1", kind: "fillblank", prompt: "She is kneading the ____ (doe/dough) to make bread.", answer: "dough" },
+      ],
+    },
+    {
+      heading: "Reading",
+      items: [
+        { id: "rp", kind: "passage", prompt: "Once upon a time, a curious caterpillar explored the world around him." },
+        { id: "rq", kind: "long", prompt: "What is the title of this story?", lines: 2, answer: "(varies)" },
+        { id: "wp", kind: "prompt", prompt: "Write what you think happens next.", lines: 3 },
+      ],
+    },
+  ],
+};
+
+describe("clean worksheet PDF renderer", () => {
   it("produces a valid, non-empty PDF buffer", async () => {
-    const buf = await renderWorksheetPdfBuffer(THREE_SECTIONS, { dateLabel: "2026-06-17", withAnswerKey: false });
+    const buf = await renderWorksheetPdfBuffer(THREE_SECTIONS, { dateLabel: "2026-06-17" });
     expect(Buffer.isBuffer(buf)).toBe(true);
     expect(buf.length).toBeGreaterThan(800);
     expect(buf.subarray(0, 5).toString("latin1")).toBe("%PDF-");
   });
 
   it("starts each section on its own page (page-per-assignment)", async () => {
-    // 3 sections, no answer key => at least 3 pages.
-    const noKey = await renderWorksheetPdfBuffer(THREE_SECTIONS, { withAnswerKey: false });
-    expect(countPdfPages(noKey)).toBeGreaterThanOrEqual(3);
+    const buf = await renderWorksheetPdfBuffer(THREE_SECTIONS);
+    expect(countPdfPages(buf)).toBeGreaterThanOrEqual(3);
   });
 
-  it("puts the answer key on its own additional page", async () => {
-    const withKey = await renderWorksheetPdfBuffer(THREE_SECTIONS, { withAnswerKey: true });
-    const noKey = await renderWorksheetPdfBuffer(THREE_SECTIONS, { withAnswerKey: false });
-    expect(countPdfPages(withKey)).toBeGreaterThan(countPdfPages(noKey));
+  it("NEVER includes the answer key inside the student worksheet (no back-of-page key)", async () => {
+    const buf = await renderWorksheetPdfBuffer(THREE_SECTIONS);
+    // student worksheet = exactly one page per section (3), no extra key page.
+    expect(countPdfPages(buf)).toBe(3);
+    expect(buf.toString("latin1")).not.toContain("Answer Key");
+  });
+
+  it("produces the answer key as a SEPARATE standalone document", async () => {
+    const keyPromise = renderAnswerKeyPdfBuffer(THREE_SECTIONS, { dateLabel: "2026-06-17" });
+    expect(keyPromise).not.toBeNull();
+    const keyBuf = await keyPromise!;
+    expect(keyBuf.subarray(0, 5).toString("latin1")).toBe("%PDF-");
+    // sanity: no Unicode replacement char / tofu leaked into the PDF text stream
+    expect(keyBuf.toString("latin1")).not.toContain("\uFFFD");
+    expect(countPdfPages(keyBuf)).toBeGreaterThanOrEqual(1);
+  });
+
+  it("returns null answer key when there are no answers", async () => {
+    const noAnswers: WorksheetContent = {
+      title: "Free Write",
+      sections: [{ heading: "Journal", items: [{ id: "j", kind: "prompt", prompt: "Write about your day.", lines: 5 }] }],
+    };
+    expect(renderAnswerKeyPdfBuffer(noAnswers)).toBeNull();
+  });
+
+  it("renders all activity kinds (matching, scramble, fillblank, word bank) without throwing", async () => {
+    const buf = await renderWorksheetPdfBuffer(ALL_KINDS, { dateLabel: "2026-06-17" });
+    expect(buf.subarray(0, 5).toString("latin1")).toBe("%PDF-");
+    expect(countPdfPages(buf)).toBeGreaterThanOrEqual(4); // 4 sections each on its own page
   });
 
   it("handles a single-section worksheet without throwing", async () => {
@@ -74,8 +148,8 @@ describe("colorful worksheet PDF renderer", () => {
       title: "Quick Practice",
       sections: [{ heading: "Warm Up", items: [{ id: "a", kind: "short", prompt: "2 + 2 = ?", answer: "4" }] }],
     };
-    const buf = await renderWorksheetPdfBuffer(one, { withAnswerKey: true });
+    const buf = await renderWorksheetPdfBuffer(one);
     expect(buf.subarray(0, 5).toString("latin1")).toBe("%PDF-");
-    expect(countPdfPages(buf)).toBeGreaterThanOrEqual(2); // content page + answer key page
+    expect(countPdfPages(buf)).toBe(1); // single section = single page, no key
   });
 });
