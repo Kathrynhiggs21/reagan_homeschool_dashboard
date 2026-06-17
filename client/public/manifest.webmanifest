@@ -1,0 +1,33 @@
+{
+  "name": "Reagan's Homeschool",
+  "short_name": "Reagan",
+  "description": "Reagan's cozy homeschool dashboard — today's plan, Kiwi, bookshelf, apps, and coins.",
+  "id": "/",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#fffbf2",
+  "theme_color": "#2f9e8f",
+  "categories": ["education", "kids"],
+  "icons": [
+    {
+      "src": "/manus-storage/pwa-icon-192_4e973cc3.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/manus-storage/pwa-icon-512_6949fada.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/manus-storage/pwa-icon-maskable-512_0f28943c.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

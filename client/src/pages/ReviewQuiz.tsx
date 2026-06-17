@@ -119,7 +119,7 @@ function QuizRunner({
           onClick={handleNext}
           disabled={completeSession.isPending}
         >
-          {qIndex + 1 >= questions.length ? "Finish Quiz" : "Next Question →"}
+          {qIndex + 1 >= questions.length ? "Finish Questionnaire" : "Next Question →"}
         </Button>
       )}
     </div>
@@ -164,12 +164,12 @@ export default function ReviewQuiz() {
       utils.reviewSessions.listSessionsForDate.invalidate();
       setShowGenerate(false);
       setGenTopic("");
-      toast.success(`Quiz ready! ${data.questionCount} questions`);
+      toast.success(`Questionnaire ready! ${data.questionCount} questions`);
       // Fetch the session questions
       // We'll use the sessionId to load questions from the session
       // For now, show a placeholder — the session is created, user can see it in history
     },
-    onError: (e) => toast.error("Failed to generate quiz", { description: e.message }),
+      onError: (e) => toast.error("Failed to generate questionnaire", { description: e.message }),
   });
 
   const updateWeakTopic = trpc.reviewSessions.updateWeakTopic.useMutation({
@@ -203,7 +203,7 @@ export default function ReviewQuiz() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-white">🧠 Review & Quiz</h1>
+            <h1 className="text-3xl font-bold text-white">🧠 Review & Questionnaire</h1>
             <p className="text-slate-400 mt-1">Practice what you know, strengthen what you don't</p>
           </div>
           {isAdmin && (
@@ -211,7 +211,7 @@ export default function ReviewQuiz() {
               className="bg-violet-600 hover:bg-violet-700 text-white"
               onClick={() => setShowGenerate(true)}
             >
-              ✨ Generate Quiz
+              ✨ Generate Questionnaire
             </Button>
           )}
         </div>
@@ -270,7 +270,7 @@ export default function ReviewQuiz() {
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${tab === t ? "bg-slate-700 text-white" : "text-slate-400 hover:text-white"}`}
               onClick={() => setTab(t)}
             >
-              {t === "weak" ? "🎯 Weak Topics" : t === "quiz" ? "📝 Today's Quizzes" : "📊 History"}
+              {t === "weak" ? "🎯 Weak Topics" : t === "quiz" ? "📝 Today's Questionnaires" : "📊 History"}
             </button>
           ))}
         </div>
@@ -282,7 +282,7 @@ export default function ReviewQuiz() {
               <div className="bg-slate-900 rounded-2xl p-12 text-center text-slate-500">
                 <p className="text-3xl mb-3">🌱</p>
                 <p>No weak topics tracked yet.</p>
-                <p className="text-sm mt-1">Take a quiz to start tracking what needs more practice.</p>
+                <p className="text-sm mt-1">Take a questionnaire to start tracking what needs more practice.</p>
               </div>
             ) : (
               <div className="flex flex-col gap-3">
@@ -335,10 +335,10 @@ export default function ReviewQuiz() {
             {todaySessions.length === 0 ? (
               <div className="bg-slate-900 rounded-2xl p-12 text-center text-slate-500">
                 <p className="text-3xl mb-3">📝</p>
-                <p>No quizzes today yet.</p>
+                <p>No questionnaires today yet.</p>
                 {isAdmin && (
                   <Button className="mt-4 bg-violet-600 hover:bg-violet-700" onClick={() => setShowGenerate(true)}>
-                    ✨ Generate a Quiz
+                    ✨ Generate a Questionnaire
                   </Button>
                 )}
               </div>

@@ -75,7 +75,7 @@ export default function BrainBreakTvBox() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
-        <div className="aspect-video w-full overflow-hidden rounded-md border bg-black">
+        <div className="aspect-video w-full overflow-hidden rounded-md border">
           {playing ? (
             <iframe
               key={clip.id}
@@ -89,18 +89,24 @@ export default function BrainBreakTvBox() {
             <button
               type="button"
               onClick={() => setPlaying(true)}
-              className="relative flex h-full w-full items-center justify-center bg-gradient-to-br from-black/70 to-black/30 text-white hover:opacity-95"
+              // No grey/black box (Katy's rule): the unstarted state is always a
+              // warm kiwi-teal gradient. The thumbnail fades in on top when it
+              // loads; if it 404s the gradient stays — never a grey void.
+              className="relative flex h-full w-full items-center justify-center bg-gradient-to-br from-teal-500 via-emerald-500 to-amber-400 text-white hover:opacity-95"
               aria-label={`Play ${clip.title}`}
             >
               <img
                 src={`https://i.ytimg.com/vi/${clip.id}/hqdefault.jpg`}
                 alt=""
-                className="absolute inset-0 h-full w-full object-cover opacity-70"
+                className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-300"
+                onLoad={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.opacity = "0.75";
+                }}
                 onError={(e) => {
                   (e.currentTarget as HTMLImageElement).style.display = "none";
                 }}
               />
-              <span className="relative flex flex-col items-center gap-2">
+              <span className="relative flex flex-col items-center gap-2 drop-shadow">
                 <span className="text-4xl">{clip.emoji}</span>
                 <span className="rounded-full bg-white/90 px-4 py-1.5 text-sm font-semibold text-black shadow">
                   ▶ Play — {clip.title}

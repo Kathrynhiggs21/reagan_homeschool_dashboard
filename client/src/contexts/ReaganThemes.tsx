@@ -1,35 +1,68 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { trpc } from "@/lib/trpc";
 
-export type ThemeId = "starry" | "cream" | "chalkboard" | "notebook";
+/**
+ * Reagan's theme catalog — 5 themes (2026-06-17, Katy):
+ *   1. chalkboard  — Black Chalkboard (kept; the original dark slate look)
+ *   2. white       — White Basic (kept look: clean light version, same layout
+ *                    + same per-subject colors)
+ *   3. glass       — NEW: Bubble Glass — modern colorful glassmorphism, soft 3D
+ *                    translucent cards, vivid candy accents.
+ *   4. sunshine    — NEW: Sunshine Minimal — clean flat, rounded, cheerful and
+ *                    very simple (lots of white space, big friendly shapes).
+ *   5. galaxy      — NEW (AI pick that fits best): Galaxy Glow — deep indigo
+ *                    space with neon aurora accents; calm but magical.
+ *
+ * Each theme is applied via the `data-rtheme` attribute on <html>, with the
+ * matching CSS living in index.css. `swatch` is the little color dot shown in
+ * the sidebar picker.
+ */
+export type ThemeId = "chalkboard" | "white" | "glass" | "sunshine" | "galaxy";
 
-export const THEMES: Record<ThemeId, { label: string; emoji: string; description: string }> = {
-  starry:     { label: "Starry Chalkboard", emoji: "🌙", description: "Deep night with warm pastel chalk — cozy & magical." },
-  cream:      { label: "Cream Homeschool",  emoji: "✏️", description: "Soft cream paper with rainbow pastel letters — printed planner feel." },
-  chalkboard: { label: "Chalkboard Night",  emoji: "🖤", description: "Pure black slate with clean chalk. Minimal & calm." },
-  notebook:   { label: "Notebook Doodle",   emoji: "📓", description: "Notebook paper with blue lines & red margin." },
+export const THEMES: Record<ThemeId, { label: string; emoji: string; description: string; swatch: string }> = {
+  chalkboard: { label: "Black Chalkboard", emoji: "🖤", description: "Black slate with bright chalk. Calm & classic.", swatch: "#1f2421" },
+  white:      { label: "White Basic",      emoji: "🤍", description: "Clean white classroom, same subject colors.",  swatch: "#f7f7f4" },
+  glass:      { label: "Bubble Glass",     emoji: "🫧", description: "Colorful glass bubbles — modern & playful.",    swatch: "linear-gradient(135deg,#7dd3fc,#c4b5fd,#fbcfe8)" },
+  sunshine:   { label: "Sunshine",         emoji: "🌼", description: "Bright, simple & flat. Lots of happy space.",   swatch: "linear-gradient(135deg,#fde68a,#fca5a5)" },
+  galaxy:     { label: "Galaxy Glow",      emoji: "🌌", description: "Deep space with soft neon aurora glow.",        swatch: "linear-gradient(135deg,#312e81,#7c3aed,#22d3ee)" },
 };
 
+// Order shown in the picker.
+export const THEME_ORDER: ThemeId[] = ["chalkboard", "white", "glass", "sunshine", "galaxy"];
+
+// Migrate legacy theme ids (pre-2026-06-17) to the new catalog so saved prefs
+// don't break. starry/notebook -> galaxy/white-ish closest matches.
+const LEGACY: Record<string, ThemeId> = {
+  starry: "galaxy",
+  cream: "white",
+  notebook: "white",
+};
+function normalize(v: string | null | undefined): ThemeId | null {
+  if (!v) return null;
+  if ((THEMES as any)[v]) return v as ThemeId;
+  if (LEGACY[v]) return LEGACY[v];
+  return null;
+}
+
 type Ctx = { themeId: ThemeId; setThemeId: (t: ThemeId) => void };
-const ThemeCtx = createContext<Ctx>({ themeId: "starry", setThemeId: () => {} });
+const ThemeCtx = createContext<Ctx>({ themeId: "chalkboard", setThemeId: () => {} });
 
 const STORAGE_KEY = "reagan_theme_v1";
 
 export function ReaganThemeProvider({ children }: { children: ReactNode }) {
   const [themeId, setThemeIdState] = useState<ThemeId>(() => {
-    if (typeof window === "undefined") return "starry";
-    const saved = localStorage.getItem(STORAGE_KEY) as ThemeId | null;
-    return saved && THEMES[saved] ? saved : "starry";
+    if (typeof window === "undefined") return "chalkboard";
+    return normalize(localStorage.getItem(STORAGE_KEY)) ?? "chalkboard";
   });
 
-  // Hydrate from server pref (works across devices). Local storage stays as a fast fallback.
+  // Hydrate from server pref (cross-device). Local storage is the fast fallback.
   const serverPref = trpc.prefs.getPublic.useQuery({ key: "ui.theme" });
   const hydratedRef = useRef(false);
   useEffect(() => {
     if (hydratedRef.current) return;
-    const v = serverPref.data as string | null | undefined;
-    if (v && (THEMES as any)[v]) {
-      setThemeIdState(v as ThemeId);
+    const v = normalize(serverPref.data as string | null | undefined);
+    if (v) {
+      setThemeIdState(v);
       hydratedRef.current = true;
     } else if (serverPref.isFetched) {
       hydratedRef.current = true;
@@ -47,7 +80,6 @@ export function ReaganThemeProvider({ children }: { children: ReactNode }) {
   const setThemeId = (t: ThemeId) => {
     if (!THEMES[t]) return;
     setThemeIdState(t);
-    // Best-effort server persistence (no-op if not signed in).
     try { writePref.mutate({ key: "ui.theme", value: t }); } catch { /* ok */ }
   };
 

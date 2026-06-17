@@ -229,57 +229,49 @@ const TodaySchoolWork = forwardRef<TodaySchoolWorkHandle, { onItemsChanged?: (it
           </div>
         )}
 
+        {/* 2026-06-17 (Katy): flattened the three labeled buckets
+            (Have-to-do / Optional / Extras) into ONE simple tile grid so
+            Reagan just sees "Today's School Work" without the extra labels.
+            All worksheets are preserved; we keep each tile's bucket on the
+            opened item so server-side coin/coverage logic is unchanged. */}
         {!isEmpty && (
-          <div className="space-y-4">
-            {BUCKETS.map(b => {
-              const items = (data?.[b.key] ?? []) as TodayPrintableItem[];
-              if (items.length === 0) return null;
-              return (
-                <div key={b.key} className={`rounded-xl p-3 bg-gradient-to-br ${b.bg}`}>
-                  <div className={`flex items-center gap-2 mb-2 font-bold ${b.color}`}>
-                    <span className="text-xl">{b.emoji}</span>
-                    <span>{b.label}</span>
-                    <span className="opacity-60 text-xs font-normal">({items.length})</span>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {items.map(it => {
-                      const t = thumbUrl(it.thumbKey);
-                      const isDone = it.status === "done";
-                      return (
-                        <button
-                          key={it.id}
-                          id={`printable-tile-${it.id}`}
-                          onClick={() => { setOpen({ ...it, bucket: b.key }); setPhotoDataUrl(null); }}
-                          className={`group relative text-left rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition border scroll-mt-28 ${isDone ? "opacity-60" : ""}`}
-                        >
-                          <div className="aspect-[4/3] bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center overflow-hidden">
-                            {t ? (
-                              <img src={t} alt="" className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="text-4xl">📄</div>
-                            )}
-                          </div>
-                          <div className="p-2">
-                            <div className="text-xs font-semibold line-clamp-2">{it.title}</div>
-                            <div className="text-[10px] opacity-70 mt-0.5 flex items-center gap-1">
-                              <span>{it.source}</span>
-                              {it.estMinutes ? <><span>·</span><span>{it.estMinutes}m</span></> : null}
-                              {it.coinReward ? <><span>·</span><span>{it.coinReward} 🪙</span></> : null}
-                            </div>
-                          </div>
-                          {isDone && (
-                            <div className="absolute top-1 right-1 bg-emerald-500 text-white rounded-full text-[10px] font-bold px-2 py-0.5">✓ done</div>
-                          )}
-                          {!isDone && hasAutosave(it) && (
-                            <div className="absolute top-1 right-1 bg-amber-300 text-amber-950 rounded-full text-[10px] font-bold px-2 py-0.5">⏯ Resume</div>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {BUCKETS.flatMap(b =>
+              ((data?.[b.key] ?? []) as TodayPrintableItem[]).map(it => {
+                const t = thumbUrl(it.thumbKey);
+                const isDone = it.status === "done";
+                return (
+                  <button
+                    key={it.id}
+                    id={`printable-tile-${it.id}`}
+                    onClick={() => { setOpen({ ...it, bucket: b.key }); setPhotoDataUrl(null); }}
+                    className={`group relative text-left rounded-xl overflow-hidden bg-white shadow-sm hover:shadow-md transition border scroll-mt-28 ${isDone ? "opacity-60" : ""}`}
+                  >
+                    <div className="aspect-[4/3] bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center overflow-hidden">
+                      {t ? (
+                        <img src={t} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="text-4xl">📄</div>
+                      )}
+                    </div>
+                    <div className="p-2">
+                      <div className="text-xs font-semibold line-clamp-2">{it.title}</div>
+                      <div className="text-[10px] opacity-70 mt-0.5 flex items-center gap-1">
+                        <span>{it.source}</span>
+                        {it.estMinutes ? <><span>·</span><span>{it.estMinutes}m</span></> : null}
+                        {it.coinReward ? <><span>·</span><span>{it.coinReward} 🪙</span></> : null}
+                      </div>
+                    </div>
+                    {isDone && (
+                      <div className="absolute top-1 right-1 bg-emerald-500 text-white rounded-full text-[10px] font-bold px-2 py-0.5">✓ done</div>
+                    )}
+                    {!isDone && hasAutosave(it) && (
+                      <div className="absolute top-1 right-1 bg-amber-300 text-amber-950 rounded-full text-[10px] font-bold px-2 py-0.5">⏯ Resume</div>
+                    )}
+                  </button>
+                );
+              }),
+            )}
           </div>
         )}
 

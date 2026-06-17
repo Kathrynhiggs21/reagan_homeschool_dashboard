@@ -34,6 +34,55 @@ function isTuckEverlasting(b: Book): boolean {
   return (b.title || "").toLowerCase().includes("tuck everlasting");
 }
 
+/* --------------------------------------------------------------------------
+ * 2026-06-17 (Katy): in-browser reading.
+ * Reagan can read books online without leaving the dashboard or paying.
+ * We only ever open FREE, LEGAL sources:
+ *   • Open Library's "read" search (millions of free/borrowable books)
+ *   • Project Gutenberg (full public-domain texts, e.g. classics)
+ * In-copyright titles (like Tuck Everlasting) still show the legal store /
+ * library launch tiles instead of a full text.
+ * ------------------------------------------------------------------------ */
+function openLibraryReadUrl(b: Book): string {
+  const q = encodeURIComponent(`${b.title || ""} ${b.author || ""}`.trim());
+  return `https://openlibrary.org/search?q=${q}&mode=ebooks&has_fulltext=true`;
+}
+function gutenbergSearchUrl(b: Book): string {
+  const q = encodeURIComponent(`${b.title || ""} ${b.author || ""}`.trim());
+  return `https://www.gutenberg.org/ebooks/search/?query=${q}`;
+}
+
+function OnlineReaderDialog({ book, onClose }: { book: Book | null; onClose: () => void }) {
+  const [source, setSource] = useState<"openlibrary" | "gutenberg">("openlibrary");
+  if (!book) return null;
+  const url = source === "openlibrary" ? openLibraryReadUrl(book) : gutenbergSearchUrl(book);
+  return (
+    <Dialog open={!!book} onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-5xl p-0 overflow-hidden h-[85vh] flex flex-col">
+        <DialogHeader className="px-4 pt-4 pb-2 shrink-0">
+          <DialogTitle className="font-display flex items-center gap-2 flex-wrap">
+            <span>📖 Read online — {book.title}</span>
+            <span className="ml-auto flex gap-1">
+              <Button size="sm" variant={source === "openlibrary" ? "default" : "outline"} className={source === "openlibrary" ? "" : "bg-transparent"} onClick={() => setSource("openlibrary")}>Open Library</Button>
+              <Button size="sm" variant={source === "gutenberg" ? "default" : "outline"} className={source === "gutenberg" ? "" : "bg-transparent"} onClick={() => setSource("gutenberg")}>Free Classics</Button>
+              <a href={url} target="_blank" rel="noreferrer"><Button size="sm" variant="outline" className="bg-transparent">Open in new tab ↗</Button></a>
+            </span>
+          </DialogTitle>
+        </DialogHeader>
+        <iframe
+          title={`Read ${book.title}`}
+          src={url}
+          className="flex-1 w-full border-0"
+          sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+        />
+        <p className="text-[11px] text-muted-foreground px-4 py-2 shrink-0">
+          Free, legal readers only. If a book can’t show here, tap “Open in new tab”.
+        </p>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function AddBookDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   const utils = trpcRoot.useUtils();
   const create = trpcRoot.books.create.useMutation();
@@ -77,6 +126,7 @@ export default function Bookshelf() {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [draftPage, setDraftPage] = useState<string>("");
   const [adding, setAdding] = useState(false);
+  const [reading, setReading] = useState<Book | null>(null);
 
   // Dedupe by normalized title+author so duplicate seeds don't double-render.
   const dedupedBooks: Book[] = (() => {
@@ -192,6 +242,22 @@ export default function Bookshelf() {
                     </div>
                   )}
 
+                  {/* 2026-06-17: Read-online button on every book (free legal
+                      sources). Hidden for in-copyright Tuck, which keeps its
+                      dedicated store/library tiles below. */}
+                  {!isTuck && (
+                    <div className="mt-3">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="bg-transparent h-7 text-xs"
+                        onClick={() => setReading(b)}
+                      >
+                        📖 Read online
+                      </Button>
+                    </div>
+                  )}
+
                   {/* Tuck Everlasting legal launch tiles */}
                   {isTuck && (
                     <div className="mt-4 border-t border-neutral-200 pt-3">
@@ -267,6 +333,23 @@ export default function Bookshelf() {
         </section>
       )}
 
+      {/* Always-available way to find something free to read online. */}
+      <Card className="classroom-card p-5">
+        <div className="flex items-center gap-4 flex-wrap">
+          <span className="text-4xl">🌐</span>
+          <div className="flex-1 min-w-0">
+            <div className="font-display font-semibold text-lg chalk-white">Read free books online</div>
+            <p className="text-sm text-muted-foreground">Thousands of free, legal books — right here in the dashboard.</p>
+          </div>
+          <Button
+            onClick={() => setReading({ id: -1, title: "", author: "" } as Book)}
+          >
+            Browse free books
+          </Button>
+        </div>
+      </Card>
+
+      <OnlineReaderDialog book={reading} onClose={() => setReading(null)} />
       {adding && <AddBookDialog open={adding} onOpenChange={setAdding} />}
     </div>
   );

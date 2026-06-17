@@ -163,6 +163,18 @@ export function KiwiProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      // 2026-06-17 (Katy): sync Reagan's profile photo/companion FIRST and
+      // independently, so it runs even if the prefs router is unavailable.
+      try {
+        if (trpcUtils?.profile?.get?.fetch) {
+          const prof: any = await trpcUtils.profile.get.fetch().catch(() => null);
+          if (!cancelled && prof) {
+            if (prof.photoUrl) { setPhotoUrlState(prof.photoUrl); try { localStorage.setItem("reaganPhotoUrl", prof.photoUrl); } catch {} }
+            if (prof.companionName) { setCompanionNameState(prof.companionName); try { localStorage.setItem("companionName", prof.companionName); } catch {} }
+            if (prof.companionAvatar) { setCompanionAvatarState(prof.companionAvatar); try { localStorage.setItem("companionAvatar", prof.companionAvatar); } catch {} }
+          }
+        }
+      } catch { /* ignore */ }
       try {
         if (!trpcUtils?.prefs?.get?.fetch) return;
         const [a, t, f] = await Promise.all([

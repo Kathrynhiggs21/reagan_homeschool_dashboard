@@ -604,3 +604,208 @@ Sequencing rule (project memory): measurement conversion BEFORE volume; poetry/h
 - [x] Phase 6 — Chat budget echo: `budgetEcho()` shows "Planning ~Xh, starting at Y…" immediately under the user message; replaced by the real result on success. Server remains source of truth for time math.
 - [x] Phase 6 — 6/17 calendar pilot fix: block 2910001 "Ali visit" (23:00 + 60min) crossed midnight; `buildEventResource` now rolls the END date forward (`crossesMidnight()` + `addDaysISO()`) so end is 6/18T00:00 instead of an invalid 6/17 end-before-start. Auto-resync (idempotent upsert) will correct the live event. 5 regression tests.
 - [x] Phase 7 — Full suite 527 files / 4,769 passing / 7 skipped / 0 failures; TypeScript clean.
+
+---
+
+## Agenda Editor stuck + Today manual edits broken (2026-06-17, Katy report)
+- [ ] BUG: Agenda Editor page gets stuck / "manual editing broken" — chat hangs and manual block edits don't apply on the Today page
+- [ ] Reproduce: open /agenda-editor for today, try a manual block edit + a chat message; capture console/network/devserver logs
+- [ ] Diagnose root cause (stuck pending state? failed mutation? snapshot not refreshing? Today vs date mismatch?)
+- [ ] Fix manual editing path + chat hang; add/adjust vitest coverage
+- [ ] Set TODAY (Wed Jun 17) schedule, start 11:00 AM:
+      1) 11:00 Ali visit (45m)
+      2) 12:00 Lunch (60m)
+      3) 1:00 Funny clip (<=10m)
+      4) Measurement types + general overview (30m)
+      5) Measurement conversion intro (~30m)
+      6) Activity: measure our 3 live ducks + fill bathtub/water, convert length/volume (fun, hands-on)
+- [ ] Verify the day renders correctly + checkpoint + report
+
+## IXL direct deep-link (2026-06-17, Katy report)
+- [ ] BUG: IXL button opened a login page + an app chooser (IXL/Khan/etc.) — Katy wants ONE direct link to the exact IXL skill URL, ready/signed-in
+- [ ] Remove the app-chooser/login intermediary; each practice button = single direct deep link to the exact grade-5 skill URL
+- [ ] Default math button to the grade-5 measurement/conversion skill (matches today); keep a one-time "sign in once on this device" note
+- [ ] Verify the link opens straight to the skill (no chooser)
+
+---
+
+## Full dashboard audit (2026-06-17, Katy directive)
+- [x] Editor stuck fix: client chat watchdog + Reset/Cancel so the spinner can never trap the UI
+- [ ] Build today (Wed 6/17) 11am-start measurement+ducks schedule directly
+- [ ] IXL: one direct deep link to exact skill (kill app-chooser/login intermediary)
+- [ ] Inventory every route/page (kid + adult) + full router/schedule/schema surface
+- [ ] Reagan-side frontend audit: pages, daily-use, links, assignments, what she can do
+- [ ] Text legibility/contrast sweep across ALL pages (kid + adult)
+- [ ] Adult-side frontend audit: every page works correctly
+- [ ] CONTRADICTION SWEEP: stale restrictions/gates/validations/old-todo limits that block current intent or cause errors (e.g., weekend auto-build lock, "no test day", role gates, hardcoded caps)
+- [ ] Backend audit: routers, procedures, schedules/cron, periodic tasks, calendar/email, dead code
+- [ ] Housekeeping: prune stale todos/history, reorganize, dedupe
+- [ ] Verify (tests/typecheck), checkpoint, deliver audit report
+
+---
+
+## Full dashboard audit (2026-06-17, Katy directive)
+- [ ] Build today (Wed 6/17) 11am-start measurement+ducks schedule directly (deterministic, no AI in path)
+- [ ] IXL: one direct deep link to exact skill (kill app-chooser/login intermediary)
+- [ ] Inventory every route/page (kid + adult) + full router/schedule/schema surface
+- [ ] Reagan-side frontend audit: pages, daily-use, links, assignments, what she can do
+- [ ] Text legibility/contrast sweep across ALL pages (kid + adult)
+- [ ] Adult-side frontend audit: every page works correctly
+- [ ] CONTRADICTION SWEEP: stale restrictions/gates/validations/old-todo limits that block current intent or cause errors
+- [ ] Backend audit: routers, procedures, schedules/cron, periodic tasks, calendar/email, dead code
+- [ ] Housekeeping: prune stale todos/history, reorganize, dedupe
+- [ ] Verify (tests/typecheck), checkpoint, deliver audit report
+
+## RELIABILITY DIRECTIVE (2026-06-17, Katy): "no more errors/resets/stuck/wrong output"
+- [ ] Make agenda editing NOT depend on the AI succeeding: manual edits commit instantly, no AI in path
+- [ ] Deterministic parse+apply for common requests (start time + blocks + durations) without waiting on the model
+- [ ] AI only enhances (ideas/lesson text); if slow, the day is already built — nothing freezes
+- [ ] Silent auto-recovery for slow calls (background self-clear), but REMOVE the user-facing Reset/Cancel affordance
+- [ ] Audit the whole app for any other AI-in-the-critical-path spots that can hang or emit wrong output
+
+---
+
+## 2026-06-17 — Simplification + Kiwi merge + Coin economy (Katy session)
+
+### Protected (DO NOT remove during simplification)
+- [x] Kiwi keeps ALL fun: flying/roaming, dress-up/costumes, dance, visits, chat, voice, flock companions.
+
+### Done this session
+- [x] Today (Wed 6/17) set directly: 11:00 Ali 45m, 12:00 Lunch 60m, 1:00 Funny clip 10m, 1:10 Measurement types/overview 30m, 1:40 Conversion intro 30m, 2:30 3-Duck Measurement Adventure 40m.
+- [x] Removed user-facing Reset/Cancel from agenda chat; kept silent background self-clear.
+- [x] Reagan sidebar trimmed 9 -> 6 (Today, Schedule, Kiwi, Bookshelf, Notebook, Apps & Tools). Practice/Flashcards/Review routes kept, removed from kid menu.
+- [x] Legibility: confirmed text-muted-foreground is intentional secondary color; text-white usages all sit on colored/dark backgrounds.
+- [x] Questionnaire relabel completed on ReviewQuiz page (header, generate, finish, tabs, empty states, toasts). Only internal var names remain.
+
+### In progress / to do
+- [ ] Merge Kiwi floating pieces (KiwiPerch + KiwiCompanion + KiwiQuietListener + flock/dress-up) into ONE Kiwi companion component. No capability lost. /kiwi stays as stats/coins page.
+- [ ] Automatic coin economy: award coins on block/assignment/questionnaire completion, amount scaled by difficulty + time taken; idempotent (once per completion), reversible on un-turn-in; coins page shows running total + recent ledger.
+- [ ] Adult-side audit: collapse duplicate flows, remove unused apps/pages, legibility.
+- [ ] Contradiction + dead-data sweep: stale restrictions/exclusions, duplicate actions, unused app links.
+- [ ] Backend audit: routers, schedules/cron, schema, calendar/email, dead code.
+- [ ] Housekeeping: prune stale todos/history, dedupe, reorganize.
+- [ ] LAST: Google Calendar de-duplication (single shared calendar; remove duplicate copies from Katy + Reagan personal calendars; lock sync target so dupes don't return).
+
+### Coins page redesign (2026-06-17 Katy spec) — exact
+- [ ] Remove existing reward/spend "what to use coins for" options/store UI entirely.
+- [ ] Top: BIG totals header — Today's coins, This week's coins, Total overall (overall biggest/headline).
+- [ ] Show Used coins (redeemed) so balance = earned - used.
+- [ ] Basic, almost-financial ledger TABLE of coins, EXPANDABLE (collapsed by default): date | what she did (block/assignment/questionnaire) | coins (+earned / -redeemed).
+- [ ] Bottom: ONE button — "Email / contact Mom to exchange coins for a reward or money" -> sends to spear.cpt@gmail.com with current balance prefilled. Katy replies with reward + coin cost. No in-app reward catalog.
+- [ ] Adult-side: simple "mark redeemed N coins for [reward]" action so Used coins / balance stay honest.
+- [ ] Coins auto-awarded by difficulty+time engine on each completion; ledger fills itself.
+
+## Continuation session (Katy live directives)
+
+### Phase 1 — Auto coin economy (finish)
+- [ ] blocks.complete: replace flat coins:1 with computeCoinAward(inferDifficulty,minutes)
+- [ ] blocks.selfComplete: same
+- [ ] rewards router: expose coinSummary query for Coins page
+
+### Phase 2 — Coins page rebuild (client/src/pages/Kiwi.tsx)
+- [ ] Totals header (today/week/total earned) + used coins row
+- [ ] Expandable ledger table (date | what | coins)
+- [ ] Single "Email Mom to exchange coins" button -> spear.cpt@gmail.com only
+- [ ] Remove practice browser, voice sliders, prize store
+- [ ] Adult side: mark redeemed N coins for reward
+
+### Phase 3 — Today page trim (client/src/pages/Today.tsx)
+- [ ] Remove Have-to-do 3-card strip
+- [ ] Remove 15-min skill-builder block
+- [ ] Remove mom-only/no-tutor notice + lined notebook strip
+
+### Phase 4 — Apps trim (client/src/pages/Apps.tsx)
+- [ ] Remove most apps; keep only used / sign-in-only / preference apps
+
+### Phase 5 — Notebook rich popup from floating dock (ResourceDock)
+- [ ] Add notebook icon to ResourceDock
+- [ ] Left sidebar: paper types (blank/lined/graph/dotted/colored) + tools (type, draw/handwriting, math, clipart, checklist)
+- [ ] Handwriting-to-text: handwriting converts to typed font (NOT read-aloud)
+- [ ] Saves to the Drive notes (same saved-notes mechanism)
+- [ ] Kiwi can open it
+- [ ] Remove Notebook from kid sidebar (-> 5 entries)
+
+### Phase 6 — Bookshelf in-browser ebook/online reading
+### Phase 7 — Legibility fixes (Analytics, Screening History, Curriculum Hub)
+### Phase 8 — Settings simplification
+- [ ] Hide DNS/technical internals (sync commands, raw logs)
+- [ ] Plain-English explanation per option
+- [ ] Always-on listening analytics ALWAYS ON (working on, talking about, mood, people talking, time per assignment); wake word optionally OFF only
+
+### Phase 9 — Backend audit + housekeeping
+### Phase 10 — Tests, typecheck, checkpoint
+### Phase 11 — LAST: Google Calendar de-duplication
+
+### Phase 5b — Timer placement clarification (Katy)
+- [ ] Timer lives ONLY in the floating-dock popup extras tray (with calculator, notebook, word lookup) — never inline on kid pages
+- [ ] Time-on-assignment keeps recording silently behind the scenes for analytics regardless of whether the visible timer is open (KiwiQuietListener/analytics time tracking stays ALWAYS ON)
+
+## Continuation session — added (Katy, big test-out day tomorrow)
+
+### Phase 7 — Collapsible left sidebar
+- [ ] Left page-list sidebar collapses/expands (icon-rail <-> full labels), remembered per device
+
+### Phase 8 — Theme overhaul (4 themes total)
+- [ ] Redesign 2 of the 4 themes into a distinctly modern look: simple, colorful, 3D-glass / minimalistic
+- [ ] Each theme may also vary layout (not just colors); keep collapsible left sidebar as default structure
+- [ ] No tropical themes (user dislikes)
+
+### Phase 13 — Deliverables (after everything works)
+- [ ] Full audit report: front + back + extended — syncing (Calendar, Drive), worksheets, sign-ins (IXL/Khan/Classroom/etc), all links, AI (agenda editor, Kiwi chat, review quizzes, grading), calendar, coins, notebook. For each: works / doesn't / errors + why
+- [ ] Kiwi capabilities list
+- [ ] Analytics list (working on, talking about, mood, people talking, time per assignment, etc.)
+- [ ] GOAL: everything runs smoothly for tomorrow's platform test-out day
+
+## Theme plan CONFIRMED (Katy 2026-06-17)
+- Theme 1: Black Chalkboard (current dark) — KEEP, per-subject colors intact
+- Theme 2: White Basic (clean light, same layout/subject colors) — KEEP
+- Theme 3: NEW look (AI choice) — visibly different, e.g. modern colorful glassmorphism (3D glass cards, translucent panels), own layout variation
+- Theme 4: NEW look (AI choice) — distinct from #3, e.g. clean minimalistic flat/rounded or warm paper, own layout variation
+- No tropical. Each new theme should add layout variation, not just colors.
+- Left-hand sidebar page list COLLAPSIBLE (icon-rail <-> labels, remembered)
+
+## Theme plan UPDATED to 5 themes (Katy 2026-06-17)
+- Theme 1: Black Chalkboard (keep)
+- Theme 2: White Basic (keep)
+- Theme 3: NEW modern colorful glassmorphism (AI) + layout variation
+- Theme 4: NEW distinct minimalist/flat or warm-paper (AI) + layout variation
+- Theme 5: NEW one more best-fit look (AI choice)
+- Theme switcher for Reagan: bottom-left of sidebar (near collapse control), kid-friendly
+- Kiwi intro can also offer to change the look; same theme state, stays in sync
+- Full theme control also in adult Settings
+
+## Downloadable app (Katy 2026-06-17)
+- [ ] Make the site installable as a PWA: web app manifest + icons + offline service worker + "Install app" prompt
+- [ ] Works as Add-to-Home-Screen on iPad/iPhone/Android and install on desktop Chrome/Edge; launches full-screen with its own icon
+- [ ] Note: requires the PUBLISHED .manus.space URL (not dev preview); native App Store/Play build is out of scope for tomorrow
+- [ ] Do PWA step AFTER UI is final so icon + cache reflect finished site
+
+- [x] Collapsible left sidebar (icon-rail <-> labels, remembered per device)
+- [x] Theme picker pinned bottom-left of sidebar (compact when collapsed)
+- [x] 5-theme catalog: Black Chalkboard (kept), White Basic (new clean light), Bubble Glass (new glassmorphism), Sunshine (new flat minimal), Galaxy Glow (new deep-space)
+- [x] Legacy theme ids (starry/cream/notebook) auto-migrate so saved prefs don't break
+- [x] Kiwi intro offers a theme change ("Want to change how your school looks?")
+
+
+## 🚀 Final test-out-day polish (2026-06-17)
+- [ ] App icon: teal-Kiwi variations generated (roofline+R, book+Reagan, badge); awaiting final pick — using roofline+R as placeholder
+- [x] Backend audit: dead/orphaned procedures, contradictions, stale restrictions, scheduled-job wiring — findings in references/audit-findings-2026-06-17.md (tsc clean, 5 crons live & wired, ihsd guards confirmed, only note = 7AM vs 6:30AM email timing)
+- [x] PWA: manifest.webmanifest + sw.js (network-first nav, never caches API/tRPC/storage) + icons (192/512/maskable/apple-touch/favicon, teal roofline+R) + dismissible install chip (PwaInstallPrompt, prod-only SW reg, iOS Safari hint); 6 vitest pass
+- [ ] Verification: tsc clean, pnpm test green, key flows, checkpoint
+- [ ] Audit report deliverable + Kiwi capabilities list + analytics list
+- [ ] Google Calendar de-dup (events showing 3x) — LAST
+
+
+## Test-out-day polish — progress 2026-06-17
+- [x] IXL launcher hardened: ignores non-launcher homepage/marketing URLs (e.g. ?customDomain=quickstart), only honors real {skill}/sign-in launchers; deep-links to exact grade-5 skill otherwise (server/_lib/subjectAppLinks.ts + isRealQuickStartLauncher)
+- [x] One-time "Sign in as Reagan the first time" tip on first IXL launch (WorksheetRunner.tsx, localStorage-gated)
+- [x] Aligned stale UI-contract tests to current intended design (no feature reverts): sidebarContract (5-leaf, Notebook in dock), scheduleSidebarContract (NavItem[], no /coins), agendasPageDeletion (NavItem[]), companionBelt (belt in Kiwi popup), kiwiVoiceSlidersContract (sliders panel intentionally removed, voice logic intact), reaganSelfComplete (computeCoinAward not flat coins:1), appsCanonical (launch-tile guard)
+- [x] Removed dead Google Classroom tile from appLinks (@ihsd.us account closed)
+- [x] Fixed malformed 'Planets Recap Video' tile (added planet emoji)
+- [x] Full suite green: tsc 0 errors, 528 files / 4779 tests pass (7 skipped)
+- [ ] Google Calendar de-duplication (events showing 3x)
+
+- [x] Google Calendar de-duplication: data layer confirmed clean (2 feeds, no dup rows). Added render-safe dedupeIcalEvents() on listIcalEventsBetween — collapses the same event arriving from multiple subscribed feeds AND imported copies with rewritten uids (uid+forDate primary key, summary+startsAt fallback), while preserving recurring events across different days. 5 vitest scenarios in server/icalEventDedupe.test.ts. Full suite green: tsc 0 errors, 529 files / 4784 tests pass (7 skipped)
+
+- [x] No-grey-box fix: Brain-Break TV unstarted state now uses a warm kiwi-teal→amber gradient (thumbnail fades in on load, gradient stays if it 404s) instead of a black/grey void (BrainBreakTvBox.tsx). tsc clean.
+- [x] Verified Kiwi popup on load is the intentional one-time IntroTour (localStorage kiwiTourSeen, cross-device synced) — NOT the voice assistant auto-opening; complies with the wake-word/click-only rule (no mic request).

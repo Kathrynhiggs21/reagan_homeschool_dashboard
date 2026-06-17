@@ -57,7 +57,7 @@ describe("v2.40 — /agendas page deletion + sidebar entry removal", () => {
 
   it("CozyShell KID_NAV preserves /schedule (the kid-side calendar) — distinct from the deleted /agendas adult page", () => {
     const src = fs.readFileSync(COZY_SHELL_PATH, "utf8");
-    const kidNavMatch = src.match(/const KID_NAV: NavRow\[\] = \[([\s\S]*?)\];/);
+    const kidNavMatch = src.match(/const KID_NAV: NavItem\[\] = \[([\s\S]*?)\];/);
     expect(kidNavMatch).toBeTruthy();
     const block = kidNavMatch![1];
     expect(block).toMatch(/to: ["']\/schedule["']/);

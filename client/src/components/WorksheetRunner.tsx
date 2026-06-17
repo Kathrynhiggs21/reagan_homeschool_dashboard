@@ -196,7 +196,22 @@ export default function WorksheetRunner({
                 </span>
                 <Button
                   size="sm"
-                  onClick={() => window.open(appLink.url, "_blank", "noopener")}
+                  onClick={() => {
+                    // One-time, gentle reminder so the FIRST launch signs in as
+                    // Reagan (so her progress tracks) and the browser saves it.
+                    if (
+                      appLink.app === "ixl" &&
+                      typeof window !== "undefined" &&
+                      !localStorage.getItem("ixl-signin-tip-seen")
+                    ) {
+                      localStorage.setItem("ixl-signin-tip-seen", "1");
+                      toast("Sign in as Reagan the first time", {
+                        description:
+                          "Use Reagan's IXL login once and let the browser save it — after that it opens straight to the skill.",
+                      });
+                    }
+                    window.open(appLink.url, "_blank", "noopener");
+                  }}
                 >
                   <ExternalLink className="h-4 w-4 mr-1" /> {appLink.label}
                 </Button>

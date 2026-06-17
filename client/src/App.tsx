@@ -12,12 +12,11 @@ import AdultGate from "./components/AdultGate";
 import AssignmentsLibrary from "./pages/AssignmentsLibrary";
 import CozyShell from "./components/CozyShell";
 import KiwiCompanion from "./components/KiwiCompanion";
-import KiwiPerch from "./components/KiwiPerch";
-import KiwiQuietListener from "./components/KiwiQuietListener";
 import ResourceDock from "./components/ResourceDock";
 import QuickAddFab from "./components/QuickAddFab";
 import NotebookDrawer from "./components/NotebookDrawer";
 import MakeRequestPill from "./components/MakeRequestPill";
+import PwaInstallPrompt from "./components/PwaInstallPrompt";
 import Today from "./pages/Today";
 import Curriculum from "./pages/Curriculum";
 import Bookshelf from "./pages/Bookshelf";
@@ -136,10 +135,10 @@ function Router() {
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
-      {ui.showKiwiPerch && <KiwiPerch />}
       <ResourceDock />
+      {/* Single Kiwi mount — KiwiCompanion now renders the roaming bird and the
+          quiet listener internally (2026-06-17 merge). */}
       <KiwiCompanion />
-      <KiwiQuietListener />
       {ui.showQuickAddFab && <QuickAddFab />}
       {/* Global Notebook drawer — only renders when adult lock is unlocked
           AND the per-object toggle in Settings is on. */}
@@ -160,6 +159,7 @@ function App() {
               <CustomBackgroundProvider>
                 <Toaster />
                 <Router />
+                <PwaInstallPrompt />
               </CustomBackgroundProvider>
             </AdultLockProvider>
           </KiwiProvider>

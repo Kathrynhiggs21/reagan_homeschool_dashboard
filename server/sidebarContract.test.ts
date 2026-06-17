@@ -5,7 +5,9 @@ import { resolve } from "node:path";
 /**
  * Locks the post-cull sidebar layout (May 4 2026).
  *
- * Kid sidebar must be exactly: Today, Schedule, Kiwi Coins, Practice, Bookshelf, Notebook, Apps & Tools.
+ * Kid sidebar must be exactly: Today, Schedule, Kiwi, Bookshelf, Apps & Tools.
+ * (2026-06-17: Notebook moved out of the sidebar to the floating dock, so the
+ * kid sidebar is now 5 anchor leaves — cleaner for Reagan, fewer clicks.)
  * Adult sidebar must be exactly: Curriculum Hub, Daily Schedule, Agenda Editor, Settings.
  * Deleted concepts (Proud Wall, My Levels, Tutor Handoff, Family Stream/Update,
  * Upload-Sync, Daily Packet, Parent Notes, separate Analytics page, separate
@@ -39,7 +41,8 @@ const adultBlock = extractArrayLiteral("ADULT_NAV");
 
 // 2026-05-05 (later) — Coins + Practice merged into ONE consolidated /kiwi
 // page. Sidebar collapses back to a single "Kiwi" leaf entry.
-const KID_REQUIRED = ["Today", "Schedule", "Kiwi", "Bookshelf", "Notebook", "Apps & Tools"];
+// 2026-06-17 — Notebook moved to the floating dock; removed from sidebar.
+const KID_REQUIRED = ["Today", "Schedule", "Kiwi", "Bookshelf", "Apps & Tools"];
 // 2026-05-05 — "Daily Schedule" page deleted; "Analytics" added back as a real adult page.
 const ADULT_REQUIRED = ["Curriculum Hub", "Agenda Editor", "Analytics", "Settings"];
 
@@ -58,10 +61,12 @@ const ADULT_FORBIDDEN = [
 ];
 
 describe("sidebar contract", () => {
-  it("kid sidebar has exactly the 7 required labels", () => {
+  it("kid sidebar has exactly the 5 anchor labels (Notebook now in dock)", () => {
     for (const label of KID_REQUIRED) {
       expect(kidBlock).toContain(`"${label}"`);
     }
+    // Notebook must NOT be a sidebar leaf anymore (lives in the floating dock).
+    expect(kidBlock.includes('"Notebook"')).toBe(false);
   });
 
   it("kid sidebar contains none of the deleted labels", () => {
@@ -82,13 +87,12 @@ describe("sidebar contract", () => {
     }
   });
 
-  it("kid sidebar leaf count stays within the agreed band (6–9 leaves)", () => {
-    // v3.28 (2026-06-01): the sidebar grew back to 9 leaves after Practice,
-    // Flashcards, and Review & Quiz returned as dedicated pages. The strict
-    // 6-leaf cap from May 2026 is now a band: at least the 6 anchor leaves
-    // (KID_REQUIRED) plus optional skill/practice surfaces.
+  it("kid sidebar leaf count stays within the agreed band (5–9 leaves)", () => {
+    // v3.28 (2026-06-01): sidebar had grown back to 9 leaves. 2026-06-17:
+    // Notebook moved to the floating dock, so the floor is now the 5 anchor
+    // leaves (KID_REQUIRED) plus optional skill/practice surfaces.
     const matches = kidBlock.match(/label:\s*"[^"]+"/g) ?? [];
-    expect(matches.length).toBeGreaterThanOrEqual(6);
+    expect(matches.length).toBeGreaterThanOrEqual(5);
     expect(matches.length).toBeLessThanOrEqual(10);
   });
 

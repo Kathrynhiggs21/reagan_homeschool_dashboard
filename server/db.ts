@@ -2542,6 +2542,70 @@ export async function recentCoinLedger(userId?: number | null, limit = 30) {
   return userId == null ? rows : rows.filter((r: any) => r.userId === userId);
 }
 
+/**
+ * Compute an automatic coin award from difficulty + time spent.
+ * Base 5 coins. Difficulty multiplier: easy x1, medium x1.5, hard x2.
+ * Time bonus: +1 coin per ~10 minutes of effort, capped at +10.
+ * Result is rounded and clamped to a sane 1..40 range so a single item
+ * can never mint a runaway balance.
+ */
+export function computeCoinAward(opts: {
+  difficulty?: "easy" | "medium" | "hard" | null;
+  minutes?: number | null;
+}): number {
+  const base = 5;
+  const mult = opts.difficulty === "hard" ? 2 : opts.difficulty === "medium" ? 1.5 : 1;
+  const minutes = Math.max(0, Math.min(120, Math.round(opts.minutes ?? 0)));
+  const timeBonus = Math.min(10, Math.floor(minutes / 10));
+  const coins = Math.round(base * mult) + timeBonus;
+  return Math.max(1, Math.min(40, coins));
+}
+
+/**
+ * Infer a difficulty bucket when none is explicitly set, from planned minutes
+ * and an optional block kind. Keeps the auto-award path deterministic so it
+ * always produces a number.
+ */
+export function inferDifficulty(opts: {
+  minutes?: number | null;
+  kind?: string | null;
+}): "easy" | "medium" | "hard" {
+  const m = opts.minutes ?? 0;
+  const k = (opts.kind ?? "").toLowerCase();
+  if (k.includes("quiz") || k.includes("assessment") || k.includes("test")) return "hard";
+  if (m >= 40) return "hard";
+  if (m >= 20) return "medium";
+  return "easy";
+}
+
+/**
+ * Coins summary for the redesigned Coins page: today / this-week / total
+ * earned, plus total used (redemptions / negative deltas), and the current
+ * balance. Week starts Sunday in local time.
+ */
+export async function coinSummary(userId?: number | null) {
+  const db = getDb();
+  const rows: any = await db.select().from(coinLedger);
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const dow = now.getDay(); // 0 = Sun
+  const startOfWeek = startOfToday - dow * 24 * 60 * 60 * 1000;
+  let earned = 0, used = 0, today = 0, week = 0;
+  for (const r of rows) {
+    if (userId != null && r.userId !== userId) continue;
+    const t = r.createdAt ? new Date(r.createdAt).getTime() : 0;
+    const d = Number(r.delta) || 0;
+    if (d > 0) {
+      earned += d;
+      if (t >= startOfToday) today += d;
+      if (t >= startOfWeek) week += d;
+    } else {
+      used += Math.abs(d);
+    }
+  }
+  return { today, week, totalEarned: earned, used, balance: earned - used };
+}
+
 export async function listPrizes(activeOnly = true) {
   const db = getDb();
   const rows: any = await db.select().from(prizes).orderBy(desc(prizes.createdAt));
@@ -2596,6 +2660,30 @@ export async function listMyRedemptions(userId?: number | null) {
   const db = getDb();
   const rows: any = await db.select().from(prizeRedemptions).orderBy(desc(prizeRedemptions.requestedAt));
   return userId == null ? rows : rows.filter((r: any) => r.userId === userId);
+}
+
+/**
+ * Adult-only coin redemption against a free-text reward. Writes a single
+ * negative ledger entry (kind="spend_prize", reasonNote=reward label) so the
+ * Coins page "used" total and balance update without needing the prize store.
+ * Does NOT block on balance — Mom/Grandma are trusted to redeem fairly.
+ */
+export async function redeemCoinsForReward(params: {
+  userId?: number | null;
+  coins: number;
+  reward: string;
+  byUserId?: number | null;
+}) {
+  const db = getDb();
+  const amount = Math.max(1, Math.round(params.coins));
+  await db.insert(coinLedger).values({
+    userId: params.userId ?? null,
+    delta: -amount,
+    kind: "spend_prize",
+    reasonNote: `Redeemed: ${params.reward}`,
+  } as any);
+  const summary = await coinSummary(params.userId ?? null);
+  return { ok: true, redeemed: amount, reward: params.reward, ...summary };
 }
 
 // ===== Good Work Notes =====
@@ -6266,12 +6354,21 @@ export async function markPrintableDone(id: number, opts: { photoKey?: string | 
   try {
     const rows: any[] = await d.select().from(dailyPrintables).where(eq(dailyPrintables.id, id));
     row = rows[0] ?? null;
-    if (row?.coinReward && row.coinReward > 0) {
-      await d.insert(coinLedger).values({
-        ledgerType: "earn",
-        delta: row.coinReward,
-        reason: `Printable: ${row.title}`,
-      } as any);
+    if (row) {
+      // Auto-award by difficulty + time. Falls back to the row's coinReward
+      // when set, else computes from estimated minutes. Correct columns:
+      // coinLedger uses `kind` + `reasonNote` (not ledgerType/reason).
+      const minutes = Number(row.estMinutes ?? 0) || 0;
+      const difficulty = inferDifficulty({ minutes, kind: row.kind ?? row.subjectSlug });
+      const computed = computeCoinAward({ difficulty, minutes });
+      const coins = row.coinReward && row.coinReward > 0 ? row.coinReward : computed;
+      if (coins > 0) {
+        await d.insert(coinLedger).values({
+          delta: coins,
+          kind: "earn_gold_star",
+          reasonNote: `Printable: ${row.title}`,
+        } as any);
+      }
     }
   } catch { /* coins are best-effort */ }
   // Push 31 (2026-05-13) — Topic-coverage rollup extension.
@@ -6939,7 +7036,49 @@ export async function listIcalEventsBetween(opts: { startDate: string; endDate: 
       ) as any,
     )
     .orderBy(asc(icalEvents.startsAt));
-  return rows;
+  return dedupeIcalEvents(rows as any[]);
+}
+
+/**
+ * Render-safe de-duplication for calendar events (2026-06-17).
+ *
+ * Even though each feed's cache is wipe-and-replaced, the SAME real-world
+ * event can legitimately arrive from more than one subscribed calendar
+ * (e.g. a soccer tryout that lives on both the Family calendar and Reagan's
+ * calendar), which made it appear 2-3x on the schedule. We collapse those
+ * here so a given event renders exactly once per day.
+ *
+ * Identity key (in priority order):
+ *   1. uid + forDate           — the canonical iCal identity for a day
+ *   2. summary + startsAt      — fallback when feeds rewrite/strip the uid
+ *      (the OpenAI/ChatGPT-imported copies use different uids for the same
+ *       event, so uid alone is not enough).
+ * We keep the first occurrence (lowest feedId/startsAt due to the ORDER BY).
+ */
+export function dedupeIcalEvents<T extends {
+  uid?: string | null;
+  summary?: string | null;
+  forDate?: string | null;
+  startsAt?: Date | string | null;
+}>(rows: T[]): T[] {
+  const seen = new Set<string>();
+  const out: T[] = [];
+  for (const r of rows) {
+    const startKey = r.startsAt instanceof Date
+      ? r.startsAt.toISOString()
+      : String(r.startsAt ?? "");
+    const summaryNorm = (r.summary ?? "").trim().toLowerCase();
+    const uidKey = `uid:${(r.uid ?? "").trim()}|${r.forDate ?? ""}`;
+    const titleKey = `sum:${summaryNorm}|${startKey}`;
+    // Skip if EITHER identity has already been emitted.
+    if ((r.uid && seen.has(uidKey)) || (summaryNorm && seen.has(titleKey))) {
+      continue;
+    }
+    if (r.uid) seen.add(uidKey);
+    if (summaryNorm) seen.add(titleKey);
+    out.push(r);
+  }
+  return out;
 }
 
 

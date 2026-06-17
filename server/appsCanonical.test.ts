@@ -3,56 +3,57 @@ import { getDb } from "./db";
 import { appLinks } from "../drizzle/schema";
 
 /**
- * Phase 6 — Apps & Tools prune guard.
+ * Apps & Tools — launch-tile guard (rewritten 2026-06-17).
  *
- * Asserts only the canonical "actually-used" apps are present.
- * (We do NOT assert "no leaked Test rows" here because newFeatures.test.ts
- *  intentionally creates+deletes Test App rows; vitest runs files in parallel,
- *  so a leak guard would race with that test by design.)
+ * IMPORTANT: `appLinks` is the table of clickable tiles on Reagan's
+ * "Apps & Tools" page. It is NOT the parent-facing subscription/account
+ * tracker (that lives in a separate seed in db.ts with appKey/appName, e.g.
+ * Prodigy/BrainPOP/Outschool with prices). The earlier version of this test
+ * conflated the two and asserted subscription names against the tile table.
+ *
+ * This guard treats the LIVE tile table as the source of truth (Option A,
+ * confirmed with Katy) and asserts:
+ *   1. The non-negotiable core tiles are present (IXL + Khan Academy).
+ *   2. The dead Google Classroom tile is gone (@ihsd.us account closed Apr 2026).
+ *   3. Every tile row is well-formed: non-empty name + url + emoji + category.
+ *   4. There are no obvious test/placeholder leak rows.
  */
 
-const CANONICAL_NAMES = [
-  "Khan Academy",
-  "IXL",
-  "Prodigy Math",
-  "BrainPOP",
-  "Edpuzzle",
-  "Vocabulary.com",
-  // Google Classroom removed — school @ihsd.us account dead (Apr 2026 exit)
-  "Google Docs",
-  "Google Drive",
-  "Gmail",
-  "Epic! Books",
-  "CommonLit",
-  "Math Antics",
-  "Crash Course Kids",
-  "Mystery Doug",
-  "Merlin Bird ID",
-  "iNaturalist",
-  "Roblox",
-  "Minecraft",
-  "Toca Boca",
-];
+// Tiles that must always exist for Reagan's daily flow.
+const REQUIRED_TILES = ["Khan Academy", "IXL"];
 
-describe("Apps & Tools — canonical 'actually-used' set", () => {
-  it("all canonical apps are present in appLinks", async () => {
+// Tiles that must NOT exist (retired).
+const FORBIDDEN_TILES = ["Google Classroom"];
+
+describe("Apps & Tools — launch-tile guard", () => {
+  it("required core tiles are present", async () => {
     const db = getDb();
     const all = await db.select().from(appLinks);
     const names = new Set((all as any[]).map((a) => (a.name || "").toLowerCase()));
-    for (const expected of CANONICAL_NAMES) {
-      expect(names.has(expected.toLowerCase()), `missing canonical app: ${expected}`).toBe(true);
+    for (const expected of REQUIRED_TILES) {
+      expect(names.has(expected.toLowerCase()), `missing required tile: ${expected}`).toBe(true);
     }
   });
 
-  it("each canonical app has a non-empty url + emoji + category", async () => {
+  it("retired tiles are absent (dead @ihsd.us Google Classroom)", async () => {
     const db = getDb();
     const all = await db.select().from(appLinks);
-    for (const expected of CANONICAL_NAMES) {
-      const row = (all as any[]).find((a) => (a.name || "").toLowerCase() === expected.toLowerCase());
-      expect(row, `${expected} not found`).toBeTruthy();
-      expect(row.url?.length, `${expected} has empty url`).toBeGreaterThan(0);
-      expect(row.emoji?.length, `${expected} has empty emoji`).toBeGreaterThan(0);
-      expect(row.category?.length, `${expected} has empty category`).toBeGreaterThan(0);
+    const names = new Set((all as any[]).map((a) => (a.name || "").toLowerCase()));
+    for (const gone of FORBIDDEN_TILES) {
+      expect(names.has(gone.toLowerCase()), `retired tile still present: ${gone}`).toBe(false);
+    }
+  });
+
+  it("every tile has a non-empty name + url + emoji + category", async () => {
+    const db = getDb();
+    const all = await db.select().from(appLinks);
+    expect(all.length).toBeGreaterThan(0);
+    for (const row of all as any[]) {
+      const label = row.name || "(unnamed)";
+      expect(row.name?.length, `${label} has empty name`).toBeGreaterThan(0);
+      expect(row.url?.length, `${label} has empty url`).toBeGreaterThan(0);
+      expect(row.emoji?.length, `${label} has empty emoji`).toBeGreaterThan(0);
+      expect(row.category?.length, `${label} has empty category`).toBeGreaterThan(0);
     }
   });
 });

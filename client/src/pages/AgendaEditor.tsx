@@ -218,6 +218,11 @@ export default function AgendaEditor() {
   const [chatInput, setChatInput] = useState("");
   const [attachment, setAttachment] = useState<{ url: string; mimeType: string; fileName: string } | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  // 2026-06-17 (Katy directive: "no more errors/resets/stuck"). SILENT
+  // watchdog only — no user-facing reset button. If a send somehow stays
+  // pending past the server's own 45s timeout + margin, we quietly clear the
+  // mutation in the background so the box re-enables on its own. Mom never
+  // sees a "reset" affordance; it just keeps working.
 
   const utils = trpc.useUtils();
 
@@ -250,6 +255,18 @@ export default function AgendaEditor() {
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
+
+  // Silent self-heal: if a request stays pending past the server's own 45s
+  // timeout + margin, quietly reset it in the background and drop any pending
+  // bubble. No banner, no button — the box just becomes usable again.
+  useEffect(() => {
+    if (!chatM.isPending) return;
+    const t = setTimeout(() => {
+      chatM.reset();
+      setChatMessages(prev => prev.filter(m => !m.pending));
+    }, 60_000);
+    return () => clearTimeout(t);
+  }, [chatM.isPending]);
 
   const onPickFile = async (file: File) => {
     if (file.size > 8 * 1024 * 1024) {

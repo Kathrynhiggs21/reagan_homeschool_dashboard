@@ -907,13 +907,21 @@ export const appRouter = router({
         // returned row so the kid-side celebrate toast can surface the
         // boost without a second round-trip. Best-effort — if the award
         // fails the original block row still ships back.
+        // Auto coin economy: award scales with the block's difficulty + length
+        // instead of a flat 1. Difficulty is inferred from planned minutes and
+        // block type (quiz/assessment => hard). Deterministic; never throws.
         let award: any = null;
         try {
+          const blk: any = r ?? (await db.getBlock(input.id));
+          const durationMin = Number(blk?.durationMin ?? 30) || 30;
+          const blockType = blk?.blockType ?? null;
+          const difficulty = db.inferDifficulty({ minutes: durationMin, kind: blockType });
+          const coinsToAward = db.computeCoinAward({ difficulty, minutes: durationMin });
           award = await db.awardSticker({
             userId: (ctx.user as any)?.id ?? null,
             reason: "block_done",
             blockId: input.id,
-            coins: 1,
+            coins: coinsToAward,
           });
         } catch (e) {
           console.warn("[rewards] awardSticker failed", e);
@@ -963,11 +971,16 @@ export const appRouter = router({
         // celebrate toast can show the ×boost copy on streak days.
         let award: any = null;
         try {
+          const blk: any = r ?? (await db.getBlock(input.id));
+          const durationMin = Number(blk?.durationMin ?? 30) || 30;
+          const blockType = blk?.blockType ?? null;
+          const difficulty = db.inferDifficulty({ minutes: durationMin, kind: blockType });
+          const coinsToAward = db.computeCoinAward({ difficulty, minutes: durationMin });
           award = await db.awardSticker({
             userId: (ctx.user as any)?.id ?? null,
             reason: "block_done",
             blockId: input.id,
-            coins: 1,
+            coins: coinsToAward,
           });
         } catch (e) {
           console.warn("[rewards] awardSticker failed (selfComplete)", e);
@@ -4053,6 +4066,7 @@ export const appRouter = router({
   rewards: router({
     myStickers: publicProcedure.query(({ ctx }) => db.listStickers((ctx as any).user?.id ?? null)),
     myCoins: publicProcedure.query(({ ctx }) => db.coinBalance((ctx as any).user?.id ?? null)),
+    coinSummary: publicProcedure.query(({ ctx }) => db.coinSummary((ctx as any).user?.id ?? null)),
     myLedger: publicProcedure.input(z.object({ limit: z.number().default(30) }).optional()).query(({ input, ctx }) => db.recentCoinLedger((ctx as any).user?.id ?? null, input?.limit ?? 30)),
     awardBonus: protectedProcedure.input(z.object({
       userId: z.number().optional(), coins: z.number().default(1), lyric: z.string().optional(),
@@ -4103,6 +4117,18 @@ export const appRouter = router({
     deletePrize: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.deletePrize(input.id)),
     requestPrize: publicProcedure.input(z.object({ prizeId: z.number() })).mutation(({ input, ctx }) => db.requestPrize((ctx as any).user?.id ?? null, input.prizeId)),
     myRedemptions: publicProcedure.query(({ ctx }) => db.listMyRedemptions((ctx as any).user?.id ?? null)),
+    /* Adult-only: mark N coins redeemed for a free-text reward (no prize-store dependency).
+       Writes a negative ledger entry so the balance and "used" total update. */
+    redeemCoins: familyAdminProcedure.input(z.object({
+      coins: z.number().int().min(1).max(10000),
+      reward: z.string().min(1).max(200),
+      userId: z.number().optional(),
+    })).mutation(({ input, ctx }) => db.redeemCoinsForReward({
+      userId: input.userId ?? null,
+      coins: input.coins,
+      reward: input.reward,
+      byUserId: (ctx.user as any)?.id ?? null,
+    })),
     goodWorkNotes: publicProcedure.query(({ ctx }) => db.listGoodWorkNotes((ctx as any).user?.id ?? null)),
     addGoodWorkNote: protectedProcedure.input(z.object({
       userId: z.number().optional(),
@@ -9761,6 +9787,77 @@ ${readinessLegendHtml()}
       .mutation(async ({ input }) => {
         await db.deleteNotebookPage(input.dateStr, input.pageIndex);
         return { ok: true };
+      }),
+
+    /* ------------------------------------------------------------------
+     * 2026-06-17 (Katy): KID-accessible notebook.
+     * Reagan opens the notebook from the floating dock (no adult login),
+     * so these mirror get/save but are publicProcedure. Saved pages are
+     * the same notebookPages rows the adult side reads, and on save we
+     * fire-and-forget a Drive push into the "journal" folder so her notes
+     * land in the Drive notes area automatically.
+     * ---------------------------------------------------------------- */
+    kidGet: publicProcedure
+      .input(z.object({ dateStr: z.string(), pageIndex: z.number().int().min(0).default(0) }))
+      .query(async ({ input }) => db.getNotebookPage(input.dateStr, input.pageIndex)),
+
+    kidSave: publicProcedure
+      .input(z.object({
+        dateStr: z.string(),
+        pageIndex: z.number().int().min(0).default(0),
+        paperStyle: z.string().optional(),
+        textContent: z.string().nullable().optional(),
+        drawingStrokes: z.string().nullable().optional(),
+        penColor: z.string().nullable().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { dateStr, pageIndex, ...patch } = input;
+        const row = await db.upsertNotebookPage(dateStr, pageIndex, patch);
+        // Fire-and-forget Drive mirror of the typed text as a markdown note.
+        void (async () => {
+          try {
+            const text = (patch.textContent ?? "").trim();
+            if (!text) return;
+            const ym = dateStr.slice(0, 7);
+            const md = `# Reagan's Notebook — ${dateStr} (page ${pageIndex + 1})\n\n${text}\n`;
+            const buf = Buffer.from(md, "utf8");
+            const { storagePut } = await import("./storage");
+            const key = `notebook/${dateStr}-p${pageIndex}.md`;
+            const put = await storagePut(key, buf, "text/markdown");
+            await (db as any).enqueueDrivePush?.({
+              fileKey: put.key,
+              fileUrl: put.url,
+              fileName: `${dateStr} - Notebook p${pageIndex + 1}`,
+              mimeType: "text/markdown",
+              targetFolder: "journal" as any,
+              targetSubpath: ym,
+            } as any);
+          } catch { /* best-effort */ }
+        })();
+        return row;
+      }),
+
+    /* Handwriting -> typed text. Reagan draws on the pad; we send the PNG
+     * to the vision LLM and return plain typed text she can keep. This is
+     * transcription only (NOT read-aloud). */
+    ocr: publicProcedure
+      .input(z.object({ imageDataUrl: z.string().min(16) }))
+      .mutation(async ({ input }) => {
+        try {
+          const resp = await invokeLLM({
+            messages: [
+              { role: "system", content: "You convert a child's handwriting into clean typed text. Return ONLY the transcribed text, preserving line breaks. Do not add commentary." },
+              { role: "user", content: [
+                { type: "text", text: "Transcribe the handwriting in this image to typed text." },
+                { type: "image_url", image_url: { url: input.imageDataUrl, detail: "high" } },
+              ] as any },
+            ],
+          });
+          const text = (resp as any)?.choices?.[0]?.message?.content ?? "";
+          return { text: typeof text === "string" ? text.trim() : "" };
+        } catch {
+          return { text: "", error: "Couldn't read the handwriting right now." };
+        }
       }),
   }),
 

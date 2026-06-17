@@ -45,12 +45,16 @@ describe("Reagan self-mark-complete — push 43", () => {
     expect(slice).toContain('actorOpenId: ctx.user?.openId ?? "reagan-self"');
   });
 
-  it("blocks.selfComplete still awards the sticker + coin", () => {
+  it("blocks.selfComplete still awards the sticker + coins (difficulty/time-based)", () => {
+    // 2026-06-17: coins are no longer a flat 1 — they are computed by
+    // difficulty + minutes via db.computeCoinAward and forwarded to
+    // awardSticker as `coins: coinsToAward`. The reward still fires.
     const idx = routersSrc.indexOf("selfComplete: publicProcedure");
     const slice = routersSrc.slice(idx, idx + 2500);
     expect(slice).toContain("await db.awardSticker({");
     expect(slice).toContain('reason: "block_done"');
-    expect(slice).toContain("coins: 1");
+    expect(slice).toContain("db.computeCoinAward({");
+    expect(slice).toContain("coins: coinsToAward");
   });
 
   it("Today.tsx imports the selfComplete hook defensively", () => {

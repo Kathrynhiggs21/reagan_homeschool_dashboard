@@ -22,7 +22,6 @@ import ThemePickerStrip from "@/components/ThemePickerStrip";
 import KiwiIntroStrip from "@/components/KiwiIntroStrip";
 import IntroTour from "@/components/IntroTour";
 import ConfidencePrinciplesStrip from "@/components/ConfidencePrinciplesStrip";
-import SkillBuilderTile from "@/components/SkillBuilderTile";
 import PlacementInviteCard from "@/components/PlacementInviteCard";
 import CurriculumChip from "@/components/CurriculumChip";
 import TopicLabel from "@/components/TopicLabel";
@@ -1112,8 +1111,9 @@ export default function Today() {
       <TodaySchoolWork ref={todaySchoolWorkRef} onItemsChanged={setPrintableItems} />
       <WorksheetRunner seed={worksheetSeed} open={worksheetOpen} onOpenChange={setWorksheetOpen} />
 
-      {/* Daily 15-min Skill Builder — next-up skill from her ladder */}
-      <SkillBuilderTile />
+      {/* 2026-06-17 (Katy): removed the daily 15-min Skill Builder tile to
+          simplify Reagan's view. The skill ladder still drives review blocks
+          and auto-attach behind the scenes. */}
 
       {/* Game-as-reward / mood break (only renders on signal) */}
       <GameBreakCard />
@@ -1539,17 +1539,10 @@ function TutorOfDayStrip() {
   if (q.isLoading || q.isError) return null;
   const t = (q.data as any) || null;
 
-  if (!t) {
-    return (
-      <Card className="classroom-card p-3 flex items-center gap-3">
-        <span className="text-xl" aria-hidden>🏠</span>
-        <div className="text-sm">
-          <span className="font-display font-semibold">Mom-only day today.</span>{" "}
-          <span className="text-muted-foreground">No tutor scheduled.</span>
-        </div>
-      </Card>
-    );
-  }
+  // 2026-06-17 (Katy): on a Mom-only / no-tutor day, render nothing instead
+  // of a "No tutor scheduled" notice. Reagan only ever sees the positive
+  // "With Reagan today: <tutor>" strip when a tutor IS scheduled.
+  if (!t) return null;
 
   const window =
     t.arrival && t.departure ? `${t.arrival}–${t.departure}` : t.arrival || t.departure || "";

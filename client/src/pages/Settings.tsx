@@ -139,18 +139,23 @@ export default function Settings() {
         </TabsContent>
       </Tabs>
 
-      {/* v3.21 (2026-05-31) — Drive Connector status + drain command.
-          Sandbox-only mirror path; admin-only display. */}
-      <ConnectorPushCard />
-
-      {/* v3.27 (2026-05-31) — Surface Untitled-leak warnings stamped
-          by `applyConnectorReport` so admins see + dismiss them without
-          dropping into SQL. */}
-      <ConnectorWarningsCard />
-
-      {/* Runbooks — meta admin tool below the 5 user-facing tabs.
-          Self-hides when registry is empty. */}
-      <RunbooksAdminCard />
+      {/* 2026-06-17 — Technical internals (Drive drain command, connector
+          warnings, runbooks) tucked behind a collapsed Advanced section so
+          the day-to-day Settings stays plain-English. Nothing removed. */}
+      <details className="mt-6 rounded-lg border bg-muted/30">
+        <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium text-muted-foreground">
+          Advanced &amp; technical (rarely needed)
+        </summary>
+        <div className="space-y-4 p-4 pt-0">
+          <p className="text-xs text-muted-foreground">
+            These are behind-the-scenes tools for syncing and troubleshooting.
+            You almost never need to open this — everything runs automatically.
+          </p>
+          <ConnectorPushCard />
+          <ConnectorWarningsCard />
+          <RunbooksAdminCard />
+        </div>
+      </details>
 
       {/* IEP reference moved to /curriculum — it lives next to the actual
           learning data instead of being buried in Settings. The link below

@@ -91,4 +91,21 @@ describe("subjectAppLink — optional IXL QuickStart no-password launcher", () =
     expect(r.label).toBe("Open in IXL");
     expect(r.url).toContain("ixl.com/math/grade-5/");
   });
+
+  it("ignores a bare homepage / marketing URL (e.g. ?customDomain=quickstart) and deep-links to the skill", () => {
+    // Real-world value Katy had: a homepage URL with no sign-in PATH. It is NOT
+    // a no-password launcher, so we must fall back to the exact skill deep link.
+    process.env.IXL_QUICKSTART_URL = "https://www.ixl.com/?customDomain=quickstart";
+    const r = subjectAppLink({ subjectSlug: "math", title: "Metric Units Intro", topicHint: "metric" });
+    expect(r.label).toBe("Open in IXL");
+    expect(r.url).toContain("compare-and-convert-metric-units");
+    expect(r.url).not.toContain("customDomain");
+  });
+
+  it("ignores any other site-root URL with a query but no sign-in path", () => {
+    process.env.IXL_QUICKSTART_URL = "https://www.ixl.com/?foo=bar";
+    const r = subjectAppLink({ subjectSlug: "ela", title: "Reading" });
+    expect(r.label).toBe("Open in IXL");
+    expect(r.url).toContain("ixl.com/ela/grade-5");
+  });
 });

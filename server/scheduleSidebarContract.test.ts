@@ -32,22 +32,21 @@ describe("/schedule + sidebar Kiwi consolidation — contract", () => {
   });
 
   it("KID_NAV has a Kiwi leaf and no separate /coins entry", () => {
-    // v3.28 (2026-06-01): /practice came back as its own kid surface
-    // alongside Flashcards + Review. The original "single Kiwi leaf"
-    // contract still applies to /coins (which stays consolidated into
-    // /kiwi), but /practice is now a sibling leaf again.
-    const navBlock = SIDEBAR.split("KID_NAV: NavRow[] = [")[1]?.split("];")[0] ?? "";
+    // 2026-06-17: KID_NAV is NavItem[] again (Notebook moved to the floating
+    // dock). Coins stays consolidated into /kiwi — no separate /coins leaf.
+    const navBlock = SIDEBAR.split("KID_NAV: NavItem[] = [")[1]?.split("];")[0] ?? "";
     expect(navBlock).toContain('to: "/kiwi"');
     expect(navBlock).toContain('label: "Kiwi"');
     expect(navBlock).not.toMatch(/to:\s*"\/coins"/);
-    expect(navBlock).not.toMatch(/kind:\s*"group",[^[]*Kiwi/);
   });
 
-  it("KID_NAV has exactly the 6 expected leaves (locked May 5 2026)", () => {
-    const navBlock = SIDEBAR.split("KID_NAV: NavRow[] = [")[1]?.split("];")[0] ?? "";
-    const labels = ["Today", "Schedule", "Kiwi", "Bookshelf", "Notebook", "Apps & Tools"];
+  it("KID_NAV has exactly the 5 anchor leaves (Notebook moved to dock 2026-06-17)", () => {
+    const navBlock = SIDEBAR.split("KID_NAV: NavItem[] = [")[1]?.split("];")[0] ?? "";
+    const labels = ["Today", "Schedule", "Kiwi", "Bookshelf", "Apps & Tools"];
     for (const lbl of labels) {
       expect(navBlock).toContain(`label: "${lbl}"`);
     }
+    // Notebook is no longer a sidebar leaf.
+    expect(navBlock).not.toContain('label: "Notebook"');
   });
 });

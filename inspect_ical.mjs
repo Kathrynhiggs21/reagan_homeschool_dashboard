@@ -1,0 +1,15 @@
+import mysql from 'mysql2/promise';
+const url = process.env.DATABASE_URL;
+const conn = await mysql.createConnection(url);
+const [feeds] = await conn.query('SELECT id,label,url,lastSyncStatus,eventsCached FROM icalFeeds ORDER BY id');
+console.log('=== FEEDS ===');
+console.log(JSON.stringify(feeds, null, 2));
+const [dupUrls] = await conn.query('SELECT url, COUNT(*) c FROM icalFeeds GROUP BY url HAVING c>1');
+console.log('=== DUPLICATE FEED URLS ==='); console.log(JSON.stringify(dupUrls,null,2));
+const [bySource] = await conn.query('SELECT feedId, COUNT(*) n FROM icalEvents GROUP BY feedId');
+console.log('=== EVENTS PER FEED ==='); console.log(JSON.stringify(bySource,null,2));
+const [dupEvents] = await conn.query('SELECT uid, forDate, summary, COUNT(*) copies FROM icalEvents GROUP BY uid, forDate, summary HAVING copies>1 ORDER BY copies DESC LIMIT 15');
+console.log('=== DUP EVENTS (uid+date) ==='); console.log(JSON.stringify(dupEvents,null,2));
+const [dupBySummary] = await conn.query('SELECT summary, forDate, COUNT(*) copies FROM icalEvents GROUP BY summary, forDate HAVING copies>1 ORDER BY copies DESC LIMIT 15');
+console.log('=== DUP EVENTS (summary+date) ==='); console.log(JSON.stringify(dupBySummary,null,2));
+await conn.end();

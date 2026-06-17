@@ -3,18 +3,32 @@ import { useKiwi } from "@/contexts/KiwiContext";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Send, Mic, MicOff, X, Volume2, VolumeX, MessageCircle, MessageSquareText } from "lucide-react";
+import { Send, Mic, MicOff, X, Volume2, VolumeX, MessageCircle, MessageSquareText, Shirt } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import KiwiSprite from "./KiwiSprite";
 import FlockSprite, { type FlockMember } from "./FlockSprite";
 import { speakLikeBird } from "@/lib/birdVoice";
 import { speakAs, getActiveCompanionId, type CompanionId } from "@/lib/companionVoices";
 import { transcriptHasWakeWord, extractQuestionAfterWake } from "@shared/wakeWord";
+import KiwiPerch from "./KiwiPerch";
+import KiwiQuietListener from "./KiwiQuietListener";
+import CompanionBelt from "./CompanionBelt";
 
+/**
+ * KiwiCompanion is now the SINGLE Kiwi entry point (2026-06-17, Katy:
+ * "keep all kiwi things but combine into one kiwi companion piece").
+ * It mounts, in one place with no capability lost:
+ *   - the roaming/flying animated bird (KiwiPerch)
+ *   - the invisible school-day quiet listener (KiwiQuietListener)
+ *   - the tap/wake-word chat + voice popup (this component's panel)
+ *   - dress-up / flock switching (CompanionBelt) folded inside the popup
+ * App.tsx mounts ONLY <KiwiCompanion/> now.
+ */
 export default function KiwiCompanion() {
-  const { open, setOpen, enabled, mode, voiceMode, setVoiceMode, adultPresent, companionName, companionAvatar, setCompanionName } = useKiwi();
+  const { open, setOpen, enabled, mode, voiceMode, setVoiceMode, adultPresent, companionName, companionAvatar, setCompanionName, showKiwiPerch } = useKiwi();
   const [input, setInput] = useState("");
   const [muted, setMuted] = useState(false);
+  const [showDressUp, setShowDressUp] = useState(false);
   const [lastInteractionAt, setLastInteractionAt] = useState<number>(Date.now());
   const [proactivePrompted, setProactivePrompted] = useState(false);
   // Track which flock companion is the "voice" right now. The CompanionBelt
@@ -298,7 +312,11 @@ export default function KiwiCompanion() {
 
   return (
     <>
-      {/* Kiwi's own floating perch (KiwiPerch) now handles opening chat; no separate launcher button needed */}
+      {/* The roaming animated bird + the invisible quiet listener now render
+          from inside this single companion, so App.tsx has exactly ONE Kiwi
+          mount. Both keep all their original behavior. */}
+      {showKiwiPerch && <KiwiPerch />}
+      <KiwiQuietListener />
 
       {/* Panel */}
       {open && (
@@ -333,6 +351,16 @@ export default function KiwiCompanion() {
               <Button
                 variant="ghost"
                 size="icon"
+                onClick={() => setShowDressUp((v) => !v)}
+                title="Dress up — switch Kiwi's flock companion"
+                aria-pressed={showDressUp}
+                className={showDressUp ? "text-pink-500" : "text-muted-foreground"}
+              >
+                <Shirt className="w-4 h-4"/>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={toggleWakeWord}
                 title={wakeWordOn ? "Wake word ON — say ‘Hi Kiwi’ to call me" : "Wake word OFF — tap me to talk"}
                 className={wakeWordOn ? "text-emerald-500" : "text-muted-foreground"}
@@ -342,12 +370,28 @@ export default function KiwiCompanion() {
               <Button variant="ghost" size="icon" onClick={() => setMuted(m => !m)} title={muted ? "Unmute" : "Mute voice"}>
                 {muted ? <VolumeX className="w-4 h-4"/> : <Volume2 className="w-4 h-4"/>}
               </Button>
+              {/* 2026-06-17 (Katy): Kiwi can open Reagan's notebook for her. */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => { try { window.dispatchEvent(new CustomEvent("kiwi:open-notebook")); } catch { /* ignore */ } }}
+                title="Open my notebook"
+                className="text-purple-500"
+              >
+                <span className="text-base leading-none">📝</span>
+              </Button>
               <Button variant="ghost" size="icon" onClick={() => { setOpen(false); utils.kiwi.history.invalidate(); }}>
                 <X className="w-4 h-4"/>
               </Button>
             </div>
           </div>
 
+          {showDressUp && (
+            <div className="px-3 py-2 border-b bg-pink-50/50 dark:bg-pink-950/20">
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Dress up — pick your buddy</div>
+              <CompanionBelt size={34} />
+            </div>
+          )}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.isLoading && <div className="text-center text-sm text-muted-foreground">Loading...</div>}
             {messages.data?.length === 0 && (

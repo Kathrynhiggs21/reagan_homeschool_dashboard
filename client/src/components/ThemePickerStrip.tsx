@@ -1,6 +1,6 @@
-import { THEMES, useReaganTheme, type ThemeId } from "@/contexts/ReaganThemes";
+import { THEMES, THEME_ORDER, useReaganTheme } from "@/contexts/ReaganThemes";
 
-const ORDER: ThemeId[] = ["starry", "cream", "chalkboard", "notebook"];
+const ORDER = THEME_ORDER;
 
 /**
  * Theme picker strip. Renders four pill buttons that switch the global theme.
@@ -12,7 +12,7 @@ const ORDER: ThemeId[] = ["starry", "cream", "chalkboard", "notebook"];
  */
 export default function ThemePickerStrip({ compact = false }: { compact?: boolean }) {
   const { themeId, setThemeId } = useReaganTheme();
-  const isLightTheme = themeId === "cream" || themeId === "notebook";
+  const isLightTheme = themeId === "white" || themeId === "sunshine";
 
   // Idle (non-selected) pill colors are derived from the current theme so the
   // strip is always legible no matter which page or background it sits on.

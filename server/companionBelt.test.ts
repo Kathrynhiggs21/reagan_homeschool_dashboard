@@ -15,13 +15,13 @@ import { join } from "node:path";
  *   - Render KiwiSprite for kiwi, FlockSprite for the others
  *   - Use speakAs(activeCompanion, ...) when not Kiwi
  *
- * CozyShell must mount the belt under "For Reagan".
+ * 2026-06-17: the belt is now folded INSIDE the Kiwi popup (KiwiCompanion)
+ * rather than the sidebar — consolidated, clutter-free Kiwi surface.
  */
 describe("Companion belt + KiwiCompanion wiring", () => {
   const root = join(__dirname, "..");
   const belt = readFileSync(join(root, "client/src/components/CompanionBelt.tsx"), "utf8");
   const companion = readFileSync(join(root, "client/src/components/KiwiCompanion.tsx"), "utf8");
-  const shell = readFileSync(join(root, "client/src/components/CozyShell.tsx"), "utf8");
 
   it("CompanionBelt iterates FLOCK_MEMBERS and uses setActiveCompanionId", () => {
     expect(belt).toContain("FLOCK_MEMBERS.map");
@@ -49,8 +49,8 @@ describe("Companion belt + KiwiCompanion wiring", () => {
     expect(companion).toContain("KiwiSprite");
   });
 
-  it("CozyShell mounts CompanionBelt under For Reagan", () => {
-    expect(shell).toContain("CompanionBelt");
-    expect(shell).toMatch(/My Flock/);
+  it("KiwiCompanion mounts the CompanionBelt inside the Kiwi popup", () => {
+    expect(companion).toContain('import CompanionBelt from "./CompanionBelt"');
+    expect(companion).toContain("<CompanionBelt");
   });
 });

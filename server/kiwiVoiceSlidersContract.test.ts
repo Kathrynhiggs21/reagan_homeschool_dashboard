@@ -158,13 +158,20 @@ describe("Kiwi voice & sliders contract (v2.87)", () => {
     });
   });
 
-  describe("Kiwi page mounts the sliders panel", () => {
+  describe("Coins/Kiwi page — sliders panel intentionally removed (2026-06-17)", () => {
     const src = fs.readFileSync(KIWI_TSX, "utf8");
-    it("imports + renders <KiwiVoiceSliders/>", () => {
-      expect(src).toMatch(
-        /import\s+KiwiVoiceSliders\s+from\s+["']@\/components\/KiwiVoiceSliders["']/,
-      );
-      expect(src).toMatch(/<KiwiVoiceSliders\s*\/>/);
+    it("does NOT mount the slider panel on the Coins page (decluttered per Katy)", () => {
+      // Katy explicitly removed the voice-slider UI from this page. The page
+      // header documents it under 'What was REMOVED'.
+      expect(src).not.toMatch(/<KiwiVoiceSliders\s*\/>/);
+    });
+    it("the slider logic still exists and powers Kiwi's voice (getKiwiPersonality used by TalkToKiwiButton)", () => {
+      // The component file remains and is consumed by the Talk-to-Kiwi button,
+      // so Kiwi's voice personality still works — only the manual UI was pulled.
+      const sliders = fs.readFileSync(SLIDERS, "utf8");
+      expect(sliders).toMatch(/export function getKiwiPersonality\(\)/);
+      const talk = fs.readFileSync(TALK_BTN, "utf8");
+      expect(talk).toContain("getKiwiPersonality()");
     });
   });
 

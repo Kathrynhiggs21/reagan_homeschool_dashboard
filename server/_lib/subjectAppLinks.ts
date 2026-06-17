@@ -147,12 +147,36 @@ const PRODIGY_MATH = "https://play.prodigygame.com/";
  * student lands on the right activity after the password-less sign-in. If the
  * launcher format doesn't support a destination, we just use it as-is.
  */
+/**
+ * A value only counts as a real no-password launcher when it either carries a
+ * `{skill}` destination placeholder OR points at a QuickStart / sign-in PATH
+ * that actually logs the student in. A bare IXL homepage / marketing URL
+ * (e.g. `https://www.ixl.com/?customDomain=quickstart`) is NOT a launcher —
+ * routing through it would dump Reagan on a generic page instead of her skill,
+ * so we ignore it and fall back to the exact skill deep link (one-time sign-in,
+ * then the browser-saved password makes every later tap seamless).
+ */
+export function isRealQuickStartLauncher(raw: string): boolean {
+  if (!raw) return false;
+  if (raw.includes("{skill}")) return true;
+  let u: URL | null = null;
+  try {
+    u = new URL(raw);
+  } catch {
+    return false;
+  }
+  const path = u.pathname.toLowerCase();
+  const isBareRoot = path === "/" || path === "";
+  const hasLauncherPath = /\/(signin|sign-in|quickstart|qs|autologin|auto-login|login)\b/.test(path);
+  return hasLauncherPath && !isBareRoot;
+}
 function quickStartLauncher(skillUrl: string): string | null {
   const qs = (typeof process !== "undefined" && process.env && process.env.IXL_QUICKSTART_URL
     ? String(process.env.IXL_QUICKSTART_URL)
     : ""
   ).trim();
   if (!qs) return null;
+  if (!isRealQuickStartLauncher(qs)) return null;
   if (qs.includes("{skill}")) return qs.replace("{skill}", encodeURIComponent(skillUrl));
   // Append the destination only when it's safe (no existing query/fragment).
   if (!qs.includes("?") && !qs.includes("#")) {

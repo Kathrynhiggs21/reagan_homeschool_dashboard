@@ -2,26 +2,44 @@ import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Timer as TimerIcon, Calculator as CalcIcon, BookOpen } from "lucide-react";
+import KidNotebookPopup from "@/components/KidNotebookPopup";
 
 /**
- * ResourceDock — tiny floating dock (bottom-left) with 3 tools Reagan can
- * pop open while doing a block: Timer, Calculator, Dictionary.
- * Everything is a modal so she never leaves the page.
+ * ResourceDock — tiny floating dock (bottom-center) with the quick tools
+ * Reagan can pop open while doing a block: Notebook, Timer, Calculator,
+ * Word Finder. Everything is a modal/popup so she never leaves the page.
+ *
+ * 2026-06-17 (Katy): the Notebook is no longer a sidebar page — it lives
+ * here in the dock "extras". Kiwi can also open it by dispatching the
+ * `kiwi:open-notebook` window event. The Timer lives ONLY here in the dock
+ * (never inline on her pages); time-on-task is still recorded silently for
+ * analytics elsewhere regardless of whether she opens this visible timer.
  */
 
 export default function ResourceDock() {
   const [tool, setTool] = useState<null | "timer" | "calc" | "dict">(null);
+  const [notebookOpen, setNotebookOpen] = useState(false);
+
+  // Let Kiwi (or anything else) open the notebook via a window event.
+  useEffect(() => {
+    const onOpen = () => setNotebookOpen(true);
+    window.addEventListener("kiwi:open-notebook", onOpen as EventListener);
+    return () => window.removeEventListener("kiwi:open-notebook", onOpen as EventListener);
+  }, []);
+
   return (
     <>
       <div
         className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 flex flex-row gap-2 px-2 py-1 rounded-full bg-background/70 backdrop-blur border shadow-lg no-print"
         style={{ pointerEvents: "auto" }}
       >
+        <DockBtn onClick={() => setNotebookOpen(true)} label="Notebook" emoji="📝" />
         <DockBtn onClick={() => setTool("timer")} label="Timer" emoji="⏱️" />
         <DockBtn onClick={() => setTool("calc")} label="Calc" emoji="🧮" />
         <DockBtn onClick={() => setTool("dict")} label="Word" emoji="📖" />
       </div>
+
+      <KidNotebookPopup open={notebookOpen} onClose={() => setNotebookOpen(false)} />
       <Dialog open={!!tool} onOpenChange={(o) => !o && setTool(null)}>
         <DialogContent className="max-w-md">
           <DialogHeader>

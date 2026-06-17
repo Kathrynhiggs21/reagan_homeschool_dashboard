@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useKiwi } from "@/contexts/KiwiContext";
+import ThemePickerStrip from "@/components/ThemePickerStrip";
 
 const STORAGE_KEY = "kiwi-intro-dismissed-v1";
 const PLAYED_KEY = "kiwi-intro-played-v1";
@@ -93,6 +94,13 @@ export default function KiwiIntroStrip() {
               <span className="px-2.5 py-1 rounded-full bg-amber-200 text-amber-900 border border-amber-400">No tests</span>
               <span className="px-2.5 py-1 rounded-full bg-amber-200 text-amber-900 border border-amber-400">No timers</span>
               <span className="px-2.5 py-1 rounded-full bg-amber-200 text-amber-900 border border-amber-400">You pick how to learn</span>
+            </div>
+            {/* Kiwi offers to change how the classroom looks (2026-06-17). */}
+            <div className="mt-3 pt-3 border-t border-amber-300/70">
+              <p className="text-[13px] font-semibold text-amber-900 mb-1.5">
+                Want to change how your school looks? Pick a theme! 🎨
+              </p>
+              <ThemePickerStrip compact />
             </div>
           </>
         )}
