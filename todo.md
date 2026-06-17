@@ -528,3 +528,14 @@ for a future in-site token; this session just RAN the work.
 - [x] System prompt: "You ARE the schedule editor, not a suggestion bot" + explicit videos/assignments/lessons handling (update/insert as block content)
 - [x] 10 new wiring tests (server/agendaEditorDirectChatWiring.test.ts): direct binding, no optional chain, no dead-end toast, first-person reply, snapshot refresh, server tally fields, prompt directives
 - [x] Full suite 522 files / 4705 pass / 7 skipped / 0 fail; tsc clean
+
+## Live calendar credential + IXL finalization (2026-06-17)
+- [x] Received Google service-account key (school-calendar-api@reagans-daily-sparkle); saved as GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON secret (preventMatching)
+- [x] App auth resolver already supports SA JSON (JWT-bearer mint, Calendar scope) — no code change needed
+- [x] Live validation script (scripts/validate-calendar-secret.mjs): token mint OK, READ "Reagan" calendar OK
+- [x] Default target calendar set to Reagan Homeschool id (o81tqeb4425ej2k9il7lhmooh4@group.calendar.google.com)
+- [ ] BLOCKED on Katy: share the "Reagan" calendar with school-calendar-api@reagans-daily-sparkle.iam.gserviceaccount.com at "Make changes to events" (currently read-only -> 403 on write). Verified read-only 4x.
+- [ ] After sharing granted: click Settings -> Calendar -> "Sync 2-week pilot" (or tell Manus) to push 6/17-6/30 and verify events land
+- [x] IXL: cleared IXL_QUICKSTART_URL (Family membership has no reliable no-password QuickStart); buttons deep-link to exact grade-5 skill
+- [x] Added one-time "First-time IXL setup" tip to PracticePrefsCard (sign in once on device + save password)
+- [x] Full suite green: 522 files / 4710 pass / 7 skipped / 0 fail; TypeScript clean

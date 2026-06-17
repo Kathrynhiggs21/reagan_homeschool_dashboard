@@ -43,6 +43,21 @@ export default function PracticePrefsCard() {
           </div>
         </div>
       </label>
+
+      <div className="rounded-md border border-sky-300/60 bg-sky-50 dark:bg-sky-900/20 p-3">
+        <div className="text-sm font-medium flex items-center gap-1.5">
+          <span aria-hidden>🔑</span> First-time IXL setup (one time only)
+        </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          On a Family membership IXL can't auto-log-in from this app, but you only
+          have to sign in <strong>once</strong> on Reagan's device:
+        </p>
+        <ol className="text-xs text-muted-foreground mt-1 list-decimal pl-4 space-y-0.5">
+          <li>Open IXL on her tablet/laptop and sign in with her username + password.</li>
+          <li>When the browser asks <em>“Save password?”</em> tap <strong>Save</strong>, and check <em>“keep me signed in”</em> on IXL.</li>
+          <li>After that, every IXL button here drops her straight on the exact skill — already signed in, no password to type.</li>
+        </ol>
+      </div>
     </Card>
   );
 }
