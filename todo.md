@@ -842,3 +842,14 @@ Sequencing rule (project memory): measurement conversion BEFORE volume; poetry/h
 - [x] Theme redesign — catalog rebuilt to 5 themes (ReaganThemes.tsx): Black Chalkboard + White Basic kept; NEW Bubble Glass (colorful glassmorphism/soft 3D), Sunshine (flat minimalist), Galaxy Glow (deep space neon aurora). No tropical themes. Legacy ids migrate cleanly.
 - [x] Theme CSS verified present in index.css (chalkboard 94 / white 83 / glass 27 / sunshine 26 / galaxy 42 rules) — themes actually render, not just picker entries.
 - [x] Collapsible left sidebar kept as default structure across themes.
+
+- [x] Full audit report delivered — references/AUDIT-REPORT-2026-06-17.md (+PDF): front/back/extended status (works/note/needs-credentials) for syncing, worksheets, sign-ins, links, AI, calendar, coins, notebook
+- [x] Kiwi capabilities list — included in audit report §5
+- [x] Analytics list (working on, talking about, mood, people talking, time per assignment, completion, nightly CSV) — included in audit report §6
+- [x] GOAL: dashboard verified runnable for test-out day (tsc clean, 4784 tests pass, checkpoint 0a95fc28)
+
+
+## Post-audit follow-ups — 2026-06-17
+- [x] Retuned nightly-agenda-email cron to 0 30 10 * * 1-5 = 6:30 AM EDT, Mon-Fri only (task B9YPb9JBVMVW5FqgDZ9wik; next run 2026-06-18 10:30 UTC). NOTE: UTC cron; bump to 0 30 11 * * 1-5 when EST returns in Nov.
+- [x] Verified Google Classroom + Drive import wiring: Calendar sync LIVE (GOOGLE_CALENDAR_OAUTH_TOKEN); Classroom/Drive planners+reducers built & tested; drive-* endpoints cron-gated. GAP: drivePushWorker.ts:164 live uploader is still a stub + no live classroom.googleapis fetch caller. Wrote plain-English activation guide: references/GOOGLE-DRIVE-CLASSROOM-ACTIVATION-GUIDE.md (token setup is Katy's 10-min step; finishing live uploader is my follow-up).
+- [ ] POST-TEST-OUT (my work, after Katy supplies GOOGLE_DRIVE_OAUTH_TOKEN): flip drivePushWorker from stub to live drive.files.create; wire live classroom.googleapis fetch caller; verify Automation Health flips to drained
