@@ -809,3 +809,10 @@ Sequencing rule (project memory): measurement conversion BEFORE volume; poetry/h
 
 - [x] No-grey-box fix: Brain-Break TV unstarted state now uses a warm kiwi-teal→amber gradient (thumbnail fades in on load, gradient stays if it 404s) instead of a black/grey void (BrainBreakTvBox.tsx). tsc clean.
 - [x] Verified Kiwi popup on load is the intentional one-time IntroTour (localStorage kiwiTourSeen, cross-device synced) — NOT the voice assistant auto-opening; complies with the wake-word/click-only rule (no mic request).
+
+
+## Homepage (Today) declutter — 2026-06-17
+- [x] Remove Have-to-do 3-card strip from Today/homepage — confirmed not present (no such component rendered)
+- [x] Remove 15-min skill-builder block from Today/homepage — removed (dated note at Today.tsx:1114; skill ladder still drives review behind the scenes)
+- [x] Remove mom-only/no-tutor notice + lined notebook strip — removed (Today.tsx:1542 renders nothing on no-tutor days; only positive "With Reagan today" strip shows when a tutor is scheduled; no lined notebook strip present)
+- [x] Verify tsc + vitest green, checkpoint — tsc 0 errors, 529 files / 4784 tests pass (7 skipped)
