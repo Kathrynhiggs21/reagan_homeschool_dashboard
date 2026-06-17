@@ -289,6 +289,25 @@ export function addMinutesHHMM(hhmm: string, mins: number): string {
 }
 
 /**
+ * True when adding `mins` to `startHHMM` pushes the clock to or past midnight,
+ * i.e. the block crosses into the next calendar day. A late block like
+ * 23:00 + 60min lands at 00:00 the following day, which must be stamped on
+ * the NEXT date or Google Calendar rejects the event as an empty/invalid
+ * time range (end <= start on the same date).
+ */
+export function crossesMidnight(startHHMM: string, mins: number): boolean {
+  const [h, m] = startHHMM.split(":").map(Number);
+  return h * 60 + m + Math.max(1, mins) >= 24 * 60;
+}
+
+/** Add a whole number of days to a YYYY-MM-DD date string (UTC-safe). */
+export function addDaysISO(dateISO: string, days: number): string {
+  const d = new Date(`${dateISO}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+/**
  * Build a Google Calendar event resource from a dashboard block + plan
  * date. Stamps the sync marker + dashboardBlockId for idempotency and
  * the soft-delete sweep.
@@ -299,7 +318,13 @@ export function buildEventResource(
   opts: { timeZone: string; tutorEmail?: string | null },
 ): GCalEventResource {
   const startHHMM = block.startTime;
-  const endHHMM = addMinutesHHMM(startHHMM, Math.max(1, block.durationMin || 30));
+  const durMin = Math.max(1, block.durationMin || 30);
+  const endHHMM = addMinutesHHMM(startHHMM, durMin);
+  // If the block runs past midnight, the end time belongs to the next day.
+  // Without this, a 23:00/60min block produces end 00:00 on the SAME date,
+  // which Google rejects as an empty time range (this caused the lone 6/17
+  // "Ali visit" pilot failure).
+  const endDateISO = crossesMidnight(startHHMM, durMin) ? addDaysISO(dateISO, 1) : dateISO;
   const isTutorBlock =
     block.blockType === "tutor" ||
     (Array.isArray(block.tags) && block.tags.includes("tutor"));
@@ -308,7 +333,7 @@ export function buildEventResource(
     summary: `[Reagan Homeschool] ${block.title}`.slice(0, 250),
     description: `${(block.description ?? "").slice(0, 3800)}\n\n— Reagan Homeschool Dashboard (auto-sync)`,
     start: { dateTime: buildRfc3339(dateISO, startHHMM, opts.timeZone), timeZone: opts.timeZone },
-    end: { dateTime: buildRfc3339(dateISO, endHHMM, opts.timeZone), timeZone: opts.timeZone },
+    end: { dateTime: buildRfc3339(endDateISO, endHHMM, opts.timeZone), timeZone: opts.timeZone },
     reminders: { useDefault: false, overrides: [{ method: "popup", minutes: 10 }] },
     extendedProperties: {
       private: { [SYNC_TAG_KEY]: "1", dashboardBlockId: String(block.id) },

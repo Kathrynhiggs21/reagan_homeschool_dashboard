@@ -44,7 +44,7 @@ const KID_NAV: NavRow[] = [
   { to: "/apps",      emoji: "🎒", label: "Apps & Tools", dot: "#22c55e" },
   { to: "/practice",  emoji: "🎯", label: "Practice",     dot: "#f59e0b" },
   { to: "/flashcards", emoji: "🃏", label: "Flashcards",   dot: "#8b5cf6" },
-  { to: "/review",     emoji: "🧠", label: "Review & Quiz", dot: "#10b981" },
+  { to: "/review",     emoji: "🧠", label: "Review & Questionnaire", dot: "#10b981" },
 ];
 
 // MORE_NAV is now empty — Adventures is a Today popup, Journal is folded

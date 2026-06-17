@@ -33,6 +33,14 @@ const TYPES = [
   "other",
 ] as const;
 
+// Display-only relabel: the stored value stays "quiz" (taxonomy/filters/DB
+// untouched), but the user-facing label reads "Questionnaire" per Mom's
+// request to avoid test/quiz language for Reagan.
+function typeLabel(t: string): string {
+  if (t === "quiz") return "Questionnaire";
+  return t.replace("_", " ");
+}
+
 const SUBJECTS = [
   "math",
   "ela",
@@ -193,7 +201,7 @@ export default function AssignmentsLibrary() {
             <SelectTrigger className="w-40"><SelectValue placeholder="Type" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All types</SelectItem>
-              {TYPES.map((t) => <SelectItem key={t} value={t}>{t.replace("_", " ")}</SelectItem>)}
+              {TYPES.map((t) => <SelectItem key={t} value={t}>{typeLabel(t)}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={status} onValueChange={setStatus}>
@@ -257,7 +265,7 @@ export default function AssignmentsLibrary() {
                     {row.notes && <div className="text-xs text-muted-foreground truncate">{row.notes}</div>}
                   </td>
                   <td className="px-3 py-2 uppercase text-xs">{row.subjectSlug ?? "—"}</td>
-                  <td className="px-3 py-2 text-xs">{row.type.replace("_", " ")}</td>
+                  <td className="px-3 py-2 text-xs">{typeLabel(row.type)}</td>
                   <td className="px-3 py-2 text-xs">{row.topic ?? "—"}</td>
                   <td className="px-3 py-2 text-xs">{row.fromSource}</td>
                   <td className="px-3 py-2 text-xs">{row.ihClassroom ? "Yes" : "No"}</td>
@@ -312,7 +320,7 @@ export default function AssignmentsLibrary() {
               <span>Type</span>
               <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{TYPES.map((t) => <SelectItem key={t} value={t}>{t.replace("_", " ")}</SelectItem>)}</SelectContent>
+                <SelectContent>{TYPES.map((t) => <SelectItem key={t} value={t}>{typeLabel(t)}</SelectItem>)}</SelectContent>
               </Select>
             </label>
             <label className="text-xs space-y-1">

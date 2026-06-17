@@ -115,6 +115,26 @@ export type AgendaEditOp =
       durationMin?: number;              // default 25
       afterBlockId?: number | null;      // null = append (slot at end of day)
       reason?: string | null;            // optional plain-English reason that goes into the block description
+    }
+  /**
+   * v1 (2026-06-17) — "several ways → pick one". Emitted ONLY when the adult
+   * explicitly asks for choices ("give me several ways", "a few ideas",
+   * "options for ..."). This op writes NOTHING to the DB. The chat returns the
+   * candidate list to the UI, which renders pickable chips; the adult's pick
+   * comes back as a normal follow-up message that the planner turns into a
+   * regular insert. This is the one allowed exception to the "make the change,
+   * don't propose options" rule.
+   */
+  | {
+      kind: "offer_options";
+      prompt: string;                    // short question shown above the choices, e.g. "Pick a duck-themed measurement activity:"
+      options: Array<{
+        title: string;                   // short label for the chip
+        description: string;             // 1–2 sentence explanation of the activity
+        blockType?: string;              // suggested block type when picked (default "adventure")
+        subjectSlug?: string | null;     // suggested subject when picked
+        durationMin?: number;            // suggested duration when picked (5–180)
+      }>;
     };
 
 export type AgendaEditPlan = {
@@ -186,6 +206,17 @@ Operation types:
   ladder row to review and slots a catch-up block at the end of the day.
   Prefer this over a plain insert when the adult's intent is clearly
   remediation rather than adding new content.
+- {"kind":"offer_options","prompt":"Pick one:","options":[{"title":"...","description":"...","blockType":"adventure","subjectSlug":"...","durationMin":30}, ...]}
+  Use this ONLY when the adult EXPLICITLY asks for choices to pick from —
+  phrases like "give me several ways", "a few ideas", "some options", "a
+  couple of choices", "list a few". Provide 3–5 distinct, concrete options.
+  This op writes NOTHING — it just presents the choices; the adult will pick
+  one and you'll insert it on the next turn. If the adult did NOT ask for
+  choices, do NOT use this op — just make the single best change.
+  IMPORTANT: when a request mixes a definite build ("add measurement lesson +
+  worksheet") AND an explicit ask for choices ("...then a fun activity, give
+  me several ways"), emit the definite ops (insert/generate_worksheet) AND a
+  trailing offer_options for the choice part, in the same plan.
 
 Allowed blockType values: morning_warmup, math, adventure, read_aloud, choice,
 catch_up, appointment, custom.
@@ -237,11 +268,23 @@ Interpretation rules — be generous, infer intent:
 - Never invent blocks unless the instruction asks to add one.
 - Prefer minimal-diff edits. Never re-emit unchanged fields on update.
 
-You ARE the schedule editor, not a suggestion bot. The adult expects you to
-make the change, not propose options or ask which one they'd prefer. Decide
-the single best interpretation and emit the ops for it. Only return ops=[] when
-the request is genuinely a cross-day move, a tutor swap, or a full-day wipe
-(the cases listed above) — never because you're unsure which option they want.
+You ARE the schedule editor, not a suggestion bot. By default the adult expects
+you to make the change, not propose options or ask which one they'd prefer.
+Decide the single best interpretation and emit the ops for it. Only return
+ops=[] when the request is genuinely a cross-day move, a tutor swap, or a
+full-day wipe (the cases listed above) — never because you're unsure which
+option they want.
+THE ONE EXCEPTION: if the adult EXPLICITLY asks for choices ("give me several
+ways", "a few ideas", "some options"), use the offer_options op for that part
+instead of guessing a single one. This is the only time you may present
+choices.
+
+TIME BUDGET & START TIME: if the adult states a start time ("start at 1",
+"10am") and/or a total time window ("2–4 hours", "about 3 hrs total"), compose
+the new blocks so their durations roughly sum to that window and the first new
+block begins at the stated start. The system will also deterministically
+re-lay start times and scale durations to fit, so just aim for a sensible split
+— don't stress the exact minutes.
 
 Assignments, videos, lessons, links — handle them as block content:
 - "swap the science video for X" / "change the math video" → a single update op
@@ -547,6 +590,38 @@ export function validateEditPlan(
         cleanOps.push(op);
         break;
       }
+      case "offer_options": {
+        // v1 (2026-06-17) — "several ways → pick one". Writes nothing; just
+        // validates the candidate list before the chat returns it to the UI.
+        const raw = Array.isArray((op as any).options) ? (op as any).options : [];
+        const clean = raw
+          .filter((o: any) => o && typeof o === "object" && typeof o.title === "string" && o.title.trim().length > 0)
+          .slice(0, 6)
+          .map((o: any) => {
+            const bt = normalizeBlockType(o.blockType) || (validBlockTypes.has(o.blockType) ? o.blockType : "adventure");
+            let dur = Math.floor(Number(o.durationMin));
+            if (!Number.isFinite(dur)) dur = 30;
+            dur = Math.max(5, Math.min(180, dur));
+            const slug = typeof o.subjectSlug === "string" && subjectSlugs.has(o.subjectSlug) ? o.subjectSlug : null;
+            return {
+              title: String(o.title).trim().slice(0, 120),
+              description: typeof o.description === "string" ? o.description.trim().slice(0, 400) : "",
+              blockType: bt,
+              subjectSlug: slug,
+              durationMin: dur,
+            };
+          });
+        if (clean.length < 2) {
+          warnings.push("Dropped offer_options op with fewer than 2 valid choices.");
+          continue;
+        }
+        (op as any).options = clean;
+        (op as any).prompt = typeof (op as any).prompt === "string" && (op as any).prompt.trim()
+          ? String((op as any).prompt).trim().slice(0, 200)
+          : "Pick one:";
+        cleanOps.push(op);
+        break;
+      }
     }
   }
 
@@ -782,7 +857,7 @@ export async function generateAgendaEditPlan(
                     properties: {
                       kind: {
                         type: "string",
-                        enum: ["update", "delete", "insert", "reorder", "shiftAll"],
+                        enum: ["update", "delete", "insert", "reorder", "shiftAll", "generate_worksheet", "queue_review_block", "offer_options"],
                       },
                       // ---- update fields ----
                       id: { type: "number" },
@@ -802,6 +877,32 @@ export async function generateAgendaEditPlan(
                       },
                       // ---- shiftAll ----
                       minutes: { type: "number" },
+                      // ---- generate_worksheet ----
+                      targetBlockId: { type: ["number", "null"] },
+                      topic: { type: ["string", "null"] },
+                      gradeLevel: { type: ["string", "null"] },
+                      questionCount: { type: "number" },
+                      style: { type: "string", enum: ["practice", "quiz", "review", "writing-prompt"] },
+                      sourceAttachmentUrl: { type: ["string", "null"] },
+                      // ---- queue_review_block ----
+                      reason: { type: ["string", "null"] },
+                      // ---- offer_options ----
+                      prompt: { type: "string" },
+                      options: {
+                        type: "array",
+                        items: {
+                          type: "object",
+                          properties: {
+                            title: { type: "string" },
+                            description: { type: "string" },
+                            blockType: { type: "string" },
+                            subjectSlug: { type: ["string", "null"] },
+                            durationMin: { type: "number" },
+                          },
+                          required: ["title"],
+                          additionalProperties: false,
+                        },
+                      },
                     },
                     required: ["kind"],
                     additionalProperties: false,

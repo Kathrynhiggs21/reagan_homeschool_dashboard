@@ -94,7 +94,53 @@ function BlockLine({ b, kind }: { b: Snapshot; kind: string }) {
   );
 }
 
-type ChatMessage = { role: "user" | "assistant"; content: string };
+/**
+ * Lightweight, display-only parse of a start time and/or time budget from the
+ * user's plain-English message, mirroring the server's parseBudgetAndStart.
+ * Returns a short human echo like "Planning ~3h, starting at 1:00 PM" so the
+ * adult sees the editor understood the constraints the instant they hit send.
+ * The server remains the source of truth for the actual time math.
+ */
+function budgetEcho(message: string): string | null {
+  const m = message.toLowerCase();
+  // Start time: "start 1pm", "start at 10", "starting at 9:30 am", "at 1 pm".
+  let startLabel: string | null = null;
+  const startMatch = m.match(/(?:start(?:ing)?|begin|at)\s*(?:at\s*)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/);
+  if (startMatch) {
+    let h = parseInt(startMatch[1], 10);
+    const min = startMatch[2] ? parseInt(startMatch[2], 10) : 0;
+    const ap = startMatch[3];
+    if (h >= 1 && h <= 23) {
+      if (ap === "pm" && h < 12) h += 12;
+      if (ap === "am" && h === 12) h = 0;
+      // Bare hour with no am/pm: assume school hours (1–7 => PM).
+      if (!ap && h >= 1 && h <= 7) h += 12;
+      const hr12 = ((h + 11) % 12) + 1;
+      const apOut = h < 12 ? "AM" : "PM";
+      startLabel = `${hr12}:${String(min).padStart(2, "0")} ${apOut}`;
+    }
+  }
+  // Budget: "2-4 hrs", "2 to 4 hours", "about 3 hours", "90 minutes".
+  let budgetLabel: string | null = null;
+  const range = m.match(/(\d{1,2})\s*(?:-|to|–)\s*(\d{1,2})\s*(?:hour|hr|h)\b/);
+  const single = m.match(/(\d{1,3})\s*(hour|hr|h|minute|min|m)\b/);
+  if (range) {
+    budgetLabel = `~${range[2]}h (${range[1]}–${range[2]}h)`;
+  } else if (single) {
+    const n = parseInt(single[1], 10);
+    const unit = single[2];
+    if (/^(hour|hr|h)$/.test(unit)) budgetLabel = `~${n}h`;
+    else budgetLabel = `~${n} min`;
+  }
+  if (!startLabel && !budgetLabel) return null;
+  const bits: string[] = [];
+  if (budgetLabel) bits.push(`Planning ${budgetLabel}`);
+  if (startLabel) bits.push(`${budgetLabel ? "starting" : "Starting"} at ${startLabel}`);
+  return bits.join(", ") + "…";
+}
+
+type ChatOption = { title: string; description?: string; durationMin?: number; subjectSlug?: string | null; blockType?: string };
+type ChatMessage = { role: "user" | "assistant"; content: string; options?: { prompt?: string; options: ChatOption[] }[]; pending?: boolean };
 
 /**
  * Turn the chat mutation result into a confident, first-person confirmation of
@@ -183,7 +229,8 @@ export default function AgendaEditor() {
   const chatM = trpc.agendaEditor.chat.useMutation({
     onSuccess: (data: any) => {
       const reply = composeFirstPersonReply(data);
-      setChatMessages(prev => [...prev, { role: "assistant", content: reply }]);
+      const options = Array.isArray(data?.options) && data.options.length ? data.options : undefined;
+      setChatMessages(prev => [...prev.filter(m => !m.pending), { role: "assistant", content: reply, options }]);
       setAttachment(null);
       // Refresh the live schedule beside the chat so the change is visible at once.
       utils.agendaEditor.snapshot.invalidate({ date });
@@ -191,7 +238,7 @@ export default function AgendaEditor() {
       utils.plans?.today?.invalidate?.();
     },
     onError: (e: any) => {
-      setChatMessages(prev => [...prev, { role: "assistant", content: `I hit a snag and couldn't make that change: ${e?.message || "unknown error"}. Try rephrasing and I'll get it done.` }]);
+      setChatMessages(prev => [...prev.filter(m => !m.pending), { role: "assistant", content: `I hit a snag and couldn't make that change: ${e?.message || "unknown error"}. Try rephrasing and I'll get it done.` }]);
     },
   });
 
@@ -219,12 +266,28 @@ export default function AgendaEditor() {
     reader.readAsDataURL(file);
   };
 
+  // "Several ways → pick one": clicking a proposed option sends a follow-up
+  // chat that instructs the editor to add exactly that choice to the day.
+  const pickOption = (opt: ChatOption) => {
+    if (chatM.isPending) return;
+    const dur = opt.durationMin ? ` (about ${opt.durationMin} min)` : "";
+    const desc = opt.description ? ` — ${opt.description}` : "";
+    const msg = `Add this one to ${date}: "${opt.title}"${desc}${dur}.`;
+    setChatMessages(prev => [...prev, { role: "user", content: `Picked: ${opt.title}` }]);
+    chatM.mutate({ date, message: msg });
+  };
+
   const sendChat = () => {
     const trimmed = chatInput.trim();
     if (!trimmed && !attachment) return;
     if (chatM.isPending) return;
     const userMsg = trimmed || "(attached file)";
-    setChatMessages(prev => [...prev, { role: "user", content: userMsg + (attachment ? `\n\n📎 ${attachment.fileName}` : "") }]);
+    const echo = trimmed ? budgetEcho(trimmed) : null;
+    setChatMessages(prev => [
+      ...prev,
+      { role: "user", content: userMsg + (attachment ? `\n\n📎 ${attachment.fileName}` : "") },
+      ...(echo ? [{ role: "assistant" as const, content: `_${echo}_`, pending: true }] : []),
+    ]);
     setChatInput("");
     chatM.mutate({
       date,
@@ -428,6 +491,33 @@ export default function AgendaEditor() {
                         <Streamdown>{msg.content}</Streamdown>
                       ) : (
                         <span className="whitespace-pre-wrap">{msg.content}</span>
+                      )}
+                      {msg.role === "assistant" && msg.options && msg.options.length > 0 && (
+                        <div className="mt-2 space-y-2">
+                          {msg.options.map((grp, gi) => (
+                            <div key={gi} className="space-y-1.5">
+                              {grp.prompt && <div className="text-xs font-medium text-muted-foreground">{grp.prompt}</div>}
+                              <div className="flex flex-col gap-1.5">
+                                {grp.options.map((opt, oi) => (
+                                  <button
+                                    key={oi}
+                                    type="button"
+                                    disabled={chatM.isPending}
+                                    onClick={() => pickOption(opt)}
+                                    className="text-left rounded-lg border border-primary/30 bg-primary/5 hover:bg-primary/10 disabled:opacity-50 px-3 py-2 transition-colors"
+                                    data-testid="agenda-option-chip"
+                                  >
+                                    <div className="flex items-center justify-between gap-2">
+                                      <span className="font-medium text-foreground">{opt.title}</span>
+                                      {opt.durationMin ? <span className="text-[11px] font-mono opacity-70 shrink-0">{opt.durationMin}m</span> : null}
+                                    </div>
+                                    {opt.description && <div className="mt-0.5 text-xs text-muted-foreground">{opt.description}</div>}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </div>
                   </div>

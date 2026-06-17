@@ -343,6 +343,11 @@ export const appRouter = router({
         resolveTutorOfDay(input.date).catch(() => null),
         loadOwnedBooksForAgenda().catch(() => []),
       ]);
+      // v1 (2026-06-17) — parse a start anchor ("start at 1pm") and a total-time
+      // window ("2–4 hours") out of the adult prompt so the day composes to the
+      // exact time the adult asked for. Deterministic post-pass enforces it.
+      const { parseBudgetAndStart } = await import("./_lib/agendaBudget");
+      const budget = parseBudgetAndStart(input.adultPrompt || "");
       const draft = await generateScheduleDraft({
         dateStr: input.date,
         dayLabel,
@@ -357,6 +362,9 @@ export const appRouter = router({
         topicCatalog,
         tutorOfDay,
         ownedBooks,
+        startTime: budget.startTime,
+        budgetMinMinutes: budget.minMinutes,
+        budgetMaxMinutes: budget.maxMinutes,
       });
       return { ...draft, tutorOfDay, tutorLabel: tutorOfDayLabel(tutorOfDay) };
     }),
@@ -1519,6 +1527,45 @@ export const appRouter = router({
       const editPlan = await generateAgendaEditPlan(planCtx, input.message, attachment);
       // 3. Validate + apply ops to DB immediately (no preview step)
       const validated = validateEditPlan(editPlan, planCtx);
+      // 3a. v1 (2026-06-17) — budget + start-anchor layout. If the adult stated
+      // a start time and/or a total time window, deterministically scale the
+      // durations of newly inserted blocks into that window and lay their
+      // start times forward from the anchor (flowing around existing
+      // appointment blocks). This guarantees "start 1pm, 2–4h" is honored even
+      // when the LLM's time math is off. Additive: no budget/start → no-op.
+      const { parseBudgetAndStart, layoutInsertedBlocks } = await import("./_lib/agendaBudget");
+      const budgetParse = parseBudgetAndStart(input.message || "");
+      if (budgetParse.startTime || budgetParse.minMinutes != null || budgetParse.maxMinutes != null) {
+        const insertOps = validated.ops.filter((o: AgendaEditOp) => o.kind === "insert") as Array<Extract<AgendaEditOp, { kind: "insert" }>>;
+        if (insertOps.length > 0) {
+          // Build layout input: the new inserts (flexible) plus any existing
+          // appointment blocks on the day (fixed) so new blocks flow around them.
+          const fixed = snapshot
+            .filter((b) => b.startTime && b.blockType === "appointment")
+            .map((b, i) => ({ ref: 10000 + i, durationMin: b.durationMin, fixed: true as const, startTime: b.startTime as string }));
+          const flexInputs = insertOps.map((o, i) => ({ ref: i, durationMin: o.durationMin }));
+          const laidOut = layoutInsertedBlocks(
+            [...flexInputs, ...fixed],
+            {
+              startTime: budgetParse.startTime ?? null,
+              minMinutes: budgetParse.minMinutes,
+              maxMinutes: budgetParse.maxMinutes,
+            },
+          );
+          const byRef = new Map(laidOut.map((r) => [r.ref, r]));
+          insertOps.forEach((o, i) => {
+            const r = byRef.get(i);
+            if (r) {
+              (o as any).durationMin = r.durationMin;
+              if (r.startTime) (o as any).startTime = r.startTime;
+            }
+          });
+        }
+      }
+      // 3b. v1 (2026-06-17) — "several ways → pick one". offer_options ops write
+      // nothing; collect them so the UI can render pickable choices.
+      const offeredOptions = (validated.ops.filter((o: AgendaEditOp) => o.kind === "offer_options") as Array<Extract<AgendaEditOp, { kind: "offer_options" }>>)
+        .map((o) => ({ prompt: o.prompt, options: o.options }));
       const codeMap = await resolveTopicIds(
         validated.ops.flatMap((op: AgendaEditOp) =>
           op.kind === "update" || op.kind === "insert" ? [(op as any).curriculumTopicCode || null] : []
@@ -1635,12 +1682,19 @@ export const appRouter = router({
         curriculumTopicCode: b.curriculumTopicCode ?? null,
       }));
       const changeCount = inserted + updated + deleted + reordered + shifted;
-      const reply = changeCount === 0
+      const hasOptions = offeredOptions.length > 0;
+      const optionTail = hasOptions
+        ? (changeCount === 0
+            ? ""
+            : " ") + `I also have a few ways to do the fun part — pick the one you like and I'll add it.`
+        : "";
+      const reply = (changeCount === 0 && !hasOptions)
         ? (editPlan.summary || "I read that, but nothing needed to change — the schedule already matches what you asked.")
-        : editPlan.summary || `Done — I made ${changeCount} change${changeCount === 1 ? "" : "s"} to ${input.date}'s schedule. It's live now.`;
+        : (editPlan.summary || (changeCount > 0 ? `Done — I made ${changeCount} change${changeCount === 1 ? "" : "s"} to ${input.date}'s schedule. It's live now.` : "Here are a few options to choose from.")) + optionTail;
       return {
         reply, inserted, updated, deleted, reordered, shifted,
         warnings: validated.warnings, blocks: freshBlocks,
+        options: offeredOptions,
       };
     }),
 

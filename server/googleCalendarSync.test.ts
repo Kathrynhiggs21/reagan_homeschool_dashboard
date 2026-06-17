@@ -222,6 +222,8 @@ import {
   tzOffsetString,
   buildRfc3339,
   addMinutesHHMM,
+  crossesMidnight,
+  addDaysISO,
   buildEventResource,
   SYNC_TAG_KEY,
 } from "./_lib/googleCalendarSync";
@@ -285,5 +287,49 @@ describe("buildEventResource (live path)", () => {
       tutorEmail: "tutor@example.com",
     });
     expect(ev.attendees).toEqual([{ email: "tutor@example.com" }]);
+  });
+
+  // Regression: the lone 6/17 pilot failure was "Ali visit" at 23:00 for 60min.
+  // The end clock wrapped to 00:00 but was stamped on the SAME date, so Google
+  // saw end < start and rejected it as an empty time range.
+  it("rolls the END date forward when a block crosses midnight (the 6/17 Ali-visit bug)", () => {
+    const lateBlock = {
+      id: 2910001,
+      title: "Ali visit",
+      description: null,
+      startTime: "23:00",
+      durationMin: 60,
+      blockType: "appointment",
+    };
+    const ev = buildEventResource(lateBlock, "2026-06-17", { timeZone: "America/New_York" });
+    expect(ev.start?.dateTime).toBe("2026-06-17T23:00:00-04:00");
+    // End is 00:00 on the NEXT day, not the same day.
+    expect(ev.end?.dateTime).toBe("2026-06-18T00:00:00-04:00");
+    // And the end is strictly after the start.
+    expect(new Date(ev.end!.dateTime!).getTime()).toBeGreaterThan(
+      new Date(ev.start!.dateTime!).getTime(),
+    );
+  });
+
+  it("keeps end on the same date for a normal daytime block", () => {
+    const ev = buildEventResource(block, "2026-06-19", { timeZone: "America/New_York" });
+    expect(ev.end?.dateTime?.startsWith("2026-06-19")).toBe(true);
+  });
+});
+
+describe("crossesMidnight + addDaysISO", () => {
+  it("detects a block that runs to or past midnight", () => {
+    expect(crossesMidnight("23:00", 60)).toBe(true);   // ends 00:00 next day
+    expect(crossesMidnight("23:30", 31)).toBe(true);   // 00:01 next day
+    expect(crossesMidnight("23:59", 1)).toBe(true);    // ends exactly midnight
+  });
+  it("returns false for blocks that finish before midnight", () => {
+    expect(crossesMidnight("22:00", 60)).toBe(false);  // ends 23:00 same day
+    expect(crossesMidnight("09:00", 45)).toBe(false);
+  });
+  it("advances the ISO date by whole days (UTC-safe across month end)", () => {
+    expect(addDaysISO("2026-06-17", 1)).toBe("2026-06-18");
+    expect(addDaysISO("2026-06-30", 1)).toBe("2026-07-01");
+    expect(addDaysISO("2026-12-31", 1)).toBe("2027-01-01");
   });
 });

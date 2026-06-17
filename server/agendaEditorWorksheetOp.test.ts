@@ -223,13 +223,15 @@ describe("buildWorksheetPrompt — deterministic prompt shape", () => {
       style: "quiz",
     });
     expect(p.system).toMatch(/5th grade/);
-    expect(p.user).toMatch(/quiz/);
+    // v1 (2026-06-17) — quiz style is surfaced to the user as "questionnaire".
+    expect(p.user).toMatch(/questionnaire/);
+    expect(p.user).not.toMatch(/\bquiz\b/);
   });
 
   it("maps each style to a different noun", () => {
     const styles: Array<{ s: "practice" | "quiz" | "review" | "writing-prompt"; noun: RegExp }> = [
       { s: "practice", noun: /practice worksheet/ },
-      { s: "quiz", noun: /\bquiz\b/ },
+      { s: "quiz", noun: /questionnaire/ },
       { s: "review", noun: /review sheet/ },
       { s: "writing-prompt", noun: /writing prompt/ },
     ];
@@ -237,5 +239,13 @@ describe("buildWorksheetPrompt — deterministic prompt shape", () => {
       const p = buildWorksheetPrompt({ topic: "x", gradeLevel: "5th", questionCount: 5, style: s });
       expect(p.user).toMatch(noun);
     }
+  });
+
+  it("never uses the words 'quiz' or 'test' for the quiz style (Katy's questionnaire rule)", () => {
+    const p = buildWorksheetPrompt({ topic: "measurement conversions", gradeLevel: "5th grade", questionCount: 8, style: "quiz" });
+    expect(p.user).not.toMatch(/\bquiz\b/i);
+    expect(p.user).not.toMatch(/\btest\b/i);
+    expect(p.system).toMatch(/Questionnaire/);
+    expect(p.system).toMatch(/do NOT use the words/i);
   });
 });

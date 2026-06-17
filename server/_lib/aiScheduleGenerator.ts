@@ -11,6 +11,7 @@
  */
 import { invokeLLM } from "../_core/llm";
 import { loadKnowledgeBundle } from "./knowledgeBundle";
+import { layoutInsertedBlocks, type LayoutBlock } from "./agendaBudget";
 import { buildSeasonalProfile, renderSeasonalPromptFragment } from "./seasonalProfile";
 
 export const ALLOWED_BLOCK_TYPES = [
@@ -80,6 +81,18 @@ export type AIGenerateInput = {
    * unit tests + offline calls keep working.
    */
   enforceTopic?: boolean;
+  /**
+   * v1 (2026-06-17) — Budget + start-anchor support for conversational prompts.
+   * When the adult prompt states a start time ("start at 1pm") and/or a total
+   * time window ("2–4 hours"), the caller parses them with agendaBudget.ts and
+   * passes them here. The prompt surfaces them as explicit guidance, and a
+   * deterministic post-pass (applyBudgetLayout) scales block durations to fit
+   * the window and lays start times forward from the anchor — because the LLM
+   * is unreliable at exact time math.
+   */
+  startTime?: string | null;          // "HH:MM" 24h anchor
+  budgetMinMinutes?: number | null;    // lower bound of total work window
+  budgetMaxMinutes?: number | null;    // upper bound of total work window
 };
 
 export type AIOwnedBookHint = {
@@ -206,6 +219,56 @@ export function sanitizeBlocks(
   return { blocks: capped, warnings };
 }
 
+/**
+ * v1 (2026-06-17) — Deterministic budget/start-anchor post-pass.
+ *
+ * After the LLM drafts blocks, this scales the flexible (non-appointment) block
+ * durations so their total lands inside the adult's stated window and lays
+ * start times forward from the anchor, flowing around appointment blocks (which
+ * keep their own time). Capped at the existing 300-min/day ceiling so it can
+ * never contradict sanitizeBlocks. A no-op when neither a start anchor nor a
+ * budget was supplied, so existing callers are unaffected.
+ */
+export function applyBudgetLayout(
+  blocks: AIBlockDraft[],
+  opts: { startTime?: string | null; minMinutes?: number | null; maxMinutes?: number | null },
+): AIBlockDraft[] {
+  const hasAnchor = !!opts.startTime;
+  const hasBudget = opts.minMinutes != null || opts.maxMinutes != null;
+  if (!hasAnchor && !hasBudget) return blocks;
+  if (blocks.length === 0) return blocks;
+
+  // Respect the day-wide 300-min ceiling enforced by sanitizeBlocks: never let
+  // a budget push the total above it.
+  const HARD_CAP = 300;
+  const maxMinutes = opts.maxMinutes != null ? Math.min(opts.maxMinutes, HARD_CAP) : null;
+  // Clamp the minimum to the ceiling too — a budget like "6 hours" (min=max=360)
+  // must never scale the day above the 300-min/day cap sanitizeBlocks enforces.
+  const minMinutes = opts.minMinutes != null ? Math.min(opts.minMinutes, HARD_CAP) : null;
+
+  const layoutInput: LayoutBlock[] = blocks.map((b, i) => ({
+    ref: i,
+    durationMin: b.durationMin,
+    fixed: b.blockType === "appointment",
+    startTime: b.startTime ?? null,
+  }));
+  const laid = layoutInsertedBlocks(layoutInput, {
+    startTime: opts.startTime ?? null,
+    minMinutes,
+    maxMinutes,
+  });
+  const byRef = new Map(laid.map((l) => [l.ref, l]));
+  return blocks.map((b, i) => {
+    const l = byRef.get(i);
+    if (!l) return b;
+    return {
+      ...b,
+      durationMin: l.durationMin,
+      startTime: l.startTime ?? b.startTime,
+    };
+  });
+}
+
 /** Build the LLM messages array. Exported so tests can pin the prompt shape. */
 export function buildPromptMessages(input: AIGenerateInput) {
   const subjectsList = input.subjects.map(s => `- ${s.slug} (${s.name})`).join("\n");
@@ -225,10 +288,25 @@ export function buildPromptMessages(input: AIGenerateInput) {
   // Day-length hint now defers to seasonal target when caller didn't override.
   // "full" = use seasonal target, "half" = halve it, "off" = no blocks.
   const seasonalTargetMin = seasonal.targetBlockCount * 35; // ~35 min avg block
+  // v1 (2026-06-17) — an explicit budget from the adult prompt OVERRIDES the
+  // seasonal default. The deterministic post-pass enforces the exact math, but
+  // we still tell the LLM so it sizes the right number/length of blocks.
+  const hasBudget = input.budgetMinMinutes != null || input.budgetMaxMinutes != null;
+  const budgetText = hasBudget
+    ? (input.budgetMinMinutes != null && input.budgetMaxMinutes != null
+        ? `${input.budgetMinMinutes}–${input.budgetMaxMinutes} minutes total (the adult asked for this exact window — size blocks to fit it)`
+        : input.budgetMaxMinutes != null
+          ? `no more than ${input.budgetMaxMinutes} minutes total (adult-specified cap)`
+          : `at least ${input.budgetMinMinutes} minutes total (adult-specified minimum)`)
+    : null;
   const totalMinHint =
+    budgetText ? budgetText :
     input.dayLength === "off" ? "0 (just one optional rest block)" :
     input.dayLength === "half" ? `around ${Math.round(seasonalTargetMin / 2)}–${Math.round(seasonalTargetMin * 0.75)} minutes total` :
     `around ${seasonalTargetMin}–${seasonalTargetMin + 60} minutes total (seasonal default: ${seasonal.mode} mode, ${seasonal.targetBlockCount} blocks starting ${seasonal.defaultStart})`;
+  const startLine = input.startTime
+    ? `- The school day STARTS at ${input.startTime} (24h). Assign startTime to each block in order beginning at ${input.startTime}; the system will finalize exact times.`
+    : null;
 
   const knowledge = loadKnowledgeBundle();
   const topicCatalog = (input.topicCatalog || []).slice(0, 80);
@@ -288,6 +366,7 @@ export function buildPromptMessages(input: AIGenerateInput) {
     `- Use ONLY these block types: ${blockTypesList}.`,
     `- For subjectSlug use one of (or null): ${input.subjects.map(s => s.slug).join(", ")}.`,
     `- Total duration target: ${totalMinHint}.`,
+    startLine ?? "",
     `- Always include a soft warm-up first and a low-stakes wrap-up last.`,
     `- Keep titles ≤ 60 chars and friendly (one emoji is fine).`,
     `- Description = a parent-readable plan with the activity, materials, and 1–2 talk-about-it questions.`,
@@ -424,10 +503,12 @@ export async function generateScheduleDraft(input: AIGenerateInput): Promise<AIG
         warnings.push("hard-reject: dropped " + dropped + " academic block(s) that remained un-tagged after retry");
       }
       const summaryFromRetry = typeof retryParsed?.summary === "string" ? retryParsed.summary.slice(0, 600) : "";
+      blocks = applyBudgetLayout(blocks, { startTime: input.startTime, minMinutes: input.budgetMinMinutes, maxMinutes: input.budgetMaxMinutes });
       return { blocks, summary: summaryFromRetry || (typeof parsed?.summary === "string" ? parsed.summary.slice(0, 600) : ""), warnings };
     }
   }
 
+  blocks = applyBudgetLayout(blocks, { startTime: input.startTime, minMinutes: input.budgetMinMinutes, maxMinutes: input.budgetMaxMinutes });
   return {
     blocks,
     summary: typeof parsed?.summary === "string" ? parsed.summary.slice(0, 600) : "",

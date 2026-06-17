@@ -563,3 +563,44 @@ for a future in-site token; this session just RAN the work.
 ## Calendar UI honesty pass (2026-06-17)
 - [x] CalendarSyncCard writable state now shows an auto-pilot note ("2-week pilot syncs automatically the first time access is granted") and relabels the pilot button as an idempotent "Re-sync" — the UI no longer implies a required manual step.
 - [x] Read-only panel now includes a one-click "Open this calendar's sharing settings in Google" link (uses probe.targetCalendarId) right next to the copyable service-account email. TypeScript clean. (Project vitest is server-only/node env; no client component-test harness exists, so this presentational change is covered by tsc + manual review rather than a new RTL stack.)
+
+
+## Conversational Agenda Assistant — "talk to it like Manus, but for the agenda" (2026-06-17)
+Headline feature. Build on the EXISTING engine (server/_lib/agendaEditor.ts + agendaEditor.chat in routers.ts) rather than from scratch.
+ACCEPTANCE TEST (primary) = Katy's real prompt for **TODAY (Wed Jun 17, 2026)**, run after the Ali appointment:
+> "Start 10am, 2–4 hours total. Teach measurement types, a lesson on measurement conversions, include metric info too, a worksheet on all of it, then a fun duck-themed activity using measurement — give me several ways to choose from."
+SECONDARY = **NEXT DAY (Thu Jun 18, 2026)**: volume + poetry/haiku unit.
+Sequencing rule (project memory): measurement conversion BEFORE volume; poetry/haiku AFTER measurement; fun activity last. So: today=measurement unit; tomorrow=volume + haiku.
+
+- [ ] PHASE 2 — Total-time-budget + start-anchor day composition. Parse "start at 10am" + "2–4 hours total" (and "after the Ali appt / after lunch" style anchors). Size/sequence inserted blocks so their durations sum within the stated window, laying start times forward from the anchor. Respect existing fixed/appointment blocks.
+- [ ] PHASE 3 — Per-block teaching-content generation. When composing a unit, generate real lesson content into each block's description (measurement types explanation, conversions lesson, metric system info, haiku lesson w/ 5-7-5 + examples) and emit generate_worksheet for the practice block. Not just titles.
+- [ ] PHASE 4 — "Several ways → pick one" option flow. New op/return path so the assistant can PROPOSE multiple options (e.g. 5 duck activities) in chat instead of auto-applying; user picks one; the pick is written into the agenda. (Note: current SYSTEM_PROMPT forbids offering options — must add an explicit "offer choices when the adult asks for several ways / ideas / options" path.)
+- [ ] PHASE 5 — Chat UI: render option cards with pick buttons + show budget/summary; add vitest for budget parsing, composition, and the option/pick flow. Verify Jun 19 example end-to-end.
+- [ ] PHASE 6 — Checkpoint + deliver with the Jun 19 prompt demonstrated.
+
+## Calendar pilot (2026-06-17) — DONE
+- [x] Service account granted write access; live probe = WRITE_READY.
+- [x] Pushed 6/17–6/30 pilot via app sync logic: 41 events created (weekends empty), all days idempotently re-syncable. One block (id 2910001, 6/17) errored "specified time range is empty" — investigate (likely 0-duration or missing startTime block); benign for the rest.
+
+
+## Agenda assistant — corrected start times + printables/PDF/questionnaire (2026-06-17)
+- Start times: TODAY (measurement) = 1:00 PM; TOMORROW (volume + haiku) = 10:00 AM. Both 2–4 hrs.
+- [x] PHASE 2a — agendaBudget.ts: pure parser for start anchor ("start at 1pm" / "today starts at 1") + total-time window ("2–4 hours" / "3 hrs total"), plus layoutInsertedBlocks() that scales flexible durations to the window and lays sequential start times forward from the anchor, flowing around fixed/appointment blocks. (No DB/LLM.)
+- [x] PHASE 2b — wired agendaBudget into the day COMPOSER (aiGenerate → generateScheduleDraft), not the surgical editor (avoids contradicting agendaEditor's edit-only design). aiGenerate now parses start+budget from the adult prompt; generator surfaces them in the prompt and runs applyBudgetLayout() to deterministically scale durations into the window (capped at the existing 300-min/day ceiling) and lay start times forward from the anchor, flowing around appointment blocks. 27 budget tests pass; tsc clean. ORIGINAL note (kept for history) — wire agendaBudget into agendaEditor: feed parsed start/budget into the LLM user message as explicit guidance, and post-process insert ops via layoutInsertedBlocks so durations sum within the window and start times flow from the anchor. Add vitest.
+- [ ] PHASE 5a — Printables work correctly: generated worksheets/lessons produce a clean, complete printable view/PDF (no clipped content, real questions).
+- [ ] PHASE 5b — Direct PDF print links require NO sign-in: the print/PDF link opens the document directly (no Manus OAuth, no Google login, no auth wall) so a tutor can click-and-print. Aligns with standing pref that agenda links open straight to content.
+- [ ] PHASE 5c — Quizzes allowed but labeled "Questionnaire" everywhere user-facing (block title, worksheet header, PDF, print view) — never "quiz"/"test".
+
+---
+
+## ✏️ Conversational Agenda Editor (2026-06-17 session)
+
+- [x] Phase 1 — Mapped existing engine: `agendaEditor.chat` (surgical edits), `aiScheduleGenerator` (day composition), `agendaEditorWorksheetOp` (worksheets), `agendaPdf` (PDF).
+- [x] Phase 2 — Built `server/_lib/agendaBudget.ts`: `parseBudgetAndStart()` + `layoutInsertedBlocks()` (deterministic duration scaling + start-time assignment). Wired into `aiGenerate` and `agendaEditor.chat`. 27 tests.
+- [x] Phase 3 — Confirmed worksheet pipeline; quiz style authored as "questionnaire" in `buildWorksheetPrompt`. 15 tests.
+- [x] Phase 4 — Added `offer_options` op (only when user explicitly asks "several ways"/"give me options"); fixed LLM JSON schema enum to include `generate_worksheet`, `queue_review_block`, `offer_options`. Option chips render in `AgendaEditor.tsx` and clicking one writes the choice. 4 tests + integration test (`agendaComposeMeasurementDay.test.ts`).
+- [x] Phase 5 — Printables/PDF no-sign-in audit: homepage `PrintAgendaButton` uses publicProcedure + base64 blob (no sign-in); per-worksheet PDFs open via `/manus-storage` proxy (server-side auth). Worksheet PDF link is a true one-click `window.open`.
+- [x] Phase 5 — "Questionnaire" relabel sweep: kid nav "Review & Quiz" → "Review & Questionnaire"; Assignments Library renders the `quiz` type as "Questionnaire" (filter, form, table) while keeping the stored enum value `quiz`. In-app size controls NOT relabeled (per spec).
+- [x] Phase 6 — Chat budget echo: `budgetEcho()` shows "Planning ~Xh, starting at Y…" immediately under the user message; replaced by the real result on success. Server remains source of truth for time math.
+- [x] Phase 6 — 6/17 calendar pilot fix: block 2910001 "Ali visit" (23:00 + 60min) crossed midnight; `buildEventResource` now rolls the END date forward (`crossesMidnight()` + `addDaysISO()`) so end is 6/18T00:00 instead of an invalid 6/17 end-before-start. Auto-resync (idempotent upsert) will correct the live event. 5 regression tests.
+- [x] Phase 7 — Full suite 527 files / 4,769 passing / 7 skipped / 0 failures; TypeScript clean.

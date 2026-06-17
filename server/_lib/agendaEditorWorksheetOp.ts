@@ -61,15 +61,23 @@ export function buildWorksheetPrompt(input: {
   style: GenerateWorksheetInput["style"];
 }): { system: string; user: string } {
   const grade = (input.gradeLevel || "5th grade").toLowerCase();
+  // v1 (2026-06-17) — Katy's labeling rule: quizzes are fine, but the
+  // user-facing wording must read "questionnaire" (never "quiz"/"test"). The
+  // internal style enum stays "quiz" so existing routing/validation is intact;
+  // only the authored noun the LLM uses for titles/instructions changes.
   const styleNoun =
-    input.style === "quiz" ? "quiz"
+    input.style === "quiz" ? "questionnaire"
     : input.style === "review" ? "review sheet"
     : input.style === "writing-prompt" ? "writing prompt"
     : "practice worksheet";
+  const labelRule =
+    input.style === "quiz"
+      ? ` Title it as a "Questionnaire" — do NOT use the words "quiz" or "test" anywhere in the title or instructions.`
+      : "";
   const system =
     `You are a homeschool worksheet author. Write age-appropriate ${styleNoun}s ` +
     `for a ${grade} student. Be concrete, include real numbers / examples, and ` +
-    `keep the language simple. Output JSON only — no commentary.`;
+    `keep the language simple.${labelRule} Output JSON only — no commentary.`;
   const user =
     `Make a ${styleNoun} on: ${input.topic.trim()}.\n` +
     `It must contain exactly ${input.questionCount} numbered question${input.questionCount === 1 ? "" : "s"}, ` +
