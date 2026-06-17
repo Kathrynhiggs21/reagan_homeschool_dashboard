@@ -83,12 +83,19 @@ function CalendarPushSection() {
               <RefreshCw className={`w-3 h-3 ${connQ.isFetching ? "animate-spin" : ""}`} />
             </Button>
           </div>
+          {/* The 2-week pilot auto-pushes on the server the first time the
+              calendar becomes writable, so this is informational. The button
+              below stays available as a safe, idempotent manual re-sync. */}
+          <p className="text-[11px] text-muted-foreground" data-testid="calendar-autopilot-note">
+            The 2-week pilot (Jun 17–30) syncs automatically the first time access is granted —
+            no action needed. Use the buttons below to re-sync on demand.
+          </p>
           <div className="flex flex-wrap gap-2">
             <Button size="sm" className="h-7" disabled={busy} onClick={pushToday} data-testid="calendar-push-today">
               {busy ? "Syncing…" : "Sync today"}
             </Button>
             <Button size="sm" variant="secondary" className="h-7" disabled={busy} onClick={pushPilot} data-testid="calendar-push-pilot">
-              {busy ? "Syncing…" : "Sync 2-week pilot (Jun 17–30)"}
+              {busy ? "Syncing…" : "Re-sync 2-week pilot (Jun 17–30)"}
             </Button>
           </div>
         </>
@@ -114,6 +121,18 @@ function CalendarPushSection() {
                 {copiedEmail ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
               </Button>
             </div>
+          )}
+          {conn.targetCalendarId && (
+            <a
+              href={`https://calendar.google.com/calendar/u/0/r/settings/calendar/${encodeURIComponent(conn.targetCalendarId)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] text-sky-600 hover:underline"
+              data-testid="calendar-readonly-open-google"
+            >
+              Open this calendar&apos;s sharing settings in Google
+              <ExternalLink className="w-3 h-3" />
+            </a>
           )}
           <Button size="sm" className="h-7" onClick={recheck} disabled={connQ.isFetching} data-testid="calendar-conn-recheck">
             <RefreshCw className={`w-3 h-3 mr-1 ${connQ.isFetching ? "animate-spin" : ""}`} />

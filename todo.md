@@ -559,3 +559,7 @@ for a future in-site token; this session just RAN the work.
 - [x] Wire it into the `calendar.connectionStatus` admin procedure as fire-and-forget after a writable probe (never blocks/throws the status query).
 - [x] 9 new vitest cases (server/googleCalendarAutoPilot.test.ts) — gating, idempotency, error-no-stamp, empty-flag, best-effort setFlag. Full suite green (524 files / 4,728 pass / 7 skip), TypeScript clean.
 - [ ] LIVE pilot push — STILL pending the service account being granted "Make changes to events" on the Reagan calendar (write probe still 403 READ_ONLY_NEEDS_SHARING as of 2026-06-17). Auto-pilot will push automatically once that share is set; no app click needed.
+
+## Calendar UI honesty pass (2026-06-17)
+- [x] CalendarSyncCard writable state now shows an auto-pilot note ("2-week pilot syncs automatically the first time access is granted") and relabels the pilot button as an idempotent "Re-sync" — the UI no longer implies a required manual step.
+- [x] Read-only panel now includes a one-click "Open this calendar's sharing settings in Google" link (uses probe.targetCalendarId) right next to the copyable service-account email. TypeScript clean. (Project vitest is server-only/node env; no client component-test harness exists, so this presentational change is covered by tsc + manual review rather than a new RTL stack.)
