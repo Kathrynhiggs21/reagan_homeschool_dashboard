@@ -6,10 +6,10 @@ import { trpc } from "@/lib/trpc";
  *   1. chalkboard  — Black Chalkboard (kept; the original dark slate look)
  *   2. white       — White Basic (kept look: clean light version, same layout
  *                    + same per-subject colors)
- *   3. glass       — NEW: Bubble Glass — modern colorful glassmorphism, soft 3D
- *                    translucent cards, vivid candy accents.
- *   4. sunshine    — NEW: Sunshine Minimal — clean flat, rounded, cheerful and
- *                    very simple (lots of white space, big friendly shapes).
+ *   3. glass       — Glassmorphism — frosted translucent panels over a deep
+ *                    cinematic gradient; thin light rims + soft pop-out.
+ *   4. sunshine    — Bright & Colorful Card — clean light canvas with vivid
+ *                    candy-colored cards and chunky pop-out shadows.
  *   5. galaxy      — NEW (AI pick that fits best): Galaxy Glow — deep indigo
  *                    space with neon aurora accents; calm but magical.
  *
@@ -22,8 +22,8 @@ export type ThemeId = "chalkboard" | "white" | "glass" | "sunshine" | "galaxy";
 export const THEMES: Record<ThemeId, { label: string; emoji: string; description: string; swatch: string }> = {
   chalkboard: { label: "Black Chalkboard", emoji: "🖤", description: "Black slate with bright chalk. Calm & classic.", swatch: "#1f2421" },
   white:      { label: "White Basic",      emoji: "🤍", description: "Clean white classroom, same subject colors.",  swatch: "#f7f7f4" },
-  glass:      { label: "Bubble Glass",     emoji: "🫧", description: "Colorful glass bubbles — modern & playful.",    swatch: "linear-gradient(135deg,#7dd3fc,#c4b5fd,#fbcfe8)" },
-  sunshine:   { label: "Sunshine",         emoji: "🌼", description: "Bright, simple & flat. Lots of happy space.",   swatch: "linear-gradient(135deg,#fde68a,#fca5a5)" },
+  glass:      { label: "Glassmorphism",    emoji: "🔮", description: "Frosted glass panels on a glowing night gradient.", swatch: "linear-gradient(135deg,#0b1020,#6366f1,#38bdf8)" },
+  sunshine:   { label: "Bright & Colorful", emoji: "🌈", description: "Vivid candy cards with soft pop-out shadows.",  swatch: "linear-gradient(135deg,#60a5fa,#f472b6,#34d399)" },
   galaxy:     { label: "Galaxy Glow",      emoji: "🌌", description: "Deep space with soft neon aurora glow.",        swatch: "linear-gradient(135deg,#312e81,#7c3aed,#22d3ee)" },
 };
 

@@ -857,3 +857,24 @@ Sequencing rule (project memory): measurement conversion BEFORE volume; poetry/h
 ## Coin-data integrity cleanup — 2026-06-17 (pre-flight finding)
 - [x] coinLedger integrity FIXED (2026-06-17): found 10,091 rows = 9,601 synthetic bulk adult_bonus (+1) test inserts (1,681 in one day, 37 in one second) inflating balance to fake 6,288; 239 spend_prize redemptions were made against that fake balance. Removing only fake earns would leave -3,322, proving the whole ledger was dev/test activity. Per Katy (Option 1): wiped coinLedger entirely for an honest fresh start (live coinSummary now 0/0/0/0/0). Full 10,091-row JSON backup saved at /home/ubuntu/reagan_coin_backup/coinLedger_backup_20260617.json (reversible).
 - [x] Integrity scan of other analytics tables: moodLogs 0, proudMoments 13 (organic), studentRequests 0, reviewAttempts 0, reviewSessions 9 (organic), journalEntries 0, skillProgress 37 = grade-5 ladder seed (all level 0; 32 never practiced; 5 tiny organic test interactions). No other synthetic data found. Temp inspection scripts removed.
+
+## New themes + colorful worksheets — 2026-06-17 (Katy)
+- [ ] Replace the 2 disliked themes (Bubble Glass, one other) with 2 new ones
+- [ ] Theme A "Bright & Colorful Card": light bg, vibrant colored cards (purple/orange/green/pink/blue), every panel a rounded pop-out card with soft drop shadows (ref 363/361/340/364/359/338)
+- [ ] Theme B "Glassmorphism": frosted translucent blurred panels over soft gradient backdrop, light text, subtle pop-out (ref LAST 3: 371/370/368)
+- [ ] Both themes registered in theme catalog + full CSS in index.css + render in picker
+- [ ] Per-block colorful worksheet PDF generator: AI-generated, full-color illustrated, grade-appropriate (6th), opens directly to that block's assignment content (ref 309/297)
+- [ ] "Generate / Print colorful worksheet" button on each daily block
+- [ ] Verify tsc + vitest green; preview both themes + a sample worksheet; checkpoint
+
+
+---
+
+## 🎨 Themes + Colorful Worksheets (2026-06-17, Katy)
+
+- [x] Replace "Bubble Glass" theme with a true Glassmorphism theme (frosted translucent panels over a deep cinematic gradient; thin light rims; soft pop-out). Keep the `glass` rtheme id so saved prefs keep working.
+- [x] Replace "Sunshine Minimal" theme with a Bright & Colorful Card theme (light canvas; vivid candy cards cycling a rainbow palette; chunky pop-out shadows). Keep the `sunshine` rtheme id.
+- [x] Update theme catalog labels/descriptions/swatches + picker light/dark detection (glass=dark, sunshine=light).
+- [x] Upgrade worksheet PDF renderer (`server/_lib/worksheetPdf.ts`) to the colorful illustrated look from refs (title banner + pencil mascot, confetti, Name/Date box, per-section colored header pills + bordered cards, themed answer boxes / MC bubbles, Skills-Covered footer ribbon, encouraging mascot footer). Grade-appropriate tone (6th in summer mode, else 5th) via existing content.
+- [x] PAGE-PER-ASSIGNMENT: each block/worksheet/assignment starts on its OWN page in the printable; multi-page assignments flow onto extra pages; never pack multiple separate block assignments onto one shared page. Answer key still on its own page(s) at the end.
+- [x] vitest coverage for the renderer (produces a valid non-empty PDF buffer; one page per worksheet/section start) + tsc clean.

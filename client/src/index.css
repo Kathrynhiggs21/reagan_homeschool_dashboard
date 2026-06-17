@@ -1617,131 +1617,192 @@ html[data-rtheme="white"] aside .chalkboard { background: #eef2f7 !important; bo
 
 
 /* ===================================================================== */
-/*  NEW THEME: Bubble Glass (glass)  — modern colorful glassmorphism      */
-/*  2026-06-17 (Katy): visibly different look + layout feel. Soft 3D      */
-/*  translucent cards over a vivid pastel aurora, candy accents.         */
+/*  THEME: Glassmorphism (glass)  — frosted translucent panels           */
+/*  2026-06-17 (Katy, v2): re-skinned to match the Home Assistant glass   */
+/*  v2 + Harry Potter dashboard references (last 3 images). Dark,         */
+/*  cinematic gradient backdrop; deeply blurred translucent cards with    */
+/*  thin light rims and a subtle pop-out lift; light text on glass;       */
+/*  bright accents appear only as small glows/pills, never solid panels.  */
 /* ===================================================================== */
 html[data-rtheme="glass"] body {
   background:
-    radial-gradient(circle at 12% 12%, rgba(125,211,252,0.55) 0, transparent 45%),
-    radial-gradient(circle at 85% 18%, rgba(196,181,253,0.55) 0, transparent 45%),
-    radial-gradient(circle at 70% 88%, rgba(251,207,232,0.55) 0, transparent 50%),
-    radial-gradient(circle at 25% 80%, rgba(167,243,208,0.45) 0, transparent 50%),
-    #eef3fb;
+    radial-gradient(circle at 14% 12%, rgba(99,102,241,0.40) 0, transparent 46%),
+    radial-gradient(circle at 86% 16%, rgba(56,189,248,0.32) 0, transparent 46%),
+    radial-gradient(circle at 78% 86%, rgba(217,70,239,0.30) 0, transparent 52%),
+    radial-gradient(circle at 20% 84%, rgba(45,212,191,0.26) 0, transparent 52%),
+    linear-gradient(160deg, #0b1020 0%, #141b32 45%, #1b1530 100%);
   background-attachment: fixed;
-  color: #14233b;
+  color: #eef2fb;
 }
 html[data-rtheme="glass"] .chalk-white,
-html[data-rtheme="glass"] aside .chalk-white { color: #14233b !important; }
+html[data-rtheme="glass"] aside .chalk-white { color: #f3f6ff !important; }
 html[data-rtheme="glass"] .chalk-yellow,
-html[data-rtheme="glass"] aside .chalk-yellow { color: #b4530e !important; }
-html[data-rtheme="glass"] .text-muted-foreground { color: rgba(20,35,59,0.62) !important; }
-html[data-rtheme="glass"] h1, html[data-rtheme="glass"] h2 { text-shadow: none !important; }
+html[data-rtheme="glass"] aside .chalk-yellow { color: #fcd34d !important; }
+html[data-rtheme="glass"] .text-muted-foreground { color: rgba(226,232,246,0.74) !important; }
+html[data-rtheme="glass"] h1, html[data-rtheme="glass"] h2 { color: #f3f6ff !important; text-shadow: 0 1px 12px rgba(0,0,0,0.35) !important; }
 
-/* Frosted-glass cards */
+/* Frosted dark-glass cards — strong blur, thin light rim, soft pop-out */
 html[data-rtheme="glass"] .chalkboard,
 html[data-rtheme="glass"] .cozy-card,
 html[data-rtheme="glass"] .classroom-card,
 html[data-rtheme="glass"] .card {
-  background: rgba(255,255,255,0.45) !important;
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-  border: 1px solid rgba(255,255,255,0.65) !important;
+  background: linear-gradient(150deg, rgba(255,255,255,0.16), rgba(255,255,255,0.07)) !important;
+  backdrop-filter: blur(26px) saturate(150%);
+  -webkit-backdrop-filter: blur(26px) saturate(150%);
+  border: 1px solid rgba(255,255,255,0.22) !important;
   box-shadow:
-    0 1px 0 rgba(255,255,255,0.9) inset,
-    0 12px 32px rgba(80,110,200,0.18),
-    0 2px 8px rgba(80,110,200,0.10) !important;
-  color: #14233b !important;
-  border-radius: 1.25rem !important;
+    0 1px 0 rgba(255,255,255,0.28) inset,
+    0 18px 44px rgba(4,8,20,0.50),
+    0 4px 12px rgba(4,8,20,0.35) !important;
+  color: #eef2fb !important;
+  border-radius: 1.4rem !important;
 }
 html[data-rtheme="glass"] aside,
 html[data-rtheme="glass"] [aria-label="Sidebar"] {
-  background: rgba(255,255,255,0.55) !important;
-  backdrop-filter: blur(20px) saturate(140%);
-  -webkit-backdrop-filter: blur(20px) saturate(140%);
-  border-right: 1px solid rgba(255,255,255,0.7) !important;
-  color: #14233b !important;
+  background: linear-gradient(180deg, rgba(18,24,44,0.66), rgba(14,18,34,0.72)) !important;
+  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+  border-right: 1px solid rgba(255,255,255,0.14) !important;
+  color: #eef2fb !important;
 }
 html[data-rtheme="glass"] aside .chalkboard {
-  background: rgba(255,255,255,0.5) !important;
-  border: 1px solid rgba(255,255,255,0.8) !important;
-  color: #14233b !important;
+  background: linear-gradient(150deg, rgba(255,255,255,0.14), rgba(255,255,255,0.06)) !important;
+  border: 1px solid rgba(255,255,255,0.20) !important;
+  color: #eef2fb !important;
 }
-html[data-rtheme="glass"] aside nav a:hover { background: rgba(125,211,252,0.30) !important; }
+html[data-rtheme="glass"] aside nav a:hover { background: rgba(125,211,252,0.18) !important; }
 html[data-rtheme="glass"] aside nav a.bg-sidebar-primary,
 html[data-rtheme="glass"] aside nav [class*="bg-sidebar-primary"] {
-  background: linear-gradient(135deg,#7dd3fc,#c4b5fd) !important;
-  color: #0f2030 !important;
+  background: linear-gradient(135deg, rgba(99,102,241,0.85), rgba(56,189,248,0.85)) !important;
+  color: #ffffff !important;
 }
-html[data-rtheme="glass"] aside button { color: #14233b !important; }
+html[data-rtheme="glass"] aside button { color: #eef2fb !important; }
 html[data-rtheme="glass"] .schedule-row,
 html[data-rtheme="glass"] .schedule-row-v2 {
-  background: rgba(255,255,255,0.5) !important;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  color: #14233b !important;
-  border-radius: 1rem !important;
+  background: linear-gradient(150deg, rgba(255,255,255,0.14), rgba(255,255,255,0.06)) !important;
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  color: #eef2fb !important;
+  border-radius: 1.1rem !important;
 }
 html[data-rtheme="glass"] .time-chip {
-  background: rgba(196,181,253,0.55) !important;
-  color: #2a1a4a !important;
+  background: rgba(125,211,252,0.30) !important;
+  color: #e8f6ff !important;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+}
+/* On glass, hard-white cards must turn translucent too so the backdrop shows through */
+html[data-rtheme="glass"] .bg-white,
+html[data-rtheme="glass"] [class*="bg-white/"] {
+  background: linear-gradient(150deg, rgba(255,255,255,0.16), rgba(255,255,255,0.07)) !important;
+  color: #eef2fb !important;
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
 }
 
 /* ===================================================================== */
-/*  NEW THEME: Sunshine (sunshine) — bright, flat, very simple            */
-/*  Lots of happy white space, big friendly rounded shapes, warm accents. */
+/*  THEME: Bright & Colorful Card (sunshine) — vivid candy cards         */
+/*  2026-06-17 (Katy, v2): re-skinned to match the colorful card         */
+/*  dashboard references (refs 338/340/361/363). Clean light canvas;     */
+/*  each card is a saturated solid color with a soft chunky pop-out      */
+/*  shadow (raised 3D feel) and rounded corners. Cards cycle through a    */
+/*  rainbow palette via :nth-of-type so the grid reads playful, not flat. */
 /* ===================================================================== */
 html[data-rtheme="sunshine"] body {
   background:
-    radial-gradient(circle at 50% -10%, rgba(253,230,138,0.55) 0, transparent 40%),
-    #fffdf7;
-  color: #3a2f12;
+    radial-gradient(circle at 8% 6%, rgba(96,165,250,0.16) 0, transparent 40%),
+    radial-gradient(circle at 92% 8%, rgba(244,114,182,0.16) 0, transparent 42%),
+    radial-gradient(circle at 50% 100%, rgba(52,211,153,0.14) 0, transparent 46%),
+    #f4f6fb;
+  color: #1f2640;
 }
 html[data-rtheme="sunshine"] .chalk-white,
-html[data-rtheme="sunshine"] aside .chalk-white { color: #3a2f12 !important; }
+html[data-rtheme="sunshine"] aside .chalk-white { color: #1f2640 !important; }
 html[data-rtheme="sunshine"] .chalk-yellow,
 html[data-rtheme="sunshine"] aside .chalk-yellow { color: #d97706 !important; }
-html[data-rtheme="sunshine"] .text-muted-foreground { color: rgba(58,47,18,0.6) !important; }
-html[data-rtheme="sunshine"] h1, html[data-rtheme="sunshine"] h2 { text-shadow: none !important; }
+html[data-rtheme="sunshine"] .text-muted-foreground { color: rgba(31,38,64,0.62) !important; }
+html[data-rtheme="sunshine"] h1, html[data-rtheme="sunshine"] h2 { color: #161c30 !important; text-shadow: none !important; }
 
+/* Base card: white with a soft chunky pop-out shadow + rounded corners */
 html[data-rtheme="sunshine"] .chalkboard,
 html[data-rtheme="sunshine"] .cozy-card,
 html[data-rtheme="sunshine"] .classroom-card,
 html[data-rtheme="sunshine"] .card {
   background: #ffffff !important;
-  border: 2px solid #fde68a !important;
-  box-shadow: 0 6px 0 rgba(252,211,77,0.35) !important;
-  color: #3a2f12 !important;
+  border: 0 !important;
+  box-shadow:
+    0 10px 24px rgba(31,38,64,0.12),
+    0 2px 6px rgba(31,38,64,0.08) !important;
+  color: #1f2640 !important;
   border-radius: 1.5rem !important;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+html[data-rtheme="sunshine"] .cozy-card:hover,
+html[data-rtheme="sunshine"] .classroom-card:hover,
+html[data-rtheme="sunshine"] .card:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 16px 34px rgba(31,38,64,0.16),
+    0 4px 10px rgba(31,38,64,0.10) !important;
+}
+/* Rainbow card cycle — saturated candy fills with matching pop-out shadow.
+   Applied to the dashboard cozy-card grid so each tile is its own color. */
+html[data-rtheme="sunshine"] .cozy-card:nth-of-type(6n+1) {
+  background: linear-gradient(160deg,#dbeafe,#bfdbfe) !important;
+  box-shadow: 0 12px 26px rgba(37,99,235,0.22) !important;
+}
+html[data-rtheme="sunshine"] .cozy-card:nth-of-type(6n+2) {
+  background: linear-gradient(160deg,#fce7f3,#fbcfe8) !important;
+  box-shadow: 0 12px 26px rgba(219,39,119,0.20) !important;
+}
+html[data-rtheme="sunshine"] .cozy-card:nth-of-type(6n+3) {
+  background: linear-gradient(160deg,#dcfce7,#bbf7d0) !important;
+  box-shadow: 0 12px 26px rgba(22,163,74,0.20) !important;
+}
+html[data-rtheme="sunshine"] .cozy-card:nth-of-type(6n+4) {
+  background: linear-gradient(160deg,#fef9c3,#fde68a) !important;
+  box-shadow: 0 12px 26px rgba(202,138,4,0.22) !important;
+}
+html[data-rtheme="sunshine"] .cozy-card:nth-of-type(6n+5) {
+  background: linear-gradient(160deg,#ede9fe,#ddd6fe) !important;
+  box-shadow: 0 12px 26px rgba(124,58,237,0.20) !important;
+}
+html[data-rtheme="sunshine"] .cozy-card:nth-of-type(6n+6) {
+  background: linear-gradient(160deg,#ffedd5,#fed7aa) !important;
+  box-shadow: 0 12px 26px rgba(234,88,12,0.22) !important;
 }
 html[data-rtheme="sunshine"] aside,
 html[data-rtheme="sunshine"] [aria-label="Sidebar"] {
-  background: #fff8e6 !important;
-  border-right: 2px solid #fde68a !important;
-  color: #3a2f12 !important;
+  background: #ffffff !important;
+  border-right: 1px solid rgba(31,38,64,0.08) !important;
+  box-shadow: 4px 0 18px rgba(31,38,64,0.06) !important;
+  color: #1f2640 !important;
 }
 html[data-rtheme="sunshine"] aside .chalkboard {
-  background: linear-gradient(180deg,#fff6d6,#ffe9a8) !important;
-  border: 2px solid #fcd34d !important;
-  color: #3a2f12 !important;
+  background: linear-gradient(160deg,#6366f1,#8b5cf6) !important;
+  border: 0 !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 22px rgba(99,102,241,0.30) !important;
 }
-html[data-rtheme="sunshine"] aside nav a:hover { background: rgba(252,211,77,0.4) !important; }
+html[data-rtheme="sunshine"] aside .chalkboard .chalk-white { color: #ffffff !important; }
+html[data-rtheme="sunshine"] aside nav a:hover { background: rgba(99,102,241,0.12) !important; }
 html[data-rtheme="sunshine"] aside nav a.bg-sidebar-primary,
 html[data-rtheme="sunshine"] aside nav [class*="bg-sidebar-primary"] {
-  background: #fbbf24 !important;
-  color: #3a2f12 !important;
+  background: linear-gradient(135deg,#6366f1,#8b5cf6) !important;
+  color: #ffffff !important;
 }
-html[data-rtheme="sunshine"] aside button { color: #3a2f12 !important; }
+html[data-rtheme="sunshine"] aside button { color: #1f2640 !important; }
 html[data-rtheme="sunshine"] .schedule-row,
 html[data-rtheme="sunshine"] .schedule-row-v2 {
   background: #ffffff !important;
-  border: 2px solid #fef3c7 !important;
-  color: #3a2f12 !important;
+  border: 0 !important;
+  box-shadow: 0 8px 18px rgba(31,38,64,0.10) !important;
+  color: #1f2640 !important;
   border-radius: 1.25rem !important;
 }
 html[data-rtheme="sunshine"] .time-chip {
-  background: #fde68a !important;
-  color: #7c4a03 !important;
+  background: linear-gradient(135deg,#60a5fa,#818cf8) !important;
+  color: #ffffff !important;
 }
 
 
