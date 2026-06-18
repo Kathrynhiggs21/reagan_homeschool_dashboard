@@ -20,6 +20,15 @@ describe("nightly-self-check handler contract", () => {
     expect(slice).toContain('return res.status(401)');
   });
 
+  it("accepts the platform cron caller via the shared bearer secret", () => {
+    // The Heartbeat caller has no user|admin role; it authorizes with the
+    // shared SCHEDULED_BEARER, exactly like the other platform-fired crons.
+    const idx = src.indexOf('"/api/scheduled/nightly-self-check"');
+    const slice = src.slice(idx, idx + 2000);
+    expect(slice).toContain("ENV.scheduledBearer");
+    expect(slice).toContain("bearerOk");
+  });
+
   it("calls the bounded repairer and only notifies when repairs were made", () => {
     const idx = src.indexOf('"/api/scheduled/nightly-self-check"');
     const slice = src.slice(idx, idx + 2500);

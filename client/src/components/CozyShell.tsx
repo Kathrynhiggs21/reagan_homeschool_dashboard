@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useKiwi } from "@/contexts/KiwiContext";
 import { useAdultLock } from "@/contexts/AdultLockContext";
+import SummerQuickToggle from "@/components/SummerQuickToggle";
 import { Button } from "@/components/ui/button";
 import { Lock, Unlock, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { daysUntilSummerBreak } from "@/lib/summerCountdown";
@@ -161,6 +162,11 @@ export default function CozyShell({ children }: { children: ReactNode }) {
               )}
               {collapsed && <div className="my-2 border-t border-sidebar-border" />}
               {adultNavFiltered.map((n) => navLink(n, true))}
+              {!collapsed && (
+                <div className="px-1 pt-2">
+                  <SummerQuickToggle />
+                </div>
+              )}
               {!tutorModeOn && (
                 <a
                   href={DRIVE_HUB_URL}

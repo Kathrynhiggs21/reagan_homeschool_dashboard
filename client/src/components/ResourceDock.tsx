@@ -52,15 +52,15 @@ export default function ResourceDock() {
 
       <KidNotebookPopup open={notebookOpen} onClose={() => setNotebookOpen(false)} />
 
-      <FloatingWindow open={timerOpen} title="Timer" emoji="⏱️" width={340} testId="floating-timer" onClose={() => setTimerOpen(false)}>
+      <FloatingWindow open={timerOpen} title="Timer" emoji="⏱️" width={340} height={300} minHeight={240} testId="floating-timer" onClose={() => setTimerOpen(false)}>
         <TimerBody />
       </FloatingWindow>
 
-      <FloatingWindow open={calcOpen} title="Calculator" emoji="🧮" width={320} testId="floating-calc" onClose={() => setCalcOpen(false)}>
+      <FloatingWindow open={calcOpen} title="Calculator" emoji="🧮" width={320} height={420} minHeight={320} testId="floating-calc" onClose={() => setCalcOpen(false)}>
         <CalcBody />
       </FloatingWindow>
 
-      <FloatingWindow open={dictOpen} title="Word Finder" emoji="📖" width={380} testId="floating-dict" onClose={() => setDictOpen(false)}>
+      <FloatingWindow open={dictOpen} title="Word Finder" emoji="📖" width={380} height={400} minHeight={260} testId="floating-dict" onClose={() => setDictOpen(false)}>
         <DictBody />
       </FloatingWindow>
     </>

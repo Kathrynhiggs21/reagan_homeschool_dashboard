@@ -18,6 +18,7 @@ import { useTutorMode } from "@/hooks/useTutorMode";
 import { BlockResourcesPanel } from "@/components/BlockResourcesPanel";
 import { BlockAdventurePanel } from "@/components/BlockAdventurePanel";
 import { BlockPrintablesPanel } from "@/components/BlockPrintablesPanel";
+import { PrintWorksheetButton } from "@/components/PrintWorksheetButton";
 import { Loader2, Send, Sparkles, Paperclip, Printer, Trash2, ArrowRight, Clock, ChevronDown, ChevronUp } from "lucide-react";
 import { Streamdown } from "streamdown";
 
@@ -1147,6 +1148,19 @@ function ManualBlockRow({
           id, even ones not tied to a topic or adventure. Spans full row. */}
       <div style={{ gridColumn: "1 / -1" }}>
         <BlockPrintablesPanel date={date} blockId={String(block.id)} />
+      </div>
+      {/* 2026-06-18 — per-block Print worksheet: generates the worksheet for
+          this block (via worksheets.forBlock), renders a PDF (worksheets.makePdf),
+          opens it, and files it to Drive automatically. Spans full row. */}
+      <div style={{ gridColumn: "1 / -1" }} className="flex justify-end">
+        <PrintWorksheetButton
+          date={date}
+          blockId={String(block.id)}
+          title={block.title}
+          subjectSlug={(block as any).subjectSlug ?? null}
+          blockType={(block as any).blockType ?? null}
+          topicHint={block.description ?? null}
+        />
       </div>
     </div>
   );

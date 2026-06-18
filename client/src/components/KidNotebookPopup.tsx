@@ -158,10 +158,13 @@ export default function KidNotebookPopup({ open, onClose }: { open: boolean; onC
       title="My Notebook"
       emoji="📝"
       width={720}
+      height={520}
+      minWidth={360}
+      minHeight={320}
       testId="floating-notebook"
       onClose={() => { void doSave(); onClose(); }}
     >
-      <div className="-m-3 overflow-hidden rounded-xl">
+      <div className="-m-3 h-full flex flex-col overflow-hidden rounded-xl">
         {/* Toolbar */}
         <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-b" style={{ background: "#fdf6e3", color: "#1c1917" }}>
           <div className="flex rounded-md overflow-hidden border border-amber-300">
@@ -214,8 +217,8 @@ export default function KidNotebookPopup({ open, onClose }: { open: boolean; onC
           </div>
         </div>
 
-        {/* Writing area */}
-        <div className="max-h-[55vh] overflow-auto p-4 flex items-start justify-center bg-stone-100">
+        {/* Writing area — fills the resizable window */}
+        <div className="flex-1 min-h-0 overflow-auto p-4 flex items-start justify-center bg-stone-100">
           <div className="w-full max-w-2xl rounded-lg shadow-md" style={{ backgroundColor: paperStyle.backgroundColor, backgroundImage: paperStyle.backgroundImage, backgroundSize: paperStyle.backgroundSize }}>
             {mode === "type" ? (
               <textarea ref={textareaRef} value={text} onChange={(e) => { setText(e.target.value); markDirty(); }}

@@ -1191,3 +1191,12 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] orihsd.us email — zero references remain (already removed)
 - [x] /api/scheduled/* routes — confirmed intentional Heartbeat/cron surface, gateway-restricted (not orphaned)
 - [x] Flat Kiwi PDF logo — replaced 3D asset with flat yellow/green budgie matching site (3D backed up)
+
+
+## 2026-06-18 — Post-launch follow-ups (user: "do all")
+- [x] Register nightly self-check cron on the live deployment (task_uid LdbzFcsFwWmN9BDHPyC2tG, 3:30 AM ET); added dual-auth bearer path so the cron caller is accepted
+- [ ] Add functional adult Summer toggle (operates Mom-only days + drives tutor suppression); not a passive badge
+- [x] Per-block "Print worksheet" button (AgendaEditor block row): worksheets.forBlock + makePdf, opens PDF, auto-files to Drive
+- [x] Make floating tool windows (Notebook/Timer/Calculator/Word) resizable via a bottom-right corner grip (mouse + touch), with min-size + viewport clamping
+- [x] Functional adult Summer quick-toggle (Auto/On/Off via summer.override) in adult sidebar; cascades to tutor suppression + agenda/PDF; familyAdmin-gated
+- [ ] Drive: triage Inbox folder and reassign each file to its correct destination folder (or remove junk/dups)

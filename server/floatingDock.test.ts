@@ -39,6 +39,17 @@ describe("Floating dock tools", () => {
     expect(floatSrc).not.toMatch(/from "@\/components\/ui\/dialog"/);
   });
 
+  it("FloatingWindow is resizable via a bottom-right corner grip (mouse + touch)", () => {
+    // Size state + a dedicated resize start handler.
+    expect(floatSrc).toMatch(/startResize/);
+    expect(floatSrc).toMatch(/resizeState/);
+    // Visible grip in the bottom-right with the se-resize cursor.
+    expect(floatSrc).toContain("cursor-se-resize");
+    // Honors a minimum size so it can't be shrunk to nothing.
+    expect(floatSrc).toMatch(/minWidth/);
+    expect(floatSrc).toMatch(/minHeight/);
+  });
+
   it("ResourceDock opens tools as FloatingWindows, not blocking Dialogs", () => {
     expect(dockSrc).toContain('import FloatingWindow from "@/components/FloatingWindow"');
     // The old blocking Dialog wrapper is gone.

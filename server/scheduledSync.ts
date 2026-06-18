@@ -2087,14 +2087,20 @@ ${kidSummaryLine}
    * panel.
    * =========================================================== */
   app.post("/api/scheduled/nightly-self-check", async (req: Request, res: Response) => {
+    // Dual auth (shared bearer OR cookie role) — matches the other
+    // platform-fired crons so the Heartbeat caller (no user role) is accepted.
+    const bearerHeader = String(req.headers["authorization"] ?? req.headers["Authorization" as any] ?? "");
+    const bearerOk = !!ENV.scheduledBearer && bearerHeader.startsWith("Bearer ") && bearerHeader.slice(7).trim() === ENV.scheduledBearer;
     let role: string | null = null;
-    try {
-      const u = await sdk.authenticateRequest(req);
-      role = u?.role ?? null;
-    } catch {
-      role = null;
+    if (!bearerOk) {
+      try {
+        const u = await sdk.authenticateRequest(req);
+        role = u?.role ?? null;
+      } catch {
+        role = null;
+      }
     }
-    if (!role || (role !== "user" && role !== "admin")) {
+    if (!bearerOk && (!role || (role !== "user" && role !== "admin"))) {
       return res.status(401).json({ ok: false, error: "Unauthorized" });
     }
     try {
