@@ -1048,3 +1048,35 @@ Katy clarified: worksheets should look like REAL printable worksheets (NewPath /
 - [x] Glassmorphism theme: keep, but remove White Basic from main flow (hide or move behind a side button)
 - [x] Bright & Colorful theme: make it much more colorful / vibrant
 - [x] Fix nightly packet-audit false positive: warm-up / mood-setter blocks (e.g. "Summer charge") should not be flagged as "printed with no work"
+
+
+## Dashboard fixes (2026-06-17 night batch 2)
+
+- [x] Packet PDF: school-day window computed from real block times (no more hardcoded 9-1)
+- [x] Packet PDF: blocks numbered sequentially 1..N (no more 2-8)
+- [x] Verify packet audit clean for 2026-06-18 (morning-vibe not flagged)
+- [ ] Remove distracting white box (Oh-Grade-Tracker / underline box) site-wide; move behind button/popup if info needed
+- [ ] Fix bottom-left overlap: Adult-code button vs Reagan "Make a request" button (no stacking)
+- [ ] Legibility: make grey boxes glass/translucent or theme-appropriate so text is readable on ALL themes
+- [ ] Double-check every page across all 5 themes for illegible text; fix
+- [ ] Re-run all system audits; fix any errors
+- [ ] Sync deliverables to Google Drive
+
+## Proactive audit pass (2026-06-17 night) — pre-nightly-job
+
+- [x] Legibility: HomeAnalyticsStrip -> theme-aware (classroom-card + muted-foreground)
+- [x] Legibility: PacketAuditChip no_plan chip -> inner-panel + muted
+- [x] Legibility: OwnedBookCard not_started/shelved chips -> inner-panel + muted
+- [x] Fix stale makeRequestPill test (bottom-24 lift)
+- [x] Fix flaky bumpFromSubmission test (skillCode > varchar(32))
+- [x] DATA BUG: 6/18 morning blocks stored 22:xx instead of 10:xx -> corrected to 10:00/10:10/10:40/11:10
+- [x] Re-verify 6/18 packet window now reads 10:00 start (verified 10:00 - 14:10, forward order, in school band)
+- [x] Audit: scan ALL daily plans for out-of-range startTimes -> found 4 more corrupted past days (5/4, 5/5, 6/1, 6/3)
+- [x] DATA BUG: corrected 4 historical days' leading-run evening times back to morning (-12h)
+- [x] Audit: scan upcoming days for out-of-order/overlap -> 6/19, 6/22, 6/23 all clean
+- [x] PREVENTION: add tested dayStartSanity.normalizeDayStart() guard; wired into applyBudgetLayout so future AI days can't save AM/PM-corrupted morning times
+- [x] Add 15 unit tests for dayStartSanity (incl. split-day case preserving correct afternoon)
+- [x] Audit: nightly packet/email path — dual auth (bearer bypasses CF cookie 403), sendNow fallback, recipients Mom+Grandma confirmed
+- [x] Full vitest suite green (534 files / 4854 tests) + tsc clean
+- [ ] Save checkpoint
+- [ ] Google Drive sync

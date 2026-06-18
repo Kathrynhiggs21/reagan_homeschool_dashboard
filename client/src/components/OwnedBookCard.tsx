@@ -9,11 +9,11 @@ import { toast } from "sonner";
 import { subjectTint, tintCardStyle, tintInkStyle } from "@/lib/subjectColors";
 
 const STATUS_LABEL: Record<string, { label: string; tone: string }> = {
-  not_started:               { label: "not started",            tone: "bg-slate-100 text-slate-700" },
+  not_started:               { label: "not started",            tone: "inner-panel text-muted-foreground" },
   in_progress:               { label: "in progress",            tone: "bg-emerald-100 text-emerald-800" },
   in_progress_unstructured:  { label: "scattered (in progress)",tone: "bg-amber-100 text-amber-800" },
   done:                      { label: "done",                   tone: "bg-blue-100 text-blue-800" },
-  shelved:                   { label: "shelved",                tone: "bg-zinc-200 text-zinc-700" },
+  shelved:                   { label: "shelved",                tone: "inner-panel text-muted-foreground" },
 };
 
 export default function OwnedBookCard({ book }: { book: any }) {
@@ -125,7 +125,7 @@ export default function OwnedBookCard({ book }: { book: any }) {
                 {showRecon ? "Hide pages-already-done" : "Mark pages already done"}
               </Button>
               {showRecon && (
-                <div className="mt-2 rounded-md border bg-white/40 p-2">
+                <div className="mt-2 rounded-md border inner-panel p-2">
                   <div className="text-xs text-muted-foreground mb-1.5">
                     Type pages or ranges Reagan already finished (e.g. <code className="font-mono">12, 14, 30-35</code>). They'll be skipped on future agendas.
                   </div>

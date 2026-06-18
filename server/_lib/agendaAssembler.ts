@@ -15,6 +15,40 @@ import { hydrateLessonForBlock } from "./hydrateLessonForBlock";
 import { deriveGeneratedForBlock } from "./blockGeneratorMatch";
 
 
+/**
+ * v3.40 (2026-06-17) — Derive the printed "School day: …" window from the
+ * actual block times instead of a hardcoded 09:00-13:00. Earliest start →
+ * latest (start + duration). Falls back to null when no timed blocks exist,
+ * which the PDF cover already handles gracefully (the line is just omitted).
+ */
+function computeSchoolDayWindow(
+  blocks: AgendaPdfBlock[],
+): { start: string; end: string } | null {
+  const timed = blocks.filter(
+    (b) => typeof b.startTime === "string" && /^\d{1,2}:\d{2}$/.test(b.startTime),
+  );
+  if (timed.length === 0) return null;
+  const toMin = (t: string): number => {
+    const [h, m] = t.split(":").map((n) => parseInt(n, 10));
+    return h * 60 + m;
+  };
+  const toHHMM = (mins: number): string => {
+    const clamped = Math.max(0, Math.min(24 * 60, mins));
+    const h = Math.floor(clamped / 60);
+    const m = clamped % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  };
+  let minStart = Infinity;
+  let maxEnd = -Infinity;
+  for (const b of timed) {
+    const s = toMin(b.startTime as string);
+    const e = s + (b.durationMin ?? 0);
+    if (s < minStart) minStart = s;
+    if (e > maxEnd) maxEnd = e;
+  }
+  return { start: toHHMM(minStart), end: toHHMM(maxEnd) };
+}
+
 function previousDateStr(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00");
   d.setDate(d.getDate() - 1);
@@ -289,7 +323,7 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
 
   const blocks: AgendaPdfBlock[] = blocksRawWithGenerated.map(({ b, i, refs, generated }) => {
     return {
-      sortOrder: (b.sortOrder ?? i) + 1, // 1-indexed for printout
+      sortOrder: i + 1, // 1-indexed for printout, sequential by position (robust to gaps)
       startTime: b.startTime ?? null,
       durationMin: b.durationMin ?? 30,
       subjectName: b.subjectName ?? null,
@@ -420,7 +454,7 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
     tutorDeparture,
     blocks,
     tutorNotesYesterday,
-    schoolDayWindow: { start: "09:00", end: "13:00" },
+    schoolDayWindow: computeSchoolDayWindow(blocks),
     devotionText: (plan as any).devotionText ?? null,
     summerMode,
     packetAudit: packetAuditResult,

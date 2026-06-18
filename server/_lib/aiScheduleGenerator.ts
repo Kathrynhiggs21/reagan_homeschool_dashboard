@@ -12,6 +12,7 @@
 import { invokeLLM } from "../_core/llm";
 import { loadKnowledgeBundle } from "./knowledgeBundle";
 import { layoutInsertedBlocks, type LayoutBlock } from "./agendaBudget";
+import { normalizeDayStart } from "./dayStartSanity";
 import { buildSeasonalProfile, renderSeasonalPromptFragment } from "./seasonalProfile";
 
 export const ALLOWED_BLOCK_TYPES = [
@@ -258,7 +259,7 @@ export function applyBudgetLayout(
     maxMinutes,
   });
   const byRef = new Map(laid.map((l) => [l.ref, l]));
-  return blocks.map((b, i) => {
+  const out = blocks.map((b, i) => {
     const l = byRef.get(i);
     if (!l) return b;
     return {
@@ -267,6 +268,10 @@ export function applyBudgetLayout(
       startTime: l.startTime ?? b.startTime,
     };
   });
+  // Final guard: an upstream LLM AM/PM mixup can land morning blocks in the
+  // evening band (e.g. "10" -> "22:00"). normalizeDayStart repairs only the
+  // corrupted leading run, leaving any legitimately-correct afternoon alone.
+  return normalizeDayStart(out).items;
 }
 
 /** Build the LLM messages array. Exported so tests can pin the prompt shape. */

@@ -160,7 +160,7 @@ export default function AISearchBar() {
             {results.map((r: any, i: number) => (
               <li
                 key={i}
-                className="border rounded-md p-3 flex items-start gap-3 bg-white/40"
+                className="border rounded-md p-3 flex items-start gap-3 inner-panel"
               >
                 <div className="min-w-0 flex-1">
                   <div className="font-medium text-sm">{r.title}</div>

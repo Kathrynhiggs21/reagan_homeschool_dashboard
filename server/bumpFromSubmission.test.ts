@@ -26,7 +26,9 @@ describe("bumpFromSubmission (Phase 5)", () => {
     // Use a unique code per worker so parallel test files can't collide,
     // and pin ladderOrder=0 so bumpFromSubmission's "lowest active" pick
     // deterministically lands on us instead of any other parallel fixture.
-    uniq = `VITEST-BUMP-${process.pid}-${Date.now()}`;
+    // Keep within skillCode varchar(32). Base36 of pid+timestamp stays short
+    // while remaining unique per worker/run. Prefix "VB-" makes it greppable.
+    uniq = `VB-${process.pid.toString(36)}-${Date.now().toString(36)}`;
     await drizzle.insert(skillLadder).values({
       subjectSlug: "math",
       strand: TEST_STRAND,

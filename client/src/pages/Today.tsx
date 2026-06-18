@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { useKiwi } from "@/contexts/KiwiContext";
 import { useAdultLock } from "@/contexts/AdultLockContext";
 import { useState, useEffect } from "react";
@@ -1485,37 +1486,44 @@ function DailyTipAndFreshStart() {
       try { utils.invalidate(); } catch { /* ok */ }
     },
   });
+  // 2026-06-17 (Katy): the always-on tip box read as a distracting blank
+  // white rectangle on the glass/dark themes. Collapsed it into a small
+  // "Tip" pill that opens the full tip in a popover (with Read-aloud), with
+  // a compact "Fresh start" button beside it. No large box on any theme.
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-      <div
-        className="flex items-center gap-2 rounded-xl border px-3 py-2 text-[13px] leading-snug flex-1"
-        style={{
-          background: "rgba(255,238,170,0.10)",
-          borderColor: "rgba(255,238,170,0.35)",
-          color: "#fff4d6",
-        }}
-      >
-        <span aria-hidden className="text-base">💡</span>
-        <span className="flex-1">{tip}</span>
-        <button
-          onClick={() => speakLikeBird(tip)}
-          className="shrink-0 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] hover:bg-white/10"
-          aria-label="Read today's tip out loud"
-          title="Read this to me"
-        >
-          <Volume2 className="w-3 h-3" /> Read
-        </button>
-      </div>
+    <div className="flex items-center gap-2 flex-wrap">
+      <Popover>
+        <PopoverTrigger asChild>
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/20 text-white/85 hover:text-white border border-white/15 hover:border-white/30 transition-all duration-150 select-none"
+            title="Today's tip"
+          >
+            <span aria-hidden>💡</span> Tip of the day
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-80 max-w-[90vw] text-sm bg-popover text-popover-foreground">
+          <div className="flex items-start gap-2">
+            <span aria-hidden className="text-base mt-0.5">💡</span>
+            <span className="flex-1 leading-snug">{tip}</span>
+          </div>
+          <div className="mt-3 flex justify-end">
+            <Button
+              size="sm"
+              variant="outline"
+              className="bg-transparent h-7 px-2 text-xs"
+              onClick={() => speakLikeBird(tip)}
+            >
+              <Volume2 className="w-3 h-3 mr-1" /> Read to me
+            </Button>
+          </div>
+        </PopoverContent>
+      </Popover>
       <button
         type="button"
         disabled={refresh.isPending}
         onClick={() => refresh.mutate({})}
-        className="shrink-0 inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-[13px] font-semibold border hover:bg-white/10 disabled:opacity-60"
-        style={{
-          background: "rgba(127,227,196,0.12)",
-          borderColor: "rgba(127,227,196,0.45)",
-          color: "#bff5e0",
-        }}
+        className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium bg-white/10 hover:bg-white/20 text-white/85 hover:text-white border border-white/15 hover:border-white/30 transition-all duration-150 select-none disabled:opacity-60"
         title="Rebuild today's plan — keeps your finished and started work"
       >
         <span aria-hidden>🔄</span>

@@ -298,7 +298,7 @@ export default function Analytics() {
                   ? "bg-rose-100 text-rose-900 border-rose-200"
                   : "bg-sky-100 text-sky-900 border-sky-200";
               return (
-                <div key={g.id} className="p-2 rounded-md border bg-white/40 flex items-start gap-2 text-xs" data-testid="iep-goal-row">
+                <div key={g.id} className="p-2 rounded-md border inner-panel flex items-start gap-2 text-xs" data-testid="iep-goal-row">
                   <span className={`px-1.5 py-0.5 rounded-full border text-[10px] shrink-0 ${chip}`} data-testid="iep-goal-chip">{bucket}</span>
                   <span className="line-clamp-2">{g.goalText}</span>
                 </div>
@@ -360,7 +360,7 @@ export default function Analytics() {
           </div>
           <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-2">
             {realSubjectGrades.map((g) => (
-              <div key={g.subjectSlug} className="p-3 rounded-md border bg-white/40">
+              <div key={g.subjectSlug} className="p-3 rounded-md border inner-panel">
                 <div className="flex items-baseline justify-between">
                   <div className="capitalize font-semibold">{g.subjectSlug}</div>
                   <div className="text-2xl font-display font-semibold">{g.letter}</div>
@@ -449,7 +449,7 @@ export default function Analytics() {
             </h3>
             <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
               {uniqueGoals.map((g: any) => (
-                <div key={g.id} className="p-3 rounded-md border bg-white/40">
+                <div key={g.id} className="p-3 rounded-md border inner-panel">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-violet-100 text-violet-900 border border-violet-200 capitalize">{g.area}</span>
                     {g.subjectSlug && <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-100 text-sky-900 border border-sky-200 capitalize">{g.subjectSlug}</span>}
@@ -472,7 +472,7 @@ export default function Analytics() {
             </h3>
             <div className="space-y-2 max-h-96 overflow-y-auto pr-2">
               {uniqueAccoms.map((a: any) => (
-                <div key={a.id} className="p-3 rounded-md border bg-white/40">
+                <div key={a.id} className="p-3 rounded-md border inner-panel">
                   <div className="flex items-start gap-2">
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-100 text-orange-900 border border-orange-200 capitalize shrink-0 mt-0.5">{a.category}</span>
                     <div className="flex-1">

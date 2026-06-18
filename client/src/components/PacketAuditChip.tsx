@@ -38,7 +38,7 @@ export default function PacketAuditChip({ forDate }: { forDate?: string }) {
       <div
         data-packet-audit-chip
         data-status="no_plan"
-        className="inline-flex items-center gap-2 rounded-full bg-neutral-100 text-neutral-600 px-3 py-1 text-xs font-semibold"
+        className="inline-flex items-center gap-2 rounded-full inner-panel text-muted-foreground px-3 py-1 text-xs font-semibold"
       >
         <span aria-hidden>🗓️</span>
         No school plan for this day

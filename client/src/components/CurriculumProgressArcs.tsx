@@ -83,7 +83,7 @@ export default function CurriculumProgressArcs() {
             const slug = SUBJECT_TO_SLUG[r.subject] ?? "math";
             const meta = subjectMeta(slug);
             return (
-              <div key={r.subject} className="rounded-xl border bg-white/60 dark:bg-white/5 p-3 flex flex-col items-center" style={{ borderColor: `${meta.color}55` }}>
+              <div key={r.subject} className="rounded-xl border inner-panel p-3 flex flex-col items-center" style={{ borderColor: `${meta.color}55` }}>
                 <ProgressArc value={r.pct} color={meta.color} />
                 <div className="mt-2 text-sm font-semibold flex items-center gap-1" style={{ color: meta.color }}>
                   <span aria-hidden>{meta.emoji}</span>
@@ -199,7 +199,7 @@ function RecentTurnInsTable() {
         aria-label="Search every turn-in"
       />
 
-      <div className="rounded-md border bg-white/60 dark:bg-white/5 max-h-[220px] overflow-y-auto">
+      <div className="rounded-md border inner-panel max-h-[220px] overflow-y-auto">
         {(recent.isLoading || (q.trim().length >= 2 && search.isLoading)) ? (
           <div className="p-2 text-xs text-muted-foreground">Loading…</div>
         ) : showRows.length === 0 ? (

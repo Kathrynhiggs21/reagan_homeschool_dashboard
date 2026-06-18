@@ -197,6 +197,15 @@
       0 18px 40px -12px oklch(0 0 0 / 0.28);
   }
 
+  /* Inner sub-panel inside a card (IEP rows, goal cards, submissions, etc.)
+     2026-06-17 (Katy): these used hardcoded bg-white/40, which washed out to
+     near-invisible on dark / glass / galaxy themes. This token resolves to a
+     legible fill on every theme (see per-theme overrides below). */
+  .inner-panel {
+    background: oklch(1 0 0 / 0.06);
+    border-color: oklch(1 0 0 / 0.12);
+  }
+
   /* Chalkboard hero panel — real chalkboard texture inside a wood frame */
   .chalkboard {
     background-color: #1e2225;
@@ -1874,3 +1883,41 @@ html[data-rtheme="sunshine"] .text-slate-300 {
 /* Tiny labels (10-11px) get a small minimum weight bump everywhere so they
    don't disappear regardless of theme. */
 .text-\[10px\], .text-\[11px\] { font-weight: 500; }
+
+/* ----------------------------------------------------------------------- */
+/*  Inner sub-panels (.inner-panel) — per-theme fills so the IEP / goal /   */
+/*  submission cards stay legible on every theme. Replaces the old          */
+/*  hardcoded bg-white/40 that washed out on dark / glass / galaxy.         */
+/* ----------------------------------------------------------------------- */
+
+/* Dark slate themes: soft raised translucent panel, light text already set. */
+html[data-rtheme="chalkboard"] .inner-panel,
+html[data-rtheme="galaxy"] .inner-panel {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+/* Glass theme: frosted translucent panel to match the glassmorphism look. */
+html[data-rtheme="glass"] .inner-panel {
+  background: rgba(255, 255, 255, 0.10) !important;
+  border-color: rgba(255, 255, 255, 0.22) !important;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* Light themes: soft solid panel with a subtle ink border for contrast. */
+html[data-rtheme="white"] .inner-panel {
+  background: rgba(255, 255, 255, 0.85) !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+html[data-rtheme="cream"] .inner-panel,
+html[data-rtheme="notebook"] .inner-panel {
+  background: rgba(255, 255, 255, 0.70) !important;
+  border-color: rgba(45, 35, 23, 0.14) !important;
+}
+
+/* Bright & Colorful: warm translucent panel that reads on the vivid canvas. */
+html[data-rtheme="sunshine"] .inner-panel {
+  background: rgba(255, 255, 255, 0.78) !important;
+  border-color: rgba(31, 38, 64, 0.14) !important;
+}
