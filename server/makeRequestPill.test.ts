@@ -37,9 +37,12 @@ describe("Push 54 — global Reagan request pill", () => {
     expect(pillSrc).toContain("<MakeRequestButton />");
   });
 
-  it("pill is fixed bottom-left + carries no-print so it stays off printouts", () => {
-    // bottom-24 (lifted) clears the adult-lock sidebar button overlap; sm restores bottom-6.
-    expect(pillSrc).toContain("fixed left-3 bottom-24 z-40");
+  it("pill is fixed bottom-RIGHT + carries no-print so it stays off printouts", () => {
+    // Moved to the right edge (2026-06-18) so it no longer overlaps the
+    // sidebar's bottom-left "Unlock adult area" button. bottom-24 on mobile
+    // clears the center ResourceDock; sm restores bottom-6.
+    expect(pillSrc).toContain("fixed right-3 bottom-24 z-30");
+    expect(pillSrc).toContain("sm:right-4 sm:bottom-6");
     expect(pillSrc).toContain("no-print");
     expect(pillSrc).toContain("print:hidden");
   });

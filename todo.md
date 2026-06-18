@@ -1080,3 +1080,9 @@ Katy clarified: worksheets should look like REAL printable worksheets (NewPath /
 - [x] Full vitest suite green (534 files / 4854 tests) + tsc clean
 - [ ] Save checkpoint
 - [ ] Google Drive sync
+
+## UI fixes (2026-06-18 morning, per Katy)
+- [x] Fix bottom-left overlap: move floating "Make a request" pill to bottom-RIGHT so it no longer covers the sidebar "Unlock adult area" button
+- [x] Remove the always-on Kiwi airplane "fly" button (unnecessary)
+- [x] Retire the Kiwi fly-across (airplane whoosh) action entirely; keep Kiwi roaming + draggable + single-tap chat
+- [x] Update stale fly-button + pill-position tests to match

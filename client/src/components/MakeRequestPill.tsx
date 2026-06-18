@@ -29,8 +29,8 @@ export default function MakeRequestPill() {
     <div
       className="
         no-print print:hidden
-        fixed left-3 bottom-24 z-40
-        sm:left-4 sm:bottom-6
+        fixed right-3 bottom-24 z-30
+        sm:right-4 sm:bottom-6
       "
       // Use a wrapper rather than overriding MakeRequestButton's styling so
       // the existing dialog UX stays untouched.

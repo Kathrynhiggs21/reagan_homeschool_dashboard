@@ -2,8 +2,10 @@
  * Source-introspection tests for two UI contracts that don't have a DOM
  * test runner in this project:
  *
- *   1. KiwiPerch must expose a single-tap, accessible fly trigger
- *      (a real <button> with aria-label, distinct from the chat-open tap).
+ *   1. KiwiPerch must NOT show the always-on airplane fly button, and the
+ *      fly-across (airplane whoosh) action must be retired (per Katy,
+ *      2026-06-18). Kiwi still roams and is draggable; single tap still
+ *      opens chat.
  *   2. Apps page must render BOTH Student and Parent <a> links on Google
  *      app cards when both emails are configured, with Student first
  *      (= the default identity).
@@ -20,36 +22,36 @@ function readSrc(rel: string): string {
   return readFileSync(resolve(process.cwd(), rel), "utf8");
 }
 
-describe("KiwiPerch single-tap fly button contract", () => {
+describe("KiwiPerch — airplane fly action retired, roaming kept", () => {
   const src = readSrc("client/src/components/KiwiPerch.tsx");
 
-  it("renders a true <button> with the data-kiwi-fly-button hook", () => {
-    expect(src).toMatch(/data-kiwi-fly-button/);
-    // The marker must live on a real button element (not a span/div).
-    expect(src).toMatch(/<button[\s\S]*?data-kiwi-fly-button/);
+  it("no longer renders the always-on airplane fly button", () => {
+    expect(src).not.toMatch(/data-kiwi-fly-button/);
+    expect(src).not.toMatch(/aria-label="Make Kiwi fly across the screen"/);
   });
 
-  it("button has an aria-label so screen readers announce it", () => {
-    expect(src).toMatch(/aria-label="Make Kiwi fly across the screen"/);
+  it("fly-across action is a no-op (no setFlying(true) launch)", () => {
+    // The airplane whoosh set flying state true; it must be gone.
+    expect(src).not.toMatch(/setFlying\(true\)/);
   });
 
-  it("button calls the same flyAcrossRef helper used by the timer (no duplicate logic)", () => {
-    // Both the timer effect and the button must call flyAcrossRef.current?.()
-    const matches = src.match(/flyAcrossRef\.current\?\.\(\)/g) ?? [];
-    expect(matches.length).toBeGreaterThanOrEqual(2);
+  it("double-tap on Kiwi no longer triggers the airplane whoosh", () => {
+    expect(src).not.toMatch(/Wheee! ✈️/);
   });
 
-  it("button is hidden during flight, drag, and adult presence (no spam)", () => {
-    expect(src).toMatch(/!flying && !dragging && !adultPresent/);
-  });
-
-  it("does NOT replace the existing single-tap-on-Kiwi opens chat behavior", () => {
-    // Single tap on Kiwi (not on the fly button) must still call setOpen.
+  it("single tap on Kiwi still opens chat (interaction preserved)", () => {
     expect(src).toMatch(/setOpen\(!open\);/);
   });
 
-  it("exposes window.flyKiwi() programmatic trigger for celebration moments", () => {
+  it("Kiwi still roams/idles and remains draggable (movement preserved)", () => {
+    // Roaming guards reference the flying flag; drag handlers remain.
+    expect(src).toMatch(/!dragging && !flying/);
+    expect(src).toMatch(/dragging/);
+  });
+
+  it("window.flyKiwi() hook still exists but is harmless (no-op ref)", () => {
     expect(src).toMatch(/window as any\)\.flyKiwi/);
+    expect(src).toMatch(/flyAcrossRef\.current = \(\) => \{\};/);
   });
 });
 
