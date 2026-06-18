@@ -4973,6 +4973,24 @@ export type CanonicalParentSlug =
   | "progressAndReports"
   | "todo";
 
+/**
+ * Human-readable Drive folder NAME for each canonical parent slug. The
+ * subfolder-id cache (`getCanonicalSubfolderId`) keys on the human name
+ * (slugified), so the live Drive push worker uses this map to bridge a
+ * routable target's slug back to the parent's display name.
+ */
+export const CANONICAL_PARENT_NAMES: Record<CanonicalParentSlug, string> = {
+  adminAndHomeschoolRecords: "Admin and Homeschool Records",
+  adventuresAndEnrichment: "Adventures and Enrichment",
+  assignmentsAndWork: "Assignments and Work",
+  curriculumAndStandards: "Curriculum and Standards",
+  dailyOperations: "Daily Operations",
+  inboxUnsorted: "Inbox (Unsorted)",
+  printablesAndResources: "Printables and Resources",
+  progressAndReports: "Progress and Reports",
+  todo: "Todo",
+};
+
 export const DRIVE_TARGET_TO_CANONICAL_PARENT: Record<DrivePushTarget, CanonicalParentSlug> = {
   reagan: "inboxUnsorted",                  // catch-all → Inbox (Unsorted)
   reagan_ihes: "printablesAndResources",    // legacy "Printables"
@@ -5976,12 +5994,16 @@ const APP_SETTING_DEFAULTS: Record<string, string> = {
   // match the post-v2.54 canonical IDs so a fresh seed creates the correct
   // mappings instead of duplicating empty folders.
   "drive.folder.adminAndHomeschoolRecords": "1aLViM1-T0_ob0CFNxJN9hnzMauROySjF",
-  "drive.folder.adventuresAndEnrichment": "137Knn9KbGKPcTsmOhHhM930HTxEGpjWB",
+  // 2026-06-18: repointed off the trashed duplicate (137Knn9…, mis-nested
+  // under Curriculum) to the live Hub-root Adventures folder.
+  "drive.folder.adventuresAndEnrichment": "1XiwfVoZEXDqfe6bheV-oSh-yMnLOqXq-",
   "drive.folder.assignmentsAndWork": "1--Z75dZRcTTrEVlRGtIVfP5b1OMi8hCT",
   "drive.folder.curriculumAndStandards": "1ighaciRpTk8oloh55dEhgx0YZmomsZWJ",
   "drive.folder.dailyOperations": "1wyFk4rTPT-bZsadEVwODmqnABhevn6yb",
   "drive.folder.inboxUnsorted": "1PQPK34gnnlZrNojxFLJddCnDSpUQ5kR1",
-  "drive.folder.printablesAndResources": "1UxqumEtHKucybapWNaNttaDGNg_0QQCH",
+  // 2026-06-18: repointed off the trashed duplicate (1Uxqum…) to the live
+  // Hub-root Printables folder.
+  "drive.folder.printablesAndResources": "1Z_XX5Xqcg8NPkKfZDKYDl8BV-rm59LBg",
   "drive.folder.progressAndReports": "1YYRTEko_yYCg0V3S-tx-wyT6wQ2F2mpj",
   "drive.folder.todo": "15XPBzEZZD78Veq3mvk90yFFKP_vGMXHJ",
 };

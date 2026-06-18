@@ -1,88 +1,56 @@
 /**
- * Drive Push Worker — credential-gated stub (2026-05-30)
- * ======================================================
+ * Drive Push Worker — live uploader (credential-gated)
+ * ====================================================
  *
- * The dashboard already enqueues `drive_push_queue` rows from a dozen places
- * (day logs, recap replies, the 12 reference Markdown docs, future-worksheet
- * imports, etc.). What's missing is the drainer that actually uploads them.
+ * The dashboard enqueues `drive_push_queue` rows from a dozen places (day
+ * logs, recap replies, reference docs, agenda PDFs, worksheets, …). This
+ * module is the drainer that actually uploads them to Google Drive.
  *
- * Building the live drainer requires a Google Drive OAuth token or a service
- * account JSON, which has NOT been provided yet. Until then this module:
+ * Credential gate (unchanged contract):
+ *   - `getDriveCredentialStatus()` is the single source of truth for "do we
+ *     have Drive credentials?". It reads only env, never the network.
+ *   - `runDrivePushWorker()` / `runDrivePushOnce()` short-circuit with a
+ *     `skipped_no_credentials` outcome (and ZERO DB writes) when no
+ *     credential is configured — perfectly safe to call from heartbeat today.
  *
- *   1. Exposes `getDriveCredentialStatus()` — a single source of truth for
- *      "do we have Drive credentials?" Currently returns `not_configured`.
- *      The moment the user drops a `GOOGLE_DRIVE_OAUTH_TOKEN` or a
- *      `GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON` env var into the project, this
- *      function flips to `ready` and the rest of the worker comes online.
+ * Live path (active the moment GOOGLE_DRIVE_OAUTH_TOKEN or
+ * GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON lands in env):
+ *   1. Resolve the row's target Drive folder id:
+ *        target → canonical parent folder id (app_settings drive.folder.*)
+ *               → named subfolder (getCanonicalSubfolderId, else mkdir-P)
+ *               → optional targetSubpath segments (mkdir-P each).
+ *      Resolutions are cached for the process lifetime.
+ *   2. Name-based dedupe: if a non-trashed child with the same name already
+ *      exists in the destination folder, mark the row `skipped`
+ *      (`dedupe_hit`) without uploading. (We can't compare the queue's
+ *      SHA-256 contentHash against Drive's md5Checksum — different
+ *      algorithms — so byte-dedupe stays a queue-side concern in
+ *      enqueueDrivePush; here we dedupe on the deterministic dated filename.)
+ *   3. Upload: inline `contentText` → text/markdown body; otherwise fetch the
+ *      S3 bytes via a freshly-signed URL (storageGetSignedUrl from fileKey,
+ *      else the row's stored fileUrl) and stream them up.
+ *   4. Persist exactly ONE markDrivePushResult per row. The worker never
+ *      throws to the heartbeat caller — per-row failures are recorded as
+ *      `failed` with the upstream error message and the loop continues.
  *
- *   2. Exposes `runDrivePushWorker()` — the public entry point. When
- *      credentials are missing, it short-circuits immediately with a
- *      structured `skipped_no_credentials` summary (no errors, no DB
- *      writes — perfectly safe to call from a heartbeat schedule today).
- *      When credentials land, it walks `listPendingDrivePushes`, performs
- *      hash-based dedupe against the target folder's children, uploads
- *      anything new, and marks each row `pushed` / `skipped` / `failed`
- *      via `markDrivePushResult`.
- *
- *   3. Exposes `runDrivePushOnce()` for unit-testable single-row drain.
- *      Same credential gate, same outcome shape.
- *
- * Design intent: the day Mom (or whoever) creates the Google Cloud project,
- * generates an OAuth token or service account, and drops it in env, this
- * file goes from no-op to live with **zero callsite changes**. Heartbeat
- * already calls `runDrivePushWorker()` on schedule — it just exits early
- * today.
- *
- * Implementation notes for the live path (left here so the future
- * implementer doesn't have to re-derive them):
- *
- *   - Hash-based skip: before uploading, list the target folder's children
- *     via `drive.files.list({ q: "'${parentId}' in parents and trashed=false" })`.
- *     Compare the row's `contentHash` against each child's `md5Checksum`
- *     (Drive returns it for binary files). If a match exists, write
- *     `status='skipped'` + `errorMessage='dedupe_hit'` and move on without
- *     uploading.
- *
- *   - Inline content: when the row has `contentText` set (markdown blob),
- *     create the Drive file via `drive.files.create({ requestBody: {...},
- *     media: { mimeType: 'text/markdown', body: contentText } })`. No S3
- *     fetch needed.
- *
- *   - Binary content: when `fileKey` is set, presign the S3 GET via
- *     `storageGet(fileKey)` and stream the response into `media.body`.
- *
- *   - Folder resolution: `targetFolder` is a logical bucket name; the live
- *     worker needs a `targetFolderToDriveId(folder, subpath)` helper that
- *     maps "day_log" → the actual Drive folder ID under "Daily Operations /
- *     Day Logs / 2026-05". Derive lazily on first use, cache for the
- *     process lifetime. `mkdirP` semantics: create missing intermediate
- *     folders so the worker is self-bootstrapping.
- *
- *   - Outcome persistence: every row gets exactly ONE `markDrivePushResult`
- *     call. Failures are logged with `status='failed'` + the upstream
- *     error message; the worker never throws to the heartbeat caller.
- *
- *   - Concurrency: serial drain is fine (Mom's volume is < 100 rows/day).
- *     Drive API is happy with sequential requests; rate limits won't be
- *     hit at this scale.
+ * Testability: all Drive I/O goes through the injectable `DriveClient`
+ * interface (see ./driveClient). Unit tests pass a fake client + fake db, so
+ * the live logic is exercised without any network or real credentials.
  */
 
 import * as db from "../db";
 import type { DrivePushQueueRow } from "../../drizzle/schema";
+import { makeRealDriveClient, type DriveClient } from "./driveClient";
+import { storageGetSignedUrl } from "../storage";
 
 /* =====================================================================
-   Credential gate — single source of truth
+   Credential gate — single source of truth (UNCHANGED)
    ===================================================================== */
 
 export type DriveCredentialStatus =
   | { kind: "ready"; source: "oauth_token" | "service_account" }
   | { kind: "not_configured"; reason: string };
 
-/**
- * Returns whether the live Drive uploader should run. The caller is
- * responsible for short-circuiting; this function never reads from the
- * network and is safe to call thousands of times.
- */
 export function getDriveCredentialStatus(): DriveCredentialStatus {
   const token = (process.env.GOOGLE_DRIVE_OAUTH_TOKEN || "").trim();
   if (token.length > 0) {
@@ -90,9 +58,8 @@ export function getDriveCredentialStatus(): DriveCredentialStatus {
   }
   const sa = (process.env.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON || "").trim();
   if (sa.length > 0) {
-    // Cheap shape check — don't validate the full JSON here, just confirm
-    // it looks like a service account blob so we don't false-positive on
-    // an empty literal "{}" or stray characters.
+    // Cheap shape check — don't validate the full JSON here, just confirm it
+    // looks like a service-account blob so we don't false-positive on "{}".
     if (sa.length > 50 && sa.includes("private_key") && sa.includes("client_email")) {
       return { kind: "ready", source: "service_account" };
     }
@@ -108,7 +75,7 @@ export function getDriveCredentialStatus(): DriveCredentialStatus {
 }
 
 /* =====================================================================
-   Worker outcome shape
+   Worker outcome shape (UNCHANGED)
    ===================================================================== */
 
 export type DrivePushSummary = {
@@ -121,16 +88,261 @@ export type DrivePushSummary = {
 };
 
 /* =====================================================================
+   Dependency injection seam
+   ===================================================================== */
+
+/**
+ * The db surface the worker needs. The real `../db` module satisfies this;
+ * tests pass a minimal fake. Declaring it explicitly keeps the worker honest
+ * about exactly which helpers it touches.
+ */
+export interface WorkerDeps {
+  listPendingDrivePushes(limit: number): Promise<DrivePushQueueRow[]>;
+  markDrivePushResult(args: {
+    id: number;
+    status: "pushed" | "skipped" | "failed";
+    driveFileId?: string | null;
+    errorMessage?: string | null;
+  }): Promise<unknown>;
+  getCanonicalParentForRoutable(
+    target: any,
+  ): Promise<{ slug: any; folderId: string | null }>;
+  getCanonicalSubfolderId(parentName: string, subfolderName: string): Promise<string | null>;
+  setAppSetting(key: string, value: string | null): Promise<void>;
+  CANONICAL_PARENT_NAMES: Record<string, string>;
+  DRIVE_FOLDER_NAMES: Record<string, string>;
+}
+
+/** Build the default deps object from the real db module. */
+function realDeps(): WorkerDeps {
+  return {
+    listPendingDrivePushes: (limit) => db.listPendingDrivePushes(limit),
+    markDrivePushResult: (args) => db.markDrivePushResult(args),
+    getCanonicalParentForRoutable: (target) => db.getCanonicalParentForRoutable(target),
+    getCanonicalSubfolderId: (p, s) => db.getCanonicalSubfolderId(p, s),
+    setAppSetting: (k, v) => db.setAppSetting(k, v),
+    CANONICAL_PARENT_NAMES: db.CANONICAL_PARENT_NAMES as any,
+    DRIVE_FOLDER_NAMES: db.DRIVE_FOLDER_NAMES as any,
+  };
+}
+
+export type WorkerOverrides = {
+  driveClient?: DriveClient;
+  deps?: WorkerDeps;
+  /** Fetch bytes for a binary row. Defaults to presigned-S3 fetch. */
+  fetchBytes?: (row: DrivePushQueueRow) => Promise<Uint8Array>;
+};
+
+const slugify = (s: string) => s.replace(/[^A-Za-z0-9]+/g, "_");
+
+/* =====================================================================
+   Folder resolution — target → destination Drive folder id (cached)
+   ===================================================================== */
+
+/**
+ * Resolve (and create if necessary) the Drive folder id a queue row should
+ * land in. Caches every resolution in `cache` for the worker run's lifetime
+ * so a batch of day logs only hits the Drive list/create endpoints once.
+ */
+async function resolveDestinationFolderId(
+  row: DrivePushQueueRow,
+  drive: DriveClient,
+  deps: WorkerDeps,
+  cache: Map<string, string>,
+): Promise<string> {
+  const target = String((row as any).targetFolder ?? (row as any).target_folder ?? "reagan");
+
+  // 1) Canonical parent folder id.
+  const parent = await deps.getCanonicalParentForRoutable(target);
+  if (!parent.folderId) {
+    throw new Error(`No canonical parent folder id for target "${target}" (slug ${String(parent.slug)})`);
+  }
+  let currentId = parent.folderId;
+
+  // 2) Named subfolder under the parent (e.g. "Day Logs"). Empty string =>
+  //    file lives directly in the parent (the Inbox catch-all does this).
+  const subfolderName = (deps.DRIVE_FOLDER_NAMES[target] ?? "").trim();
+  if (subfolderName.length > 0) {
+    const parentName = deps.CANONICAL_PARENT_NAMES[String(parent.slug)] ?? String(parent.slug);
+    currentId = await ensureChildFolder(
+      currentId,
+      subfolderName,
+      drive,
+      cache,
+      // Prefer the persisted canonical-subfolder id when we have one; this
+      // avoids a list call and keeps us pinned to the folder the dashboard
+      // already knows about.
+      async () => await deps.getCanonicalSubfolderId(parentName, subfolderName),
+      // When we discover/create the id, persist it back so future ticks and
+      // other code paths reuse it.
+      async (id) => {
+        await deps.setAppSetting(`drive.folderMap.${slugify(parentName)}.${slugify(subfolderName)}`, id);
+      },
+    );
+  }
+
+  // 3) Optional structural subpath (e.g. "Math/Graded"). Date-named
+  //    artifacts pass an empty subpath (flattened 2026-06-18); classroom
+  //    lifecycle + static doc trees still use it.
+  const subpath = String((row as any).targetSubpath ?? (row as any).target_subpath ?? "").trim();
+  if (subpath.length > 0) {
+    for (const seg of subpath.split("/").map((s) => s.trim()).filter(Boolean)) {
+      currentId = await ensureChildFolder(currentId, seg, drive, cache);
+    }
+  }
+
+  return currentId;
+}
+
+/**
+ * Find-or-create a child folder named `name` under `parentId`. Order:
+ *   1. process cache,
+ *   2. optional `persistedLookup` (e.g. app_settings cache),
+ *   3. live Drive list,
+ *   4. create.
+ * Persists newly-discovered ids via `onResolve` when provided.
+ */
+async function ensureChildFolder(
+  parentId: string,
+  name: string,
+  drive: DriveClient,
+  cache: Map<string, string>,
+  persistedLookup?: () => Promise<string | null>,
+  onResolve?: (id: string) => Promise<void>,
+): Promise<string> {
+  const cacheKey = `${parentId}::${name.toLowerCase()}`;
+  const cached = cache.get(cacheKey);
+  if (cached) return cached;
+
+  if (persistedLookup) {
+    const persisted = await persistedLookup();
+    if (persisted && persisted.length > 0 && !persisted.startsWith("1FAKE")) {
+      cache.set(cacheKey, persisted);
+      return persisted;
+    }
+  }
+
+  const children = await drive.listChildren(parentId, { foldersOnly: true });
+  const match = children.find((c) => c.name.trim().toLowerCase() === name.trim().toLowerCase());
+  let id: string;
+  if (match) {
+    id = match.id;
+  } else {
+    id = await drive.createFolder(parentId, name);
+  }
+  cache.set(cacheKey, id);
+  if (onResolve) {
+    try { await onResolve(id); } catch { /* persistence is best-effort */ }
+  }
+  return id;
+}
+
+/* =====================================================================
+   Per-row drain
+   ===================================================================== */
+
+async function defaultFetchBytes(row: DrivePushQueueRow): Promise<Uint8Array> {
+  const directUrl = String((row as any).fileUrl ?? (row as any).file_url ?? "").trim();
+  const fileKey = String((row as any).fileKey ?? (row as any).file_key ?? "").trim();
+  let url = directUrl;
+  // Prefer a freshly-signed URL from the key (the stored fileUrl may be a
+  // relative /manus-storage path or an expired signature).
+  if (fileKey.length > 0) {
+    try {
+      url = await storageGetSignedUrl(fileKey);
+    } catch {
+      // fall back to whatever was stored on the row
+    }
+  }
+  if (!url || (!url.startsWith("http://") && !url.startsWith("https://"))) {
+    throw new Error(`Row ${row.id}: no fetchable URL (fileKey="${fileKey}", fileUrl="${directUrl}")`);
+  }
+  const resp = await fetch(url);
+  if (!resp.ok) throw new Error(`Row ${row.id}: byte fetch ${resp.status} from storage`);
+  const buf = await resp.arrayBuffer();
+  return new Uint8Array(buf);
+}
+
+/**
+ * Drain a single row to completion. Resolves the destination folder, runs
+ * name-dedupe, uploads, and records exactly one result. Returns the outcome.
+ */
+async function drainRow(
+  row: DrivePushQueueRow,
+  drive: DriveClient,
+  deps: WorkerDeps,
+  cache: Map<string, string>,
+  fetchBytes: (r: DrivePushQueueRow) => Promise<Uint8Array>,
+): Promise<"pushed" | "skipped" | "failed"> {
+  try {
+    const destId = await resolveDestinationFolderId(row, drive, deps, cache);
+    const fileName = String((row as any).fileName ?? (row as any).file_name ?? "").trim();
+    if (!fileName) throw new Error(`Row ${row.id}: missing fileName`);
+
+    // Name-based dedupe against the destination folder.
+    const existing = await drive.listChildren(destId);
+    const dupe = existing.find((c) => c.name.trim().toLowerCase() === fileName.toLowerCase());
+    if (dupe) {
+      await deps.markDrivePushResult({
+        id: row.id,
+        status: "skipped",
+        driveFileId: dupe.id,
+        errorMessage: "dedupe_hit",
+      });
+      return "skipped";
+    }
+
+    const contentText = (row as any).contentText ?? (row as any).content_text ?? null;
+    const mimeType =
+      String((row as any).mimeType ?? (row as any).mime_type ?? "").trim() ||
+      (contentText != null ? "text/markdown" : "application/octet-stream");
+
+    let uploaded;
+    if (contentText != null && String(contentText).length > 0) {
+      uploaded = await drive.uploadFile({
+        parentId: destId,
+        name: fileName,
+        mimeType: mimeType || "text/markdown",
+        contentText: String(contentText),
+      });
+    } else {
+      const bytes = await fetchBytes(row);
+      uploaded = await drive.uploadFile({
+        parentId: destId,
+        name: fileName,
+        mimeType,
+        contentBytes: bytes,
+      });
+    }
+
+    await deps.markDrivePushResult({
+      id: row.id,
+      status: "pushed",
+      driveFileId: uploaded.id,
+      errorMessage: null,
+    });
+    return "pushed";
+  } catch (e: any) {
+    await deps.markDrivePushResult({
+      id: row.id,
+      status: "failed",
+      errorMessage: (e?.message ?? String(e)).slice(0, 600),
+    });
+    return "failed";
+  }
+}
+
+/* =====================================================================
    Public entry — schedule-safe drain
    ===================================================================== */
 
 /**
- * Drains up to `limit` pending rows. Safe to call from a heartbeat
- * schedule today — when credentials are missing it short-circuits with
- * `skipped_no_credentials` and zero DB writes.
+ * Drains up to `limit` pending rows. Safe to call from heartbeat: when no
+ * credential is configured it short-circuits with `skipped_no_credentials`
+ * and zero DB writes.
  */
 export async function runDrivePushWorker(
-  opts: { limit?: number } = {},
+  opts: { limit?: number } & WorkerOverrides = {},
 ): Promise<DrivePushSummary> {
   const cred = getDriveCredentialStatus();
   if (cred.kind !== "ready") {
@@ -144,26 +356,23 @@ export async function runDrivePushWorker(
     };
   }
 
-  const limit = Math.max(1, Math.min(500, opts.limit ?? 100));
-  const pending = (await db.listPendingDrivePushes(limit)) as DrivePushQueueRow[];
+  const deps = opts.deps ?? realDeps();
+  const drive = opts.driveClient ?? makeRealDriveClient();
+  const fetchBytes = opts.fetchBytes ?? defaultFetchBytes;
 
+  const limit = Math.max(1, Math.min(500, opts.limit ?? 100));
+  const pending = (await deps.listPendingDrivePushes(limit)) as DrivePushQueueRow[];
+
+  const cache = new Map<string, string>();
   let pushed = 0;
   let skipped = 0;
   let failed = 0;
 
   for (const row of pending) {
-    // The live implementation goes here. Until it lands, mark the row
-    // failed with a clear error so we don't silently spin on the same
-    // row forever once credentials arrive but the live path is still TBD.
-    // (We never reach this branch today because the credential gate
-    // above short-circuits.)
-    await db.markDrivePushResult({
-      id: row.id,
-      status: "failed",
-      errorMessage:
-        "drivePushWorker live path not yet implemented — credentials present but uploader stub still in place. See drivePushWorker.ts module header for the wiring guide.",
-    });
-    failed += 1;
+    const outcome = await drainRow(row, drive, deps, cache, fetchBytes);
+    if (outcome === "pushed") pushed += 1;
+    else if (outcome === "skipped") skipped += 1;
+    else failed += 1;
   }
 
   return {
@@ -176,25 +385,22 @@ export async function runDrivePushWorker(
 }
 
 /**
- * Single-row drain used by tests and by the live worker's loop. Returns
- * the same outcome contract as the queue row's eventual status.
+ * Single-row drain used by tests and by the live worker's loop. Same
+ * credential gate; returns the same outcome contract as the queue row's
+ * eventual status.
  */
 export async function runDrivePushOnce(
   row: DrivePushQueueRow,
+  overrides: WorkerOverrides = {},
 ): Promise<{ outcome: "pushed" | "skipped" | "failed" | "skipped_no_credentials"; reason?: string }> {
   const cred = getDriveCredentialStatus();
   if (cred.kind !== "ready") {
     return { outcome: "skipped_no_credentials", reason: cred.reason };
   }
-  // Live path TBD — see module header for the wiring guide.
-  await db.markDrivePushResult({
-    id: row.id,
-    status: "failed",
-    errorMessage:
-      "drivePushWorker live path not yet implemented — see drivePushWorker.ts module header.",
-  });
-  return {
-    outcome: "failed",
-    reason: "drivePushWorker live path not yet implemented",
-  };
+  const deps = overrides.deps ?? realDeps();
+  const drive = overrides.driveClient ?? makeRealDriveClient();
+  const fetchBytes = overrides.fetchBytes ?? defaultFetchBytes;
+  const cache = new Map<string, string>();
+  const outcome = await drainRow(row, drive, deps, cache, fetchBytes);
+  return { outcome };
 }
