@@ -38,8 +38,9 @@ describe("nightly-agenda-email — attachment-only contract (2026-05-30)", () =>
   });
 
   it("tells the recipient that the PDF is attached", () => {
-    // Body should make the attachment obvious.
-    expect(src).toContain("PDF is attached");
+    // Body should make the attachment obvious. 2026-06-18 slim body phrasing:
+    // "Today's colored printable is attached as a PDF".
+    expect(src).toContain("attached as a PDF");
   });
 
   it("still attaches the agenda PDF to the email's attachments[] array", () => {

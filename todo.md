@@ -1315,3 +1315,26 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] Place bell in CozyShell top-right, adult-only (gated on unlocked)
 - [x] Vitest for db helpers, procedures, event hooks, adult-only UI (8 tests)
 - [x] Full suite green (4967 tests)
+
+## 2026-06-18 (PM) — Email + PDF layout + block dimming fixes
+- [ ] Scheduled nightly job sent unwanted "school plan" summary, "packet ... no work" audit, AND a 3:32 AM "nightly self-check" email today; suppress ALL of these so ONLY the colored printable PDF email goes out daily
+- [ ] Verify the scheduled job (Heartbeat) calls the same suppressed path, not just manual sendNow
+- [ ] PDF worksheets: set 0.5in margins on all sides (text currently runs to edge)
+- [ ] PDF worksheets: distribute content evenly / use full page; add real answer space (lines or boxes)
+- [ ] Keep colored subject header + template design extras + designated icon; keep name/date/title
+- [ ] Block dimming: blocks greyed out before day starts; change so blocks only grey/dim AFTER checked-done or turned-in
+
+- [ ] PAUSE all emails to marcy.spear@gmail.com (Grandma) — remove her from every recipient list; only spear.cpt@gmail.com receives email
+- [x] Shift the agenda/schedule back by one day (done in PM session 2 — see below)
+
+## 2026-06-18 (PM session 2) — Email/schedule/PDF/UX overhaul
+- [x] PAUSE all emails to marcy.spear@gmail.com (Grandma); keep only spear.cpt@gmail.com everywhere emails are sent — enforced centrally at mailer + digest toggle/queue + recap-send + kid-requests + manual/scheduled agenda email; single testable GRANDMA pause flag (isGrandmaEmailPaused/setGrandmaEmailPaused)
+- [x] Daily email carries ONLY the single combined colored printable agenda PDF (worksheets merged inline); slim branded body + kid "What's coming up" line; per-block worksheet attachments removed from email
+- [x] Updated all affected contract tests (digest/recap/kid-requests/mailer/nightly agenda) to assert paused + single-PDF behavior; full suite green (4975 tests)
+- [x] Shift agenda/schedule back by one day: today's (06-18) full 8-block plan moved to 06-19; cascaded the near-term run (06-19..07-01) forward one school day, skipping weekends, latest-first to avoid unique-date collisions. Past days + far-future 2027/2028 template rows untouched. Blocks travel with planId. Verified.
+- [x] Suppress ALL non-PDF emails: confirmed the ONLY daily EMAIL is the single colored PDF (Mom-only). The "school plan" summary, "packet... no work" audit, and 3:32 AM self-check are in-app owner pings (not emails) and are already silenced for routine runs. Weekly digest is an in-app owner notification (not emailed). Per Katy (Option B): keep weekly recap + rare break-alert, killed the routine noise.
+- [x] PDF worksheets: 0.5in (36pt) even margin on all four sides in worksheetPdf.ts; banner/footer/content all respect it
+- [x] PDF worksheets: even full-page distribution (breathing-gap spread, single-pass, never adds phantom pages); roomier ruled lines + bigger answer boxes; kept colored subject-themed banner + Kiwi mascot icon + Name/Date box + title/subtitle. Verified via sample render + new spacing test (8/8 colorful tests pass)
+- [x] Per-worksheet fill-in option: AgendaEditor block row now has a split control — "Open / Fill in PDF" (instant fillable 0.5in PDF, also files to Drive) + dropdown "Download / print PDF" and "Open in Google Drive". makePdf returns {driveConnected, driveEnqueued, driveOpenUrl}; Open-in-Drive deep-links the real Drive copy when connected, else honestly says "Drive not connected" and opens the PDF (no silent no-op). db.findPushedDriveFileIdByHash resolves the Drive file id. Student daily view already opens the fillable PDF (label clarified). Live Drive push stays dormant until a Drive credential is added (Path 1).
+- [x] Fix block dimming: factored a pure isBlockDone() predicate (client/src/lib/blockDimming.ts) used by Today.tsx. A block greys (.is-done opacity 0.55) ONLY when status==="complete" (checked-done) OR every pinned worksheet is turned in (printable status "done"). Never dims by elapsed time, before day start, or on partial turn-in (verified it was already time-agnostic; gap was that turning in a worksheet didn't grey the block). 8 vitest scenarios in server/blockDimming.test.ts.
+- [ ] Run full suite, checkpoint, verify regenerated PDF, guide publish

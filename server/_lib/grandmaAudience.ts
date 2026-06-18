@@ -23,6 +23,56 @@ export const GRANDMA_EMAILS: ReadonlyArray<string> = [
 
 const GRANDMA_SET = new Set<string>(GRANDMA_EMAILS.map((e) => e.toLowerCase()));
 
+/**
+ * 2026-06-18 — Grandma email PAUSE switch.
+ *
+ * Katy paused ALL email to Grandma Marcy (marcy.spear@gmail.com) until
+ * further notice. Rather than deleting her from 17 recipient lists (and
+ * losing the un-pause path), we keep her wired into every Grandma-aware
+ * surface but run every OUTBOUND recipient list through
+ * `pauseGrandmaRecipients()`. To re-enable, flip this single flag to false.
+ *
+ * Note: this only suppresses *email delivery*. UI surfaces that show
+ * "Grandma" copy/permissions are unaffected — she can still edit, and the
+ * dashboard still knows who she is.
+ */
+let _grandmaEmailPaused = true;
+
+/**
+ * Is Grandma email delivery currently paused? Default: true (paused as of
+ * 2026-06-18). Exposed as a function so callers + tests read live state.
+ */
+export function isGrandmaEmailPaused(): boolean {
+  return _grandmaEmailPaused;
+}
+
+/**
+ * Set the Grandma email pause state. To permanently re-enable, change the
+ * initializer above to `false`. This setter exists mainly so tests can
+ * exercise BOTH the paused and un-paused contracts without freezing one in.
+ */
+export function setGrandmaEmailPaused(paused: boolean): void {
+  _grandmaEmailPaused = paused;
+}
+
+/**
+ * Back-compat constant snapshot of the initial pause state. Prefer
+ * `isGrandmaEmailPaused()` in new code so the live (settable) value is used.
+ */
+export const GRANDMA_EMAIL_PAUSED = true;
+
+/**
+ * Drop any Grandma addresses from an outbound recipient list while the
+ * pause is active. Pure, order-preserving, de-dupes nothing else.
+ * Returns a NEW array (never mutates the input).
+ */
+export function pauseGrandmaRecipients(
+  recipients: ReadonlyArray<string>,
+): string[] {
+  if (!isGrandmaEmailPaused()) return [...recipients];
+  return recipients.filter((e) => !isGrandmaEmail(e));
+}
+
 export type GrandmaAudience = "grandma" | "not-grandma";
 
 export interface GrandmaAudienceDescriptor {
@@ -53,8 +103,10 @@ export function grandmaAudienceFor(
     // House rule from Pushes 94/95/97: Grandma is ALWAYS a primary
     // recipient of the Sunday digest by default, and ALWAYS the
     // recap-email recipient when a school day has no logged work.
-    isDigestRecipient: grandma,
-    isRecapEmailRecipient: grandma,
+    // 2026-06-18: while the pause is on, she is NEVER an email recipient
+    // (digest or recap), regardless of the house rule above.
+    isDigestRecipient: grandma && !isGrandmaEmailPaused(),
+    isRecapEmailRecipient: grandma && !isGrandmaEmailPaused(),
   };
 }
 

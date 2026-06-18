@@ -13,6 +13,7 @@ import { findFreeLinks } from "./freeLinkFinder";
 import { storagePut } from "./storage";
 import { generateWorksheet, buildDeterministicWorksheet, isNonAcademicBlock, type WorksheetSeed } from "./_lib/worksheetGenerator";
 import { renderAndStoreWorksheetPdf } from "./_lib/worksheetPdf";
+import { getDriveCredentialStatus } from "./_lib/drivePushWorker";
 import { subjectAppLink } from "./_lib/subjectAppLinks";
 import { isUsableWorksheet, type WorksheetContent } from "@shared/worksheetTypes";
 import { generateScheduleDraft, type AIBlockDraft } from "./_lib/aiScheduleGenerator";
@@ -3368,7 +3369,8 @@ export const appRouter = router({
         const answered = await db.isRecapAlreadyAnswered(dateISO).catch(() => false);
         if (answered) return { ok: true, skipped: "already-answered", dateISO };
 
-        const fixedRecipients = ["marcy.spear@gmail.com", "spear.cpt@gmail.com"];
+        // 2026-06-18: Grandma paused. Recap-request tokens go to Mom only.
+        const fixedRecipients = ["spear.cpt@gmail.com"];
         let tutorEmails: string[] = [];
         try {
           const tutors = (await (db as any).listTutors?.(true)) ?? [];
@@ -4718,7 +4720,10 @@ export const appRouter = router({
           printableId: input.printableId,
           withAnswerKey: input.withAnswerKey ?? true,
         });
-        // File to Drive (best-effort; dedupes by content hash).
+        // File to Drive (best-effort; dedupes by content hash). The worker only
+        // uploads when a Drive credential is configured; otherwise the row sits
+        // pending and we tell the UI Drive isn't connected (no silent failure).
+        let driveEnqueued = false;
         try {
           await db.enqueueDrivePush({
             fileKey: key,
@@ -4728,8 +4733,33 @@ export const appRouter = router({
             targetFolder: "reagan_assignments",
             contentHash,
           });
+          driveEnqueued = true;
         } catch (e) { console.warn("[worksheets] drive enqueue failed", e); }
-        return { ok: true, url, fileName };
+
+        // Is live Google Drive actually connected? (single source of truth)
+        const driveCred = getDriveCredentialStatus();
+        const driveConnected = driveCred.kind === "ready";
+
+        // If connected, try to resolve the real Drive open URL for this exact
+        // file so "Open in Drive" deep-links to the annotatable copy. We look up
+        // the pushed queue row by contentHash; if the push hasn't drained yet,
+        // driveOpenUrl stays null and the UI falls back to the Drive folder.
+        let driveOpenUrl: string | null = null;
+        if (driveConnected && contentHash) {
+          try {
+            const fileId = await db.findPushedDriveFileIdByHash?.(contentHash, "reagan_assignments");
+            if (fileId) driveOpenUrl = `https://drive.google.com/file/d/${fileId}/view`;
+          } catch (e) { console.warn("[worksheets] drive open-url lookup failed", e); }
+        }
+
+        return {
+          ok: true,
+          url,
+          fileName,
+          driveConnected,
+          driveEnqueued,
+          driveOpenUrl,
+        };
       }),
   }),
   /* =================== UPLOAD OR SYNC =================== */
@@ -5097,9 +5127,9 @@ export const appRouter = router({
       .input(z.object({ summerActive: z.boolean().optional() }).optional())
       .query(async ({ input }) => {
         const payload = await db.buildWeeklyDigestPayload();
+        // 2026-06-18: Grandma paused — digest preview audience is Mom only.
         const recipients = [
           "spear.cpt@gmail.com",
-          "marcy.spear@gmail.com",
         ];
         const { renderSundayDigestHtml } = await import("./_lib/sundayDigestRenderer");
         return {
@@ -5285,7 +5315,6 @@ export const appRouter = router({
         const { notifyOwner } = await import("./_core/notification");
         const { runAutoAttachForDate } = await import("./_lib/blockAutoAttach");
         const { sendEmail } = await import("./_core/mailer");
-        const { buildPerBlockWorksheetAttachments } = await import("./_lib/perBlockWorksheetPdf");
 
         const today = (() => {
           const d = new Date();
@@ -5439,18 +5468,15 @@ export const appRouter = router({
 <p style="text-align:center;margin:24px 0;color:#1f3a2e;font-weight:600;">Today's printables are attached as a PDF.</p>
 <p style="font-size:13px;color:#555;text-align:center;margin-top:8px;">The packet has the full schedule plus each block's worksheet — print it and Reagan can work on paper.</p>
 </body></html>`;
-          // Build worksheet attachments
+          // 2026-06-18 single-PDF rule: email carries ONLY the one combined
+          // colored printable agenda PDF (worksheets are merged inline). The
+          // app is where Reagan grabs individual fillable worksheets.
           const emailAtts: Array<{ filename: string; content: Buffer; contentType: string }> = [
             { filename: `${forDate} - ${payload.studentName} - Agenda.pdf`, content: pdfBuffer, contentType: "application/pdf" },
           ];
-          try {
-            const wsAtts = await buildPerBlockWorksheetAttachments(payload as any);
-            for (const ws of wsAtts) {
-              emailAtts.push({ filename: ws.filename, content: ws.pdfBuffer, contentType: "application/pdf" });
-            }
-          } catch { /* worksheet build failure is non-fatal */ }
+          // 2026-06-18: Grandma paused — Mom only (mailer also strips Grandma).
           const emailResult = await sendEmail({
-            to: ["marcy.spear@gmail.com", "spear.cpt@gmail.com"],
+            to: ["spear.cpt@gmail.com"],
             subject: title,
             html,
             attachments: emailAtts,

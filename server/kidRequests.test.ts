@@ -18,13 +18,14 @@ import {
 
 describe("kidRequests — push 26", () => {
   beforeAll(() => {
-    expect(KID_REQUEST_RECIPIENTS.length).toBe(3);
+    // 2026-06-18: Grandma paused — kid-request recipients are Mom + Dad.
+    expect(KID_REQUEST_RECIPIENTS.length).toBe(2);
     expect(KID_REQUEST_RECIPIENTS).toContain("spear.cpt@gmail.com");
     expect(KID_REQUEST_RECIPIENTS).toContain("blakehiggs@hotmail.com");
-    expect(KID_REQUEST_RECIPIENTS).toContain("marcy.spear@gmail.com");
+    expect(KID_REQUEST_RECIPIENTS).not.toContain("marcy.spear@gmail.com");
   });
 
-  it("create returns id + emailedTo with all 3 recipients (joined)", async () => {
+  it("create returns id + emailedTo with Mom + Dad (joined; Grandma paused)", async () => {
     const res = await createKidRequest({
       body: "test from vitest — please ignore",
       kind: "general",
@@ -33,8 +34,8 @@ describe("kidRequests — push 26", () => {
     expect(res.id).toBeGreaterThan(0);
     expect(res.emailedTo).toContain("spear.cpt@gmail.com");
     expect(res.emailedTo).toContain("blakehiggs@hotmail.com");
-    expect(res.emailedTo).toContain("marcy.spear@gmail.com");
-    expect(res.emailedTo.split(",").length).toBe(3);
+    expect(res.emailedTo).not.toContain("marcy.spear@gmail.com");
+    expect(res.emailedTo.split(",").length).toBe(2);
     expect(res.notifyOwnerOk).toBe(false);
     // Cleanup so this row doesn't pollute future runs.
     await resolveKidRequest(res.id, null, "auto-resolved by vitest");

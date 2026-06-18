@@ -321,7 +321,7 @@ const TodaySchoolWork = forwardRef<TodaySchoolWorkHandle, { onItemsChanged?: (it
                   rel="noreferrer"
                   className="flex items-center justify-center gap-2 w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-sm shadow"
                 >
-                  📑 Open the printable PDF →
+                  📑 Open the fill-in PDF →
                 </a>
               )}
                 {started && (

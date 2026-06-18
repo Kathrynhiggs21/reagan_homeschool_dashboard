@@ -6,12 +6,13 @@
  * cron/SMTP layer only has to call planSundayDigestSend() and walk the
  * resulting `sends` array.
  */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
   planSundayDigestSend,
   type PlanSundayDigestInput,
 } from "./_lib/sundayDigestSendPlan";
 import type { DigestSnapshot } from "./_lib/sundayDigestBody";
+import { setGrandmaEmailPaused } from "./_lib/grandmaAudience";
 
 // A Sunday at 19:30 America/New_York → 23:30 UTC during EST. Use a
 // Sunday in May (EDT) → Sunday 19:30 EDT === Sunday 23:30 UTC.
@@ -47,6 +48,20 @@ function baseInput(over: Partial<PlanSundayDigestInput> = {}): PlanSundayDigestI
 }
 
 describe("Push 124 — planSundayDigestSend", () => {
+  // These cases verify the audience/ordering contract with Grandma present,
+  // which requires the global pause OFF. The 2026-06-18 pause is verified
+  // in its own case below.
+  beforeEach(() => setGrandmaEmailPaused(false));
+  afterEach(() => setGrandmaEmailPaused(true));
+
+  it("2026-06-18 PAUSE: Grandma is dropped, only Mom is queued, while paused", () => {
+    setGrandmaEmailPaused(true);
+    const out = planSundayDigestSend(baseInput());
+    expect(out.skipReason).toBeNull();
+    expect(out.sends.map((s) => s.role)).toEqual(["mom"]);
+    expect(out.sends.some((s) => s.toEmail === "marcy.spear@gmail.com")).toBe(false);
+  });
+
   it("inside Sunday window with Grandma enabled queues Mom + Grandma in that order", () => {
     const out = planSundayDigestSend(baseInput());
     expect(out.skipReason).toBeNull();

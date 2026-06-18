@@ -1,13 +1,18 @@
 /**
  * Push 106 (2026-05-13) — Grandma viewer audience contract.
  */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 import {
   GRANDMA_EMAILS,
   grandmaAudienceFor,
   isGrandmaEmail,
   shouldRenderGrandmaCopy,
+  isGrandmaEmailPaused,
+  setGrandmaEmailPaused,
+  pauseGrandmaRecipients,
 } from "./_lib/grandmaAudience";
+
+afterEach(() => setGrandmaEmailPaused(true));
 
 describe("Push 106 — Grandma viewer audience", () => {
   it("Marcy's email is the canonical Grandma list of one", () => {
@@ -35,13 +40,33 @@ describe("Push 106 — Grandma viewer audience", () => {
     }
   });
 
-  it("grandmaAudienceFor surfaces Grandma + digest + recap recipients flags", () => {
+  it("grandmaAudienceFor surfaces Grandma audience + role even while email paused", () => {
     const r = grandmaAudienceFor("marcy.spear@gmail.com");
     expect(r.audience).toBe("grandma");
     expect(r.email).toBe("marcy.spear@gmail.com");
     expect(r.homeRole).toBe("editor");
+    // 2026-06-18 PAUSE (default ON): she is NOT an email recipient.
+    expect(r.isDigestRecipient).toBe(false);
+    expect(r.isRecapEmailRecipient).toBe(false);
+  });
+
+  it("grandmaAudienceFor recipient flags are TRUE again once un-paused", () => {
+    setGrandmaEmailPaused(false);
+    const r = grandmaAudienceFor("marcy.spear@gmail.com");
     expect(r.isDigestRecipient).toBe(true);
     expect(r.isRecapEmailRecipient).toBe(true);
+  });
+
+  it("2026-06-18 PAUSE: default state is paused; pauseGrandmaRecipients strips her", () => {
+    expect(isGrandmaEmailPaused()).toBe(true);
+    expect(pauseGrandmaRecipients(["spear.cpt@gmail.com", "marcy.spear@gmail.com"]))
+      .toEqual(["spear.cpt@gmail.com"]);
+  });
+
+  it("pauseGrandmaRecipients keeps her when un-paused", () => {
+    setGrandmaEmailPaused(false);
+    expect(pauseGrandmaRecipients(["spear.cpt@gmail.com", "marcy.spear@gmail.com"]))
+      .toEqual(["spear.cpt@gmail.com", "marcy.spear@gmail.com"]);
   });
 
   it("Mom is not-grandma but still the primary parent in the home matrix", () => {

@@ -45,8 +45,9 @@ describe("Push 51 — Recap request admin surface", () => {
     const slice = routersSrc.slice(idx, idx + 2500);
     expect(slice).toContain('"actual-entries-exist"');
     expect(slice).toContain('"already-answered"');
-    // Recipients: Mom + Grandma + active tutors (deduped via Set).
-    expect(slice).toContain('"marcy.spear@gmail.com"');
+    // Recipients: 2026-06-18 Grandma paused — Mom only + active tutors
+    // (deduped via Set). Grandma must NOT appear in the defaults here.
+    expect(slice).not.toContain('"marcy.spear@gmail.com"');
     expect(slice).toContain('"spear.cpt@gmail.com"');
     expect(slice).toContain('listTutors?.(true)');
     expect(slice).toContain("new Set([...fixedRecipients, ...tutorEmails])");

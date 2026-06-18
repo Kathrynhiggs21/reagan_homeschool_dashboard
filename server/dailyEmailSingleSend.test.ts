@@ -66,10 +66,12 @@ describe("daily email is the PDF only — no summary, no audit email", () => {
     expect(routers).not.toContain("notified = await notifyOwner({ title, content });");
   });
 
-  it("sendNow still sends the real email with the PDF attached", () => {
-    expect(routers).toContain("buildPerBlockWorksheetAttachments");
+  it("sendNow still sends the real email with the single agenda PDF attached", () => {
+    // 2026-06-18 single-PDF rule: email carries ONLY the combined colored
+    // agenda PDF (worksheets merged inline) — no separate per-block attachments.
     expect(routers).toMatch(/Agenda\.pdf`/);
     expect(routers).toContain("await sendEmail(");
+    expect(routers).not.toContain("buildPerBlockWorksheetAttachments");
   });
 
   it("sendNow email body is slimmed — no block dump / mastery in the HTML", () => {

@@ -14,6 +14,8 @@
  *   - Pure module — no DB, no I/O.
  */
 
+import { isGrandmaEmail, isGrandmaEmailPaused } from "./grandmaAudience";
+
 export interface SundayDigestRecipient {
   email: string;
   displayName: string;
@@ -59,7 +61,12 @@ export function planSundayDigestSend(
       ordered.push(r);
     }
   }
-  return ordered.map((r) => ({
+  // 2026-06-18: Grandma email paused — drop her from the queued send while
+  // the pause is on (single flag in grandmaAudience.ts).
+  const visible = isGrandmaEmailPaused()
+    ? ordered.filter((r) => !isGrandmaEmail(r.email))
+    : ordered;
+  return visible.map((r) => ({
     idempotencyKey: `${input.weekStart}:${r.email.trim().toLowerCase()}`,
     weekStart: input.weekStart,
     weekEnd: input.weekEnd,

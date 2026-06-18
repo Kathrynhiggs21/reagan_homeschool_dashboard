@@ -99,7 +99,7 @@ function registerBrandFonts(doc: PDFKit.PDFDocument) {
 
 // ---- Page geometry ---------------------------------------------------------
 const PAGE_PT = 612; // LETTER width
-const MARGIN = 44;
+const MARGIN = 36; // 0.5in even margin on all four sides (Katy 2026-06-18)
 const PAGE_W = PAGE_PT - MARGIN * 2;
 const CONTENT_LEFT = MARGIN;
 const CONTENT_RIGHT = MARGIN + PAGE_W;
@@ -269,21 +269,22 @@ function renderSectionHeader(doc: PDFKit.PDFDocument, idx: number, sec: Workshee
 
 // ---- Answer-space helpers --------------------------------------------------
 function ruledLines(doc: PDFKit.PDFDocument, count: number, indent = 26) {
+  // Roomier ruled lines so Reagan has real space to write by hand.
   for (let i = 0; i < count; i++) {
-    ensureSpace(doc, 20);
-    const y = doc.y + 13;
-    doc.save().lineWidth(0.8).strokeColor(RULE).moveTo(CONTENT_LEFT + indent, y).lineTo(CONTENT_RIGHT, y).stroke().restore();
-    doc.y = y + 5;
+    ensureSpace(doc, 30);
+    const y = doc.y + 20;
+    doc.save().lineWidth(0.9).strokeColor(RULE).moveTo(CONTENT_LEFT + indent, y).lineTo(CONTENT_RIGHT, y).stroke().restore();
+    doc.y = y + 8;
   }
-  doc.moveDown(0.2);
+  doc.moveDown(0.3);
 }
 
 /** A soft rounded answer box (the signature element of this style). */
-function answerBox(doc: PDFKit.PDFDocument, h: number, theme: Theme, w = PAGE_W * 0.52) {
-  ensureSpace(doc, h + 6);
+function answerBox(doc: PDFKit.PDFDocument, h: number, theme: Theme, w = PAGE_W * 0.62) {
+  ensureSpace(doc, h + 10);
   const y = doc.y;
   rrect(doc, CONTENT_LEFT + 26, y, w, h, 9, theme.boxFill, theme.boxStroke, 1.3);
-  doc.y = y + h + 8;
+  doc.y = y + h + 12;
 }
 
 // ===========================================================================
@@ -382,8 +383,8 @@ function renderItem(doc: PDFKit.PDFDocument, item: WorksheetItem, n: number, the
       numLabel(doc, n, theme, y);
       doc.fillColor(INK).font(F_BODY_B).fontSize(11.5)
         .text(cleanForPdf(item.prompt), CONTENT_LEFT + 26, y, { width: PAGE_W - 30 });
-      doc.moveDown(0.15);
-      ruledLines(doc, item.lines ?? (item.kind === "prompt" ? 4 : 3));
+      doc.moveDown(0.25);
+      ruledLines(doc, item.lines ?? (item.kind === "prompt" ? 5 : 4));
       return;
     }
     case "short":
@@ -394,8 +395,8 @@ function renderItem(doc: PDFKit.PDFDocument, item: WorksheetItem, n: number, the
       numLabel(doc, n, theme, y);
       doc.fillColor(INK).font(F_BODY_B).fontSize(11.5)
         .text(cleanForPdf(item.prompt), CONTENT_LEFT + 26, y, { width: PAGE_W - 30 });
-      doc.moveDown(0.15);
-      answerBox(doc, 26, theme);
+      doc.moveDown(0.25);
+      answerBox(doc, 34, theme);
       return;
     }
   }
@@ -555,9 +556,27 @@ export function renderWorksheetPdfBuffer(
         }
         renderSectionHeader(doc, si, sec, theme);
         const items = Array.isArray(sec.items) ? sec.items : [];
+        // Distribute the section's items down the page with an even "breathing"
+        // gap so short sections fill the sheet instead of clustering at the top.
+        // Single pass, no re-flow: we estimate leftover space up front from a
+        // rough per-item height, then add an equal gap after each item. The gap
+        // is capped and clamped to the footer, so it can only ADD air, never
+        // create phantom pages.
+        const answerable = items.filter((it) => it.kind !== "passage").length || items.length;
+        const roughPerItem = 78; // conservative average item height incl. answer space
+        const bodyStartY = doc.y;
+        const available = bottomLimit(doc) - bodyStartY;
+        const estUsed = answerable * roughPerItem;
+        const leftover = available - estUsed;
+        // Spread leftover space generously (cap 52pt/item) so short sections
+        // fill the sheet top-to-bottom rather than clustering near the header.
+        const breatheGap = leftover > 40 ? Math.min(52, Math.floor((leftover * 0.82) / Math.max(1, answerable))) : 0;
         for (const item of items) {
           renderItem(doc, item, n, theme);
           if (item.kind !== "passage") n++;
+          if (breatheGap > 0 && doc.y + breatheGap < bottomLimit(doc)) {
+            doc.y += breatheGap;
+          }
         }
       });
 

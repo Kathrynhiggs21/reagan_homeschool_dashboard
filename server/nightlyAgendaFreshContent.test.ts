@@ -105,18 +105,16 @@ describe("nightlyAgenda.sendNow — fresh-content-per-run (v3.24)", () => {
     expect(body).toContain("readinessLegendText()");
   });
 
-  it("Resend send list targets BOTH Marcy and Mom (no fallback to old single-recipient path)", () => {
+  it("2026-06-18: Resend send list is Mom only (Grandma paused)", () => {
     const body = getSendNowBody();
-    expect(body).toMatch(
-      /to:\s*\["marcy\.spear@gmail\.com",\s*"spear\.cpt@gmail\.com"\]/,
-    );
+    expect(body).toMatch(/to:\s*\["spear\.cpt@gmail\.com"\]/);
+    expect(body).not.toContain("marcy.spear@gmail.com");
   });
 
-  it("per-block worksheet attachments are also computed in-band, not cached", () => {
+  it("2026-06-18 single-PDF rule: email carries ONLY the agenda PDF (no per-block worksheet email attachments)", () => {
     const body = getSendNowBody();
-    expect(body).toMatch(
-      /const wsAtts = await buildPerBlockWorksheetAttachments\(payload as any\);/,
-    );
+    expect(body).not.toContain("buildPerBlockWorksheetAttachments");
+    expect(body).toMatch(/Agenda\.pdf`/);
   });
 
   it("status is computed AFTER the email send, never speculatively", () => {

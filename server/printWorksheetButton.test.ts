@@ -45,4 +45,13 @@ describe("PrintWorksheetButton", () => {
     expect(btn).toMatch(/if \(busy\) return/);
     expect(btn).toMatch(/disabled=\{busy\}/);
   });
+
+  it("offers an Open-in-Drive action that falls back to the PDF when Drive is unavailable", () => {
+    expect(btn).toMatch(/Open in Google Drive/);
+    expect(btn).toMatch(/driveOpenUrl/);
+    expect(btn).toMatch(/driveConnected/);
+    // makePdf must surface Drive status + open url to the client.
+    expect(routers).toMatch(/driveConnected/);
+    expect(routers).toMatch(/driveOpenUrl/);
+  });
 });

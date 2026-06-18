@@ -152,14 +152,14 @@ describe("mailer (Resend)", () => {
 
     const { sendEmail } = await freshMailer();
     const res = await sendEmail({
-      to: ["marcy.spear@gmail.com", "spear.cpt@gmail.com"],
+      to: ["dad.smtp@hotmail.com", "spear.cpt@gmail.com"],
       subject: "Plan",
       html: "<p>hi</p>",
     });
     expect(res.ok).toBe(true);
     expect(res.messageId).toBe("msg_partial");
     expect(res.acceptedRecipients).toEqual(["spear.cpt@gmail.com"]);
-    expect(res.droppedRecipients).toEqual(["marcy.spear@gmail.com"]);
+    expect(res.droppedRecipients).toEqual(["dad.smtp@hotmail.com"]);
     expect(sendMock).toHaveBeenCalledTimes(3);
   });
 
@@ -168,14 +168,14 @@ describe("mailer (Resend)", () => {
     sendMock.mockResolvedValueOnce({ data: { id: "msg_allow" }, error: null });
     const { sendEmail } = await freshMailer();
     const res = await sendEmail({
-      to: ["marcy.spear@gmail.com", "spear.cpt@gmail.com"],
+      to: ["dad.smtp@hotmail.com", "spear.cpt@gmail.com"],
       subject: "Filtered",
       html: "<p>hi</p>",
     });
     expect(res.ok).toBe(true);
     const call = sendMock.mock.calls[0][0];
     expect(call.to).toEqual(["spear.cpt@gmail.com"]);
-    expect(res.droppedRecipients).toEqual(["marcy.spear@gmail.com"]);
+    expect(res.droppedRecipients).toEqual(["dad.smtp@hotmail.com"]);
   });
 
   it("returns skipped when MAIL_ALLOWED_RECIPIENTS strips every requested address AND no SMTP fallback configured", async () => {
@@ -183,7 +183,7 @@ describe("mailer (Resend)", () => {
     // No GMAIL_SMTP_USER/PASSWORD set — SMTP fallback disabled.
     const { sendEmail } = await freshMailer();
     const res = await sendEmail({
-      to: ["marcy.spear@gmail.com", "spear.cpt@gmail.com"],
+      to: ["dad.smtp@hotmail.com", "spear.cpt@gmail.com"],
       subject: "None allowed",
       html: "<p>hi</p>",
     });
@@ -194,7 +194,7 @@ describe("mailer (Resend)", () => {
     expect(sendMock).not.toHaveBeenCalled();
     expect(res.droppedRecipients).toEqual(
       expect.arrayContaining([
-        "marcy.spear@gmail.com",
+        "dad.smtp@hotmail.com",
         "spear.cpt@gmail.com",
       ]),
     );
@@ -208,7 +208,7 @@ describe("mailer (Resend)", () => {
     smtpSendMailMock.mockResolvedValueOnce({ messageId: "smtp_msg_1" });
     const { sendEmail } = await freshMailer();
     const res = await sendEmail({
-      to: ["marcy.spear@gmail.com", "spear.cpt@gmail.com"],
+      to: ["dad.smtp@hotmail.com", "spear.cpt@gmail.com"],
       subject: "Both should land",
       html: "<p>body</p>",
     });
@@ -217,9 +217,9 @@ describe("mailer (Resend)", () => {
     expect(sendMock.mock.calls[0][0].to).toEqual(["spear.cpt@gmail.com"]);
     // SMTP fallback got the dropped address.
     expect(smtpSendMailMock).toHaveBeenCalledTimes(1);
-    expect(smtpSendMailMock.mock.calls[0][0].to).toBe("marcy.spear@gmail.com");
+    expect(smtpSendMailMock.mock.calls[0][0].to).toBe("dad.smtp@hotmail.com");
     expect(res.acceptedRecipients).toEqual(
-      expect.arrayContaining(["spear.cpt@gmail.com", "marcy.spear@gmail.com"]),
+      expect.arrayContaining(["spear.cpt@gmail.com", "dad.smtp@hotmail.com"]),
     );
   });
 
@@ -230,7 +230,7 @@ describe("mailer (Resend)", () => {
     smtpSendMailMock.mockResolvedValue({ messageId: "smtp_msg_only" });
     const { sendEmail } = await freshMailer();
     const res = await sendEmail({
-      to: ["marcy.spear@gmail.com", "spear.cpt@gmail.com"],
+      to: ["dad.smtp@hotmail.com", "spear.cpt@gmail.com"],
       subject: "All via SMTP",
       html: "<p>body</p>",
     });
@@ -240,7 +240,7 @@ describe("mailer (Resend)", () => {
     // Both addresses went through SMTP.
     expect(smtpSendMailMock).toHaveBeenCalledTimes(2);
     expect(res.acceptedRecipients).toEqual(
-      expect.arrayContaining(["marcy.spear@gmail.com", "spear.cpt@gmail.com"]),
+      expect.arrayContaining(["dad.smtp@hotmail.com", "spear.cpt@gmail.com"]),
     );
   });
 
@@ -252,7 +252,7 @@ describe("mailer (Resend)", () => {
     smtpSendMailMock.mockRejectedValueOnce(new Error("connection refused"));
     const { sendEmail } = await freshMailer();
     const res = await sendEmail({
-      to: ["marcy.spear@gmail.com", "spear.cpt@gmail.com"],
+      to: ["dad.smtp@hotmail.com", "spear.cpt@gmail.com"],
       subject: "SMTP fails",
       html: "<p>body</p>",
     });
@@ -260,7 +260,32 @@ describe("mailer (Resend)", () => {
     // but Marcy is reported as dropped (SMTP failed).
     expect(res.ok).toBe(true);
     expect(res.acceptedRecipients).toEqual(["spear.cpt@gmail.com"]);
-    expect(res.droppedRecipients).toEqual(["marcy.spear@gmail.com"]);
+    expect(res.droppedRecipients).toEqual(["dad.smtp@hotmail.com"]);
+  });
+
+  it("2026-06-18 PAUSE: strips Grandma at the mailer; sends to the rest", async () => {
+    sendMock.mockResolvedValueOnce({ data: { id: "msg_nogma" }, error: null });
+    const { sendEmail } = await freshMailer();
+    const res = await sendEmail({
+      to: ["marcy.spear@gmail.com", "spear.cpt@gmail.com"],
+      subject: "Paused",
+      html: "<p>hi</p>",
+    });
+    expect(res.ok).toBe(true);
+    // Grandma never reaches Resend or SMTP.
+    expect(sendMock.mock.calls[0][0].to).toEqual(["spear.cpt@gmail.com"]);
+  });
+
+  it("2026-06-18 PAUSE: skips entirely when Grandma is the ONLY recipient", async () => {
+    const { sendEmail } = await freshMailer();
+    const res = await sendEmail({
+      to: ["marcy.spear@gmail.com"],
+      subject: "Only Grandma",
+      html: "<p>hi</p>",
+    });
+    expect(res.ok).toBe(false);
+    expect(res.skipped).toBe(true);
+    expect(sendMock).not.toHaveBeenCalled();
   });
 
   it("derives a plain-text fallback from HTML when text is not provided", async () => {

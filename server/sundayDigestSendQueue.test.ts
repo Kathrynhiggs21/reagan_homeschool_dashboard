@@ -1,12 +1,19 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import {
   planSundayDigestSend,
   dedupePlannedSends,
   type QueuedDigestSend,
 } from "./_lib/sundayDigestSendQueue";
 import { renderSundayDigestHtml } from "./_lib/sundayDigestRenderer";
+import { setGrandmaEmailPaused } from "./_lib/grandmaAudience";
 
 describe("Push 78 — Sunday digest send queue", () => {
+  // These cases verify the recipient-ORDERING contract, which only includes
+  // Grandma when she is NOT paused. The global pause (default ON as of
+  // 2026-06-18) is exercised separately below.
+  beforeEach(() => setGrandmaEmailPaused(false));
+  afterEach(() => setGrandmaEmailPaused(true));
+
   it("always queues Mom first, Grandma second", () => {
     const plan = planSundayDigestSend({
       weekStart: "2026-05-10",
@@ -97,6 +104,17 @@ describe("Push 78 — Sunday digest send queue", () => {
     expect(html).toContain("Mom + Grandma recipients");
     expect(html).toContain("reaganhiggs910@gmail.com");
     expect(html).toContain("marcy.spear@gmail.com");
+  });
+
+  it("2026-06-18 PAUSE: Grandma is dropped from the queued send while paused", () => {
+    setGrandmaEmailPaused(true);
+    const plan = planSundayDigestSend({
+      weekStart: "2026-05-10",
+      weekEnd: "2026-05-16",
+    });
+    expect(plan).toHaveLength(1);
+    expect(plan[0].recipient.role).toBe("mom");
+    expect(plan.some((p) => p.recipient.email === "marcy.spear@gmail.com")).toBe(false);
   });
 
   it("idempotency keys are unique within a single plan", () => {

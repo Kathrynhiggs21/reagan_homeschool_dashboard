@@ -5220,6 +5220,38 @@ export async function listRecentDrivePushes(limit = 20): Promise<DrivePushQueueR
 }
 
 /**
+ * Look up the Google Drive file id for a successfully-pushed file by its
+ * content hash within a target folder. Used by worksheets.makePdf to deep-link
+ * "Open in Drive" to the exact annotatable copy. Returns null when the push
+ * hasn't drained yet (so the UI can fall back to the Drive folder). Best-effort:
+ * any failure resolves to null rather than throwing.
+ */
+export async function findPushedDriveFileIdByHash(
+  contentHash: string,
+  targetFolder: DrivePushTarget,
+): Promise<string | null> {
+  if (!contentHash) return null;
+  try {
+    const db = getDb();
+    const [row] = (await db
+      .select()
+      .from(drivePushQueue)
+      .where(
+        and(
+          eq(drivePushQueue.contentHash as any, contentHash),
+          eq(drivePushQueue.targetFolder as any, targetFolder as any),
+          eq(drivePushQueue.status as any, "pushed" as any),
+        ),
+      )
+      .orderBy(desc(drivePushQueue.id))
+      .limit(1)) as any[];
+    return row?.driveFileId ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * v3.23 (2026-05-31) — One-shot recovery helper. Resets every row whose
  * created_at is >= the given epoch ms AND whose status is one of the
  * provided non-pending statuses back to `pending`, clearing
@@ -8241,10 +8273,11 @@ export async function listPendingRecapRequests(limit = 50): Promise<DailyRecapRe
  * a single source of truth so future SMTP integration is one line.
  * Mom, Dad, Grandma Marcy.
  */
+// 2026-06-18: Grandma (marcy.spear@gmail.com) paused — removed from kid-request
+// recipients until further notice. Re-add when GRANDMA_EMAIL_PAUSED flips off.
 export const KID_REQUEST_RECIPIENTS = [
   "spear.cpt@gmail.com",     // Mom
   "blakehiggs@hotmail.com",  // Dad
-  "marcy.spear@gmail.com",   // Grandma Marcy
 ] as const;
 
 export async function createKidRequest(input: {

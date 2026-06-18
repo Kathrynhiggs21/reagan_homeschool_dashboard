@@ -62,6 +62,7 @@ import MascotGreeting from "@/components/MascotGreeting";
 import TodaySchoolWork, { type TodaySchoolWorkHandle, type TodayPrintableItem } from "@/components/TodaySchoolWork";
 import WorksheetRunner, { type WorksheetRunnerSeed } from "@/components/WorksheetRunner";
 import { detectSubjectSlug, findBestPrintableForBlock, findAllPrintablesForBlock } from "@/lib/matchPrintable";
+import { isBlockDone } from "@/lib/blockDimming";
 import { fallbackActivityFor } from "@/lib/subjectFallbackActivity";
 import { useRef } from "react";
 import { dailyTipForDate, localDateKey } from "@/lib/dailyTips";
@@ -738,7 +739,12 @@ export default function Today() {
         )}
         <div className="space-y-2">
           {blocks.map((b: any, i: number) => {
-            const isDone = b.status === "complete";
+            // A block greys out ONLY after it is checked-done (status
+            // "complete") OR every worksheet pinned to it has been turned in
+            // (printable status "done"). It must NEVER dim merely because its
+            // time slot passed or before the day starts. 2026-06-18.
+            const blockPrintables = findAllPrintablesForBlock(printableItems, b, 10);
+            const isDone = isBlockDone(b, blockPrintables as any);
             const tint = subjectTint(b.subjectSlug);
             const stop = rainbowStop(i);
             return (

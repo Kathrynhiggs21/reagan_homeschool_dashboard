@@ -136,7 +136,7 @@ describe("/api/scheduled/daily-recap-send cron behavior", () => {
     expect(rows.length).toBe(0);
   });
 
-  it("SEND path: creates recap-request rows for Mom + Grandma with unique tokens and status='sent' when day is empty", async () => {
+  it("SEND path: creates recap-request rows for Mom (Grandma paused) with unique tokens and status='sent' when day is empty", async () => {
     stubAuth();
     await cleanFutureDate();
 
@@ -151,11 +151,12 @@ describe("/api/scheduled/daily-recap-send cron behavior", () => {
     expect(body.skipped).toBeUndefined();
     expect(body.dateISO).toBe(FUTURE_DATE);
     expect(Array.isArray(body.sent)).toBe(true);
-    expect(body.sent.length).toBeGreaterThanOrEqual(2);
+    expect(body.sent.length).toBeGreaterThanOrEqual(1);
 
     const recipients = body.sent.map((s: any) => s.recipient);
-    expect(recipients).toContain("marcy.spear@gmail.com");
+    // 2026-06-18 Grandma paused — Mom present, Grandma absent.
     expect(recipients).toContain("spear.cpt@gmail.com");
+    expect(recipients).not.toContain("marcy.spear@gmail.com");
 
     // Tokens are unique
     const tokens = body.sent.map((s: any) => s.token);
@@ -172,7 +173,7 @@ describe("/api/scheduled/daily-recap-send cron behavior", () => {
       .select()
       .from(dailyRecapRequests)
       .where(eq(dailyRecapRequests.dateISO, FUTURE_DATE));
-    expect(rows.length).toBeGreaterThanOrEqual(2);
+    expect(rows.length).toBeGreaterThanOrEqual(1);
     for (const row of rows) {
       expect(row.status).toBe("sent");
       expect(typeof row.replyToken).toBe("string");

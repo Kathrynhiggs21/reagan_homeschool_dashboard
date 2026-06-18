@@ -4,13 +4,28 @@
  * Locks the Mom-permanent / Grandma-toggleable / extras-appended rule
  * so the WeeklyDigestCard and the Sunday send queue always agree.
  */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
   resolveDigestRecipients,
   grandmaMuteBanner,
 } from "./_lib/digestRecipientsToggle";
+import { setGrandmaEmailPaused } from "./_lib/grandmaAudience";
 
 describe("Push 94 — digest recipients toggle", () => {
+  // The toggle ORDERING contract requires the global pause OFF. The
+  // 2026-06-18 global pause is verified in its own case below.
+  beforeEach(() => setGrandmaEmailPaused(false));
+  afterEach(() => setGrandmaEmailPaused(true));
+
+  it("2026-06-18 PAUSE: global pause forces Mom-only even when grandmaEnabled", () => {
+    setGrandmaEmailPaused(true);
+    const r = resolveDigestRecipients({ grandmaEnabled: true });
+    expect(r.recipients).toHaveLength(1);
+    expect(r.recipients[0].role).toBe("mom");
+    expect(r.grandmaIncluded).toBe(false);
+    expect(r.summary).not.toContain("Grandma");
+  });
+
   it("Grandma on (default) → Mom + Grandma in that order", () => {
     const r = resolveDigestRecipients({ grandmaEnabled: true });
     expect(r.recipients.map((x) => x.role)).toEqual(["mom", "grandma"]);

@@ -12,6 +12,7 @@
  * No DB, no I/O.
  */
 import type { SundayDigestRecipient } from "./sundayDigestSendQueue";
+import { isGrandmaEmailPaused } from "./grandmaAudience";
 
 export interface DigestRecipientsInput {
   /** When false → Grandma is excluded from this week's send. */
@@ -46,8 +47,10 @@ const GRANDMA: SundayDigestRecipient = {
 export function resolveDigestRecipients(
   input: DigestRecipientsInput,
 ): DigestRecipientsResolution {
+  // 2026-06-18: global Grandma email pause overrides the per-week toggle.
+  const grandmaOn = input.grandmaEnabled && !isGrandmaEmailPaused();
   const list: SundayDigestRecipient[] = [MOM];
-  if (input.grandmaEnabled) list.push(GRANDMA);
+  if (grandmaOn) list.push(GRANDMA);
 
   const extras = input.extras ?? [];
   // De-dup by email (case-insensitive) preserving order.
@@ -64,7 +67,7 @@ export function resolveDigestRecipients(
   return {
     recipients: list,
     summary: `Sending to: ${names}`,
-    grandmaIncluded: input.grandmaEnabled,
+    grandmaIncluded: grandmaOn,
   };
 }
 

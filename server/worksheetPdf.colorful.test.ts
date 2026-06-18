@@ -143,6 +143,23 @@ describe("clean worksheet PDF renderer", () => {
     expect(countPdfPages(buf)).toBeGreaterThanOrEqual(4); // 4 sections each on its own page
   });
 
+  it("distributes a short single-page section with breathing space (fills the page)", async () => {
+    // A 3-item single section should NOT cluster at the very top; with the
+    // even-distribution gap the last item sits well below the header band.
+    const buf = await renderWorksheetPdfBuffer({
+      title: "Spacing Check",
+      subjectSlug: "math",
+      sections: [{ heading: "Practice", items: [
+        { id: "a", kind: "short", prompt: "2 + 2 = ?", answer: "4" },
+        { id: "b", kind: "short", prompt: "3 + 5 = ?", answer: "8" },
+        { id: "c", kind: "short", prompt: "9 - 4 = ?", answer: "5" },
+      ] }],
+    });
+    // single section => single page (distribution must never add a page)
+    expect(countPdfPages(buf)).toBe(1);
+    expect(buf.subarray(0, 5).toString("latin1")).toBe("%PDF-");
+  });
+
   it("handles a single-section worksheet without throwing", async () => {
     const one: WorksheetContent = {
       title: "Quick Practice",

@@ -1034,9 +1034,11 @@ export function registerScheduledSync(app: Express) {
         }
         forDate = target.toISOString().slice(0, 10);
       }
+      // 2026-06-18: Grandma paused + single-recipient rule. Default to Mom
+      // only; the mailer still strips any Grandma address defensively.
       const recipients: string[] = Array.isArray(req.body?.recipients) && req.body.recipients.length > 0
         ? req.body.recipients
-        : ["marcy.spear@gmail.com", "spear.cpt@gmail.com"];
+        : ["spear.cpt@gmail.com"];
       const force = !!req.body?.force;
 
       const { assembleAgendaForDate } = await import("./_lib/agendaAssembler");
@@ -1236,13 +1238,15 @@ export function registerScheduledSync(app: Express) {
         }
       } catch { /* summary line is optional cosmetic */ }
 
-      const html = `<!doctype html><html><body style=\"font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#222;max-width:680px;margin:0 auto;padding:20px;\">
-<div style=\"text-align:center;margin-bottom:8px;\"><div style=\"font-size:22px;font-weight:800;color:#1f3a2e;\">${payload.studentName}'s School Plan</div><div style=\"color:#666;font-size:14px;\">${payload.dayLabel}</div></div>
-${tutorLine}
+      // 2026-06-18 single-PDF rule: short branded note + the friendly
+      // "What's coming up" line (kept for Reagan) — but NO HTML block dump.
+      // The colored printable PDF (attached) is the deliverable.
+      void blockListHtml; void tutorLine;
+      const html = `<!doctype html><html><body style=\"font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#222;max-width:560px;margin:0 auto;padding:24px;\">
+<div style=\"text-align:center;margin-bottom:12px;\"><div style=\"font-size:22px;font-weight:800;color:#1f3a2e;\">${payload.studentName}'s School Plan</div><div style=\"color:#666;font-size:14px;\">${payload.dayLabel}</div></div>
 ${kidSummaryLine}
-<div style=\"margin:20px 0;padding:14px 16px;border-left:4px solid #1f3a2e;background:#fafafa;border-radius:8px;\">${blockListHtml || '<div style=\"color:#888;\">No blocks scheduled.</div>'}</div>
-<p style=\"font-size:13px;color:#1f3a2e;text-align:center;margin:24px 0;font-weight:600;\">📎 The full agenda PDF is attached to this email — no link needed.</p>
-<p style=\"font-size:12px;color:#888;text-align:center;margin-top:8px;\">If anything changes before school start, this email will be re-sent automatically.</p>
+<p style=\"font-size:15px;color:#1f3a2e;text-align:center;margin:20px 0;font-weight:600;\">📎 Today's colored printable is attached as a PDF — print it or open it on the dashboard.</p>
+<p style=\"font-size:12px;color:#888;text-align:center;margin-top:8px;\">If anything changes before school start, this email is re-sent automatically.</p>
 </body></html>`;
 
       // Build the attachments[] array the scheduled-task agent will pass to
@@ -1301,11 +1305,17 @@ ${kidSummaryLine}
       // Attachments are uploaded to public CDN URLs first.
       // ============================================================
       const { sendEmail } = await import("./_core/mailer");
-      const emailAttachments = attachments.map((a) => ({
-        filename: a.filename,
-        content: Buffer.from(a.contentBase64, "base64"),
-        contentType: a.mimeType,
-      }));
+      // 2026-06-18 single-PDF rule: the daily email carries ONLY the one
+      // combined colored printable agenda PDF (worksheets are already merged
+      // inline). Per-block worksheet attachments are dropped from email; the
+      // app is where Reagan grabs individual fillable worksheets.
+      const emailAttachments = attachments
+        .filter((a) => a.kind === "agenda")
+        .map((a) => ({
+          filename: a.filename,
+          content: Buffer.from(a.contentBase64, "base64"),
+          contentType: a.mimeType,
+        }));
       const sendResult = await sendEmail({
         to: recipients,
         subject,
@@ -1627,8 +1637,9 @@ ${kidSummaryLine}
         return res.json({ ok: true, skipped: "already-answered", dateISO });
       }
 
-      // Recipients: Mom + Grandma (constants), plus every active tutor with a non-empty email.
-      const fixedRecipients = ["marcy.spear@gmail.com", "spear.cpt@gmail.com"];
+      // Recipients: 2026-06-18 Grandma paused — Mom only, plus every active
+      // tutor with a non-empty email. (Mailer also strips Grandma defensively.)
+      const fixedRecipients = ["spear.cpt@gmail.com"];
       let tutorEmails: string[] = [];
       try {
         const tutorsRows = (await (db as any).listTutors?.(true)) ?? [];

@@ -34,6 +34,7 @@
 
 import { Resend } from "resend";
 import nodemailer, { type Transporter } from "nodemailer";
+import { pauseGrandmaRecipients } from "../_lib/grandmaAudience";
 
 export interface MailAttachment {
   filename: string;
@@ -203,7 +204,16 @@ export async function sendEmail(opts: SendEmailOptions): Promise<SendEmailResult
     return { ok: false, skipped: true, error: msg };
   }
 
-  const requestedTo = Array.isArray(opts.to) ? opts.to : [opts.to];
+  // 2026-06-18 — Grandma email PAUSE. Strip Grandma from EVERY outbound list
+  // at the lowest layer so no scheduled/manual/recap/digest path can leak to
+  // her while paused. Single flag (GRANDMA_EMAIL_PAUSED) controls this.
+  const requestedToRaw = Array.isArray(opts.to) ? opts.to : [opts.to];
+  const requestedTo = pauseGrandmaRecipients(requestedToRaw);
+  if (requestedTo.length === 0) {
+    const msg = "All recipients paused/empty after Grandma pause filter";
+    console.warn(`[mailer] ${msg}; requested=${requestedToRaw.join(", ")}`);
+    return { ok: false, skipped: true, error: msg, acceptedRecipients: [], droppedRecipients: requestedToRaw };
+  }
   const { finalList, dropped } = applyRecipientPolicy(requestedTo);
   // SMTP fallback target list = addresses Resend's allow-list filter dropped.
   const smtpFallbackTargets = dropped.slice();
