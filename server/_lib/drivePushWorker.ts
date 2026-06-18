@@ -48,8 +48,14 @@ import { storageGetSignedUrl } from "../storage";
    ===================================================================== */
 
 export type DriveCredentialStatus =
-  | { kind: "ready"; source: "oauth_token" | "service_account" }
+  | { kind: "ready"; source: "oauth_token" | "service_account" | "calendar_oauth_token" | "calendar_service_account" }
   | { kind: "not_configured"; reason: string };
+
+function looksLikeServiceAccount(sa: string): boolean {
+  // Cheap shape check — don't validate the full JSON here, just confirm it
+  // looks like a service-account blob so we don't false-positive on "{}".
+  return sa.length > 50 && sa.includes("private_key") && sa.includes("client_email");
+}
 
 export function getDriveCredentialStatus(): DriveCredentialStatus {
   const token = (process.env.GOOGLE_DRIVE_OAUTH_TOKEN || "").trim();
@@ -58,9 +64,7 @@ export function getDriveCredentialStatus(): DriveCredentialStatus {
   }
   const sa = (process.env.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON || "").trim();
   if (sa.length > 0) {
-    // Cheap shape check — don't validate the full JSON here, just confirm it
-    // looks like a service-account blob so we don't false-positive on "{}".
-    if (sa.length > 50 && sa.includes("private_key") && sa.includes("client_email")) {
+    if (looksLikeServiceAccount(sa)) {
       return { kind: "ready", source: "service_account" };
     }
     return {
@@ -68,9 +72,20 @@ export function getDriveCredentialStatus(): DriveCredentialStatus {
       reason: "GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON is set but malformed (expected a service-account JSON containing 'private_key' and 'client_email').",
     };
   }
+  // Fallback (2026-06-18, approved by Katy): reuse the Google CALENDAR
+  // credential for Drive when no dedicated Drive credential is set. The
+  // service account mints a Drive-scoped token in resolveAccessToken().
+  const calSa = (process.env.GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON || "").trim();
+  if (calSa.length > 0 && looksLikeServiceAccount(calSa)) {
+    return { kind: "ready", source: "calendar_service_account" };
+  }
+  const calToken = (process.env.GOOGLE_CALENDAR_OAUTH_TOKEN || "").trim();
+  if (calToken.length > 0) {
+    return { kind: "ready", source: "calendar_oauth_token" };
+  }
   return {
     kind: "not_configured",
-    reason: "No Drive credentials in env. Set GOOGLE_DRIVE_OAUTH_TOKEN (preferred for personal use) or GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON to enable the worker.",
+    reason: "No Drive credentials in env. Set GOOGLE_DRIVE_OAUTH_TOKEN or GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON (or provide a Google Calendar credential to reuse for Drive).",
   };
 }
 

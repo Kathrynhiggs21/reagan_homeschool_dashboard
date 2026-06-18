@@ -63,10 +63,14 @@ describe("isPinnedHubRoot", () => {
 describe("runDriveFolderDedupeJob", () => {
   const savedToken = process.env.GOOGLE_DRIVE_OAUTH_TOKEN;
   const savedSa = process.env.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON;
+  const savedCalSa = process.env.GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON;
+  const savedCalTok = process.env.GOOGLE_CALENDAR_OAUTH_TOKEN;
 
   beforeEach(() => {
     delete process.env.GOOGLE_DRIVE_OAUTH_TOKEN;
     delete process.env.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON;
+    delete process.env.GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON;
+    delete process.env.GOOGLE_CALENDAR_OAUTH_TOKEN;
   });
 
   afterEach(() => {
@@ -74,6 +78,10 @@ describe("runDriveFolderDedupeJob", () => {
     else delete process.env.GOOGLE_DRIVE_OAUTH_TOKEN;
     if (savedSa !== undefined) process.env.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON = savedSa;
     else delete process.env.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON;
+    if (savedCalSa !== undefined) process.env.GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON = savedCalSa;
+    else delete process.env.GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON;
+    if (savedCalTok !== undefined) process.env.GOOGLE_CALENDAR_OAUTH_TOKEN = savedCalTok;
+    else delete process.env.GOOGLE_CALENDAR_OAUTH_TOKEN;
   });
 
   it("short-circuits with skipped_no_credentials when no creds — zero side effects", async () => {
@@ -94,10 +102,14 @@ describe("runDriveFolderDedupeJob", () => {
 describe("findHashDuplicate", () => {
   const savedToken = process.env.GOOGLE_DRIVE_OAUTH_TOKEN;
   const savedSa = process.env.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON;
+  const savedCalSa = process.env.GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON;
+  const savedCalTok = process.env.GOOGLE_CALENDAR_OAUTH_TOKEN;
 
   beforeEach(() => {
     delete process.env.GOOGLE_DRIVE_OAUTH_TOKEN;
     delete process.env.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON;
+    delete process.env.GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON;
+    delete process.env.GOOGLE_CALENDAR_OAUTH_TOKEN;
   });
 
   afterEach(() => {
@@ -105,6 +117,10 @@ describe("findHashDuplicate", () => {
     else delete process.env.GOOGLE_DRIVE_OAUTH_TOKEN;
     if (savedSa !== undefined) process.env.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON = savedSa;
     else delete process.env.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON;
+    if (savedCalSa !== undefined) process.env.GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON = savedCalSa;
+    else delete process.env.GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON;
+    if (savedCalTok !== undefined) process.env.GOOGLE_CALENDAR_OAUTH_TOKEN = savedCalTok;
+    else delete process.env.GOOGLE_CALENDAR_OAUTH_TOKEN;
   });
 
   const validHash = "a".repeat(64); // 64 lowercase hex chars

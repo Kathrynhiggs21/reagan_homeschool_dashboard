@@ -65,8 +65,18 @@ export async function resolveAccessToken(): Promise<string> {
     // is ever needed, swap this branch for an OAuth2Client refresh.)
     return rawToken;
   }
-  const rawSa = (process.env.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON || "").trim();
+  // Prefer a dedicated Drive service account, else fall back to the CALENDAR
+  // service account (2026-06-18, approved by Katy — reuse one Google
+  // credential for both Calendar and Drive). The Drive scope is requested
+  // when minting the JWT below, so the SA must have Drive API access.
+  let rawSa = (process.env.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON || "").trim();
   if (rawSa.length === 0) {
+    rawSa = (process.env.GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON || "").trim();
+  }
+  if (rawSa.length === 0) {
+    // Last resort: a Calendar OAuth token reused as a bearer for Drive.
+    const calToken = (process.env.GOOGLE_CALENDAR_OAUTH_TOKEN || "").trim();
+    if (calToken.length > 0) return calToken;
     throw new Error("resolveAccessToken: no Drive credential in env");
   }
   let creds: any;

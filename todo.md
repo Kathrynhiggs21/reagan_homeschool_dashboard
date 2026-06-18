@@ -1317,14 +1317,14 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] Full suite green (4967 tests)
 
 ## 2026-06-18 (PM) — Email + PDF layout + block dimming fixes
-- [ ] Scheduled nightly job sent unwanted "school plan" summary, "packet ... no work" audit, AND a 3:32 AM "nightly self-check" email today; suppress ALL of these so ONLY the colored printable PDF email goes out daily
-- [ ] Verify the scheduled job (Heartbeat) calls the same suppressed path, not just manual sendNow
-- [ ] PDF worksheets: set 0.5in margins on all sides (text currently runs to edge)
-- [ ] PDF worksheets: distribute content evenly / use full page; add real answer space (lines or boxes)
-- [ ] Keep colored subject header + template design extras + designated icon; keep name/date/title
-- [ ] Block dimming: blocks greyed out before day starts; change so blocks only grey/dim AFTER checked-done or turned-in
+- [x] Scheduled nightly job summary/audit/self-check suppressed; ONLY the colored printable PDF email goes out daily (canonical entry in PM session 2 below)
+- [x] Verified the Heartbeat cron hits POST /api/scheduled/nightly-agenda-email — the SAME suppressed/single-PDF/Mom-only handler I edited; no separate alternate send path exists
+- [x] PDF worksheets 0.5in margins (canonical entry in PM session 2 below)
+- [x] PDF worksheets even full-page distribution + answer lines/boxes (canonical entry in PM session 2 below)
+- [x] Kept colored subject header + design extras + Kiwi icon + name/date/title (canonical entry in PM session 2 below)
+- [x] Block dimming only after checked-done or turned-in (canonical entry in PM session 2 below)
 
-- [ ] PAUSE all emails to marcy.spear@gmail.com (Grandma) — remove her from every recipient list; only spear.cpt@gmail.com receives email
+- [x] PAUSE all emails to marcy.spear@gmail.com (Grandma) (canonical entry in PM session 2 below)
 - [x] Shift the agenda/schedule back by one day (done in PM session 2 — see below)
 
 ## 2026-06-18 (PM session 2) — Email/schedule/PDF/UX overhaul
@@ -1337,4 +1337,19 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] PDF worksheets: even full-page distribution (breathing-gap spread, single-pass, never adds phantom pages); roomier ruled lines + bigger answer boxes; kept colored subject-themed banner + Kiwi mascot icon + Name/Date box + title/subtitle. Verified via sample render + new spacing test (8/8 colorful tests pass)
 - [x] Per-worksheet fill-in option: AgendaEditor block row now has a split control — "Open / Fill in PDF" (instant fillable 0.5in PDF, also files to Drive) + dropdown "Download / print PDF" and "Open in Google Drive". makePdf returns {driveConnected, driveEnqueued, driveOpenUrl}; Open-in-Drive deep-links the real Drive copy when connected, else honestly says "Drive not connected" and opens the PDF (no silent no-op). db.findPushedDriveFileIdByHash resolves the Drive file id. Student daily view already opens the fillable PDF (label clarified). Live Drive push stays dormant until a Drive credential is added (Path 1).
 - [x] Fix block dimming: factored a pure isBlockDone() predicate (client/src/lib/blockDimming.ts) used by Today.tsx. A block greys (.is-done opacity 0.55) ONLY when status==="complete" (checked-done) OR every pinned worksheet is turned in (printable status "done"). Never dims by elapsed time, before day start, or on partial turn-in (verified it was already time-agnostic; gap was that turning in a worksheet didn't grey the block). 8 vitest scenarios in server/blockDimming.test.ts.
-- [ ] Run full suite, checkpoint, verify regenerated PDF, guide publish
+- [x] Ran full suite (552 files, 4985 tests passing, 7 skipped); saved checkpoint 26c6eef2; re-rendered + visually verified the worksheet PDF (0.5in margins, full-page spread, colored banner + Kiwi + Name/Date + answer lines/boxes + page footer).
+
+## 2026-06-18 (PM session 3) — Wire Calendar service account to power Drive
+- [ ] Reuse GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON for Drive in the credential resolver (getDriveCredentialStatus + drive client)
+- [ ] Enable live Drive push worker: ensure canonical folder, upload bytes, capture driveFileId, set status=pushed
+- [ ] "Open in Drive" deep-links the real Drive file once pushed
+- [ ] Update/relax credential-gate tests to reflect live service-account path; full suite green
+- [ ] Verify with a real push attempt; checkpoint; report
+
+## 2026-06-18 (PM session 3) — Reuse Calendar service account for Drive
+- [x] Drive credential resolver + push-worker gate now fall back to GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON / GOOGLE_CALENDAR_OAUTH_TOKEN when no dedicated GOOGLE_DRIVE_* is set (source labels: calendar_service_account / calendar_oauth_token). Dedicated Drive cred still wins.
+- [x] Verified LIVE: Calendar SA (school-calendar-api@reagans-daily-sparkle.iam.gserviceaccount.com) mints a Drive-scoped token, Drive API returns 200, and it has canAddChildren+canEdit on the canonical "Reagan School Hub" root + worksheet/agenda subfolders (already shared as Editor). Real bounded drain ran (scanned 3, 0 failed; dedupe-skipped existing files). Rows carry real drive_file_id.
+- [x] Added POST /api/scheduled/drive-push-drain (dual auth: SCHEDULED_BEARER or owner/admin) that calls runDrivePushWorker; idempotent + no-op if creds removed.
+- [x] Registered Heartbeat cron "drive-push-drain" (task_uid ECjGR6ou6tC237smPKJ68P) daily 10:45 UTC / 6:45 AM EDT.
+- [x] Updated credential-gate contract tests (drivePushWorkerCredentialGate, driveFolderDedupeJob, driveClient) to clear Calendar vars for the bare no-cred case + cover the new Calendar fallback. Full suite green (552 files, 4990 tests).
+- [x] Removed temporary dev probe scripts.

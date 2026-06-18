@@ -9,16 +9,27 @@ import { resolveAccessToken, makeRealDriveClient, FOLDER_MIME } from "./_lib/dri
 
 const savedToken = process.env.GOOGLE_DRIVE_OAUTH_TOKEN;
 const savedSa = process.env.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON;
+const savedCalSa = process.env.GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON;
+const savedCalTok = process.env.GOOGLE_CALENDAR_OAUTH_TOKEN;
 
 beforeEach(() => {
   delete process.env.GOOGLE_DRIVE_OAUTH_TOKEN;
   delete process.env.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON;
+  // Clear the Calendar credential too so the no-cred case is truly bare
+  // (the live env may carry a real Calendar SA that the Drive resolver now
+  // reuses as a fallback).
+  delete process.env.GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON;
+  delete process.env.GOOGLE_CALENDAR_OAUTH_TOKEN;
 });
 afterEach(() => {
   if (savedToken !== undefined) process.env.GOOGLE_DRIVE_OAUTH_TOKEN = savedToken;
   else delete process.env.GOOGLE_DRIVE_OAUTH_TOKEN;
   if (savedSa !== undefined) process.env.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON = savedSa;
   else delete process.env.GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON;
+  if (savedCalSa !== undefined) process.env.GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON = savedCalSa;
+  else delete process.env.GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON;
+  if (savedCalTok !== undefined) process.env.GOOGLE_CALENDAR_OAUTH_TOKEN = savedCalTok;
+  else delete process.env.GOOGLE_CALENDAR_OAUTH_TOKEN;
   vi.restoreAllMocks();
 });
 
@@ -30,6 +41,11 @@ describe("resolveAccessToken", () => {
 
   it("throws when no credential is configured", async () => {
     await expect(resolveAccessToken()).rejects.toThrow(/no Drive credential/i);
+  });
+
+  it("reuses the Calendar OAuth token verbatim when no dedicated Drive cred (2026-06-18)", async () => {
+    process.env.GOOGLE_CALENDAR_OAUTH_TOKEN = "ya29.calendar-token";
+    await expect(resolveAccessToken()).resolves.toBe("ya29.calendar-token");
   });
 
   it("throws a clear error when service-account JSON is not parseable", async () => {

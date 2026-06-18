@@ -2083,6 +2083,56 @@ ${kidSummaryLine}
   });
 
   /* ===========================================================
+   * PUSH (2026-06-18) — Drive-push drain cron
+   * -----------------------------------------------------------
+   * Heartbeat-triggered. Drains pending drive_push_queue rows by
+   * uploading each file to Google Drive (folder ensure + name
+   * dedupe + driveFileId capture). The worker self-gates on the
+   * Drive credential: when none is configured it returns
+   * skipped_no_credentials with zero DB writes. With Katy's
+   * Calendar service account reused for Drive, the gate is now
+   * "ready", so this actually files worksheet PDFs to Drive and
+   * lets "Open in Drive" deep-link the real file. Idempotent
+   * (dedupe by folder+name); safe to retry.
+   * =========================================================== */
+  app.post("/api/scheduled/drive-push-drain", async (req: Request, res: Response) => {
+    // Dual auth (see nightly-agenda-email): Heartbeat cron sends the
+    // SCHEDULED_BEARER token; a logged-in owner/admin may also trigger it.
+    const bearerHeader = String(req.headers.authorization ?? "");
+    const bearerOk =
+      !!ENV.scheduledBearer &&
+      bearerHeader.startsWith("Bearer ") &&
+      bearerHeader.slice(7).trim() === ENV.scheduledBearer;
+    let role: string | null = null;
+    if (!bearerOk) {
+      try {
+        const u = await sdk.authenticateRequest(req);
+        role = u?.role ?? null;
+      } catch {
+        role = null;
+      }
+    }
+    if (!bearerOk && role !== "user" && role !== "admin") {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
+    try {
+      const limit = Math.max(1, Math.min(500, Number(req.body?.limit ?? 100)));
+      const { runDrivePushWorker } = await import("./_lib/drivePushWorker");
+      const summary = await runDrivePushWorker({ limit });
+      return res.json({ ok: true, ...summary });
+    } catch (e: any) {
+      console.error("[drive-push-drain] error", e);
+      return res.status(500).json({
+        ok: false,
+        error: e?.message ?? String(e),
+        stack: e?.stack,
+        context: { url: "/api/scheduled/drive-push-drain" },
+        timestamp: new Date().toISOString(),
+      });
+    }
+  });
+
+  /* ===========================================================
    * PUSH (2026-06-18) — Nightly self-check / auto-fix cron
    * -----------------------------------------------------------
    * Heartbeat-triggered overnight. Bounded safety net that

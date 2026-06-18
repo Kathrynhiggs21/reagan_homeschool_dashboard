@@ -92,7 +92,12 @@ export function getCalendarCredentialStatus(): CalendarCredentialStatus {
   // case where Mom uses one OAuth token covering Drive + Calendar.
   const driveStatus = getDriveCredentialStatus();
   if (driveStatus.kind === "ready") {
-    return { kind: "ready", source: driveStatus.source };
+    // Narrow the widened Drive source union back to the Calendar source type.
+    const source: "oauth_token" | "service_account" =
+      driveStatus.source === "oauth_token" || driveStatus.source === "calendar_oauth_token"
+        ? "oauth_token"
+        : "service_account";
+    return { kind: "ready", source };
   }
   return {
     kind: "not_configured",
