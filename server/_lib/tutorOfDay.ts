@@ -21,6 +21,7 @@
  */
 import { sql } from "drizzle-orm";
 import { getDb } from "../db";
+import { summerSettingsFromKv, effectiveSummerActive } from "../summerMode";
 
 export type TutorOfDay = {
   /** Display name, e.g. "Marcy Spear" or "Ali Hill, LISW". */
@@ -63,10 +64,70 @@ function fmt24(time: string | null | undefined, fallback: string): string {
   return `${m[1].padStart(2, "0")}:${m[2]}`;
 }
 
+/**
+ * "No tutors this summer" gate (added 2026-06-18).
+ *
+ * Reagan works with Mom only over the summer break, so we suppress the
+ * tutor-of-day for any date that summer mode considers active. This reuses
+ * the exact same window/override/vacation logic as the rest of the app
+ * (server/summerMode.ts) so it tracks Mom's settings automatically and
+ * reverts to normal tutor scheduling the moment school resumes. It deletes
+ * nothing — tutorSessions and recurring appointments stay intact for fall.
+ *
+ * Controlled by the app setting `tutors.suppressInSummer` (default ON).
+ * Set it to "0" to let tutors/therapists surface during summer again.
+ */
+/**
+ * Pure decision: given the flat app-settings KV (the same keys summerMode
+ * reads) and the suppress kill-switch, decide whether tutors are suppressed
+ * for `isoDate`. No DB, no globals — fully unit-testable without touching the
+ * shared app_settings table (which would race sibling summer-mode tests).
+ */
+export function decideTutorSuppression(
+  isoDate: string,
+  kv: Record<string, string | null | undefined>,
+): boolean {
+  // Default ON: only "0" / "off" / "false" disables the summer suppression.
+  const raw = (kv["tutors.suppressInSummer"] ?? "").toString().trim().toLowerCase();
+  const suppressOn = !(raw === "0" || raw === "off" || raw === "false");
+  if (!suppressOn) return false;
+  const settings = summerSettingsFromKv(kv);
+  return effectiveSummerActive(isoDate, settings).active;
+}
+
+export async function isTutorSuppressedForDate(dateStr: string): Promise<boolean> {
+  try {
+    const { getAppSetting } = await import("../db");
+    const [suppress, autoFlip, start, end, override, vacJson] = await Promise.all([
+      getAppSetting("tutors.suppressInSummer"),
+      getAppSetting("summer.autoFlipEnabled"),
+      getAppSetting("summer.start"),
+      getAppSetting("summer.end"),
+      getAppSetting("summer.override"),
+      getAppSetting("summer.vacationRanges"),
+    ]);
+    return decideTutorSuppression(dateStr, {
+      "tutors.suppressInSummer": suppress,
+      "summer.autoFlipEnabled": autoFlip,
+      "summer.start": start,
+      "summer.end": end,
+      "summer.override": override,
+      "summer.vacationRanges": vacJson,
+    });
+  } catch {
+    // If settings can't be read, fail open (do NOT suppress) so a config
+    // hiccup never silently hides a real scheduled therapy session.
+    return false;
+  }
+}
+
 export async function resolveTutorOfDay(dateStr: string): Promise<TutorOfDay | null> {
   const db = getDb();
   const day = dateOnlyUTC(dateStr);
   const weekday = day.getUTCDay();
+
+  // No tutors over summer break — Mom only. Reversible via app settings.
+  if (await isTutorSuppressedForDate(dateStr)) return null;
 
   // ---- (1) concrete tutorSessions for that calendar date ----
   try {
