@@ -1305,3 +1305,13 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] Keep education.com /resources/grade-5 paths (verified working in real browser; CLI 403 = bot block)
 - [x] Add regression test guarding against the dead URL patterns
 - [x] Full suite green (4959 tests)
+
+## 2026-06-18 — Custom in-app notification center
+- [x] Add notifications.unreadCount + notifications.markAllRead tRPC procedures
+- [x] Add unreadNotificationCount + markAllNotificationsRead db helpers
+- [x] Wire real events: kid request submitted -> in-app notification
+- [x] Wire real events: daily packet emailed -> in-app notification
+- [x] Build NotificationBell (bell + unread badge + dropdown, per-item + mark-all read, no auto-open)
+- [x] Place bell in CozyShell top-right, adult-only (gated on unlocked)
+- [x] Vitest for db helpers, procedures, event hooks, adult-only UI (8 tests)
+- [x] Full suite green (4967 tests)

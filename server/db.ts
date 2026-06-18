@@ -1130,6 +1130,31 @@ export async function createNotification(n: typeof notifications.$inferInsert) {
 export async function markNotificationRead(id: number) {
   await getDb().update(notifications).set({ read: true }).where(eq(notifications.id, id));
 }
+/**
+ * Count unread notifications for the adult dashboard bell. Records created by
+ * the app use userId=null (broadcast to all admins), so the dashboard counts
+ * the broadcast stream. When a userId is supplied we also include that user's
+ * private notifications.
+ */
+export async function unreadNotificationCount(userId: number | null) {
+  const db = getDb();
+  const rows = userId
+    ? await db.select().from(notifications).where(eq(notifications.read, false))
+    : await db.select().from(notifications).where(and(eq(notifications.read, false), isNull(notifications.userId)));
+  if (userId) {
+    return rows.filter((r: any) => r.userId === null || r.userId === userId).length;
+  }
+  return rows.length;
+}
+/** Mark every unread notification in the adult/broadcast stream as read. */
+export async function markAllNotificationsRead(userId: number | null) {
+  const db = getDb();
+  if (userId) {
+    await db.update(notifications).set({ read: true }).where(eq(notifications.read, false));
+  } else {
+    await db.update(notifications).set({ read: true }).where(and(eq(notifications.read, false), isNull(notifications.userId)));
+  }
+}
 
 // IH ASSIGNMENTS helpers removed v2.97 (2026-05-27) — the Indian Hill sync
 // is no longer the source of truth. The `ihAssignments` table itself stays

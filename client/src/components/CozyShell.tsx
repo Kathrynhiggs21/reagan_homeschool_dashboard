@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Lock, Unlock, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { daysUntilSummerBreak } from "@/lib/summerCountdown";
 import WeatherWidget from "./WeatherWidget";
+import NotificationBell from "./NotificationBell";
 import { useTutorMode } from "@/hooks/useTutorMode";
 import { GraduationCap } from "lucide-react";
 import SidebarThemePicker from "./SidebarThemePicker";
@@ -231,7 +232,8 @@ export default function CozyShell({ children }: { children: ReactNode }) {
       </aside>
 
       <main className="flex-1 min-w-0 relative">
-        <div className="max-w-6xl mx-auto px-6 pt-4 pb-1 flex justify-end no-print">
+        <div className="max-w-6xl mx-auto px-6 pt-4 pb-1 flex justify-end items-center gap-3 no-print">
+          {unlocked && <NotificationBell />}
           <WeatherWidget />
         </div>
         <div className="max-w-6xl mx-auto px-6 pb-6">{children}</div>

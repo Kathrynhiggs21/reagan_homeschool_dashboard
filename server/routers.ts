@@ -2079,7 +2079,9 @@ export const appRouter = router({
   /* =================== NOTIFICATIONS =================== */
   notifications: router({
     list: protectedProcedure.input(z.object({}).optional()).query(({ ctx }) => db.listNotifications(ctx.user?.id ?? null)),
+    unreadCount: protectedProcedure.input(z.object({}).optional()).query(async ({ ctx }) => ({ count: await db.unreadNotificationCount(ctx.user?.id ?? null) })),
     markRead: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => db.markNotificationRead(input.id)),
+    markAllRead: protectedProcedure.input(z.object({}).optional()).mutation(({ ctx }) => db.markAllNotificationsRead(ctx.user?.id ?? null)),
     create: protectedProcedure.input(z.object({
       userId: z.number().nullable(), type: z.enum(["red_zone","block_complete","milestone","ih_update","reminder","info"]),
       title: z.string(), body: z.string().optional(), link: z.string().optional(),
@@ -3708,6 +3710,16 @@ export const appRouter = router({
       const title = `Reagan sent a request (${input.kind})`;
       const content = input.body.length > 800 ? input.body.slice(0, 800) + "…" : input.body;
       try { await notifyOwner({ title, content }); } catch {}
+      // In-app notification for the dashboard bell (broadcast to all admins).
+      try {
+        await db.createNotification({
+          userId: null,
+          type: input.kind === "stuck" ? "red_zone" : "info",
+          title,
+          body: content,
+          link: "/settings",
+        } as any);
+      } catch {}
       return { id, emailedTo, notifyOwnerOk };
     }),
     list: familyAdminProcedure.input(z.object({
@@ -5458,6 +5470,20 @@ export const appRouter = router({
           });
         } catch {
           // Stat write failure is non-fatal — the row is still in the audit trail.
+        }
+
+        // In-app notification for the dashboard bell (broadcast to all admins).
+        if (emailSent) {
+          try {
+            const prettyDate = new Date(forDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+            await db.createNotification({
+              userId: null,
+              type: "info",
+              title: `Daily packet emailed — ${prettyDate}`,
+              body: `Reagan's printables PDF (${payload.blocks.length} block${payload.blocks.length === 1 ? "" : "s"}) was emailed to ${recipients.join(", ")}.`,
+              link: "/agenda-editor",
+            } as any);
+          } catch {}
         }
 
         return {
