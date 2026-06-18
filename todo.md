@@ -1152,3 +1152,10 @@ Katy clarified: worksheets should look like REAL printable worksheets (NewPath /
 - [ ] Google Drive folder sprawl: reduce folder structure + dedupe repetitive sync writes
 - [ ] Nightly self-check/auto-fix job: validate next-day block times, auto-correct via normalizeDayStart, notifyOwner on anything unfixable
 - [ ] Deep functional sweep: agenda/AI editors, settings, adult mode, themes (visual verify dark: variants)
+
+## 2026-06-18 — Profile photo
+- [x] Decode Reagan's DNG (Galaxy S24 Ultra raw), crop square keeping her face + duck face
+- [x] Faithful photographic enhancement (brightness/shadow/WB/denoise/sharpen) — no AI face alteration
+- [x] Upload as webdev asset and set learnerProfile.photoUrl
+- [x] Default KiwiContext photoUrl to the avatar so the circle is never empty
+- [x] Verified photo renders in sidebar + morning-header circles

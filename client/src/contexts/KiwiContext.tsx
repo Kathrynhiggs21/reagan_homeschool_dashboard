@@ -75,8 +75,13 @@ export function KiwiProvider({ children }: { children: ReactNode }) {
   const [companionAvatar, setCompanionAvatarState] = useState(
     localStorage.getItem("companionAvatar") || "⭐"
   );
+  // Reagan's profile photo (her + her duck). Falls back to the bundled
+  // avatar so the upper-left circle is never empty, even before the
+  // profile fetch resolves or on a fresh device. The profile fetch below
+  // can still override this if Mom uploads a different photo in Settings.
+  const DEFAULT_REAGAN_PHOTO = "/manus-storage/reagan_avatar_d8d25131.png";
   const [photoUrl, setPhotoUrlState] = useState<string | null>(
-    localStorage.getItem("reaganPhotoUrl") || null
+    localStorage.getItem("reaganPhotoUrl") || DEFAULT_REAGAN_PHOTO
   );
 
   // Behavior sliders — clamp to 0..4. Defaults: animation lively, talk
