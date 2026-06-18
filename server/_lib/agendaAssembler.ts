@@ -13,6 +13,7 @@ import { resolveTutorOfDay } from "./tutorOfDay";
 import type { AgendaPdfInput, AgendaPdfBlock } from "./agendaPdf";
 import { hydrateLessonForBlock } from "./hydrateLessonForBlock";
 import { deriveGeneratedForBlock } from "./blockGeneratorMatch";
+import { normalizeDayStart } from "./dayStartSanity";
 
 
 /**
@@ -320,6 +321,22 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
       return { b, i, refs, generated };
     }),
   );
+
+  // Defense-in-depth (2026-06-18): even if a corrupted row slipped into the DB
+  // (morning warm-up stored at 22:xx via an upstream AM/PM mixup), clamp it back
+  // to the morning at READ time so the email / PDF / UI all render the correct
+  // window. This complements the generation-time guard in aiScheduleGenerator —
+  // belt-and-suspenders so Reagan never sees a 10 PM start again.
+  {
+    const clamp = normalizeDayStart(
+      blocksRawWithGenerated.map(({ b }) => ({ startTime: b.startTime ?? null })),
+    );
+    if (clamp.corrected) {
+      clamp.items.forEach((fixed, idx) => {
+        blocksRawWithGenerated[idx].b.startTime = fixed.startTime;
+      });
+    }
+  }
 
   const blocks: AgendaPdfBlock[] = blocksRawWithGenerated.map(({ b, i, refs, generated }) => {
     return {

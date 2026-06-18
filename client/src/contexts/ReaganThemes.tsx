@@ -80,8 +80,22 @@ export function ReaganThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (typeof document === "undefined") return;
-    document.documentElement.setAttribute("data-rtheme", themeId);
+    const root = document.documentElement;
+    root.setAttribute("data-rtheme", themeId);
     localStorage.setItem(STORAGE_KEY, themeId);
+    // Keep the Tailwind `.dark` class in sync with the active theme so that
+    // every `dark:` utility variant actually engages on the dark themes
+    // (chalkboard / glass / galaxy / legacy starry). Without this the
+    // `dark:` variants stay dormant and light-mode fills (e.g. bg-amber-50)
+    // render on dark backgrounds -> invisible / glaring "white box" text.
+    // The :root CSS-variable defaults are already dark, so this only makes
+    // the dark: variants match what the base theme already implies.
+    const DARK_THEMES: ThemeId[] = ["chalkboard", "glass", "galaxy"];
+    if (DARK_THEMES.includes(themeId)) {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
   }, [themeId]);
 
   const setThemeId = (t: ThemeId) => {

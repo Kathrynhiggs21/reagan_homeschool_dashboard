@@ -33,6 +33,7 @@ import {
   type AgendaBlockSnapshot,
   type AgendaPlanContext,
 } from "./_lib/agendaEditor";
+import { normalizeDayStart } from "./_lib/dayStartSanity";
 import {
   groupBySubject as practiceGroupBySubject,
   findDrill as findPracticeDrill,
@@ -718,6 +719,17 @@ export const appRouter = router({
             const plan: any = await db.getPlanByDate(dateStr);
             if (plan?.id) {
               const blocks: any[] = await db.listBlocksForPlan(plan.id);
+              // Read-time AM/PM defense (2026-06-18): if a corrupted row stored a
+              // morning warm-up at 22:xx, clamp the leading evening run back to
+              // the morning so the kid Today/Week view shows the correct window.
+              const clamp = normalizeDayStart(
+                (blocks ?? []).map((b) => ({ startTime: b.startTime ?? null })),
+              );
+              if (clamp.corrected) {
+                clamp.items.forEach((fixed, idx) => {
+                  if (blocks[idx]) blocks[idx].startTime = fixed.startTime;
+                });
+              }
               out[dateStr] = blocks ?? [];
             }
           } catch {

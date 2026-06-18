@@ -1086,3 +1086,60 @@ Katy clarified: worksheets should look like REAL printable worksheets (NewPath /
 - [x] Remove the always-on Kiwi airplane "fly" button (unnecessary)
 - [x] Retire the Kiwi fly-across (airplane whoosh) action entirely; keep Kiwi roaming + draggable + single-tap chat
 - [x] Update stale fly-button + pill-position tests to match
+
+## Recurring AM/PM corruption + publish (2026-06-18, BLOCKING)
+- [ ] 6/18 morning blocks reverted to 22:xx again -> something regenerated the plan overnight
+- [ ] Find which code path regenerated 6/18 (nightly job / aiScheduleGenerator / proposer / editor)
+- [ ] Confirm why normalizeDayStart guard did NOT catch it (path bypasses guard, or ran on old deployed code)
+- [ ] Fix AM/PM at true source; ensure guard runs on EVERY persistence path
+- [ ] Add read-time safety clamp as defense-in-depth (assembler/packet build)
+- [ ] Re-correct current 6/18 data to 10 AM start
+- [ ] Add regression tests for the regeneration path
+- [ ] Full suite + tsc clean
+- [ ] Checkpoint + tell Katy what to publish (live site still on old build)
+- [ ] Note: app SocketException 'api.manus.im' is the Manus app's own network error, NOT the dashboard
+
+## Live fixes round 2 (2026-06-18)
+- [x] Re-correct 6/18 morning block times to 10 AM (committed, read-back verified)
+- [ ] White/cream lined "notebook" panel under header glares on dark themes -> make theme-aware
+- [ ] Finish code guard so nightly gen can't write 22:xx (normalize unconditionally in applyBudgetLayout)
+- [ ] Full suite + tsc clean
+- [ ] Checkpoint; remind Katy to Publish for the code/UI changes (data fixes are already live)
+
+## Round 3 (2026-06-18)
+- [ ] AM/PM guard: normalize unconditionally in applyBudgetLayout so nightly gen can't persist 22:xx
+- [ ] White lined panel under header: make theme-aware (locate exact component first)
+- [ ] Dock tools (Calculator/Notebook/Timer/Word): convert blocking modals into draggable, non-blocking floating windows that stay open while using the site
+- [ ] Tests + tsc clean, checkpoint, remind Katy to Publish for code/UI changes
+- [ ] Google Drive: drastically reduce folder sprawl + stop repetitive/duplicate syncing (inspect drive sync logic, consolidate folder structure, dedupe writes)
+
+
+## Deep sweep + self-check (2026-06-18, requested by Katy)
+
+### Legibility (invisible-on-dark) sweep
+- [x] KidHeaderStrips: 3 cream cards -> theme-aware cozy-card
+- [x] White "lined" box = the 3 KidHeaderStrips cream cards stacking to full width on mobile -> fixed (theme-aware cozy-card)
+- [x] ROOT CAUSE (systemic): themes set data-rtheme but never toggled Tailwind `.dark` class, so ALL `dark:` variants (44 files) stayed dormant -> light fills rendered on dark themes. Fixed ReaganThemes to add `.dark` for chalkboard/glass/galaxy. tsc clean.
+- [ ] Verify legibility across all 5 themes after .dark fix (visual)
+
+### Deep functional sweep (only weekly-used areas)
+- [ ] Today page + schedule blocks (open/turn-in/help/earlier/later actions)
+- [ ] Agenda editor + AI schedule generator/proposer (no AM/PM leak, sane output)
+- [ ] Settings page (toggles persist, no crashes)
+- [ ] Adult mode / unlock gate (unlock, gated cards render)
+- [ ] Kiwi (chat, roam/drag, no fly action, coins)
+- [ ] Google Drive sync (day-log + worksheets)
+- [ ] PDF builder (assembleAgendaForDate + buildAgendaPdf) for this week
+- [ ] Nightly email (recipients, auth, gating) + Send Now fallback
+
+### No-tutor summer
+- [ ] Hide/neutralize tutor-of-the-day strip + tutor wording (Mom/Grandma only this summer)
+
+### Google Drive cleanup
+- [ ] Drastically reduce folder sprawl + stop repetitive/duplicate syncing
+
+### Bounded nightly self-check (auto-fix known-safe + alert on rest)
+- [ ] Validator: next-day block times in-band & in-order; auto-correct AM/PM leading-run via dayStartSanity
+- [ ] Validator: plan exists for tomorrow; recipients present; PDF assembles without throw
+- [ ] On unfixable issues -> notifyOwner with a precise summary
+- [ ] Tests for the self-check + auto-fix

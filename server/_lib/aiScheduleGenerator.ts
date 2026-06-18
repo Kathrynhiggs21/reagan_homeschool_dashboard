@@ -236,8 +236,12 @@ export function applyBudgetLayout(
 ): AIBlockDraft[] {
   const hasAnchor = !!opts.startTime;
   const hasBudget = opts.minMinutes != null || opts.maxMinutes != null;
-  if (!hasAnchor && !hasBudget) return blocks;
   if (blocks.length === 0) return blocks;
+  // Even when there is no anchor/budget to lay out, the LLM may have emitted
+  // per-block startTimes with an AM/PM mixup (morning blocks landing at 22:xx).
+  // normalizeDayStart repairs only the corrupted leading evening run, so it is
+  // safe to run unconditionally before any early return.
+  if (!hasAnchor && !hasBudget) return normalizeDayStart(blocks).items;
 
   // Respect the day-wide 300-min ceiling enforced by sanitizeBlocks: never let
   // a budget push the total above it.

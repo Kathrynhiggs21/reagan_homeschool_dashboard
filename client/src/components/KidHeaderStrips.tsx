@@ -57,51 +57,35 @@ export default function KidHeaderStrips() {
     >
       {/* 1. Today's progress */}
       <div
-        className="rounded-2xl p-3 shadow-sm border-2"
-        style={{
-          background: "rgba(255, 250, 230, 0.94)",
-          borderColor: "rgba(160, 120, 60, 0.45)",
-          color: "#2a2010",
-        }}
+        className="cozy-card rounded-2xl p-3 text-foreground"
         aria-label="Today's progress"
       >
-        <div
-          className="text-[11px] uppercase tracking-wide font-semibold"
-          style={{ color: "#7a4d12" }}
-        >
+        <div className="text-[11px] uppercase tracking-wide font-semibold opacity-70">
           Today
         </div>
         <div className="flex items-baseline gap-2 mt-0.5">
           <div className="text-2xl font-bold">{pctToday}%</div>
-          <div className="text-xs" style={{ color: "rgba(42,32,16,0.7)" }}>
+          <div className="text-xs opacity-70">
             {effectiveDone}/{totalToday || 0} blocks
           </div>
         </div>
-        <div className="mt-2 h-2 rounded-full overflow-hidden" style={{ background: "rgba(160,120,60,0.18)" }}>
+        <div className="mt-2 h-2 rounded-full overflow-hidden bg-foreground/10">
           <div
             className="h-2 rounded-full transition-all"
             style={{ width: `${pctToday}%`, background: "#22c55e" }}
           />
         </div>
-        <div className="text-xs mt-2" style={{ color: "#3a2a00" }}>
+        <div className="text-xs mt-2 opacity-80">
           {progressLabel}
         </div>
       </div>
 
       {/* 2. 3-day mood dots */}
       <div
-        className="rounded-2xl p-3 shadow-sm border-2"
-        style={{
-          background: "rgba(255, 250, 230, 0.94)",
-          borderColor: "rgba(160, 120, 60, 0.45)",
-          color: "#2a2010",
-        }}
+        className="cozy-card rounded-2xl p-3 text-foreground"
         aria-label="Last 3 days mood"
       >
-        <div
-          className="text-[11px] uppercase tracking-wide font-semibold"
-          style={{ color: "#7a4d12" }}
-        >
+        <div className="text-[11px] uppercase tracking-wide font-semibold opacity-70">
           How I felt
         </div>
         <div className="flex items-center gap-3 mt-2">
@@ -131,14 +115,14 @@ export default function KidHeaderStrips() {
                     className="w-6 h-6 rounded-full"
                     style={{ background: color, boxShadow: "0 1px 0 rgba(0,0,0,0.18)" }}
                   />
-                  <span className="text-[10px] mt-1" style={{ color: "rgba(42,32,16,0.7)" }}>
+                  <span className="text-[10px] mt-1 opacity-70">
                     {d.date.slice(5)}
                   </span>
                 </div>
               );
             })}
         </div>
-        <div className="text-xs mt-2" style={{ color: "#3a2a00" }}>
+        <div className="text-xs mt-2 opacity-80">
           Last 3 days
         </div>
       </div>
@@ -147,41 +131,31 @@ export default function KidHeaderStrips() {
       {next ? (
         <Link href={`/today#block-${next.id}`}>
           <div
-            className="rounded-2xl p-3 shadow-sm border-2 cursor-pointer hover:brightness-105 transition"
-            style={{
-              background: "linear-gradient(180deg, #fff4d6 0%, #ffe5a8 100%)",
-              borderColor: "#d6a544",
-              color: "#3a2a00",
-            }}
+            className="cozy-card rounded-2xl p-3 text-foreground cursor-pointer hover:brightness-110 transition border-2 border-amber-400/50"
             aria-label="Pick up where you left off"
           >
-            <div className="text-[11px] uppercase tracking-wide font-semibold" style={{ color: "#7a4d12" }}>
+            <div className="text-[11px] uppercase tracking-wide font-semibold text-amber-400">
               Pick up where I left off
             </div>
             <div className="font-bold mt-0.5 truncate">{next.title || "Next block"}</div>
-            <div className="text-xs capitalize" style={{ color: "rgba(58,42,0,0.75)" }}>
+            <div className="text-xs capitalize opacity-75">
               {next.subjectSlug}
             </div>
-            <div className="text-xs font-bold mt-1" style={{ color: "#7a4d12" }}>
+            <div className="text-xs font-bold mt-1 text-amber-400">
               Jump →
             </div>
           </div>
         </Link>
       ) : (
         <div
-          className="rounded-2xl p-3 shadow-sm border-2"
-          style={{
-            background: "rgba(220, 252, 231, 0.96)",
-            borderColor: "#86efac",
-            color: "#0f4f24",
-          }}
+          className="cozy-card rounded-2xl p-3 text-foreground border-2 border-emerald-400/50"
           aria-label="All caught up"
         >
-          <div className="text-[11px] uppercase tracking-wide font-semibold" style={{ color: "#147a3a" }}>
+          <div className="text-[11px] uppercase tracking-wide font-semibold text-emerald-400">
             Nice!
           </div>
           <div className="font-bold mt-0.5">All caught up today</div>
-          <div className="text-xs mt-1" style={{ color: "rgba(15,79,36,0.8)" }}>
+          <div className="text-xs mt-1 opacity-80">
             No more blocks waiting.
           </div>
         </div>
