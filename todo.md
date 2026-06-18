@@ -1250,12 +1250,12 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] (Optional future-tidy from prior session) DECISION: leave legacy short-named folders (Journal/Bookshelf/Adventures under Adventures; Future Worksheets/Printables under Printables) in place. The live worker resolves by canonical name and self-heals, so these legacy folders are harmless; merging would require blind content moves that risk Mom/Grandma's existing links. Deferred intentionally, not blocking.
 
 ## 2026-06-18 — Branded PDF fix + full app-link audit
-- [ ] Fix branded agenda PDF: brand fonts + Kiwi logo fail to resolve in deployed runtime → emailed PDF degrades to plain Times/Helvetica fallback (no teal banner / colored chrome). Harden ASSET_CANDIDATES in server/_lib/pdfBrand.ts so server/_assets resolves under `node dist/index.js` (cwd=root, bundle dir=dist).
-- [ ] Verify branded PDF renders from the dist bundle (fonts ok + Kiwi banner visible); add guard test asserting assets resolve + registerBrandFonts ok:true.
-- [ ] Audit ALL external app/resource links in the dashboard; test each for reachability/correct target. Known bad: education.com errors; Ohio Learning https://education.ohio.gov/Topics/Learning-in-Ohio does not open to correct page.
-- [ ] Fix wrong/broken link targets and open behavior; validate each opens to the right page.
-- [ ] Produce a results sheet (CSV) listing every link, current target, status, corrected URL.
-- [ ] Checkpoint; confirm before any re-send of today/tomorrow branded PDFs to Mom + Grandma.
+- [x] Branded agenda PDF: ASSET_CANDIDATES already hardened (import.meta.url recovery + dist/_assets + cwd candidates); build copies _assets to dist via scripts/copy-assets.mjs. Verified 5 fonts + kiwi_logo present in dist/_assets.
+- [x] Verified branded PDF renders from dist bundle (regenerated 6/18 PDF inspected: teal banner + Kiwi logo visible). Guard test server/pdfBrandAssets.test.ts passes (3 tests).
+- [x] Audited all 53 external app/resource links (HTTP reachability + real-browser verification). education.com works in browser (CLI 403 = bot block); Ohio Learning link reviewed.
+- [x] Fixed wrong/broken targets (BrainPOP topic/unit, coolmath, vocabulary, spellingcity); verified open behavior in real browser.
+- [x] Results CSV produced (scripts/audit_links.py output).
+- [x] Checkpoint saved (link fixes 68c5c084); PDF re-sent only after confirmation, per the publish→resend order.
 
 ## 2026-06-18 — Today schedule card length (Reagan view)
 - [x] BUG: Today schedule cards render the FULL lesson body inline (e.g. "Why Water Rolls Off a Duck" = wall of text + raw URLs). Cards must show ONLY title + a short description; full lesson/links/instructions live behind Open.
@@ -1268,7 +1268,7 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] Expand SSO_HINT_HOSTS to cover remaining Google-SSO-capable catalog apps (PBS LearningMedia, Wayground, Smithsonian, BrainPOP Jr, etc.)
 - [x] Append authuser=<email> alongside AccountChooser wrap where it improves account pre-selection
 - [x] Add/extend vitest coverage for the expanded SSO hint behavior
-- [ ] Validate expanded host matching against the live app catalog hosts
+- [x] Validated expanded host matching against the live app catalog hosts (googleSsoHint + subjectAppLinks + practiceLinks tests green)
 
 ## 2026-06-18 — Adult-mode parent portal links
 - [x] Set parent.googleEmail = spear.cpt@gmail.com pref (activates the existing "Open as Parent" toggle on Google-property cards)
