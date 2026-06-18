@@ -2070,6 +2070,68 @@ ${kidSummaryLine}
       return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
     }
   });
+
+  /* ===========================================================
+   * PUSH (2026-06-18) — Nightly self-check / auto-fix cron
+   * -----------------------------------------------------------
+   * Heartbeat-triggered overnight. Bounded safety net that
+   * repairs the three known silent-corruption classes:
+   *   1. AM/PM "+12h" leading-run block times
+   *   2. Duplicate pending drivePushQueue rows
+   *   3. Placeholder profile photos (example.com/...)
+   * Notifies the owner (Mom) ONLY when something was actually
+   * repaired, so a clean night stays quiet. Auth-gated to the
+   * same user|admin (or heartbeat) family as the rest of
+   * /api/scheduled/*. Accepts optional { todayISO, lookbackDays,
+   * lookaheadDays, dryRun } overrides for tests + the Settings
+   * panel.
+   * =========================================================== */
+  app.post("/api/scheduled/nightly-self-check", async (req: Request, res: Response) => {
+    let role: string | null = null;
+    try {
+      const u = await sdk.authenticateRequest(req);
+      role = u?.role ?? null;
+    } catch {
+      role = null;
+    }
+    if (!role || (role !== "user" && role !== "admin")) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
+    try {
+      const body = (req.body ?? {}) as {
+        todayISO?: string;
+        lookbackDays?: number;
+        lookaheadDays?: number;
+        dryRun?: boolean;
+      };
+      const report = await (db as any).runNightlySelfCheck({
+        todayISO: body.todayISO,
+        lookbackDays: body.lookbackDays,
+        lookaheadDays: body.lookaheadDays,
+        dryRun: body.dryRun === true,
+      });
+
+      // Only ping the owner when repairs were made (and not a dry run).
+      let notified = false;
+      if (!report.clean && body.dryRun !== true) {
+        try {
+          const { summarizeReport } = await import("./_lib/selfCheck");
+          const summary = summarizeReport(report);
+          if (summary) {
+            const { notifyOwner } = await import("./_core/notification");
+            notified = await notifyOwner(summary);
+          }
+        } catch (e) {
+          console.error("[nightly-self-check] notifyOwner failed", e);
+        }
+      }
+
+      return res.json({ ok: true, notified, report });
+    } catch (e: any) {
+      console.error("[nightly-self-check] error", e);
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
 }
 
 /* ===========================================================

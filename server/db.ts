@@ -9852,3 +9852,160 @@ export async function ensurePrintableForBlock(input: {
     subjectSlug: input.subjectSlug ?? null,
   });
 }
+
+
+/* ===========================================================================
+ * NIGHTLY SELF-CHECK / AUTO-FIX (2026-06-18)
+ * ---------------------------------------------------------------------------
+ * Bounded safety-net job. Scans a small date window and repairs the three
+ * known silent-corruption classes deterministically:
+ *   1. AM/PM "+12h" leading-run block times  → normalizeDayStart write-back
+ *   2. Duplicate pending drivePushQueue rows  → keep newest, delete rest
+ *   3. Placeholder profile photoUrl           → clear so the real one shows
+ *
+ * Hard bounds (can never run away):
+ *   - Date window is fixed (default: yesterday .. +14 days).
+ *   - Plans scanned are capped (MAX_PLANS).
+ *   - Pending-row scan is capped (MAX_PENDING_SCAN).
+ *   - Every repair is idempotent: a second run on clean data is a no-op.
+ * =========================================================================== */
+import {
+  planAllTimeFixes,
+  planDuplicatePendingRemovals,
+  isPlaceholderPhotoUrl,
+  type SelfCheckDay,
+  type SelfCheckReport,
+  type PendingRow,
+} from "./_lib/selfCheck";
+
+function selfCheckAddDaysISO(dateISO: string, days: number): string {
+  const d = new Date(`${dateISO}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+export type RunNightlySelfCheckOpts = {
+  /** Anchor date (ISO). Defaults to today (UTC). */
+  todayISO?: string;
+  /** Days before the anchor to include. Default 1. */
+  lookbackDays?: number;
+  /** Days after the anchor to include. Default 14. */
+  lookaheadDays?: number;
+  /** When true, compute findings but do NOT write. Default false. */
+  dryRun?: boolean;
+};
+
+const SELF_CHECK_MAX_PLANS = 60;
+const SELF_CHECK_MAX_PENDING_SCAN = 2000;
+
+export async function runNightlySelfCheck(
+  opts: RunNightlySelfCheckOpts = {},
+): Promise<SelfCheckReport> {
+  const db = getDb();
+  const todayISO = opts.todayISO ?? new Date().toISOString().slice(0, 10);
+  const lookback = Math.max(0, opts.lookbackDays ?? 1);
+  const lookahead = Math.max(0, opts.lookaheadDays ?? 14);
+  const windowDays = lookback + lookahead + 1;
+  const dryRun = opts.dryRun === true;
+
+  const startISO = selfCheckAddDaysISO(todayISO, -lookback);
+  const endISO = selfCheckAddDaysISO(todayISO, lookahead);
+
+  // --- 1. AM/PM block-time repair --------------------------------------
+  const plans: Array<{ id: number; date: any; notes: string | null }> = await db
+    .select({ id: dailyPlans.id, date: dailyPlans.date, notes: dailyPlans.notes })
+    .from(dailyPlans)
+    .where(and(gte(dailyPlans.date, startISO as any), lte(dailyPlans.date, endISO as any)))
+    .orderBy(asc(dailyPlans.date))
+    .limit(SELF_CHECK_MAX_PLANS);
+
+  const days: SelfCheckDay[] = [];
+  for (const p of plans) {
+    const blocks: Array<{ id: number; startTime: string | null; sortOrder: number }> =
+      await db
+        .select({
+          id: scheduleBlocks.id,
+          startTime: scheduleBlocks.startTime,
+          sortOrder: scheduleBlocks.sortOrder,
+        })
+        .from(scheduleBlocks)
+        .where(eq(scheduleBlocks.planId, p.id))
+        .orderBy(asc(scheduleBlocks.sortOrder));
+    const dateISO =
+      typeof p.date === "string" ? p.date.slice(0, 10) : new Date(p.date).toISOString().slice(0, 10);
+    days.push({ dateISO, intentText: p.notes, blocks });
+  }
+
+  const timeFixes = planAllTimeFixes(days);
+  if (!dryRun) {
+    for (const fix of timeFixes) {
+      await db
+        .update(scheduleBlocks)
+        .set({ startTime: fix.to })
+        .where(eq(scheduleBlocks.id, fix.blockId));
+    }
+  }
+
+  // --- 2. Duplicate pending Drive-push rows ----------------------------
+  const pending: Array<{
+    id: number;
+    targetFolder: string;
+    fileName: string;
+    createdAt: any;
+    contentHash: string | null;
+  }> = await db
+    .select({
+      id: drivePushQueue.id,
+      targetFolder: drivePushQueue.targetFolder,
+      fileName: drivePushQueue.fileName,
+      createdAt: drivePushQueue.createdAt,
+      contentHash: drivePushQueue.contentHash,
+    })
+    .from(drivePushQueue)
+    .where(eq(drivePushQueue.status, "pending" as any))
+    .orderBy(desc(drivePushQueue.id))
+    .limit(SELF_CHECK_MAX_PENDING_SCAN);
+
+  const pendingRows: PendingRow[] = pending.map((r) => ({
+    id: r.id,
+    targetFolder: String(r.targetFolder),
+    fileName: r.fileName,
+    createdAt: r.createdAt ? new Date(r.createdAt).getTime() : null,
+    contentHash: r.contentHash ?? null,
+  }));
+
+  const dupGroups = planDuplicatePendingRemovals(pendingRows);
+  const removeIds = dupGroups.flatMap((g) => g.removeIds);
+  if (!dryRun && removeIds.length) {
+    await db.delete(drivePushQueue).where(inArray(drivePushQueue.id, removeIds));
+  }
+
+  // --- 3. Placeholder profile photos -----------------------------------
+  const profiles: Array<{ id: number; photoUrl: string | null }> = await db
+    .select({ id: learnerProfile.id, photoUrl: learnerProfile.photoUrl })
+    .from(learnerProfile);
+  let placeholderPhotosCleared = 0;
+  for (const pr of profiles) {
+    if (isPlaceholderPhotoUrl(pr.photoUrl)) {
+      placeholderPhotosCleared++;
+      if (!dryRun) {
+        await db
+          .update(learnerProfile)
+          .set({ photoUrl: null })
+          .where(eq(learnerProfile.id, pr.id));
+      }
+    }
+  }
+
+  const clean =
+    timeFixes.length === 0 && removeIds.length === 0 && placeholderPhotosCleared === 0;
+
+  return {
+    ranAtISO: new Date().toISOString(),
+    windowDays,
+    timeFixes,
+    duplicatePendingRemoved: removeIds.length,
+    placeholderPhotosCleared,
+    clean,
+  };
+}
