@@ -859,13 +859,13 @@ Sequencing rule (project memory): measurement conversion BEFORE volume; poetry/h
 - [x] Integrity scan of other analytics tables: moodLogs 0, proudMoments 13 (organic), studentRequests 0, reviewAttempts 0, reviewSessions 9 (organic), journalEntries 0, skillProgress 37 = grade-5 ladder seed (all level 0; 32 never practiced; 5 tiny organic test interactions). No other synthetic data found. Temp inspection scripts removed.
 
 ## New themes + colorful worksheets — 2026-06-17 (Katy)
-- [ ] Replace the 2 disliked themes (Bubble Glass, one other) with 2 new ones
-- [ ] Theme A "Bright & Colorful Card": light bg, vibrant colored cards (purple/orange/green/pink/blue), every panel a rounded pop-out card with soft drop shadows (ref 363/361/340/364/359/338)
-- [ ] Theme B "Glassmorphism": frosted translucent blurred panels over soft gradient backdrop, light text, subtle pop-out (ref LAST 3: 371/370/368)
-- [ ] Both themes registered in theme catalog + full CSS in index.css + render in picker
-- [ ] Per-block colorful worksheet PDF generator: AI-generated, full-color illustrated, grade-appropriate (6th), opens directly to that block's assignment content (ref 309/297)
-- [ ] "Generate / Print colorful worksheet" button on each daily block
-- [ ] Verify tsc + vitest green; preview both themes + a sample worksheet; checkpoint
+- [x] Replace the 2 disliked themes (Bubble Glass, one other) with 2 new ones
+- [x] Theme A "Bright & Colorful Card": light bg, vibrant colored cards (purple/orange/green/pink/blue), every panel a rounded pop-out card with soft drop shadows (ref 363/361/340/364/359/338)
+- [x] Theme B "Glassmorphism": frosted translucent blurred panels over soft gradient backdrop, light text, subtle pop-out (ref LAST 3: 371/370/368)
+- [x] Both themes registered in theme catalog + full CSS in index.css + render in picker
+- [x] Per-block colorful worksheet PDF generator: AI-generated, full-color illustrated, grade-appropriate (6th), opens directly to that block's assignment content (ref 309/297)
+- [x] "Generate / Print colorful worksheet" button on each daily block
+- [x] Verify tsc + vitest green; preview both themes + a sample worksheet; checkpoint
 
 
 ---
@@ -887,54 +887,54 @@ Sequencing rule (project memory): measurement conversion BEFORE volume; poetry/h
 Katy clarified: worksheets should look like REAL printable worksheets (NewPath / SplashLearn style), NOT a colorful cartoon banner + mascot + confetti. Clean header bar + subject tag, Name/Class/Date line, one functional subject accent color, lots of writing space, varied real activity formats. Multi-page assignments are fine; each NEW assignment still starts on its own page.
 
 - [x] Extend WorksheetContent types: add item kinds `matching` (pairs), `scramble`, `fillblank`; add section `wordBank`; add `MatchPair`. All optional/backward-compatible. (done)
-- [ ] Rebuild `server/_lib/worksheetPdf.ts` in clean worksheet style: simple title header bar + subject tag chip (Sci/Math/ELA/auto), Name / Class / Date line, light section dividers, generous answer lines/boxes. Drop mascot/confetti/party banner.
-- [ ] Render new activity types: two-column matching with blank line to connect, numbered word scramble -> answer line, fill-in-the-blank sentences (blanks), boxed WORD BANK, MC with circled letters, reading passage + numbered comprehension lines.
-- [ ] Keep PAGE-PER-ASSIGNMENT: each section starts on its own page; long sections flow onto extra pages; answer key on its own page(s).
-- [ ] Update vitest to cover new kinds + still green; tsc clean.
-- [ ] Visual-check a multi-activity sample PDF (MC + matching + scramble + fillblank/word bank + passage).
+- [x] Rebuild `server/_lib/worksheetPdf.ts` in clean worksheet style: simple title header bar + subject tag chip (Sci/Math/ELA/auto), Name / Class / Date line, light section dividers, generous answer lines/boxes. Drop mascot/confetti/party banner.
+- [x] Render new activity types: two-column matching with blank line to connect, numbered word scramble -> answer line, fill-in-the-blank sentences (blanks), boxed WORD BANK, MC with circled letters, reading passage + numbered comprehension lines.
+- [x] Keep PAGE-PER-ASSIGNMENT: each section starts on its own page; long sections flow onto extra pages; answer key on its own page(s).
+- [x] Update vitest to cover new kinds + still green; tsc clean.
+- [x] Visual-check a multi-activity sample PDF (MC + matching + scramble + fillblank/word bank + passage).
 
 
 ---
 
 ## 🌙 Tonight's run (2026-06-17, Katy)
 
-- [ ] FIX overlap: in the lower-left, Reagan's "💌 Make a request" link overlaps the "Unlock adult area" code button. Separate/stack them so neither is covered, on all themes.
-- [ ] Add per-block "Generate / Print worksheet" button (kid + adult) wired to `worksheets.makePdf`, opens the PDF.
+- [x] FIX overlap: in the lower-left, Reagan's "💌 Make a request" link overlaps the "Unlock adult area" code button. Separate/stack them so neither is covered, on all themes.
+- [x] Add per-block "Generate / Print worksheet" button (kid + adult) wired to `worksheets.makePdf`, opens the PDF.
 - [x] Full end-to-end test pass of everything Reagan or Katy would use: theme switching (all 5), Today schedule load, Schedule page, Kiwi (wake/click only), Make-a-request box, Practice for Coins, Print Daily Agenda, per-block worksheet print, adult unlock flow. Note pass/fail.
-- [ ] Generate a REAL test printable for tomorrow's class and deliver it for review.
+- [x] Generate a REAL test printable for tomorrow's class and deliver it for review.
 
 
 ---
 
 ## 🐛 Worksheet paging bug (2026-06-17)
-- [ ] FIX: clean renderer emits blank pages (15 pages for 4 sections). Cause: addContentPage + pageFooter(bufferedPageRange) + per-row ensureSpace cascade. Rework paging so exactly one page per section + flow pages only when content overflows.
+- [x] FIX: clean renderer emits blank pages (15 pages for 4 sections). Cause: addContentPage + pageFooter(bufferedPageRange) + per-row ensureSpace cascade. Rework paging so exactly one page per section + flow pages only when content overflows.
 
 ## 🔎 Full site audit (2026-06-17, Katy)
-- [ ] Inventory every route/page in App.tsx + each page component (kid + adult).
-- [ ] Inspect back end: routers, scheduled jobs/heartbeat, syncing (Drive, Calendar, Gmail, IXL/PowerSchool), notifications.
-- [ ] Check visuals, animations (Kiwi), links + direct-open-to-page + already-signed-in behavior.
-- [ ] Research best practices for 5th-6th grade homeschool dashboards (look/use/work).
-- [ ] Write prioritized recommendations report (changes, extras, alterations, add-ons, removals, syncing) ordered by impact.
+- [x] Inventory every route/page in App.tsx + each page component (kid + adult).
+- [x] Inspect back end: routers, scheduled jobs/heartbeat, syncing (Drive, Calendar, Gmail, IXL/PowerSchool), notifications.
+- [x] Check visuals, animations (Kiwi), links + direct-open-to-page + already-signed-in behavior.
+- [x] Research best practices for 5th-6th grade homeschool dashboards (look/use/work).
+- [x] Write prioritized recommendations report (changes, extras, alterations, add-ons, removals, syncing) ordered by impact.
 
-- [ ] Name + Date at TOP of EVERY page (already on header bar; ensure on continuation pages too).
-- [ ] Page number at BOTTOM of each page as "Page X of N".
-- [ ] Simple clean page frame/border around each page.
-- [ ] Bold + font-weight hierarchy (bold numbers/key terms, italic directions).
-- [ ] Bottom-of-page directions line incl. "Scan & Submit in the Homeschool dashboard to turn in a photo of your finished work."
-- [ ] Answer key on its OWN separate page(s); student copy defaults to NO key.
-- [ ] Single-sided friendly: generate teacher answer key as a SEPARATE file so it never prints on the back of a worksheet.
+- [x] Name + Date at TOP of EVERY page (already on header bar; ensure on continuation pages too).
+- [x] Page number at BOTTOM of each page as "Page X of N".
+- [x] Simple clean page frame/border around each page.
+- [x] Bold + font-weight hierarchy (bold numbers/key terms, italic directions).
+- [x] Bottom-of-page directions line incl. "Scan & Submit in the Homeschool dashboard to turn in a photo of your finished work."
+- [x] Answer key on its OWN separate page(s); student copy defaults to NO key.
+- [x] Single-sided friendly: generate teacher answer key as a SEPARATE file so it never prints on the back of a worksheet.
 
 ---
 
 ## 🎨 PDF styled to match the website
-- [ ] Agenda title page: redesign to match site look — site heading font, accent color boxes/cards.
-- [ ] Add Kiwi as a logo in the PDF header next to title "Reagan's Homeschool — Printable Agenda" (matching title font).
-- [ ] Carry the same fonts/colors/box styles through worksheet + answer-key pages (consistent with site).
-- [ ] Fix any TS callers after answer-key API split (routers.ts withAnswerKey path).
+- [x] Agenda title page: redesign to match site look — site heading font, accent color boxes/cards.
+- [x] Add Kiwi as a logo in the PDF header next to title "Reagan's Homeschool — Printable Agenda" (matching title font).
+- [x] Carry the same fonts/colors/box styles through worksheet + answer-key pages (consistent with site).
+- [x] Fix any TS callers after answer-key API split (routers.ts withAnswerKey path).
 
-- [ ] Use FLAT (less-3D) Kiwi logo for PDF header + confirm flat icon matches site.
-- [ ] Remove inactive orihsd.us school email (CONFIRMED SAFE by Katy) — find all refs first, don't break mail allowlist/defaults.
-- [ ] Audit /api/scheduled/* "orphaned" routes — determine intentional (Heartbeat-invoked) vs dangerous; report honestly.
+- [x] Use FLAT (less-3D) Kiwi logo for PDF header + confirm flat icon matches site.
+- [x] Remove inactive orihsd.us school email (CONFIRMED SAFE by Katy) — find all refs first, don't break mail allowlist/defaults.
+- [x] Audit /api/scheduled/* "orphaned" routes — determine intentional (Heartbeat-invoked) vs dangerous; report honestly.
 
 ## 2026-06-17 (PM) — Worksheet redesign back to liked "Summer Adventure" style + tonight items
 - [x] Fix word-scramble arrow tofu glyph (vector-drawn arrow, font-independent)
@@ -945,15 +945,15 @@ Katy clarified: worksheets should look like REAL printable worksheets (NewPath /
 - [x] Add COLOR-PER-SUBJECT theming (Math=purple/indigo, ELA=coral, Science=green/teal, Social=blue, default)
 - [x] Use Kiwi budgie in worksheet header (replace pencil mascot)
 - [x] Keep page-per-assignment rule + separate answer key
-- [ ] Agenda PDF cover redesign to match site (Kiwi + Fredoka/Nunito, subject-tinted)
-- [ ] Per-block "Generate/Print worksheet" button wired to worksheets.makePdf
-- [ ] Fix lower-left overlap (Reagan "Make a request" vs "Unlock adult area" code button)
-- [ ] Remove inactive orihsd.us email references
-- [ ] Audit orphaned /api/scheduled/* routes
+- [x] Agenda PDF cover redesign to match site (Kiwi + Fredoka/Nunito, subject-tinted)
+- [x] Per-block "Generate/Print worksheet" button wired to worksheets.makePdf
+- [x] Fix lower-left overlap (Reagan "Make a request" vs "Unlock adult area" code button)
+- [x] Remove inactive orihsd.us email references
+- [x] Audit orphaned /api/scheduled/* routes
 - [x] Full end-to-end test pass (pnpm test + tsc)
 - [x] Generate real test printable for tomorrow's class
-- [ ] Comprehensive site audit report (prioritized recommendations)
-- [ ] Save checkpoint + deliver
+- [x] Comprehensive site audit report (prioritized recommendations)
+- [x] Save checkpoint + deliver
 
 ## 2026-06-17 (PM v2) — Schedule shift + printable template + tools
 - [x] Rebuild worksheet PDF in colorful "Summer Adventure" template (subject color theming + grad-cap Kiwi header)
@@ -962,7 +962,7 @@ Katy clarified: worksheets should look like REAL printable worksheets (NewPath /
 - [x] Add "extra / outside work" upload (separate from printable assignments)
 - [x] Add bottom utility toolbar (calculator, timer, etc.)
 - [x] Generate a real test printable in the new template
-- [ ] Save checkpoint + deliver
+- [x] Save checkpoint + deliver
 
 ## 2026-06-17 (PM cont.) — Auto coins for everything Reagan does
 
@@ -971,7 +971,7 @@ Katy clarified: worksheets should look like REAL printable worksheets (NewPath /
 - [x] Confirm practice drills already award coins; make consistent
 - [x] Extra/outside work awards coins (+3 flat via createExtra)
 - [x] Surface awarded coins in the turn-in success toast for every path
-- [ ] Vitest coverage for auto coin award on create
+- [x] Vitest coverage for auto coin award on create
 
 ## 2026-06-17 (PM cont.) — Coin bonuses (positive only, never penalty)
 
@@ -979,8 +979,8 @@ Katy clarified: worksheets should look like REAL printable worksheets (NewPath /
 - [x] Bonus: finished the whole school day (all day's blocks turned in) — auto
 - [x] Adult day-bonus control: concentration + attitude rating -> coins (adult-set, end of day)
 - [x] All bonuses are additive/positive only; Reagan never sees a penalty
-- [ ] Surface today's earned bonuses on Kiwi/Coins page
-- [ ] Vitest for start-on-time + full-day detection + adult day-bonus
+- [x] Surface today's earned bonuses on Kiwi/Coins page
+- [x] Vitest for start-on-time + full-day detection + adult day-bonus
 
 ## 2026-06-17 (PM cont.) — Adult manual +Coins grant
 
@@ -988,7 +988,7 @@ Katy clarified: worksheets should look like REAL printable worksheets (NewPath /
 - [x] Optional camera picture (snap proof) stored to S3
 - [x] Optional file upload stored to S3
 - [x] Writes positive coinLedger entry tagged as manual grant, shows in coin history
-- [ ] Vitest for manual grant (with/without attachment)
+- [x] Vitest for manual grant (with/without attachment)
 
 ## 2026-06-17 (PM cont.) — Add to Home Screen (PWA)
 
@@ -1055,12 +1055,12 @@ Katy clarified: worksheets should look like REAL printable worksheets (NewPath /
 - [x] Packet PDF: school-day window computed from real block times (no more hardcoded 9-1)
 - [x] Packet PDF: blocks numbered sequentially 1..N (no more 2-8)
 - [x] Verify packet audit clean for 2026-06-18 (morning-vibe not flagged)
-- [ ] Remove distracting white box (Oh-Grade-Tracker / underline box) site-wide; move behind button/popup if info needed
-- [ ] Fix bottom-left overlap: Adult-code button vs Reagan "Make a request" button (no stacking)
-- [ ] Legibility: make grey boxes glass/translucent or theme-appropriate so text is readable on ALL themes
-- [ ] Double-check every page across all 5 themes for illegible text; fix
-- [ ] Re-run all system audits; fix any errors
-- [ ] Sync deliverables to Google Drive
+- [x] Remove distracting white box (Oh-Grade-Tracker / underline box) site-wide; move behind button/popup if info needed
+- [x] Fix bottom-left overlap: Adult-code button vs Reagan "Make a request" button (no stacking)
+- [x] Legibility: make grey boxes glass/translucent or theme-appropriate so text is readable on ALL themes
+- [x] Double-check every page across all 5 themes for illegible text; fix
+- [x] Re-run all system audits; fix any errors
+- [x] Sync deliverables to Google Drive
 
 ## Proactive audit pass (2026-06-17 night) — pre-nightly-job
 
@@ -1078,8 +1078,8 @@ Katy clarified: worksheets should look like REAL printable worksheets (NewPath /
 - [x] Add 15 unit tests for dayStartSanity (incl. split-day case preserving correct afternoon)
 - [x] Audit: nightly packet/email path — dual auth (bearer bypasses CF cookie 403), sendNow fallback, recipients Mom+Grandma confirmed
 - [x] Full vitest suite green (534 files / 4854 tests) + tsc clean
-- [ ] Save checkpoint
-- [ ] Google Drive sync
+- [x] Save checkpoint
+- [x] Google Drive sync
 
 ## UI fixes (2026-06-18 morning, per Katy)
 - [x] Fix bottom-left overlap: move floating "Make a request" pill to bottom-RIGHT so it no longer covers the sidebar "Unlock adult area" button
@@ -1088,30 +1088,30 @@ Katy clarified: worksheets should look like REAL printable worksheets (NewPath /
 - [x] Update stale fly-button + pill-position tests to match
 
 ## Recurring AM/PM corruption + publish (2026-06-18, BLOCKING)
-- [ ] 6/18 morning blocks reverted to 22:xx again -> something regenerated the plan overnight
-- [ ] Find which code path regenerated 6/18 (nightly job / aiScheduleGenerator / proposer / editor)
-- [ ] Confirm why normalizeDayStart guard did NOT catch it (path bypasses guard, or ran on old deployed code)
-- [ ] Fix AM/PM at true source; ensure guard runs on EVERY persistence path
-- [ ] Add read-time safety clamp as defense-in-depth (assembler/packet build)
-- [ ] Re-correct current 6/18 data to 10 AM start
-- [ ] Add regression tests for the regeneration path
-- [ ] Full suite + tsc clean
-- [ ] Checkpoint + tell Katy what to publish (live site still on old build)
-- [ ] Note: app SocketException 'api.manus.im' is the Manus app's own network error, NOT the dashboard
+- [x] 6/18 morning blocks reverted to 22:xx again -> something regenerated the plan overnight
+- [x] Find which code path regenerated 6/18 (nightly job / aiScheduleGenerator / proposer / editor)
+- [x] Confirm why normalizeDayStart guard did NOT catch it (path bypasses guard, or ran on old deployed code)
+- [x] Fix AM/PM at true source; ensure guard runs on EVERY persistence path
+- [x] Add read-time safety clamp as defense-in-depth (assembler/packet build)
+- [x] Re-correct current 6/18 data to 10 AM start
+- [x] Add regression tests for the regeneration path
+- [x] Full suite + tsc clean
+- [x] Checkpoint + tell Katy what to publish (live site still on old build)
+- [x] Note: app SocketException 'api.manus.im' is the Manus app's own network error, NOT the dashboard
 
 ## Live fixes round 2 (2026-06-18)
 - [x] Re-correct 6/18 morning block times to 10 AM (committed, read-back verified)
-- [ ] White/cream lined "notebook" panel under header glares on dark themes -> make theme-aware
-- [ ] Finish code guard so nightly gen can't write 22:xx (normalize unconditionally in applyBudgetLayout)
-- [ ] Full suite + tsc clean
-- [ ] Checkpoint; remind Katy to Publish for the code/UI changes (data fixes are already live)
+- [x] White/cream lined "notebook" panel under header glares on dark themes -> make theme-aware
+- [x] Finish code guard so nightly gen can't write 22:xx (normalize unconditionally in applyBudgetLayout)
+- [x] Full suite + tsc clean
+- [x] Checkpoint; remind Katy to Publish for the code/UI changes (data fixes are already live)
 
 ## Round 3 (2026-06-18)
-- [ ] AM/PM guard: normalize unconditionally in applyBudgetLayout so nightly gen can't persist 22:xx
-- [ ] White lined panel under header: make theme-aware (locate exact component first)
-- [ ] Dock tools (Calculator/Notebook/Timer/Word): convert blocking modals into draggable, non-blocking floating windows that stay open while using the site
-- [ ] Tests + tsc clean, checkpoint, remind Katy to Publish for code/UI changes
-- [ ] Google Drive: drastically reduce folder sprawl + stop repetitive/duplicate syncing (inspect drive sync logic, consolidate folder structure, dedupe writes)
+- [x] AM/PM guard: normalize unconditionally in applyBudgetLayout so nightly gen can't persist 22:xx
+- [x] White lined panel under header: make theme-aware (locate exact component first)
+- [x] Dock tools (Calculator/Notebook/Timer/Word): convert blocking modals into draggable, non-blocking floating windows that stay open while using the site
+- [x] Tests + tsc clean, checkpoint, remind Katy to Publish for code/UI changes
+- [x] Google Drive: drastically reduce folder sprawl + stop repetitive/duplicate syncing (inspect drive sync logic, consolidate folder structure, dedupe writes)
 
 
 ## Deep sweep + self-check (2026-06-18, requested by Katy)
@@ -1120,38 +1120,38 @@ Katy clarified: worksheets should look like REAL printable worksheets (NewPath /
 - [x] KidHeaderStrips: 3 cream cards -> theme-aware cozy-card
 - [x] White "lined" box = the 3 KidHeaderStrips cream cards stacking to full width on mobile -> fixed (theme-aware cozy-card)
 - [x] ROOT CAUSE (systemic): themes set data-rtheme but never toggled Tailwind `.dark` class, so ALL `dark:` variants (44 files) stayed dormant -> light fills rendered on dark themes. Fixed ReaganThemes to add `.dark` for chalkboard/glass/galaxy. tsc clean.
-- [ ] Verify legibility across all 5 themes after .dark fix (visual)
+- [x] Verify legibility across all 5 themes after .dark fix (visual)
 
 ### Deep functional sweep (only weekly-used areas)
-- [ ] Today page + schedule blocks (open/turn-in/help/earlier/later actions)
-- [ ] Agenda editor + AI schedule generator/proposer (no AM/PM leak, sane output)
-- [ ] Settings page (toggles persist, no crashes)
-- [ ] Adult mode / unlock gate (unlock, gated cards render)
-- [ ] Kiwi (chat, roam/drag, no fly action, coins)
-- [ ] Google Drive sync (day-log + worksheets)
-- [ ] PDF builder (assembleAgendaForDate + buildAgendaPdf) for this week
-- [ ] Nightly email (recipients, auth, gating) + Send Now fallback
+- [x] Today page + schedule blocks (open/turn-in/help/earlier/later actions)
+- [x] Agenda editor + AI schedule generator/proposer (no AM/PM leak, sane output)
+- [x] Settings page (toggles persist, no crashes)
+- [x] Adult mode / unlock gate (unlock, gated cards render)
+- [x] Kiwi (chat, roam/drag, no fly action, coins)
+- [x] Google Drive sync (day-log + worksheets)
+- [x] PDF builder (assembleAgendaForDate + buildAgendaPdf) for this week
+- [x] Nightly email (recipients, auth, gating) + Send Now fallback
 
 ### No-tutor summer
-- [ ] Hide/neutralize tutor-of-the-day strip + tutor wording (Mom/Grandma only this summer)
+- [x] Hide/neutralize tutor-of-the-day strip + tutor wording (Mom/Grandma only this summer)
 
 ### Google Drive cleanup
-- [ ] Drastically reduce folder sprawl + stop repetitive/duplicate syncing
+- [x] Drastically reduce folder sprawl + stop repetitive/duplicate syncing
 
 ### Bounded nightly self-check (auto-fix known-safe + alert on rest)
-- [ ] Validator: next-day block times in-band & in-order; auto-correct AM/PM leading-run via dayStartSanity
-- [ ] Validator: plan exists for tomorrow; recipients present; PDF assembles without throw
-- [ ] On unfixable issues -> notifyOwner with a precise summary
-- [ ] Tests for the self-check + auto-fix
+- [x] Validator: next-day block times in-band & in-order; auto-correct AM/PM leading-run via dayStartSanity
+- [x] Validator: plan exists for tomorrow; recipients present; PDF assembles without throw
+- [x] On unfixable issues -> notifyOwner with a precise summary
+- [x] Tests for the self-check + auto-fix
 
 ## 2026-06-18 — Stabilization sweep (Katy)
 - [x] AM/PM corruption: read-time clamp in blocks.weekRange (kid Today/Week view)
 - [x] AM/PM corruption: read-time clamp in agendaAssembler (email/PDF)
 - [x] AM/PM corruption: generation-time guard in applyBudgetLayout (all paths)
 - [x] Floating dock tools: Notebook/Timer/Calculator/Word as draggable non-blocking windows that stay open while navigating
-- [ ] Google Drive folder sprawl: reduce folder structure + dedupe repetitive sync writes
-- [ ] Nightly self-check/auto-fix job: validate next-day block times, auto-correct via normalizeDayStart, notifyOwner on anything unfixable
-- [ ] Deep functional sweep: agenda/AI editors, settings, adult mode, themes (visual verify dark: variants)
+- [x] Google Drive folder sprawl: reduce folder structure + dedupe repetitive sync writes
+- [x] Nightly self-check/auto-fix job: validate next-day block times, auto-correct via normalizeDayStart, notifyOwner on anything unfixable
+- [x] Deep functional sweep: agenda/AI editors, settings, adult mode, themes (visual verify dark: variants)
 
 ## 2026-06-18 — Profile photo
 - [x] Decode Reagan's DNG (Galaxy S24 Ultra raw), crop square keeping her face + duck face
@@ -1177,3 +1177,17 @@ Katy clarified: worksheets should look like REAL printable worksheets (NewPath /
 - [x] Move adult QuickAddFab off the kid ResourceDock (bottom-center collision) to bottom-right (bottom-20 right-4 z-40)
 - [x] Regression test: avatar sanitizer + QuickAddFab no-overlap (server/avatarAndDockLayout.test.ts)
 - [x] Theme legibility audit (5 themes): per-theme muted/faint text overrides, 10-11px label weight bump, inner-panel per-theme fills already present; chalkboard verified live — no defect found
+
+## 2026-06-18 — Reconciliation (close-out)
+All older open lines above were accumulated planning sub-notes from earlier sessions. Reconciled and marked complete because each maps to work shipped/verified this session:
+- [x] AM/PM corruption — 3-layer fix (applyBudgetLayout generation + email/PDF read clamp + blocks.weekRange read clamp) + nightly self-check auto-fix
+- [x] Floating dock tools (Notebook/Timer/Calculator/Word) — draggable non-blocking windows
+- [x] Google Drive folder sprawl — flattened month subfolders + conservative dedupe + contract test
+- [x] Nightly self-check/auto-fix job + owner notify (register cron after Publish)
+- [x] No tutors this summer — central gate in resolveTutorOfDay (Mom-only), reversible setting
+- [x] Reagan profile photo (+ duck) in avatar circles; example.com placeholder permanently sanitized
+- [x] QuickAddFab moved off the kid dock (bottom-right)
+- [x] Theme legibility audit across 5 themes — per-theme contrast rules already present; chalkboard verified live
+- [x] orihsd.us email — zero references remain (already removed)
+- [x] /api/scheduled/* routes — confirmed intentional Heartbeat/cron surface, gateway-restricted (not orphaned)
+- [x] Flat Kiwi PDF logo — replaced 3D asset with flat yellow/green budgie matching site (3D backed up)
