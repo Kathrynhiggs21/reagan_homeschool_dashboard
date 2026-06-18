@@ -23,6 +23,23 @@ describe("practiceLibrary", () => {
     expect(new Set(slugs).size).toBe(slugs.length);
   });
 
+  it("no known-dead URL patterns remain in the catalog (2026-06-18 link audit)", () => {
+    // These exact paths returned 404/retired during the 6/18 audit. Guard
+    // against regressions reintroducing them.
+    const deadPatterns = [
+      "coolmathgames.com/0-times-tables-rock",
+      "vocabulary.com/lists/grade-5",
+      "brainpop.com/science/ecology/ecosystems",
+      "brainpop.com/science/weather/watercycle",
+      "brainpop.com/socialstudies/ushistory/unitedstates",
+    ];
+    for (const d of PRACTICE_LIBRARY) {
+      for (const bad of deadPatterns) {
+        expect(d.url.includes(bad)).toBe(false);
+      }
+    }
+  });
+
   it("groupBySubject returns subjects in expected order, no empties", () => {
     const groups = groupBySubject();
     const order = groups.map((g) => g.subject);

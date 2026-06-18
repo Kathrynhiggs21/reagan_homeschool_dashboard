@@ -1265,16 +1265,16 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 
 ## 2026-06-18 — Reagan Google account SSO hint coverage
 - [x] Verify student.googleEmail pref = reaganhiggs910@gmail.com in prod (confirmed set; parent.googleEmail = null)
-- [ ] Expand SSO_HINT_HOSTS to cover remaining Google-SSO-capable catalog apps (PBS LearningMedia, Wayground, Smithsonian, BrainPOP Jr, etc.)
-- [ ] Append authuser=<email> alongside AccountChooser wrap where it improves account pre-selection
-- [ ] Add/extend vitest coverage for the expanded SSO hint behavior
+- [x] Expand SSO_HINT_HOSTS to cover remaining Google-SSO-capable catalog apps (PBS LearningMedia, Wayground, Smithsonian, BrainPOP Jr, etc.)
+- [x] Append authuser=<email> alongside AccountChooser wrap where it improves account pre-selection
+- [x] Add/extend vitest coverage for the expanded SSO hint behavior
 - [ ] Validate expanded host matching against the live app catalog hosts
 
 ## 2026-06-18 — Adult-mode parent portal links
-- [ ] Set parent.googleEmail = spear.cpt@gmail.com pref (activates the existing "Open as Parent" toggle on Google-property cards)
-- [ ] Add adult-mode-only parent/teacher portal links for apps with a distinct parent/educator dashboard (IXL, Khan, Prodigy, etc.), opened with the spear.cpt@gmail.com account hint
-- [ ] Keep parent links separate from Reagan's student links; only visible in adult mode
-- [ ] Add vitest coverage for parent-portal link generation + parent account hint
+- [x] Set parent.googleEmail = spear.cpt@gmail.com pref (activates the existing "Open as Parent" toggle on Google-property cards)
+- [x] Add adult-mode-only parent/teacher portal links for apps with a distinct parent/educator dashboard (IXL, Khan, Prodigy, etc.), opened with the spear.cpt@gmail.com account hint
+- [x] Keep parent links separate from Reagan's student links; only visible in adult mode
+- [x] Add vitest coverage for parent-portal link generation + parent account hint
 
 ## 2026-06-18 — Today's school day + parent SSO
 - [x] Add parent.googleEmail / parent.googleAuthUser to public-read allowlist
@@ -1286,8 +1286,8 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] Fix "after lunch" wording in Intro block -> "after the break"
 - [x] Generate write-in worksheets for all academic blocks incl. both duck blocks
 - [x] Full vitest suite green (4949 passed)
-- [ ] Save checkpoint + user publishes
-- [ ] After publish: send branded agenda PDF + duck worksheets to spear.cpt@gmail.com
+- [x] Save checkpoint + user publishes
+- [x] After publish: send branded agenda PDF + duck worksheets to spear.cpt@gmail.com
 
 ## 2026-06-18 — Daily email = ONLY the printables PDF
 - [x] Remove notifyOwner "school plan summary" notification from nightlyAgenda.sendNow (no summary/mastery email)
@@ -1295,3 +1295,13 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] Slim the PDF email HTML body to a short note (printables attached), no block dump / mastery snapshot
 - [x] Clamp long lesson-body description on the PDF cover summary cards
 - [x] Update/extend vitest to assert single-email behavior + audit-not-emailed
+
+## 2026-06-18 — App/assignment link audit
+- [x] Audit all 53 catalog URLs (HTTP reachability + browser verification)
+- [x] Fix BrainPOP dead category URLs -> working /topic/ and /unit/ pages (ecosystems, water-cycle, ushistory)
+- [x] Fix coolmathgames 404 slug -> site root
+- [x] Fix vocabulary.com 404 grade-5 list -> /lists landing
+- [x] Fix spellingcity retired path -> root
+- [x] Keep education.com /resources/grade-5 paths (verified working in real browser; CLI 403 = bot block)
+- [x] Add regression test guarding against the dead URL patterns
+- [x] Full suite green (4959 tests)
