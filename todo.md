@@ -1199,4 +1199,22 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] Per-block "Print worksheet" button (AgendaEditor block row): worksheets.forBlock + makePdf, opens PDF, auto-files to Drive
 - [x] Make floating tool windows (Notebook/Timer/Calculator/Word) resizable via a bottom-right corner grip (mouse + touch), with min-size + viewport clamping
 - [x] Functional adult Summer quick-toggle (Auto/On/Off via summer.override) in adult sidebar; cascades to tutor suppression + agenda/PDF; familyAdmin-gated
-- [ ] Drive: triage Inbox folder and reassign each file to its correct destination folder (or remove junk/dups)
+- [x] Drive: triaged Inbox (19 items → Admin/Assignments/Printables/Adventures), trashed duplicate README, merged 3 overlapping Daily-Agenda folders into "Daily Agenda PDFs", merged duplicate Adult Notes into Admin
+
+
+## 2026-06-18 — Post-launch follow-ups + live Drive restructuring
+- [x] Nightly self-check cron registered on the live deployment (dual-auth fix)
+- [x] Floating tool windows (Notebook/Timer/Calculator/Word) made resizable
+- [x] Functional adult Summer toggle (Mom-only days + tutor suppression)
+- [x] Per-block Print Worksheet button wired to existing PDF generation
+- [x] Vitest suite green: 544 files / 4914 tests (checkpoint c424d1bf)
+- [x] Audited the AI World / Manus shortcut archive (12mpzfd…): 753 items, de-duped 28 byte-identical duplicate shortcuts to Trash; 4 same-name-different-content left in place; index refreshed
+- [x] Audited the live Homeschool Hub (1r3bJac…): full tree mapped
+- [x] Inbox (Unsorted) triaged: 19 items reassigned to Admin / Assignments / Printables / Adventures; junk README trashed; Inbox now empty
+- [x] Daily Operations merged: 3 overlapping agenda folders consolidated into canonical "Daily Agenda PDFs"; duplicate empty "Adult Notes" husk merged into Admin's Adult Notes
+- [x] Hub-wide de-dupe: 80+ byte-identical duplicate files (READMEs, analytics CSVs, day logs) trashed; 0 duplicates remain
+- [x] 25 live empty homeschool folders populated with `_ABOUT.md` (purpose + dashboard source + sync info)
+- [x] Sync map repaired: repointed `drive.folder.adventuresAndEnrichment` + `drive.folder.printablesAndResources` from trashed copies to live folders; cleared 7 stale subfolder-map caches for self-heal
+- [x] drive_push_queue verified healthy: 119 pushed / 250 skipped / 45 pending / 0 failed; agenda PDF artifact routing confirmed to "Daily Operations / Daily Agenda PDFs"
+- [x] Hub-root README.md refreshed with the post-cleanup folder map + cleanup summary
+- [ ] (Left intentionally) 4 empty folders under Archive/_engineering + legacy Classroom — archived scraps, not part of the live tree
