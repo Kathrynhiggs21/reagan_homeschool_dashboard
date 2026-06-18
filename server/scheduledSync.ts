@@ -2117,7 +2117,11 @@ ${kidSummaryLine}
         dryRun: body.dryRun === true,
       });
 
-      // Only ping the owner when repairs were made (and not a dry run).
+      // Ping the owner ONLY for notify-worthy conditions (not routine auto-
+      // repairs). `summarizeReport` returns null for clean runs AND for runs
+      // whose only changes were routine auto-fixes (AM/PM clamps, dup-pending
+      // collapses, placeholder-photo clears) — so those stay silent per Katy's
+      // 2026-06-18 directive. The guard below still short-circuits clean/dry-run.
       let notified = false;
       if (!report.clean && body.dryRun !== true) {
         try {

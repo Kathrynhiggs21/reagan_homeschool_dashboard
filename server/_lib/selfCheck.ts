@@ -164,12 +164,38 @@ export type SelfCheckReport = {
   clean: boolean;
 };
 
-/** Build a concise, owner-friendly summary. Returns null when clean. */
+/**
+ * True only when a run contains something the OWNER actually needs to act on.
+ *
+ * Katy's directive (2026-06-18): routine overnight auto-repairs — AM/PM block-
+ * time clamps, duplicate-pending-row collapses, and placeholder-photo clears —
+ * are exactly what this safety net is *supposed* to fix silently. Emailing her
+ * every time one fires is noise. So those three categories are NEVER notify-
+ * worthy on their own. The hook is left here so that if the job ever surfaces a
+ * genuinely unexpected/unfixable condition in the future, it can flip this to
+ * true and the owner still gets pinged.
+ */
+export function isNotifyWorthy(report: SelfCheckReport): boolean {
+  if (report.clean) return false;
+  // All current repair classes are routine + auto-fixed → stay silent.
+  // (No material/unfixable categories exist yet; when one is added, return true
+  //  for it here.)
+  return false;
+}
+
+/**
+ * Build a concise, owner-friendly summary.
+ *
+ * Returns null when the run is clean OR when everything it did was a routine
+ * auto-repair (see `isNotifyWorthy`). The repairs still happen and are recorded
+ * in the structured `report`; this only governs whether the owner is emailed.
+ */
 export function summarizeReport(report: SelfCheckReport): {
   title: string;
   content: string;
 } | null {
   if (report.clean) return null;
+  if (!isNotifyWorthy(report)) return null;
 
   const lines: string[] = [];
   if (report.timeFixes.length) {

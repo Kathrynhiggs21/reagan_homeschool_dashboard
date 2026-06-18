@@ -5,6 +5,7 @@ import {
   planDuplicatePendingRemovals,
   isPlaceholderPhotoUrl,
   summarizeReport,
+  isNotifyWorthy,
   type SelfCheckDay,
   type PendingRow,
   type SelfCheckReport,
@@ -170,7 +171,7 @@ describe("selfCheck — summarizeReport", () => {
     expect(summarizeReport(base)).toBeNull();
   });
 
-  it("summarizes repairs when not clean", () => {
+  it("is SILENT for routine auto-repairs (Katy: don't email me for these)", () => {
     const report: SelfCheckReport = {
       ...base,
       clean: false,
@@ -178,11 +179,27 @@ describe("selfCheck — summarizeReport", () => {
       duplicatePendingRemoved: 2,
       placeholderPhotosCleared: 1,
     };
-    const summary = summarizeReport(report);
-    expect(summary).not.toBeNull();
-    expect(summary!.title).toMatch(/self-check/i);
-    expect(summary!.content).toContain("22:00 → 10:00");
-    expect(summary!.content).toContain("2 duplicate pending Drive upload");
-    expect(summary!.content).toContain("1 placeholder profile photo");
+    // Repairs still recorded in the structured report, but no owner email.
+    expect(isNotifyWorthy(report)).toBe(false);
+    expect(summarizeReport(report)).toBeNull();
+  });
+
+  it("isNotifyWorthy is false for a clean run", () => {
+    expect(isNotifyWorthy(base)).toBe(false);
+  });
+
+  it("isNotifyWorthy is false even when many repairs fired", () => {
+    const report: SelfCheckReport = {
+      ...base,
+      clean: false,
+      timeFixes: [
+        { dateISO: "2026-06-18", blockId: 1, from: "22:00", to: "10:00" },
+        { dateISO: "2026-06-19", blockId: 2, from: "23:00", to: "11:00" },
+      ],
+      duplicatePendingRemoved: 5,
+      placeholderPhotosCleared: 3,
+    };
+    expect(isNotifyWorthy(report)).toBe(false);
+    expect(summarizeReport(report)).toBeNull();
   });
 });

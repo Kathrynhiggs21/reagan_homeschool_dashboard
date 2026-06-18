@@ -1195,7 +1195,7 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 
 ## 2026-06-18 — Post-launch follow-ups (user: "do all")
 - [x] Register nightly self-check cron on the live deployment (task_uid LdbzFcsFwWmN9BDHPyC2tG, 3:30 AM ET); added dual-auth bearer path so the cron caller is accepted
-- [ ] Add functional adult Summer toggle (operates Mom-only days + drives tutor suppression); not a passive badge
+- [x] Add functional adult Summer toggle (operates Mom-only days + drives tutor suppression); not a passive badge — DELIVERED (see Functional adult Summer quick-toggle line below)
 - [x] Per-block "Print worksheet" button (AgendaEditor block row): worksheets.forBlock + makePdf, opens PDF, auto-files to Drive
 - [x] Make floating tool windows (Notebook/Timer/Calculator/Word) resizable via a bottom-right corner grip (mouse + touch), with min-size + viewport clamping
 - [x] Functional adult Summer quick-toggle (Auto/On/Off via summer.override) in adult sidebar; cascades to tutor suppression + agenda/PDF; familyAdmin-gated
@@ -1218,3 +1218,7 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] drive_push_queue verified healthy: 119 pushed / 250 skipped / 45 pending / 0 failed; agenda PDF artifact routing confirmed to "Daily Operations / Daily Agenda PDFs"
 - [x] Hub-root README.md refreshed with the post-cleanup folder map + cleanup summary
 - [x] Reviewed the 4 remaining empty folders (Archive/_engineering Todo scraps + legacy Classroom) — confirmed they are archived scraps outside the live tree; intentionally left in Archive, no action needed
+
+
+## 2026-06-18 — Nightly self-check email noise
+- [x] Silence routine nightly self-check emails (Katy: "not needed"). Added `isNotifyWorthy()` gate in `server/_lib/selfCheck.ts`; `summarizeReport()` now returns null for runs whose only changes are routine auto-fixes (AM/PM block-time clamps, dup-pending collapses, placeholder-photo clears). Repairs STILL happen + are recorded in the structured report; only the owner email is suppressed. Hook left in place to re-enable notifications for any future material/unfixable condition. Updated `selfCheck.test.ts` (17 pass) + handler contract test; full self-check suite 25/25 green.
