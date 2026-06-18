@@ -1,5 +1,15 @@
 import { useMemo } from "react";
 import { subjectTint } from "@/lib/subjectColors";
+import { trpc } from "@/lib/trpc";
+
+/** Parse a "HH:MM" string to its hour (0-23). Returns null if malformed. */
+function hourFromHHMM(s: string | null | undefined): number | null {
+  if (!s) return null;
+  const m = /^\s*(\d{1,2}):(\d{2})/.exec(s);
+  if (!m) return null;
+  const h = parseInt(m[1], 10);
+  return Number.isFinite(h) && h >= 0 && h <= 23 ? h : null;
+}
 
 /**
  * AgendaCalendarStrip — 2026-05-30
@@ -39,6 +49,12 @@ interface Props {
   offLabel?: string | null;
   /** Hour to start the timeline (24h, 0-23). Default 7. */
   startHour?: number;
+  /**
+   * Hour at which untimed blocks begin flowing (24h). When omitted, the strip
+   * reads the `summer.startTimeDefault` preference so changing the default
+   * start in Settings updates the display everywhere. Falls back to 10.
+   */
+  flowStartHour?: number;
   /** Hour to end the timeline (exclusive). Default 18 (6 PM). */
   endHour?: number;
   /** Pixels per hour. Default 60 → 1 minute = 1 px. */
@@ -75,13 +91,16 @@ export function layoutBlocks(
   blocks: AgendaBlockLite[],
   startHour: number,
   endHour: number,
+  /** Hour untimed blocks flow from (24h). Defaults to 10 (summer default). */
+  flowStartHour = 10,
 ): PositionedBlock[] {
   const startBoundary = startHour * 60;
   const endBoundary = endHour * 60;
   const out: PositionedBlock[] = [];
-  // Track flow cursor for blocks without startTime — start at 10 AM (the
-  // summer default day start, or the timeline's startHour, whichever is later).
-  let flowCursor = Math.max(10 * 60, startBoundary);
+  // Track flow cursor for blocks without startTime — start at the configured
+  // day-start hour (from the summer.startTimeDefault pref), or the timeline's
+  // startHour, whichever is later.
+  let flowCursor = Math.max(flowStartHour * 60, startBoundary);
 
   // First pass: place timed blocks; advance the flow cursor past them so
   // untimed blocks slot AFTER the latest timed block.
@@ -136,12 +155,25 @@ export function AgendaCalendarStrip({
   offLabel,
   startHour = 7,
   endHour = 18,
+  flowStartHour,
   pxPerHour = 60,
   onBlockClick,
 }: Props) {
+  // When the caller doesn't pin a flow start, read the configured day-start
+  // default (summer.startTimeDefault) so changing it in Settings updates the
+  // untimed-block flow everywhere the strip is used. Falls back to 10.
+  const startTimeDefaultPref = trpc.prefs.getPublic.useQuery(
+    { key: "summer.startTimeDefault" },
+    { enabled: flowStartHour === undefined, staleTime: 5 * 60 * 1000 },
+  );
+  const resolvedFlowStartHour =
+    flowStartHour ??
+    hourFromHHMM(startTimeDefaultPref.data as string | null | undefined) ??
+    10;
+
   const placed = useMemo(
-    () => layoutBlocks(blocks, startHour, endHour),
-    [blocks, startHour, endHour],
+    () => layoutBlocks(blocks, startHour, endHour, resolvedFlowStartHour),
+    [blocks, startHour, endHour, resolvedFlowStartHour],
   );
 
   // Hide entirely when there's nothing to show (standing rule: "don't show

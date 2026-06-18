@@ -9486,6 +9486,7 @@ export const appRouter = router({
           "summer.end",                 // "MM-DD" — last summer day
           "summer.override",            // "on" | "off" — manual override
           "summer.vacationRanges",      // JSON array of {start,end} ISO dates
+          "summer.startTimeDefault",    // "HH:MM" — standing day-start; AgendaCalendarStrip flows untimed blocks from here
           // v2.32 (2026-05-18) — Calendar identity surfaced on Settings.
           // Read-only public values (no secrets) so the same key path used
           // by Mom/Grandma also works for `prefs.getPublic` reads from

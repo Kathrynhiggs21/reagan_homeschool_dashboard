@@ -18,7 +18,8 @@ export type HomeRole = "parent" | "editor" | "tutor" | "student" | "viewer";
 
 const PARENT_EMAILS = new Set<string>([
   "spear.cpt@gmail.com",   // Mom
-  "blakehiggs@hotmail.com", // Dad
+  "blakehiggs@hotmail.com", // Dad (Hotmail)
+  "higgsblake@gmail.com",   // Dad (Gmail — the account he signs in with)
 ]);
 const STUDENT_EMAIL = "reaganhiggs910@gmail.com";
 const EDITOR_EMAILS = new Set<string>([
