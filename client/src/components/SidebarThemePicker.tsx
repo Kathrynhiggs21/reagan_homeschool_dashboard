@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { THEMES, THEME_ORDER, useReaganTheme, type ThemeId } from "@/contexts/ReaganThemes";
+import { THEMES, THEME_PRIMARY, THEME_SECONDARY, useReaganTheme, type ThemeId } from "@/contexts/ReaganThemes";
 
 /**
  * SidebarThemePicker — pinned at the bottom-left of the sidebar so Reagan can
@@ -34,7 +34,7 @@ export default function SidebarThemePicker({ collapsed = false }: { collapsed?: 
             className="absolute bottom-11 left-1/2 -translate-x-1/2 z-50 w-44 rounded-xl border bg-popover text-popover-foreground shadow-xl p-1.5 space-y-0.5"
             onMouseLeave={() => setOpenFlyout(false)}
           >
-            {THEME_ORDER.map((id) => (
+            {[...THEME_PRIMARY, ...THEME_SECONDARY].map((id) => (
               <ThemeRow key={id} id={id} active={id === themeId} onPick={() => { setThemeId(id); setOpenFlyout(false); }} />
             ))}
           </div>
@@ -49,10 +49,18 @@ export default function SidebarThemePicker({ collapsed = false }: { collapsed?: 
         🎨 <span>Theme</span>
       </div>
       <div className="space-y-0.5">
-        {THEME_ORDER.map((id) => (
+        {THEME_PRIMARY.map((id) => (
           <ThemeRow key={id} id={id} active={id === themeId} onPick={() => setThemeId(id)} />
         ))}
       </div>
+      {THEME_SECONDARY.length > 0 && (
+        <div className="space-y-0.5 pt-0.5 mt-0.5 border-t border-sidebar-border/40">
+          <div className="px-1 text-[9px] uppercase tracking-wider font-semibold text-muted-foreground">More</div>
+          {THEME_SECONDARY.map((id) => (
+            <ThemeRow key={id} id={id} active={id === themeId} onPick={() => setThemeId(id)} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

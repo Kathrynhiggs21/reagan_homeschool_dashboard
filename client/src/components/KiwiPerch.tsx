@@ -9,7 +9,7 @@ import {
   ALL_PROJECT_KINDS,
   type KiwiCostume,
 } from "@shared/kiwiCharacter";
-import { computeBranches, findLedges, makeFallingSnack, type FallingSnack } from "@/lib/kiwiWorld";
+import { findLedges } from "@/lib/kiwiWorld";
 // Kiwi is silent by default. We deliberately do NOT import chirp() here so the
 // perch never makes sound on its own. Voice/chirp only fires through KiwiCompanion
 // (chat reply) and only when Mom has flipped Silent mode off in Settings.
@@ -110,8 +110,6 @@ export default function KiwiPerch() {
   const [bubbleText, setBubbleText] = useState<string | null>(null);
   const [popBurst, setPopBurst] = useState<number>(0);
   const [tilt, setTilt] = useState(0); // degrees
-  // World: a snack falling from a branch that Kiwi hops over to eat.
-  const [snack, setSnack] = useState<FallingSnack | null>(null);
   // Slow ambient project (nest / needlework / ...) that advances over a session.
   const [projectTick, setProjectTick] = useState(0);
   const projectKindRef = useRef(ALL_PROJECT_KINDS[Math.floor(Math.random() * ALL_PROJECT_KINDS.length)]!);
@@ -336,8 +334,9 @@ export default function KiwiPerch() {
 
   /* ====================== PERCH ON A PAGE LEDGE/CARD =======================
    * Every 30-60s Kiwi hops up onto the top edge of a real card on the page
-   * (instead of free-floating) and does a little activity there. Falls back to
-   * a branch tip if no cards are visible. Skipped while dragging/flying.
+   * (instead of free-floating) and does a little activity there. Skipped while
+   * dragging/flying. (Branch landing + falling snacks were removed per Katy
+   * 2026-06-17 — no more tree-branch world props.)
    */
   useEffect(() => {
     if (!enabled || adultPresent) return;
@@ -347,17 +346,10 @@ export default function KiwiPerch() {
       timer = window.setTimeout(() => {
         if (!dragging && !flying) {
           const ledges = findLedges();
-          const branches = computeBranches();
-          let target: { x: number; y: number } | null = null;
-          if (ledges.length && Math.random() < 0.7) {
+          if (ledges.length) {
             const l = ledges[Math.floor(Math.random() * ledges.length)]!;
             // Stand on the card's top edge (sprite sits just above it).
-            target = { x: l.x - size / 2, y: l.y - size + 8 };
-          } else if (branches.length) {
-            const b = branches[Math.floor(Math.random() * branches.length)]!;
-            target = { x: b.x - size / 2, y: b.y + b.length * 0.45 };
-          }
-          if (target) {
+            const target = { x: l.x - size / 2, y: l.y - size + 8 };
             setPose("flap");
             setPos(clamp(target, size, open));
             window.setTimeout(() => {
@@ -372,45 +364,6 @@ export default function KiwiPerch() {
               }
               window.setTimeout(() => setPose("idle"), 7000 + Math.random() * 4000);
             }, 700);
-          }
-        }
-        schedule();
-      }, delay);
-    };
-    schedule();
-    return () => { if (timer) window.clearTimeout(timer); };
-  }, [enabled, adultPresent, dragging, flying, size, open]);
-
-  /* ======================== SNACK DROPS FROM A BRANCH =====================
-   * Every 45-90s a snack (fry/berry) falls from a branch; Kiwi notices, hops
-   * over, and "eats" it (eating pose). Pure visual sugar, silent.
-   */
-  useEffect(() => {
-    if (!enabled || adultPresent) return;
-    let timer: number;
-    const schedule = () => {
-      const delay = 45_000 + Math.random() * 45_000;
-      timer = window.setTimeout(() => {
-        if (!dragging && !flying) {
-          const branches = computeBranches();
-          const b = branches[Math.floor(Math.random() * branches.length)];
-          if (b) {
-            const landY = Math.min(window.innerHeight - size - 24, b.y + b.length + 120);
-            const s = makeFallingSnack(b, landY);
-            setSnack(s);
-            // After the snack "lands", Kiwi hops over and eats it.
-            window.setTimeout(() => {
-              setPose("flap");
-              setPos(clamp({ x: s.landX - size / 2, y: s.landY }, size, open));
-              window.setTimeout(() => {
-                setPose("eating");
-                setBubbleText("snack o'clock \u{1F60B}");
-                if (bubbleTimeoutRef.current) window.clearTimeout(bubbleTimeoutRef.current);
-                bubbleTimeoutRef.current = window.setTimeout(() => setBubbleText(null), 2600);
-                setSnack(null);
-                window.setTimeout(() => setPose("idle"), 2600);
-              }, 900);
-            }, 1100);
           }
         }
         schedule();
@@ -604,26 +557,6 @@ export default function KiwiPerch() {
 
         {popBurst > 0 && <PopBurst key={popBurst} size={size} />}
 
-        {/* Falling snack from a branch — drops then disappears when Kiwi eats it. */}
-        {snack && (
-          <span
-            aria-hidden
-            className="fixed pointer-events-none no-print"
-            style={{
-              left: snack.fromX,
-              top: snack.fromY,
-              fontSize: 24,
-              zIndex: 25,
-              animation: "kiwiSnackFall 1.1s cubic-bezier(0.4,0,0.6,1) forwards",
-              // @ts-expect-error CSS custom props
-              "--snack-dx": `${snack.landX - snack.fromX}px`,
-              "--snack-dy": `${snack.landY - snack.fromY}px`,
-            }}
-          >
-            {snack.glyph}
-          </span>
-        )}
-
         {cameo && (
           <div
             aria-hidden
@@ -705,10 +638,6 @@ export default function KiwiPerch() {
         @keyframes kiwiPop {
           0% { transform: translate(0,0) scale(0.6); opacity: 0.9; }
           100% { transform: translate(var(--kx), var(--ky)) scale(1.1); opacity: 0; }
-        }
-        @keyframes kiwiSnackFall {
-          0% { transform: translate(0,0) rotate(0deg); opacity: 1; }
-          100% { transform: translate(var(--snack-dx), var(--snack-dy)) rotate(180deg); opacity: 1; }
         }
         @keyframes kiwiCameo {
           0%   { transform: translate(20px, 10px) scale(0.4); opacity: 0; }

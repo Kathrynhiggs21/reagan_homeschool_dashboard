@@ -12,7 +12,6 @@ import { speakAs, getActiveCompanionId, type CompanionId } from "@/lib/companion
 import { transcriptHasWakeWord, extractQuestionAfterWake } from "@shared/wakeWord";
 import KiwiPerch from "./KiwiPerch";
 import KiwiQuietListener from "./KiwiQuietListener";
-import KiwiBranches from "./KiwiBranches";
 import CompanionBelt from "./CompanionBelt";
 import { resolveKiwiDayCharacter } from "@shared/kiwiCharacter";
 
@@ -324,7 +323,6 @@ export default function KiwiCompanion() {
       {/* The roaming animated bird + the invisible quiet listener now render
           from inside this single companion, so App.tsx has exactly ONE Kiwi
           mount. Both keep all their original behavior. */}
-      {showKiwiPerch && <KiwiBranches />}
       {showKiwiPerch && <KiwiPerch />}
       <KiwiQuietListener />
 

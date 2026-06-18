@@ -1041,3 +1041,10 @@ Katy clarified: worksheets should look like REAL printable worksheets (NewPath /
 - [x] Vacation awareness: auto from school off-days + summer mode via kiwi.today server resolver
 - [x] kiwi.today authoritative resolver wired to perch + Today header + companion panel
 - [x] Vitest for kiwi.today resolver (shape/holiday/determinism/default-date)
+
+## Dashboard refinements (2026-06-17, Katy)
+
+- [x] Remove Kiwi tree-branch / swing / hammock world props (keep Kiwi + costumes + lines)
+- [x] Glassmorphism theme: keep, but remove White Basic from main flow (hide or move behind a side button)
+- [x] Bright & Colorful theme: make it much more colorful / vibrant
+- [x] Fix nightly packet-audit false positive: warm-up / mood-setter blocks (e.g. "Summer charge") should not be flagged as "printed with no work"

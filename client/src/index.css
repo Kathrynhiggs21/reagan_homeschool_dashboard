@@ -1710,10 +1710,12 @@ html[data-rtheme="glass"] [class*="bg-white/"] {
 /* ===================================================================== */
 html[data-rtheme="sunshine"] body {
   background:
-    radial-gradient(circle at 8% 6%, rgba(96,165,250,0.16) 0, transparent 40%),
-    radial-gradient(circle at 92% 8%, rgba(244,114,182,0.16) 0, transparent 42%),
-    radial-gradient(circle at 50% 100%, rgba(52,211,153,0.14) 0, transparent 46%),
-    #f4f6fb;
+    radial-gradient(circle at 6% 4%, rgba(96,165,250,0.55) 0, transparent 40%),
+    radial-gradient(circle at 94% 6%, rgba(244,114,182,0.55) 0, transparent 42%),
+    radial-gradient(circle at 84% 80%, rgba(251,191,36,0.45) 0, transparent 44%),
+    radial-gradient(circle at 12% 92%, rgba(52,211,153,0.50) 0, transparent 46%),
+    linear-gradient(135deg,#eef4ff 0%,#fdeffb 50%,#eafff4 100%);
+  background-attachment: fixed;
   color: #1f2640;
 }
 html[data-rtheme="sunshine"] .chalk-white,
@@ -1723,16 +1725,17 @@ html[data-rtheme="sunshine"] aside .chalk-yellow { color: #d97706 !important; }
 html[data-rtheme="sunshine"] .text-muted-foreground { color: rgba(31,38,64,0.62) !important; }
 html[data-rtheme="sunshine"] h1, html[data-rtheme="sunshine"] h2 { color: #161c30 !important; text-shadow: none !important; }
 
-/* Base card: white with a soft chunky pop-out shadow + rounded corners */
+/* Base card: bright tinted fill with a chunky colorful pop-out shadow.
+   (2026-06-17 v3, Katy: pushed way more colorful — no more plain white.) */
 html[data-rtheme="sunshine"] .chalkboard,
 html[data-rtheme="sunshine"] .cozy-card,
 html[data-rtheme="sunshine"] .classroom-card,
 html[data-rtheme="sunshine"] .card {
-  background: #ffffff !important;
-  border: 0 !important;
+  background: linear-gradient(160deg,#ffffff,#eaf2ff) !important;
+  border: 2px solid rgba(255,255,255,0.85) !important;
   box-shadow:
-    0 10px 24px rgba(31,38,64,0.12),
-    0 2px 6px rgba(31,38,64,0.08) !important;
+    0 12px 26px rgba(99,102,241,0.20),
+    0 2px 6px rgba(31,38,64,0.10) !important;
   color: #1f2640 !important;
   border-radius: 1.5rem !important;
   transition: transform .15s ease, box-shadow .15s ease;
@@ -1748,55 +1751,67 @@ html[data-rtheme="sunshine"] .card:hover {
 /* Rainbow card cycle — saturated candy fills with matching pop-out shadow.
    Applied to the dashboard cozy-card grid so each tile is its own color. */
 html[data-rtheme="sunshine"] .cozy-card:nth-of-type(6n+1) {
-  background: linear-gradient(160deg,#dbeafe,#bfdbfe) !important;
-  box-shadow: 0 12px 26px rgba(37,99,235,0.22) !important;
+  background: linear-gradient(160deg,#93c5fd,#60a5fa) !important;
+  box-shadow: 0 14px 28px rgba(37,99,235,0.38) !important;
+  color: #0b1f4d !important;
 }
 html[data-rtheme="sunshine"] .cozy-card:nth-of-type(6n+2) {
-  background: linear-gradient(160deg,#fce7f3,#fbcfe8) !important;
-  box-shadow: 0 12px 26px rgba(219,39,119,0.20) !important;
+  background: linear-gradient(160deg,#f9a8d4,#f472b6) !important;
+  box-shadow: 0 14px 28px rgba(219,39,119,0.38) !important;
+  color: #4a0b2e !important;
 }
 html[data-rtheme="sunshine"] .cozy-card:nth-of-type(6n+3) {
-  background: linear-gradient(160deg,#dcfce7,#bbf7d0) !important;
-  box-shadow: 0 12px 26px rgba(22,163,74,0.20) !important;
+  background: linear-gradient(160deg,#6ee7b7,#34d399) !important;
+  box-shadow: 0 14px 28px rgba(16,163,127,0.38) !important;
+  color: #053826 !important;
 }
 html[data-rtheme="sunshine"] .cozy-card:nth-of-type(6n+4) {
-  background: linear-gradient(160deg,#fef9c3,#fde68a) !important;
-  box-shadow: 0 12px 26px rgba(202,138,4,0.22) !important;
+  background: linear-gradient(160deg,#fde047,#facc15) !important;
+  box-shadow: 0 14px 28px rgba(202,138,4,0.40) !important;
+  color: #4a3500 !important;
 }
 html[data-rtheme="sunshine"] .cozy-card:nth-of-type(6n+5) {
-  background: linear-gradient(160deg,#ede9fe,#ddd6fe) !important;
-  box-shadow: 0 12px 26px rgba(124,58,237,0.20) !important;
+  background: linear-gradient(160deg,#c4b5fd,#a78bfa) !important;
+  box-shadow: 0 14px 28px rgba(124,58,237,0.38) !important;
+  color: #2a0e57 !important;
 }
 html[data-rtheme="sunshine"] .cozy-card:nth-of-type(6n+6) {
-  background: linear-gradient(160deg,#ffedd5,#fed7aa) !important;
-  box-shadow: 0 12px 26px rgba(234,88,12,0.22) !important;
+  background: linear-gradient(160deg,#fdba74,#fb923c) !important;
+  box-shadow: 0 14px 28px rgba(234,88,12,0.40) !important;
+  color: #4a1d00 !important;
 }
+/* Keep text/icons inside vivid cards legible against the saturated fills. */
+html[data-rtheme="sunshine"] .cozy-card[class*="nth"] .text-muted-foreground,
+html[data-rtheme="sunshine"] .cozy-card .chalk-white { color: inherit !important; }
 html[data-rtheme="sunshine"] aside,
 html[data-rtheme="sunshine"] [aria-label="Sidebar"] {
-  background: #ffffff !important;
-  border-right: 1px solid rgba(31,38,64,0.08) !important;
-  box-shadow: 4px 0 18px rgba(31,38,64,0.06) !important;
-  color: #1f2640 !important;
-}
-html[data-rtheme="sunshine"] aside .chalkboard {
-  background: linear-gradient(160deg,#6366f1,#8b5cf6) !important;
-  border: 0 !important;
+  background: linear-gradient(180deg,#6366f1 0%,#8b5cf6 50%,#ec4899 100%) !important;
+  border-right: 0 !important;
+  box-shadow: 4px 0 22px rgba(99,102,241,0.35) !important;
   color: #ffffff !important;
-  box-shadow: 0 10px 22px rgba(99,102,241,0.30) !important;
+}
+html[data-rtheme="sunshine"] aside .text-muted-foreground,
+html[data-rtheme="sunshine"] aside .text-sidebar-foreground,
+html[data-rtheme="sunshine"] aside nav a { color: rgba(255,255,255,0.92) !important; }
+html[data-rtheme="sunshine"] aside button { color: #ffffff !important; }
+html[data-rtheme="sunshine"] aside .chalkboard {
+  background: rgba(255,255,255,0.16) !important;
+  border: 1px solid rgba(255,255,255,0.30) !important;
+  color: #ffffff !important;
+  box-shadow: 0 10px 22px rgba(0,0,0,0.18) !important;
 }
 html[data-rtheme="sunshine"] aside .chalkboard .chalk-white { color: #ffffff !important; }
-html[data-rtheme="sunshine"] aside nav a:hover { background: rgba(99,102,241,0.12) !important; }
+html[data-rtheme="sunshine"] aside nav a:hover { background: rgba(255,255,255,0.18) !important; }
 html[data-rtheme="sunshine"] aside nav a.bg-sidebar-primary,
 html[data-rtheme="sunshine"] aside nav [class*="bg-sidebar-primary"] {
-  background: linear-gradient(135deg,#6366f1,#8b5cf6) !important;
-  color: #ffffff !important;
+  background: rgba(255,255,255,0.92) !important;
+  color: #5b21b6 !important;
 }
-html[data-rtheme="sunshine"] aside button { color: #1f2640 !important; }
 html[data-rtheme="sunshine"] .schedule-row,
 html[data-rtheme="sunshine"] .schedule-row-v2 {
-  background: #ffffff !important;
-  border: 0 !important;
-  box-shadow: 0 8px 18px rgba(31,38,64,0.10) !important;
+  background: linear-gradient(120deg,#ffffff,#f0f6ff) !important;
+  border: 2px solid rgba(129,140,248,0.35) !important;
+  box-shadow: 0 10px 20px rgba(99,102,241,0.18) !important;
   color: #1f2640 !important;
   border-radius: 1.25rem !important;
 }

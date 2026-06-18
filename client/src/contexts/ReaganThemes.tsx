@@ -30,6 +30,13 @@ export const THEMES: Record<ThemeId, { label: string; emoji: string; description
 // Order shown in the picker.
 export const THEME_ORDER: ThemeId[] = ["chalkboard", "white", "glass", "sunshine", "galaxy"];
 
+// 2026-06-17 (Katy): "White Basic" is moved out of the main picker flow. The
+// primary themes show as pills up front; secondary themes (just White Basic
+// for now) live behind a small "More" side button so the plain white look
+// stays available without cluttering the main row.
+export const THEME_PRIMARY: ThemeId[] = ["chalkboard", "glass", "sunshine", "galaxy"];
+export const THEME_SECONDARY: ThemeId[] = ["white"];
+
 // Migrate legacy theme ids (pre-2026-06-17) to the new catalog so saved prefs
 // don't break. starry/notebook -> galaxy/white-ish closest matches.
 const LEGACY: Record<string, ThemeId> = {

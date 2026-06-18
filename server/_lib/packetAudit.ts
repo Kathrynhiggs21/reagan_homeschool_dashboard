@@ -22,11 +22,19 @@
  */
 
 import type { AgendaPdfBlock } from "./agendaPdf";
+import { isMorningVibeBlock } from "./slayChargeMorningVibe";
 
 /** Block types that are NOT expected to carry worksheet-style content. */
 export const NON_CONTENT_BLOCK_TYPES = new Set<string>([
   "appointment", // lunch / break / movement / doctor / errand
   "adventure", // hands-on movement; carries its own steps via `generated`
+  // The daily "Slay Charge" / Summer charge morning-vibe block is an
+  // intentional 5-minute mood-setter (joke / clip), NOT schoolwork — it
+  // deliberately has no lesson / worksheet / video. Exempt both the current
+  // and legacy block-type ids so the nightly audit never flags it as
+  // "printed with no work". (2026-06-17, Katy: stop the false-positive email.)
+  "morning_vibe",
+  "morning_warmup",
 ]);
 
 export interface AuditBlockInput {
@@ -109,6 +117,9 @@ export function auditPacket(
   for (const b of blocks) {
     const blockType = String(blockTypeBySortOrder.get(b.sortOrder) ?? "").toLowerCase();
     if (NON_CONTENT_BLOCK_TYPES.has(blockType)) continue;
+    // Belt-and-suspenders: also exempt the daily morning-vibe / Slay Charge
+    // mood-setter by title, in case it was ever saved under a different type.
+    if (isMorningVibeBlock({ blockType, title: b.title })) continue;
     contentBlocks++;
     if (!blockHasContent(b)) {
       emptyBlocks.push({

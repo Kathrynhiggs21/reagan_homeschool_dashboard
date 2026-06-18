@@ -149,6 +149,34 @@ describe("v3.31 — auditPacket", () => {
     expect(r.totalBlocks).toBe(2);
   });
 
+  it("exempts the morning-vibe / Slay Charge mood-setter by block type", () => {
+    expect(NON_CONTENT_BLOCK_TYPES.has("morning_vibe")).toBe(true);
+    expect(NON_CONTENT_BLOCK_TYPES.has("morning_warmup")).toBe(true);
+    const blocks = [
+      block({ sortOrder: 1, title: "Slay Charge \u26A1" }),
+      block({ sortOrder: 2, title: "Summer charge \u2600\uFE0F" }),
+    ];
+    const types = new Map<number, string>([
+      [1, "morning_vibe"],
+      [2, "morning_warmup"],
+    ]);
+    const r = auditPacket("2026-06-17", blocks, types);
+    // Both exempt → no content blocks, no false-positive email.
+    expect(r.ok).toBe(true);
+    expect(r.contentBlocks).toBe(0);
+    expect(r.emptyBlocks.length).toBe(0);
+  });
+
+  it("exempts the mood-setter by title even if saved under another type", () => {
+    const blocks = [block({ sortOrder: 1, title: "Slay Charge \u26A1" })];
+    // Deliberately NOT a known non-content type id.
+    const types = new Map<number, string>([[1, "custom"]]);
+    const r = auditPacket("2026-06-17", blocks, types);
+    expect(r.ok).toBe(true);
+    expect(r.contentBlocks).toBe(0);
+    expect(r.emptyBlocks.length).toBe(0);
+  });
+
   it("block type matching is case-insensitive", () => {
     const blocks = [block({ sortOrder: 1, title: "Lunch" })];
     const types = new Map<number, string>([[1, "APPOINTMENT"]]);
