@@ -1217,4 +1217,4 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] Sync map repaired: repointed `drive.folder.adventuresAndEnrichment` + `drive.folder.printablesAndResources` from trashed copies to live folders; cleared 7 stale subfolder-map caches for self-heal
 - [x] drive_push_queue verified healthy: 119 pushed / 250 skipped / 45 pending / 0 failed; agenda PDF artifact routing confirmed to "Daily Operations / Daily Agenda PDFs"
 - [x] Hub-root README.md refreshed with the post-cleanup folder map + cleanup summary
-- [ ] (Left intentionally) 4 empty folders under Archive/_engineering + legacy Classroom — archived scraps, not part of the live tree
+- [x] Reviewed the 4 remaining empty folders (Archive/_engineering Todo scraps + legacy Classroom) — confirmed they are archived scraps outside the live tree; intentionally left in Archive, no action needed
