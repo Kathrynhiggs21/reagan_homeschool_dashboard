@@ -92,3 +92,23 @@ function cleanFragment(s: string): string {
 function escapeRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
+
+/**
+ * Stop phrases that send Kiwi back to passive wake-word waiting while she is
+ * mid-conversation. Reagan can say "bye Kiwi", "stop", "that's all", etc.
+ * Kept generous but specific enough to avoid false positives mid-sentence.
+ */
+export function transcriptHasStopPhrase(transcript: string, companionName: string): boolean {
+  const text = (transcript || "").toLowerCase().trim();
+  if (!text) return false;
+  const name = (companionName || "kiwi").trim().toLowerCase();
+  const namePart = `(?:${escapeRe(name)}|kiwi)`;
+  const patterns: RegExp[] = [
+    new RegExp(`\\b(bye|goodbye|good bye|see ya|see you|night|goodnight|good night)\\b[\\s,.!]*${namePart}?`, "i"),
+    new RegExp(`\\b${namePart}[\\s,.!]*(bye|goodbye|stop|go away|be quiet|quiet|that'?s all|thank you|thanks)\\b`, "i"),
+    /\b(stop talking|be quiet|go to sleep|go away|that'?s all for now|that'?s enough|nevermind|never mind)\b/i,
+    /^(stop|quiet|bye|goodbye|shush)[\s.!,]*$/i,
+  ];
+  return patterns.some((re) => re.test(text));
+}
+

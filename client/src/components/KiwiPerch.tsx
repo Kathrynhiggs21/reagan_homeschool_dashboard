@@ -36,10 +36,26 @@ import { popStickersAt, popStickersFromElement } from "@/lib/stickerBurst";
 
 type Pos = { x: number; y: number };
 
-// Perch is smaller on mobile so it doesn't cover half the screen
+// Perch is smaller on mobile so it doesn't cover half the screen.
+// 2026-06-18 (Katy): make Kiwi noticeably bigger on screen.
 function perchSize(): number {
-  if (typeof window === "undefined") return 80;
-  return window.innerWidth < 640 ? 60 : 80;
+  if (typeof window === "undefined") return 120;
+  return window.innerWidth < 640 ? 96 : 120;
+}
+
+// Routes treated as the "home screen" where Kiwi should start in the
+// lower-right corner regardless of any older saved position.
+function isHomeRoute(): boolean {
+  if (typeof window === "undefined") return false;
+  const p = (window.location.pathname || "/").replace(/\/+$/, "") || "/";
+  return p === "/" || p === "/today" || p === "/home";
+}
+
+// Lower-right anchor for a given size.
+function lowerRight(size: number): Pos {
+  const w = typeof window !== "undefined" ? window.innerWidth : 1024;
+  const h = typeof window !== "undefined" ? window.innerHeight : 768;
+  return { x: Math.max(16, w - size - 20), y: Math.max(16, h - size - 28) };
 }
 
 // Per-route persistence so she doesn't block the same button on every page
@@ -51,6 +67,22 @@ function routeKey(): string {
 const LS_PREFIX = "kiwiPerchPos:";
 
 function loadPos(size: number): Pos {
+  // On the home screen, Kiwi always STARTS in the lower-right corner. Reagan
+  // can still drag her elsewhere afterward (that move is saved), but a fresh
+  // load / first visit places her bottom-right as requested (2026-06-18).
+  if (isHomeRoute()) {
+    try {
+      const seeded = localStorage.getItem(LS_PREFIX + "homeSeeded") === "1";
+      const key = LS_PREFIX + routeKey();
+      const raw = localStorage.getItem(key);
+      if (seeded && raw) {
+        const p = JSON.parse(raw);
+        if (typeof p.x === "number" && typeof p.y === "number") return p;
+      }
+    } catch {}
+    try { localStorage.setItem(LS_PREFIX + "homeSeeded", "1"); } catch {}
+    return lowerRight(size);
+  }
   try {
     const key = LS_PREFIX + routeKey();
     const raw = localStorage.getItem(key) || localStorage.getItem(LS_PREFIX + "_last");
@@ -59,9 +91,7 @@ function loadPos(size: number): Pos {
       if (typeof p.x === "number" && typeof p.y === "number") return p;
     }
   } catch {}
-  const w = typeof window !== "undefined" ? window.innerWidth : 1024;
-  const h = typeof window !== "undefined" ? window.innerHeight : 768;
-  return { x: Math.max(16, w - size - 24), y: Math.max(16, h - size - 120) };
+  return lowerRight(size);
 }
 
 function clamp(p: Pos, size: number, chatOpen?: boolean): Pos {

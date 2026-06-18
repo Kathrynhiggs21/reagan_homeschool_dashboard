@@ -9,7 +9,7 @@ import KiwiSprite from "./KiwiSprite";
 import FlockSprite, { type FlockMember } from "./FlockSprite";
 import { speakLikeBird } from "@/lib/birdVoice";
 import { speakAs, getActiveCompanionId, type CompanionId } from "@/lib/companionVoices";
-import { transcriptHasWakeWord, extractQuestionAfterWake } from "@shared/wakeWord";
+import { transcriptHasWakeWord, extractQuestionAfterWake, transcriptHasStopPhrase } from "@shared/wakeWord";
 import KiwiPerch from "./KiwiPerch";
 import KiwiQuietListener from "./KiwiQuietListener";
 import CompanionBelt from "./CompanionBelt";
@@ -26,7 +26,7 @@ import { resolveKiwiDayCharacter } from "@shared/kiwiCharacter";
  * App.tsx mounts ONLY <KiwiCompanion/> now.
  */
 export default function KiwiCompanion() {
-  const { open, setOpen, enabled, mode, voiceMode, setVoiceMode, adultPresent, companionName, companionAvatar, setCompanionName, showKiwiPerch } = useKiwi();
+  const { open, setOpen, enabled, mode, setMode, voiceMode, setVoiceMode, adultPresent, companionName, companionAvatar, setCompanionName, showKiwiPerch } = useKiwi();
   const [input, setInput] = useState("");
   const [muted, setMuted] = useState(false);
   const [showDressUp, setShowDressUp] = useState(false);
@@ -60,10 +60,31 @@ export default function KiwiCompanion() {
       window.removeEventListener("kiwi:wake-word-changed", onWakeChange as EventListener);
     };
   }, []);
-  function toggleWakeWord() {
+  async function toggleWakeWord() {
     const next = !wakeWordOn;
     setWakeWordOn(next);
     try { window.localStorage?.setItem("kiwiMicConsent", next ? "1" : "0"); } catch { /* ignore */ }
+    if (next) {
+      // Turning the always-listening feature ON: make sure the listening loop
+      // is in a mic-using mode, voice (TTS) is on so Kiwi talks back, and the
+      // browser microphone permission is actually granted. We request the mic
+      // here — on a real user gesture — which is the correct moment to prompt,
+      // and immediately release the stream (SpeechRecognition reacquires it).
+      try { if (mode !== "wake" && mode !== "always") setMode("wake"); } catch { /* ignore */ }
+      try { if (voiceMode !== "voice") setVoiceMode("voice"); } catch { /* ignore */ }
+      setMuted(false);
+      try {
+        const stream = await navigator.mediaDevices?.getUserMedia?.({ audio: true });
+        stream?.getTracks?.().forEach((t) => t.stop());
+      } catch {
+        // Permission denied/blocked — reflect that so we don't claim it's on.
+        setWakeWordOn(false);
+        try { window.localStorage?.setItem("kiwiMicConsent", "0"); } catch { /* ignore */ }
+        try { window.dispatchEvent(new CustomEvent("kiwi:wake-word-changed", { detail: { on: false } })); } catch { /* ignore */ }
+        alert("To let Kiwi listen for her name, allow microphone access for this site in your browser, then turn this on again.");
+        return;
+      }
+    }
     try { window.dispatchEvent(new CustomEvent("kiwi:wake-word-changed", { detail: { on: next } })); } catch { /* ignore */ }
   }
   const messages = trpc.kiwi.history.useQuery({ limit: 20 });
@@ -167,11 +188,24 @@ export default function KiwiCompanion() {
   const sendMsgRef = useRef<any>(null);
   const activeReviewBlockRef = useRef<any>(null);
   const reviewQuizPayloadRef = useRef<string | undefined>(undefined);
+  const companionNameRef = useRef<string>(companionName);
+  // Conversation state: true once the wake word is heard, meaning subsequent
+  // utterances are treated as direct questions (hands-free) WITHOUT needing the
+  // wake word again — until a stop phrase or the silence timeout fires.
+  const conversingRef = useRef<boolean>(false);
+  const silenceTimerRef = useRef<number | null>(null);
+  // "Listening" indicator surfaced to the UI (the green dot on the panel header).
+  const [activelyListening, setActivelyListening] = useState(false);
+  const SILENCE_MS = 15_000; // back to passive wake-word waiting after 15s quiet
   useEffect(() => { sendMsgRef.current = sendMsg.mutate; }, [sendMsg.mutate]);
   useEffect(() => { activeReviewBlockRef.current = activeReviewBlock; }, [activeReviewBlock]);
   useEffect(() => { reviewQuizPayloadRef.current = reviewQuizPayload; }, [reviewQuizPayload]);
+  useEffect(() => { companionNameRef.current = companionName; }, [companionName]);
   useEffect(() => {
-    if (!enabled || mode !== "wake" || adultPresent || open) return;
+    // Listen whenever the feature is on (wake OR always mode) and an adult
+    // isn't present. We no longer bail when `open` is true: once Reagan wakes
+    // Kiwi, the panel opens and we KEEP listening so the chat is hands-free.
+    if (!enabled || (mode !== "wake" && mode !== "always") || adultPresent) return;
     if (typeof window === "undefined") return;
     let consent = false;
     try { consent = window.localStorage?.getItem("kiwiMicConsent") === "1"; } catch { /* no storage */ }
@@ -189,37 +223,79 @@ export default function KiwiCompanion() {
       try { r.start(); } catch { /* already running or recently stopped */ }
     };
 
+    // Return Kiwi to passive wake-word waiting.
+    const endConversation = () => {
+      conversingRef.current = false;
+      if (silenceTimerRef.current) { window.clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null; }
+    };
+    // (Re)arm the silence countdown; when it elapses Kiwi stops responding
+    // freely and waits for the wake word again.
+    const armSilence = () => {
+      if (silenceTimerRef.current) window.clearTimeout(silenceTimerRef.current);
+      silenceTimerRef.current = window.setTimeout(() => {
+        endConversation();
+      }, SILENCE_MS) as unknown as number;
+    };
+
+    // Send an utterance to Kiwi as a real question and keep the conversation
+    // alive (re-arm the silence timer).
+    const ask = (question: string) => {
+      if (!question || question.length < 2) return;
+      setOpen(true);
+      conversingRef.current = true;
+      armSilence();
+      (sendMsgRef.current as any)?.({
+        userMessage: question,
+        adultPresent,
+        currentBlockType: activeReviewBlockRef.current ? "review" : undefined,
+        quizPayload: reviewQuizPayloadRef.current,
+      });
+    };
+
     const buildRecognizer = () => {
       r = new SR();
       r.continuous = true;
       r.interimResults = true;
       r.lang = "en-US";
+      r.onstart = () => { if (!cancelled) setActivelyListening(true); };
       r.onresult = (e: any) => {
         // Only act on FINAL results so we don't fire on every interim word.
         const last = e.results[e.results.length - 1];
         if (!last || last.isFinal === false) return;
         const rawText = (last[0]?.transcript || "").trim();
         if (!rawText) return;
-        if (!transcriptHasWakeWord(rawText, companionName)) return;
-
-        // Debounce: ignore if we just handled an identical/utterance recently.
+        const name = companionNameRef.current;
         const now = Date.now();
+
+        // STOP PHRASE: "bye Kiwi" / "stop" → leave conversation, wait for wake.
+        if (conversingRef.current && transcriptHasStopPhrase(rawText, name)) {
+          endConversation();
+          return;
+        }
+
+        const hasWake = transcriptHasWakeWord(rawText, name);
+
+        // CASE 1 — already conversing: treat the whole utterance as a question,
+        // no wake word needed (hands-free back-and-forth).
+        if (conversingRef.current && !hasWake) {
+          armSilence();
+          ask(extractQuestionAfterWake(rawText, name) || rawText);
+          return;
+        }
+
+        // CASE 2 — passive: only react to the wake word.
+        if (!hasWake) return;
+        // Debounce duplicate wake utterances.
         if (now - lastWakeAtRef.current < 1500) return;
         lastWakeAtRef.current = now;
 
-        // Reagan said the wake word. Open the panel...
+        // Reagan said the wake word. Open the panel + enter conversation mode.
         setOpen(true);
-        // ...and if she included a question after the name, send it straight
-        // to Kiwi so the answer comes back without a second step.
-        const question = extractQuestionAfterWake(rawText, companionName);
+        conversingRef.current = true;
+        armSilence();
+        const question = extractQuestionAfterWake(rawText, name);
         if (question && question.length >= 2) {
-          try { r.stop(); } catch {}
-          (sendMsgRef.current as any)?.({
-            userMessage: question,
-            adultPresent,
-            currentBlockType: activeReviewBlockRef.current ? "review" : undefined,
-            quizPayload: reviewQuizPayloadRef.current,
-          });
+          ask(question);
         }
       };
       r.onerror = (e: any) => {
@@ -239,6 +315,7 @@ export default function KiwiCompanion() {
         }
       };
       r.onend = () => {
+        if (!cancelled) setActivelyListening(false);
         if (cancelled || permanentlyOff) return;
         // Throttle restarts so we don't spin in a tight loop if Chrome keeps
         // ending the session.
@@ -267,9 +344,15 @@ export default function KiwiCompanion() {
 
     return () => {
       cancelled = true;
+      setActivelyListening(false);
+      if (silenceTimerRef.current) { window.clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null; }
+      conversingRef.current = false;
       try { r?.stop(); } catch {}
     };
-  }, [enabled, mode, adultPresent, open, companionName, setOpen]);
+    // Intentionally NOT depending on `open` or `companionName`: tearing the mic
+    // down and rebuilding it on every panel-open or name change would drop the
+    // hands-free conversation. The latest name is read via companionNameRef.
+  }, [enabled, mode, adultPresent, setOpen]);
 
   // Kid-driven "Make a Request" — Reagan picks a kind (assignment, adventure,
   // schedule change, snack, supplies, help) and Kiwi turns the rest of her
@@ -340,7 +423,16 @@ export default function KiwiCompanion() {
               </div>
               <div>
                 <div className="font-display font-semibold text-base leading-tight">{companionName}</div>
-                <div className="text-[10px] text-muted-foreground">{adultPresent ? "Resting — adult is here" : "Here for you 💛"}</div>
+                <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                  {activelyListening && !adultPresent && (
+                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
+                  )}
+                  {adultPresent
+                    ? "Resting — adult is here"
+                    : activelyListening
+                      ? "Listening — say ‘Hey Kiwi’"
+                      : "Here for you 💛"}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-1">
@@ -370,7 +462,7 @@ export default function KiwiCompanion() {
                 variant="ghost"
                 size="icon"
                 onClick={toggleWakeWord}
-                title={wakeWordOn ? "Wake word ON — say ‘Hi Kiwi’ to call me" : "Wake word OFF — tap me to talk"}
+                title={wakeWordOn ? "Always listening ON — say ‘Hey Kiwi’ to talk; ‘bye Kiwi’ to stop" : "Listening OFF — tap to let me hear my name"}
                 className={wakeWordOn ? "text-emerald-500" : "text-muted-foreground"}
               >
                 {wakeWordOn ? <Mic className="w-4 h-4"/> : <MicOff className="w-4 h-4"/>}
