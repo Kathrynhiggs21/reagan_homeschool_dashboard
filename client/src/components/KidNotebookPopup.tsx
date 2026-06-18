@@ -16,7 +16,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import FloatingWindow from "@/components/FloatingWindow";
 import { toast } from "sonner";
 import DrawCanvas, { type DrawCanvasHandle, type PFStroke } from "@/components/DrawCanvas";
 
@@ -153,12 +153,15 @@ export default function KidNotebookPopup({ open, onClose }: { open: boolean; onC
   const paperStyle = PAPER[paper] ?? PAPER.lined;
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) { void doSave(); onClose(); } }}>
-      <DialogContent className="max-w-3xl p-0 overflow-hidden">
-        <DialogHeader className="px-4 pt-4 pb-0">
-          <DialogTitle className="font-display flex items-center gap-2">📝 My Notebook</DialogTitle>
-        </DialogHeader>
-
+    <FloatingWindow
+      open={open}
+      title="My Notebook"
+      emoji="📝"
+      width={720}
+      testId="floating-notebook"
+      onClose={() => { void doSave(); onClose(); }}
+    >
+      <div className="-m-3 overflow-hidden rounded-xl">
         {/* Toolbar */}
         <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-b" style={{ background: "#fdf6e3", color: "#1c1917" }}>
           <div className="flex rounded-md overflow-hidden border border-amber-300">
@@ -212,21 +215,21 @@ export default function KidNotebookPopup({ open, onClose }: { open: boolean; onC
         </div>
 
         {/* Writing area */}
-        <div className="max-h-[60vh] overflow-auto p-4 flex items-start justify-center bg-stone-100">
+        <div className="max-h-[55vh] overflow-auto p-4 flex items-start justify-center bg-stone-100">
           <div className="w-full max-w-2xl rounded-lg shadow-md" style={{ backgroundColor: paperStyle.backgroundColor, backgroundImage: paperStyle.backgroundImage, backgroundSize: paperStyle.backgroundSize }}>
             {mode === "type" ? (
               <textarea ref={textareaRef} value={text} onChange={(e) => { setText(e.target.value); markDirty(); }}
-                className="w-full min-h-[50vh] p-5 text-base leading-8 font-mono resize-none outline-none"
+                className="w-full min-h-[40vh] p-5 text-base leading-8 font-mono resize-none outline-none"
                 style={{ background: "transparent", color: "#1c1917", lineHeight: "32px", caretColor: "#1a56db" }}
                 placeholder="Start writing… type [ ] for a checkbox, or use the buttons above." spellCheck />
             ) : (
-              <div className="w-full min-h-[50vh] relative">
+              <div className="w-full min-h-[40vh] relative">
                 <DrawCanvas ref={drawRef} width={672} height={900} color={penColor} size={penSize} className="w-full" />
               </div>
             )}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </FloatingWindow>
   );
 }

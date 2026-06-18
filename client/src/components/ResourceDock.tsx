@@ -1,23 +1,33 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import FloatingWindow from "@/components/FloatingWindow";
 import KidNotebookPopup from "@/components/KidNotebookPopup";
 
 /**
  * ResourceDock — tiny floating dock (bottom-center) with the quick tools
  * Reagan can pop open while doing a block: Notebook, Timer, Calculator,
- * Word Finder. Everything is a modal/popup so she never leaves the page.
+ * Word Finder.
  *
- * 2026-06-17 (Katy): the Notebook is no longer a sidebar page — it lives
- * here in the dock "extras". Kiwi can also open it by dispatching the
- * `kiwi:open-notebook` window event. The Timer lives ONLY here in the dock
- * (never inline on her pages); time-on-task is still recorded silently for
- * analytics elsewhere regardless of whether she opens this visible timer.
+ * 2026-06-18 (Katy): these tools are now DRAGGABLE FLOATING WINDOWS, not
+ * blocking modals. Each one can be moved around by its title bar, minimized,
+ * and — critically — stays open while Reagan navigates the rest of the site
+ * (the dock owns the open/closed flags, and the dock is mounted globally in
+ * App.tsx outside the route switch). More than one tool can be open at once
+ * (e.g. Calculator + Word at the same time).
+ *
+ * The Notebook lives here in the dock "extras"; Kiwi can also open it by
+ * dispatching the `kiwi:open-notebook` window event. The Timer lives ONLY
+ * here in the dock (never inline on her pages); time-on-task is still recorded
+ * silently for analytics elsewhere regardless of whether she opens this timer.
  */
 
 export default function ResourceDock() {
-  const [tool, setTool] = useState<null | "timer" | "calc" | "dict">(null);
+  // Each tool tracks its own open flag so multiple can float at once and each
+  // stays open across navigation.
+  const [timerOpen, setTimerOpen] = useState(false);
+  const [calcOpen, setCalcOpen] = useState(false);
+  const [dictOpen, setDictOpen] = useState(false);
   const [notebookOpen, setNotebookOpen] = useState(false);
 
   // Let Kiwi (or anything else) open the notebook via a window event.
@@ -34,36 +44,35 @@ export default function ResourceDock() {
         className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 flex flex-row gap-1.5 px-2.5 py-1.5 rounded-2xl bg-background/90 backdrop-blur border-2 border-amber-200/70 shadow-xl no-print"
         style={{ pointerEvents: "auto" }}
       >
-        <DockBtn onClick={() => setNotebookOpen(true)} label="Notebook" emoji="📝" />
-        <DockBtn onClick={() => setTool("timer")} label="Timer" emoji="⏱️" />
-        <DockBtn onClick={() => setTool("calc")} label="Calc" emoji="🧮" />
-        <DockBtn onClick={() => setTool("dict")} label="Word" emoji="📖" />
+        <DockBtn onClick={() => setNotebookOpen(true)} active={notebookOpen} label="Notebook" emoji="📝" />
+        <DockBtn onClick={() => setTimerOpen((v) => !v)} active={timerOpen} label="Timer" emoji="⏱️" />
+        <DockBtn onClick={() => setCalcOpen((v) => !v)} active={calcOpen} label="Calc" emoji="🧮" />
+        <DockBtn onClick={() => setDictOpen((v) => !v)} active={dictOpen} label="Word" emoji="📖" />
       </div>
 
       <KidNotebookPopup open={notebookOpen} onClose={() => setNotebookOpen(false)} />
-      <Dialog open={!!tool} onOpenChange={(o) => !o && setTool(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-display">
-              {tool === "timer" && "Timer ⏱️"}
-              {tool === "calc" && "Calculator 🧮"}
-              {tool === "dict" && "Word Finder 📖"}
-            </DialogTitle>
-          </DialogHeader>
-          {tool === "timer" && <TimerBody />}
-          {tool === "calc" && <CalcBody />}
-          {tool === "dict" && <DictBody />}
-        </DialogContent>
-      </Dialog>
+
+      <FloatingWindow open={timerOpen} title="Timer" emoji="⏱️" width={340} testId="floating-timer" onClose={() => setTimerOpen(false)}>
+        <TimerBody />
+      </FloatingWindow>
+
+      <FloatingWindow open={calcOpen} title="Calculator" emoji="🧮" width={320} testId="floating-calc" onClose={() => setCalcOpen(false)}>
+        <CalcBody />
+      </FloatingWindow>
+
+      <FloatingWindow open={dictOpen} title="Word Finder" emoji="📖" width={380} testId="floating-dict" onClose={() => setDictOpen(false)}>
+        <DictBody />
+      </FloatingWindow>
     </>
   );
 }
 
-function DockBtn({ onClick, label, emoji }: { onClick: () => void; label: string; emoji: string }) {
+function DockBtn({ onClick, label, emoji, active }: { onClick: () => void; label: string; emoji: string; active?: boolean }) {
   return (
     <button
       onClick={onClick}
-      className="flex flex-col items-center justify-center gap-0.5 px-2.5 py-1 rounded-xl bg-background border hover:bg-amber-50 hover:border-amber-300 hover:scale-105 transition select-none"
+      aria-pressed={active}
+      className={`flex flex-col items-center justify-center gap-0.5 px-2.5 py-1 rounded-xl border hover:bg-amber-50 hover:border-amber-300 hover:scale-105 transition select-none ${active ? "bg-amber-100 border-amber-400 dark:bg-amber-900/40" : "bg-background"}`}
       title={label}
       aria-label={label}
     >

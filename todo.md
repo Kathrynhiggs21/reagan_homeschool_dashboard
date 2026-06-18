@@ -1143,3 +1143,12 @@ Katy clarified: worksheets should look like REAL printable worksheets (NewPath /
 - [ ] Validator: plan exists for tomorrow; recipients present; PDF assembles without throw
 - [ ] On unfixable issues -> notifyOwner with a precise summary
 - [ ] Tests for the self-check + auto-fix
+
+## 2026-06-18 — Stabilization sweep (Katy)
+- [x] AM/PM corruption: read-time clamp in blocks.weekRange (kid Today/Week view)
+- [x] AM/PM corruption: read-time clamp in agendaAssembler (email/PDF)
+- [x] AM/PM corruption: generation-time guard in applyBudgetLayout (all paths)
+- [x] Floating dock tools: Notebook/Timer/Calculator/Word as draggable non-blocking windows that stay open while navigating
+- [ ] Google Drive folder sprawl: reduce folder structure + dedupe repetitive sync writes
+- [ ] Nightly self-check/auto-fix job: validate next-day block times, auto-correct via normalizeDayStart, notifyOwner on anything unfixable
+- [ ] Deep functional sweep: agenda/AI editors, settings, adult mode, themes (visual verify dark: variants)
