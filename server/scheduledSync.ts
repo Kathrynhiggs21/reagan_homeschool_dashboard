@@ -1150,14 +1150,19 @@ export function registerScheduledSync(app: Express) {
           });
           // Auto-mirror this worksheet to Drive (Worksheets / Daily Packets)
           try {
-            const ym = forDate.slice(0, 7);
+            // Flattened 2026-06-18: no {YYYY-MM} subfolder. Prefix the
+            // worksheet filename with the date so names stay unique and
+            // naturally sorted in the flat Worksheets folder.
+            const wsName = a.filename.startsWith(forDate)
+              ? a.filename
+              : `${forDate} - ${a.filename}`;
             await (db as any).enqueueDrivePush?.({
               fileKey: wsStorageKey,
               fileUrl: wsSigned ?? wsStorageUrl,
-              fileName: a.filename,
+              fileName: wsName,
               mimeType: "application/pdf",
               targetFolder: "worksheets" as any,
-              targetSubpath: ym,
+              targetSubpath: "",
             } as any);
           } catch { /* drive mirror is fire-and-forget */ }
         }
@@ -1169,14 +1174,14 @@ export function registerScheduledSync(app: Express) {
 
       // Auto-mirror the agenda PDF itself.
       try {
-        const ym = forDate.slice(0, 7);
+        // Flattened 2026-06-18: dated filename, no {YYYY-MM} subfolder.
         await (db as any).enqueueDrivePush?.({
           fileKey: key,
           fileUrl: absolutePdfUrl ?? url,
           fileName: `${forDate} - ${payload.studentName} - Agenda.pdf`,
           mimeType: "application/pdf",
           targetFolder: "agenda_pdf" as any,
-          targetSubpath: ym,
+          targetSubpath: "",
         } as any);
       } catch { /* fire-and-forget */ }
 

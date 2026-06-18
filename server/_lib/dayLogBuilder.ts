@@ -107,9 +107,12 @@ export function dayLogFileName(dateISO: string): string {
   return `${dateISO} - Day Log.md`;
 }
 
-export function dayLogSubpath(dateISO: string): string {
-  // YYYY-MM month folder under "Day Logs"
-  return dateISO.slice(0, 7);
+export function dayLogSubpath(_dateISO: string): string {
+  // Flattened 2026-06-18: day-log filenames already start with the full
+  // ISO date ("2026-06-18 - Day Log.md"), so the old {YYYY-MM} subfolder
+  // only added folder sprawl. Files now land directly in "Day Logs",
+  // naturally sorted by their dated filename.
+  return "";
 }
 
 function formatTime(startsAt: string | null): string {

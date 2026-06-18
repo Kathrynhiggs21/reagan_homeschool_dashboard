@@ -3908,7 +3908,6 @@ export const appRouter = router({
         void (async () => {
           try {
             const today = new Date().toISOString().slice(0, 10);
-            const ym = today.slice(0, 7);
             const safeTitle = (input.title ?? `Block ${input.blockId}`)
               .replace(/[^A-Za-z0-9]+/g, "_")
               .slice(0, 60);
@@ -3918,7 +3917,8 @@ export const appRouter = router({
               fileName: `${today} - ${safeTitle} - submission_${submissionId}`,
               mimeType: null,
               targetFolder: "finished_work" as any,
-              targetSubpath: ym,
+              // Flattened 2026-06-18: dated filename, no {YYYY-MM} subfolder.
+              targetSubpath: "",
             } as any);
           } catch { /* best-effort */ }
         })();
@@ -3993,7 +3993,6 @@ export const appRouter = router({
         void (async () => {
           try {
             const today = new Date().toISOString().slice(0, 10);
-            const ym = today.slice(0, 7);
             const safeTitle = input.title.replace(/[^A-Za-z0-9]+/g, "_").slice(0, 60);
             await (db as any).enqueueDrivePush?.({
               fileKey,
@@ -4001,7 +4000,8 @@ export const appRouter = router({
               fileName: `${today} - EXTRA - ${safeTitle} - submission_${submissionId}`,
               mimeType: null,
               targetFolder: "finished_work" as any,
-              targetSubpath: ym,
+              // Flattened 2026-06-18: dated filename, no {YYYY-MM} subfolder.
+              targetSubpath: "",
             } as any);
           } catch { /* best-effort */ }
         })();
@@ -9998,7 +9998,6 @@ ${readinessLegendHtml()}
           try {
             const text = (patch.textContent ?? "").trim();
             if (!text) return;
-            const ym = dateStr.slice(0, 7);
             const md = `# Reagan's Notebook — ${dateStr} (page ${pageIndex + 1})\n\n${text}\n`;
             const buf = Buffer.from(md, "utf8");
             const { storagePut } = await import("./storage");
@@ -10010,7 +10009,8 @@ ${readinessLegendHtml()}
               fileName: `${dateStr} - Notebook p${pageIndex + 1}`,
               mimeType: "text/markdown",
               targetFolder: "journal" as any,
-              targetSubpath: ym,
+              // Flattened 2026-06-18: dated filename, no {YYYY-MM} subfolder.
+              targetSubpath: "",
             } as any);
           } catch { /* best-effort */ }
         })();

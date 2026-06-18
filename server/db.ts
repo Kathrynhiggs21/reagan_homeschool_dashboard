@@ -7982,12 +7982,12 @@ export async function queueOffPlanTopicForDriveSync(
     topicId = Number(result?.[0]?.insertId ?? result?.insertId ?? 0);
   }
   // Enqueue Drive push targeting topics_covered routable target.
-  const ym = dateISO.slice(0, 7); // YYYY-MM
+  // Flattened 2026-06-18: dated filename, no {YYYY-MM} subfolder.
   const safeName = topic.replace(/[^A-Za-z0-9]+/g, "_").slice(0, 80);
   const fileName = `${dateISO} - ${subjectSlug} - ${safeName}.md`;
   await db.insert(drivePushQueue).values({
     targetFolder: "topics_covered" as any,
-    targetSubpath: ym,
+    targetSubpath: "",
     fileName,
     mimeType: "text/markdown",
     contentText: contentMarkdown,

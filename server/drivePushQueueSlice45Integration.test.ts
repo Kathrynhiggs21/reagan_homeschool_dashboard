@@ -53,7 +53,8 @@ describe("Slice 4.5 — drivePushQueue real-DB integration", () => {
 
     expect(rows.length).toBe(1);
     expect(rows[0].targetFolder).toBe("topics_covered");
-    expect(rows[0].targetSubpath).toBe("2031-04");
+    // Flattened 2026-06-18: dated filename, no {YYYY-MM} subfolder.
+    expect(rows[0].targetSubpath).toBe("");
     expect(rows[0].mimeType).toBe("text/markdown");
     expect(rows[0].contentText).toBe(md);
     expect(rows[0].status).toBe("pending");

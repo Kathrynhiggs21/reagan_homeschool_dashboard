@@ -1159,3 +1159,11 @@ Katy clarified: worksheets should look like REAL printable worksheets (NewPath /
 - [x] Upload as webdev asset and set learnerProfile.photoUrl
 - [x] Default KiwiContext photoUrl to the avatar so the circle is never empty
 - [x] Verified photo renders in sidebar + morning-header circles
+
+## 2026-06-18 — Drive folder sprawl reduction
+- [x] Flatten {YYYY-MM} month subfolders for day_log, recap_reply, topics_covered, agenda_pdf
+- [x] Flatten finished_work (x2) and journal (notebook) enqueues in routers.ts
+- [x] Flatten worksheets enqueue (date-prefix filename for uniqueness) + agenda_pdf in scheduledSync.ts
+- [x] dayLogSubpath() returns "" so day logs land directly in Day Logs
+- [x] Update tests pinning old month-bucket subpath (driveSyncPaths, dayLogBuilderIntegration, dailyRecapReplyIntegration, drivePushQueueSlice45Integration)
+- [x] Add driveFlatteningContract.test.ts to lock the flat behavior

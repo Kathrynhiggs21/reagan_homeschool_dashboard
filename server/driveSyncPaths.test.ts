@@ -62,20 +62,21 @@ describe("Push 92 — driveSyncPaths", () => {
     expect(agendaPdfFile("2026-05-13")).toBe("2026-05-13 - Agenda.pdf");
   });
 
-  it("describeOffPlanSync packs targetFolder + subpath + filename + mime", () => {
+  it("describeOffPlanSync packs targetFolder + flat subpath + filename + mime", () => {
+    // Flattened 2026-06-18: no {YYYY-MM} subfolder; dated filename only.
     const d = describeOffPlanSync("2026-05-13", "ela", "Vocabulary");
     expect(d).toEqual({
       targetFolder: "topics_covered",
-      targetSubpath: "2026-05",
+      targetSubpath: "",
       fileName: "2026-05-13 - ela - Vocabulary.md",
       mimeType: "text/markdown",
     });
   });
 
-  it("describeDayLogSync uses day_log + .md mime", () => {
+  it("describeDayLogSync uses day_log + .md mime, flat subpath", () => {
     const d = describeDayLogSync("2026-05-13");
     expect(d.targetFolder).toBe("day_log");
-    expect(d.targetSubpath).toBe("2026-05");
+    expect(d.targetSubpath).toBe("");
     expect(d.mimeType).toBe("text/markdown");
   });
 

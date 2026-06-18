@@ -12,7 +12,7 @@ describe("Push 162 — wire buildDailyMomBriefing into nightly-agenda-email", ()
   it("calls buildDailyMomBriefing inside the nightly-agenda-email handler", () => {
     const idx = SRC.indexOf("/api/scheduled/nightly-agenda-email");
     expect(idx).toBeGreaterThan(-1);
-    const handlerSlice = SRC.slice(idx, idx + 16000);
+    const handlerSlice = SRC.slice(idx, idx + 20000);
     expect(handlerSlice).toMatch(/buildDailyMomBriefing\s*\(\s*\{[\s\S]*schoolDayISO\s*:\s*forDate/);
     expect(handlerSlice).toMatch(/kidName\s*:\s*payload\.studentName/);
     expect(handlerSlice).toMatch(/worksheetsAttached\s*:\s*perBlockAttachments\.length/);
@@ -20,7 +20,7 @@ describe("Push 162 — wire buildDailyMomBriefing into nightly-agenda-email", ()
 
   it("emits momBriefing on the response with exactly the published shape", () => {
     const idx = SRC.indexOf("/api/scheduled/nightly-agenda-email");
-    const handlerSlice = SRC.slice(idx, idx + 16000);
+    const handlerSlice = SRC.slice(idx, idx + 20000);
     expect(handlerSlice).toMatch(/momBriefing\s*:\s*momBriefing\s*\?/);
     expect(handlerSlice).toMatch(/schoolDayISO\s*:\s*momBriefing\.schoolDayISO/);
     expect(handlerSlice).toMatch(/markdownBody\s*:\s*momBriefing\.markdownBody/);

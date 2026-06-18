@@ -176,7 +176,8 @@ describe("/api/scheduled/daily-recap-reply integration", () => {
           row.fileName.includes("life-skills"),
       );
       expect(ourPush).toBeTruthy();
-      expect(ourPush.targetSubpath).toBe(FUTURE_DATE.slice(0, 7));
+      // Flattened 2026-06-18: dated filename, no {YYYY-MM} subfolder.
+      expect(ourPush.targetSubpath).toBe("");
       expect(ourPush.mimeType).toBe("text/markdown");
       expect(ourPush.contentText).toContain("Baking cookies as fractions");
       expect(ourPush.contentText).toContain(FUTURE_DATE);

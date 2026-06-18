@@ -102,8 +102,12 @@ export function describeOffPlanSync(
   topic: string,
 ): DriveSyncDescriptor {
   return {
+    // Flattened 2026-06-18: files are named with the full ISO date, so the
+    // old {YYYY-MM} subfolder only added folder sprawl Mom/Grandma had to
+    // click through. Files now land directly in the canonical folder,
+    // sorted naturally by their dated filename.
     targetFolder: "topics_covered",
-    targetSubpath: monthBucket(dateISO),
+    targetSubpath: "",
     fileName: offPlanTopicFile(dateISO, subjectSlug, topic),
     mimeType: "text/markdown",
   };
@@ -111,8 +115,9 @@ export function describeOffPlanSync(
 
 export function describeDayLogSync(dateISO: string): DriveSyncDescriptor {
   return {
+    // Flattened 2026-06-18: dated filename, no {YYYY-MM} subfolder.
     targetFolder: "day_log",
-    targetSubpath: monthBucket(dateISO),
+    targetSubpath: "",
     fileName: dayLogFile(dateISO),
     mimeType: "text/markdown",
   };
@@ -123,8 +128,9 @@ export function describeRecapReplySync(
   sender: string,
 ): DriveSyncDescriptor {
   return {
+    // Flattened 2026-06-18: dated filename, no {YYYY-MM} subfolder.
     targetFolder: "recap_reply",
-    targetSubpath: monthBucket(dateISO),
+    targetSubpath: "",
     fileName: recapReplyFile(dateISO, sender),
     mimeType: "text/markdown",
   };
@@ -132,8 +138,9 @@ export function describeRecapReplySync(
 
 export function describeAgendaPdfSync(dateISO: string): DriveSyncDescriptor {
   return {
+    // Flattened 2026-06-18: dated filename, no {YYYY-MM} subfolder.
     targetFolder: "agenda_pdf",
-    targetSubpath: monthBucket(dateISO),
+    targetSubpath: "",
     fileName: agendaPdfFile(dateISO),
     mimeType: "application/pdf",
   };

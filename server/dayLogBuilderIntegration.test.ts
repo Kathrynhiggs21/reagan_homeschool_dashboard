@@ -39,9 +39,10 @@ describe("Slice 4.5 — dayLogBuilder real-DB integration", () => {
     // Clean residue from prior runs.
     await db.delete(actualAgendaEntries).where(eq(actualAgendaEntries.dateISO, TEST_DATE));
     await db.delete(topicsCoveredOffPlan).where(eq(topicsCoveredOffPlan.dateISO, TEST_DATE));
+    // Flattened 2026-06-18: rows are keyed by dated fileName, not a month subpath.
     await db
       .delete(drivePushQueue)
-      .where(eq(drivePushQueue.targetSubpath as any, "2031-05" as any));
+      .where(eq(drivePushQueue.fileName as any, dayLogFileName(TEST_DATE) as any));
   });
 
   afterAll(async () => {
@@ -50,12 +51,13 @@ describe("Slice 4.5 — dayLogBuilder real-DB integration", () => {
     await db.delete(topicsCoveredOffPlan).where(eq(topicsCoveredOffPlan.dateISO, TEST_DATE));
     await db
       .delete(drivePushQueue)
-      .where(eq(drivePushQueue.targetSubpath as any, "2031-05" as any));
+      .where(eq(drivePushQueue.fileName as any, dayLogFileName(TEST_DATE) as any));
   });
 
   it("dayLogFileName + dayLogSubpath produce canonical path parts", () => {
     expect(dayLogFileName(TEST_DATE)).toBe(`${TEST_DATE} - Day Log.md`);
-    expect(dayLogSubpath(TEST_DATE)).toBe("2031-05");
+    // Flattened 2026-06-18: day logs land directly in the Day Logs folder.
+    expect(dayLogSubpath(TEST_DATE)).toBe("");
   });
 
   it("loadDayLogPayload reflects DB state (plan + actual + off-plan)", async () => {
