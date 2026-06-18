@@ -119,14 +119,18 @@ describe("nightlyAgenda.sendNow — fresh-content-per-run (v3.24)", () => {
     );
   });
 
-  it("status is computed AFTER both notify and email, never speculatively", () => {
+  it("status is computed AFTER the email send, never speculatively", () => {
+    // 2026-06-18 — the notifyOwner "school plan" summary push was removed so
+    // adults get ONLY the printables-PDF email. The remaining ordering
+    // contract: build email -> sendEmail -> mark status.
     const body = getSendNowBody();
-    const notifyAt = body.indexOf("notified = await notifyOwner");
     const emailAt = body.indexOf("emailResult = await sendEmail");
     const markAt = body.indexOf("markNightlyAgendaEmailStatus");
-    expect(notifyAt).toBeGreaterThan(0);
-    expect(emailAt).toBeGreaterThan(notifyAt);
+    expect(emailAt).toBeGreaterThan(0);
     expect(markAt).toBeGreaterThan(emailAt);
+    // The summary notifyOwner push must be gone (notified hard-set to false).
+    expect(body).not.toContain("notified = await notifyOwner");
+    expect(body).toContain("const notified = false;");
   });
 });
 

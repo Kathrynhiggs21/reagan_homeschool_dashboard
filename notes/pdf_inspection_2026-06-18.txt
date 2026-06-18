@@ -1,0 +1,11 @@
+Source: /home/ubuntu/out/agenda_618.pdf viewed on 2026-06-18.
+
+Key findings:
+1. Cover page timing is correct: 1:30 PM to 4:15 PM.
+2. Packet includes 7 detail pages / worksheets and totals 11 pages.
+3. The schedule summary section still dumps the full long description for "Intro: Why Water Rolls Off a Duck (watch first)" on page 1, including raw URLs and lesson-body text.
+4. This confirms the web card clamp fix is separate from the PDF packet; the PDF builder/assembler still needs a summary-description clamp for long lesson-body blocks.
+5. Duck block pages are present in the packet, and worksheets appear embedded after the summary pages.
+6. Next action: inspect agenda PDF builder / assembler code and add truncation for summary descriptions while preserving full worksheet pages.
+
+Evidence pages observed: pages 1-5 of agenda_618.pdf.

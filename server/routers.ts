@@ -5361,7 +5361,7 @@ export const appRouter = router({
         // surfacing as an XML "AccessDenied" page in the inbox. The PDF is
         // attached to the email itself, so the link was redundant anyway.
         // The dashboard always has a fresh signed URL via /manus-storage/.
-        const { readinessLegendText, readinessLegendHtml } = await import(
+        const { readinessLegendText } = await import(
           "./_lib/agendaLinkReadiness"
         );
         const linkLine =
@@ -5407,30 +5407,25 @@ export const appRouter = router({
           masterySection +
           linkLine;
 
-        let notified = false;
-        try {
-          notified = await notifyOwner({ title, content });
-        } catch (e) {
-          notified = false;
-        }
+        // 2026-06-18 — Per Katy: the ONLY daily email should be the finished
+        // printables PDF (sent via sendEmail below). The notifyOwner summary
+        // push (block list + Mastery Snapshot + links explainer) is suppressed
+        // so adults no longer receive the duplicate "school plan" summary email.
+        // `title`/`content` are still computed above for the audit row + tests.
+        void content;
+        const notified = false;
 
         // Also send via Gmail MCP (triggers confirmation card in Manus UI)
         let emailSent = false;
         try {
           // Build HTML body
-          const blockListHtml = payload.blocks.map((b: any) => {
-            const head = `<b>${b.sortOrder}. ${b.startTime ?? "flex"} &middot; ${b.durationMin} min</b>` +
-              (b.subjectName ? ` <span style="color:#888;">[${b.subjectName}]</span>` : "") +
-              (b.curriculumTopicCode ? ` <span style="color:#888;">topic ${b.curriculumTopicCode}</span>` : "");
-            const desc = b.description ? `<div style="color:#444;font-size:13px;margin:2px 0 0 14px;">${b.description}</div>` : "";
-            return `<div style="padding:8px 0;border-bottom:1px solid #eee;">${head}<div style="margin:2px 0 0 14px;">${b.title}</div>${desc}</div>`;
-          }).join("");
+          // 2026-06-18 — Slimmed body: the PDF *is* the deliverable. No block
+          // dump, no Mastery Snapshot, no links explainer in the email body —
+          // just a short note pointing at the attached printables.
           const html = `<!doctype html><html><body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:#222;max-width:680px;margin:0 auto;padding:20px;">
-<div style="text-align:center;margin-bottom:8px;"><div style="font-size:22px;font-weight:800;color:#1f3a2e;">${payload.studentName}'s School Plan</div><div style="color:#666;font-size:14px;">${payload.dayLabel}</div></div>
-<div style="margin:20px 0;padding:14px 16px;border-left:4px solid #1f3a2e;background:#fafafa;border-radius:8px;">${blockListHtml || '<div style="color:#888;">No blocks scheduled.</div>'}</div>
-<p style="text-align:center;margin:24px 0;color:#1f3a2e;font-weight:600;">→ PDF agenda attached to this email.</p>
-<p style="font-size:12px;color:#888;text-align:center;margin-top:8px;">Per-block worksheets are also attached as separate PDFs.</p>
-${readinessLegendHtml()}
+<div style="text-align:center;margin-bottom:8px;"><div style="font-size:22px;font-weight:800;color:#1f3a2e;">${payload.studentName}'s Printables</div><div style="color:#666;font-size:14px;">${payload.dayLabel}</div></div>
+<p style="text-align:center;margin:24px 0;color:#1f3a2e;font-weight:600;">Today's printables are attached as a PDF.</p>
+<p style="font-size:13px;color:#555;text-align:center;margin-top:8px;">The packet has the full schedule plus each block's worksheet — print it and Reagan can work on paper.</p>
 </body></html>`;
           // Build worksheet attachments
           const emailAtts: Array<{ filename: string; content: Buffer; contentType: string }> = [

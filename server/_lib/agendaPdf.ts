@@ -242,6 +242,34 @@ export function cleanForPdf(s: string | null | undefined): string {
   return out;
 }
 
+/**
+ * 2026-06-18 — Short, clean one-liner for the COVER schedule cards. Some
+ * blocks stuff the entire lesson (watch links, read-together, try-it, raw
+ * URLs) into `description`; on the cover we only want a tidy preview, while
+ * the per-block detail page keeps the full text. Strategy: drop URLs and the
+ * "=== SECTION ===" scaffolding, take the first sentence, hard-cap length.
+ */
+export function summarizeForPdf(s: string | null | undefined, maxLen = 160): string {
+  const cleaned = cleanForPdf(s);
+  if (!cleaned) return "";
+  let out = cleaned
+    // drop bare URLs
+    .replace(/https?:\/\/\S+/gi, "")
+    // drop "=== ... ===" scaffolding markers
+    .replace(/={2,}[^=]*={2,}/g, " ")
+    .replace(/ {2,}/g, " ")
+    .trim();
+  // First sentence (up to . ! ?), if it's reasonably sized
+  const sentenceMatch = out.match(/^.*?[.!?](\s|$)/);
+  if (sentenceMatch && sentenceMatch[0].trim().length >= 24) {
+    out = sentenceMatch[0].trim();
+  }
+  if (out.length > maxLen) {
+    out = out.slice(0, maxLen - 1).replace(/\s+\S*$/, "").trim() + "\u2026";
+  }
+  return out;
+}
+
 function rule(doc: PDFKit.PDFDocument) {
   doc.strokeColor(RULE_COLOR).moveTo(MARGIN, doc.y).lineTo(PAGE_W + MARGIN, doc.y).stroke();
   doc.moveDown(0.4);
@@ -497,7 +525,8 @@ function renderCoverPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, agendaH
       : "";
 
     // measure dynamic height
-    const descLines = b.description ? Math.min(3, Math.ceil(cleanForPdf(b.description).length / 88)) : 0;
+    const descSummary = b.description ? summarizeForPdf(b.description) : "";
+    const descLines = descSummary ? Math.min(2, Math.ceil(descSummary.length / 88)) : 0;
     const refLines = b.bookPageRefs?.length ?? 0;
     const cardH = 34 + (descLines * 12) + (refLines * 11) + (topicStr ? 11 : 0) + 12;
 
@@ -530,8 +559,8 @@ function renderCoverPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, agendaH
       doc.fillColor(INK_SOFT).font(BF.body).fontSize(8.5).text(cleanForPdf(topicStr), ix + 24, ly, { width: PAGE_W - 60, lineBreak: false, ellipsis: true });
       ly += 11;
     }
-    if (b.description) {
-      doc.fillColor(INK).font(BF.body).fontSize(9).text(cleanForPdf(b.description.trim()), ix + 24, ly, { width: PAGE_W - 60, height: descLines * 12, ellipsis: true });
+    if (descSummary) {
+      doc.fillColor(INK).font(BF.body).fontSize(9).text(descSummary, ix + 24, ly, { width: PAGE_W - 60, height: descLines * 12, ellipsis: true });
       ly += descLines * 12;
     }
     if (b.bookPageRefs?.length) {

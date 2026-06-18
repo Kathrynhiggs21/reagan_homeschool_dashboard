@@ -1288,3 +1288,10 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] Full vitest suite green (4949 passed)
 - [ ] Save checkpoint + user publishes
 - [ ] After publish: send branded agenda PDF + duck worksheets to spear.cpt@gmail.com
+
+## 2026-06-18 — Daily email = ONLY the printables PDF
+- [x] Remove notifyOwner "school plan summary" notification from nightlyAgenda.sendNow (no summary/mastery email)
+- [x] Suppress packet-audit notifyOwner ("N blocks printed with no work") email in agendaAssembler
+- [x] Slim the PDF email HTML body to a short note (printables attached), no block dump / mastery snapshot
+- [x] Clamp long lesson-body description on the PDF cover summary cards
+- [x] Update/extend vitest to assert single-email behavior + audit-not-emailed

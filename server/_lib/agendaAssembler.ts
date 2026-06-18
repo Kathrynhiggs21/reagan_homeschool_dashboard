@@ -425,39 +425,18 @@ export async function assembleAgendaForDate(dateStr: string): Promise<AgendaPdfI
     | import("./packetAudit").PacketAuditResult
     | null = null;
   try {
-    const { auditPacket, formatAuditNotification } = await import("./packetAudit");
+    const { auditPacket } = await import("./packetAudit");
     const blockTypeBySortOrder = new Map<number, string>();
     blocksRaw.forEach((b: any, i: number) => {
       blockTypeBySortOrder.set((b.sortOrder ?? i) + 1, String(b.blockType ?? ""));
     });
     const audit = auditPacket(dateStr, blocks, blockTypeBySortOrder);
     packetAuditResult = audit;
-    if (!audit.ok) {
-      // De-dupe per date so re-assembling the same day doesn't re-notify.
-      const marker = `packet.audit.notified.${dateStr}`;
-      let already = false;
-      try {
-        already = (await db.getAppSetting(marker)) === "1";
-      } catch {
-        already = false;
-      }
-      if (!already) {
-        try {
-          const { notifyOwner } = await import("../_core/notification");
-          const msg = formatAuditNotification(audit);
-          const sent = await notifyOwner(msg);
-          if (sent) {
-            try {
-              await db.setAppSetting(marker, "1");
-            } catch {
-              /* marker write failure is non-fatal */
-            }
-          }
-        } catch {
-          /* notification failure must not block the packet */
-        }
-      }
-    }
+    // 2026-06-18 — Per Katy: the packet audit is now a SILENT internal flag
+    // only. We still compute `packetAuditResult` (surfaced to the dashboard
+    // "today's packet" status chip), but we no longer fire the
+    // notifyOwner("N blocks printed with no work") email — adults should only
+    // ever receive the single daily printables-PDF email.
   } catch {
     /* audit failure must not block the packet */
   }

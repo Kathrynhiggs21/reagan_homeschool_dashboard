@@ -90,9 +90,9 @@ describe("nightlyAgenda.sendNow — manual send contract (v2.89)", () => {
       "storagePut",
       "storageGetSignedUrl",
       "insertNightlyAgendaEmail",
-      "notifyOwner",
-      // v3.24 (2026-05-31): Resend send happens BEFORE the status mark
-      // and is the load-bearing channel; pin its position.
+      // 2026-06-18: the notifyOwner "school plan" summary push was removed so
+      // adults receive ONLY the printables-PDF email. The PDF email
+      // (sendEmail) is now the single load-bearing channel; pin its position.
       "sendEmail",
       "markNightlyAgendaEmailStatus",
     ];
@@ -106,15 +106,18 @@ describe("nightlyAgenda.sendNow — manual send contract (v2.89)", () => {
     }
   });
 
-  it("sendNow marks the row 'sent' on success and 'failed' on notify+email failure", () => {
-    // v3.24 (2026-05-31): the row now succeeds if EITHER `notifyOwner` OR
-    // the Resend send (`sendEmail`) returns truthy. So a single failure of
-    // either channel no longer fails the run. Pin the new compound logic.
+  it("sendNow marks the row 'sent' on email success", () => {
+    // 2026-06-18: the notifyOwner summary push was removed, so `notified` is
+    // now hard-set to false and success depends on the printables-PDF email
+    // (`emailSent`). The compound `(notified || emailSent)` expression is
+    // preserved (it simply reduces to `emailSent`), so the audit row still
+    // flips to 'sent' when the PDF email goes out.
     const idx = src.indexOf("sendNow:");
     const slice = src.slice(idx, idx + 12000);
     expect(slice).toContain(
       "status: (notified || emailSent) ? \"sent\" : \"failed\"",
     );
+    expect(slice).toContain("const notified = false;");
   });
 
   it("sendNow notifyOwner audit recipient is spear.cpt@gmail.com (notification ping only)", () => {
