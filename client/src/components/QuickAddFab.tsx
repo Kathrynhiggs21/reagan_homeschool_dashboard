@@ -50,8 +50,11 @@ export default function QuickAddFab() {
 
   return (
     <>
+      {/* Bottom-right so it never overlaps the centered kid ResourceDock
+          (which is fixed bottom-4 left-1/2). QuickAddFab is adult-only and the
+          right-side MakeRequestPill is locked-only, so they never coexist. */}
       <Button
-        className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 shadow-lg"
+        className="fixed bottom-20 right-4 z-40 shadow-lg no-print"
         onClick={() => setOpen(true)}
         aria-label="Quick Add"
       >

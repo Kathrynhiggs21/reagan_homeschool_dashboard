@@ -80,8 +80,26 @@ export function KiwiProvider({ children }: { children: ReactNode }) {
   // profile fetch resolves or on a fresh device. The profile fetch below
   // can still override this if Mom uploads a different photo in Settings.
   const DEFAULT_REAGAN_PHOTO = "/manus-storage/reagan_avatar_d8d25131.png";
+  // Guard against stale/placeholder photo values (e.g. the old
+  // "https://example.com/reagan.jpg" seed) that would otherwise win over the
+  // real bundled avatar. Any non-http(s)/-storage value, or a known
+  // placeholder host, is treated as missing so the circle always shows Reagan.
+  const sanitizePhoto = (v: string | null | undefined): string => {
+    if (!v) return DEFAULT_REAGAN_PHOTO;
+    const s = v.trim();
+    if (!s) return DEFAULT_REAGAN_PHOTO;
+    if (s.includes("example.com")) return DEFAULT_REAGAN_PHOTO;
+    if (s.startsWith("/manus-storage/") || s.startsWith("http://") || s.startsWith("https://")) return s;
+    return DEFAULT_REAGAN_PHOTO;
+  };
+  // Heal any stale localStorage value on load so it can't keep shadowing the
+  // real photo across reloads.
+  try {
+    const cached = localStorage.getItem("reaganPhotoUrl");
+    if (cached && sanitizePhoto(cached) !== cached) localStorage.setItem("reaganPhotoUrl", sanitizePhoto(cached));
+  } catch { /* ignore */ }
   const [photoUrl, setPhotoUrlState] = useState<string | null>(
-    localStorage.getItem("reaganPhotoUrl") || DEFAULT_REAGAN_PHOTO
+    sanitizePhoto(localStorage.getItem("reaganPhotoUrl"))
   );
 
   // Behavior sliders — clamp to 0..4. Defaults: animation lively, talk
@@ -174,7 +192,8 @@ export function KiwiProvider({ children }: { children: ReactNode }) {
         if (trpcUtils?.profile?.get?.fetch) {
           const prof: any = await trpcUtils.profile.get.fetch().catch(() => null);
           if (!cancelled && prof) {
-            if (prof.photoUrl) { setPhotoUrlState(prof.photoUrl); try { localStorage.setItem("reaganPhotoUrl", prof.photoUrl); } catch {} }
+            // Only accept a real (non-placeholder) server photo; otherwise keep the bundled avatar.
+            if (prof.photoUrl && sanitizePhoto(prof.photoUrl) === prof.photoUrl) { setPhotoUrlState(prof.photoUrl); try { localStorage.setItem("reaganPhotoUrl", prof.photoUrl); } catch {} }
             if (prof.companionName) { setCompanionNameState(prof.companionName); try { localStorage.setItem("companionName", prof.companionName); } catch {} }
             if (prof.companionAvatar) { setCompanionAvatarState(prof.companionAvatar); try { localStorage.setItem("companionAvatar", prof.companionAvatar); } catch {} }
           }
