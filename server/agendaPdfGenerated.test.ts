@@ -32,11 +32,12 @@ function pageCount(buf: Buffer): number {
 
 describe("Push 76 — agenda PDF renders generated payloads", () => {
   it("source contains the addendum-page block + inline-suppression conditions", () => {
-    // Inline summary line on summary page is suppressed when description or
-    // bookPageRefs exist.
-    expect(SRC).toMatch(
-      /if \(b\.generated && !b\.description && !\(b\.bookPageRefs && b\.bookPageRefs\.length > 0\)\)/,
-    );
+    // 2026-06-18 (branded template): the old cover "inline generated summary
+    // line" was removed in favor of subject-colored schedule cards that already
+    // surface description + book refs. Generated payloads now render on the
+    // per-block detail page. The contract we still enforce: the per-block
+    // fallback only renders when there is no lesson AND no generated payload.
+    expect(SRC).toMatch(/if \(!L && !b\.generated\)/);
     // v3.28 (2026-06-01): the addendum gate was refactored from
     // `!!b.generated && !b.lesson` to the equivalent `G && !L` (where
     // G = b.generated, L = b.lesson). Either form is fine; what matters is

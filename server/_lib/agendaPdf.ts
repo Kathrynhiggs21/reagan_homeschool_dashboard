@@ -33,6 +33,27 @@
 import PDFDocument from "pdfkit";
 import { createHash } from "node:crypto";
 import QRCode from "qrcode";
+import {
+  registerBrandFonts, loadKiwiLogo, themeFor, type BrandFonts, type Theme,
+  rrect, gradientRoundedRect, sparkle, dashedRoundedRect,
+  BRAND_HERO, INK, INK_SOFT, LINE as BRAND_LINE,
+} from "./pdfBrand";
+
+// ---- Brand chrome module state (assigned per-build) ------------------------
+let BF: BrandFonts = {
+  ok: false, title: "Times-Bold", display: "Helvetica-Bold", h: "Helvetica-Bold",
+  body: "Helvetica", bodyB: "Helvetica-Bold", it: "Helvetica-Oblique",
+};
+/** Per-page banner title/subtitle used by stampAgendaChrome. */
+let AGENDA_CHROME: { title: string; subtitle: string; theme: Theme; footerPill: string } = {
+  title: "Reagan's Homeschool", subtitle: "Daily Agenda", theme: BRAND_HERO,
+  footerPill: "Reagan \u00b7 Summer Adventure \u00b7 keep shining!",
+};
+
+// Banner geometry — content must start below the banner on every page.
+const BANNER_H_FIRST = 86;
+const BANNER_H_CONT = 52;
+const FOOTER_RESERVE = 38;
 
 type TocEntry = { blockTitle: string; subjectName: string | null; pageIndex: number };
 
@@ -226,18 +247,92 @@ function rule(doc: PDFKit.PDFDocument) {
   doc.moveDown(0.4);
 }
 
-function sectionHead(doc: PDFKit.PDFDocument, text: string) {
-  doc.fillColor(BRAND_GREEN).fontSize(12).font("Helvetica-Bold").text(cleanForPdf(text).toUpperCase(), { characterSpacing: 0.5 });
-  doc.font("Helvetica");
-  doc.moveDown(0.2);
+/** Map a subject name to a brand subject theme (for per-block accent color). */
+function subjectThemeFor(name?: string | null): Theme {
+  return themeFor(name);
+}
+
+/** A colored "pill" section heading used on detail pages. */
+function sectionHead(doc: PDFKit.PDFDocument, text: string, theme: Theme = AGENDA_CHROME.theme) {
+  const label = cleanForPdf(text).toUpperCase();
+  doc.font(BF.h).fontSize(10.5);
+  const w = Math.min(PAGE_W, doc.widthOfString(label) + 24);
+  const y = doc.y;
+  rrect(doc, MARGIN, y, w, 19, 9, theme.boxFill, theme.boxStroke, 1);
+  doc.fillColor(theme.accent).font(BF.h).fontSize(10).text(label, MARGIN + 12, y + 4.5, { width: w - 18, lineBreak: false, characterSpacing: 0.3 });
+  doc.y = y + 24;
 }
 
 function bodyText(doc: PDFKit.PDFDocument, text: string, opts?: PDFKit.Mixins.TextOptions) {
-  doc.fillColor(GRAY_DARK).fontSize(10).font("Helvetica").text(cleanForPdf(text), { width: PAGE_W, ...opts });
+  doc.fillColor(INK).fontSize(10).font(BF.body).text(cleanForPdf(text), { width: PAGE_W, ...opts });
 }
 
 function bullet(doc: PDFKit.PDFDocument, text: string) {
-  doc.fillColor(GRAY_DARK).fontSize(10).font("Helvetica").text(`· ${cleanForPdf(text)}`, { width: PAGE_W, indent: 8 });
+  doc.fillColor(INK).fontSize(10).font(BF.body).text(`· ${cleanForPdf(text)}`, { width: PAGE_W, indent: 8 });
+}
+
+/**
+ * Stamp the colorful chrome (gradient Kiwi banner on top, footer pill on
+ * bottom) on EVERY pdfkit-rendered page. Called once after all content pages
+ * are laid out but before doc.end(). Page numbers are stamped later by the
+ * pdf-lib pass (after worksheet merge + ToC insert) so they stay accurate.
+ */
+function stampAgendaChrome(doc: PDFKit.PDFDocument) {
+  const range = doc.bufferedPageRange();
+  const total = range.count;
+  const theme = AGENDA_CHROME.theme;
+  const logo = loadKiwiLogo();
+  for (let i = 0; i < total; i++) {
+    doc.switchToPage(range.start + i);
+    const W = doc.page.width;
+    const H = doc.page.height;
+    const isFirst = i === 0;
+    const bannerH = isFirst ? BANNER_H_FIRST : BANNER_H_CONT;
+    const bx = MARGIN, by = MARGIN - 14;
+
+    // gradient banner
+    gradientRoundedRect(doc, bx, by, PAGE_W, bannerH, 16, theme.g1, theme.g2);
+    sparkle(doc, bx + PAGE_W * 0.5, by + 12, 4, "#ffffff", 0.9);
+    sparkle(doc, bx + PAGE_W * 0.57, by + bannerH - 16, 3, "#ffffff", 0.7);
+
+    // Kiwi mascot (left)
+    const logoSize = isFirst ? 66 : 40;
+    const logoY = by + (bannerH - logoSize) / 2;
+    if (logo) { try { doc.image(logo, bx + 10, logoY, { fit: [logoSize, logoSize] }); } catch { /* ignore */ } }
+    const textX = bx + (logo ? logoSize + 20 : 18);
+
+    const titleStr = cleanForPdf(AGENDA_CHROME.title + (total > 1 && i > 0 ? "  (cont.)" : ""));
+    if (isFirst) {
+      const availW = bx + PAGE_W - 18 - textX;
+      let ts = 22; doc.font(BF.title);
+      while (ts > 13 && doc.fontSize(ts).widthOfString(titleStr) > availW) ts -= 1;
+      doc.fillColor("#ffffff").font(BF.title).fontSize(ts).text(titleStr, textX, by + 16, { width: availW, lineBreak: false, ellipsis: true });
+      doc.fillColor("#f3fbf7").font(BF.display).fontSize(11).text(cleanForPdf(AGENDA_CHROME.subtitle), textX, by + 16 + ts + 6, { width: availW, lineBreak: false, ellipsis: true });
+    } else {
+      const availW = bx + PAGE_W - 18 - textX;
+      let ts = 15; doc.font(BF.title);
+      while (ts > 10 && doc.fontSize(ts).widthOfString(titleStr) > availW) ts -= 1;
+      doc.fillColor("#ffffff").font(BF.title).fontSize(ts).text(titleStr, textX, by + (bannerH - ts) / 2 - 2, { width: availW, lineBreak: false, ellipsis: true });
+    }
+
+    // footer pill (page number is added bottom-right later by pdf-lib)
+    const label = cleanForPdf(AGENDA_CHROME.footerPill);
+    doc.font(BF.bodyB).fontSize(9);
+    const labelW = doc.widthOfString(label);
+    const pillW = Math.min(PAGE_W - 120, Math.max(180, labelW + 52));
+    const pillH = 20;
+    const px = bx + (PAGE_W - pillW) / 2;
+    const py = H - MARGIN - pillH + 6;
+    rrect(doc, px, py, pillW, pillH, 10, theme.footer);
+    sparkle(doc, px + 16, py + pillH / 2, 3.5, theme.accent, 0.9);
+    // Manual horizontal centering with lineBreak:false avoids the wrap/baseline
+    // collapse that was hiding the text inside the pill.
+    doc.fillColor(theme.accent).font(BF.bodyB).fontSize(9);
+    const tw = doc.widthOfString(label);
+    const tx = px + 22 + Math.max(0, (pillW - 22 - tw) / 2);
+    const th = doc.currentLineHeight();
+    doc.text(label, tx, py + (pillH - th) / 2, { lineBreak: false });
+  }
 }
 
 function answerLine(doc: PDFKit.PDFDocument) {
@@ -311,40 +406,39 @@ function renderPrintSeparatelyBox(
 /* ========================= COVER PAGE ==================================== */
 
 function renderCoverPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, agendaHash: string) {
-  // Summer mode banner — shown ABOVE the title when active
+  // The gradient Kiwi banner (stamped later) provides the header. Start with
+  // the day label + summer chip just under it.
   if (input.summerMode) {
-    doc.fillColor(BRAND_SUMMER).fontSize(13).font("Helvetica-Bold")
-      .text(cleanForPdf("Summer Preview - 6th Grade"), { align: "center" });
-    doc.moveDown(0.15);
+    const chip = "Summer Preview \u00b7 6th Grade";
+    doc.font(BF.h).fontSize(9);
+    const cw = doc.widthOfString(chip) + 22;
+    const cy = doc.y;
+    rrect(doc, MARGIN, cy, cw, 17, 8, "#fff3df", "#f3cd86", 1);
+    doc.fillColor("#b45309").font(BF.h).fontSize(9).text(chip, MARGIN + 11, cy + 4.5, { lineBreak: false });
+    doc.y = cy + 22;
   }
 
-  // Title bar
-  doc.fillColor(BRAND_GREEN).fontSize(22).font("Helvetica-Bold")
-    .text(cleanForPdf(`${input.studentName}'s School Day`), { align: "center" });
-  doc.moveDown(0.15);
-  doc.fillColor(GRAY_MED).fontSize(14).font("Helvetica").text(cleanForPdf(input.dayLabel), { align: "center" });
-  doc.moveDown(0.3);
+  doc.fillColor(INK).font(BF.title).fontSize(17)
+    .text(cleanForPdf(`${input.studentName}'s School Day`), MARGIN, doc.y, { width: PAGE_W });
+  doc.fillColor(INK_SOFT).font(BF.display).fontSize(12).text(cleanForPdf(input.dayLabel), MARGIN, doc.y + 2, { width: PAGE_W });
+  doc.moveDown(0.4);
 
-  // Tutor line
+  // Tutor + window info row
   if (input.tutorName) {
     const tutorLine = `Tutor: ${input.tutorName}` +
-      (input.tutorArrival ? `  ·  Arrives ${formatTime(input.tutorArrival)}` : "") +
-      (input.tutorDeparture ? `  ·  Leaves ${formatTime(input.tutorDeparture)}` : "");
-    doc.fillColor(BRAND_BLUE).fontSize(11).font("Helvetica").text(cleanForPdf(tutorLine), { align: "center" });
-    doc.moveDown(0.2);
+      (input.tutorArrival ? `  \u00b7  Arrives ${formatTime(input.tutorArrival)}` : "") +
+      (input.tutorDeparture ? `  \u00b7  Leaves ${formatTime(input.tutorDeparture)}` : "");
+    doc.fillColor(BRAND_BLUE).fontSize(10.5).font(BF.bodyB).text(cleanForPdf(tutorLine), MARGIN, doc.y, { width: PAGE_W });
+    doc.moveDown(0.15);
   }
-
-  // School-day window
   if (input.schoolDayWindow) {
-    doc.fillColor(GRAY_LIGHT).fontSize(10).text(
-      cleanForPdf(`School day: ${formatTime(input.schoolDayWindow.start)} – ${formatTime(input.schoolDayWindow.end)}`),
-      { align: "center" },
+    doc.fillColor(INK_SOFT).fontSize(10).font(BF.body).text(
+      cleanForPdf(`School day: ${formatTime(input.schoolDayWindow.start)} - ${formatTime(input.schoolDayWindow.end)}`),
+      MARGIN, doc.y, { width: PAGE_W },
     );
-    doc.moveDown(0.2);
+    doc.moveDown(0.15);
   }
-
-  doc.moveDown(0.3);
-  rule(doc);
+  doc.moveDown(0.25);
 
   // What's in this packet summary
   const hasDevotionPage = !!input.devotionText;
@@ -361,75 +455,110 @@ function renderCoverPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, agendaH
     return s + vids;
   }, 0);
 
-  doc.fillColor(BRAND_GREEN).fontSize(11).font("Helvetica-Bold").text(cleanForPdf("What's in this packet:"));
-  doc.font("Helvetica").moveDown(0.15);
   const packetSummary: string[] = [];
   if (hasDevotionPage) packetSummary.push("Devotion / reflection page");
   packetSummary.push("Cover sheet (this page) with today's full schedule");
   if (detailPageCount > 0) packetSummary.push(`${detailPageCount} detail page${detailPageCount === 1 ? "" : "s"} (one per block, with notes space)`);
   if (totalWorksheets > 0) packetSummary.push(`${totalWorksheets} worksheet${totalWorksheets === 1 ? "" : "s"} embedded in packet`);
   if (totalVideos > 0) packetSummary.push(`${totalVideos} video link${totalVideos === 1 ? "" : "s"} with descriptions`);
-  for (const line of packetSummary) {
-    bullet(doc, line);
-  }
-  doc.moveDown(0.4);
-  rule(doc);
 
-  // Block list
-  doc.fillColor(BRAND_GREEN).fontSize(13).font("Helvetica-Bold").text(cleanForPdf("Today's Schedule"));
-  doc.font("Helvetica").moveDown(0.3);
+  // "What's in this packet" cream card
+  {
+    const theme = AGENDA_CHROME.theme;
+    doc.font(BF.body).fontSize(9.5);
+    const lineH = 13;
+    const cardH = 26 + packetSummary.length * lineH + 8;
+    const cy = doc.y;
+    rrect(doc, MARGIN, cy, PAGE_W, cardH, 12, "#fffdf5", "#f0d98a", 1.2);
+    doc.fillColor(theme.accent).font(BF.h).fontSize(10).text(cleanForPdf("WHAT'S IN THIS PACKET"), MARGIN + 14, cy + 10, { width: PAGE_W - 28 });
+    let ly = cy + 26;
+    for (const line of packetSummary) {
+      sparkle(doc, MARGIN + 18, ly + 5, 2.6, theme.accent, 0.9);
+      doc.fillColor(INK).font(BF.body).fontSize(9.5).text(cleanForPdf(line), MARGIN + 28, ly, { width: PAGE_W - 42, lineBreak: false, ellipsis: true });
+      ly += lineH;
+    }
+    doc.y = cy + cardH + 10;
+  }
+
+  // Schedule heading
+  doc.fillColor(INK).font(BF.title).fontSize(14).text(cleanForPdf("Today's Schedule"), MARGIN, doc.y, { width: PAGE_W });
+  doc.moveDown(0.35);
 
   if (input.blocks.length === 0) {
-    doc.fillColor(GRAY_LIGHT).fontSize(11).text(cleanForPdf("No blocks scheduled."));
+    doc.fillColor(INK_SOFT).fontSize(11).font(BF.body).text(cleanForPdf("No blocks scheduled."), MARGIN, doc.y, { width: PAGE_W });
   }
 
+  // Subject-colored schedule cards
   for (const b of input.blocks) {
+    const theme = subjectThemeFor(b.subjectName);
     const timeStr = formatTime(b.startTime);
-    const subj = b.subjectName ? ` [${b.subjectName}]` : "";
     const topicStr = b.curriculumTopicCode
-      ? (b.curriculumTopicTitle
-          ? `  ·  ${b.curriculumTopicCode}: ${b.curriculumTopicTitle}`
-          : `  ·  ${b.curriculumTopicCode}`)
+      ? (b.curriculumTopicTitle ? `${b.curriculumTopicCode}: ${b.curriculumTopicTitle}` : b.curriculumTopicCode)
       : "";
 
-    // Block header row
-    doc.fillColor(GRAY_DARK).fontSize(10).font("Helvetica-Bold")
-      .text(cleanForPdf(`${b.sortOrder}.  ${timeStr}  ·  ${b.durationMin} min${subj}${topicStr}`), { continued: false });
-    doc.font("Helvetica");
-    doc.fillColor(GRAY_DARK).fontSize(11).text(cleanForPdf(`   ${b.title}`), { indent: 4 });
+    // measure dynamic height
+    const descLines = b.description ? Math.min(3, Math.ceil(cleanForPdf(b.description).length / 88)) : 0;
+    const refLines = b.bookPageRefs?.length ?? 0;
+    const cardH = 34 + (descLines * 12) + (refLines * 11) + (topicStr ? 11 : 0) + 12;
 
+    // page-break guard so a card never splits across the banner
+    if (doc.y + cardH > doc.page.height - (MARGIN + FOOTER_RESERVE)) {
+      doc.addPage();
+    }
+    const cy = doc.y;
+    rrect(doc, MARGIN, cy, PAGE_W, cardH, 11, "#ffffff", theme.boxStroke, 1.2);
+    // left accent stripe
+    doc.save().roundedRect(MARGIN, cy, 6, cardH, 3).fill(theme.accent).restore();
+
+    const ix = MARGIN + 16;
+    // number badge + title
+    doc.fillColor(theme.accent).font(BF.h).fontSize(11.5).text(`${b.sortOrder}.`, ix, cy + 9, { width: 22, lineBreak: false });
+    doc.fillColor(INK).font(BF.bodyB).fontSize(11.5).text(cleanForPdf(b.title), ix + 24, cy + 9, { width: PAGE_W - 24 - 120, lineBreak: false, ellipsis: true });
+    // time + duration chip on the right
+    const chipTxt = `${timeStr} \u00b7 ${b.durationMin} min`;
+    doc.font(BF.h).fontSize(8.5);
+    const chipW = doc.widthOfString(chipTxt) + 18;
+    rrect(doc, MARGIN + PAGE_W - chipW - 12, cy + 8, chipW, 16, 8, theme.boxFill, theme.boxStroke, 1);
+    doc.fillColor(theme.accent).font(BF.h).fontSize(8.5).text(chipTxt, MARGIN + PAGE_W - chipW - 12, cy + 12, { width: chipW, align: "center", lineBreak: false });
+
+    let ly = cy + 26;
+    if (b.subjectName) {
+      doc.fillColor(theme.accent).font(BF.h).fontSize(8).text(cleanForPdf(b.subjectName.toUpperCase()), ix + 24, ly, { width: PAGE_W - 60, lineBreak: false });
+      ly += 11;
+    }
+    if (topicStr) {
+      doc.fillColor(INK_SOFT).font(BF.body).fontSize(8.5).text(cleanForPdf(topicStr), ix + 24, ly, { width: PAGE_W - 60, lineBreak: false, ellipsis: true });
+      ly += 11;
+    }
     if (b.description) {
-      doc.fillColor(GRAY_MED).fontSize(9).text(cleanForPdf(`   ${b.description.trim()}`), { width: PAGE_W, indent: 4 });
+      doc.fillColor(INK).font(BF.body).fontSize(9).text(cleanForPdf(b.description.trim()), ix + 24, ly, { width: PAGE_W - 60, height: descLines * 12, ellipsis: true });
+      ly += descLines * 12;
     }
     if (b.bookPageRefs?.length) {
       for (const r of b.bookPageRefs) {
-        doc.fillColor(BRAND_BLUE).fontSize(9).text(cleanForPdf(`   ${r.bookTitle} - pg. ${r.fromPage}-${r.toPage}`), { indent: 4 });
+        doc.fillColor(BRAND_BLUE).font(BF.body).fontSize(8.5).text(cleanForPdf(`${r.bookTitle} - pg. ${r.fromPage}-${r.toPage}`), ix + 24, ly, { width: PAGE_W - 60, lineBreak: false, ellipsis: true });
+        ly += 11;
       }
     }
-    // Every block gets a per-block detail page; cover always points to it.
-    doc.fillColor(GRAY_LIGHT).fontSize(8).text(cleanForPdf(`   -> Detail page in this packet (notes space below)`), { indent: 4 });
-    // Surface generated payload hint on cover
-    if (b.generated && !b.description && !(b.bookPageRefs && b.bookPageRefs.length > 0)) {
-      doc.fillColor(BRAND_WARM).fontSize(9).text(cleanForPdf(`   ${b.generated.printable}`), { indent: 4 });
-    }
-    doc.moveDown(0.4);
+    doc.y = cy + cardH + 8;
   }
 
   // Yesterday's tutor notes
   if (input.tutorNotesYesterday) {
+    // Guard: never let this section land in the bottom chrome band.
+    if (doc.y > doc.page.height - (MARGIN + FOOTER_RESERVE + 70)) doc.addPage();
     doc.moveDown(0.2);
-    rule(doc);
-    doc.fillColor(BRAND_GREEN).fontSize(11).font("Helvetica-Bold").text(cleanForPdf("From yesterday's tutor"));
-    doc.font("Helvetica");
-    doc.fillColor(GRAY_DARK).fontSize(10)
-      .text(cleanForPdf(`${input.tutorNotesYesterday.tutorName}: ${input.tutorNotesYesterday.notes.trim()}`), { width: PAGE_W });
+    sectionHead(doc, "From Yesterday's Tutor");
+    doc.fillColor(INK).font(BF.body).fontSize(10)
+      .text(cleanForPdf(`${input.tutorNotesYesterday.tutorName}: ${input.tutorNotesYesterday.notes.trim()}`), MARGIN, doc.y, { width: PAGE_W });
     doc.moveDown(0.3);
   }
 
-  // Footer
+  // Footer note
+  if (doc.y > doc.page.height - (MARGIN + FOOTER_RESERVE + 24)) doc.addPage();
   doc.moveDown(0.4);
-  doc.fillColor(GRAY_LIGHT).fontSize(7)
-    .text(cleanForPdf(`Packet hash: ${agendaHash.slice(0, 16)}...  ·  Generated for ${input.forDate}  ·  If anything changes before school, this packet will be re-sent.`));
+  doc.fillColor(INK_SOFT).font(BF.body).fontSize(7)
+    .text(cleanForPdf(`Packet hash: ${agendaHash.slice(0, 16)}...  \u00b7  Generated for ${input.forDate}  \u00b7  If anything changes before school, this packet will be re-sent.`), MARGIN, doc.y, { width: PAGE_W });
 }
 
 /* ========================= DEVOTION PAGE ================================== */
@@ -437,17 +566,20 @@ function renderCoverPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, agendaH
 function renderDevotionPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput) {
   if (!input.devotionText) return;
   doc.addPage();
-  doc.fillColor(BRAND_GREEN).fontSize(20).font("Helvetica-Bold").text(cleanForPdf("Today's Devotion"), { align: "center" });
-  doc.moveDown(0.2);
-  doc.fillColor(GRAY_MED).fontSize(11).font("Helvetica").text(cleanForPdf(input.dayLabel), { align: "center" });
+  const theme = AGENDA_CHROME.theme;
+  doc.fillColor(INK).font(BF.title).fontSize(18).text(cleanForPdf("Today's Devotion"), MARGIN, doc.y, { width: PAGE_W });
+  doc.fillColor(INK_SOFT).font(BF.display).fontSize(11).text(cleanForPdf(input.dayLabel), MARGIN, doc.y + 2, { width: PAGE_W });
   doc.moveDown(0.5);
-  rule(doc);
-  doc.moveDown(0.3);
-  doc.fillColor(GRAY_DARK).fontSize(12).font("Helvetica").text(cleanForPdf(input.devotionText.trim()), { width: PAGE_W });
-  doc.moveDown(0.8);
-  rule(doc);
-  doc.fillColor(GRAY_LIGHT).fontSize(9).text(cleanForPdf("Reflection space:"), { indent: 0 });
-  doc.moveDown(0.2);
+  // devotion text in a soft cream card
+  doc.font(BF.body).fontSize(12);
+  const txt = cleanForPdf(input.devotionText.trim());
+  const innerW = PAGE_W - 28;
+  const boxH = doc.heightOfString(txt, { width: innerW }) + 24;
+  const cy = doc.y;
+  rrect(doc, MARGIN, cy, PAGE_W, boxH, 12, theme.boxFill, theme.boxStroke, 1.2);
+  doc.fillColor(INK).font(BF.body).fontSize(12).text(txt, MARGIN + 14, cy + 12, { width: innerW });
+  doc.y = cy + boxH + 14;
+  sectionHead(doc, "Reflection Space");
   for (let i = 0; i < 6; i++) answerLine(doc);
 }
 
@@ -465,21 +597,22 @@ function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: Age
     tocSink.push({ blockTitle: `${b.sortOrder}. ${b.title}`, subjectName: b.subjectName ?? null, pageIndex });
   }
 
-  // Page header
-  doc.fillColor(BRAND_GREEN).fontSize(18).font("Helvetica-Bold").text(cleanForPdf(`${b.sortOrder}. ${b.title}`));
-  doc.font("Helvetica");
-  doc.fillColor(GRAY_LIGHT).fontSize(10).text(
-    cleanForPdf([
-      formatTime(b.startTime),
-      `${b.durationMin} min`,
-      b.subjectName ?? null,
-      b.curriculumTopicCode
-        ? (b.curriculumTopicTitle ? `${b.curriculumTopicCode}: ${b.curriculumTopicTitle}` : b.curriculumTopicCode)
-        : null,
-    ].filter(Boolean).join("  ·  ")),
-  );
-  doc.moveDown(0.3);
-  rule(doc);
+  // Page header — subject-colored accent
+  const theme = subjectThemeFor(b.subjectName);
+  doc.fillColor(INK).font(BF.title).fontSize(16).text(cleanForPdf(`${b.sortOrder}. ${b.title}`), MARGIN, doc.y, { width: PAGE_W });
+  const metaStr = [
+    formatTime(b.startTime),
+    `${b.durationMin} min`,
+    b.subjectName ?? null,
+    b.curriculumTopicCode
+      ? (b.curriculumTopicTitle ? `${b.curriculumTopicCode}: ${b.curriculumTopicTitle}` : b.curriculumTopicCode)
+      : null,
+  ].filter(Boolean).join("  \u00b7  ");
+  doc.fillColor(theme.accent).font(BF.h).fontSize(9.5).text(cleanForPdf(metaStr), MARGIN, doc.y + 2, { width: PAGE_W });
+  doc.moveDown(0.2);
+  // thin themed underline
+  doc.save().strokeColor(theme.boxStroke).lineWidth(1.5).moveTo(MARGIN, doc.y).lineTo(MARGIN + PAGE_W, doc.y).stroke().restore();
+  doc.moveDown(0.5);
 
   const L = b.lesson;
   if (L) {
@@ -587,10 +720,10 @@ function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: Age
     if (L.worksheets && L.worksheets.length > 0) {
       sectionHead(doc, "Worksheets & Activities");
       for (const w of L.worksheets) {
-        doc.fillColor(GRAY_DARK).fontSize(12).font("Helvetica-Bold").text(cleanForPdf(w.title));
-        doc.font("Helvetica");
+        doc.fillColor(INK).fontSize(12).font(BF.bodyB).text(cleanForPdf(w.title));
+        doc.font(BF.body);
         if (w.description) {
-          doc.fillColor(GRAY_MED).fontSize(9).text(cleanForPdf(w.description.trim()), { width: PAGE_W, indent: 4 });
+          doc.fillColor(INK_SOFT).fontSize(9).font(BF.body).text(cleanForPdf(w.description.trim()), { width: PAGE_W, indent: 4 });
         }
         // v3.11: Try to embed image inline; PDF bytes are merged after pdfkit finishes
         const displayUrl = w.resolvedUrl || w.printableUrl || null;
@@ -696,9 +829,9 @@ function renderLessonPage(doc: PDFKit.PDFDocument, input: AgendaPdfInput, b: Age
   const G = b.generated;
   if (G && !L) {
     if (G.kind === "adventure" && G.instructions[0]) {
-      doc.fillColor(BRAND_WARM).fontSize(10).font("Helvetica-Bold")
+      doc.fillColor(BRAND_WARM).fontSize(10).font(BF.bodyB)
         .text(cleanForPdf(`Safety: ${G.instructions[0]}`), { width: PAGE_W });
-      doc.font("Helvetica");
+      doc.font(BF.body);
       doc.moveDown(0.2);
     }
     const stepsToRender = G.kind === "adventure" ? G.instructions.slice(1) : G.instructions;
@@ -755,12 +888,30 @@ export async function buildAgendaPdf(input: AgendaPdfInput): Promise<AgendaPdfRe
   const agendaHash = hashAgenda(canonical);
 
   // bufferPages:true — lets us walk all pages later for page-number stamping.
-  const doc = new PDFDocument({ size: "LETTER", margin: MARGIN, bufferPages: true });
+  // Top margin leaves room for the gradient banner; bottom for the footer pill.
+  const TOP_FIRST = MARGIN + BANNER_H_FIRST - 6;
+  const TOP_CONT = MARGIN + BANNER_H_CONT;
+  const doc = new PDFDocument({
+    size: "LETTER",
+    bufferPages: true,
+    margins: { top: TOP_FIRST, bottom: MARGIN + FOOTER_RESERVE, left: MARGIN, right: MARGIN },
+  });
+  // Register brand fonts + set per-build chrome config.
+  BF = registerBrandFonts(doc);
+  AGENDA_CHROME = {
+    title: `${input.studentName}'s Homeschool`,
+    subtitle: input.summerMode ? "Summer Adventure \u00b7 Daily Agenda" : "Daily Agenda",
+    theme: BRAND_HERO,
+    footerPill: `${input.studentName} \u00b7 ${input.forDate} \u00b7 keep shining!`,
+  };
+  // Continuation pages use a smaller banner → smaller top margin.
+  doc.on("pageAdded", () => { doc.x = MARGIN; doc.y = TOP_CONT; });
   const chunks: Buffer[] = [];
   doc.on("data", (c: Buffer) => chunks.push(c));
   const done = new Promise<void>((resolve) => doc.on("end", () => resolve()));
 
   // Page 1: Cover sheet
+  doc.x = MARGIN; doc.y = TOP_FIRST;
   renderCoverPage(doc, input, agendaHash);
 
   // Page 2: Devotion (if set)
@@ -774,6 +925,9 @@ export async function buildAgendaPdf(input: AgendaPdfInput): Promise<AgendaPdfRe
   for (const b of input.blocks) {
     renderLessonPage(doc, input, b, tocEntries);
   }
+
+  // Stamp the colorful chrome (banner + footer pill) on every page.
+  stampAgendaChrome(doc);
 
   doc.end();
   await done;
@@ -809,16 +963,22 @@ export async function buildAgendaPdf(input: AgendaPdfInput): Promise<AgendaPdfRe
       const { width, height } = tocPage.getSize();
       const left = MARGIN;
       const right = width - MARGIN;
-      let y = height - MARGIN;
+      // Branded header band (teal hero) to match the rest of the packet.
+      const bandH = 64;
+      const bandY = height - MARGIN - bandH + 14;
+      tocPage.drawRectangle({
+        x: left, y: bandY, width: PAGE_W, height: bandH,
+        color: rgb(0.204, 0.831, 0.671), // #34d399
+      });
       tocPage.drawText("Table of Contents", {
-        x: left, y: y - 18,
-        size: 20, font: tocFont, color: rgb(0.18, 0.42, 0.32), // BRAND_GREEN-ish
+        x: left + 18, y: bandY + bandH - 30,
+        size: 20, font: tocFont, color: rgb(1, 1, 1),
       });
-      y -= 40;
       tocPage.drawText(`${input.studentName} — ${input.forDate}`, {
-        x: left, y, size: 10, font: bodyFont, color: rgb(0.4, 0.4, 0.4),
+        x: left + 18, y: bandY + 14,
+        size: 10, font: bodyFont, color: rgb(0.94, 0.99, 0.97),
       });
-      y -= 24;
+      let y = bandY - 28;
       // Each entry: title (left), dotted leader, page number (right)
       // Block lesson pages are at tocEntries[i].pageIndex + 1 (because we
       // inserted the ToC page at position 1, shifting them).
@@ -839,7 +999,8 @@ export async function buildAgendaPdf(input: AgendaPdfInput): Promise<AgendaPdfRe
       }
     }
 
-    // 3) Stamp "Page X of Y" footer on every page (after all merges/inserts).
+    // 3) Stamp "Page X of Y" on every page, bottom-RIGHT so it clears the
+    //    centered footer pill drawn by stampAgendaChrome.
     const totalPages = mainDoc.getPageCount();
     const footerFont = await mainDoc.embedFont(StandardFonts.Helvetica);
     for (let i = 0; i < totalPages; i++) {
@@ -848,8 +1009,8 @@ export async function buildAgendaPdf(input: AgendaPdfInput): Promise<AgendaPdfRe
       const label = `Page ${i + 1} of ${totalPages}`;
       const textWidth = footerFont.widthOfTextAtSize(label, 8);
       page.drawText(label, {
-        x: (width - textWidth) / 2,
-        y: 18,
+        x: width - MARGIN - textWidth,
+        y: 22,
         size: 8,
         font: footerFont,
         color: rgb(0.55, 0.55, 0.55),

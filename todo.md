@@ -1222,3 +1222,17 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 
 ## 2026-06-18 — Nightly self-check email noise
 - [x] Silence routine nightly self-check emails (Katy: "not needed"). Added `isNotifyWorthy()` gate in `server/_lib/selfCheck.ts`; `summarizeReport()` now returns null for runs whose only changes are routine auto-fixes (AM/PM block-time clamps, dup-pending collapses, placeholder-photo clears). Repairs STILL happen + are recorded in the structured report; only the owner email is suppressed. Hook left in place to re-enable notifications for any future material/unfixable condition. Updated `selfCheck.test.ts` (17 pass) + handler contract test; full self-check suite 25/25 green.
+
+
+## 2026-06-18 — Daily printable PDF rebrand + Drive folder-map re-resolution
+- [x] Diagnose plain daily-agenda PDF: found two PDF builders — worksheetPdf.ts already branded ("Summer Adventure" template), agendaPdf.ts was still plain PDFKit Helvetica
+- [x] Create shared brand kit `server/_lib/pdfBrand.ts` (Kiwi logo + Fredoka/Nunito fonts w/ standard-font fallback, palette, subject themes, vector helpers, banner/footer chrome)
+- [x] Re-skin agendaPdf.ts cover (gradient Kiwi banner, Summer Preview chip, cream packet card, subject-colored schedule cards), devotion + per-block pages, ToC page band, footer pill + page numbers
+- [x] Add page-break guards before tutor-notes + footer-hash so they never collide with bottom chrome
+- [x] Align worksheet title/description + addendum fonts to brand fonts
+- [x] Fix footer pill text not rendering (manual-centered, lineBreak:false, precise baseline)
+- [x] Update 2 brittle tests to assert behavior not old layout (agendaPdfGenerated source-grep; printAndGoPacket byte-size -> page-count)
+- [x] Re-resolve the 7 Drive subfolders (deleted earlier for self-heal) under the live Adventures/Printables parents; created canonical-named folders + persisted drive.folderMap.* rows
+- [x] Update driveCanonicalFolders.test.ts expected IDs for Adventures/Printables (were the trashed dup IDs) to the live repointed IDs
+- [x] Full suite green: 544 files / 4916 tests
+- [ ] (Future tidy, optional) Live Adventures parent has older short-named folders (Journal, Bookshelf, Adventures) and Printables has (Future Worksheets, Printables) alongside the new canonical subfolders — could merge/migrate content later, left untouched to avoid blind moves

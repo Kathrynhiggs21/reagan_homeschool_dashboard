@@ -10,16 +10,21 @@ import { getAppSetting } from "./db";
 // folder IDs to their populated counterparts (see todo.md "2026-05-18…
 // Drive Hub unification"). The DB is the source of truth — these IDs are
 // what `appSettings` actually contains in production.
+// 2026-06-18: Inbox triage + Drive cleanup found the Adventures and
+// Printables parents were still pointing at TRASHED duplicate folders
+// (137Knn9… and 1Uxqum…, both mis-nested under Curriculum). Repointed the
+// DB to the live Hub-root folders and re-resolved their subfolders. These
+// expectations now match the corrected production app_settings.
 const EXPECTED_FOLDERS: Record<string, string> = {
   "drive.rootFolderId": "1r3bJacPLJN7VHI8y72rcx1-GRxspqo1r",
   "drive.rootFolderOwner": "spear.cpt@gmail.com",
   "drive.folder.adminAndHomeschoolRecords": "1aLViM1-T0_ob0CFNxJN9hnzMauROySjF",
-  "drive.folder.adventuresAndEnrichment": "137Knn9KbGKPcTsmOhHhM930HTxEGpjWB",
+  "drive.folder.adventuresAndEnrichment": "1XiwfVoZEXDqfe6bheV-oSh-yMnLOqXq-",
   "drive.folder.assignmentsAndWork": "1--Z75dZRcTTrEVlRGtIVfP5b1OMi8hCT",
   "drive.folder.curriculumAndStandards": "1ighaciRpTk8oloh55dEhgx0YZmomsZWJ",
   "drive.folder.dailyOperations": "1wyFk4rTPT-bZsadEVwODmqnABhevn6yb",
   "drive.folder.inboxUnsorted": "1PQPK34gnnlZrNojxFLJddCnDSpUQ5kR1",
-  "drive.folder.printablesAndResources": "1UxqumEtHKucybapWNaNttaDGNg_0QQCH",
+  "drive.folder.printablesAndResources": "1Z_XX5Xqcg8NPkKfZDKYDl8BV-rm59LBg",
   "drive.folder.progressAndReports": "1YYRTEko_yYCg0V3S-tx-wyT6wQ2F2mpj",
   "drive.folder.todo": "15XPBzEZZD78Veq3mvk90yFFKP_vGMXHJ",
 };

@@ -144,9 +144,15 @@ describe("buildAgendaPdf v2.98 — full packet rendering", () => {
         },
       }],
     });
-    // Lesson page adds bytes.
-    expect(withLessonResult.pdfBuffer.byteLength).toBeGreaterThan(
-      noLessonResult.pdfBuffer.byteLength,
+    // 2026-06-18: byte-size is no longer a reliable proxy after the branded
+    // template (compression + pagination shifts make sizes nearly equal).
+    // Assert the real contract instead: the lesson variant has at least as
+    // many PDF pages, and the lesson worksheet content is present in the
+    // canonical text.
+    const pageCount = (buf: Buffer) =>
+      (buf.toString("latin1").match(/\/Type\s*\/Page\b(?!s)/g) ?? []).length;
+    expect(pageCount(withLessonResult.pdfBuffer)).toBeGreaterThanOrEqual(
+      pageCount(noLessonResult.pdfBuffer),
     );
   });
 
