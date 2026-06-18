@@ -80,6 +80,56 @@ function AppForm({ open, onOpenChange, app }: any) {
   );
 }
 
+// Adult-only parent/teacher portals. These are SEPARATE from Reagan's student
+// app tiles and only render when an adult has unlocked the dashboard. Each
+// opens with the parent Google account hint (spear.cpt@gmail.com) so Mom/
+// Grandma land on the right account without retyping. These deliberately point
+// at the parent/teacher-facing surface of each app (progress, assignments,
+// reports) — never Reagan's student view.
+const PARENT_PORTALS: { name: string; url: string; emoji: string; note: string }[] = [
+  { name: "IXL — Parent / Teacher", url: "https://www.ixl.com/signin/account", emoji: "📊", note: "Analytics, skill progress & usage reports" },
+  { name: "Khan Academy — Teacher", url: "https://www.khanacademy.org/teacher/dashboard", emoji: "🎓", note: "Class progress & assignments dashboard" },
+  { name: "Prodigy — Parent", url: "https://www.prodigygame.com/main-en/parents/", emoji: "🐉", note: "Parent account: goals, rewards & reports" },
+  { name: "Quizlet — Teacher", url: "https://quizlet.com/latest", emoji: "📇", note: "Manage study sets & classes" },
+  { name: "BrainPOP — Educator", url: "https://educators.brainpop.com/", emoji: "🤖", note: "Assignments & My BrainPOP" },
+  { name: "Edpuzzle — Teacher", url: "https://edpuzzle.com/assignments", emoji: "🎬", note: "Assign videos & view answers" },
+];
+
+function ParentPortalsSection({ parentEmail }: { parentEmail: string | null }) {
+  if (!parentEmail) return null;
+  return (
+    <section className="mt-8" data-parent-portals>
+      <div className="flex items-baseline justify-between mb-3">
+        <h2 className="font-display text-xl font-semibold chalk-white">👩‍💻 Parent &amp; teacher portals</h2>
+        <span className="text-xs text-muted-foreground">Opens with {parentEmail} • adult view only</span>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+        {PARENT_PORTALS.map((p) => (
+          <a
+            key={p.name}
+            href={withGoogleSsoHint(p.url, parentEmail)}
+            target="_blank"
+            rel="noreferrer"
+            className="block"
+            data-parent-portal
+            title={`Open ${p.name} as ${parentEmail}`}
+          >
+            <Card className="classroom-card p-4 h-full flex items-center gap-3 hover:-translate-y-0.5 hover:shadow-lg transition-all">
+              <span className="time-chip chip-violet !w-12 !h-12 !text-2xl !rounded-xl shrink-0 flex items-center justify-center" aria-hidden>
+                {p.emoji}
+              </span>
+              <div className="min-w-0">
+                <div className="font-display font-semibold text-sm leading-tight">{p.name}</div>
+                <div className="text-[11px] text-muted-foreground truncate">{p.note}</div>
+              </div>
+            </Card>
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 export default function Apps() {
   const { unlocked } = useAdultLock();
   const utils = trpc.useUtils();
@@ -271,6 +321,10 @@ export default function Apps() {
           <p className="font-display">No apps yet.</p>
           <p className="text-sm text-muted-foreground mt-1">Adults can add apps with the + Add app button.</p>
         </Card>
+      )}
+
+      {unlocked && (
+        <ParentPortalsSection parentEmail={dadEmail} />
       )}
 
       {unlocked && (

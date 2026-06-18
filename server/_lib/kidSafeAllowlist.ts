@@ -155,7 +155,6 @@ export const TIER5_SOFT_ORG: readonly string[] = [
   "code-it.co.uk",
   "tynker.com",
   "raspberrypi.org",
-  "wonderopolis.org",
   "tweentribune.com",
   "kidsdiscover.com",
   "edutopia.org",

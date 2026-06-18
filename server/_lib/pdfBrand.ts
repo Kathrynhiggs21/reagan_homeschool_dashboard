@@ -26,10 +26,21 @@ try {
 } catch {
   __thisDir = typeof __dirname !== "undefined" ? __dirname : process.cwd();
 }
+// Resolve brand assets robustly across BOTH runtimes:
+//  - dev / vitest: source file lives in server/_lib, cwd = repo root
+//  - prod: esbuild bundle lives in dist/index.js, cwd is NOT guaranteed to be
+//    the repo root on the autoscale runtime. The build step copies
+//    server/_assets -> dist/_assets so the bundle-local candidate always hits.
+// We list candidates relative to the bundle/source dir (walking up a few
+// levels) first, then cwd-based fallbacks last.
 const ASSET_CANDIDATES = [
-  join(__thisDir, "_assets"),
-  join(__thisDir, "..", "_assets"),
-  join(process.cwd(), "server", "_assets"),
+  join(__thisDir, "_assets"),                  // dist/_assets (prod, copied by build) or server/_lib/_assets
+  join(__thisDir, "..", "_assets"),            // dist/../_assets or server/_assets (dev/vitest)
+  join(__thisDir, "..", "server", "_assets"), // dist/../server/_assets
+  join(__thisDir, "..", "..", "_assets"),     // one more level up
+  join(__thisDir, "..", "..", "server", "_assets"),
+  join(process.cwd(), "server", "_assets"),    // cwd=repo root
+  join(process.cwd(), "dist", "_assets"),      // cwd=repo root, bundle-local copy
   join(process.cwd(), "_assets"),
 ];
 export function assetPath(name: string): string | null {

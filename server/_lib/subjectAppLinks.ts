@@ -15,7 +15,7 @@
  *
  * IXL skill URLs verified to follow the pattern:
  *   https://www.ixl.com/math/grade-5/<skill-slug>
- *   https://www.ixl.com/ela|science|social-studies/grade-5
+ *   https://www.ixl.com/ela/grade-5  (and /science/grade-5, /social-studies/grade-5)
  */
 
 export type AppId = "khan" | "ixl" | "prodigy" | "education";
@@ -115,14 +115,20 @@ const KHAN: Record<Bucket, string> = {
   generic: "https://www.khanacademy.org/math/cc-fifth-grade-math",
 };
 
+// 2026-06-18 — Education.com migrated its URL taxonomy from /resources/fifth-grade/*
+// to /resources/grade-5/* and renamed the ELA subject slug to
+// "english-language-arts" (the old "reading-writing" path now only survives via a
+// fragile redirect that can intermittently hit a Cloudflare interstitial).
+// Updated to the current canonical slugs verified live in-browser 2026-06-18 so
+// links land directly on the right page without relying on legacy redirects.
 const EDUCATION: Record<Bucket, string> = {
-  math: "https://www.education.com/resources/fifth-grade/math/",
-  science: "https://www.education.com/resources/fifth-grade/science/",
-  ela: "https://www.education.com/resources/fifth-grade/reading-writing/",
-  reading: "https://www.education.com/resources/fifth-grade/reading/",
-  writing: "https://www.education.com/resources/fifth-grade/writing/",
-  social: "https://www.education.com/resources/fifth-grade/social-studies/",
-  generic: "https://www.education.com/resources/fifth-grade/",
+  math: "https://www.education.com/resources/grade-5/math/",
+  science: "https://www.education.com/resources/grade-5/science/",
+  ela: "https://www.education.com/resources/grade-5/english-language-arts/",
+  reading: "https://www.education.com/resources/grade-5/english-language-arts/reading/",
+  writing: "https://www.education.com/resources/grade-5/english-language-arts/writing/",
+  social: "https://www.education.com/resources/grade-5/social-studies/",
+  generic: "https://www.education.com/resources/grade-5/",
 };
 
 const PRODIGY_MATH = "https://play.prodigygame.com/";

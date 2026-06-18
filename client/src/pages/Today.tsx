@@ -28,6 +28,7 @@ import CurriculumChip from "@/components/CurriculumChip";
 import TopicLabel from "@/components/TopicLabel";
 import GameBreakCard from "@/components/GameBreakCard";
 import HomeAnalyticsStrip from "@/components/HomeAnalyticsStrip";
+import { cardSummary } from "@shared/cardSummary";
 // Push 59 (2026-05-13) — Kid-friendly micro strips at top of Today.
 import KidHeaderStrips from "@/components/KidHeaderStrips";
 import MoodTimelineStrip from "@/components/MoodTimelineStrip";
@@ -827,7 +828,27 @@ export default function Today() {
                     );
                   })()}
                   {b.description && (
-                    <p className="mt-1 chalk-white/90" style={{ fontSize: "0.95rem", opacity: 0.82, lineHeight: 1.35 }}>{b.description}</p>
+                    /* 2026-06-18 — Cards show ONLY a short, link-stripped
+                       summary (clamped to 2 lines). The full lesson body,
+                       links, and instructions live behind "Open", so a long
+                       block (e.g. the duck Hydro lesson) never overflows the
+                       card. cardSummary strips raw URLs / === headers / markup
+                       and truncates on a sentence boundary. */
+                    <p
+                      className="mt-1 chalk-white/90"
+                      style={{
+                        fontSize: "0.95rem",
+                        opacity: 0.82,
+                        lineHeight: 1.35,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                      title={b.description}
+                    >
+                      {cardSummary(b.description)}
+                    </p>
                   )}
                   {/* Push 119 (2026-05-13) — Slay Charge ⚡ daily mood-setter.
                       Renders ONLY inside the morning_vibe block (i.e., the

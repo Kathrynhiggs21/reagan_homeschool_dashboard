@@ -1248,3 +1248,43 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] New tests: driveClient.test.ts (7) + drivePushWorkerLive.test.ts (9); credential-gate tests (10) still green
 - [x] Full suite green: 546 files / 4932 passed, 7 skipped
 - [x] (Optional future-tidy from prior session) DECISION: leave legacy short-named folders (Journal/Bookshelf/Adventures under Adventures; Future Worksheets/Printables under Printables) in place. The live worker resolves by canonical name and self-heals, so these legacy folders are harmless; merging would require blind content moves that risk Mom/Grandma's existing links. Deferred intentionally, not blocking.
+
+## 2026-06-18 — Branded PDF fix + full app-link audit
+- [ ] Fix branded agenda PDF: brand fonts + Kiwi logo fail to resolve in deployed runtime → emailed PDF degrades to plain Times/Helvetica fallback (no teal banner / colored chrome). Harden ASSET_CANDIDATES in server/_lib/pdfBrand.ts so server/_assets resolves under `node dist/index.js` (cwd=root, bundle dir=dist).
+- [ ] Verify branded PDF renders from the dist bundle (fonts ok + Kiwi banner visible); add guard test asserting assets resolve + registerBrandFonts ok:true.
+- [ ] Audit ALL external app/resource links in the dashboard; test each for reachability/correct target. Known bad: education.com errors; Ohio Learning https://education.ohio.gov/Topics/Learning-in-Ohio does not open to correct page.
+- [ ] Fix wrong/broken link targets and open behavior; validate each opens to the right page.
+- [ ] Produce a results sheet (CSV) listing every link, current target, status, corrected URL.
+- [ ] Checkpoint; confirm before any re-send of today/tomorrow branded PDFs to Mom + Grandma.
+
+## 2026-06-18 — Today schedule card length (Reagan view)
+- [x] BUG: Today schedule cards render the FULL lesson body inline (e.g. "Why Water Rolls Off a Duck" = wall of text + raw URLs). Cards must show ONLY title + a short description; full lesson/links/instructions live behind Open.
+- [x] Fix display side: clamp card description to a short summary (no raw URLs, ~2-3 lines) on the Today/schedule card component. (shared/cardSummary.ts + 2-line CSS clamp; full text on hover title + behind Open)
+- [x] Fix generation side (durable): shared cardSummary helper strips URLs/headers/markup and truncates on a sentence boundary, applied at the card so ANY future long block is auto-condensed.
+- [x] Add vitest coverage for the clamp/summary helper. (server/cardSummary.test.ts, 9 tests incl. real duck wall-of-text)
+
+## 2026-06-18 — Reagan Google account SSO hint coverage
+- [x] Verify student.googleEmail pref = reaganhiggs910@gmail.com in prod (confirmed set; parent.googleEmail = null)
+- [ ] Expand SSO_HINT_HOSTS to cover remaining Google-SSO-capable catalog apps (PBS LearningMedia, Wayground, Smithsonian, BrainPOP Jr, etc.)
+- [ ] Append authuser=<email> alongside AccountChooser wrap where it improves account pre-selection
+- [ ] Add/extend vitest coverage for the expanded SSO hint behavior
+- [ ] Validate expanded host matching against the live app catalog hosts
+
+## 2026-06-18 — Adult-mode parent portal links
+- [ ] Set parent.googleEmail = spear.cpt@gmail.com pref (activates the existing "Open as Parent" toggle on Google-property cards)
+- [ ] Add adult-mode-only parent/teacher portal links for apps with a distinct parent/educator dashboard (IXL, Khan, Prodigy, etc.), opened with the spear.cpt@gmail.com account hint
+- [ ] Keep parent links separate from Reagan's student links; only visible in adult mode
+- [ ] Add vitest coverage for parent-portal link generation + parent account hint
+
+## 2026-06-18 — Today's school day + parent SSO
+- [x] Add parent.googleEmail / parent.googleAuthUser to public-read allowlist
+- [x] Expand SSO_HINT_HOSTS with more Google-SSO learning apps
+- [x] Add adult-only Parent/Teacher portals section to Apps.tsx
+- [x] Set parent.googleEmail = spear.cpt@gmail.com (prod DB)
+- [x] Re-time 6/18 to 1:30 PM start, trimmed, ends 4:15 PM
+- [x] Remove "Lunch + reset" -> replace with 15-min "Break"
+- [x] Fix "after lunch" wording in Intro block -> "after the break"
+- [x] Generate write-in worksheets for all academic blocks incl. both duck blocks
+- [x] Full vitest suite green (4949 passed)
+- [ ] Save checkpoint + user publishes
+- [ ] After publish: send branded agenda PDF + duck worksheets to spear.cpt@gmail.com

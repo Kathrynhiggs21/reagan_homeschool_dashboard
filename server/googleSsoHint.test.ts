@@ -39,6 +39,26 @@ describe("googleAuthLink — withGoogleSsoHint + supportsGoogleSso", () => {
     }
   });
 
+  it("includes the 2026-06-18 SSO host expansion (catalog coverage)", () => {
+    const added = [
+      "pbslearningmedia.org",
+      "vocabulary.com",
+      "nearpod.com",
+      "flip.com",
+      "newsela.com",
+      "commonlit.org",
+      "typing.com",
+      "gimkit.com",
+      "getepic.com",
+      "scratch.mit.edu",
+      "tinkercad.com",
+      "desmos.com",
+    ];
+    for (const host of added) {
+      expect(SRC.includes(`"${host}"`)).toBe(true);
+    }
+  });
+
   it("returns href unchanged when email is empty (defensive)", () => {
     // Inline-execute the helper logic to verify behavior. We parse out the
     // function body by eval after stripping the export keyword. To keep this

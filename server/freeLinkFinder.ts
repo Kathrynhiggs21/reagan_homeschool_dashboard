@@ -79,7 +79,10 @@ function printablePack(query: string): FreeLink {
     kind: "printable",
     source: "Education.com",
     label: `Printable: ${query}`,
-    url: `https://www.education.com/search/?q=${encodeURIComponent(query)}&grade=fifth-grade`,
+    // 2026-06-18 — old /search/?q=...&grade=fifth-grade silently fell back to the
+    // homepage (stale grade param). The modern path-based search returns real
+    // grade-5 worksheet results (verified live in-browser).
+    url: `https://www.education.com/resources/grade-5/worksheets/?q=${encodeURIComponent(query)}`,
     emoji: "🧾",
   };
 }

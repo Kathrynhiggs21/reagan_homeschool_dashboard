@@ -1,0 +1,2 @@
+date,blocks_planned,blocks_completed,blocks_skipped,coverage_subjects,coverage_avg_pct,listening_focus_pct,listening_relevant_chunks,listening_dropped_chunks,listening_off_task,listening_distractions,listening_minutes_on_task,listening_top_topic,avg_emotion,avg_comfort,avg_difficulty,avg_talkativeness,kiwi_interactions,kiwi_user_messages,kiwi_initiated_checkins,kiwi_top_topic,iep_behind,iep_on_track,iep_ahead,off_plan_topics_count
+2026-06-17,6,0,0,4,0,,,,,,,,,,,,,,,,0,6,0,0

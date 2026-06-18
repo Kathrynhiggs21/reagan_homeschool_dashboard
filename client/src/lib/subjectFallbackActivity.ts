@@ -146,11 +146,16 @@ const M = {
   } satisfies FallbackActivity,
 
   wonder: {
-    title: "Wonder of the Day",
+    // 2026-06-18 — Wonderopolis.org was permanently shut down by NCFL on
+    // 2025-07-31, so the old "Wonder of the Day" link (wonderopolis.org/wonders)
+    // is dead. Repointed to Mystery Science's free mini-lessons, which serve the
+    // same "pick a curiosity question, watch + do a quick activity" purpose and
+    // are confirmed live (200).
+    title: "Mini Science Mystery",
     description:
-      "Open today's Wonder, read it, and try the quiz at the bottom.",
-    source: "Wonderopolis",
-    sourceUrl: "https://www.wonderopolis.org/wonders",
+      "Pick a mini-lesson question that looks interesting, watch the short video, and do the quick activity.",
+    source: "Mystery Science",
+    sourceUrl: "https://mysteryscience.com/mini-lessons",
     estMinutes: 15,
     coinReward: 5,
     emoji: "✨",
