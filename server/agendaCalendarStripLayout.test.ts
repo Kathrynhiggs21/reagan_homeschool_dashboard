@@ -26,18 +26,18 @@ describe("AgendaCalendarStrip.layoutBlocks", () => {
     expect(placed[1].endMin).toBe(235);
   });
 
-  it("flows untimed blocks sequentially starting at 9 AM", () => {
+  it("flows untimed blocks sequentially starting at 10 AM (summer default)", () => {
     const blocks: AgendaBlockLite[] = [
       { id: 1, title: "First", durationMin: 30 },
       { id: 2, title: "Second", durationMin: 20 },
     ];
     const placed = layoutBlocks(blocks, startHour, endHour);
-    // 09:00 - 07:00 = 120 min
-    expect(placed[0].startMin).toBe(120);
-    expect(placed[0].endMin).toBe(150);
-    // Next block flows 5 min after the first (30 + 5 = 35 → starts at 155)
-    expect(placed[1].startMin).toBe(155);
-    expect(placed[1].endMin).toBe(175);
+    // 10:00 - 07:00 = 180 min
+    expect(placed[0].startMin).toBe(180);
+    expect(placed[0].endMin).toBe(210);
+    // Next block flows 5 min after the first (30 + 5 = 35 → starts at 215)
+    expect(placed[1].startMin).toBe(215);
+    expect(placed[1].endMin).toBe(235);
   });
 
   it("flows untimed blocks AFTER timed blocks, not on top of them", () => {

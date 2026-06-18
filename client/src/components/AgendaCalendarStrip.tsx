@@ -79,9 +79,9 @@ export function layoutBlocks(
   const startBoundary = startHour * 60;
   const endBoundary = endHour * 60;
   const out: PositionedBlock[] = [];
-  // Track flow cursor for blocks without startTime — start at 9 AM (or the
-  // timeline's startHour, whichever is later).
-  let flowCursor = Math.max(9 * 60, startBoundary);
+  // Track flow cursor for blocks without startTime — start at 10 AM (the
+  // summer default day start, or the timeline's startHour, whichever is later).
+  let flowCursor = Math.max(10 * 60, startBoundary);
 
   // First pass: place timed blocks; advance the flow cursor past them so
   // untimed blocks slot AFTER the latest timed block.

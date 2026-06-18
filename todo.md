@@ -1340,11 +1340,12 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] Ran full suite (552 files, 4985 tests passing, 7 skipped); saved checkpoint 26c6eef2; re-rendered + visually verified the worksheet PDF (0.5in margins, full-page spread, colored banner + Kiwi + Name/Date + answer lines/boxes + page footer).
 
 ## 2026-06-18 (PM session 3) — Wire Calendar service account to power Drive
-- [ ] Reuse GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON for Drive in the credential resolver (getDriveCredentialStatus + drive client)
-- [ ] Enable live Drive push worker: ensure canonical folder, upload bytes, capture driveFileId, set status=pushed
-- [ ] "Open in Drive" deep-links the real Drive file once pushed
-- [ ] Update/relax credential-gate tests to reflect live service-account path; full suite green
-- [ ] Verify with a real push attempt; checkpoint; report
+(These 5 were the planning placeholders; all DONE — see the detailed canonical entries in the "Reuse Calendar service account for Drive" block below. Checkpoint 71497844.)
+- [x] Reuse GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON for Drive in the credential resolver (getDriveCredentialStatus + drive client)
+- [x] Enable live Drive push worker: ensure canonical folder, upload bytes, capture driveFileId, set status=pushed
+- [x] "Open in Drive" deep-links the real Drive file once pushed
+- [x] Update/relax credential-gate tests to reflect live service-account path; full suite green
+- [x] Verify with a real push attempt; checkpoint; report
 
 ## 2026-06-18 (PM session 3) — Reuse Calendar service account for Drive
 - [x] Drive credential resolver + push-worker gate now fall back to GOOGLE_CALENDAR_SERVICE_ACCOUNT_JSON / GOOGLE_CALENDAR_OAUTH_TOKEN when no dedicated GOOGLE_DRIVE_* is set (source labels: calendar_service_account / calendar_oauth_token). Dedicated Drive cred still wins.
