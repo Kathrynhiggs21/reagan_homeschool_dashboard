@@ -1235,4 +1235,16 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] Re-resolve the 7 Drive subfolders (deleted earlier for self-heal) under the live Adventures/Printables parents; created canonical-named folders + persisted drive.folderMap.* rows
 - [x] Update driveCanonicalFolders.test.ts expected IDs for Adventures/Printables (were the trashed dup IDs) to the live repointed IDs
 - [x] Full suite green: 544 files / 4916 tests
-- [ ] (Future tidy, optional) Live Adventures parent has older short-named folders (Journal, Bookshelf, Adventures) and Printables has (Future Worksheets, Printables) alongside the new canonical subfolders — could merge/migrate content later, left untouched to avoid blind moves
+- [x] (Future tidy, optional) Live Adventures parent has older short-named folders (Journal, Bookshelf, Adventures) and Printables has (Future Worksheets, Printables) alongside the new canonical subfolders — RESOLVED as a deferred decision below (2026-06-18 cont.): left untouched intentionally; worker self-heals by canonical name, so they are harmless and merging would risk existing links
+
+
+## 2026-06-18 (cont.) — Resolve FAKE folder-map rows + implement live Drive push worker
+- [x] Resolve the 3 `1FAKE_…` placeholder rows in app_settings: Day Logs → real folder `1T8w95lKV9VmHU4u-tjE3h2UhEeKdqIDC`; both Inbox keys (single + double underscore slug) → live Inbox parent `1PQPK34gnnlZrNojxFLJddCnDSpUQ5kR1` (flat drop zone, no redundant nested folder). Verified `fake_remaining = 0`.
+- [x] Fix stale `APP_SETTING_DEFAULTS` in db.ts: Adventures (137Knn9… → 1XiwfVoZEXDqfe6bheV-oSh-yMnLOqXq-) and Printables (1Uxqum… → 1Z_XX5Xqcg8NPkKfZDKYDl8BV-rm59LBg) so a fresh seed can't re-introduce the trashed dup IDs (live DB rows were already correct; defaults now match driveCanonicalFolders.test.ts).
+- [x] Add `CANONICAL_PARENT_NAMES` map (slug → human folder name) to db.ts for worker subfolder resolution
+- [x] New `server/_lib/driveClient.ts`: injectable Drive REST client (listChildren / createFolder / uploadFile multipart) + `resolveAccessToken` (OAuth token or service-account JWT via google-auth-library)
+- [x] Rewrite `server/_lib/drivePushWorker.ts` live path: canonical parent → named subfolder (persisted-id-first, ignores 1FAKE, else list/create) → optional structural subpath mkdir-P, per-run cache, name-based dedupe (SHA-256 vs Drive md5 mismatch documented), inline contentText + binary S3-bytes upload, exactly-one markDrivePushResult, never throws to heartbeat. Credential gate + public signatures unchanged (gate tests still pass).
+- [x] Install google-auth-library
+- [x] New tests: driveClient.test.ts (7) + drivePushWorkerLive.test.ts (9); credential-gate tests (10) still green
+- [x] Full suite green: 546 files / 4932 passed, 7 skipped
+- [x] (Optional future-tidy from prior session) DECISION: leave legacy short-named folders (Journal/Bookshelf/Adventures under Adventures; Future Worksheets/Printables under Printables) in place. The live worker resolves by canonical name and self-heals, so these legacy folders are harmless; merging would require blind content moves that risk Mom/Grandma's existing links. Deferred intentionally, not blocking.
