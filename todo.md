@@ -1391,20 +1391,29 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 
 
 ## Boot splash — choreographed cap-toss sequence (Katy 2026-06-19)
-- [ ] Frame 1: Kiwi centered on solid homeschool dark background, grad cap on head, brief friendly wave
-- [ ] Frame 2: Cap detaches + arcs upward; "Reagan's" (dynamic name) writes on letter-by-letter in an arched child-like handwritten script following the cap path
-- [ ] Frame 3: Cap peaks; Kiwi looks up / tracks it
-- [ ] Frame 4: Cap falls straight down to Kiwi's right past her feet, exits bottom; as it passes the feet, "HOMESCHOOL" fades in all-at-once below in a 3D bubble all-caps style matching Kiwi's blue/yellow aesthetic
-- [ ] Frame 5: Cap gone, Kiwi turns to viewer, smiles + winks, then splash fades out
-- [ ] Keep dynamic name + possessive; respect prefers-reduced-motion (static, name + HOMESCHOOL shown, quick dismiss); tap/key to skip
-- [ ] tsc + build clean; checkpoint
+- [x] Frame 1: Kiwi centered on solid homeschool dark background, grad cap on head, brief friendly wave
+- [x] Frame 2: Cap detaches + arcs upward; "Reagan's" (dynamic name) writes on letter-by-letter in an arched child-like handwritten script following the cap path
+- [x] Frame 3: Cap peaks; Kiwi looks up / tracks it
+- [x] Frame 4: Cap falls straight down to Kiwi's right past her feet, exits bottom; as it passes the feet, "HOMESCHOOL" fades in all-at-once below in a 3D bubble all-caps style matching Kiwi's blue/yellow aesthetic
+- [x] Frame 5: Cap gone, Kiwi turns to viewer, smiles + winks, then splash fades out
+- [x] Keep dynamic name + possessive; respect prefers-reduced-motion (static, name + HOMESCHOOL shown, quick dismiss); tap/key to skip
+- [x] tsc + build clean; checkpoint
 
 
 ## Kiwi feather drift (website ambient, NOT boot splash) — Katy 2026-06-19
-- [ ] Recolor boot splash text/background to the REAL blue/yellow budgie palette (yellow head + turquoise body) — sprite recolor is a separate open question
-- [ ] Find where the persistent Kiwi companion renders on the website
-- [ ] Occasionally (e.g., when Kiwi flaps/takes off) drop a single feather that floats gently down and off-screen
-- [ ] Feather styled in Kiwi's colors (yellow/teal), subtle sway + rotate as it falls, low frequency so it's a delight not a distraction
-- [ ] Respect prefers-reduced-motion (no falling feathers); keep performance light (one feather at a time, auto-cleanup)
-- [ ] NOT on the boot splash — only the in-app Kiwi
-- [ ] tsc + build clean; checkpoint
+- [x] Recolor boot splash text/background to the REAL blue/yellow budgie palette (yellow head + turquoise body) — sprite recolor is a separate open question
+- [x] Find where the persistent Kiwi companion renders on the website (KiwiPerch.tsx)
+- [x] Occasionally (e.g., when Kiwi flaps/takes off) drop a single feather that floats gently down and off-screen
+- [x] Feather styled in Kiwi's colors (yellow/teal), subtle sway + rotate as it falls, low frequency so it's a delight not a distraction
+- [x] Respect prefers-reduced-motion (no falling feathers); keep performance light (one feather at a time, auto-cleanup)
+- [x] NOT on the boot splash — only the in-app Kiwi
+- [x] tsc + build clean; checkpoint
+
+
+## Kiwi variety + social world (time-aware moments + Lychee + duck flock) — Katy 2026-06-19
+- [x] Time-aware moment engine (resolveKiwiMoment + getTimeSegment): mood + idle/funny lines rotate by day segment instead of being frozen all day
+- [x] Best-friend male budgie Lychee (rhymes with Kiwi): coral/cream sprite, visits OFTEN with follow/bicker/preen/flyoff banter beats
+- [x] Real 3-duck flock visits RARELY: large white-speckled black Swedish female leader (greenish back) + two teen mallard twins (one slightly smaller, smaller eyes), matched to owner photos/video
+- [x] Duck cameo waddles in single-file with head-bob waddle animation + muttery follow-the-leader banter
+- [x] Wire KiwiPerch: refresh moment over the day, render Lychee/duck cameos, drifting feathers on takeoff (reduced-motion aware)
+- [x] Deterministic vitest (kiwiMoment.test.ts) for moment rotation + social frequency/beat/banter; full suite + tsc + build clean; checkpoint
