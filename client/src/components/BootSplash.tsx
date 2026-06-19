@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import KiwiSprite from "./KiwiSprite";
+import { trpc } from "@/lib/trpc";
 
 /**
  * BootSplash
@@ -25,8 +26,14 @@ import KiwiSprite from "./KiwiSprite";
  */
 
 const SESSION_KEY = "bootSplashSeen";
-const TITLE_WORDS = ["Reagan's", "Homeschool"];
 const WORD_COLORS = ["#fff4d6", "#bdf0d6"]; // chalk cream / chalk mint
+
+/** Turn a name into its possessive form: "Reagan" -> "Reagan's", "Chris" -> "Chris'". */
+function possessive(name: string): string {
+  const n = name.trim();
+  if (!n) return "";
+  return /s$/i.test(n) ? `${n}’` : `${n}’s`;
+}
 
 // Little floating school doodles around the lockup.
 const DOODLES = [
@@ -49,6 +56,15 @@ export default function BootSplash() {
   });
   const [leaving, setLeaving] = useState(false);
   const [reduced, setReduced] = useState(false);
+
+  // Pull the student's name from app settings (public profile query). While it
+  // loads we fall back to "Reagan" so the splash never flashes a blank title.
+  const profile = trpc.profile.get.useQuery(undefined, { enabled: show });
+  const titleWords = useMemo(() => {
+    const full = (profile.data?.studentName || "Reagan").trim();
+    const first = full.split(/\s+/)[0] || "Reagan";
+    return [possessive(first), "Homeschool"];
+  }, [profile.data?.studentName]);
 
   useEffect(() => {
     if (!show) return;
@@ -173,13 +189,13 @@ export default function BootSplash() {
           </span>
         </div>
 
-        {/* Title — "Reagan's Homeschool" sliding in word-by-word */}
+        {/* Title — "<Name>'s Homeschool" sliding in word-by-word */}
         <div className="flex flex-col">
           <h1
             className="font-display leading-tight m-0 flex flex-col"
             style={{ letterSpacing: "-0.01em" }}
           >
-            {TITLE_WORDS.map((w, i) => (
+            {titleWords.map((w, i) => (
               <span
                 key={w}
                 className={reduced ? "boot-word-static" : "boot-word"}
@@ -204,7 +220,7 @@ export default function BootSplash() {
               fontFamily: "'Caveat', cursive",
               fontSize: "clamp(1rem, 2.8vw, 1.5rem)",
               opacity: 0.95,
-              animationDelay: reduced ? undefined : `${0.5 + TITLE_WORDS.length * 0.18}s`,
+              animationDelay: reduced ? undefined : `${0.5 + titleWords.length * 0.18}s`,
             }}
           >
             Let's learn something fun today ✏️

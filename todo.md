@@ -1387,3 +1387,4 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] Show once per session (sessionStorage), fade out after ready, tap/key to dismiss, respect prefers-reduced-motion
 - [x] Mount in App.tsx above the router so it covers the whole page during initial mount
 - [x] Verify (tsc + build clean) + checkpoint
+- [x] Pull the student's name dynamically from app settings (profile.studentName, public query) instead of hardcoding; possessive helper handles names ending in "s"; falls back to "Reagan" while loading
