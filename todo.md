@@ -1379,3 +1379,11 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] Resync via gws user-OAuth: queue drained — 18/20 stuck rows pushed (16 Topics Covered, 1 Analytics CSV, 1 assignment PDF); 2 unrecoverable (corrupt fileKey "k", bytes never stored). Final queue: 176 pushed / 291 skipped / 2 failed / 0 pending
 - [x] Tests: drivePushCorruptKeyGuard (4) + drivePushQuota403Classification (2); full drive suite 245 green
 - [x] Report findings to user
+
+
+## Boot splash — animated title with Kiwi (Katy 2026-06-19)
+- [x] Build a branded boot splash: centered Kiwi scholar (glasses + lab coat + graduation cap) shown on first app load
+- [x] Animate the title "Reagan's Homeschool" in beside the bird (word-by-word entrance) + cute educational doodles (pencil/book/apple/star) and a hopping flap-in
+- [x] Show once per session (sessionStorage), fade out after ready, tap/key to dismiss, respect prefers-reduced-motion
+- [x] Mount in App.tsx above the router so it covers the whole page during initial mount
+- [x] Verify (tsc + build clean) + checkpoint

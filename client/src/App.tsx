@@ -9,6 +9,7 @@ import { KiwiProvider } from "./contexts/KiwiContext";
 import { AdultLockProvider } from "./contexts/AdultLockContext";
 import { CustomBackgroundProvider } from "./contexts/CustomBackgroundContext";
 import AdultGate from "./components/AdultGate";
+import BootSplash from "./components/BootSplash";
 import AssignmentsLibrary from "./pages/AssignmentsLibrary";
 import CozyShell from "./components/CozyShell";
 import KiwiCompanion from "./components/KiwiCompanion";
@@ -163,6 +164,7 @@ function App() {
             <AdultLockProvider>
               <CustomBackgroundProvider>
                 <Toaster />
+                <BootSplash />
                 <Router />
                 <PwaInstallPrompt />
               </CustomBackgroundProvider>
