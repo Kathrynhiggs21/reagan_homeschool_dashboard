@@ -1417,3 +1417,166 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] Duck cameo waddles in single-file with head-bob waddle animation + muttery follow-the-leader banter
 - [x] Wire KiwiPerch: refresh moment over the day, render Lychee/duck cameos, drifting feathers on takeoff (reduced-motion aware)
 - [x] Deterministic vitest (kiwiMoment.test.ts) for moment rotation + social frequency/beat/banter; full suite + tsc + build clean; checkpoint
+
+
+## Seasonal duck behavior — kiddie pool splash on hot days, huddle when cold (Katy 2026-06-19)
+- [ ] Add a deterministic season/temperature resolver (resolveDuckSeason) from the date: hot (summer) / cold (winter) / mild (spring+fall)
+- [ ] Hot day: duck flock splashes in their blue kiddie pool (pool prop + splash poses + cooling-off banter)
+- [ ] Cold day: flock huddles together in a tight cuddle pile (huddle pose + cozy/shivery banter)
+- [ ] Mild day: keep the normal single-file waddle behavior + banter
+- [ ] Wire the seasonal mode into the duck cameo in KiwiPerch (pool/huddle/waddle render + matching line bank)
+- [ ] Deterministic vitest for resolveDuckSeason + season-specific duck lines; full suite + tsc + build clean; checkpoint
+
+
+## Lychee mini-events — shared bit (Katy 2026-06-19)
+- [ ] Add an occasional "shared moment" beat to the Lychee social engine (rare, deterministic)
+- [ ] "Shared berry" bit: Kiwi + Lychee share a little berry, with a cute shared-snack banter line
+- [ ] "Synchronized hop" bit: the two birds do a quick matching hop together
+- [ ] Render the mini-event in the cameo (berry prop / sync-hop animation) respecting reduced-motion
+- [ ] Deterministic vitest for the mini-event beats + lines
+
+## Who-visited-today log — collectible badge (Katy 2026-06-19)
+- [ ] Persist per-day visits (Lychee / ducks) so a stop-by is remembered for the day
+- [ ] Tiny tappable badge near Kiwi showing who visited today; opens a little popover/list
+- [ ] Turn cameos into a collectible (e.g., "you spotted Lychee today!") — light, delightful, no clutter
+- [ ] Deterministic/server tests for the visit-log persistence; full suite + tsc + build clean; checkpoint
+
+
+## Bird props & extra actions + attention-weighting (Katy 2026-06-19)
+- [ ] Core rule: each bird has an appearance counter; the more a bird appears, the richer its behavior pool (Kiwi richest, then Lychee, then ducks)
+- [ ] Props auto-spawn AND auto-clean-up (appear, do the bit, disappear); all reduced-motion aware
+- [ ] Footprints: a short trail of prints when a bird steps in something (mud/paint), fades out
+- [ ] Poop: occasional comedic poop drop that leaves a tiny spot, then the bird cleans it up
+- [ ] Pool swimming: ducks splash in the kiddie pool on hot days (toe-dip for Kiwi/Lychee sometimes)
+- [ ] Tree branch perch: a branch slides in, bird fluffs + perches, branch disappears when done
+- [ ] Store-bought cage perches: rotate real pet-store perch types (rope/boing, wooden dowel, ladder, swing, mineral/cuttlebone)
+- [ ] Eating: nibbling seed/millet/berry with little crumbs
+- [ ] Hopping when happy: extra hops/bounces when mood is good
+- [ ] Build a reusable Skill capturing the whole behavior library + attention-weighting + an "update often" workflow
+- [ ] Generate several duck image style options and send to Katy to pick favorites
+- [ ] Tests + tsc + build clean; checkpoint
+
+
+## Reagan-anchored behavior + out-of-app birds (Katy 2026-06-19)
+- [x] Behavior engine: every bird does BOTH self/among-birds bits AND Reagan-directed reactions; lean toward Reagan grows with appearances
+- [x] Ducks all notice Reagan + move toward her (leader notices first, twins follow her gaze)
+- [ ] Render Reagan-aware actions + props in KiwiPerch
+- [ ] Write a complete build brief for a SEPARATE Manus task: out-of-app always-on-screen desktop/iPad bird pet (Mac menu-bar app + iPad PiP/widget), reusing sprites + behavior engine, with on/off switch
+- [ ] Out-of-app birds do NOT talk about school or use AI voice; they chatter about everyday fun things only
+
+
+## Kiwi dress-up wardrobe popup (Katy 2026-06-19)
+- [ ] Tap Kiwi -> "Dress me up!" opens a small wardrobe/closet popup
+- [ ] Categories: headwear, glasses, tops/outfits, neck (scarf/bow/necklace), held items, seasonal/holiday
+- [ ] Items layer onto her sprite; mix-and-match; "take off" + "surprise me"
+- [ ] Chosen outfit persists (localStorage) so she stays dressed
+- [ ] Stacks with / can override the auto-costume of the day (soccer jersey, lab coat, etc.)
+- [ ] Generate wardrobe item art (transparent layered sprites)
+- [ ] Bird-to-bird chatter is low/ambient: small text popups between birds (soft chirps reserved for opt-in out-of-app build); never loud AI voice, never school talk
+- [ ] Branch perch reserved for the out-of-app desktop pet (removed from in-app per 2026-06-17)
+
+
+## Kiwi outfit opinions (Katy 2026-06-19)
+- [ ] Kiwi reacts to the outfit Reagan picks (loves it / thinks it's silly), in her funny 11+ voice
+- [ ] If outfit changed or persists to next day, she comments (grumbles about yesterday's look, struts in a favorite, begs for a change)
+- [ ] Reaction lines are low-key text popups mixed into idle lines (not nagging)
+- [ ] Reactions tied to current outfit + whether it changed/persisted
+
+
+## Kiwi dress-up stand + girly package (Katy 2026-06-19)
+- [ ] Wardrobe popup shows Kiwi standing on a cute dress-up stand/pedestal as live preview
+- [ ] Live preview updates as items are added/removed
+- [ ] Girly accessories package: bows, tiara/crown, flower crown, hair clips, heart sunglasses, pearl necklace, tutu, dress, sparkly cape, purse, ribbons, star wand, butterfly wings
+- [ ] "Surprise me", "take off all", sparkly Save
+
+
+## Wardrobe accessory categories (Katy 2026-06-19)
+- [ ] Girly tab: bows, tiara, flower crown, pearls, tutu, heart sunglasses, sparkly cape, purse, butterfly wings, star wand
+- [ ] Sporty tab: soccer jersey + headband, baseball cap, sweatband, cleats, sport sunglasses, medal, ball prop, swim goggles
+- [ ] Everyday tab: beanie, scarf, raincoat + boots, backpack, glasses, hoodie, sun hat, sneakers
+- [ ] Silly/unexpected tab: googly eyes, tiny mustache, unibrow, traffic-cone hat, banana costume, tin-foil hat, lampshade, monocle + top hat, taco hat, dino hood, propeller cap, "I heart Reagan" tee, rubber-duck floatie
+- [ ] Kiwi extra sassy reacting to the silly items
+
+
+## Kiwi's Closet = avatar-dressing screen (Roblox-style) (Katy 2026-06-19)
+- [ ] Full dress-up screen feel (not tiny popup): Kiwi as big avatar on a rotating stand
+- [ ] Category tabs (Girly/Sporty/Everyday/Silly/Seasonal), each a scrollable item grid of tappable thumbnails (shop-like)
+- [ ] Layered slots: head, eyes, neck, body, feet, held, back/wings (items stack like an avatar outfit)
+- [ ] Equipped panel with per-item remove; Save look / Surprise me / Take off all
+- [ ] Saved outfit presets ("Soccer Day", "Fancy", "Goofy") to swap like avatar costumes
+- [ ] Kiwi sassy reactions as the look is built
+
+
+## Wardrobe "Other / life-stuff" category (Katy 2026-06-19)
+- [ ] Health/injury: arm cast (signable), leg cast + crutch, bandage, sling, eye patch, hospital gown, thermometer, ice pack
+- [ ] Situational: lab coat, doctor mask, raincoat, apron + chef hat, party hat + sash, grad cap + gown, swim floaties, mittens
+- [ ] Seasonal/holiday: Santa hat, bunny ears, pumpkin bucket, reindeer antlers, shamrock, flag
+- [ ] These integrate with auto-costume-of-the-day (soccer/doctor/injury) and Reagan can override manually
+
+
+## Wardrobe — full slot/item coverage (Katy 2026-06-19)
+- [ ] Hats/headwear: cap, beanie, sun hat, cowboy, top hat, party, Santa, chef, witch, crown/tiara, propeller, cone
+- [ ] Headbands/hair: sport headband, sweatband, bows, flower crown, clips, bunny/reindeer ears, halo, antennae
+- [ ] Glasses/eyes: heart shades, sport shades, nerd glasses, monocle, eye patch, googly eyes, goggles
+- [ ] Neck: scarf, bow tie, pearls, medal, bandana
+- [ ] Body/outfits: dress, tutu, hoodie, jersey, lab coat, raincoat, hospital gown, banana/dino costume, cape, sweater
+- [ ] Bags/packs: backpack, purse, fanny pack, satchel, lunchbox, suitcase
+- [ ] Feet: sneakers, cleats, rain boots, ballet slippers, fuzzy slippers
+- [ ] Held/back: star wand, flag, balloon, umbrella, ball, wings, jetpack
+- [ ] Ensure every layer slot has multiple options across all tabs
+
+
+## Dressing room snapshot + lookbook (Katy 2026-06-19)
+- [ ] Camera/snapshot button in dressing room captures Kiwi in current outfit on the stand
+- [ ] Render layered avatar preview to an image (html-to-canvas) and save via storage
+- [ ] "Kiwi Lookbook" gallery: saved snapshots persist, scrollable
+- [ ] Re-load a saved look ("wear this again"), download, delete
+
+
+## Wardrobe equip rules + costume tab (Katy 2026-06-19)
+- [ ] Remove items one by one (each equipped item has its own remove x) + Clear/Take off all button
+- [ ] One item per slot: new hat replaces current hat; hat and headband share the head slot (swap, not stack); same for glasses/body/feet/etc.
+- [ ] Halloween/costume tab (full-outfit costumes): angel (halo+wings), devil (horns+tail+pitchfork), maid, witch, vampire, ghost, skeleton, mummy, pumpkin, black cat, superhero, princess, pirate, ninja, clown, fairy, cowgirl
+- [ ] Animated-character-style costumes (generic, non-trademarked): cute mouse, magical girl, knight, robot, dinosaur, unicorn, mermaid, astronaut, bumblebee
+- [ ] Costumes take body slot + may auto-add signature head/held piece; Kiwi extra sassy on spooky/silly ones
+- [ ] CONFIRM: "smelly angel" — normal angel vs stinky-gag variant (stink lines)?
+
+
+## Wardrobe removal clarification (Katy 2026-06-19)
+- [ ] Removal is per-piece only (each equipped item has its own remove x) + a single Take off all / Clear
+- [ ] NO bulk/group removal (no "remove all hats" or "remove costume set")
+- [ ] Costumes are decomposable: equip the whole set OR pick individual pieces (just horns, just wings); each piece obeys one-per-slot swap
+
+
+## Wardrobe trendy/teen-culture tab (Katy 2026-06-19)
+- [ ] Trendy items: headphones/earbuds, oversized hoodie, claw clip, smiley/heart bag, friendship bracelets, butterfly clips, bucket hat, mini crossbody bag, platform sneakers, statement sunglasses, ring light, bubble tea, phone prop, oversized cardigan, leg warmers
+- [ ] Kiwi reactions use light, age-appropriate current slang (slay, main-character energy, lowkey iconic, no cap, it ate) — tasteful 11+
+- [ ] Slang lines refreshable over time via the bird-behavior Skill so they stay current
+
+
+---
+
+## 🐦 Bird World — Visit Log + YouTube Interest Engine (2026-06-19)
+
+### Per-day "who visited today" visit-log badge
+- [x] Add a per-day visit log (localStorage key `kiwi_visits_YYYY-MM-DD`) recording each guest cameo `{ guest, ts }`
+- [x] Record visit inside the social scheduler's `if (soc.guestId)` branch (lychee and/or ducks)
+- [x] Small tappable badge near Kiwi showing today's unique visitors (Lychee dot + duck dot) with a popover listing visit times
+- [x] Auto-reset at midnight (date-keyed; re-check on mount + each scheduler tick)
+- [x] Deterministic helper extracted + unit-tested (todayVisitKey, recordVisit, summarizeVisits) — server/kiwiVisitLog.test.ts (6 tests)
+
+### YouTube interest engine (REAL data — likes/subs live + optional Takeout seed)
+- [ ] Connect `youtube.readonly` scope for the account Reagan uses (one-tap authorize)
+- [ ] Server: read Liked videos + Subscriptions (YouTube Data API v3), extract topic/theme keywords into an interest profile
+- [ ] Optional: import Google Takeout `watch-history.json` to seed a deeper interest profile (manual upload)
+- [ ] Persist interest profile (DB) + periodic refresh (Heartbeat)
+- [ ] Drift Kiwi's activity ideas / assignment themes / idle chatter from the interest profile (real signals only, no fabrication)
+- [ ] Unlock interest-themed wearables based on detected interests
+- [ ] Tests for interest extraction + drift (deterministic, no live calls in tests)
+- [ ] NOTE: YouTube watch/search history is NOT available via API — only Liked/Subs/Playlists live; full history requires Takeout import
+
+
+### Start-time change (2026-06-19)
+- [x] Set next school day (Mon 2026-06-22) to start 11:00 AM (cascaded 11:00/11:40/12:20/13:00, +120m shift)
+- [x] Set standing default summer.startTimeDefault = 11:00 (appSettings)
+- [x] AgendaCalendarStrip component fallback 10 → 11 (+ test updated)

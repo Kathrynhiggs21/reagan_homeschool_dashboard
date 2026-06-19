@@ -169,7 +169,7 @@ export function AgendaCalendarStrip({
   const resolvedFlowStartHour =
     flowStartHour ??
     hourFromHHMM(startTimeDefaultPref.data as string | null | undefined) ??
-    10;
+    11;
 
   const placed = useMemo(
     () => layoutBlocks(blocks, startHour, endHour, resolvedFlowStartHour),

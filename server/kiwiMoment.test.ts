@@ -8,6 +8,8 @@ import {
   LYCHEE_BICKER_LINES,
   LYCHEE_PREEN_LINES,
   LYCHEE_FLYOFF_LINES,
+  LYCHEE_BERRY_LINES,
+  LYCHEE_SYNCHOP_LINES,
 } from "../shared/kiwiCharacter";
 
 // A plain everyday date with no special costume/guest so the moment engine is
@@ -142,6 +144,8 @@ describe("resolveKiwiSocial", () => {
       bicker: LYCHEE_BICKER_LINES,
       preen: LYCHEE_PREEN_LINES,
       flyoff: LYCHEE_FLYOFF_LINES,
+      sharedberry: LYCHEE_BERRY_LINES,
+      synchop: LYCHEE_SYNCHOP_LINES,
       chatter: LYCHEE_FOLLOW_LINES, // chatter falls back to the follow bank
     };
     for (let d = 1; d <= 14; d++) {

@@ -11,6 +11,13 @@ import {
   ALL_PROJECT_KINDS,
   type KiwiCostume,
   type KiwiSocialMoment,
+  todayVisitKey,
+  recordVisit,
+  summarizeVisits,
+  describeVisits,
+  type VisitEntry,
+  type VisitGuest,
+  type VisitSummary,
 } from "@shared/kiwiCharacter";
 import { findLedges } from "@/lib/kiwiWorld";
 // Kiwi is silent by default. We deliberately do NOT import chirp() here so the
@@ -208,6 +215,57 @@ export default function KiwiPerch() {
       setFeathers((prev) => prev.filter((f) => f.id !== id));
     }, 3600);
   }, [reducedMotion]);
+
+  // ---- Bird props (footprints / poop / pool / branch / store perches / food) ----
+  // A prop spawns next to the active bird, plays its little bit, then auto-cleans
+  // up. Visual-only; reduced-motion shows the prop statically (no splash/ripple).
+  const [activeProp, setActiveProp] = useState<
+    | { id: number; kind: string }
+    | null
+  >(null);
+  const propIdRef = useRef(0);
+  const propTimerRef = useRef<number | null>(null);
+  const spawnProp = useCallback((kind: string, holdMs = 6000) => {
+    const id = ++propIdRef.current;
+    setActiveProp({ id, kind });
+    if (propTimerRef.current) window.clearTimeout(propTimerRef.current);
+    propTimerRef.current = window.setTimeout(() => {
+      setActiveProp((p) => (p && p.id === id ? null : p));
+    }, holdMs);
+  }, []);
+
+  // ---- Per-day visit log ("who came to see Kiwi today") ----
+  // Reagan collects a tiny daily log of guest cameos. Persisted in localStorage
+  // under a date-keyed key so it resets at local midnight on its own. Pure
+  // helpers (todayVisitKey/recordVisit/summarizeVisits) live in kiwiCharacter.
+  const [visitKey, setVisitKey] = useState<string>(() => todayVisitKey());
+  const [visitLog, setVisitLog] = useState<VisitEntry[]>([]);
+  const [visitOpen, setVisitOpen] = useState(false);
+  // Load (or roll over) the log whenever the active day-key changes.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(visitKey);
+      const parsed = raw ? (JSON.parse(raw) as VisitEntry[]) : [];
+      setVisitLog(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      setVisitLog([]);
+    }
+  }, [visitKey]);
+  // Record a guest visit into today's log (idempotent-safe; capped in helper).
+  const recordTodayVisit = useCallback((guest: VisitGuest) => {
+    const key = todayVisitKey();
+    // If we've rolled past midnight since last write, switch keys first.
+    setVisitKey((prev) => (prev === key ? prev : key));
+    setVisitLog((prev) => {
+      // When the key just rolled, prev still holds yesterday's rows; start fresh.
+      const base = key === visitKey ? prev : [];
+      const next = recordVisit(base, guest, Date.now());
+      try { localStorage.setItem(key, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }, [visitKey]);
+  const visitSummary: VisitSummary = useMemo(() => summarizeVisits(visitLog), [visitLog]);
+
   const lastInteractRef = useRef(Date.now());
   const bubbleTimeoutRef = useRef<number | null>(null);
   const dragOffsetRef = useRef<{ dx: number; dy: number } | null>(null);
@@ -404,6 +462,8 @@ export default function KiwiPerch() {
             setSocial(soc);
             const member: FlockMember = soc.guestId === "ducks" ? "ducks" : "lychee";
             setCameo(member);
+            // Log it into Reagan's per-day "who visited today" collectible.
+            recordTodayVisit(soc.guestId === "ducks" ? "ducks" : "lychee");
             // Show the banter line as a bubble.
             if (soc.line) {
               setBubbleText(soc.line);
@@ -415,12 +475,21 @@ export default function KiwiPerch() {
               setPose("flap");
               dropFeather();
               window.setTimeout(() => setPose("idle"), 900);
+            } else if (soc.beat === "synchop") {
+              // Synchronized hop with Lychee — Kiwi hops happily too.
+              setPose("flap");
+              window.setTimeout(() => setPose("chirp"), 300);
+              window.setTimeout(() => setPose("idle"), 900);
             } else {
               setPose("chirp");
               window.setTimeout(() => setPose("idle"), 700);
             }
-            // Clear the cameo after ~7s (ducks linger a touch longer).
+            // Beat-specific props that auto-clean-up alongside the cameo.
             const hold = soc.guestId === "ducks" ? 7_600 : 6_800;
+            if (soc.beat === "poolsplash") spawnProp("pool", hold);
+            else if (soc.beat === "huddle") spawnProp("huddle", hold);
+            else if (soc.beat === "sharedberry") spawnProp("berry", hold);
+            // Clear the cameo after the hold (ducks linger a touch longer).
             window.setTimeout(() => { setCameo(null); setSocial(null); }, hold);
           } else {
             // No scheduled guest this window — occasional quiet fly-by of the
@@ -439,7 +508,7 @@ export default function KiwiPerch() {
     };
     schedule();
     return () => { if (timer) window.clearTimeout(timer); };
-  }, [enabled, adultPresent, dragging, flying, dropFeather]);
+  }, [enabled, adultPresent, dragging, flying, dropFeather, spawnProp, recordTodayVisit]);
 
   /* ====================== PERCH ON A PAGE LEDGE/CARD =======================
    * Every 30-60s Kiwi hops up onto the top edge of a real card on the page
@@ -671,6 +740,15 @@ export default function KiwiPerch() {
           <Feather key={f.id} color={f.color} size={size} seed={f.id + i} />
         ))}
 
+        {activeProp && (
+          <BirdProp
+            key={activeProp.id}
+            kind={activeProp.kind}
+            size={size}
+            reduced={reducedMotion}
+          />
+        )}
+
         {cameo && (() => {
           // The duck trio is a 3-wide image, so render it bigger and tuck it
           // lower-left like a little waddling squad; single birds sit close.
@@ -736,6 +814,19 @@ export default function KiwiPerch() {
             button was unnecessary clutter. Kiwi can still fly via double-tap
             (see the dblclick/double-tap handler above) and the window.flyKiwi
             hook, so no functionality is lost. */}
+
+        {/* Per-day "who visited today" collectible badge. Only appears once a
+            guest has actually stopped by (standing rule: don't show if no info).
+            Tappable → popover listing today's visitors + times. */}
+        {visitSummary.total > 0 && (
+          <VisitBadge
+            summary={visitSummary}
+            log={visitLog}
+            open={visitOpen}
+            onToggle={() => setVisitOpen((v) => !v)}
+            size={size}
+          />
+        )}
       </div>
 
       <style>{`
@@ -774,7 +865,93 @@ export default function KiwiPerch() {
           0%   { transform: translate(0,0) rotate(0deg); opacity: 0.95; }
           100% { transform: translate(var(--fx), var(--fy)) rotate(var(--fr)); opacity: 0; }
         }
+        /* Prop fade-in for pool / huddle / berry accents. */
+        @keyframes kiwiPropIn {
+          0%   { transform: translateY(8px) scale(0.7); opacity: 0; }
+          16%  { transform: translateY(0) scale(1); opacity: 1; }
+          84%  { transform: translateY(0) scale(1); opacity: 1; }
+          100% { transform: translateY(4px) scale(0.85); opacity: 0; }
+        }
+        /* Expanding water ripple rings under the splashing ducks. */
+        @keyframes kiwiRipple {
+          0%   { transform: scale(0.3); opacity: 0.55; }
+          100% { transform: scale(1.6); opacity: 0; }
+        }
+        /* Splash droplets arcing up off the pool. */
+        @keyframes kiwiDroplet {
+          0%   { transform: translate(0,0) scale(1); opacity: 0.9; }
+          100% { transform: translate(var(--dx), var(--dy)) scale(0.4); opacity: 0; }
+        }
       `}</style>
+    </div>
+  );
+}
+
+/**
+ * VisitBadge — Reagan's per-day "who came to see Kiwi today" collectible.
+ * A little chip tucked under the perch showing a guest icon per unique visitor
+ * (plus a count). Tapping it opens a tiny popover that lists each visit time.
+ * Visual + informational only; never makes sound.
+ */
+function VisitBadge({
+  summary,
+  log,
+  open,
+  onToggle,
+  size,
+}: {
+  summary: VisitSummary;
+  log: VisitEntry[];
+  open: boolean;
+  onToggle: () => void;
+  size: number;
+}) {
+  const guestIcon = (g: VisitGuest) => (g === "lychee" ? "🦜" : "🦆");
+  const guestName = (g: VisitGuest) => (g === "lychee" ? "Lychee" : "Duck squad");
+  const fmtTime = (ts: number) =>
+    new Date(ts).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return (
+    <div
+      className="absolute"
+      style={{ top: size + 6, left: "50%", transform: "translateX(-50%)", zIndex: 40 }}
+    >
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-label={`Today's visitors: ${describeVisits(summary)}`}
+        title="Who visited Kiwi today?"
+        className="flex items-center gap-1 rounded-full border-2 border-amber-300 bg-amber-50 px-2 py-0.5 shadow hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-amber-400"
+        style={{ fontFamily: "'Patrick Hand','Comic Sans MS',cursive" }}
+        data-testid="kiwi-visit-badge"
+      >
+        {summary.guests.map((g) => (
+          <span key={g} aria-hidden style={{ fontSize: 14, lineHeight: 1 }}>
+            {guestIcon(g)}
+          </span>
+        ))}
+        <span className="text-[11px] font-bold text-amber-800">{summary.total}</span>
+      </button>
+      {open && (
+        <div
+          className="absolute left-1/2 -translate-x-1/2 mt-1 rounded-xl border-2 border-amber-300 bg-white p-2 shadow-lg"
+          style={{ width: 178, zIndex: 9999, fontFamily: "'Patrick Hand','Comic Sans MS',cursive" }}
+          data-testid="kiwi-visit-popover"
+        >
+          <div className="text-[12px] font-bold text-amber-800 mb-1">Visitors today 🎉</div>
+          <div className="max-h-40 overflow-auto">
+            {[...log]
+              .slice()
+              .reverse()
+              .map((e, i) => (
+                <div key={i} className="flex items-center gap-1.5 text-[12px] text-slate-700 py-0.5">
+                  <span aria-hidden>{guestIcon(e.guest)}</span>
+                  <span className="font-semibold">{guestName(e.guest)}</span>
+                  <span className="ml-auto text-[11px] text-slate-400">{fmtTime(e.ts)}</span>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -850,4 +1027,112 @@ function Feather({ color, size, seed }: { color: string; size: number; seed: num
 
 export function celebrateKiwi(message?: string) {
   window.dispatchEvent(new CustomEvent("kiwi:celebrate", { detail: { message } }));
+}
+
+/**
+ * A little world prop that appears next to the active bird for a beat, then
+ * auto-cleans up. Visual-only sugar. With reduced motion the prop is shown
+ * statically (no splash droplets / ripple animation).
+ */
+function BirdProp({ kind, size, reduced }: { kind: string; size: number; reduced: boolean }) {
+  // Tuck the prop lower-left, roughly where the cameo squad waddles in.
+  const base: React.CSSProperties = {
+    position: "absolute",
+    left: -Math.round(size * 0.55),
+    top: Math.round(size * 0.55),
+    pointerEvents: "none",
+    animation: reduced ? undefined : "kiwiPropIn 7s ease-in-out forwards",
+  };
+
+  if (kind === "pool") {
+    const pw = Math.round(size * 1.1);
+    const ph = Math.round(pw * 0.4);
+    // A few droplets arcing up off the water.
+    const drops = Array.from({ length: 5 }).map((_, i) => {
+      const dir = i % 2 === 0 ? 1 : -1;
+      const dx = `${dir * (10 + i * 6)}px`;
+      const dy = `${-(16 + (i % 3) * 8)}px`;
+      return (
+        <span
+          key={i}
+          style={{
+            position: "absolute",
+            left: pw / 2,
+            top: ph * 0.35,
+            width: 5,
+            height: 5,
+            borderRadius: "50%",
+            background: "rgba(125,211,252,0.95)",
+            // @ts-expect-error CSS variables
+            "--dx": dx,
+            "--dy": dy,
+            animation: reduced ? undefined : `kiwiDroplet ${900 + i * 120}ms ease-out ${i * 160}ms infinite`,
+          }}
+        />
+      );
+    });
+    return (
+      <div aria-hidden style={{ ...base, width: pw, height: ph }} title="Pool day!">
+        {/* Ripple rings */}
+        {!reduced && [0, 1].map((r) => (
+          <span
+            key={r}
+            style={{
+              position: "absolute",
+              left: pw * 0.2,
+              top: ph * 0.3,
+              width: pw * 0.6,
+              height: ph * 0.5,
+              border: "2px solid rgba(56,189,248,0.5)",
+              borderRadius: "50%",
+              animation: `kiwiRipple ${1800}ms ease-out ${r * 700}ms infinite`,
+            }}
+          />
+        ))}
+        {/* The pool basin */}
+        <div
+          style={{
+            position: "absolute",
+            bottom: 0,
+            width: pw,
+            height: ph,
+            borderRadius: "50%",
+            background: "radial-gradient(ellipse at 50% 38%, #7dd3fc 0%, #38bdf8 55%, #0ea5e9 100%)",
+            boxShadow: "inset 0 3px 6px rgba(255,255,255,0.45), 0 3px 6px rgba(2,132,199,0.35)",
+            border: "3px solid #1d4ed8",
+          }}
+        />
+        {drops}
+      </div>
+    );
+  }
+
+  if (kind === "huddle") {
+    // A cozy little warmth glow + zzz for the cold-day cuddle pile.
+    return (
+      <div aria-hidden style={{ ...base, width: Math.round(size * 0.7), height: Math.round(size * 0.5) }} title="Cozy huddle">
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: "50%",
+            background: "radial-gradient(circle at 50% 60%, rgba(251,191,36,0.35) 0%, rgba(251,191,36,0) 70%)",
+            filter: "blur(2px)",
+          }}
+        />
+        <span style={{ position: "absolute", left: "60%", top: 0, fontSize: 14, opacity: 0.8 }}>💤</span>
+      </div>
+    );
+  }
+
+  if (kind === "berry") {
+    // A shared little berry between Kiwi + Lychee.
+    return (
+      <div aria-hidden style={{ ...base, width: 22, height: 22, left: -Math.round(size * 0.2), top: Math.round(size * 0.25) }} title="Sharing a berry">
+        <span style={{ fontSize: 18 }}>🫐</span>
+      </div>
+    );
+  }
+
+  return null;
 }

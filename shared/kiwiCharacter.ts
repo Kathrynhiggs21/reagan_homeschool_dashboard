@@ -666,13 +666,42 @@ export function resolveKiwiMoment(
 
 export type KiwiGuestId = "lychee" | "ducks" | null;
 export type KiwiInteractionBeat =
-  | "follow"   // Lychee tails Kiwi around the perch
-  | "bicker"   // playful squabble
-  | "preen"    // grooming each other, sweet
-  | "flyoff"   // they zoom off together for a sec
-  | "waddle"   // the duck trio waddles through
-  | "chatter"  // general happy noise
+  | "follow"      // Lychee tails Kiwi around the perch
+  | "bicker"      // playful squabble
+  | "preen"       // grooming each other, sweet
+  | "flyoff"      // they zoom off together for a sec
+  | "sharedberry" // Lychee + Kiwi share a little berry (rare mini-event)
+  | "synchop"     // Lychee + Kiwi do a quick matching hop (rare mini-event)
+  | "waddle"      // the duck squad waddles through (mild weather)
+  | "poolsplash"  // the duck squad splashes in the kiddie pool (hot days)
+  | "huddle"      // the duck squad huddles in a cuddle pile (cold days)
+  | "chatter"     // general happy noise
   | null;
+
+/** Coarse weather mode for the duck flock's seasonal behavior. */
+export type DuckSeason = "hot" | "cold" | "mild";
+
+/**
+ * Resolve the duck flock's seasonal mode from the date (Cincinnati/Eastern
+ * climate), with an optional explicit temperature (°F) override for when a
+ * real weather signal is wired in later.
+ *   - hot  → June–August (or tempF >= 82)
+ *   - cold → December–February (or tempF <= 40)
+ *   - mild → everything else (spring + fall)
+ * Temperature, when provided, always wins over the month heuristic.
+ */
+export function resolveDuckSeason(iso: string, tempF?: number | null): DuckSeason {
+  if (typeof tempF === "number" && !Number.isNaN(tempF)) {
+    if (tempF >= 82) return "hot";
+    if (tempF <= 40) return "cold";
+    return "mild";
+  }
+  const md = parseMonthDay(iso);
+  const month = md?.month ?? 6;
+  if (month >= 6 && month <= 8) return "hot";
+  if (month === 12 || month === 1 || month === 2) return "cold";
+  return "mild";
+}
 
 export interface KiwiSocialMoment {
   /** Who's visiting right now (or null for just Kiwi). */
@@ -683,6 +712,8 @@ export interface KiwiSocialMoment {
   line: string;
   /** The 2-hour visit window index (0-11 across the day), for stable keys. */
   windowIndex: number;
+  /** The duck flock's seasonal mode at this moment (always resolved). */
+  season: DuckSeason;
 }
 
 /** Lychee follow-around lines. */
@@ -720,6 +751,40 @@ export const LYCHEE_FLYOFF_LINES: string[] = [
   "Lychee and I gotta bounce for two seconds. bird business. very official.",
 ];
 
+/** RARE Lychee mini-event: sharing a single little berry. Extra-cute. */
+export const LYCHEE_BERRY_LINES: string[] = [
+  "Lychee found ONE berry and we're splitting it. half each. true friendship math.",
+  "shared-berry moment with Lychee \uD83E\uDED0 he nibbles one side, I nibble the other. best snack ever.",
+  "me + Lychee + one berry = the cutest little picnic on your desk. you're welcome.",
+  "Lychee saved me the last berry. I'm gonna cry. (it's a really good berry.)",
+];
+
+/** RARE Lychee mini-event: a quick synchronized hop together. */
+export const LYCHEE_SYNCHOP_LINES: string[] = [
+  "watch this\u2014me and Lychee do a synchronized hop. hop! hop! ten out of ten, no notes.",
+  "Lychee and I have been practicing our matching hop. ready? *hop together* NAILED it.",
+  "sync-hop with my bestie! we hopped at the EXACT same time. we're basically a duo act now.",
+  "me + Lychee, one little hop, perfectly in time. tiny birds, big synchronized energy.",
+];
+
+/** HOT-day duck lines: the flock cools off in their blue kiddie pool. */
+export const DUCK_POOL_LINES: string[] = [
+  "it's HOT out, so the squad piled into their blue kiddie pool. the big black Swedish lady cannonballed. splash everywhere.",
+  "pool day for the ducks! the speckly leader is doing laps, the mallard twins are just bobbing like little rubber duckies. bliss.",
+  "the flock's splashing in the pool to beat the heat\u2014wings flapping, water flying, twins squealing. summer duck chaos.",
+  "hot day = pool party. the boss duck splashes, the twins dunk their heads and shake it everywhere. ten outta ten swim sesh.",
+  "ducks in the kiddie pool again. the little twin keeps slipping off the edge and flopping back in. comedy. pure comedy.",
+];
+
+/** COLD-day duck lines: the flock huddles in a cozy cuddle pile. */
+export const DUCK_HUDDLE_LINES: string[] = [
+  "brrr! the ducks are huddled in one big cuddle pile, the black Swedish lady in the middle keeping the twins toasty.",
+  "cold day, so the squad's a single fluffy duck-blob. three ducks, one shape. body heat economics.",
+  "the flock's all tucked together, beaks under wings, the twins squished against their big leader. cozy duck huddle.",
+  "it's freezing so the ducks made a warm little pile. the smaller twin wormed right into the middle. smart baby.",
+  "duck huddle activated. they're puffed up like three feather pillows leaning on each other. winter mode: engaged.",
+];
+
 /** Duck squad visit lines. Reagan's REAL flock: the big black Swedish female
  * (white-speckled chest, greenish back) struts in front like a proud leader,
  * and the two brown mallard "twins" scurry behind her in a tight little cluster,
@@ -741,19 +806,25 @@ export const DUCK_VISIT_LINES: string[] = [
  * Schedule logic (deterministic from date+window):
  *   - The day is split into 12 two-hour windows.
  *   - Lychee visits OFTEN: in most windows there's a strong chance he's around,
- *     cycling through follow / bicker / preen / flyoff beats.
- *   - The duck trio is RARE: only a couple of windows a week, and never at the
- *     same time as a Lychee beat that needs the spotlight.
+ *     cycling through follow / bicker / preen / flyoff beats, plus RARE
+ *     mini-events (sharing a berry / a synchronized hop).
+ *   - The duck squad is RARE: only a couple of windows a week. WHAT they do
+ *     depends on the season: pool-splash on hot days, huddle when cold, or the
+ *     normal single-file waddle in mild weather.
+ *
+ * `tempF`, when provided, drives the season directly (for future weather wiring).
  */
 export function resolveKiwiSocial(
   isoDateTime: string,
   hourOverride?: number,
+  tempF?: number | null,
 ): KiwiSocialMoment {
   const isoDate = isoDateTime.slice(0, 10);
   const hour = hourOverride ?? hourFromIso(isoDateTime) ?? 12;
   const h = ((Math.floor(hour) % 24) + 24) % 24;
   const windowIndex = Math.floor(h / 2); // 0..11
 
+  const season = resolveDuckSeason(isoDate, tempF);
   const seed = stableHash(`${isoDate}|win${windowIndex}`);
 
   // Ducks: rare. Roughly ~2 windows per week → gate on a 1-in-40 hash slot,
@@ -763,36 +834,52 @@ export function resolveKiwiSocial(
   const duckWindow = isDuckDay && seed % 5 === 0;  // a single window on those days
 
   if (duckWindow) {
+    // Season decides the duck behavior + which banter bank to draw from.
+    const duckBeat: KiwiInteractionBeat =
+      season === "hot" ? "poolsplash" : season === "cold" ? "huddle" : "waddle";
+    const duckBank =
+      season === "hot" ? DUCK_POOL_LINES : season === "cold" ? DUCK_HUDDLE_LINES : DUCK_VISIT_LINES;
     return {
       guestId: "ducks",
-      beat: "waddle",
-      line: pick(DUCK_VISIT_LINES, seed) ?? DUCK_VISIT_LINES[0]!,
+      beat: duckBeat,
+      line: pick(duckBank, seed) ?? duckBank[0]!,
       windowIndex,
+      season,
     };
   }
 
   // Lychee: visits OFTEN. Present in ~65% of windows.
   const lycheeHere = seed % 100 < 65;
   if (lycheeHere) {
-    const beats: KiwiInteractionBeat[] = ["follow", "bicker", "preen", "flyoff", "chatter"];
-    const beat = beats[seed % beats.length]!;
+    // RARE mini-events (~1-in-9 of his visits): a shared berry or a sync hop.
+    const isMiniEvent = seed % 9 === 0;
+    let beat: KiwiInteractionBeat;
     let bank: string[];
-    switch (beat) {
-      case "follow":  bank = LYCHEE_FOLLOW_LINES; break;
-      case "bicker":  bank = LYCHEE_BICKER_LINES; break;
-      case "preen":   bank = LYCHEE_PREEN_LINES; break;
-      case "flyoff":  bank = LYCHEE_FLYOFF_LINES; break;
-      default:        bank = LYCHEE_FOLLOW_LINES; break;
+    if (isMiniEvent) {
+      // Alternate the two mini-events deterministically.
+      if (seed % 2 === 0) { beat = "sharedberry"; bank = LYCHEE_BERRY_LINES; }
+      else                { beat = "synchop";     bank = LYCHEE_SYNCHOP_LINES; }
+    } else {
+      const beats: KiwiInteractionBeat[] = ["follow", "bicker", "preen", "flyoff", "chatter"];
+      beat = beats[seed % beats.length]!;
+      switch (beat) {
+        case "follow":  bank = LYCHEE_FOLLOW_LINES; break;
+        case "bicker":  bank = LYCHEE_BICKER_LINES; break;
+        case "preen":   bank = LYCHEE_PREEN_LINES; break;
+        case "flyoff":  bank = LYCHEE_FLYOFF_LINES; break;
+        default:        bank = LYCHEE_FOLLOW_LINES; break;
+      }
     }
     return {
       guestId: "lychee",
       beat,
       line: pick(bank, seed + 1) ?? bank[0]!,
       windowIndex,
+      season,
     };
   }
 
-  return { guestId: null, beat: null, line: "", windowIndex };
+  return { guestId: null, beat: null, line: "", windowIndex, season };
 }
 
 /** Display metadata for each social guest (names + accent colors). */
@@ -803,3 +890,239 @@ export const KIWI_GUEST_META: Record<
   lychee: { name: "Lychee", accent: "#3b82f6", kind: "budgie" },
   ducks: { name: "the duck trio", accent: "#f6c343", kind: "ducks" },
 };
+
+
+/* ===========================================================================
+ * BIRD BEHAVIOR ENGINE  (attention-weighted, Reagan-aware)
+ * ---------------------------------------------------------------------------
+ * Reagan is the anchor of the whole flock. Every bird does TWO kinds of things:
+ *   - "self"   actions  → their own little life (eating, perching, swimming,
+ *                          bickering among themselves, pooping, etc.)
+ *   - "reagan" actions  → they NOTICE Reagan and react toward her (greet, edge
+ *                          closer, turn to face her, show off, lean in).
+ *
+ * Attention weighting: each bird has an appearance counter. The more a bird
+ * shows up, the richer its behavior pool AND the more it leans toward
+ * Reagan-directed reactions (a bird Reagan sees a lot grows more attached).
+ *
+ * Everything here is PURE + deterministic so it can be unit-tested. The perch
+ * component owns the appearance counters and the actual rendering/timers.
+ * =========================================================================== */
+
+export type BirdId = "kiwi" | "lychee" | "ducks";
+
+/** A prop a bird can spawn, perform with, then clean up. */
+export type BirdProp =
+  | "footprints"   // a short trail of prints after stepping in mud/paint
+  | "poop"         // comedic drop that leaves a spot, then gets cleaned up
+  | "pool"         // the blue kiddie pool (swimming / toe-dip)
+  | "branch"       // a tree branch slides in to perch on, then leaves
+  | "perch-rope"   // store-bought rope/boing perch
+  | "perch-dowel"  // wooden dowel perch
+  | "perch-ladder" // little ladder
+  | "perch-swing"  // hanging swing
+  | "perch-mineral"// mineral / cuttlebone perch
+  | "food-seed"    // seed/millet to nibble
+  | "food-berry"   // a berry to nibble
+  | null;
+
+/** Whether a behavior is the bird's own life, or a reaction toward Reagan. */
+export type BirdFocus = "self" | "reagan";
+
+/** A single resolved behavior for a bird at a moment. */
+export interface BirdBehavior {
+  birdId: BirdId;
+  /** Short action id (for the perch to map to an animation). */
+  action: string;
+  /** self = own life; reagan = noticing/reacting to Reagan. */
+  focus: BirdFocus;
+  /** Optional prop that spawns + auto-cleans-up for this behavior. */
+  prop: BirdProp;
+  /** A short caption line (Kiwi-voice / narrator) for the behavior. */
+  line: string;
+  /** Whether a happy hop accompanies this behavior. */
+  hop: boolean;
+}
+
+/**
+ * The behavior catalog. Pools are TIERED: tier 0 is always available; higher
+ * tiers unlock as a bird's appearance count grows (attention weighting). Each
+ * entry is tagged self vs reagan so the perch can mix both.
+ */
+interface BehaviorDef {
+  action: string;
+  focus: BirdFocus;
+  prop: BirdProp;
+  hop: boolean;
+  /** Minimum appearance count before this behavior is in the pool. */
+  tier: number;
+  /** Caption variants; one is picked deterministically. */
+  lines: string[];
+}
+
+/** Kiwi (home bird, appears the most → richest pool). */
+export const KIWI_BEHAVIORS: BehaviorDef[] = [
+  { action: "greet", focus: "reagan", prop: null, hop: true, tier: 0,
+    lines: ["hi Reagan!! you're here, you're here! best part of my day.", "REAGAN. hi. I waited all morning. *happy hops*"] },
+  { action: "nibble-seed", focus: "self", prop: "food-seed", hop: false, tier: 0,
+    lines: ["snack break. don't mind me, just demolishing this millet.", "nom nom nom. seeds. nature's tiny snacks."] },
+  { action: "hop-happy", focus: "reagan", prop: null, hop: true, tier: 0,
+    lines: ["I'm so happy you're here I literally cannot stop hopping.", "hop hop hop! that's Reagan-is-here dancing, obviously."] },
+  { action: "poop-cleanup", focus: "self", prop: "poop", hop: false, tier: 1,
+    lines: ["oops. uh. you didn't see that. *cleans it up real fast*", "I pooped. I'm a bird. I cleaned it. we move on with dignity."] },
+  { action: "perch-swap", focus: "self", prop: "perch-rope", hop: false, tier: 1,
+    lines: ["new perch just dropped. testing the rope boing. 10/10 bouncy.", "ooh a fresh perch! gotta try every angle. perch quality control."] },
+  { action: "show-off", focus: "reagan", prop: "perch-swing", hop: true, tier: 2,
+    lines: ["watch THIS, Reagan — swing trick! ...mostly stuck the landing.", "look look look! I'm showing off for you. did you see? say you saw."] },
+  { action: "footprints", focus: "self", prop: "footprints", hop: false, tier: 2,
+    lines: ["stepped in something. now I'm leaving a little trail. art, really.", "tiny muddy footprints everywhere. I'm basically a detective clue now."] },
+  { action: "branch-perch", focus: "reagan", prop: "branch", hop: false, tier: 3,
+    lines: ["a whole branch showed up so I could sit closer to you. fancy.", "perching on my special branch to keep an eye on you, Reagan. cozy."] },
+];
+
+/** Lychee (best friend, visits often → medium pool). */
+export const LYCHEE_BEHAVIORS: BehaviorDef[] = [
+  { action: "peek-reagan", focus: "reagan", prop: null, hop: false, tier: 0,
+    lines: ["Lychee's peeking at Reagan from behind me. he's shy but he likes you.", "Lychee noticed you and did a little head-tilt. that's his hello."] },
+  { action: "nibble-berry", focus: "self", prop: "food-berry", hop: false, tier: 0,
+    lines: ["Lychee found a berry and he is NOT sharing this time. rude. cute.", "Lychee's munching a berry, cheeks all puffed. little chipmunk-bird."] },
+  { action: "edge-closer", focus: "reagan", prop: null, hop: true, tier: 1,
+    lines: ["Lychee's scooting closer to Reagan one tiny hop at a time. brave boy.", "every time you look away Lychee inches toward you. he's warming up to you."] },
+  { action: "show-off-reagan", focus: "reagan", prop: "perch-swing", hop: true, tier: 2,
+    lines: ["Lychee's showing off for Reagan now. flexing on the swing. show-off.", "Lychee did his fanciest hop FOR YOU, Reagan. he's smitten."] },
+  { action: "perch-ladder", focus: "self", prop: "perch-ladder", hop: false, tier: 2,
+    lines: ["Lychee climbed the little ladder just to look taller than me. petty.", "Lychee's doing ladder laps. up, down, up, down. cardio bird."] },
+];
+
+/** Ducks (rare → smaller pool, but BIG group reactions to Reagan). */
+export const DUCK_BEHAVIORS: BehaviorDef[] = [
+  { action: "all-notice", focus: "reagan", prop: null, hop: false, tier: 0,
+    lines: ["all three ducks just spotted Reagan and turned to face her at once. synchronized staring. iconic.", "the Swedish leader saw Reagan first, then the twins snapped their heads to look too. you've been noticed."] },
+  { action: "waddle-toward", focus: "reagan", prop: null, hop: false, tier: 0,
+    lines: ["the whole flock is waddling TOWARD Reagan in a little hopeful line. (they think you have snacks.)", "ducks incoming — straight at Reagan, leader in front, twins bumping along behind. a tiny stampede of love."] },
+  { action: "pool-toward", focus: "reagan", prop: "pool", hop: false, tier: 1,
+    lines: ["the ducks dragged their pool over near Reagan to splash where she can watch. show ducks.", "pool party RELOCATED to be next to Reagan. the twins keep checking if she's watching. she is."] },
+  { action: "huddle-watch", focus: "reagan", prop: null, hop: false, tier: 1,
+    lines: ["the flock huddled up but they're all facing Reagan, like a tiny feathered audience.", "cold-day duck huddle, but every beak is pointed at Reagan. they cuddle, they stare, they adore."] },
+];
+
+/**
+ * Resolve a bird's current behavior, deterministically, given:
+ *   - birdId, a seed (e.g. derived from date/window), and
+ *   - appearanceCount: how many times the perch has shown this bird (drives
+ *     both pool richness and the lean toward Reagan-directed reactions).
+ *
+ * Returns null if the pool is somehow empty (defensive).
+ */
+export function resolveBirdBehavior(
+  birdId: BirdId,
+  seed: number,
+  appearanceCount: number,
+): BirdBehavior | null {
+  const catalog =
+    birdId === "kiwi" ? KIWI_BEHAVIORS : birdId === "lychee" ? LYCHEE_BEHAVIORS : DUCK_BEHAVIORS;
+
+  // Unlock tier grows with appearances (every ~3 appearances unlocks a tier).
+  const unlockedTier = Math.floor(Math.max(0, appearanceCount) / 3);
+  let pool = catalog.filter((b) => b.tier <= unlockedTier);
+  if (pool.length === 0) pool = catalog.filter((b) => b.tier === 0);
+  if (pool.length === 0) return null;
+
+  // Attention lean: the more a bird appears, the more we bias toward Reagan.
+  // reaganBias rises from ~0.4 to a cap of ~0.85.
+  const reaganBias = Math.min(0.85, 0.4 + appearanceCount * 0.03);
+  const wantReagan = (seed % 100) / 100 < reaganBias;
+
+  const focusPool = pool.filter((b) => (wantReagan ? b.focus === "reagan" : b.focus === "self"));
+  const finalPool = focusPool.length > 0 ? focusPool : pool;
+
+  const def = finalPool[seed % finalPool.length]!;
+  const line = def.lines[(seed >> 3) % def.lines.length]!;
+  return {
+    birdId,
+    action: def.action,
+    focus: def.focus,
+    prop: def.prop,
+    line,
+    hop: def.hop,
+  };
+}
+
+/** Convenience: total number of distinct behaviors authored for a bird (for
+ * the Skill's "more appearances → more attention" auditing + tests). */
+export function behaviorCount(birdId: BirdId): number {
+  return birdId === "kiwi"
+    ? KIWI_BEHAVIORS.length
+    : birdId === "lychee"
+      ? LYCHEE_BEHAVIORS.length
+      : DUCK_BEHAVIORS.length;
+}
+
+/* ============================ VISIT LOG (per-day) ============================
+ * Reagan collects a little daily log of "who stopped by to see Kiwi today."
+ * Pure, deterministic helpers so the badge logic is unit-testable and the
+ * KiwiPerch component just reads/writes localStorage with these.
+ *
+ * Storage shape (one key per local calendar day):
+ *   key:   "kiwi_visits_YYYY-MM-DD"
+ *   value: JSON Array<{ guest: "lychee" | "ducks"; ts: number }>
+ */
+export type VisitGuest = "lychee" | "ducks";
+export type VisitEntry = { guest: VisitGuest; ts: number };
+
+/** Local-day key (NOT UTC) so "today" resets at the child's local midnight. */
+export function todayVisitKey(now: Date = new Date()): string {
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `kiwi_visits_${y}-${m}-${d}`;
+}
+
+/** Append a visit to today's log, capped so it can't grow unbounded. */
+export function recordVisit(
+  log: VisitEntry[],
+  guest: VisitGuest,
+  ts: number,
+  cap = 50,
+): VisitEntry[] {
+  const next = [...log, { guest, ts }];
+  return next.length > cap ? next.slice(next.length - cap) : next;
+}
+
+export type VisitSummary = {
+  guests: VisitGuest[]; // unique guests, in first-seen order
+  counts: Record<VisitGuest, number>; // how many times each came by
+  total: number;
+  lastTs: number | null;
+};
+
+/** Roll a day's raw entries into a badge-friendly summary. */
+export function summarizeVisits(log: VisitEntry[]): VisitSummary {
+  const counts: Record<VisitGuest, number> = { lychee: 0, ducks: 0 };
+  const guests: VisitGuest[] = [];
+  let lastTs: number | null = null;
+  for (const e of log) {
+    if (e.guest !== "lychee" && e.guest !== "ducks") continue;
+    if (counts[e.guest] === 0) guests.push(e.guest);
+    counts[e.guest] += 1;
+    if (lastTs == null || e.ts > lastTs) lastTs = e.ts;
+  }
+  return { guests, counts, total: log.length, lastTs };
+}
+
+/** Friendly one-liner for the badge popover. */
+export function describeVisits(summary: VisitSummary): string {
+  if (summary.total === 0) return "No visitors yet today — check back soon!";
+  const parts: string[] = [];
+  if (summary.counts.lychee > 0) {
+    parts.push(
+      `Lychee ${summary.counts.lychee === 1 ? "swung by" : `swung by ${summary.counts.lychee}×`}`,
+    );
+  }
+  if (summary.counts.ducks > 0) {
+    parts.push(
+      `the duck squad ${summary.counts.ducks === 1 ? "waddled through" : `waddled through ${summary.counts.ducks}×`}`,
+    );
+  }
+  return parts.join(" • ");
+}

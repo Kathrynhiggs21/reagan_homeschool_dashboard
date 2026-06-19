@@ -33,7 +33,7 @@ describe("summer.startTimeDefault is publicly readable for the calendar strip", 
     expect(STRIP).not.toMatch(/trpc\.prefs\.get\.useQuery\(\s*\{\s*key:\s*["']summer\.startTimeDefault["']/);
   });
 
-  it("falls back to 10 (10 AM) when the pref is unset", () => {
-    expect(STRIP).toMatch(/hourFromHHMM\([^)]*\)\s*\?\?\s*\n?\s*10/);
+  it("falls back to 11 (11 AM) when the pref is unset", () => {
+    expect(STRIP).toMatch(/hourFromHHMM\([^)]*\)\s*\?\?\s*\n?\s*11/);
   });
 });
