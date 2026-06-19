@@ -1,12 +1,15 @@
 /**
  * FlockSprite — renders one of Reagan's flock companions.
- * Kiwi is Reagan's main bird (see KiwiSprite). The flock includes
- * Blue (a blue budgie), Daffy (a duckling), and Honk (a gosling).
- * These are stub poses for now (idle only) — we can expand to animated
- * sprites later. Art is served from Manus CDN storage.
+ * Kiwi is Reagan's main bird (see KiwiSprite). The flock includes:
+ *   - Lychee: Kiwi's MALE budgie best friend (coral/cream, rhymes with Kiwi)
+ *   - Blue: a blue budgie
+ *   - Daffy: a duckling
+ *   - Honk: a gosling
+ *   - Ducks: the 3-duck trio that waddles through occasionally
+ * Art is served from Manus CDN storage.
  */
 
-export type FlockMember = "kiwi" | "blue" | "daffy" | "honk";
+export type FlockMember = "kiwi" | "lychee" | "blue" | "daffy" | "honk" | "ducks";
 
 const FLOCK: Record<
   FlockMember,
@@ -17,6 +20,12 @@ const FLOCK: Record<
     name: "Kiwi",
     species: "Parakeet",
     accent: "#f59e0b",
+  },
+  lychee: {
+    src: "https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/lychee_budgie_idle-oE93msvsSM2Jm98EAn5VNF.webp",
+    name: "Lychee",
+    species: "Parakeet",
+    accent: "#f4736b",
   },
   blue: {
     src: "/manus-storage/blue_budgie_idle_63a1d557.webp",
@@ -36,13 +45,21 @@ const FLOCK: Record<
     species: "Gosling",
     accent: "#84a050",
   },
+  ducks: {
+    // Reagan's real flock: a big black Swedish female (white-speckled chest,
+    // greenish back sheen) leading two brown teen mallard "twins."
+    src: "/manus-storage/duck_trio_idle_ccbd7b0d.png",
+    name: "the duck squad",
+    species: "Ducks",
+    accent: "#3f7d6b",
+  },
 };
 
 export function getFlockMeta(member: FlockMember) {
   return FLOCK[member];
 }
 
-export const FLOCK_MEMBERS: FlockMember[] = ["kiwi", "blue", "daffy", "honk"];
+export const FLOCK_MEMBERS: FlockMember[] = ["kiwi", "lychee", "blue", "daffy", "honk", "ducks"];
 
 export default function FlockSprite({
   member,

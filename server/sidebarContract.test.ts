@@ -96,8 +96,11 @@ describe("sidebar contract", () => {
     expect(matches.length).toBeLessThanOrEqual(10);
   });
 
-  it("adult sidebar has exactly four entries (no creep)", () => {
+  it("adult sidebar has exactly five entries (no creep)", () => {
+    // 2026-06: "Idea Library" (/adventures) added as a real adult page, so the
+    // adult nav is now 5 entries: Curriculum Hub, Agenda Editor, Idea Library,
+    // Analytics, Settings.
     const matches = adultBlock.match(/label:\s*"[^"]+"/g) ?? [];
-    expect(matches.length).toBe(4);
+    expect(matches.length).toBe(5);
   });
 });

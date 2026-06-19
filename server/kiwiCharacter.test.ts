@@ -89,7 +89,7 @@ describe("kiwiCharacter — vacation + guest birds", () => {
   });
   it("detects a guest bird from an explicit flag", () => {
     const c = resolveKiwiDayCharacter("2026-09-15", { birdVisit: true });
-    expect(["blue", "daffy", "honk"]).toContain(c.guestBird);
+    expect(["lychee", "blue", "daffy", "honk"]).toContain(c.guestBird);
   });
   it("detects a guest bird from an event title", () => {
     const c = resolveKiwiDayCharacter("2026-09-15", { eventTitles: ["Visit from friend"] });

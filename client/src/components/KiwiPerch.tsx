@@ -5,9 +5,12 @@ import { useKiwi } from "@/contexts/KiwiContext";
 import { trpc } from "@/lib/trpc";
 import {
   resolveKiwiDayCharacter,
+  resolveKiwiMoment,
+  resolveKiwiSocial,
   kiwiProjectForTick,
   ALL_PROJECT_KINDS,
   type KiwiCostume,
+  type KiwiSocialMoment,
 } from "@shared/kiwiCharacter";
 import { findLedges } from "@/lib/kiwiWorld";
 // Kiwi is silent by default. We deliberately do NOT import chirp() here so the
@@ -133,6 +136,37 @@ export default function KiwiPerch() {
     [todayChar.data, todayISO],
   );
   const costume: KiwiCostume = dayChar.costume;
+
+  /* ---- Time-aware MOMENT (2026-06-19, Katy) ----
+   * Kiwi used to wear the exact same look + say the same line all day. Now we
+   * recompute a "moment" every ~15 min from the wall clock so her mood + idle
+   * lines rotate across the day's 6 segments. A real costume (event / holiday /
+   * vacation) still persists all day — only the everyday vibe rotates. */
+  const [nowTick, setNowTick] = useState<number>(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNowTick(Date.now()), 15 * 60_000);
+    return () => window.clearInterval(id);
+  }, []);
+  const moment = useMemo(() => {
+    const iso = new Date(nowTick).toISOString();
+    return resolveKiwiMoment(iso, {
+      eventTitles: (dayChar as any).eventTitles ?? [],
+      onVacation: dayChar.onVacation,
+      favoriteShowLabel: (dayChar as any).favoriteShowLabel,
+    });
+  }, [nowTick, dayChar]);
+  // Mood drives a tiny accent ring + the rotating idle/funny line bank.
+  const moodAccent = useMemo(() => {
+    switch (moment.mood) {
+      case "cozy": return "#f59e0b";
+      case "sleepy": return "#818cf8";
+      case "hyper": return "#22c55e";
+      case "snacky": return "#fb923c";
+      case "focused": return "#0ea5e9";
+      case "chill": return "#a78bfa";
+      default: return "#fbbf24";
+    }
+  }, [moment.mood]);
   const [size, setSize] = useState<number>(() => perchSize());
   const [pos, setPos] = useState<Pos>(() => loadPos(perchSize()));
   const [dragging, setDragging] = useState(false);
@@ -146,6 +180,34 @@ export default function KiwiPerch() {
   // Flock cameo: occasionally, Blue / Daffy / Honk fly in for ~6s and hover
   // near Kiwi, then fade away. Silent, visual-only.
   const [cameo, setCameo] = useState<FlockMember | null>(null);
+  // Social cameo: Lychee (best friend, often) or the duck trio (rare). Carries
+  // an interaction beat (follow / bicker / preen / flyoff / waddle) + a banter
+  // line. Driven by the deterministic resolveKiwiSocial schedule.
+  const [social, setSocial] = useState<KiwiSocialMoment | null>(null);
+  // Drifting feathers that peel off Kiwi on big flaps / takeoff.
+  const [feathers, setFeathers] = useState<Array<{ id: number; color: string }>>([]);
+  const featherIdRef = useRef(0);
+  // Reduced-motion guard (declared early so all effects can use dropFeather).
+  const reducedMotion = useMemo(
+    () =>
+      typeof window !== "undefined" &&
+      !!window.matchMedia &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    [],
+  );
+  // Drop a drifting feather off Kiwi. Visual-only, auto-cleans up, respects
+  // reduced-motion (skips entirely). Called on big flaps / takeoff.
+  const dropFeather = useCallback(() => {
+    if (reducedMotion) return;
+    // Kiwi feather palette (blue/yellow budgie) — vary a little for life.
+    const colors = ["#f5e25e", "#6aa8a4", "#4f9494", "#357c7e"];
+    const color = colors[Math.floor(Math.random() * colors.length)]!;
+    const id = ++featherIdRef.current;
+    setFeathers((prev) => [...prev.slice(-4), { id, color }]);
+    window.setTimeout(() => {
+      setFeathers((prev) => prev.filter((f) => f.id !== id));
+    }, 3600);
+  }, [reducedMotion]);
   const lastInteractRef = useRef(Date.now());
   const bubbleTimeoutRef = useRef<number | null>(null);
   const dragOffsetRef = useRef<{ dx: number; dy: number } | null>(null);
@@ -245,8 +307,13 @@ export default function KiwiPerch() {
           // Pick a random activity pose
           const pick = KIWI_ACTIVITY_POSES[Math.floor(Math.random() * KIWI_ACTIVITY_POSES.length)];
           setPose(pick);
-          // Show speech bubble for this activity
-          const bubbleMsg = KIWI_ACTIVITY_BUBBLES[pick];
+          // Show a speech bubble. ~45% of the time use the TIME-AWARE moment
+          // line (dawn/morning/.../night) so Kiwi's chatter visibly shifts
+          // through the day; otherwise the pose-specific activity line.
+          const useMomentLine = Math.random() < 0.45;
+          const bubbleMsg = useMomentLine
+            ? (moment.idleLine || KIWI_ACTIVITY_BUBBLES[pick])
+            : KIWI_ACTIVITY_BUBBLES[pick];
           if (bubbleMsg) {
             setBubbleText(bubbleMsg);
             if (bubbleTimeoutRef.current) window.clearTimeout(bubbleTimeoutRef.current);
@@ -263,7 +330,7 @@ export default function KiwiPerch() {
     };
     schedule();
     return () => { if (timer) window.clearTimeout(timer); };
-  }, [enabled, adultPresent, dragging, flying]);
+  }, [enabled, adultPresent, dragging, flying, moment]);
 
   // Medium flutter hop every 25-45s: bigger movement
   useEffect(() => {
@@ -274,6 +341,8 @@ export default function KiwiPerch() {
       timer = window.setTimeout(() => {
         if (!dragging && !flying) {
           setPose("flap");
+          // A big flutter is a "takeoff" — sometimes a feather drifts off.
+          if (Math.random() < 0.6) dropFeather();
           setPos((p) => clamp({
             x: p.x + (Math.random() - 0.5) * 200,
             y: p.y + (Math.random() - 0.5) * 120,
@@ -285,7 +354,7 @@ export default function KiwiPerch() {
     };
     schedule();
     return () => { if (timer) window.clearTimeout(timer); };
-  }, [enabled, adultPresent, dragging, flying]);
+  }, [enabled, adultPresent, dragging, flying, dropFeather, size, open]);
 
   // Reusable fly-across action. Used by both the 90-150s timer and the
   // tap-to-fly trigger (double-tap on Kiwi or programmatic flyKiwi() call).
@@ -313,30 +382,64 @@ export default function KiwiPerch() {
     else if (pose === "sleep") setPose("idle");
   }, [adultPresent]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Flock cameo every 60-150s. A friend pops in next to Kiwi for ~6s, then
-  // gently floats away. Silent visual sugar to make Kiwi feel less lonely.
+  /* ======================== SOCIAL WORLD CAMEO LOOP ========================
+   * Lychee (Kiwi's best friend) visits OFTEN; the duck trio drops by rarely.
+   * The deterministic resolveKiwiSocial() decides who's around for the current
+   * 2-hour window, plus an interaction beat (follow / bicker / preen / flyoff /
+   * waddle). We surface that here as a ~7s cameo with a banter bubble, and we
+   * also still occasionally show a quieter Blue/Daffy/Honk fly-by for variety.
+   */
   useEffect(() => {
     if (!enabled || adultPresent) return;
     let timer: number | undefined;
-    const friends: FlockMember[] = ["blue", "daffy", "honk"];
+    const otherFriends: FlockMember[] = ["blue", "daffy", "honk"];
     const schedule = () => {
-      const delay = 60_000 + Math.random() * 90_000;
+      // Lychee comes by often, so keep the cadence fairly lively.
+      const delay = 45_000 + Math.random() * 70_000;
       timer = window.setTimeout(() => {
         if (!dragging && !flying) {
-          const pick = friends[Math.floor(Math.random() * friends.length)];
-          setCameo(pick);
-          // Auto-clear cameo after ~6s
-          window.setTimeout(() => setCameo(null), 6_200);
-          // Tiny pose nudge so Kiwi reacts to her friend
-          setPose("chirp");
-          window.setTimeout(() => setPose("idle"), 700);
+          const nowIso = new Date().toISOString();
+          const soc = resolveKiwiSocial(nowIso);
+          if (soc.guestId) {
+            setSocial(soc);
+            const member: FlockMember = soc.guestId === "ducks" ? "ducks" : "lychee";
+            setCameo(member);
+            // Show the banter line as a bubble.
+            if (soc.line) {
+              setBubbleText(soc.line);
+              if (bubbleTimeoutRef.current) window.clearTimeout(bubbleTimeoutRef.current);
+              bubbleTimeoutRef.current = window.setTimeout(() => setBubbleText(null), 5200);
+            }
+            // Kiwi reacts to the beat.
+            if (soc.beat === "flyoff") {
+              setPose("flap");
+              dropFeather();
+              window.setTimeout(() => setPose("idle"), 900);
+            } else {
+              setPose("chirp");
+              window.setTimeout(() => setPose("idle"), 700);
+            }
+            // Clear the cameo after ~7s (ducks linger a touch longer).
+            const hold = soc.guestId === "ducks" ? 7_600 : 6_800;
+            window.setTimeout(() => { setCameo(null); setSocial(null); }, hold);
+          } else {
+            // No scheduled guest this window — occasional quiet fly-by of the
+            // other flock members so the world still feels populated.
+            if (Math.random() < 0.4) {
+              const pick = otherFriends[Math.floor(Math.random() * otherFriends.length)];
+              setCameo(pick);
+              window.setTimeout(() => setCameo(null), 5_200);
+              setPose("chirp");
+              window.setTimeout(() => setPose("idle"), 700);
+            }
+          }
         }
         schedule();
       }, delay);
     };
     schedule();
     return () => { if (timer) window.clearTimeout(timer); };
-  }, [enabled, adultPresent, dragging, flying]);
+  }, [enabled, adultPresent, dragging, flying, dropFeather]);
 
   /* ====================== PERCH ON A PAGE LEDGE/CARD =======================
    * Every 30-60s Kiwi hops up onto the top edge of a real card on the page
@@ -563,23 +666,42 @@ export default function KiwiPerch() {
 
         {popBurst > 0 && <PopBurst key={popBurst} size={size} />}
 
-        {cameo && (
-          <div
-            aria-hidden
-            className="absolute pointer-events-none"
-            style={{
-              left: -Math.round(size * 0.55),
-              top: -Math.round(size * 0.15),
-              width: Math.round(size * 0.65),
-              height: Math.round(size * 0.65),
-              animation: "kiwiCameo 6.2s ease-in-out forwards",
-              filter: `drop-shadow(0 6px 10px ${getFlockMeta(cameo).accent}55)`,
-            }}
-            title={`${getFlockMeta(cameo).name} stopped by!`}
-          >
-            <FlockSprite member={cameo} size={Math.round(size * 0.65)} />
-          </div>
-        )}
+        {/* Drifting feathers that peel off on takeoff. Visual-only. */}
+        {feathers.map((f, i) => (
+          <Feather key={f.id} color={f.color} size={size} seed={f.id + i} />
+        ))}
+
+        {cameo && (() => {
+          // The duck trio is a 3-wide image, so render it bigger and tuck it
+          // lower-left like a little waddling squad; single birds sit close.
+          const isDucks = cameo === "ducks";
+          const cw = isDucks ? Math.round(size * 1.15) : Math.round(size * 0.65);
+          return (
+            <div
+              aria-hidden
+              className="absolute pointer-events-none"
+              style={{
+                left: isDucks ? -Math.round(size * 0.7) : -Math.round(size * 0.55),
+                top: isDucks ? Math.round(size * 0.35) : -Math.round(size * 0.15),
+                width: cw,
+                height: cw,
+                animation: isDucks
+                  ? "kiwiDucks 7.4s ease-in-out forwards"
+                  : "kiwiCameo 6.6s ease-in-out forwards",
+                filter: `drop-shadow(0 6px 10px ${getFlockMeta(cameo).accent}55)`,
+              }}
+              title={`${getFlockMeta(cameo).name} stopped by!`}
+            >
+              {isDucks ? (
+                <div style={{ animation: "kiwiDuckWaddle 1.1s ease-in-out infinite" }}>
+                  <FlockSprite member={cameo} size={cw} />
+                </div>
+              ) : (
+                <FlockSprite member={cameo} size={cw} />
+              )}
+            </div>
+          );
+        })()}
 
         <div
           onPointerDown={onPointerDown}
@@ -631,6 +753,27 @@ export default function KiwiPerch() {
           70%  { transform: translate(-6px, -2px) scale(1); opacity: 1; }
           100% { transform: translate(-32px, -28px) scale(0.55); opacity: 0; }
         }
+        @keyframes kiwiDucks {
+          0%   { transform: translate(40px, 6px) scale(0.5); opacity: 0; }
+          14%  { transform: translate(0, 0) scale(1); opacity: 1; }
+          40%  { transform: translate(-6px, 0) scale(1); opacity: 1; }
+          60%  { transform: translate(4px, 0) scale(1); opacity: 1; }
+          80%  { transform: translate(-4px, 0) scale(1); opacity: 1; }
+          100% { transform: translate(-44px, 4px) scale(0.6); opacity: 0; }
+        }
+        /* Inner waddle: a quick side-to-side + tiny vertical bob that reads like
+           their real head-bobbing follow-the-leader walk. */
+        @keyframes kiwiDuckWaddle {
+          0%   { transform: translateY(0) rotate(0deg); }
+          25%  { transform: translateY(-2px) rotate(-1.2deg); }
+          50%  { transform: translateY(0) rotate(0deg); }
+          75%  { transform: translateY(-2px) rotate(1.2deg); }
+          100% { transform: translateY(0) rotate(0deg); }
+        }
+        @keyframes kiwiFeatherFall {
+          0%   { transform: translate(0,0) rotate(0deg); opacity: 0.95; }
+          100% { transform: translate(var(--fx), var(--fy)) rotate(var(--fr)); opacity: 0; }
+        }
       `}</style>
     </div>
   );
@@ -663,6 +806,46 @@ function PopBurst({ size = 80 }: { size?: number }) {
     );
   });
   return <>{items}</>;
+}
+
+/** A single drifting feather that peels off Kiwi on takeoff. Pure visual sugar. */
+function Feather({ color, size, seed }: { color: string; size: number; seed: number }) {
+  // Deterministic-ish drift from the seed so multiple feathers fan out.
+  const dir = seed % 2 === 0 ? 1 : -1;
+  const fx = `${dir * (24 + (seed % 5) * 9)}px`;
+  const fy = `${48 + (seed % 4) * 14}px`;
+  const fr = `${dir * (120 + (seed % 6) * 30)}deg`;
+  const startLeft = size * 0.5 + dir * (size * 0.12);
+  const startTop = size * 0.42;
+  return (
+    <span
+      aria-hidden
+      style={{
+        position: "absolute",
+        left: startLeft,
+        top: startTop,
+        width: 14,
+        height: 14,
+        pointerEvents: "none",
+        zIndex: 5,
+        // @ts-expect-error CSS variables
+        "--fx": fx,
+        "--fy": fy,
+        "--fr": fr,
+        animation: "kiwiFeatherFall 3.4s ease-in forwards",
+      }}
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M12 2C8 6 5 11 5 16c0 3 2 6 7 6 0-5 1-9 4-13 1-2 1-5 0-7-1.5 1-3 3-4 7z"
+          fill={color}
+          stroke="rgba(0,0,0,0.12)"
+          strokeWidth="0.6"
+        />
+        <path d="M9 19c1-4 2-8 5-12" stroke="rgba(255,255,255,0.45)" strokeWidth="0.8" fill="none" />
+      </svg>
+    </span>
+  );
 }
 
 export function celebrateKiwi(message?: string) {

@@ -50,8 +50,8 @@ export interface KiwiDayCharacter {
   costume: KiwiCostume;
   /** Short human label for the costume (tooltip / aria). */
   costumeLabel: string;
-  /** A friend bird is visiting today (Blue / Daffy / Honk), or null. */
-  guestBird: "blue" | "daffy" | "honk" | null;
+  /** A friend bird is visiting today (Lychee / Blue / Daffy / Honk), or null. */
+  guestBird: "lychee" | "blue" | "daffy" | "honk" | null;
   /** Today's headline funny line in Kiwi's voice (deterministic per day). */
   funnyLine: string;
   /** A short idle bubble line (rotates through the bank). */
@@ -354,7 +354,8 @@ export function resolveKiwiDayCharacter(
   // Guest bird: explicit event flag, or a small deterministic chance otherwise.
   let guestBird: KiwiDayCharacter["guestBird"] = null;
   if (ctx.birdVisit || events.some((t) => /\bbird\b|flock|visit from|friend/i.test(t || ""))) {
-    const friends: Array<"blue" | "daffy" | "honk"> = ["blue", "daffy", "honk"];
+    // Lychee (Kiwi's best friend) shows up most often; the others are rarer.
+    const friends: Array<"lychee" | "blue" | "daffy" | "honk"> = ["lychee", "lychee", "lychee", "blue", "daffy", "honk"];
     guestBird = friends[seed % friends.length]!;
   }
 
@@ -448,3 +449,357 @@ export function kiwiProjectForTick(kind: KiwiProjectKind, tick: number): KiwiPro
 }
 
 export const ALL_PROJECT_KINDS: KiwiProjectKind[] = ["nest", "needlework", "reading-tower", "snack-stack"];
+
+/* =========================================================================
+ * TIME-AWARE VARIETY ENGINE (2026-06-19, Katy)
+ * =========================================================================
+ * The original resolver keyed everything off the date alone, so Kiwi wore the
+ * SAME look + said the same headline line all day ("sunglasses all day" bug).
+ *
+ * resolveKiwiMoment() wraps the daily resolver and adds a *time-of-day* layer:
+ *   - When the day has a real costume (calendar event / holiday / vacation),
+ *     that costume PERSISTS all day — it's what's actually happening.
+ *   - On ordinary "none" days, Kiwi rotates a light mood + tiny accessory +
+ *     fresh idle line for each of 6 day-segments, so she visibly changes every
+ *     couple of hours without ever locking into one gimmick.
+ *
+ * Everything stays PURE + DETERMINISTIC: same (isoDateTime, ctx) → same moment.
+ * Callers pass a full ISO datetime (or a {hour} override for tests).
+ */
+
+export type KiwiSegment =
+  | "dawn"      // 05:00–07:59  sleepy, coffee-ish, slow start
+  | "morning"   // 08:00–10:59  school energy, ready to grind
+  | "midday"    // 11:00–13:59  snack brain, mid-focus
+  | "afternoon" // 14:00–16:59  winding down, a little goofy
+  | "evening"   // 17:00–19:59  relaxed, cozy
+  | "night";    // 20:00–04:59  sleepy, low-key
+
+export const KIWI_SEGMENTS: KiwiSegment[] = [
+  "dawn", "morning", "midday", "afternoon", "evening", "night",
+];
+
+/** Map an hour (0-23) to a day-segment. */
+export function getTimeSegment(hour: number): KiwiSegment {
+  const h = ((Math.floor(hour) % 24) + 24) % 24;
+  if (h >= 5 && h < 8) return "dawn";
+  if (h >= 8 && h < 11) return "morning";
+  if (h >= 11 && h < 14) return "midday";
+  if (h >= 14 && h < 17) return "afternoon";
+  if (h >= 17 && h < 20) return "evening";
+  return "night";
+}
+
+/** Pull the hour out of an ISO datetime string ("...THH:..."), else null. */
+export function hourFromIso(iso: string): number | null {
+  const m = /T(\d{2}):/.exec(iso);
+  if (!m) return null;
+  return parseInt(m[1], 10);
+}
+
+/**
+ * Light, swappable "moods" Kiwi cycles through on ordinary days. These never
+ * override a real costume — they're tiny accessories/vibes that keep her fresh.
+ */
+export type KiwiMood =
+  | "cozy"      // blanket / sweater vibe
+  | "sleepy"    // droopy eyes, yawning
+  | "hyper"     // wide-eyed, bouncy
+  | "snacky"    // crumb on beak, snack obsessed
+  | "focused"   // tiny reading glasses
+  | "silly"     // upside-down, goofing
+  | "chill";    // headphones, vibing
+
+export interface KiwiMoodInfo {
+  mood: KiwiMood;
+  /** Short human label (tooltip / aria). */
+  label: string;
+  /** A tiny accessory hint the sprite layer can use (emoji-ish key). */
+  accessory: "blanket" | "zzz" | "spark" | "crumb" | "glasses" | "none" | "headphones";
+}
+
+export const KIWI_MOODS: Record<KiwiMood, KiwiMoodInfo> = {
+  cozy:    { mood: "cozy",    label: "Cozy Kiwi",    accessory: "blanket" },
+  sleepy:  { mood: "sleepy",  label: "Sleepy Kiwi",  accessory: "zzz" },
+  hyper:   { mood: "hyper",   label: "Hyper Kiwi",   accessory: "spark" },
+  snacky:  { mood: "snacky",  label: "Snacky Kiwi",  accessory: "crumb" },
+  focused: { mood: "focused", label: "Focused Kiwi", accessory: "glasses" },
+  silly:   { mood: "silly",   label: "Silly Kiwi",   accessory: "none" },
+  chill:   { mood: "chill",   label: "Chill Kiwi",   accessory: "headphones" },
+};
+
+/**
+ * Which moods are "in season" for each segment. The first is the most likely
+ * default; the rest add day-to-day variety (seeded by date+segment).
+ */
+const SEGMENT_MOODS: Record<KiwiSegment, KiwiMood[]> = {
+  dawn:      ["sleepy", "cozy", "snacky"],
+  morning:   ["hyper", "focused", "chill"],
+  midday:    ["snacky", "focused", "silly"],
+  afternoon: ["silly", "chill", "hyper"],
+  evening:   ["chill", "cozy", "snacky"],
+  night:     ["sleepy", "cozy", "chill"],
+};
+
+/** Per-segment idle line banks — Kiwi's vibe genuinely shifts through the day. */
+export const KIWI_SEGMENT_LINES: Record<KiwiSegment, string[]> = {
+  dawn: [
+    "it's so early my feathers aren't even awake yet. five more minutes?",
+    "morning, bestie. I require coffee. I'm a bird. I'll take a seed.",
+    "the sun's up and so are we, unfortunately. let's ease into it.",
+    "yawn. ok. we're doing this. slowly. gently. like sleepy queens.",
+    "dawn patrol: just me, you, and the urge to go back to bed.",
+  ],
+  morning: [
+    "ok GENIUS hours. brain's loading... loading... there it is. let's go.",
+    "morning energy is UP. I did three wing flaps. athlete.",
+    "fresh day, fresh start, fresh chaos. I'm ready. are you ready?",
+    "let's knock out the hard stuff while our brains are still spicy.",
+    "she's awake, she's caffeinated (on vibes), she's THAT girl.",
+  ],
+  midday: [
+    "is it snack o'clock? asking for me. it's me. I want a snack.",
+    "midday brain is 60% focus, 40% 'what's for lunch.' relatable.",
+    "halfway through, bestie. don't fade on me now. snack break soon.",
+    "I just thought about a sandwich for ten straight minutes. productive.",
+    "we're cooking. metaphorically. I cannot actually cook. no thumbs.",
+  ],
+  afternoon: [
+    "afternoon slump? not on my watch. ok maybe a little on my watch.",
+    "we're in the home stretch. silly hour activated. focus... ish.",
+    "I tried to do a backflip off the perch. it was an afternoon decision.",
+    "winding down energy. almost done. you've basically already won.",
+    "it's giving 'tired but trying,' and honestly? iconic of us.",
+  ],
+  evening: [
+    "evening vibes: lights low, snacks high. cozy mode engaged.",
+    "school's basically a wrap. let's coast into chill, bestie.",
+    "I put on my tiny headphones. don't talk to me, I'm vibing.",
+    "you did the thing today. multiple things, even. proud of you, fr.",
+    "golden hour and you GLOW. relax those shoulders, queen.",
+  ],
+  night: [
+    "it's late-ish and I'm soft and sleepy. wind it down, bestie.",
+    "stars are out, I'm fluffed up, brain's at 12%. cozy o'clock.",
+    "nighttime Kiwi is just a little blanket with eyes. goodnight soon.",
+    "we did good today. tuck the brain in. I'll guard the snacks.",
+    "low-key sleepy but I'd stay up to keep you company. that's love.",
+  ],
+};
+
+export interface KiwiMoment extends KiwiDayCharacter {
+  /** Which 2–3 hr window of the day this moment is for. */
+  segment: KiwiSegment;
+  /** The light mood layered on top (only varies on "none" / everyday days). */
+  mood: KiwiMood;
+  /** Mood metadata (label + accessory hint). */
+  moodInfo: KiwiMoodInfo;
+  /** The hour (0-23) this moment was resolved for. */
+  hour: number;
+}
+
+/**
+ * Resolve Kiwi's *current-moment* character: the daily costume PLUS a
+ * time-of-day mood/idle rotation. Pass a full ISO datetime; if it has no time
+ * component, you can pass an explicit `hour` to override (handy in tests).
+ */
+export function resolveKiwiMoment(
+  isoDateTime: string,
+  ctx: KiwiContext = {},
+  hourOverride?: number,
+): KiwiMoment {
+  const isoDate = isoDateTime.slice(0, 10);
+  const hour = hourOverride ?? hourFromIso(isoDateTime) ?? 12;
+  const segment = getTimeSegment(hour);
+
+  const base = resolveKiwiDayCharacter(isoDate, ctx);
+
+  // Seed combines date + segment (+ name) so each window of each day is its own
+  // stable pick, but it visibly changes across windows and across days.
+  const segSeed = stableHash(`${isoDate}|${segment}|${ctx.studentName ?? ""}`);
+
+  // Mood: only layer a rotating mood on ordinary days. On real-costume days the
+  // costume is the story; keep mood neutral-ish but still segment-appropriate.
+  const seasonal = SEGMENT_MOODS[segment];
+  const mood = pick(seasonal, segSeed) ?? seasonal[0]!;
+  const moodInfo = KIWI_MOODS[mood];
+
+  // Idle line: on ordinary days rotate the segment bank so it changes through
+  // the day; on costume/vacation/guest days keep the daily resolver's line so
+  // the look and the words still match.
+  let idleLine = base.idleLine;
+  let funnyLine = base.funnyLine;
+  if (base.reason === "everyday" && !base.guestBird) {
+    const segLines = KIWI_SEGMENT_LINES[segment];
+    idleLine = pick(segLines, segSeed) ?? base.idleLine;
+    // Mix the headline between the segment bank and the general spice banks so
+    // even the funnyLine moves through the day.
+    const bucket = segSeed % 10;
+    if (bucket === 0) funnyLine = pick(KIWI_POOP_LINES, segSeed)!;
+    else if (bucket <= 2) funnyLine = pick(KIWI_PET_LINES, segSeed)!;
+    else if (bucket <= 4) funnyLine = pick(KIWI_GAMER_LINES, segSeed)!;
+    else funnyLine = pick(segLines, segSeed + 3) ?? idleLine;
+  }
+
+  return {
+    ...base,
+    idleLine,
+    funnyLine,
+    segment,
+    mood,
+    moodInfo,
+    hour,
+  };
+}
+
+/* =========================================================================
+ * SOCIAL WORLD: Lychee (best friend) + the duck trio
+ * =========================================================================
+ * Lychee is Kiwi's MALE budgie best friend (name rhymes with Kiwi). He drops by
+ * OFTEN — several windows a day — and the two do classic best-friend budgie
+ * stuff: follow each other around, bicker, preen, and fly off together. A trio
+ * of ducks waddles through occasionally (a couple times a week).
+ *
+ * resolveKiwiSocial() is PURE: given an ISO datetime it deterministically tells
+ * the perch WHO (if anyone) is visiting and WHAT they're doing right now.
+ */
+
+export type KiwiGuestId = "lychee" | "ducks" | null;
+export type KiwiInteractionBeat =
+  | "follow"   // Lychee tails Kiwi around the perch
+  | "bicker"   // playful squabble
+  | "preen"    // grooming each other, sweet
+  | "flyoff"   // they zoom off together for a sec
+  | "waddle"   // the duck trio waddles through
+  | "chatter"  // general happy noise
+  | null;
+
+export interface KiwiSocialMoment {
+  /** Who's visiting right now (or null for just Kiwi). */
+  guestId: KiwiGuestId;
+  /** What the visit looks like right now. */
+  beat: KiwiInteractionBeat;
+  /** A bubble line for the moment, in Kiwi's voice. */
+  line: string;
+  /** The 2-hour visit window index (0-11 across the day), for stable keys. */
+  windowIndex: number;
+}
+
+/** Lychee follow-around lines. */
+export const LYCHEE_FOLLOW_LINES: string[] = [
+  "Lychee's here and he's COPYING me. fly left— he flies left. menace.",
+  "my bestie Lychee followed me to your desk. we're a package deal now.",
+  "Lychee does everything I do, just slightly worse. king of being mid.",
+  "look, it's Lychee! he rhymes with me. we planned that. (we didn't.)",
+  "Lychee shadowing me again. that's my guy though. ride or die.",
+];
+
+/** Lychee bicker / squabble lines (playful, never mean). */
+export const LYCHEE_BICKER_LINES: string[] = [
+  "Lychee says I sing flat. Lychee sounds like a squeaky door. anyway.",
+  "me and Lychee are 'fighting' over the best perch. it's the same perch.",
+  "Lychee stole my sunflower seed. this is WAR. (we'll be fine in a sec.)",
+  "Lychee: 'you're dramatic.' me: 'YOU'RE dramatic.' best friends, truly.",
+  "lil squabble with Lychee, no biggie. we bicker, we make up, we vibe.",
+];
+
+/** Lychee preen / sweet bestie lines. */
+export const LYCHEE_PREEN_LINES: string[] = [
+  "Lychee's fixing my head feathers. true bestie behavior, fr.",
+  "preening sesh with Lychee. this is our version of a spa day.",
+  "Lychee got a crumb off my beak. that's friendship. that's love.",
+  "me and Lychee just sitting wing-to-wing being besties. soft hours.",
+  "Lychee says hi, bestie! (he can't talk. I'm translating. trust me.)",
+];
+
+/** Lychee fly-off-together lines. */
+export const LYCHEE_FLYOFF_LINES: string[] = [
+  "brb!! me and Lychee are doing a victory lap around the room. weee!",
+  "Lychee dared me to fly to the ceiling fan. we'll be RIGHT back.",
+  "zoom zoom! best-friend flight patrol. back before you finish that line.",
+  "Lychee and I gotta bounce for two seconds. bird business. very official.",
+];
+
+/** Duck squad visit lines. Reagan's REAL flock: the big black Swedish female
+ * (white-speckled chest, greenish back) struts in front like a proud leader,
+ * and the two brown mallard "twins" scurry behind her in a tight little cluster,
+ * head-bobbing and muttering. One twin is a smidge smaller with smaller eyes.
+ * They never split up and they're always low-key chattering, not loud-quacking. */
+export const DUCK_VISIT_LINES: string[] = [
+  "the duck squad's here! big black Swedish lady up front, two mallard twins scurrying behind. formation: flawless.",
+  "here come the ducks, single file. the speckly black one leads, the brown twins shuffle after her muttering. iconic.",
+  "THREE ducks waddled in. the boss duck struts, the twins do that fast little low scurry to keep up. respect the hustle.",
+  "duck parade! the black Swedish girl bobs her head like she's counting us, twins flutter their tails and chatter. a whole vibe.",
+  "the squad's doing their muttery little group walk through your desk. they don't quack loud, they just gossip. relatable.",
+  "big speckled leader duck + two brown twins (one's a smidge smaller, tinier eyes, baby of the group). they refuse to be apart.",
+  "ducks incoming in a tight cluster. someone stopped, everyone bumped into her, tails went FLUTTER. comedy gold.",
+];
+
+/**
+ * Resolve who's hanging out with Kiwi right now.
+ *
+ * Schedule logic (deterministic from date+window):
+ *   - The day is split into 12 two-hour windows.
+ *   - Lychee visits OFTEN: in most windows there's a strong chance he's around,
+ *     cycling through follow / bicker / preen / flyoff beats.
+ *   - The duck trio is RARE: only a couple of windows a week, and never at the
+ *     same time as a Lychee beat that needs the spotlight.
+ */
+export function resolveKiwiSocial(
+  isoDateTime: string,
+  hourOverride?: number,
+): KiwiSocialMoment {
+  const isoDate = isoDateTime.slice(0, 10);
+  const hour = hourOverride ?? hourFromIso(isoDateTime) ?? 12;
+  const h = ((Math.floor(hour) % 24) + 24) % 24;
+  const windowIndex = Math.floor(h / 2); // 0..11
+
+  const seed = stableHash(`${isoDate}|win${windowIndex}`);
+
+  // Ducks: rare. Roughly ~2 windows per week → gate on a 1-in-40 hash slot,
+  // combined with day-of seed so it clusters into "duck days".
+  const duckSeed = stableHash(`${isoDate}|ducks`);
+  const isDuckDay = duckSeed % 4 === 0;            // ~1-2 days/week
+  const duckWindow = isDuckDay && seed % 5 === 0;  // a single window on those days
+
+  if (duckWindow) {
+    return {
+      guestId: "ducks",
+      beat: "waddle",
+      line: pick(DUCK_VISIT_LINES, seed) ?? DUCK_VISIT_LINES[0]!,
+      windowIndex,
+    };
+  }
+
+  // Lychee: visits OFTEN. Present in ~65% of windows.
+  const lycheeHere = seed % 100 < 65;
+  if (lycheeHere) {
+    const beats: KiwiInteractionBeat[] = ["follow", "bicker", "preen", "flyoff", "chatter"];
+    const beat = beats[seed % beats.length]!;
+    let bank: string[];
+    switch (beat) {
+      case "follow":  bank = LYCHEE_FOLLOW_LINES; break;
+      case "bicker":  bank = LYCHEE_BICKER_LINES; break;
+      case "preen":   bank = LYCHEE_PREEN_LINES; break;
+      case "flyoff":  bank = LYCHEE_FLYOFF_LINES; break;
+      default:        bank = LYCHEE_FOLLOW_LINES; break;
+    }
+    return {
+      guestId: "lychee",
+      beat,
+      line: pick(bank, seed + 1) ?? bank[0]!,
+      windowIndex,
+    };
+  }
+
+  return { guestId: null, beat: null, line: "", windowIndex };
+}
+
+/** Display metadata for each social guest (names + accent colors). */
+export const KIWI_GUEST_META: Record<
+  Exclude<KiwiGuestId, null>,
+  { name: string; accent: string; kind: "budgie" | "ducks" }
+> = {
+  lychee: { name: "Lychee", accent: "#3b82f6", kind: "budgie" },
+  ducks: { name: "the duck trio", accent: "#f6c343", kind: "ducks" },
+};
