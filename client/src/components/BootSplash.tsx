@@ -1,62 +1,49 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import KiwiSprite, { type KiwiPose } from "./KiwiSprite";
 import { trpc } from "@/lib/trpc";
+import {
+  BOOT_POSE as POSE,
+  BOOT_CAP_IMG as CAP_IMG,
+  BOOT_T as T,
+  bootTitleName,
+  poseForPhase,
+  capFlyingForPhase,
+  homeschoolStateForPhase,
+  type BootPoseKey as PoseKey,
+  type BootPhase as Phase,
+} from "@shared/bootSplash";
 
 /**
- * BootSplash — "Reagan's Homeschool" cap-toss welcome
- * ---------------------------------------------------
- * Katy's storyboard (2026-06-19). A choreographed, school-themed intro shown on
- * the FIRST app mount of a session:
+ * BootSplash — "Reagan's Homeschool" animated welcome (storyboard-accurate redesign)
+ * ----------------------------------------------------------------------------------
+ * Katy's 9-frame storyboard (2026-06-19). A smooth, video-style intro built from
+ * five real 3D cap-budgie pose renders that cross-fade into one another, on a
+ * bright WHITE studio background. Plays once per session.
  *
- *   Frame 1  Kiwi centered on the solid homeschool (dark chalkboard-green)
- *            background, graduation cap on her head, gives a friendly wave.
- *   Frame 2  Kiwi "throws" the cap; as the cap arcs UP it magically writes the
- *            possessive name (e.g. "Reagan's") on letter-by-letter, in an arched,
- *            child-like handwritten script following the cap's path.
- *   Frame 3  The cap peaks; Kiwi looks up and tracks it.
- *   Frame 4  The cap falls straight down to Kiwi's right, past her feet, and off
- *            the bottom. The instant it passes her feet, "HOMESCHOOL" fades in
- *            all-at-once below her in a 3D bubble all-caps style that matches
- *            Kiwi's real green/yellow palette.
- *   Frame 5  Cap gone, Kiwi turns back to the viewer, smiles + winks, then the
- *            whole splash fades out.
+ *   Beat 1  Kiwi (cap on) gives a warm wave — bright white stage.
+ *   Beat 2  An arched, black marker "REAGAN'S" writes on letter-by-letter at the
+ *           top, child-like and bouncy.
+ *   Beat 3  Kiwi winds up and FLINGS the cap off her head with her wing.
+ *   Beat 4  The cap arcs up-and-left with a soft motion trail; Kiwi looks up and
+ *           tracks it (wings raised).
+ *   Beat 5  The cap falls down to the right; Kiwi looks down following it as it
+ *           settles. "HOMESCHOOL" fades in DIMMED below.
+ *   Beat 6  Kiwi pops the cap back on, turns to the viewer and WINKS while
+ *           "HOMESCHOOL" lights up to full two-tone color: HOME (teal) +
+ *           SCHOOL (golden-yellow). Final logo lockup, then a gentle fade-out.
  *
- * Notes on fidelity:
- *   - Kiwi is the EXACT same sprite asset used across the site (KiwiSprite), so
- *     the bird's colors match the website one-to-one. The "HOMESCHOOL" 3D text
- *     palette is sampled from the REAL bird Kiwi is designed after — a blue/yellow
- *     budgie (yellow head #f5e25e + turquoise body #6aa8a4/#4f9494/#357c7e + deep
- *     teal outline #1f5658) — so text + bird read as one set.
- *   - Kiwi's art has no literal "wave/throw/wink" frames, so motion is conveyed
- *     with pose swaps (flap/chirp/idle) + CSS transforms and a wink flash.
+ * Fidelity notes:
+ *   - Poses are real renders of the cute fluffy budgie Kiwi is based on, matched
+ *     to the website's bird. Transitions are opacity cross-fades (no choppy snap)
+ *     plus a gentle continuous breathe/bob so the whole thing reads as one fluid
+ *     clip rather than a slideshow.
+ *   - Fonts: "Permanent Marker" for the arched name, "Fredoka" (chunky rounded)
+ *     for HOMESCHOOL — both loaded in index.html.
  *
- * Behaviour: plays once per session (sessionStorage), tap/any-key to skip,
- * respects prefers-reduced-motion (static final state, quick auto-dismiss).
+ * Behaviour: once per session (sessionStorage); tap/any key to skip; respects
+ * prefers-reduced-motion (jumps to the final lockup, then auto-dismisses).
  */
 
 const SESSION_KEY = "bootSplashSeen";
-
-/** Possessive form: "Reagan" -> "Reagan’s", "Chris" -> "Chris’". */
-function possessive(name: string): string {
-  const n = name.trim();
-  if (!n) return "";
-  return /s$/i.test(n) ? `${n}\u2019` : `${n}\u2019s`;
-}
-
-// Choreography timeline (ms from mount). Tuned so the cap's flight and the
-// writing/fade triggers line up.
-const T = {
-  wave: 250,        // Frame 1: Kiwi waves
-  throw: 1150,      // Frame 2: cap launches + name starts writing
-  peak: 1850,       // Frame 3: cap at apex, Kiwi looks up
-  fall: 1950,       // Frame 4: cap begins falling
-  homeschool: 2750, // "HOMESCHOOL" fades in as cap passes the feet
-  wink: 3450,       // Frame 5: Kiwi turns back + winks
-  hold: 4300,       // begin fade-out
-  fade: 520,
-};
-
-type Phase = "wave" | "throw" | "peak" | "fall" | "homeschool" | "wink";
 
 export default function BootSplash() {
   const [show, setShow] = useState<boolean>(() => {
@@ -75,11 +62,10 @@ export default function BootSplash() {
   // Student name from app settings (public profile query). Fallback "Reagan"
   // while it loads so the splash never flashes a blank title.
   const profile = trpc.profile.get.useQuery(undefined, { enabled: show });
-  const nameWord = useMemo(() => {
-    const full = (profile.data?.studentName || "Reagan").trim();
-    const first = full.split(/\s+/)[0] || "Reagan";
-    return possessive(first);
-  }, [profile.data?.studentName]);
+  const nameWord = useMemo(
+    () => bootTitleName(profile.data?.studentName),
+    [profile.data?.studentName],
+  );
 
   // Per-letter spans for the handwritten arch.
   const letters = useMemo(() => Array.from(nameWord), [nameWord]);
@@ -106,14 +92,13 @@ export default function BootSplash() {
       timers.current.push(window.setTimeout(fn, ms));
 
     if (reduced) {
-      // Reduced motion: show the resolved state, then dismiss.
-      setPhase("homeschool");
-      push(() => beginLeave(), 1400);
+      // Reduced motion: jump straight to the final lockup, then dismiss.
+      setPhase("wink");
+      push(() => beginLeave(), 4200);
     } else {
-      push(() => setPhase("throw"), T.throw);
-      push(() => setPhase("peak"), T.peak);
-      push(() => setPhase("fall"), T.fall);
-      push(() => setPhase("homeschool"), T.homeschool);
+      push(() => setPhase("windup"), T.windup);
+      push(() => setPhase("fling"), T.fling);
+      push(() => setPhase("lookdown"), T.lookdown);
       push(() => setPhase("wink"), T.wink);
       push(() => beginLeave(), T.hold);
     }
@@ -140,18 +125,14 @@ export default function BootSplash() {
 
   if (!show) return null;
 
-  // Pose: wave/throw use flap (wings up), peak/fall idle (looking up handled by
-  // CSS tilt), wink uses chirp (eyes-closed-ish happy pose).
-  const pose: KiwiPose =
-    phase === "wave" || phase === "throw"
-      ? "flap"
-      : phase === "wink"
-      ? "chirp"
-      : "idle";
+  // Which pose image is on top right now (the others fade beneath it).
+  const activePose: PoseKey = poseForPhase(phase);
 
-  const nameVisible = phase !== "wave"; // name starts writing at throw
-  const homeschoolVisible = phase === "homeschool" || phase === "wink";
-  const capLaunched = phase !== "wave";
+  const nameWriting = phase !== "wave"; // name starts writing after the wave
+  const capFlying = capFlyingForPhase(phase);
+  const hsState = homeschoolStateForPhase(phase);
+  const homeschoolDim = hsState === "dim";
+  const homeschoolLit = hsState === "lit";
 
   return (
     <div
@@ -162,49 +143,64 @@ export default function BootSplash() {
       style={{
         opacity: leaving ? 0 : 1,
         transition: `opacity ${T.fade}ms ease`,
-        // Deep teal-navy backdrop that harmonizes with Kiwi's real blue/yellow
-        // budgie palette (yellow head + turquoise body).
+        // Bright white studio: soft warm vignette + a faint floor shadow gradient.
+        backgroundColor: "#ffffff",
         background:
-          "radial-gradient(ellipse at 50% 38%, rgba(96,176,176,0.16), transparent 62%)," +
-          "linear-gradient(160deg, #11302f 0%, #143a3c 45%, #0c2122 100%)",
+          "radial-gradient(ellipse at 50% 30%, #ffffff 0%, #fbfdff 55%, #eef4f5 100%)",
       }}
     >
-      {/* Stage: fixed-size so absolute choreography lines up across breakpoints */}
+      {/* soft floating school doodles (very subtle, behind everything) */}
+      {!reduced && (
+        <div aria-hidden className="boot-doodles">
+          <span className="boot-doodle d1">{"\u270F\uFE0F"}</span>
+          <span className="boot-doodle d2">{"\u2B50"}</span>
+          <span className="boot-doodle d3">{"\uD83D\uDCDA"}</span>
+          <span className="boot-doodle d4">{"\u2728"}</span>
+          <span className="boot-doodle d5">{"\uD83C\uDF31"}</span>
+          <span className="boot-doodle d6">{"\u2795"}</span>
+        </div>
+      )}
+
+      {/* Stage: a compact centered lockup so the arched name, the hero bird, and
+          HOMESCHOOL read as ONE unit (not scattered across a sea of white). The
+          absolute choreography is percentage-based, so it scales with the box. */}
       <div
         className="relative"
-        style={{ width: "min(92vw, 460px)", height: "min(70vh, 460px)" }}
+        style={{ width: "min(92vw, 560px)", height: "min(88vh, 600px)" }}
       >
-        {/* Arched handwritten name — writes on letter-by-letter, following the
-            cap's upward arc. Positioned across the top. */}
+        {/* Arched handwritten name — writes on letter-by-letter along an arch. */}
         <div
           aria-hidden
           className="absolute left-0 right-0"
-          style={{ top: "4%", height: "34%" }}
+          style={{ top: "0%", height: "20%" }}
         >
           {letters.map((ch, i) => {
             const n = letters.length;
-            // Distribute letters along a shallow arch (parabola): center high.
             const t = n > 1 ? i / (n - 1) : 0.5;
-            const x = 12 + t * 76; // % across
-            const arch = -Math.sin(t * Math.PI) * 26; // px lift in the middle
-            const rot = (t - 0.5) * 16; // slight rotation along the arch
-            const delay = T.throw + 80 + i * 95; // ms; letter-by-letter
+            const x = 16 + t * 68; // % across
+            const arch = -Math.sin(t * Math.PI) * 30; // px lift in the middle
+            const rot = (t - 0.5) * 18; // slight rotation along the arch
+            const delay = T.write + 60 + i * 90; // ms; letter-by-letter
             return (
               <span
                 key={`${ch}-${i}`}
-                className={reduced ? "boot-letter-static" : "boot-letter"}
+                className={
+                  reduced
+                    ? "boot-letter-static"
+                    : nameWriting
+                    ? "boot-letter"
+                    : "boot-letter-hidden"
+                }
                 style={{
                   position: "absolute",
                   left: `${x}%`,
-                  top: `calc(38% + ${arch}px)`,
+                  top: `calc(60% + ${arch}px)`,
                   transform: `translate(-50%,-50%) rotate(${rot}deg)`,
-                  fontFamily: "'Caveat', cursive",
-                  fontWeight: 700,
-                  fontSize: "clamp(2.4rem, 9vw, 4.2rem)",
-                  // Warm cream-yellow to echo Kiwi's yellow head.
-                  color: "#fdf0a8",
-                  textShadow:
-                    "0 1px 0 rgba(0,0,0,0.3), 0 0 16px rgba(245,224,96,0.35)",
+                  fontFamily: "'Permanent Marker', 'Caveat', cursive",
+                  fontWeight: 400,
+                  fontSize: "clamp(2.6rem, 9.5vw, 6rem)",
+                  color: "#1c1c1e", // bold black marker
+                  textShadow: "0 2px 0 rgba(0,0,0,0.06)",
                   animationDelay: reduced ? undefined : `${delay}ms`,
                   whiteSpace: "pre",
                 }}
@@ -215,108 +211,90 @@ export default function BootSplash() {
           })}
         </div>
 
-        {/* Kiwi — exact site sprite. Centered; tilts up to track the cap. */}
+        {/* Kiwi pose stack — all five renders layered; the active one fades to
+            full opacity while the rest fade out, giving fluid pose-to-pose
+            morphing. A continuous breathe/bob wraps the stack. */}
         <div
-          className="absolute"
+          className={reduced ? "boot-stage" : "boot-stage boot-breathe"}
           style={{
+            position: "absolute",
             left: "50%",
-            top: "52%",
+            top: "50%",
             transform: "translate(-50%,-50%)",
-            transformOrigin: "center bottom",
-            filter: "drop-shadow(0 12px 26px rgba(0,0,0,0.45))",
+            width: "min(86vw, 540px)",
+            height: "min(70vh, 540px)",
+            filter: "drop-shadow(0 18px 26px rgba(40,80,80,0.18))",
           }}
         >
-          <div
-            className={
-              reduced
-                ? ""
-                : phase === "wave"
-                ? "boot-kiwi-wave"
-                : phase === "peak" || phase === "fall"
-                ? "boot-kiwi-lookup"
-                : phase === "wink"
-                ? "boot-kiwi-settle"
-                : ""
-            }
-          >
-            <KiwiSprite
-              pose={pose}
-              size={150}
-              animate={!reduced}
-              ariaLabel="Kiwi, ready for school"
+          {(Object.keys(POSE) as PoseKey[]).map((key) => (
+            <img
+              key={key}
+              src={POSE[key]}
+              alt={key === activePose ? "Kiwi, ready for school" : ""}
+              aria-hidden={key !== activePose}
+              draggable={false}
+              className="boot-pose"
+              style={{
+                position: "absolute",
+                inset: 0,
+                width: "100%",
+                height: "100%",
+                objectFit: "contain",
+                opacity: key === activePose ? 1 : 0,
+                transition: "opacity 360ms ease",
+                userSelect: "none",
+              }}
             />
-          </div>
-
-          {/* Wink flash overlay (Frame 5) */}
-          {!reduced && phase === "wink" && (
-            <span aria-hidden className="boot-wink" />
-          )}
+          ))}
         </div>
 
-        {/* The graduation cap. Sits on Kiwi's head in Frame 1; on throw it
-            launches up along an arc, peaks, then falls to her right past the
-            feet and off the bottom. */}
-        <span
+        {/* The flying graduation cap — launches up-left with a motion trail, then
+            falls down-right past Kiwi. Hidden once she's wearing it again. */}
+        <img
           aria-hidden
+          src={CAP_IMG}
+          alt=""
+          draggable={false}
           className={
-            reduced
-              ? "boot-cap-static"
-              : capLaunched
-              ? "boot-cap-fly"
-              : "boot-cap-rest"
+            reduced ? "boot-cap-hidden" : capFlying ? "boot-cap-fly" : "boot-cap-hidden"
           }
           style={{
             position: "absolute",
             left: "50%",
-            top: "30%",
-            fontSize: 56,
-            lineHeight: 1,
+            top: "40%",
+            width: "clamp(80px, 16vw, 170px)",
             transform: "translate(-50%,-50%)",
-            filter: "drop-shadow(0 3px 4px rgba(0,0,0,0.4))",
-            // Hide once it has exited (after the fall completes).
-            opacity: phase === "homeschool" || phase === "wink" ? 0 : 1,
+            filter: "drop-shadow(0 6px 8px rgba(0,0,0,0.18))",
           }}
-        >
-          {"\u{1F393}"}
-        </span>
+        />
 
-        {/* HOMESCHOOL — 3D bubble, all caps, Kiwi's green/yellow palette. Fades
-            in all-at-once as the cap passes the feet. */}
+        {/* HOMESCHOOL — two-tone, chunky rounded. Fades in dimmed, then lights up
+            to full teal + golden-yellow. */}
         <div
           className="absolute left-0 right-0 flex justify-center"
-          style={{ top: "78%" }}
+          style={{ top: "88%" }}
         >
           <span
             className={
-              homeschoolVisible
-                ? reduced
-                  ? "boot-homeschool-static"
-                  : "boot-homeschool-in"
-                : "boot-homeschool-hidden"
+              reduced
+                ? "boot-hs-lit"
+                : homeschoolLit
+                ? "boot-hs-lit"
+                : homeschoolDim
+                ? "boot-hs-dim"
+                : "boot-hs-hidden"
             }
             style={{
               fontFamily: "'Fredoka', 'Baloo 2', system-ui, sans-serif",
               fontWeight: 700,
-              letterSpacing: "0.04em",
-              fontSize: "clamp(1.5rem, 6.5vw, 3rem)",
-              // Kiwi's yellow head color for the face of the letters.
-              color: "#f5e25e",
-              // 3D bubble: layered shadows transition yellow -> turquoise (Kiwi's
-              // body) for depth, with a deep teal outline so it pops.
-              textShadow: [
-                "0 1px 0 #d8c84a",
-                "0 2px 0 #8fb8a8",
-                "0 3px 0 #6aa8a4",
-                "0 4px 0 #4f9494",
-                "0 5px 0 #357c7e",
-                "0 6px 1px rgba(0,0,0,0.35)",
-                "0 7px 12px rgba(0,0,0,0.5)",
-              ].join(","),
-              WebkitTextStroke: "1px #1f5658",
-              paintOrder: "stroke fill",
+              letterSpacing: "0.01em",
+              fontSize: "clamp(2.1rem, 8.5vw, 4.6rem)",
+              lineHeight: 1,
+              whiteSpace: "nowrap",
             }}
           >
-            HOMESCHOOL
+            <span className="boot-hs-home">HOME</span>
+            <span className="boot-hs-school">SCHOOL</span>
           </span>
         </div>
       </div>
@@ -324,83 +302,91 @@ export default function BootSplash() {
       <style>{`
         /* ---- Name: letter-by-letter write-on ---- */
         @keyframes boot-letter-in {
-          0%   { opacity: 0; transform: translate(-50%,-50%) scale(0.6) rotate(var(--r,0deg)); filter: blur(2px); }
+          0%   { opacity: 0; transform: translate(-50%,-60%) scale(0.6) rotate(var(--r,0deg)); }
           60%  { opacity: 1; }
-          100% { opacity: 1; transform: translate(-50%,-50%) scale(1) rotate(var(--r,0deg)); filter: blur(0); }
+          100% { opacity: 1; transform: translate(-50%,-50%) scale(1) rotate(var(--r,0deg)); }
         }
+        .boot-letter-hidden { opacity: 0; }
         .boot-letter {
           opacity: 0;
-          animation: boot-letter-in 0.42s cubic-bezier(0.34,1.56,0.64,1) both;
+          animation: boot-letter-in 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
         }
         .boot-letter-static { opacity: 1; }
 
-        /* ---- Kiwi motion ---- */
-        @keyframes boot-wave {
-          0%,100% { transform: rotate(0deg); }
-          25%     { transform: rotate(-7deg) translateY(-2px); }
-          50%     { transform: rotate(6deg); }
-          75%     { transform: rotate(-4deg); }
+        /* ---- Continuous gentle breathe/bob so it reads as one fluid clip ---- */
+        @keyframes boot-breathe {
+          0%,100% { transform: translate(-50%,-50%) translateY(0) scale(1); }
+          50%     { transform: translate(-50%,-50%) translateY(-8px) scale(1.012); }
         }
-        @keyframes boot-lookup {
-          0%   { transform: rotate(0deg); }
-          100% { transform: rotate(-8deg) translateY(-2px); }
-        }
-        @keyframes boot-settle {
-          0%   { transform: rotate(-8deg); }
-          60%  { transform: rotate(3deg) scale(1.04); }
-          100% { transform: rotate(0deg) scale(1); }
-        }
-        .boot-kiwi-wave   { animation: boot-wave 0.9s ease-in-out 1 both; transform-origin: center bottom; }
-        .boot-kiwi-lookup { animation: boot-lookup 0.5s ease-out both; transform-origin: center bottom; }
-        .boot-kiwi-settle { animation: boot-settle 0.6s cubic-bezier(0.34,1.56,0.64,1) both; transform-origin: center bottom; }
+        .boot-breathe { animation: boot-breathe 3.2s ease-in-out infinite; }
 
-        /* ---- Wink flash ---- */
-        @keyframes boot-wink-flash {
-          0%   { opacity: 0; transform: translate(40px,42px) scale(0.4) rotate(-10deg); }
-          30%  { opacity: 1; }
-          100% { opacity: 0; transform: translate(48px,30px) scale(1) rotate(8deg); }
-        }
-        .boot-wink {
-          position: absolute;
-          left: 58%; top: 30%;
-          width: 16px; height: 16px;
-          background:
-            radial-gradient(circle, #fff 0 30%, transparent 32%),
-            conic-gradient(from 0deg, transparent 0 15deg, #fff 15deg 18deg, transparent 18deg 90deg, #fff 90deg 93deg, transparent 93deg);
-          filter: drop-shadow(0 0 6px rgba(255,255,255,0.9));
-          animation: boot-wink-flash 0.7s ease-out both;
-          pointer-events: none;
-        }
-
-        /* ---- Cap flight: launch up, arc, peak, fall past feet, exit bottom ---- */
+        /* ---- Cap flight: launch up-left with trail, peak, fall down-right ---- */
         @keyframes boot-cap-flight {
-          0%   { transform: translate(-50%,-50%) rotate(-12deg) scale(1); }      /* launch */
-          26%  { transform: translate(-30%,-220%) rotate(180deg) scale(0.92); }   /* rising right + spin */
-          40%  { transform: translate(0%,-300%) rotate(320deg) scale(0.9); }      /* PEAK */
-          55%  { transform: translate(40%,-210%) rotate(430deg) scale(0.92); }    /* start falling, drift right */
-          100% { transform: translate(120%,260%) rotate(620deg) scale(1.02); }    /* fall past feet, exit bottom-right */
+          0%   { opacity: 0; transform: translate(-50%,-50%) rotate(-10deg) scale(0.7); }
+          8%   { opacity: 1; }
+          34%  { transform: translate(-150%,-150%) rotate(220deg) scale(0.78); }   /* up-left peak */
+          60%  { transform: translate(40%,-40%) rotate(430deg) scale(0.9); }       /* arc over to the right */
+          100% { opacity: 1; transform: translate(150%,150%) rotate(640deg) scale(1); } /* fall down-right, off-stage */
         }
-        .boot-cap-rest   { animation: none; }
-        .boot-cap-static { top: 22% !important; }
+        .boot-cap-hidden { opacity: 0; }
         .boot-cap-fly {
-          animation: boot-cap-flight 1.6s cubic-bezier(0.45,0.05,0.55,0.95) both;
+          animation: boot-cap-flight 2.2s cubic-bezier(0.42,0,0.4,1) both;
+          /* soft motion trail */
+          filter: drop-shadow(0 6px 8px rgba(0,0,0,0.18)) drop-shadow(-10px -8px 10px rgba(120,160,160,0.25));
         }
 
-        /* ---- HOMESCHOOL fade-in (all at once) ---- */
-        @keyframes boot-homeschool-pop {
-          0%   { opacity: 0; transform: translateY(10px) scale(0.92); }
-          60%  { opacity: 1; transform: translateY(-2px) scale(1.03); }
+        /* ---- HOMESCHOOL two-tone ---- */
+        .boot-hs-home, .boot-hs-school {
+          transition: color 600ms ease, text-shadow 600ms ease;
+        }
+        @keyframes boot-hs-pop {
+          0%   { opacity: 0; transform: translateY(14px) scale(0.9); }
+          60%  { opacity: 1; transform: translateY(-3px) scale(1.04); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
         }
-        .boot-homeschool-hidden { opacity: 0; }
-        .boot-homeschool-static { opacity: 1; }
-        .boot-homeschool-in {
-          animation: boot-homeschool-pop 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+        .boot-hs-hidden { opacity: 0; }
+        /* Dimmed: muted grey, no 3D yet */
+        .boot-hs-dim {
+          animation: boot-hs-pop 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+        }
+        .boot-hs-dim .boot-hs-home,
+        .boot-hs-dim .boot-hs-school {
+          color: #c2cdcb;
+          text-shadow: 0 1px 0 #b3bfbd;
+        }
+        /* Lit: full two-tone with a soft bubble depth */
+        .boot-hs-lit { opacity: 1; }
+        .boot-hs-lit .boot-hs-home {
+          color: #2f9e8f; /* teal */
+          text-shadow: 0 1px 0 #248577, 0 2px 0 #1d7568, 0 4px 8px rgba(31,86,88,0.28);
+        }
+        .boot-hs-lit .boot-hs-school {
+          color: #f5b916; /* golden-yellow */
+          text-shadow: 0 1px 0 #e0a40e, 0 2px 0 #c79009, 0 4px 8px rgba(120,90,10,0.22);
         }
 
+        /* ---- Floating school doodles ---- */
+        .boot-doodles { position: absolute; inset: 0; pointer-events: none; }
+        .boot-doodle {
+          position: absolute;
+          font-size: clamp(20px, 3vw, 34px);
+          opacity: 0.18;
+          animation: boot-float 7s ease-in-out infinite;
+        }
+        @keyframes boot-float {
+          0%,100% { transform: translateY(0) rotate(-4deg); }
+          50%     { transform: translateY(-16px) rotate(6deg); }
+        }
+        .boot-doodle.d1 { left: 9%;  top: 22%; animation-delay: 0s;   }
+        .boot-doodle.d2 { left: 86%; top: 18%; animation-delay: 0.8s; }
+        .boot-doodle.d3 { left: 14%; top: 70%; animation-delay: 1.6s; }
+        .boot-doodle.d4 { left: 82%; top: 64%; animation-delay: 2.2s; }
+        .boot-doodle.d5 { left: 50%; top: 90%; animation-delay: 1.1s; }
+        .boot-doodle.d6 { left: 70%; top: 40%; animation-delay: 2.8s; }
+
         @media (prefers-reduced-motion: reduce) {
-          .boot-letter, .boot-cap-fly, .boot-kiwi-wave, .boot-kiwi-lookup,
-          .boot-kiwi-settle, .boot-homeschool-in, .boot-wink {
+          .boot-letter, .boot-cap-fly, .boot-breathe, .boot-hs-dim,
+          .boot-doodle {
             animation: none !important;
           }
         }

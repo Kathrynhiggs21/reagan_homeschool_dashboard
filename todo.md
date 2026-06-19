@@ -1399,6 +1399,17 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] Keep dynamic name + possessive; respect prefers-reduced-motion (static, name + HOMESCHOOL shown, quick dismiss); tap/key to skip
 - [x] tsc + build clean; checkpoint
 
+## Boot splash — storyboard-accurate animated redesign (Katy 2026-06-19, 9-frame storyboard + reference budgie)
+- [x] Generate 5 cute 3D cap-budgie poses from the reference image (wave, wind-up/throw, look-up, look-down, wink) on transparent backgrounds; clean magenta halo + autocrop
+- [x] Generate a standalone flying graduation cap for the cap arc
+- [x] Rebuild BootSplash IN PLACE (no v2): WHITE studio background (not dark teal)
+- [x] Arched black marker/script "REAGAN'S" at the top (Permanent Marker font), letters along an arch, write-on letter-by-letter as Kiwi flings the cap
+- [x] Two-tone "HOMESCHOOL": HOME in teal + SCHOOL in golden-yellow, chunky rounded Fredoka font; fades in dimmed then lights up full color
+- [x] Fluid "video-style" choreography using the real pose images: wave → windup/throw → cap arcs up-left with motion trail → look-up tracking → cap falls down-right → look-down → HOMESCHOOL dim → wink + HOMESCHOOL full color → logo lockup; 5+ seconds, full-screen
+- [x] Cross-fade between poses (no choppy snap), gentle bob/breathe idle, soft floating school doodles
+- [x] Keep dynamic student name + possessive, sessionStorage once-per-session, tap/key skip, prefers-reduced-motion static state
+- [x] tsc + build clean; full vitest suite green; checkpoint
+
 
 ## Kiwi feather drift (website ambient, NOT boot splash) — Katy 2026-06-19
 - [x] Recolor boot splash text/background to the REAL blue/yellow budgie palette (yellow head + turquoise body) — sprite recolor is a separate open question
@@ -1419,50 +1430,50 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] Deterministic vitest (kiwiMoment.test.ts) for moment rotation + social frequency/beat/banter; full suite + tsc + build clean; checkpoint
 
 
-## Seasonal duck behavior — kiddie pool splash on hot days, huddle when cold (Katy 2026-06-19)
-- [ ] Add a deterministic season/temperature resolver (resolveDuckSeason) from the date: hot (summer) / cold (winter) / mild (spring+fall)
-- [ ] Hot day: duck flock splashes in their blue kiddie pool (pool prop + splash poses + cooling-off banter)
-- [ ] Cold day: flock huddles together in a tight cuddle pile (huddle pose + cozy/shivery banter)
-- [ ] Mild day: keep the normal single-file waddle behavior + banter
-- [ ] Wire the seasonal mode into the duck cameo in KiwiPerch (pool/huddle/waddle render + matching line bank)
-- [ ] Deterministic vitest for resolveDuckSeason + season-specific duck lines; full suite + tsc + build clean; checkpoint
+## Seasonal duck behavior — kiddie pool splash on hot days, huddle when cold (Katy 2026-06-19) — SHIPPED (Phases 1-2, v43ad6bae)
+- [x] Add a deterministic season/temperature resolver (resolveDuckSeason) from the date: hot (summer) / cold (winter) / mild (spring+fall)
+- [x] Hot day: duck flock splashes in their blue kiddie pool (pool prop + splash poses + cooling-off banter)
+- [x] Cold day: flock huddles together in a tight cuddle pile (huddle pose + cozy/shivery banter)
+- [x] Mild day: keep the normal single-file waddle behavior + banter
+- [x] Wire the seasonal mode into the duck cameo in KiwiPerch (pool/huddle/waddle render + matching line bank)
+- [x] Deterministic vitest for resolveDuckSeason + season-specific duck lines; full suite + tsc + build clean; checkpoint
 
 
-## Lychee mini-events — shared bit (Katy 2026-06-19)
-- [ ] Add an occasional "shared moment" beat to the Lychee social engine (rare, deterministic)
-- [ ] "Shared berry" bit: Kiwi + Lychee share a little berry, with a cute shared-snack banter line
-- [ ] "Synchronized hop" bit: the two birds do a quick matching hop together
-- [ ] Render the mini-event in the cameo (berry prop / sync-hop animation) respecting reduced-motion
-- [ ] Deterministic vitest for the mini-event beats + lines
+## Lychee mini-events — shared bit (Katy 2026-06-19) — SHIPPED (Phases 1-2, v43ad6bae)
+- [x] Add an occasional "shared moment" beat to the Lychee social engine (rare, deterministic)
+- [x] "Shared berry" bit: Kiwi + Lychee share a little berry, with a cute shared-snack banter line
+- [x] "Synchronized hop" bit: the two birds do a quick matching hop together
+- [x] Render the mini-event in the cameo (berry prop / sync-hop animation) respecting reduced-motion
+- [x] Deterministic vitest for the mini-event beats + lines (kiwiMoment.test.ts berry/synchop banks)
 
-## Who-visited-today log — collectible badge (Katy 2026-06-19)
-- [ ] Persist per-day visits (Lychee / ducks) so a stop-by is remembered for the day
-- [ ] Tiny tappable badge near Kiwi showing who visited today; opens a little popover/list
-- [ ] Turn cameos into a collectible (e.g., "you spotted Lychee today!") — light, delightful, no clutter
-- [ ] Deterministic/server tests for the visit-log persistence; full suite + tsc + build clean; checkpoint
+## Who-visited-today log — collectible badge (Katy 2026-06-19) — SHIPPED (Phase 3, v43ad6bae)
+- [x] Persist per-day visits (Lychee / ducks) so a stop-by is remembered for the day (localStorage kiwi_visits_YYYY-MM-DD)
+- [x] Tiny tappable badge near Kiwi showing who visited today; opens a little popover/list (VisitBadge)
+- [x] Turn cameos into a collectible (e.g., "you spotted Lychee today!") — light, delightful, no clutter
+- [x] Deterministic/server tests for the visit-log persistence (kiwiVisitLog.test.ts, 6 tests); full suite + tsc + build clean; checkpoint
 
 
-## Bird props & extra actions + attention-weighting (Katy 2026-06-19)
-- [ ] Core rule: each bird has an appearance counter; the more a bird appears, the richer its behavior pool (Kiwi richest, then Lychee, then ducks)
-- [ ] Props auto-spawn AND auto-clean-up (appear, do the bit, disappear); all reduced-motion aware
-- [ ] Footprints: a short trail of prints when a bird steps in something (mud/paint), fades out
-- [ ] Poop: occasional comedic poop drop that leaves a tiny spot, then the bird cleans it up
-- [ ] Pool swimming: ducks splash in the kiddie pool on hot days (toe-dip for Kiwi/Lychee sometimes)
-- [ ] Tree branch perch: a branch slides in, bird fluffs + perches, branch disappears when done
-- [ ] Store-bought cage perches: rotate real pet-store perch types (rope/boing, wooden dowel, ladder, swing, mineral/cuttlebone)
-- [ ] Eating: nibbling seed/millet/berry with little crumbs
-- [ ] Hopping when happy: extra hops/bounces when mood is good
-- [ ] Build a reusable Skill capturing the whole behavior library + attention-weighting + an "update often" workflow
-- [ ] Generate several duck image style options and send to Katy to pick favorites
-- [ ] Tests + tsc + build clean; checkpoint
+## Bird props & extra actions + attention-weighting (Katy 2026-06-19) — SHIPPED (Phases 1-2,7-8)
+- [x] Core rule: each bird has an appearance counter; the more a bird appears, the richer its behavior pool (Kiwi richest, then Lychee, then ducks)
+- [x] Props auto-spawn AND auto-clean-up (appear, do the bit, disappear); all reduced-motion aware
+- [x] Footprints: a short trail of prints when a bird steps in something (mud/paint), fades out
+- [x] Poop: occasional comedic poop drop that leaves a tiny spot, then the bird cleans it up
+- [x] Pool swimming: ducks splash in the kiddie pool on hot days (toe-dip for Kiwi/Lychee sometimes)
+- [x] Tree branch perch: a branch slides in, bird fluffs + perches, branch disappears when done
+- [x] Store-bought cage perches: rotate real pet-store perch types (rope/boing, wooden dowel, ladder, swing, mineral/cuttlebone)
+- [x] Eating: nibbling seed/millet/berry with little crumbs
+- [x] Hopping when happy: extra hops/bounces when mood is good
+- [x] Build a reusable Skill capturing the whole behavior library + attention-weighting + an "update often" workflow (reagan-bird-behavior Skill)
+- [x] Generate several duck image style options and send to Katy to pick favorites (4 styles; A chibi applied)
+- [x] Tests + tsc + build clean; checkpoint
 
 
 ## Reagan-anchored behavior + out-of-app birds (Katy 2026-06-19)
 - [x] Behavior engine: every bird does BOTH self/among-birds bits AND Reagan-directed reactions; lean toward Reagan grows with appearances
 - [x] Ducks all notice Reagan + move toward her (leader notices first, twins follow her gaze)
-- [ ] Render Reagan-aware actions + props in KiwiPerch
-- [ ] Write a complete build brief for a SEPARATE Manus task: out-of-app always-on-screen desktop/iPad bird pet (Mac menu-bar app + iPad PiP/widget), reusing sprites + behavior engine, with on/off switch
-- [ ] Out-of-app birds do NOT talk about school or use AI voice; they chatter about everyday fun things only
+- [x] Render Reagan-aware actions + props in KiwiPerch
+- [x] Write a complete build brief for a SEPARATE Manus task: out-of-app always-on-screen desktop/iPad bird pet (bird_pet_brief/Reagan_Birds_Desktop_Pet_Build_Brief.md)
+- [x] Out-of-app birds do NOT talk about school or use AI voice; they chatter about everyday fun things only (codified in the brief's safe-content rules)
 
 
 ## Kiwi dress-up wardrobe popup (Katy 2026-06-19)
@@ -1565,15 +1576,15 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] Auto-reset at midnight (date-keyed; re-check on mount + each scheduler tick)
 - [x] Deterministic helper extracted + unit-tested (todayVisitKey, recordVisit, summarizeVisits) — server/kiwiVisitLog.test.ts (6 tests)
 
-### YouTube interest engine (REAL data — likes/subs live + optional Takeout seed)
-- [ ] Connect `youtube.readonly` scope for the account Reagan uses (one-tap authorize)
-- [ ] Server: read Liked videos + Subscriptions (YouTube Data API v3), extract topic/theme keywords into an interest profile
-- [ ] Optional: import Google Takeout `watch-history.json` to seed a deeper interest profile (manual upload)
-- [ ] Persist interest profile (DB) + periodic refresh (Heartbeat)
-- [ ] Drift Kiwi's activity ideas / assignment themes / idle chatter from the interest profile (real signals only, no fabrication)
-- [ ] Unlock interest-themed wearables based on detected interests
-- [ ] Tests for interest extraction + drift (deterministic, no live calls in tests)
-- [ ] NOTE: YouTube watch/search history is NOT available via API — only Liked/Subs/Playlists live; full history requires Takeout import
+### YouTube interest engine (REAL data — likes/subs live + optional Takeout seed) — SHIPPED (Phase 5, v c3e47210)
+- [~] Connect `youtube.readonly` scope for the account Reagan uses (one-tap authorize) — PENDING USER ACTION (engine is built & dormant until this is done)
+- [x] Server: read Liked videos + Subscriptions (YouTube Data API v3), extract topic/theme keywords into an interest profile
+- [x] Optional: import Google Takeout `watch-history.json` to seed a deeper interest profile (manual upload)
+- [x] Persist interest profile (DB) + periodic refresh (Heartbeat)
+- [x] Drift Kiwi's activity ideas / assignment themes / idle chatter from the interest profile (real signals only, no fabrication)
+- [x] Unlock interest-themed wearables based on detected interests (interest-aware chatter + profile.interests drift)
+- [x] Tests for interest extraction + drift (deterministic, no live calls in tests) — 33 tests
+- [x] NOTE confirmed: YouTube watch/search history is NOT available via API — only Liked/Subs/Playlists live; full history requires Takeout import
 
 
 ### Start-time change (2026-06-19)
