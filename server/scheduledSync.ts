@@ -2203,6 +2203,50 @@ ${kidSummaryLine}
       return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
     }
   });
+
+  /* ===========================================================
+   * YOUTUBE INTEREST REFRESH (Katy 2026-06-19)
+   * -----------------------------------------------------------
+   * Heartbeat-triggered. Pulls Reagan's live YouTube signals
+   * (Liked videos + Subscriptions + Playlists), re-tallies the
+   * frequency-weighted interest profile, and merges it. No-ops
+   * cleanly (200 + skipped) when no YouTube OAuth token is
+   * connected, so the cron is safe to schedule before the
+   * account is linked. Nothing is fabricated.
+   * =========================================================== */
+  app.post("/api/scheduled/youtube-refresh", async (req: Request, res: Response) => {
+    const bearerHeader = String(req.headers["authorization"] ?? req.headers["Authorization" as any] ?? "");
+    const bearerOk = !!ENV.scheduledBearer && bearerHeader.startsWith("Bearer ") && bearerHeader.slice(7).trim() === ENV.scheduledBearer;
+    let role: string | null = null;
+    if (!bearerOk) {
+      try {
+        const u = await sdk.authenticateRequest(req);
+        role = u?.role ?? null;
+      } catch {
+        role = null;
+      }
+    }
+    if (!bearerOk && (!role || (role !== "user" && role !== "admin"))) {
+      return res.status(401).json({ ok: false, error: "Unauthorized" });
+    }
+    try {
+      const { fetchAllLiveSignals, canReadPrivate } = await import("./_lib/youtube");
+      if (!canReadPrivate()) {
+        try { await (db as any).updateYoutubeSyncState?.({ lastError: "No YouTube OAuth token configured." }); } catch {}
+        return res.json({ ok: true, skipped: true, reason: "not_connected" });
+      }
+      const { buildInterestProfile } = await import("../shared/interestEngine");
+      const signals = await fetchAllLiveSignals();
+      const tally = buildInterestProfile(signals);
+      const { topicsTouched } = await (db as any).applyInterestTally(tally, "liked");
+      try { await (db as any).updateYoutubeSyncState?.({ lastSyncAt: new Date(), lastSource: "youtube_live", lastItemCount: signals.length, lastError: null }); } catch {}
+      return res.json({ ok: true, signals: signals.length, topicsTouched });
+    } catch (e: any) {
+      console.error("[youtube-refresh] error", e);
+      try { await (db as any).updateYoutubeSyncState?.({ lastError: String(e?.message || e).slice(0, 480) }); } catch {}
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+    }
+  });
 }
 
 /* ===========================================================

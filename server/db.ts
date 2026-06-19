@@ -10200,3 +10200,92 @@ export async function runNightlySelfCheck(
     clean,
   };
 }
+
+/* ============================================================
+ * YouTube interest engine — db helpers (Katy 2026-06-19)
+ * Tables: youtubeInterests (accumulated topics), youtubeSyncState.
+ * Imported locally so we don't disturb the large top import block.
+ * ============================================================ */
+import {
+  youtubeInterests as _ytInterests,
+  youtubeSyncState as _ytSyncState,
+} from "../drizzle/schema";
+import {
+  mergeIntoStored as _mergeInterests,
+  topInterestLabels as _topLabels,
+  type InterestTally as _InterestTally,
+  type StoredInterest as _StoredInterest,
+} from "../shared/interestEngine";
+
+/** Read the accumulated interest profile, ranked by weight. */
+export async function listYoutubeInterests(): Promise<_StoredInterest[]> {
+  const rows = await getDb().select().from(_ytInterests).orderBy(desc(_ytInterests.weight));
+  return rows.map((r) => ({
+    topic: r.topic,
+    label: r.label,
+    weight: r.weight,
+    hits: r.hits,
+    samples: Array.isArray(r.samplesJson) ? (r.samplesJson as string[]) : [],
+  }));
+}
+
+/**
+ * Merge a fresh tally into the stored profile (accumulating over time),
+ * persist, and return the new ranked profile. Also mirrors the top
+ * interests into profile.interests so the AI scheduler + Kiwi pick them
+ * up automatically. Returns counts for the caller to report.
+ */
+export async function applyInterestTally(
+  fresh: _InterestTally[],
+  source: string,
+): Promise<{ profile: _StoredInterest[]; topicsTouched: number }> {
+  const db = getDb();
+  const existing = await listYoutubeInterests();
+  const merged = _mergeInterests(existing, fresh);
+
+  const now = new Date();
+  for (const m of merged) {
+    const prior = existing.find((e) => e.topic === m.topic);
+    if (prior) {
+      await db.update(_ytInterests)
+        .set({ weight: m.weight, hits: m.hits, label: m.label, samplesJson: m.samples as any, lastSeen: now, updatedAt: now })
+        .where(eq(_ytInterests.topic, m.topic));
+    } else {
+      await db.insert(_ytInterests).values({
+        topic: m.topic, label: m.label, weight: m.weight, hits: m.hits,
+        source: (source as any) || "manual", samplesJson: m.samples as any,
+        lastSeen: now,
+      } as any);
+    }
+  }
+
+  // Mirror the top interests into profile.interests, MERGING with any
+  // adult-entered interests already there (never clobber human input).
+  try {
+    const profile = await getProfile();
+    const human: string[] = Array.isArray(profile?.interests) ? (profile!.interests as string[]) : [];
+    const ytTop = _topLabels(merged, 8);
+    const mergedInterests = Array.from(new Set([...human, ...ytTop])).slice(0, 24);
+    await upsertProfile({ interests: mergedInterests } as any);
+  } catch { /* profile mirror is best-effort */ }
+
+  return { profile: merged, topicsTouched: merged.length };
+}
+
+/** Read (or lazily create) the single sync-state row. */
+export async function getYoutubeSyncState() {
+  const db = getDb();
+  const rows = await db.select().from(_ytSyncState).limit(1);
+  if (rows[0]) return rows[0];
+  await db.insert(_ytSyncState).values({ lastItemCount: 0 } as any);
+  const again = await db.select().from(_ytSyncState).limit(1);
+  return again[0];
+}
+
+/** Update the sync-state row (last run, counts, errors, cron uid). */
+export async function updateYoutubeSyncState(patch: Partial<typeof _ytSyncState.$inferInsert>) {
+  const db = getDb();
+  const cur = await getYoutubeSyncState();
+  await db.update(_ytSyncState).set({ ...patch, updatedAt: new Date() }).where(eq(_ytSyncState.id, cur.id));
+  return getYoutubeSyncState();
+}

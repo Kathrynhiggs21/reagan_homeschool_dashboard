@@ -22,6 +22,7 @@ import {
 import { findLedges } from "@/lib/kiwiWorld";
 import KiwiWardrobe, { readPersistedWardrobeLayers } from "./KiwiWardrobe";
 import { pickOutfitOpinion, type GlyphLayer } from "@shared/kiwiWardrobe";
+import { pickInterestChatter } from "@shared/interestEngine";
 // Kiwi is silent by default. We deliberately do NOT import chirp() here so the
 // perch never makes sound on its own. Voice/chirp only fires through KiwiCompanion
 // (chat reply) and only when Mom has flipped Silent mode off in Settings.
@@ -132,6 +133,14 @@ function clamp(p: Pos, size: number, chatOpen?: boolean): Pos {
 export default function KiwiPerch() {
   const { enabled, open, setOpen, adultPresent, mode } = useKiwi();
   const [pose, setPose] = useState<KiwiPose>("idle");
+  // Reagan's #1 real interest (from the YouTube interest engine). Quiet/
+  // null until real data exists, so Kiwi never invents an interest.
+  const interestProfileQ = (trpc as any).interests?.profile?.useQuery?.(undefined, {
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+  const topInterest: string | null =
+    interestProfileQ?.data?.profile?.[0]?.label ?? null;
 
   /* ---- Daily costume from the authoritative server resolver ----
    * kiwi.today combines today's appointments + holidays + summer/vacation
@@ -392,10 +401,20 @@ export default function KiwiPerch() {
           // ~25% of the time, if Kiwi is actually wearing something, she pipes
           // up about her current outfit (sassy, low-key, never nagging).
           const outfitLine = wardrobeLayers.length > 0 ? pickOutfitOpinion() : null;
+          // ~18% of the time, if we know something Reagan keeps coming back to,
+          // Kiwi name-drops it warmly (never school-pushy) — e.g. "saw you're
+          // big on birds lately. respect." These come from her REAL interest
+          // profile, so they stay empty/quiet until real data exists.
+          const interestLine = topInterest && Math.random() < 0.18
+            ? pickInterestChatter(topInterest)
+            : null;
           const useOutfitLine = outfitLine && Math.random() < 0.25;
-          const useMomentLine = !useOutfitLine && Math.random() < 0.45;
+          const useInterestLine = !useOutfitLine && !!interestLine;
+          const useMomentLine = !useOutfitLine && !useInterestLine && Math.random() < 0.45;
           const bubbleMsg = useOutfitLine
             ? outfitLine
+            : useInterestLine
+            ? interestLine
             : useMomentLine
             ? (moment.idleLine || KIWI_ACTIVITY_BUBBLES[pick])
             : KIWI_ACTIVITY_BUBBLES[pick];
@@ -415,7 +434,7 @@ export default function KiwiPerch() {
     };
     schedule();
     return () => { if (timer) window.clearTimeout(timer); };
-  }, [enabled, adultPresent, dragging, flying, moment, wardrobeLayers]);
+  }, [enabled, adultPresent, dragging, flying, moment, wardrobeLayers, topInterest]);
 
   // Medium flutter hop every 25-45s: bigger movement
   useEffect(() => {

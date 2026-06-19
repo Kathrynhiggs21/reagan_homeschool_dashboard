@@ -2439,3 +2439,44 @@ export const appLaunches = mysqlTable("appLaunches", {
 export type AppLaunch = typeof appLaunches.$inferSelect;
 export type InsertAppLaunch = typeof appLaunches.$inferInsert;
 
+
+/* ============================================================
+ * YouTube interest engine (Katy 2026-06-19)
+ * ----------------------------------------------------------------
+ * Real, frequency-weighted interest topics derived from Reagan's
+ * own YouTube signals — Liked videos + Subscriptions (live Data API)
+ * and/or an imported Google Takeout watch-history.json. The signal
+ * Katy trusts most is recurrence ("whatever she keeps coming back
+ * to"), so weight grows with how often a topic shows up over time.
+ *
+ * These topics drift the rest of the app: they merge into
+ * profile.interests (which already feeds the AI schedule generator
+ * + Kiwi study-buddy), drive Kiwi's idle chatter, and unlock
+ * interest-themed wearables. NOTHING here is fabricated — the table
+ * stays empty until real YouTube data is synced or imported.
+ * ============================================================ */
+export const youtubeInterests = mysqlTable("youtubeInterests", {
+  id: int("id").autoincrement().primaryKey(),
+  topic: varchar("topic", { length: 64 }).notNull(),
+  label: varchar("label", { length: 96 }).notNull(),
+  weight: int("weight").notNull().default(0),
+  hits: int("hits").notNull().default(0),
+  source: mysqlEnum("source", ["liked", "subscription", "playlist", "watch_history", "manual"]).notNull(),
+  samplesJson: json("samplesJson"),
+  lastSeen: timestamp("lastSeen").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+export type YoutubeInterest = typeof youtubeInterests.$inferSelect;
+export type InsertYoutubeInterest = typeof youtubeInterests.$inferInsert;
+
+export const youtubeSyncState = mysqlTable("youtubeSyncState", {
+  id: int("id").autoincrement().primaryKey(),
+  lastSyncAt: timestamp("lastSyncAt"),
+  lastSource: varchar("lastSource", { length: 32 }),
+  lastItemCount: int("lastItemCount").notNull().default(0),
+  lastError: text("lastError"),
+  scheduleCronTaskUid: varchar("scheduleCronTaskUid", { length: 65 }),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+export type YoutubeSyncState = typeof youtubeSyncState.$inferSelect;

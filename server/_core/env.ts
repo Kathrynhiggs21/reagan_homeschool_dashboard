@@ -12,4 +12,11 @@ export const ENV = {
   // cookie gate that has been silently 403'ing the nightly agenda email
   // since May 4. Never sent to the client. Server-side only.
   scheduledBearer: process.env.SCHEDULED_BEARER ?? "",
+  // YouTube interest engine (Katy 2026-06-19). Either an API key (works for
+  // public reads but NOT a user's private likes/subs) OR an OAuth access
+  // token bound to the account Reagan uses (required for `mine` reads of
+  // Liked videos + Subscriptions + Playlists). When BOTH are blank the
+  // engine simply has no live source and stays dormant — no fabrication.
+  youtubeApiKey: process.env.YOUTUBE_API_KEY ?? "",
+  youtubeOAuthToken: process.env.YOUTUBE_OAUTH_TOKEN ?? "",
 };

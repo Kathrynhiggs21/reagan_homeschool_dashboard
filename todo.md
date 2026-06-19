@@ -1580,3 +1580,18 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] Set next school day (Mon 2026-06-22) to start 11:00 AM (cascaded 11:00/11:40/12:20/13:00, +120m shift)
 - [x] Set standing default summer.startTimeDefault = 11:00 (appSettings)
 - [x] AgendaCalendarStrip component fallback 10 → 11 (+ test updated)
+
+
+## YouTube interest engine (Katy 2026-06-19) — DONE
+- [x] Schema: youtubeInterests + youtubeSyncState tables (migration 0075, applied)
+- [x] Pure interest engine (shared/interestEngine.ts): kid-safe theme map, frequency/recurrence weighting ("what she keeps coming back to"), source weighting, merge-over-time, Takeout parser — 21 tests
+- [x] YouTube Data API client (server/_lib/youtube.ts): likes (LL playlist) + subscriptions + playlists; OAuth-gated; dormant + zero network when no token — 2 tests
+- [x] DB helpers: listYoutubeInterests, applyInterestTally (merge), get/updateYoutubeSyncState
+- [x] tRPC interests router: profile (read), syncYouTube, importTakeout, addManual
+- [x] Settings -> People -> InterestsCard: status, Sync now, Takeout import, manual add, ranked profile bars
+- [x] Drift: top interests merge into profile.interests -> already consumed by aiScheduleGenerator + activityOptions (assignment themes + activity ideas auto-shift)
+- [x] Kiwi chatter: pickInterestChatter name-drops her top real interest ~18% of idle lines, never school-pushy — 5 tests
+- [x] Scheduled refresh: /api/scheduled/youtube-refresh (dual bearer/role auth, no-ops when not connected)
+- [x] Heartbeat cron registered (reagan-youtube-interest-refresh, daily 08:30 UTC) and PAUSED until YouTube is connected (task_uid AFwmNdRpDM3zfeCi9HQ2q8)
+- [x] HONEST LIMITS documented: watch history only via Takeout; live API = likes/subs/playlists only; nothing fabricated; empty until real data
+- [ ] PENDING USER ACTION: connect the account Reagan uses with youtube.readonly scope (set YOUTUBE_OAUTH_TOKEN), then resume the cron

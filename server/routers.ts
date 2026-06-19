@@ -10248,5 +10248,77 @@ export const appRouter = router({
       }))
       .mutation(async ({ input }) => { await db.upsertWeakTopic(input); return { ok: true }; }),
   }),
+
+  /* =================== YOUTUBE INTEREST ENGINE (Katy 2026-06-19) ===================
+   * Real, frequency-weighted interests from Reagan's own YouTube signals.
+   * Likes/subscriptions/playlists via the Data API (needs an OAuth token),
+   * plus an optional Google Takeout watch-history import. Nothing is
+   * fabricated — with no token and no import, the profile stays empty.
+   * ============================================================ */
+  interests: router({
+    /** Current accumulated interest profile (ranked) + connection status. */
+    profile: publicProcedure.query(async () => {
+      const { isYouTubeConfigured, canReadPrivate } = await import("./_lib/youtube");
+      const [profile, state] = await Promise.all([
+        db.listYoutubeInterests(),
+        db.getYoutubeSyncState(),
+      ]);
+      return {
+        profile,
+        connected: canReadPrivate(),
+        configured: isYouTubeConfigured(),
+        lastSyncAt: state?.lastSyncAt ?? null,
+        lastSource: state?.lastSource ?? null,
+        lastItemCount: state?.lastItemCount ?? 0,
+        lastError: state?.lastError ?? null,
+      };
+    }),
+
+    /** Pull live likes/subs/playlists, tally, and merge into the profile. */
+    syncYouTube: familyAdminProcedure.mutation(async () => {
+      const { fetchAllLiveSignals, canReadPrivate } = await import("./_lib/youtube");
+      const { buildInterestProfile } = await import("../shared/interestEngine");
+      if (!canReadPrivate()) {
+        await db.updateYoutubeSyncState({ lastError: "No YouTube OAuth token configured. Connect the account Reagan uses to enable live sync." } as any);
+        return { ok: false as const, reason: "not_connected" as const, topicsTouched: 0 };
+      }
+      try {
+        const signals = await fetchAllLiveSignals();
+        const tally = buildInterestProfile(signals);
+        const { topicsTouched } = await db.applyInterestTally(tally, "liked");
+        await db.updateYoutubeSyncState({ lastSyncAt: new Date(), lastSource: "youtube_live", lastItemCount: signals.length, lastError: null } as any);
+        return { ok: true as const, signals: signals.length, topicsTouched };
+      } catch (e: any) {
+        await db.updateYoutubeSyncState({ lastError: String(e?.message || e).slice(0, 480) } as any);
+        throw new TRPCError({ code: "BAD_GATEWAY", message: "YouTube sync failed: " + (e?.message || e) });
+      }
+    }),
+
+    /** Import a Google Takeout watch-history.json (array of rows). */
+    importTakeout: familyAdminProcedure
+      .input(z.object({ rows: z.array(z.any()).max(50000) }))
+      .mutation(async ({ input }) => {
+        const { parseTakeoutWatchHistory, buildInterestProfile } = await import("../shared/interestEngine");
+        const signals = parseTakeoutWatchHistory(input.rows);
+        if (signals.length === 0) {
+          return { ok: false as const, reason: "no_usable_rows" as const, signals: 0, topicsTouched: 0 };
+        }
+        const tally = buildInterestProfile(signals);
+        const { topicsTouched } = await db.applyInterestTally(tally, "watch_history");
+        await db.updateYoutubeSyncState({ lastSyncAt: new Date(), lastSource: "takeout_import", lastItemCount: signals.length, lastError: null } as any);
+        return { ok: true as const, signals: signals.length, topicsTouched };
+      }),
+
+    /** Adult-curated manual interest add (counts as a strong signal). */
+    addManual: familyAdminProcedure
+      .input(z.object({ text: z.string().min(2).max(120) }))
+      .mutation(async ({ input }) => {
+        const { buildInterestProfile } = await import("../shared/interestEngine");
+        const tally = buildInterestProfile([{ text: input.text, source: "manual" }]);
+        if (tally.length === 0) return { ok: false as const, reason: "unmatched" as const };
+        const { topicsTouched } = await db.applyInterestTally(tally, "manual");
+        return { ok: true as const, topicsTouched, matched: tally.map((t) => t.label) };
+      }),
+  }),
 });
 export type AppRouter = typeof appRouter;

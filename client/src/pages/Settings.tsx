@@ -26,6 +26,7 @@ import AdultCoinControlsCard from "@/components/AdultCoinControlsCard";
 import AutomationHealthCard from "@/components/AutomationHealthCard";
 import { useKiwi } from "@/contexts/KiwiContext";
 import { Slider } from "@/components/ui/slider";
+import InterestsCard from "@/components/InterestsCard";
 
 /**
  * Settings — radically slimmed (locked May 21 2026 per Mom "too much").
@@ -102,6 +103,7 @@ export default function Settings() {
 
         <TabsContent value="people" className="space-y-4">
           <ReaganBasicsCard />
+          <InterestsCard />
           <TutorsManager />
           <AdultPasscodeCard />
           <KiwiListeningCard />
