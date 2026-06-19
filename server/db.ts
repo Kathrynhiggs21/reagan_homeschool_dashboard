@@ -893,6 +893,97 @@ export async function deleteAdventure(id: number) {
   await getDb().delete(adventures).where(eq(adventures.id, id));
 }
 
+/* ----------------------- Idea Library (2026-06-19) ----------------------- */
+
+export type AdventureKind =
+  | "module"
+  | "day_trip"
+  | "reward"
+  | "craft"
+  | "brain_break"
+  | "infrastructure"
+  | "general";
+export type AdventureWishlistStatus = "idea" | "want_to_do" | "done";
+
+/**
+ * Idea Library filtered list. All filters are optional and AND-combined.
+ * Sort: favorites first, then newest blueprint ideas, then title.
+ */
+export async function listAdventuresFiltered(filters?: {
+  kind?: AdventureKind;
+  wishlistStatus?: AdventureWishlistStatus;
+  setting?: "indoor" | "outdoor" | "either";
+  energyLevel?: "low" | "medium" | "high";
+  favoritesOnly?: boolean;
+}) {
+  const conds: any[] = [];
+  if (filters?.kind) conds.push(eq(adventures.kind as any, filters.kind as any));
+  if (filters?.wishlistStatus) conds.push(eq(adventures.wishlistStatus as any, filters.wishlistStatus as any));
+  if (filters?.setting) conds.push(eq(adventures.setting as any, filters.setting as any));
+  if (filters?.energyLevel) conds.push(eq(adventures.energyLevel as any, filters.energyLevel as any));
+  if (filters?.favoritesOnly) conds.push(eq(adventures.isFavorite, true));
+
+  const base = getDb().select().from(adventures);
+  const q = conds.length > 0 ? base.where(conds.length === 1 ? conds[0] : and(...conds)) : base;
+  return q.orderBy(desc(adventures.isFavorite), desc(adventures.id), adventures.title);
+}
+
+/**
+ * Set the wishlist status of one adventure (idea -> want_to_do -> done).
+ * Returns the fresh row so the UI can confirm.
+ */
+export async function setAdventureStatus(id: number, wishlistStatus: AdventureWishlistStatus) {
+  await getDb().update(adventures).set({ wishlistStatus: wishlistStatus as any }).where(eq(adventures.id, id));
+  return getAdventure(id);
+}
+
+/**
+ * Drop an Idea Library entry onto a specific day's agenda as an
+ * `adventure` block. Resolves (or creates) the daily plan for the date,
+ * appends the block at the end (max sortOrder + 1), and links the
+ * adventure via `adventureId` so the agenda can hydrate its materials /
+ * instructions. Returns the new block id + planId.
+ */
+export async function addAdventureToDay(args: {
+  adventureId: number;
+  date: string; // "YYYY-MM-DD"
+  durationMin?: number;
+}): Promise<{ blockId: number; planId: number }> {
+  const adv = await getAdventure(args.adventureId);
+  if (!adv) throw new Error("Adventure not found");
+
+  // Resolve (or create) the plan row for this date. Weekend/off days are
+  // fine — we explicitly want to allow dropping an adventure onto any day.
+  const plan = await ensurePlanForDate(args.date);
+  if (!plan) throw new Error(`Could not resolve a plan for ${args.date}`);
+
+  const db = getDb();
+  // Append at the end of the day.
+  const existing = await db
+    .select({ sortOrder: scheduleBlocks.sortOrder })
+    .from(scheduleBlocks)
+    .where(eq(scheduleBlocks.planId, plan.id))
+    .orderBy(desc(scheduleBlocks.sortOrder))
+    .limit(1);
+  const nextSort = (existing[0]?.sortOrder ?? -1) + 1;
+
+  const dur = args.durationMin ?? (adv as any).minDurationMin ?? 30;
+  const title = (adv as any).title as string;
+  const descText = ((adv as any).description as string) || ((adv as any).instructions as string) || "";
+
+  const blockId = await createBlock({
+    planId: plan.id,
+    blockType: "adventure",
+    title,
+    description: descText,
+    durationMin: dur,
+    sortOrder: nextSort,
+    adventureId: args.adventureId,
+  } as any);
+
+  return { blockId, planId: plan.id };
+}
+
 /* ============================== APPS ====================================== */
 export async function listAppLinks() {
   return getDb().select().from(appLinks).orderBy(appLinks.sortOrder);

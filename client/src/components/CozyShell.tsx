@@ -41,6 +41,7 @@ const KID_NAV: NavItem[] = [
 const ADULT_NAV: NavItem[] = [
   { to: "/curriculum",    emoji: "📘", label: "Curriculum Hub" },
   { to: "/agenda-editor", emoji: "✏️", label: "Agenda Editor" },
+  { to: "/adventures",    emoji: "💡", label: "Idea Library" },
   { to: "/analytics",     emoji: "📊", label: "Analytics" },
   { to: "/settings",      emoji: "⚙️", label: "Settings" },
 ];

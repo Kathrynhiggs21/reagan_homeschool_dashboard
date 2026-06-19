@@ -1359,15 +1359,15 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 
 ## Idea Library / Adventure Bank (blueprint add-ons) 2026-06-19
 - [x] Schema: add `kind`, `category`, `wishlistStatus` columns to adventures; generate + apply migration (0074)
-- [ ] Seed ~30 blueprint ideas into adventures (modules, day trips, rewards, crafts, breaks, infrastructure)
-- [ ] DB helpers: filtered list, set status, drop-into-day (createBlock + adventureId)
-- [ ] tRPC: adventures.listFiltered, adventures.setStatus, adventures.addToDay
-- [ ] UI: /adventures Idea Library page (adult-gated) with filter chips, favorite, status, Add-to-a-day
-- [ ] Add Idea Library to adult navigation; replace /adventures redirect
-- [ ] Tests: seed count + addToDay wiring + filter contract
-- [ ] Verify + checkpoint
-- [ ] Printable "Activity & Rewards Idea Book" PDF (weekly grid + 3 cipher clues + 3 scavenger riddles)
-- [ ] Sync Idea Book PDF to Google Drive
+- [x] Seed ~30 blueprint ideas into adventures (33 seeded across modules/day trips/rewards/crafts/breaks/infrastructure)
+- [x] DB helpers: listAdventuresFiltered, setAdventureStatus, addAdventureToDay (createBlock + adventureId)
+- [x] tRPC: adventures.listFiltered (public), adventures.setStatus + addToDay (familyAdmin)
+- [x] UI: /adventures Idea Library page (adult-gated) with filter chips, favorite, status pipeline, Add-to-a-day dialog
+- [x] Add Idea Library to adult navigation; replaced /adventures redirect with the real page
+- [x] Tests: ideaLibraryHelpers (5) — filter contract + setStatus + addToDay wiring; 85 adventure tests green
+- [x] Verify + checkpoint (tsc clean, pnpm build clean)
+- [x] Printable Idea Book — /print/idea-book route (grouped by type, checkbox per idea, honors kind/favorites filter, auto-print) + Print button on the library page
+- [ ] Sync Idea Book PDF to Google Drive (print-to-PDF is on-demand from the browser; no static PDF artifact to push — confirm with Katy if she wants a server-rendered copy archived)
 
 
 ## Google Drive sync audit (user-reported 2026-06-18)

@@ -1833,6 +1833,38 @@ export const appRouter = router({
       if (url) await db.updateAdventureCover(input.id, url);
       return { url };
     }),
+
+    /* ---------------- Idea Library (2026-06-19) ---------------- */
+    /**
+     * Filtered library list. Public read (the /adventures page is adult-
+     * gated at the route level), so Kiwi-side suggestion features can also
+     * read it. All filters optional + AND-combined.
+     */
+    listFiltered: publicProcedure.input(z.object({
+      kind: z.enum(["module","day_trip","reward","craft","brain_break","infrastructure","general"]).optional(),
+      wishlistStatus: z.enum(["idea","want_to_do","done"]).optional(),
+      setting: z.enum(["indoor","outdoor","either"]).optional(),
+      energyLevel: z.enum(["low","medium","high"]).optional(),
+      favoritesOnly: z.boolean().optional(),
+    }).optional()).query(({ input }) => db.listAdventuresFiltered(input ?? undefined)),
+    /**
+     * Move an idea through the wishlist pipeline (idea -> want_to_do ->
+     * done). Adult-only: Reagan requests, adults commit.
+     */
+    setStatus: familyAdminProcedure.input(z.object({
+      id: z.number().int().positive(),
+      wishlistStatus: z.enum(["idea","want_to_do","done"]),
+    })).mutation(({ input }) => db.setAdventureStatus(input.id, input.wishlistStatus)),
+    /**
+     * Drop an idea onto a specific day's agenda as an adventure block.
+     * Adult-only. Date is an ISO "YYYY-MM-DD" string in the family's local
+     * calendar; the helper resolves/creates the plan and appends the block.
+     */
+    addToDay: familyAdminProcedure.input(z.object({
+      adventureId: z.number().int().positive(),
+      date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date must be YYYY-MM-DD"),
+      durationMin: z.number().int().min(5).max(240).optional(),
+    })).mutation(({ input }) => db.addAdventureToDay(input)),
   }),
 
   /* =================== APPS =================== */

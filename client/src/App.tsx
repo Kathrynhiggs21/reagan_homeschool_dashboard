@@ -33,6 +33,8 @@ import PracticeHub from "./pages/PracticeHub";
 import FlashcardMaker from "./pages/FlashcardMaker";
 import ReviewQuiz from "./pages/ReviewQuiz";
 import Analytics from "./pages/Analytics";
+import IdeaLibrary from "./pages/IdeaLibrary";
+import PrintIdeaBook from "./pages/PrintIdeaBook";
 import Placement from "./pages/Placement";
 import Classes from "./pages/Classes";
 import { trpc } from "@/lib/trpc";
@@ -76,6 +78,7 @@ function Router() {
 
         {/* === ADULT PRINT ROUTE (familyAdmin gate at the procedure level) === */}
         <Route path="/print/forward-plan" component={PrintForwardPlan} />
+        <Route path="/print/idea-book" component={PrintIdeaBook} />
 
         {/* === ADULT ROUTES (4 total, all gated) === */}
         <Route path="/curriculum">
@@ -106,6 +109,9 @@ function Router() {
         <Route path="/analytics">
           <AdultGate><Analytics /></AdultGate>
         </Route>
+        <Route path="/adventures">
+          <AdultGate><IdeaLibrary /></AdultGate>
+        </Route>
 
         {/* === LEGACY REDIRECTS (deleted pages → closest live page) === */}
         <Route path="/week"><Redirect to="/schedule" /></Route>
@@ -115,7 +121,6 @@ function Router() {
         <Route path="/prizes"><Redirect to="/coins" /></Route>
         <Route path="/stickers"><Redirect to="/coins" /></Route>
         <Route path="/journal"><Redirect to="/notes" /></Route>
-        <Route path="/adventures"><Redirect to="/today" /></Route>
         <Route path="/profile"><Redirect to="/settings" /></Route>
         <Route path="/timeline"><Redirect to="/schedule" /></Route>
         <Route path="/family"><Redirect to="/today" /></Route>
