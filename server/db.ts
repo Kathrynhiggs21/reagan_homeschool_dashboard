@@ -5114,6 +5114,26 @@ export async function enqueueDrivePush(args: {
   }
 
   // ------------------------------------------------------------------
+  // v3.31 (2026-06-18) — Corrupt-key guard.
+  //
+  // History: two `finished_work` submission rows entered the queue with
+  // fileKey === "k" (and fileUrl "/manus-storage/k") — a malformed client
+  // upload. The drainer could never fetch those bytes (they were never in
+  // S3), so the rows failed on every tick forever. A binary push (one with
+  // no inline contentText) MUST carry a plausible S3 key. Reject anything
+  // <= 2 chars loudly so the poison row never reaches the queue.
+  // ------------------------------------------------------------------
+  const hasInlineText = typeof (args as any).contentText === "string" && String((args as any).contentText).length > 0;
+  const keyTrim = typeof args.fileKey === "string" ? args.fileKey.trim() : "";
+  if (!hasInlineText && keyTrim.length <= 2) {
+    throw new Error(
+      `enqueueDrivePush: refused implausible fileKey "${args.fileKey}" for a binary push — ` +
+        `the S3 object key looks corrupt/truncated, so the bytes can never be fetched. ` +
+        `(fileName=${args.fileName} targetFolder=${args.targetFolder})`,
+    );
+  }
+
+  // ------------------------------------------------------------------
   // Routing audit (Phase 5, 2026-05-29) — dedupe gate (two passes).
   //
   // Pass 1 — (fileKey, targetFolder) compound match:

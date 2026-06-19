@@ -1354,3 +1354,28 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] Registered Heartbeat cron "drive-push-drain" (task_uid ECjGR6ou6tC237smPKJ68P) daily 10:45 UTC / 6:45 AM EDT.
 - [x] Updated credential-gate contract tests (drivePushWorkerCredentialGate, driveFolderDedupeJob, driveClient) to clear Calendar vars for the bare no-cred case + cover the new Calendar fallback. Full suite green (552 files, 4990 tests).
 - [x] Removed temporary dev probe scripts.
+
+---
+
+## Idea Library / Adventure Bank (blueprint add-ons) 2026-06-19
+- [x] Schema: add `kind`, `category`, `wishlistStatus` columns to adventures; generate + apply migration (0074)
+- [ ] Seed ~30 blueprint ideas into adventures (modules, day trips, rewards, crafts, breaks, infrastructure)
+- [ ] DB helpers: filtered list, set status, drop-into-day (createBlock + adventureId)
+- [ ] tRPC: adventures.listFiltered, adventures.setStatus, adventures.addToDay
+- [ ] UI: /adventures Idea Library page (adult-gated) with filter chips, favorite, status, Add-to-a-day
+- [ ] Add Idea Library to adult navigation; replace /adventures redirect
+- [ ] Tests: seed count + addToDay wiring + filter contract
+- [ ] Verify + checkpoint
+- [ ] Printable "Activity & Rewards Idea Book" PDF (weekly grid + 3 cipher clues + 3 scavenger riddles)
+- [ ] Sync Idea Book PDF to Google Drive
+
+
+## Google Drive sync audit (user-reported 2026-06-18)
+- [x] README in "Daily Agenda PDFs" is stale — root cause found; README refreshed to a dateless version (won't go stale again)
+- [x] Audit ALL 53 canonical hub folders: 36 healthy (updated <=21d), 10 empty, 3 stale (>21d: Reagan_Health 77d, IEP_Snapshots 37d, Analytics_CSV_Exports 27d)
+- [x] Confirmed recent daily agenda PDFs DO upload (today's agenda landed 00:48)
+- [x] Root cause: drive-push-drain authenticates as the Calendar SERVICE ACCOUNT (reused for Drive) which has NO Drive storage quota → HTTP 403 on every binary upload into the personal My Drive hub
+- [x] Fix: worker now classifies the quota-403 as NEEDS_USER_OAUTH (non-transient, actionable); added corrupt/short fileKey guard at enqueue so poison rows can't recur
+- [x] Resync via gws user-OAuth: queue drained — 18/20 stuck rows pushed (16 Topics Covered, 1 Analytics CSV, 1 assignment PDF); 2 unrecoverable (corrupt fileKey "k", bytes never stored). Final queue: 176 pushed / 291 skipped / 2 failed / 0 pending
+- [x] Tests: drivePushCorruptKeyGuard (4) + drivePushQuota403Classification (2); full drive suite 245 green
+- [x] Report findings to user

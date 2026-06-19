@@ -338,10 +338,26 @@ async function drainRow(
     });
     return "pushed";
   } catch (e: any) {
+    const raw = e?.message ?? String(e);
+    // Classify the service-account storage-quota 403 as an explicit,
+    // actionable error. A bare service account has no Drive storage of its
+    // own, so it can never create files in a person-owned "My Drive". This
+    // is NOT transient: it requires a user-OAuth credential (impersonating
+    // the Drive owner) or a Shared Drive destination. Surfacing it clearly
+    // keeps it from looking like a flaky failure that a retry would fix.
+    const isQuota403 =
+      /Service Accounts do not have storage quota/i.test(raw) ||
+      (/\b403\b/.test(raw) && /storageQuotaExceeded|quota/i.test(raw));
+    const errorMessage = isQuota403
+      ? ("NEEDS_USER_OAUTH: the Drive credential is a service account with no " +
+         "storage quota, so it cannot write to a personal My Drive. Provide a " +
+         "user-OAuth token (GOOGLE_DRIVE_OAUTH_TOKEN) for the Drive owner, or " +
+         "point the hub at a Shared Drive. Original: " + raw).slice(0, 600)
+      : String(raw).slice(0, 600);
     await deps.markDrivePushResult({
       id: row.id,
       status: "failed",
-      errorMessage: (e?.message ?? String(e)).slice(0, 600),
+      errorMessage,
     });
     return "failed";
   }

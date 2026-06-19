@@ -145,6 +145,22 @@ export const adventures = mysqlTable("adventures", {
   isFavorite: boolean("isFavorite").default(false).notNull(),
   coverImageUrl: varchar("coverImageUrl", { length: 500 }),
   emoji: varchar("emoji", { length: 8 }),
+  // Idea Library / Adventure Bank (2026-06-19)
+  kind: mysqlEnum("kind", [
+    "module",          // multi-session learning unit (e.g. Living History)
+    "day_trip",        // out-of-the-house visit / field trip
+    "reward",          // earned reward / treat experience
+    "craft",           // hands-on making / creative project
+    "brain_break",     // short movement / reset break
+    "infrastructure",  // workspace / setup add-on (gear, station)
+    "general",         // uncategorized adventure (existing rows)
+  ]).default("general").notNull(),
+  category: varchar("category", { length: 80 }), // human-friendly grouping
+  wishlistStatus: mysqlEnum("wishlistStatus", [
+    "idea",         // captured, not committed
+    "want_to_do",   // family wants to do it
+    "done",         // already done
+  ]).default("idea").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
