@@ -1367,7 +1367,7 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] Tests: ideaLibraryHelpers (5) — filter contract + setStatus + addToDay wiring; 85 adventure tests green
 - [x] Verify + checkpoint (tsc clean, pnpm build clean)
 - [x] Printable Idea Book — /print/idea-book route (grouped by type, checkbox per idea, honors kind/favorites filter, auto-print) + Print button on the library page
-- [ ] Sync Idea Book PDF to Google Drive (print-to-PDF is on-demand from the browser; no static PDF artifact to push — confirm with Katy if she wants a server-rendered copy archived)
+- [x] Sync Idea Book PDF to Google Drive: rendered a server-side Idea Book PDF (73 ideas, grouped by type, favorites starred, check-off boxes) and uploaded to the "Daily Agenda PDFs" hub folder via user OAuth (file id 1McGv5mZVODROjzV9JcPQy-aMtTtWtj-g, 303 KB). On-demand browser print remains available at /print/idea-book.
 
 
 ## Google Drive sync audit (user-reported 2026-06-18)
