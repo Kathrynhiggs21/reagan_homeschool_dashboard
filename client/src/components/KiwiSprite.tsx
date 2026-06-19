@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { KiwiCostume } from "@shared/kiwiCharacter";
+import type { GlyphLayer } from "@shared/kiwiWardrobe";
 
 // Kiwi's core animation poses (stored on Manus storage CDN)
 export const KIWI_POSES = {
@@ -60,6 +61,8 @@ interface KiwiSpriteProps {
   ariaLabel?: string;
   /** Optional costume overlay (jersey, lab coat, party hat, holiday hats...). */
   costume?: KiwiCostume;
+  /** Optional dress-up wardrobe layers (from Kiwi's Closet), drawn over the sprite. */
+  wardrobeLayers?: GlyphLayer[];
 }
 
 /**
@@ -108,6 +111,7 @@ export default function KiwiSprite({
   onClick,
   ariaLabel = "Kiwi the parakeet",
   costume = "none",
+  wardrobeLayers = [],
 }: KiwiSpriteProps) {
   const [reduced, setReduced] = useState(false);
   // Track which activity poses have been seen (lazy-load them)
@@ -178,6 +182,25 @@ export default function KiwiSprite({
               transform: g.rotate ? `rotate(${g.rotate}deg)` : undefined,
               filter: "drop-shadow(0 2px 3px rgba(0,0,0,0.3))",
               zIndex: 5,
+            }}
+          >
+            {g.glyph}
+          </span>
+        ))}
+        {/* Dress-up wardrobe layers (Kiwi's Closet). Hidden while sleeping. */}
+        {pose !== "sleep" && wardrobeLayers.map((g, i) => (
+          <span
+            key={`wardrobe-${i}-${g.glyph}`}
+            aria-hidden
+            className="absolute pointer-events-none select-none"
+            style={{
+              top: `${g.top * 100}%`,
+              left: `${g.left * 100}%`,
+              fontSize: size * g.size,
+              lineHeight: 1,
+              transform: g.rotate ? `rotate(${g.rotate}deg)` : undefined,
+              filter: "drop-shadow(0 2px 3px rgba(0,0,0,0.3))",
+              zIndex: g.z ?? 5,
             }}
           >
             {g.glyph}

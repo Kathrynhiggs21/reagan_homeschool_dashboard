@@ -20,6 +20,8 @@ import {
   type VisitSummary,
 } from "@shared/kiwiCharacter";
 import { findLedges } from "@/lib/kiwiWorld";
+import KiwiWardrobe, { readPersistedWardrobeLayers } from "./KiwiWardrobe";
+import { pickOutfitOpinion, type GlyphLayer } from "@shared/kiwiWardrobe";
 // Kiwi is silent by default. We deliberately do NOT import chirp() here so the
 // perch never makes sound on its own. Voice/chirp only fires through KiwiCompanion
 // (chat reply) and only when Mom has flipped Silent mode off in Settings.
@@ -238,6 +240,25 @@ export default function KiwiPerch() {
   // Reagan collects a tiny daily log of guest cameos. Persisted in localStorage
   // under a date-keyed key so it resets at local midnight on its own. Pure
   // helpers (todayVisitKey/recordVisit/summarizeVisits) live in kiwiCharacter.
+  // Kiwi's Closet (dress-up wardrobe) open state + the outfit layers currently
+  // worn on the live perch (loaded from localStorage, refreshed when the closet
+  // saves/changes an outfit via the "kiwi-outfit-changed" window event).
+  const [closetOpen, setCloset] = useState(false);
+  const [wardrobeLayers, setWardrobeLayers] = useState<GlyphLayer[]>(() => readPersistedWardrobeLayers());
+  useEffect(() => {
+    const refresh = () => setWardrobeLayers(readPersistedWardrobeLayers());
+    window.addEventListener("kiwi-outfit-changed", refresh);
+    window.addEventListener("storage", refresh);
+    return () => {
+      window.removeEventListener("kiwi-outfit-changed", refresh);
+      window.removeEventListener("storage", refresh);
+    };
+  }, []);
+  // Re-read the outfit each time the closet closes (covers same-tab edits).
+  useEffect(() => {
+    if (!closetOpen) setWardrobeLayers(readPersistedWardrobeLayers());
+  }, [closetOpen]);
+
   const [visitKey, setVisitKey] = useState<string>(() => todayVisitKey());
   const [visitLog, setVisitLog] = useState<VisitEntry[]>([]);
   const [visitOpen, setVisitOpen] = useState(false);
@@ -368,8 +389,14 @@ export default function KiwiPerch() {
           // Show a speech bubble. ~45% of the time use the TIME-AWARE moment
           // line (dawn/morning/.../night) so Kiwi's chatter visibly shifts
           // through the day; otherwise the pose-specific activity line.
-          const useMomentLine = Math.random() < 0.45;
-          const bubbleMsg = useMomentLine
+          // ~25% of the time, if Kiwi is actually wearing something, she pipes
+          // up about her current outfit (sassy, low-key, never nagging).
+          const outfitLine = wardrobeLayers.length > 0 ? pickOutfitOpinion() : null;
+          const useOutfitLine = outfitLine && Math.random() < 0.25;
+          const useMomentLine = !useOutfitLine && Math.random() < 0.45;
+          const bubbleMsg = useOutfitLine
+            ? outfitLine
+            : useMomentLine
             ? (moment.idleLine || KIWI_ACTIVITY_BUBBLES[pick])
             : KIWI_ACTIVITY_BUBBLES[pick];
           if (bubbleMsg) {
@@ -388,7 +415,7 @@ export default function KiwiPerch() {
     };
     schedule();
     return () => { if (timer) window.clearTimeout(timer); };
-  }, [enabled, adultPresent, dragging, flying, moment]);
+  }, [enabled, adultPresent, dragging, flying, moment, wardrobeLayers]);
 
   // Medium flutter hop every 25-45s: bigger movement
   useEffect(() => {
@@ -796,7 +823,7 @@ export default function KiwiPerch() {
           }}
           title="Drag Kiwi anywhere — tap to chat"
         >
-          <KiwiSprite pose={pose} size={size} animate costume={costume} ariaLabel={`Kiwi the parakeet — ${dayChar.costumeLabel}. Drag me or tap to chat`} />
+          <KiwiSprite pose={pose} size={size} animate costume={costume} wardrobeLayers={wardrobeLayers} ariaLabel={`Kiwi the parakeet — ${dayChar.costumeLabel}. Drag me or tap to chat`} />
         </div>
 
         <div
@@ -815,6 +842,19 @@ export default function KiwiPerch() {
             (see the dblclick/double-tap handler above) and the window.flyKiwi
             hook, so no functionality is lost. */}
 
+        {/* "Dress me up!" — opens Kiwi's Closet. Small sparkly tab tucked at
+            top-left of the perch so it never collides with the visit badge. */}
+        <button
+          type="button"
+          onClick={() => setCloset(true)}
+          aria-label="Open Kiwi's Closet to dress her up"
+          title="Dress me up!"
+          className="absolute -top-2 -left-2 z-40 rounded-full border-2 border-pink-300 bg-pink-50 px-1.5 py-0.5 text-[12px] shadow hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-pink-400"
+          data-testid="kiwi-dressup-btn"
+        >
+          <span aria-hidden>🧥</span>
+        </button>
+
         {/* Per-day "who visited today" collectible badge. Only appears once a
             guest has actually stopped by (standing rule: don't show if no info).
             Tappable → popover listing today's visitors + times. */}
@@ -828,6 +868,9 @@ export default function KiwiPerch() {
           />
         )}
       </div>
+
+      {/* Kiwi's Closet dress-up dialog. Refreshes the perch outfit on close. */}
+      <KiwiWardrobe open={closetOpen} onOpenChange={setCloset} />
 
       <style>{`
         @keyframes kiwiMicPulse {

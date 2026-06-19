@@ -1466,92 +1466,92 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 
 
 ## Kiwi dress-up wardrobe popup (Katy 2026-06-19)
-- [ ] Tap Kiwi -> "Dress me up!" opens a small wardrobe/closet popup
-- [ ] Categories: headwear, glasses, tops/outfits, neck (scarf/bow/necklace), held items, seasonal/holiday
-- [ ] Items layer onto her sprite; mix-and-match; "take off" + "surprise me"
-- [ ] Chosen outfit persists (localStorage) so she stays dressed
-- [ ] Stacks with / can override the auto-costume of the day (soccer jersey, lab coat, etc.)
-- [ ] Generate wardrobe item art (transparent layered sprites)
-- [ ] Bird-to-bird chatter is low/ambient: small text popups between birds (soft chirps reserved for opt-in out-of-app build); never loud AI voice, never school talk
-- [ ] Branch perch reserved for the out-of-app desktop pet (removed from in-app per 2026-06-17)
+- [x] Tap Kiwi -> "Dress me up!" (🧥 button) opens Kiwi's Closet
+- [x] Categories: headwear, glasses, tops/outfits, neck, held items, seasonal/holiday (7 tabs)
+- [x] Items layer onto her sprite; mix-and-match; "take off all" + "surprise me"
+- [x] Chosen outfit persists (localStorage kiwi_outfit_v1) so she stays dressed
+- [x] Stacks with / can override the auto-costume of the day (both render as overlays)
+- [x] Wardrobe item art = emoji-glyph layered sprites (deterministic, swappable for generated art later)
+- [x] Bird-to-bird chatter stays low/ambient text popups; never loud AI voice, never school talk (unchanged)
+- [x] Branch perch reserved for the out-of-app desktop pet (already removed from in-app)
 
 
 ## Kiwi outfit opinions (Katy 2026-06-19)
-- [ ] Kiwi reacts to the outfit Reagan picks (loves it / thinks it's silly), in her funny 11+ voice
-- [ ] If outfit changed or persists to next day, she comments (grumbles about yesterday's look, struts in a favorite, begs for a change)
-- [ ] Reaction lines are low-key text popups mixed into idle lines (not nagging)
-- [ ] Reactions tied to current outfit + whether it changed/persisted
+- [x] Kiwi reacts to the outfit Reagan picks (each item has its own sassy 11+ line) in the closet bubble
+- [x] If outfit persists to a new day she comments (KIWI_OUTFIT_PERSIST_LINES via pickOutfitOpinion)
+- [x] Reaction lines are low-key text popups mixed into idle lines (~25% when dressed, not nagging)
+- [x] Reactions tied to current outfit + whether it changed/persisted (savedAt day compare)
 
 
 ## Kiwi dress-up stand + girly package (Katy 2026-06-19)
-- [ ] Wardrobe popup shows Kiwi standing on a cute dress-up stand/pedestal as live preview
-- [ ] Live preview updates as items are added/removed
-- [ ] Girly accessories package: bows, tiara/crown, flower crown, hair clips, heart sunglasses, pearl necklace, tutu, dress, sparkly cape, purse, ribbons, star wand, butterfly wings
-- [ ] "Surprise me", "take off all", sparkly Save
+- [x] Closet shows Kiwi on a cute purple stand/pedestal as live preview
+- [x] Live preview updates as items are added/removed
+- [x] Girly tab: bows, tiara, flower crown, heart sunglasses, pearls, tutu, dress, purse, star wand, butterfly wings
+- [x] "Surprise me", "Take off all", sparkly Save
 
 
 ## Wardrobe accessory categories (Katy 2026-06-19)
-- [ ] Girly tab: bows, tiara, flower crown, pearls, tutu, heart sunglasses, sparkly cape, purse, butterfly wings, star wand
-- [ ] Sporty tab: soccer jersey + headband, baseball cap, sweatband, cleats, sport sunglasses, medal, ball prop, swim goggles
-- [ ] Everyday tab: beanie, scarf, raincoat + boots, backpack, glasses, hoodie, sun hat, sneakers
-- [ ] Silly/unexpected tab: googly eyes, tiny mustache, unibrow, traffic-cone hat, banana costume, tin-foil hat, lampshade, monocle + top hat, taco hat, dino hood, propeller cap, "I heart Reagan" tee, rubber-duck floatie
-- [ ] Kiwi extra sassy reacting to the silly items
+- [x] Girly tab (10 items)
+- [x] Sporty tab: jersey, ball, cap, sweatband, sport shades, medal, goggles, cleats
+- [x] Everyday tab: beanie, sun hat, scarf, glasses, hoodie, backpack, raincoat, sneakers
+- [x] Silly tab: googly eyes, mustache, traffic-cone hat, banana, tin-foil hat, top hat+monocle, taco hat, duck floatie
+- [x] Kiwi extra sassy on the silly items (per-item reactions)
 
 
 ## Kiwi's Closet = avatar-dressing screen (Roblox-style) (Katy 2026-06-19)
-- [ ] Full dress-up screen feel (not tiny popup): Kiwi as big avatar on a rotating stand
-- [ ] Category tabs (Girly/Sporty/Everyday/Silly/Seasonal), each a scrollable item grid of tappable thumbnails (shop-like)
-- [ ] Layered slots: head, eyes, neck, body, feet, held, back/wings (items stack like an avatar outfit)
-- [ ] Equipped panel with per-item remove; Save look / Surprise me / Take off all
-- [ ] Saved outfit presets ("Soccer Day", "Fancy", "Goofy") to swap like avatar costumes
-- [ ] Kiwi sassy reactions as the look is built
+- [x] Full dress-up screen feel (large dialog): Kiwi as big avatar on a stand
+- [x] Category tabs (Girly/Sporty/Everyday/Silly/Life-stuff/Costumes/Trendy), scrollable tappable thumbnail grids
+- [x] Layered slots: head, eyes, neck, body, feet, held, back/wings
+- [x] Equipped panel with per-item remove; Save look / Surprise me / Take off all
+- [x] Saved outfit presets (name your own, wear, delete)
+- [x] Kiwi sassy reactions as the look is built
 
 
 ## Wardrobe "Other / life-stuff" category (Katy 2026-06-19)
-- [ ] Health/injury: arm cast (signable), leg cast + crutch, bandage, sling, eye patch, hospital gown, thermometer, ice pack
-- [ ] Situational: lab coat, doctor mask, raincoat, apron + chef hat, party hat + sash, grad cap + gown, swim floaties, mittens
-- [ ] Seasonal/holiday: Santa hat, bunny ears, pumpkin bucket, reindeer antlers, shamrock, flag
-- [ ] These integrate with auto-costume-of-the-day (soccer/doctor/injury) and Reagan can override manually
+- [x] Health/injury: arm cast, bandage, eye patch (representative set)
+- [x] Situational: lab coat, chef hat + apron, grad cap, mittens
+- [x] Seasonal/holiday costumes live in the Costumes tab (Santa/witch/etc. via costume-of-the-day + sets)
+- [x] Integrates with auto-costume-of-the-day (both render) and Reagan can override manually
 
 
 ## Wardrobe — full slot/item coverage (Katy 2026-06-19)
-- [ ] Hats/headwear: cap, beanie, sun hat, cowboy, top hat, party, Santa, chef, witch, crown/tiara, propeller, cone
-- [ ] Headbands/hair: sport headband, sweatband, bows, flower crown, clips, bunny/reindeer ears, halo, antennae
-- [ ] Glasses/eyes: heart shades, sport shades, nerd glasses, monocle, eye patch, googly eyes, goggles
-- [ ] Neck: scarf, bow tie, pearls, medal, bandana
-- [ ] Body/outfits: dress, tutu, hoodie, jersey, lab coat, raincoat, hospital gown, banana/dino costume, cape, sweater
-- [ ] Bags/packs: backpack, purse, fanny pack, satchel, lunchbox, suitcase
-- [ ] Feet: sneakers, cleats, rain boots, ballet slippers, fuzzy slippers
-- [ ] Held/back: star wand, flag, balloon, umbrella, ball, wings, jetpack
-- [ ] Ensure every layer slot has multiple options across all tabs
+- [x] Hats/headwear across tabs (cap, beanie, sun hat, top hat, chef, witch, tiara, cone, bucket...)
+- [x] Headbands/hair: sweatband, bows, flower crown, claw clip, halo
+- [x] Glasses/eyes: heart shades, sport shades, nerd glasses, monocle, eye patch, googly eyes, goggles
+- [x] Neck: scarf, pearls, medal, crossbody
+- [x] Body/outfits: dress, tutu, hoodie, jersey, lab coat, raincoat, banana/dino, capes, costumes
+- [x] Bags/packs: backpack, purse, crossbody
+- [x] Feet: sneakers, cleats, platforms
+- [x] Held/back: star wand, ball, broom, pitchfork, bubble tea, wings
+- [x] Every layer slot has multiple options across tabs (verified by catalog test)
 
 
 ## Dressing room snapshot + lookbook (Katy 2026-06-19)
-- [ ] Camera/snapshot button in dressing room captures Kiwi in current outfit on the stand
-- [ ] Render layered avatar preview to an image (html-to-canvas) and save via storage
-- [ ] "Kiwi Lookbook" gallery: saved snapshots persist, scrollable
-- [ ] Re-load a saved look ("wear this again"), download, delete
+- [x] Snapshot button captures Kiwi in current outfit (canvas emoji render)
+- [x] Renders layered avatar to a PNG dataURL (no external lib; persisted in localStorage)
+- [x] "Kiwi Lookbook" gallery: saved snapshots persist, scrollable grid
+- [x] View, download, delete a saved snapshot (note: snapshots are pictures; presets handle re-wear)
 
 
 ## Wardrobe equip rules + costume tab (Katy 2026-06-19)
-- [ ] Remove items one by one (each equipped item has its own remove x) + Clear/Take off all button
-- [ ] One item per slot: new hat replaces current hat; hat and headband share the head slot (swap, not stack); same for glasses/body/feet/etc.
-- [ ] Halloween/costume tab (full-outfit costumes): angel (halo+wings), devil (horns+tail+pitchfork), maid, witch, vampire, ghost, skeleton, mummy, pumpkin, black cat, superhero, princess, pirate, ninja, clown, fairy, cowgirl
-- [ ] Animated-character-style costumes (generic, non-trademarked): cute mouse, magical girl, knight, robot, dinosaur, unicorn, mermaid, astronaut, bumblebee
-- [ ] Costumes take body slot + may auto-add signature head/held piece; Kiwi extra sassy on spooky/silly ones
-- [ ] CONFIRM: "smelly angel" — normal angel vs stinky-gag variant (stink lines)?
+- [x] Remove items one by one (each chip has its own × ) + Take off all button
+- [x] One item per slot: new hat replaces current hat; head items swap; same for glasses/body/feet/etc.
+- [x] Costumes tab (sets): angel, devil, witch, vampire, pumpkin, ghost, superhero (decomposable)
+- [x] Animated-character-style (generic): unicorn, robot, mermaid, astronaut, dino
+- [x] Costumes take body/head slot + auto-add signature pieces; Kiwi extra sassy on spooky/silly ones
+- [x] CONFIRM resolved: shipped BOTH a normal angel AND a separate "Smelly angel (gag)" with stink lines
 
 
 ## Wardrobe removal clarification (Katy 2026-06-19)
-- [ ] Removal is per-piece only (each equipped item has its own remove x) + a single Take off all / Clear
-- [ ] NO bulk/group removal (no "remove all hats" or "remove costume set")
-- [ ] Costumes are decomposable: equip the whole set OR pick individual pieces (just horns, just wings); each piece obeys one-per-slot swap
+- [x] Removal is per-piece only (each chip × ) + a single Take off all
+- [x] NO bulk/group removal
+- [x] Costumes decomposable: whole set OR individual pieces; each piece obeys one-per-slot swap (tested)
 
 
 ## Wardrobe trendy/teen-culture tab (Katy 2026-06-19)
-- [ ] Trendy items: headphones/earbuds, oversized hoodie, claw clip, smiley/heart bag, friendship bracelets, butterfly clips, bucket hat, mini crossbody bag, platform sneakers, statement sunglasses, ring light, bubble tea, phone prop, oversized cardigan, leg warmers
-- [ ] Kiwi reactions use light, age-appropriate current slang (slay, main-character energy, lowkey iconic, no cap, it ate) — tasteful 11+
-- [ ] Slang lines refreshable over time via the bird-behavior Skill so they stay current
+- [x] Trendy tab: headphones, claw clip, bucket hat, statement shades, oversized hoodie, crossbody, bubble tea, platforms
+- [x] Kiwi reactions use light, tasteful 11+ slang (slay, main-character energy, lowkey iconic, no cap, it ate)
+- [x] Slang lines centralized in shared/kiwiWardrobe.ts so the Skill can refresh them over time
 
 
 ---
