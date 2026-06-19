@@ -1595,3 +1595,12 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] Heartbeat cron registered (reagan-youtube-interest-refresh, daily 08:30 UTC) and PAUSED until YouTube is connected (task_uid AFwmNdRpDM3zfeCi9HQ2q8)
 - [x] HONEST LIMITS documented: watch history only via Takeout; live API = likes/subs/playlists only; nothing fabricated; empty until real data
 - [ ] PENDING USER ACTION: connect the account Reagan uses with youtube.readonly scope (set YOUTUBE_OAUTH_TOKEN), then resume the cron
+
+
+## Duck art + side deliverables (Katy 2026-06-19)
+- [x] Generate 4 duck-squad art style options (chibi / flat / storybook / plush) and send to Katy
+- [x] Apply chosen duck art to the flock (defaulted to A chibi to match Kiwi; FlockSprite "ducks" src swapped; tsc clean)
+- [x] Build brief for the out-of-app desktop/iPad bird companion (bird_pet_brief/Reagan_Birds_Desktop_Pet_Build_Brief.md)
+- [x] reagan-bird-behavior Skill created (library + attention-weighting + update-often workflow)
+- [x] Reagan 504-style homeschool accommodations plan -> branded PDF -> Drive (Reagan/504)
+- [x] Saved 6th-grade transition blueprint to Drive (Reagan/504) for later-this-summer "6th Grade Transition Success Plan"

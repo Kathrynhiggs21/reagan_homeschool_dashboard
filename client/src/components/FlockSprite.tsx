@@ -46,12 +46,12 @@ const FLOCK: Record<
     accent: "#84a050",
   },
   ducks: {
-    // Reagan's real flock: a big black Swedish female (white-speckled chest,
-    // greenish back sheen) leading two brown teen mallard "twins."
-    src: "/manus-storage/duck_trio_idle_ccbd7b0d.png",
+    // Reagan's flock: a tall cream-and-blue leader duck with two yellow twin
+    // ducklings. Chibi/kawaii style to match Kiwi's big-eyed, glossy look.
+    src: "https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/duck_style_A_chibi-DKDzjP2m6njXVB5nTjot3U.webp",
     name: "the duck squad",
     species: "Ducks",
-    accent: "#3f7d6b",
+    accent: "#7fb8d6",
   },
 };
 
