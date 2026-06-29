@@ -2429,6 +2429,8 @@ export const appRouter = router({
     /** Reset placement responses for a subject (lets her redo it later). */
     reset: protectedProcedure.input(z.object({ subjectSlug: z.string().optional() }).optional())
       .mutation(({ input }) => db.resetPlacement(input?.subjectSlug)),
+    /** Adult-only working-grade-level result computed from the 4/5/6 probes. */
+    levelReport: protectedProcedure.query(() => db.placementLevelReport()),
   }),
 
   /* =================== WEEKLY TOPICS =================== */

@@ -3,6 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 /**
  * /placement — kid-friendly diagnostic placement flow for Reagan.
@@ -40,12 +41,26 @@ const ENCOURAGEMENTS = [
 
 export default function Placement() {
   const [subject, setSubject] = useState<string | null>(null);
+  const [showResults, setShowResults] = useState(false);
 
   const status = trpc.placement.status.useQuery(undefined, { refetchOnWindowFocus: false });
   const utils = trpc.useUtils();
+  const { user } = useAuth();
+  const isAdult = !!user; // protectedProcedure also enforces this server-side
+
+  if (showResults && isAdult) {
+    return <ResultsView onBack={() => setShowResults(false)} />;
+  }
 
   if (!subject) {
-    return <SubjectPicker status={status.data as StatusShape | undefined} onPick={setSubject} />;
+    return (
+      <SubjectPicker
+        status={status.data as StatusShape | undefined}
+        onPick={setSubject}
+        isAdult={isAdult}
+        onShowResults={() => setShowResults(true)}
+      />
+    );
   }
 
   return (
@@ -56,6 +71,115 @@ export default function Placement() {
         utils.placement.status.invalidate();
       }}
     />
+  );
+}
+
+/* ----------------------------------------------------------------------- */
+/* Adult-only Results view: working grade level per subject                */
+/* ----------------------------------------------------------------------- */
+
+const SECURITY_STYLE: Record<string, { label: string; color: string }> = {
+  secure: { label: "Secure", color: "#34d399" },
+  developing: { label: "Developing", color: "#fbbf24" },
+  emerging: { label: "Emerging", color: "#fb923c" },
+};
+
+function ResultsView({ onBack }: { onBack: () => void }) {
+  const report = trpc.placement.levelReport.useQuery(undefined, { refetchOnWindowFocus: false });
+  const data = report.data as any;
+
+  return (
+    <div className="container py-6 max-w-3xl space-y-4">
+      <div className="flex items-center justify-between">
+        <button onClick={onBack} className="text-sm text-neutral-400 underline">
+          ← Back to Check-up
+        </button>
+        <span className="text-xs text-neutral-500">Parent view — Reagan doesn't see this</span>
+      </div>
+
+      <div className="space-y-1">
+        <h1 className="font-display text-2xl">Working Grade Level</h1>
+        <p className="text-sm text-neutral-300">
+          Estimated from the diagnostic Skill Check-up (below-grade, on-grade, and stretch probes).
+          Conservative on purpose — a level is only “secure” with real evidence.
+        </p>
+      </div>
+
+      {report.isLoading && <div className="animate-pulse text-sm text-neutral-400">Loading results…</div>}
+
+      {!report.isLoading && data && data.assessedCount === 0 && (
+        <Card className="classroom-card p-5">
+          <div className="text-sm text-neutral-300">
+            No Skill Check-up completed yet. Have Reagan run a subject or two and the working
+            grade level will appear here automatically.
+          </div>
+        </Card>
+      )}
+
+      {!report.isLoading && data && (data.subjects ?? []).map((s: any) => {
+        const label = SUBJECT_LABEL[s.subjectSlug] ?? { name: s.subjectSlug, emoji: "✏️" };
+        const sec = SECURITY_STYLE[s.security] ?? SECURITY_STYLE.emerging;
+        if (s.estimatedGrade == null) {
+          return (
+            <Card key={s.subjectSlug} className="classroom-card p-4 opacity-70">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl" aria-hidden>{label.emoji}</span>
+                <div className="flex-1">
+                  <div className="font-display">{label.name}</div>
+                  <div className="text-xs text-neutral-400">Not assessed yet — run the Check-up.</div>
+                </div>
+              </div>
+            </Card>
+          );
+        }
+        return (
+          <Card key={s.subjectSlug} className="classroom-card p-5 space-y-3">
+            <div className="flex items-start gap-3">
+              <span className="text-3xl" aria-hidden>{label.emoji}</span>
+              <div className="flex-1 min-w-0">
+                <div className="font-display text-lg">{label.name}</div>
+                <div className="text-sm" style={{ color: sec.color }}>
+                  {s.label} · {sec.label} · confidence {s.confidence}%
+                </div>
+              </div>
+            </div>
+
+            <p className="text-sm text-neutral-300">{s.summary}</p>
+
+            {/* Band breakdown */}
+            <div className="grid grid-cols-3 gap-2">
+              {(s.bands ?? []).map((b: any) => (
+                <div key={b.grade} className="rounded-md bg-neutral-900/40 p-2 text-center">
+                  <div className="text-xs text-neutral-400">Grade {b.grade}</div>
+                  <div className="text-sm font-semibold">
+                    {b.accuracy == null ? "—" : `${b.accuracy}%`}
+                  </div>
+                  <div className="text-[10px] text-neutral-500">{b.answered} probes</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Strands */}
+            {Array.isArray(s.strands) && s.strands.filter((st: any) => st.estimatedGrade != null).length > 0 && (
+              <div className="space-y-1">
+                <div className="text-xs uppercase tracking-wider text-neutral-500">By strand</div>
+                {s.strands.filter((st: any) => st.estimatedGrade != null).map((st: any) => (
+                  <div key={st.strand} className="flex items-center justify-between text-sm">
+                    <span className="text-neutral-300">{st.strand}</span>
+                    <span className="text-neutral-400">{st.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="rounded-md bg-[#a78bfa]/10 border border-[#a78bfa]/30 p-2 text-sm">
+              <span className="font-semibold text-[#c4b5fd]">Next step: </span>
+              {s.nextStep}
+            </div>
+          </Card>
+        );
+      })}
+    </div>
   );
 }
 
@@ -77,9 +201,13 @@ type StatusShape = {
 function SubjectPicker({
   status,
   onPick,
+  isAdult,
+  onShowResults,
 }: {
   status: StatusShape | undefined;
   onPick: (slug: string) => void;
+  isAdult?: boolean;
+  onShowResults?: () => void;
 }) {
   return (
     <div className="container py-6 max-w-3xl space-y-4">
@@ -119,6 +247,22 @@ function SubjectPicker({
           );
         })}
       </div>
+
+      {isAdult && onShowResults && (
+        <Card
+          className="classroom-card p-4 cursor-pointer hover:scale-[1.005] transition border border-[#a78bfa]/40"
+          onClick={onShowResults}
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-2xl" aria-hidden>📊</span>
+            <div className="flex-1">
+              <div className="font-display text-base">See Reagan's working grade level</div>
+              <div className="text-xs text-neutral-400">Parent view — diagnostic results per subject</div>
+            </div>
+            <span className="text-neutral-500" aria-hidden>→</span>
+          </div>
+        </Card>
+      )}
 
       <div className="pt-4">
         <Link href="/today" className="text-sm text-neutral-400 underline">

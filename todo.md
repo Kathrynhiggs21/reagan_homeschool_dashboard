@@ -1656,3 +1656,15 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] Fixed: repointed all 6 dead/wrong fallback links to verified-live evergreen pages (ReadWorks home, Mystery Science home, Smithsonian Learning Lab home, Audubon Bird Guide, GoNoodle home) and 2 fragile Khan practice deep-links to stable course/section roots. Each replacement confirmed 200 without a wrong-page bounce.
 - [x] Tests: new `server/worksheetLinks.test.ts` (20 cases) locks out known-dead patterns + asserts every link is well-formed https; no network calls (deterministic).
 - [x] Verified: full suite 566 files / 5118 passed (7 skipped). Checkpoint saved.
+
+
+---
+
+## 🎯 2026-06-29 — FEATURE: IXL-style Diagnostic / skill-level identifier (Katy: "really get here using the diagnostic ixl skill or the skill level identifier")
+- [x] Audited: the diagnostic was ALREADY built (placementTasks/placementResponses tables, /placement page, kid quiz, submitPlacementResponse persisting to skillProgress) and seeded with 108 tasks across Math/ELA/Science/SS (each with grade-4 below / grade-5 on / grade-6 stretch probes) — but 0 responses and NO adult-facing working-grade-level result (schema comment literally said "not built here"). That was the missing payoff.
+- [x] Built the level estimator: `server/_lib/placementLevel.ts` — pure/deterministic, turns 4/5/6 probe results into a per-subject + per-strand working grade level (3 → 6+), with security (secure/developing/emerging), confidence %, band breakdown, summary, and a concrete next step. Conservative by design (a level is only "secure" with real evidence; never fabricates — no responses = null).
+- [x] Persistence: confirmed existing submitPlacementResponse already writes to skillProgress; new `db.placementLevelReport()` reads only real answered probes (join responses→tasks→skillLadder). No fabricated data.
+- [x] Adult-facing level report UI: parent-only Results view on /placement (gated by useAuth + protectedProcedure) showing working grade level per subject, band %s, per-strand detail, and next step. Reagan never sees grade numbers.
+- [x] Fed into AI agenda answer-context (agendaAnswer.ts): added placementLevels block + system-prompt rule so "what level is she at in math?" answers from the diagnostic (or says to run the Check-up if not done). No fabrication on empty.
+- [x] Tests: server/placementLevel.test.ts (14 — all placement bands, strand rollup, confidence, no-fabrication) + server/placementLevelWiring.test.ts (7 — procedure/db/AI/UI wiring).
+- [x] Verified full suite: 568 files / 5139 passed (7 skipped). TypeScript + LSP clean. Checkpoint saved.

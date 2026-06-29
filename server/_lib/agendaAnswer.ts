@@ -95,6 +95,7 @@ export type AnswerContext = {
   recentGrades: string;
   recentMood: string;
   adventures: string;
+  placementLevels: string;
 };
 
 /** Run a DB read defensively — return [] / null on any failure. */
@@ -225,6 +226,29 @@ export async function gatherAnswerContext(
           })
           .join("\n");
 
+  // Diagnostic working-grade-level result (adult-facing). This is the
+  // authoritative answer to "what level is she at in X".
+  const lvl = await safe<any>(() => db.placementLevelReport?.() ?? null, null);
+  const placementLevels =
+    !lvl || !Array.isArray(lvl.subjects) || lvl.assessedCount === 0
+      ? "(no diagnostic Skill Check-up completed yet — no measured grade level on file)"
+      : lvl.subjects
+          .filter((s: any) => s.estimatedGrade != null)
+          .map((s: any) => {
+            const strandBits = Array.isArray(s.strands)
+              ? s.strands
+                  .filter((st: any) => st.estimatedGrade != null)
+                  .map((st: any) => `${st.strand}: ${st.label}`)
+                  .join("; ")
+              : "";
+            return (
+              `- ${s.subjectSlug}: ${s.label} (confidence ${s.confidence}%, ${s.answered} probes). ` +
+              `${s.summary} Next: ${s.nextStep}` +
+              (strandBits ? ` [strands — ${strandBits}]` : "")
+            );
+          })
+          .join("\n");
+
   return {
     profileLine,
     todayLine,
@@ -234,6 +258,7 @@ export async function gatherAnswerContext(
     recentGrades,
     recentMood,
     adventures,
+    placementLevels,
   };
 }
 
@@ -252,7 +277,7 @@ Voice:
 Grounding:
 - You are given a snapshot of Reagan's profile, today's plan, skill mastery, flagged weak topics, recent graded work, recent mood, and the saved adventure-idea library.
 - Use SPECIFICS from that data when relevant (name the subject, the mastery %, the recent trend). If the data doesn't cover something, say so plainly and give your best general guidance — never invent numbers, grades, or events that aren't in the context.
-- For "how is she doing in X" → cite the mastery %, weak topics, and recent grades for X, then a one-line read on the trend and one concrete next step.
+- For "how is she doing in X" or "what level / grade level is she at in X" → lead with the DIAGNOSTIC WORKING GRADE LEVEL for X (the label + confidence), then back it up with mastery %, weak topics, and recent grades, then a one-line read on the trend and one concrete next step. If the diagnostic hasn't been done for X, say so and suggest she run the Skill Check-up.
 - For "what did she do / work on" questions → summarize from today's blocks and recent graded work; if the window asked about isn't in the data, say what you can see and note the limit.
 - For idea/suggestion requests (adventures, activities, a calm afternoon, bird-themed, etc.) → prefer items already in the adventure library when they fit, then add fresh ideas. Favor hands-on, offline, movement-based, multi-activity ideas over "sit in a chair" work, and keep them appropriate for an 11-year-old girl.
 - For general homeschool/parenting/teaching questions → answer helpfully and practically.
@@ -277,6 +302,9 @@ export async function generateAgendaAnswer(
     "",
     "TODAY'S PLAN:",
     c.todayBlocks,
+    "",
+    "DIAGNOSTIC WORKING GRADE LEVEL (from the Skill Check-up; this is the authoritative 'what level is she at' answer):",
+    c.placementLevels,
     "",
     "SKILL MASTERY:",
     c.skillProgress,

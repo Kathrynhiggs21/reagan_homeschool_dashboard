@@ -3728,6 +3728,7 @@ export async function archiveProudMoment(id: number) {
 /*  DIAGNOSTIC PLACEMENT (Phase 3)                                            */
 /* ========================================================================== */
 import { placementTasks, placementResponses } from "../drizzle/schema";
+import { buildPlacementLevelReport } from "./_lib/placementLevel";
 
 /**
  * Returns all placement tasks (optionally for one subject) joined with their
@@ -3951,6 +3952,49 @@ export async function resetPlacement(subjectSlug?: string) {
     await db.delete(placementResponses);
   }
   return true;
+}
+
+/**
+ * Adult-facing diagnostic result: join every answered probe with its task's
+ * grade band + skill strand/subject, then run the pure level estimator to
+ * produce a working grade level per subject (and per strand).
+ *
+ * Returns the full report from buildPlacementLevelReport. Never throws on an
+ * empty DB — a subject with no responses comes back as estimatedGrade=null.
+ */
+export async function placementLevelReport() {
+  const db = getDb();
+  // Joined answered probes: response -> task (gradeLevel) -> skill (subject/strand)
+  const rows: any[] = await db
+    .select({
+      subjectSlug: skillLadder.subjectSlug,
+      strand: skillLadder.strand,
+      gradeLevel: placementTasks.gradeLevel,
+      isCorrect: placementResponses.isCorrect,
+      feltIt: placementResponses.feltIt,
+    })
+    .from(placementResponses)
+    .innerJoin(placementTasks, eq(placementResponses.placementTaskId, placementTasks.id))
+    .innerJoin(skillLadder, eq(placementTasks.skillLadderId, skillLadder.id));
+
+  // Per-subject total active probe count (denominator for coverage).
+  const probeRows: any[] = await db
+    .select({ subjectSlug: skillLadder.subjectSlug, taskId: placementTasks.id })
+    .from(placementTasks)
+    .innerJoin(skillLadder, eq(placementTasks.skillLadderId, skillLadder.id))
+    .where(eq(placementTasks.active, true));
+  const probeTotals: Record<string, number> = {};
+  for (const p of probeRows) probeTotals[p.subjectSlug] = (probeTotals[p.subjectSlug] || 0) + 1;
+
+  const responses = rows.map((r) => ({
+    subjectSlug: r.subjectSlug,
+    strand: r.strand ?? null,
+    gradeLevel: String(r.gradeLevel ?? "5"),
+    isCorrect: r.isCorrect ?? null,
+    feltIt: (r.feltIt ?? "ok") as "easy" | "ok" | "hard" | "skip",
+  }));
+
+  return buildPlacementLevelReport(responses, probeTotals);
 }
 
 
