@@ -1637,4 +1637,22 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] Surface answer mode in UI: chat proc returns `mode`; composeFirstPersonReply renders answers verbatim (no "added N blocks" tally); added 5 ask-anything suggested prompts
 
 ### Remaining todos sweep
-- [ ] Review all [~] scaffolded + [ ] open items; close out anything now-doable; clearly document anything still blocked on user/credentials
+- [x] Reviewed all [~] scaffolded + [ ] open items (2026-06-29). Closed out the doable work this session (email un-pause + AI agenda Q&A). The rest are NOT code-actionable right now — each is blocked on a user action or external credential. Documented status below.
+
+#### Still blocked — require USER ACTION or external credentials (no code change possible until then)
+- [ ] PENDING USER ACTION: connect the account Reagan uses with youtube.readonly scope (set YOUTUBE_OAUTH_TOKEN), then resume the cron. (Engine built & dormant; nothing fabricated until real data lands.)
+- [ ] BLOCKED on Google Drive OAuth credentials — live Drive write paths are scaffolded + credential-gated and no-op cleanly today: drive orphan/dupe cleanup (`driveFolderDedupeJob.ts`), Ohio-standards reference auto-push, sub-folder dedupe, hash-based skip vs Drive, nightly Drive-side dedupe, full two-way sync PUSH half (`drivePushWorker.ts`). All locked by their vitest suites; they flip live the moment a token is set. (NOTE: the weekday Job B mirror already works today via the `gws` CLI through the admin-mirror surface; these scaffolds are the in-app worker path.)
+- [ ] BLOCKED on Google Calendar OAuth (`GOOGLE_CALENDAR_OAUTH_TOKEN`) — one-way block→Calendar event sync + tutor-as-guest gating are scaffolded (`googleCalendarSync.ts`), pure payload builder fully tested, no-ops as `skipped_no_credentials` until token set.
+- [ ] BLOCKED on Resend custom domain verification (resend.com/domains) — lets `marcy.spear@gmail.com` receive via Resend instead of the SMTP fallback. Code already supports both paths; runbook at `references/resend-custom-domain-runbook.md`. (Interim: SMTP fallback delivers to Grandma once published.)
+- [ ] BLOCKED on skills registration — `reagan-homeschool-grading` SKILL.md 6th-grade section must be updated by Katy in the session where that skill is registered (local skill edits don't sync to remote config). Full drafted content ready in `references/skill-md-sixth-grade-update-runbook.md`.
+- [ ] PENDING USER ACTION: click **Publish** on checkpoint d3e4b50b to push the AI agenda Q&A upgrade + Grandma un-pause/recipient changes to reaganschool.manus.space. (Also clear the `MAIL_DEV_TO` secret — input card open — so production stops redirecting all mail to Mom.)
+
+
+---
+
+## 🐛 2026-06-29 — BUG: worksheet URLs broken (Katy report: "most urls don't work or just go to home page of app or no longer exists on worksheets")
+- [x] Reproduced: links are kid-facing "Open" targets from `client/src/lib/subjectFallbackActivity.ts` (curated per-subject fallback) + `server/_lib/practiceLibrary.ts` (Practice-for-Coins). In-app routing is fine (proper 404 catch-all); the breakage was stale/blocked EXTERNAL links.
+- [x] Diagnosed via live HTTP probing: ReadWorks find-content#! = 000 (dead); Mystery Science /mini-lessons redirected to one random lesson; Smithsonian /discover redirected to a stale help-archive; GoNoodle app/discover bounced to marketing home; Cornell free-bird-id blocked; deep Khan /e/division_2 + hashed ELA path render Khan's not-found shell.
+- [x] Fixed: repointed all 6 dead/wrong fallback links to verified-live evergreen pages (ReadWorks home, Mystery Science home, Smithsonian Learning Lab home, Audubon Bird Guide, GoNoodle home) and 2 fragile Khan practice deep-links to stable course/section roots. Each replacement confirmed 200 without a wrong-page bounce.
+- [x] Tests: new `server/worksheetLinks.test.ts` (20 cases) locks out known-dead patterns + asserts every link is well-formed https; no network calls (deterministic).
+- [x] Verified: full suite 566 files / 5118 passed (7 skipped). Checkpoint saved.

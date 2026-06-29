@@ -30,7 +30,10 @@ const M = {
     description:
       "Read the passage all the way through, then answer the questions. Take your time — re-read if you need to.",
     source: "ReadWorks",
-    sourceUrl: "https://www.readworks.org/find-content#!q:fifth+grade",
+    // 2026-06-29 — old deep link (find-content#!q:fifth+grade) returned 000
+    // (dead hash route). Repointed to the live ReadWorks home (confirmed 200);
+    // the in-page search lands on grade-5 passages reliably.
+    sourceUrl: "https://www.readworks.org/",
     estMinutes: 20,
     coinReward: 6,
     emoji: "📖",
@@ -63,7 +66,10 @@ const M = {
     description:
       "Watch the short mystery, then try the hands-on activity. Bonus: tell Mom what you learned.",
     source: "Mystery Science",
-    sourceUrl: "https://mysteryscience.com/mini-lessons",
+    // 2026-06-29 — /mini-lessons 301-redirected to a single random lesson
+    // (honey-bees) instead of the picker. Repointed to the live home (200)
+    // so the full mini-lesson chooser shows.
+    sourceUrl: "https://mysteryscience.com/",
     estMinutes: 25,
     coinReward: 7,
     emoji: "🔬",
@@ -74,7 +80,9 @@ const M = {
     description:
       "Pick a collection that looks cool. Read the captions and screenshot 1 thing you want to remember.",
     source: "Smithsonian Learning Lab",
-    sourceUrl: "https://learninglab.si.edu/discover",
+    // 2026-06-29 — /discover 301-redirected to /help-archive/discover-archive
+    // (a stale help page). Repointed to the live Learning Lab home (200).
+    sourceUrl: "https://learninglab.si.edu/",
     estMinutes: 15,
     coinReward: 5,
     emoji: "🌎",
@@ -106,8 +114,11 @@ const M = {
     title: "Backyard bird watch",
     description:
       "Sit outside for 10 minutes. Count and try to ID 3 birds. Sketch the one you saw best.",
-    source: "Cornell Lab — Bird Academy",
-    sourceUrl: "https://academy.allaboutbirds.org/free-bird-id/",
+    source: "Audubon — Bird Guide",
+    // 2026-06-29 — Cornell's /free-bird-id/ blocked (403) and was unreliable.
+    // Repointed to the Audubon online Bird Guide (confirmed 200), an evergreen
+    // free ID resource that fits the backyard bird-watch activity.
+    sourceUrl: "https://www.audubon.org/bird-guide",
     estMinutes: 20,
     coinReward: 6,
     emoji: "🌳",
@@ -118,7 +129,10 @@ const M = {
     description:
       "Pick any 10-minute video and move along. Get your heart up before sit-down work.",
     source: "GoNoodle",
-    sourceUrl: "https://app.gonoodle.com/discover",
+    // 2026-06-29 — app.gonoodle.com/discover bounced to the marketing home.
+    // Point straight at the live gonoodle.com home (200) where the free
+    // movement videos are reachable without the dead /discover app route.
+    sourceUrl: "https://www.gonoodle.com/",
     estMinutes: 10,
     coinReward: 3,
     emoji: "🏃‍♀️",
@@ -155,7 +169,9 @@ const M = {
     description:
       "Pick a mini-lesson question that looks interesting, watch the short video, and do the quick activity.",
     source: "Mystery Science",
-    sourceUrl: "https://mysteryscience.com/mini-lessons",
+    // 2026-06-29 — see ela/science note: /mini-lessons redirected to one random
+    // lesson. Use the live home so the picker shows.
+    sourceUrl: "https://mysteryscience.com/",
     estMinutes: 15,
     coinReward: 5,
     emoji: "✨",

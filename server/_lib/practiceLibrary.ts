@@ -51,7 +51,10 @@ export const PRACTICE_LIBRARY: PracticeDrill[] = [
     title: "Long division warm-up",
     subject: "math",
     topic: "Division",
-    url: "https://www.khanacademy.org/math/cc-fifth-grade-math/imp-multi-digit-multiplication-and-division-2/imp-multi-digit-division-2/e/division_2",
+    // 2026-06-29 — the deep `/e/division_2` exercise slug renders Khan's
+    // in-app "this content isn't here" shell (HTTP 200 but no exercise).
+    // Pointed at the stable division unit root, which always loads.
+    url: "https://www.khanacademy.org/math/cc-fifth-grade-math/imp-multi-digit-multiplication-and-division-2",
     provider: "Khan Academy",
     minutes: 10,
     coins: 3,
@@ -137,7 +140,10 @@ export const PRACTICE_LIBRARY: PracticeDrill[] = [
     title: "Main-idea practice",
     subject: "ela",
     topic: "Reading comprehension",
-    url: "https://www.khanacademy.org/ela/cc-5th-reading-vocab/x96f17fb52ad3e7ed:cc-5th-reading-vocab-stories",
+    // 2026-06-29 — the hashed `x96f...:...-stories` sub-path is unstable after
+    // Khan's ELA reorg. Pointed at the stable 5th-grade reading+vocab course
+    // root (confirmed 200, renders content).
+    url: "https://www.khanacademy.org/ela/cc-5th-reading-vocab",
     provider: "Khan Academy",
     minutes: 12,
     coins: 4,
