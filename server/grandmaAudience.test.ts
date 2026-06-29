@@ -12,7 +12,10 @@ import {
   pauseGrandmaRecipients,
 } from "./_lib/grandmaAudience";
 
-afterEach(() => setGrandmaEmailPaused(true));
+// 2026-06-29 — default is now UN-paused (Grandma receives email again).
+// Reset to the live default after each test so explicit pause/un-pause cases
+// don't leak state into the others.
+afterEach(() => setGrandmaEmailPaused(false));
 
 describe("Push 106 — Grandma viewer audience", () => {
   it("Marcy's email is the canonical Grandma list of one", () => {
@@ -40,33 +43,33 @@ describe("Push 106 — Grandma viewer audience", () => {
     }
   });
 
-  it("grandmaAudienceFor surfaces Grandma audience + role even while email paused", () => {
+  it("grandmaAudienceFor surfaces Grandma audience + role + recipient flags (default un-paused)", () => {
     const r = grandmaAudienceFor("marcy.spear@gmail.com");
     expect(r.audience).toBe("grandma");
     expect(r.email).toBe("marcy.spear@gmail.com");
     expect(r.homeRole).toBe("editor");
-    // 2026-06-18 PAUSE (default ON): she is NOT an email recipient.
-    expect(r.isDigestRecipient).toBe(false);
-    expect(r.isRecapEmailRecipient).toBe(false);
-  });
-
-  it("grandmaAudienceFor recipient flags are TRUE again once un-paused", () => {
-    setGrandmaEmailPaused(false);
-    const r = grandmaAudienceFor("marcy.spear@gmail.com");
+    // 2026-06-29 UN-PAUSE (default OFF): she IS an email recipient again.
     expect(r.isDigestRecipient).toBe(true);
     expect(r.isRecapEmailRecipient).toBe(true);
   });
 
-  it("2026-06-18 PAUSE: default state is paused; pauseGrandmaRecipients strips her", () => {
-    expect(isGrandmaEmailPaused()).toBe(true);
-    expect(pauseGrandmaRecipients(["spear.cpt@gmail.com", "marcy.spear@gmail.com"]))
-      .toEqual(["spear.cpt@gmail.com"]);
+  it("grandmaAudienceFor recipient flags drop to FALSE when explicitly paused", () => {
+    setGrandmaEmailPaused(true);
+    const r = grandmaAudienceFor("marcy.spear@gmail.com");
+    expect(r.isDigestRecipient).toBe(false);
+    expect(r.isRecapEmailRecipient).toBe(false);
   });
 
-  it("pauseGrandmaRecipients keeps her when un-paused", () => {
-    setGrandmaEmailPaused(false);
+  it("2026-06-29 UN-PAUSE: default state is un-paused; pauseGrandmaRecipients keeps her", () => {
+    expect(isGrandmaEmailPaused()).toBe(false);
     expect(pauseGrandmaRecipients(["spear.cpt@gmail.com", "marcy.spear@gmail.com"]))
       .toEqual(["spear.cpt@gmail.com", "marcy.spear@gmail.com"]);
+  });
+
+  it("pauseGrandmaRecipients strips her when explicitly paused", () => {
+    setGrandmaEmailPaused(true);
+    expect(pauseGrandmaRecipients(["spear.cpt@gmail.com", "marcy.spear@gmail.com"]))
+      .toEqual(["spear.cpt@gmail.com"]);
   });
 
   it("Mom is not-grandma but still the primary parent in the home matrix", () => {

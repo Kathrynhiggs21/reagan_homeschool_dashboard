@@ -120,14 +120,13 @@ describe("nightlyAgenda.sendNow — manual send contract (v2.89)", () => {
     expect(slice).toContain("const notified = false;");
   });
 
-  it("sendNow notifyOwner audit recipient is spear.cpt@gmail.com (notification ping only)", () => {
-    // The `recipients` array near the top of `sendNow` is the audit-row
-    // ping list; the actual Resend send list is hard-coded in the
-    // `sendEmail({ to: ["marcy.spear@gmail.com", "spear.cpt@gmail.com"] })`
-    // call lower in the body (covered by the v3.24 freshContent test).
+  it("sendNow daily-agenda recipients are Mom + Grandma Marcy (2026-06-29 un-pause)", () => {
+    // 2026-06-29: Grandma was un-paused. The daily agenda now goes to BOTH
+    // Mom (spear.cpt@gmail.com) and Grandma Marcy (marcy.spear@gmail.com).
+    // `sendEmail({ to: recipients })` uses this exact list.
     const idx = src.indexOf("sendNow:");
     const slice = src.slice(idx, idx + 12000);
-    expect(slice).toMatch(/recipients = \["spear\.cpt@gmail\.com"\]/);
+    expect(slice).toMatch(/recipients = \["spear\.cpt@gmail\.com", "marcy\.spear@gmail\.com"\]/);
   });
 
   it("response shape returns { ok, forDate, recordId, notified, emailSent, signedUrl, ... }", () => {

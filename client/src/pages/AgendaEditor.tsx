@@ -151,6 +151,15 @@ type ChatMessage = { role: "user" | "assistant"; content: string; options?: { pr
  * are surfaced plainly so nothing fails silently.
  */
 function composeFirstPersonReply(data: any): string {
+  // 2026-06-29 ANSWER MODE: the server answered a question instead of editing
+  // the schedule. Show the conversational answer exactly as written — no
+  // "added N blocks" tally, no "it's live on the schedule" framing.
+  if (data?.mode === "answer" && data?.reply && String(data.reply).trim()) {
+    const warnA = Array.isArray(data?.warnings) && data.warnings.length
+      ? `\n\n_Heads up: ${data.warnings.join(" ")}_`
+      : "";
+    return `${String(data.reply).trim()}${warnA}`;
+  }
   const ins = data?.inserted ?? 0;
   const upd = data?.updated ?? 0;
   const del = data?.deleted ?? 0;
@@ -190,6 +199,12 @@ const SUGGESTED_PROMPTS = [
   "Add lunch at 12:45 for 30 min",
   "Shift everything 15 min later",
   "Make today easy — Reagan needs a light day",
+  // 2026-06-29 — ask-anything prompts (answer mode, no schedule edit)
+  "How is Reagan doing in math?",
+  "What has she worked on recently?",
+  "Suggest a calm bird-themed afternoon",
+  "Any ideas for a hands-on science adventure?",
+  "Is she keeping up with writing?",
 ];
 
 const SUBJECT_COLORS: Record<string, string> = {

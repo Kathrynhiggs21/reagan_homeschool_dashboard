@@ -105,10 +105,13 @@ describe("nightlyAgenda.sendNow — fresh-content-per-run (v3.24)", () => {
     expect(body).toContain("readinessLegendText()");
   });
 
-  it("2026-06-18: Resend send list is Mom only (Grandma paused)", () => {
+  it("2026-06-29: Resend send list is Mom + Grandma Marcy (Grandma un-paused)", () => {
     const body = getSendNowBody();
-    expect(body).toMatch(/to:\s*\["spear\.cpt@gmail\.com"\]/);
-    expect(body).not.toContain("marcy.spear@gmail.com");
+    // The send list is built as `const recipients = [...]` then passed to
+    // `sendEmail({ to: recipients })`. Grandma was un-paused on 2026-06-29.
+    expect(body).toMatch(/recipients = \["spear\.cpt@gmail\.com", "marcy\.spear@gmail\.com"\]/);
+    expect(body).toContain("marcy.spear@gmail.com");
+    expect(body).toMatch(/to:\s*recipients/);
   });
 
   it("2026-06-18 single-PDF rule: email carries ONLY the agenda PDF (no per-block worksheet email attachments)", () => {

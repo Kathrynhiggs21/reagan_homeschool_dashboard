@@ -143,6 +143,16 @@ export type AgendaEditPlan = {
   ops: AgendaEditOp[];
   warnings: string[];          // soft warnings (e.g. "no math block found")
   refusalReason?: string;      // set when the model refuses (e.g. asked to delete the whole day)
+  /**
+   * 2026-06-29 — ANSWER MODE. When the adult's message is a QUESTION or a
+   * general request for information/ideas rather than a schedule edit, the
+   * assistant answers conversationally instead of forcing an empty diff.
+   * When `answer` is set, `ops` is normally empty and the chat surface shows
+   * this text as the reply. `mode` records which path produced the plan so the
+   * UI / tests can distinguish "I changed the schedule" from "I answered you".
+   */
+  answer?: string;
+  mode?: "edit" | "answer";
 };
 
 const SYSTEM_PROMPT = `You are the AI Agenda Editor for Reagan's homeschool dashboard.
@@ -267,6 +277,18 @@ Interpretation rules — be generous, infer intent:
 - Always preserve protected appointments unless the adult explicitly removes them.
 - Never invent blocks unless the instruction asks to add one.
 - Prefer minimal-diff edits. Never re-emit unchanged fields on update.
+
+QUESTIONS vs EDITS (read this first): You handle BOTH. If the adult is asking
+you to CHANGE the schedule, emit ops as described below. But if the message is
+a QUESTION or a general request for information or ideas — e.g. "how is she
+doing in fractions?", "what did she work on this week?", "is she keeping up?",
+"suggest a calm bird-themed afternoon", "any ideas for a science adventure?",
+or general homeschool/parenting questions — then DO NOT invent a schedule edit.
+Return ops:[] (empty) with intent="vibe" and leave the answering to the system,
+which will reply conversationally with full context about Reagan. Only emit
+ops when the adult actually wants the day's blocks changed. A request that
+mixes a question AND an edit ("she's behind in fractions, add a review block")
+should emit the edit ops — the edit wins.
 
 You ARE the schedule editor, not a suggestion bot. By default the adult expects
 you to make the change, not propose options or ask which one they'd prefer.
@@ -933,6 +955,9 @@ export async function generateAgendaEditPlan(
         ],
       };
     }
+    // No deterministic edit either — if it's a question, try answering.
+    const answered = await maybeAnswerInstead(ctx, instruction, attachment);
+    if (answered) return answered;
     return {
       summary: isTimeout
         ? "The AI took too long and I couldn't map that request automatically. Try naming the block or subject (e.g. \"add a 30 min math block at 9am\")."
@@ -950,6 +975,8 @@ export async function generateAgendaEditPlan(
   } catch (e) {
     const fb = buildDeterministicEditPlan(ctx, instruction);
     if (fb.ops.length > 0) return fb;
+    const answered = await maybeAnswerInstead(ctx, instruction, attachment);
+    if (answered) return answered;
     return {
       summary: "Could not understand instruction.",
       intent: "vibe",
@@ -971,8 +998,44 @@ export async function generateAgendaEditPlan(
         warnings: [...(fb.warnings ?? []), ...(annotated.warnings ?? [])].slice(0, 12),
       };
     }
+    // 2026-06-29 ANSWER MODE: the model found no edit to make and the
+    // deterministic planner had nothing either. If this reads like a
+    // question / general request, answer it conversationally instead of
+    // returning a confusing empty "nothing changed" diff.
+    const hasOffered = (annotated.ops ?? []).some((o) => o.kind === "offer_options");
+    if (!hasOffered && !annotated.refusalReason) {
+      const answered = await maybeAnswerInstead(ctx, instruction, attachment);
+      if (answered) return answered;
+    }
   }
   return annotated;
+}
+
+/**
+ * 2026-06-29 — Route a non-edit message to a conversational answer.
+ * Returns an answer-mode AgendaEditPlan, or null when the message does not
+ * look like a question (so the caller keeps the normal empty-diff behavior).
+ *
+ * `db` is lazily imported to avoid a static import cycle with the very large
+ * db.ts (agendaEditor is imported by routers which imports db).
+ */
+export async function maybeAnswerInstead(
+  ctx: AgendaPlanContext,
+  instruction: string,
+  attachment?: { url: string; mimeType: string },
+): Promise<AgendaEditPlan | null> {
+  const { isLikelyQuestion, generateAgendaAnswer } = await import("./agendaAnswer");
+  if (!isLikelyQuestion(instruction)) return null;
+  const db = await import("../db");
+  const answer = await generateAgendaAnswer(ctx, instruction, db, attachment);
+  return {
+    summary: answer,
+    intent: "vibe",
+    ops: [],
+    warnings: [],
+    answer,
+    mode: "answer",
+  };
 }
 
 /**

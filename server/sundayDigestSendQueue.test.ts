@@ -12,7 +12,7 @@ describe("Push 78 — Sunday digest send queue", () => {
   // Grandma when she is NOT paused. The global pause (default ON as of
   // 2026-06-18) is exercised separately below.
   beforeEach(() => setGrandmaEmailPaused(false));
-  afterEach(() => setGrandmaEmailPaused(true));
+  afterEach(() => setGrandmaEmailPaused(false));
 
   it("always queues Mom first, Grandma second", () => {
     const plan = planSundayDigestSend({

@@ -1615,3 +1615,26 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] reagan-bird-behavior Skill created (library + attention-weighting + update-often workflow)
 - [x] Reagan 504-style homeschool accommodations plan -> branded PDF -> Drive (Reagan/504)
 - [x] Saved 6th-grade transition blueprint to Drive (Reagan/504) for later-this-summer "6th Grade Transition Success Plan"
+
+
+---
+
+## 🆕 2026-06-29 — Email fix + AI agenda upgrade (Katy request: "upgrade AI agenda to more automatic any type of question, fix all todo, getting additional needed emails too")
+
+### Email: get Mom + Grandma both receiving the daily agenda reliably
+- [x] Un-pause Grandma: flipped `_grandmaEmailPaused` + `GRANDMA_EMAIL_PAUSED` to `false` + `GRANDMA_EMAIL_PAUSED` const in `server/_lib/grandmaAudience.ts`
+- [x] Added `marcy.spear@gmail.com` back to the nightlyAgenda recipient list in `server/routers.ts` (currently hardcoded Mom-only at ~line 5391 + 5511)
+- [x] Recipient policy fix: cleared `MAIL_DEV_TO` (dev-only hard redirect) and expand `MAIL_ALLOWED_RECIPIENTS` to include Marcy, OR confirm SMTP fallback path delivers to Marcy from GMAIL_SMTP_USER
+- [x] Updated mailer/grandmaAudience + 3 digest tests to lock the un-paused contract (Mom + Grandma both accepted)
+- [x] Verified no DUPLICATE sends (notifyOwner summary already suppressed; confirm only one email path fires)
+
+### AI agenda: upgrade to answer ANY type of question (conversational, automatic)
+- [x] Audit current AI agenda editor system prompt + op union (schedule-edit only today)
+- [x] Add a general-purpose Q&A capability: new `server/_lib/agendaAnswer.ts` (gatherAnswerContext + generateAgendaAnswer); when Mom's message is a question the AI answers conversationally using full dashboard context (profile, today's plan, skill mastery, weak topics, recent grades, recent mood, adventure library)
+- [x] Wire read-context helpers (listSkillsWithProgress, getAllWeakTopics, listAllBlockGrades, listRecentMood, listAdventuresFiltered, getProfile) so the AI can answer "how's she doing in fractions?", "what did Reagan work on?", "suggest a bird adventure", general homeschool/parenting Q&A — all defensively fetched (never throws on empty/missing data)
+- [x] Keep schedule-edit ops working (no regression): routing runs only when the LLM + deterministic planner produce ZERO ops AND the message reads like a question; edits always win. System prompt teaches the QUESTIONS-vs-EDITS split. Full suite 5098 passed.
+- [x] Tests for the new answer-vs-edit routing + general Q&A path: server/agendaAnswer.test.ts (7) + 4 new answer-mode contract assertions in agendaEditorDirectChatWiring.test.ts (14)
+- [x] Surface answer mode in UI: chat proc returns `mode`; composeFirstPersonReply renders answers verbatim (no "added N blocks" tally); added 5 ask-anything suggested prompts
+
+### Remaining todos sweep
+- [ ] Review all [~] scaffolded + [ ] open items; close out anything now-doable; clearly document anything still blocked on user/credentials

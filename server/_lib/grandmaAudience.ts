@@ -36,7 +36,7 @@ const GRANDMA_SET = new Set<string>(GRANDMA_EMAILS.map((e) => e.toLowerCase()));
  * "Grandma" copy/permissions are unaffected — she can still edit, and the
  * dashboard still knows who she is.
  */
-let _grandmaEmailPaused = true;
+let _grandmaEmailPaused = false;
 
 /**
  * Is Grandma email delivery currently paused? Default: true (paused as of
@@ -59,7 +59,7 @@ export function setGrandmaEmailPaused(paused: boolean): void {
  * Back-compat constant snapshot of the initial pause state. Prefer
  * `isGrandmaEmailPaused()` in new code so the live (settable) value is used.
  */
-export const GRANDMA_EMAIL_PAUSED = true;
+export const GRANDMA_EMAIL_PAUSED = false;
 
 /**
  * Drop any Grandma addresses from an outbound recipient list while the

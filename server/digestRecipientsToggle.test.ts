@@ -15,7 +15,7 @@ describe("Push 94 — digest recipients toggle", () => {
   // The toggle ORDERING contract requires the global pause OFF. The
   // 2026-06-18 global pause is verified in its own case below.
   beforeEach(() => setGrandmaEmailPaused(false));
-  afterEach(() => setGrandmaEmailPaused(true));
+  afterEach(() => setGrandmaEmailPaused(false));
 
   it("2026-06-18 PAUSE: global pause forces Mom-only even when grandmaEnabled", () => {
     setGrandmaEmailPaused(true);

@@ -1709,18 +1709,24 @@ export const appRouter = router({
       }));
       const changeCount = inserted + updated + deleted + reordered + shifted;
       const hasOptions = offeredOptions.length > 0;
+      // 2026-06-29 ANSWER MODE: when the planner answered a question instead of
+      // editing, surface that conversational answer as the reply verbatim.
+      const isAnswer = editPlan.mode === "answer" && typeof editPlan.answer === "string" && editPlan.answer.trim().length > 0;
       const optionTail = hasOptions
         ? (changeCount === 0
             ? ""
             : " ") + `I also have a few ways to do the fun part — pick the one you like and I'll add it.`
         : "";
-      const reply = (changeCount === 0 && !hasOptions)
-        ? (editPlan.summary || "I read that, but nothing needed to change — the schedule already matches what you asked.")
-        : (editPlan.summary || (changeCount > 0 ? `Done — I made ${changeCount} change${changeCount === 1 ? "" : "s"} to ${input.date}'s schedule. It's live now.` : "Here are a few options to choose from.")) + optionTail;
+      const reply = isAnswer
+        ? editPlan.answer!.trim()
+        : (changeCount === 0 && !hasOptions)
+          ? (editPlan.summary || "I read that, but nothing needed to change — the schedule already matches what you asked.")
+          : (editPlan.summary || (changeCount > 0 ? `Done — I made ${changeCount} change${changeCount === 1 ? "" : "s"} to ${input.date}'s schedule. It's live now.` : "Here are a few options to choose from.")) + optionTail;
       return {
         reply, inserted, updated, deleted, reordered, shifted,
         warnings: validated.warnings, blocks: freshBlocks,
         options: offeredOptions,
+        mode: isAnswer ? "answer" as const : "edit" as const,
       };
     }),
 
@@ -5388,7 +5394,8 @@ export const appRouter = router({
           signedUrl = null;
         }
 
-        const recipients = ["spear.cpt@gmail.com"]; // Marcy joins later — Mom-only this week.
+        // 2026-06-29 — Grandma un-paused: daily agenda goes to Mom + Grandma Marcy.
+        const recipients = ["spear.cpt@gmail.com", "marcy.spear@gmail.com"];
         const recordId = await db.insertNightlyAgendaEmail({
           forDate,
           recipients: recipients.join(", "),
@@ -5506,9 +5513,10 @@ export const appRouter = router({
           const emailAtts: Array<{ filename: string; content: Buffer; contentType: string }> = [
             { filename: `${forDate} - ${payload.studentName} - Agenda.pdf`, content: pdfBuffer, contentType: "application/pdf" },
           ];
-          // 2026-06-18: Grandma paused — Mom only (mailer also strips Grandma).
+          // 2026-06-29: Grandma un-paused — send to the full recipient list
+          // (Mom + Grandma Marcy). Mailer policy/allow-list handles delivery.
           const emailResult = await sendEmail({
-            to: ["spear.cpt@gmail.com"],
+            to: recipients,
             subject: title,
             html,
             attachments: emailAtts,

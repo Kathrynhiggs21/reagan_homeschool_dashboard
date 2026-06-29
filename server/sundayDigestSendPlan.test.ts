@@ -52,7 +52,7 @@ describe("Push 124 — planSundayDigestSend", () => {
   // which requires the global pause OFF. The 2026-06-18 pause is verified
   // in its own case below.
   beforeEach(() => setGrandmaEmailPaused(false));
-  afterEach(() => setGrandmaEmailPaused(true));
+  afterEach(() => setGrandmaEmailPaused(false));
 
   it("2026-06-18 PAUSE: Grandma is dropped, only Mom is queued, while paused", () => {
     setGrandmaEmailPaused(true);

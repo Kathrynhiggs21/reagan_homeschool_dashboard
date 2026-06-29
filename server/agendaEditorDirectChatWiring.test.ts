@@ -95,4 +95,26 @@ describe("AgendaEditor — direct-acting AI chat wiring", () => {
     expect(src).toMatch(/swap the science video/i);
     expect(src).toMatch(/reading assignment/i);
   });
+
+  // 2026-06-29 — answer-any-question upgrade contract.
+  it("system prompt teaches the QUESTIONS-vs-EDITS split", () => {
+    const src = read(BRAIN_PATH);
+    expect(src).toMatch(/QUESTIONS vs EDITS/i);
+  });
+
+  it("brain routes non-edit questions to a conversational answer", () => {
+    const src = read(BRAIN_PATH);
+    expect(src).toMatch(/maybeAnswerInstead/);
+    expect(src).toMatch(/mode:\s*"answer"/);
+  });
+
+  it("chat proc returns a mode flag so the UI can tell answers from edits", () => {
+    const src = read(ROUTERS_PATH);
+    expect(src).toMatch(/mode:\s*isAnswer\s*\?\s*"answer"/);
+  });
+
+  it("editor renders answer-mode replies verbatim (no change tally)", () => {
+    const src = read(EDITOR_PATH);
+    expect(src).toMatch(/mode === "answer"/);
+  });
 });

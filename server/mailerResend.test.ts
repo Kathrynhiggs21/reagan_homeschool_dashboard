@@ -263,29 +263,52 @@ describe("mailer (Resend)", () => {
     expect(res.droppedRecipients).toEqual(["dad.smtp@hotmail.com"]);
   });
 
-  it("2026-06-18 PAUSE: strips Grandma at the mailer; sends to the rest", async () => {
+  it("PAUSE (when explicitly enabled): strips Grandma at the mailer; sends to the rest", async () => {
     sendMock.mockResolvedValueOnce({ data: { id: "msg_nogma" }, error: null });
-    const { sendEmail } = await freshMailer();
-    const res = await sendEmail({
+    const mailer = await freshMailer();
+    const ga = await import("./_lib/grandmaAudience");
+    ga.setGrandmaEmailPaused(true);
+    const res = await mailer.sendEmail({
       to: ["marcy.spear@gmail.com", "spear.cpt@gmail.com"],
       subject: "Paused",
       html: "<p>hi</p>",
     });
+    ga.setGrandmaEmailPaused(false);
     expect(res.ok).toBe(true);
-    // Grandma never reaches Resend or SMTP.
+    // Grandma never reaches Resend or SMTP while paused.
     expect(sendMock.mock.calls[0][0].to).toEqual(["spear.cpt@gmail.com"]);
   });
 
-  it("2026-06-18 PAUSE: skips entirely when Grandma is the ONLY recipient", async () => {
-    const { sendEmail } = await freshMailer();
-    const res = await sendEmail({
+  it("PAUSE (when explicitly enabled): skips entirely when Grandma is the ONLY recipient", async () => {
+    const mailer = await freshMailer();
+    const ga = await import("./_lib/grandmaAudience");
+    ga.setGrandmaEmailPaused(true);
+    const res = await mailer.sendEmail({
       to: ["marcy.spear@gmail.com"],
       subject: "Only Grandma",
       html: "<p>hi</p>",
     });
+    ga.setGrandmaEmailPaused(false);
     expect(res.ok).toBe(false);
     expect(res.skipped).toBe(true);
     expect(sendMock).not.toHaveBeenCalled();
+  });
+
+  it("2026-06-29 UN-PAUSE (default): Grandma + Mom BOTH reach the mailer send", async () => {
+    process.env.MAIL_ALLOWED_RECIPIENTS = "spear.cpt@gmail.com,marcy.spear@gmail.com";
+    sendMock.mockResolvedValueOnce({ data: { id: "msg_both" }, error: null });
+    const mailer = await freshMailer();
+    const res = await mailer.sendEmail({
+      to: ["spear.cpt@gmail.com", "marcy.spear@gmail.com"],
+      subject: "Daily agenda",
+      html: "<p>hi</p>",
+    });
+    expect(res.ok).toBe(true);
+    // Both addresses survive the pause filter + allow-list and go to Resend.
+    expect(sendMock.mock.calls[0][0].to).toEqual([
+      "spear.cpt@gmail.com",
+      "marcy.spear@gmail.com",
+    ]);
   });
 
   it("derives a plain-text fallback from HTML when text is not provided", async () => {
