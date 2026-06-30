@@ -35,6 +35,8 @@ vi.mock("./db", async () => {
       { id: 1, title: "Math: Order of Operations", status: "todo", startTime: "09:00" },
     ]),
     insertStudentRequest: vi.fn(async () => {}),
+    getWorksheetPdfCache: vi.fn(async () => null),
+    upsertWorksheetPdfCache: vi.fn(async () => ({ id: 1, updated: false })),
   };
 });
 

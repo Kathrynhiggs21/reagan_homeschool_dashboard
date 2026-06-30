@@ -39,6 +39,8 @@ vi.mock("./db", () => ({
   listSchoolDays: vi.fn(async () => []),
   listOffDays: vi.fn(async () => []),
   listCurriculumTopics: vi.fn(async () => []),
+  getWorksheetPdfCache: vi.fn(async () => null),
+  upsertWorksheetPdfCache: vi.fn(async () => ({ id: 1, updated: false })),
 }));
 
 beforeEach(() => {

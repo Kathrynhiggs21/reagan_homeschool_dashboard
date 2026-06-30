@@ -25,7 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { Download, ExternalLink, Loader2, CheckCircle2 } from "lucide-react";
+import { Download, ExternalLink, Loader2, CheckCircle2, Printer } from "lucide-react";
 import type {
   WorksheetContent,
   WorksheetItem,
@@ -67,6 +67,7 @@ export default function WorksheetRunner({
   const forBlock = trpc.worksheets.forBlock.useMutation();
   const saveAnswers = trpc.worksheets.saveAnswers.useMutation();
   const makePdf = trpc.worksheets.makePdf.useMutation();
+  const subjectPdf = trpc.worksheets.generateForSubject.useMutation();
 
   // Load worksheet content when the dialog opens for a seed.
   useEffect(() => {
@@ -133,6 +134,27 @@ export default function WorksheetRunner({
       toast.success("Great work! Your answers are saved.");
     } catch (e: any) {
       toast.error(e?.message ?? "Couldn't save.");
+    }
+  }
+
+  // Reliable, anxiety-safe paper copy: a colorful self-hosted worksheet PDF
+  // for this subject/topic. No external site, no login -- it always opens.
+  async function handlePrintPaper() {
+    if (!seed) return;
+    const t = toast.loading("Getting your paper copy ready…");
+    try {
+      const res = await subjectPdf.mutateAsync({
+        subject: seed.subjectSlug ?? undefined,
+        topic: seed.topicHint ?? undefined,
+        bookRef: seed.bookRef ?? undefined,
+        date: seed.date,
+      });
+      toast.dismiss(t);
+      toast.success("Your paper copy is ready — opening it now.");
+      window.open(res.url, "_blank", "noopener");
+    } catch (e: any) {
+      toast.dismiss(t);
+      toast.error(e?.message ?? "Couldn't make the paper copy.");
     }
   }
 
@@ -259,6 +281,14 @@ export default function WorksheetRunner({
                 {answered}/{answerable} answered
                 {saveAnswers.isPending && " · saving…"}
               </span>
+              <Button variant="outline" className="bg-background" onClick={handlePrintPaper} disabled={subjectPdf.isPending}>
+                {subjectPdf.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                ) : (
+                  <Printer className="h-4 w-4 mr-1" />
+                )}
+                Print a paper copy
+              </Button>
               <Button variant="outline" className="bg-background" onClick={handleDownloadPdf} disabled={makePdf.isPending}>
                 {makePdf.isPending ? (
                   <Loader2 className="h-4 w-4 mr-1 animate-spin" />

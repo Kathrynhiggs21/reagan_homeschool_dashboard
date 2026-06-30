@@ -10431,3 +10431,92 @@ export async function updateYoutubeSyncState(patch: Partial<typeof _ytSyncState.
   await db.update(_ytSyncState).set({ ...patch, updatedAt: new Date() }).where(eq(_ytSyncState.id, cur.id));
   return getYoutubeSyncState();
 }
+
+
+/* ===================== SELF-HOSTED WORKSHEET PDF CACHE ===================== */
+import { worksheetPdfCache } from "../drizzle/schema";
+
+/**
+ * Read one cached worksheet-PDF row keyed on (subjectSlug, topicKey,
+ * contentVersion). Returns null on miss. Never throws.
+ */
+export async function getWorksheetPdfCache(input: {
+  subjectSlug: string;
+  topicKey: string;
+  contentVersion: number;
+}): Promise<any | null> {
+  const db = getDb();
+  const rows = await db
+    .select()
+    .from(worksheetPdfCache)
+    .where(
+      and(
+        eq(worksheetPdfCache.subjectSlug, input.subjectSlug),
+        eq(worksheetPdfCache.topicKey, input.topicKey),
+        eq(worksheetPdfCache.contentVersion, input.contentVersion),
+      ),
+    )
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/**
+ * Upsert a cached worksheet-PDF row (idempotent on the unique
+ * subject+topic+version index). Returns the row id.
+ */
+export async function upsertWorksheetPdfCache(input: {
+  subjectSlug: string;
+  topicKey: string;
+  contentVersion: number;
+  title: string;
+  storageKey: string;
+  url: string;
+  source: "llm" | "fallback";
+  questionCount: number;
+  byteSize: number;
+  generatedByUserId?: number | null;
+}): Promise<{ id: number; updated: boolean }> {
+  const db = getDb();
+  const existing: any[] = await db
+    .select({ id: worksheetPdfCache.id })
+    .from(worksheetPdfCache)
+    .where(
+      and(
+        eq(worksheetPdfCache.subjectSlug, input.subjectSlug),
+        eq(worksheetPdfCache.topicKey, input.topicKey),
+        eq(worksheetPdfCache.contentVersion, input.contentVersion),
+      ),
+    )
+    .limit(1);
+
+  if (existing[0]) {
+    await db
+      .update(worksheetPdfCache)
+      .set({
+        title: input.title,
+        storageKey: input.storageKey,
+        url: input.url,
+        source: input.source,
+        questionCount: input.questionCount,
+        byteSize: input.byteSize,
+        generatedByUserId: input.generatedByUserId ?? null,
+      } as any)
+      .where(eq(worksheetPdfCache.id, existing[0].id));
+    return { id: existing[0].id as number, updated: true };
+  }
+
+  const res: any = await db.insert(worksheetPdfCache).values({
+    subjectSlug: input.subjectSlug,
+    topicKey: input.topicKey,
+    contentVersion: input.contentVersion,
+    title: input.title,
+    storageKey: input.storageKey,
+    url: input.url,
+    source: input.source,
+    questionCount: input.questionCount,
+    byteSize: input.byteSize,
+    generatedByUserId: input.generatedByUserId ?? null,
+  } as any);
+  const insertId = Array.isArray(res) ? res[0]?.insertId : res?.insertId;
+  return { id: Number(insertId ?? 0), updated: false };
+}

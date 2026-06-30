@@ -2506,3 +2506,39 @@ export const youtubeSyncState = mysqlTable("youtubeSyncState", {
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 export type YoutubeSyncState = typeof youtubeSyncState.$inferSelect;
+
+
+/**
+ * Self-hosted worksheet PDF cache (2026-06-30).
+ *
+ * The kid-facing "Open" button no longer depends on fragile external sites
+ * (Khan/ReadWorks/etc. that 404 or bounce to a homepage). Instead the server
+ * generates a colorful, grade-5, offline-answerable printable PDF for the
+ * subject/topic and stores the bytes in S3. This table caches the resulting
+ * storage key/url keyed on (subjectSlug, topicKey, contentVersion) so repeated
+ * taps reuse the same PDF instead of regenerating + re-billing the LLM.
+ *
+ * contentVersion lets us bump-invalidate the whole cache when the renderer or
+ * prompt changes (just increment WORKSHEET_PDF_CONTENT_VERSION in code).
+ */
+export const worksheetPdfCache = mysqlTable("worksheetPdfCache", {
+  id: int("id").autoincrement().primaryKey(),
+  subjectSlug: varchar("subjectSlug", { length: 40 }).notNull(),       // math | ela | reading | writing | science | social | ...
+  topicKey: varchar("topicKey", { length: 120 }).notNull().default("default"), // slugified topic ("default" = subject fallback sheet)
+  contentVersion: int("contentVersion").notNull().default(1),          // bump to invalidate stale cache
+  title: varchar("title", { length: 200 }).notNull(),                  // human title shown if needed
+  storageKey: varchar("storageKey", { length: 300 }).notNull(),        // S3 key
+  url: varchar("url", { length: 400 }).notNull(),                      // /manus-storage/{key}
+  source: mysqlEnum("source", ["llm", "fallback"]).notNull().default("fallback"), // how the content was authored
+  questionCount: int("questionCount").notNull().default(0),
+  byteSize: int("byteSize").notNull().default(0),
+  generatedByUserId: int("generatedByUserId"),                         // adult who triggered first generation (null = kid)
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (t) => ({
+  uniqSubjectTopicVersion: uniqueIndex("worksheet_pdf_subject_topic_version_uniq").on(
+    t.subjectSlug, t.topicKey, t.contentVersion,
+  ),
+}));
+export type WorksheetPdfCache = typeof worksheetPdfCache.$inferSelect;
+export type InsertWorksheetPdfCache = typeof worksheetPdfCache.$inferInsert;

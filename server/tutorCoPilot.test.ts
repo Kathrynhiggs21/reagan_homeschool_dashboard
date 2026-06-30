@@ -29,6 +29,8 @@ vi.mock("./db", async () => {
     updateBlock: vi.fn(async (id: number, patch: any) => { updates.push({ id, patch }); }),
     createBlock: vi.fn(async (b: any) => { creates.push(b); return 999; }),
     ensurePlanForDate: vi.fn(async (date: string) => ({ id: 7, dateStr: date })),
+    getWorksheetPdfCache: vi.fn(async () => null),
+    upsertWorksheetPdfCache: vi.fn(async () => ({ id: 1, updated: false })),
   };
 });
 

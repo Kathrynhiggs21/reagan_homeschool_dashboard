@@ -13,6 +13,7 @@ import { findFreeLinks } from "./freeLinkFinder";
 import { storagePut } from "./storage";
 import { generateWorksheet, buildDeterministicWorksheet, isNonAcademicBlock, type WorksheetSeed } from "./_lib/worksheetGenerator";
 import { renderAndStoreWorksheetPdf } from "./_lib/worksheetPdf";
+import { getOrCreateSubjectWorksheetPdf } from "./_lib/subjectWorksheetPdf";
 import { getDriveCredentialStatus } from "./_lib/drivePushWorker";
 import { subjectAppLink } from "./_lib/subjectAppLinks";
 import { isUsableWorksheet, type WorksheetContent } from "@shared/worksheetTypes";
@@ -4869,6 +4870,41 @@ export const appRouter = router({
           driveConnected,
           driveEnqueued,
           driveOpenUrl,
+        };
+      }),
+    /**
+     * Self-hosted, anxiety-safe subject practice (2026-06-30).
+     *
+     * Returns a COLORFUL, grade-5, answer-it-on-paper printable PDF for a
+     * subject (+ optional topic) that we generate and host ourselves -- no
+     * external site, no login, no link rot, nothing that looks like a timed
+     * test. Cache-first: the same subject+topic reuses the stored PDF instead
+     * of re-billing the LLM. Any logged-in family member can open it.
+     */
+    generateForSubject: protectedProcedure
+      .input(z.object({
+        subject: z.string().max(64).optional(),
+        topic: z.string().max(200).optional(),
+        bookRef: z.string().max(300).optional(),
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+        forceRefresh: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const res = await getOrCreateSubjectWorksheetPdf({
+          subject: input.subject ?? null,
+          topic: input.topic ?? null,
+          bookRef: input.bookRef ?? null,
+          forDate: input.date ?? null,
+          forceRefresh: input.forceRefresh ?? false,
+          generatedByUserId: (ctx.user as any)?.id ?? null,
+        });
+        return {
+          ok: true as const,
+          url: res.url,
+          title: res.title,
+          source: res.source,
+          questionCount: res.questionCount,
+          cached: res.cached,
         };
       }),
   }),

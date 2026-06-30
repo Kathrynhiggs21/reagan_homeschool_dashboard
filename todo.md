@@ -1698,3 +1698,13 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] Link goes straight to https://www.ixl.com/diagnostic — when signed in (saved IXL web-password autofill) it opens the arena; signed out, IXL prompts sign-in as her own account. No creds in URL.
 - [x] ANTI-ANXIETY / NON-TESTING FRAMING: kid card shows NO timers/scores/grade numbers/right-wrong; calm "adventure / show what you can do / stop anytime" copy. All level detail is parent-only (login-gated). A test asserts the framing contains no test/score/fail vocabulary.
 - [x] Verified the deep link resolves (HTTP 200) before shipping; /diagnostic/snapshot was 404 so avoided.
+
+## Self-hosted worksheet PDF download pipeline (2026-06-30)
+Reused the EXISTING colorful renderer (server/_lib/worksheetPdf.ts "Summer Adventure" style) + EXISTING generator (server/_lib/worksheetGenerator.ts: LLM-first, deterministic fallback, never empty) instead of rebuilding them.
+- [x] worksheetPdfCache table + migration (subjectSlug + topicKey + contentVersion -> storage key/url) — drizzle/0077
+- [x] db.ts helpers: getWorksheetPdfCache / upsertWorksheetPdfCache (cache-first, upsert idempotent on the unique key)
+- [x] server/_lib/subjectWorksheetPdf.ts: cache-first subject service — normalizeSubjectSlug + topicKeyFor + seedForSubject (friendly NON-test titles) -> generateWorksheet -> renderAndStoreWorksheetPdf -> upsert cache. Pure helpers + injectable deps.
+- [x] worksheets tRPC router: generateForSubject (protected; cache-first; returns /manus-storage url, title, source, questionCount, cached)
+- [x] WorksheetRunner.tsx: added a reliable "Print a paper copy" button (calls generateForSubject, opens the self-hosted colorful PDF in a new tab) alongside the existing Download PDF. Anxiety-safe copy; no external-site dependency.
+- [x] Tests: server/subjectWorksheetPdf.test.ts (13) — subject normalization, topic slugging, non-test titles, cache hit/miss, forceRefresh, friendly-title override, real PDF render smoke. Patched 3 db-mock test files (dayNotesAndFinder/personaSplit/tutorCoPilot) to expose the 2 new db exports.
+- [x] Full suite green (571 files / 5184 passed, 7 skipped); TypeScript + LSP clean.
