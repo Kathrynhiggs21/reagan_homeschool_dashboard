@@ -96,6 +96,7 @@ export type AnswerContext = {
   recentMood: string;
   adventures: string;
   placementLevels: string;
+  ixlLevels: string;
 };
 
 /** Run a DB read defensively — return [] / null on any failure. */
@@ -249,6 +250,33 @@ export async function gatherAnswerContext(
           })
           .join("\n");
 
+  // IXL Real-Time Diagnostic levels (adult-recorded). When present these are
+  // the most authoritative "what level is she at" answer because they come
+  // from IXL's own adaptive diagnostic.
+  const ixl = await safe<any>(() => db.ixlDiagnosticReport?.(5) ?? null, null);
+  const ixlLevels =
+    !ixl || !Array.isArray(ixl.subjects) || ixl.recordedCount === 0
+      ? "(no IXL Diagnostic levels recorded yet)"
+      : ixl.subjects
+          .filter(
+            (s: any) =>
+              s.overallGrade != null ||
+              (Array.isArray(s.strands) && s.strands.some((st: any) => st.grade != null)),
+          )
+          .map((s: any) => {
+            const strandBits = Array.isArray(s.strands)
+              ? s.strands
+                  .filter((st: any) => st.grade != null)
+                  .map((st: any) => `${st.strandLabel}: ${st.label}`)
+                  .join("; ")
+              : "";
+            return (
+              `- ${s.subjectName}: ${s.overallLabel}. ${s.summary} Next: ${s.nextStep}` +
+              (strandBits ? ` [strands — ${strandBits}]` : "")
+            );
+          })
+          .join("\n") || "(no IXL Diagnostic levels recorded yet)";
+
   return {
     profileLine,
     todayLine,
@@ -259,6 +287,7 @@ export async function gatherAnswerContext(
     recentMood,
     adventures,
     placementLevels,
+    ixlLevels,
   };
 }
 
@@ -305,6 +334,9 @@ export async function generateAgendaAnswer(
     "",
     "DIAGNOSTIC WORKING GRADE LEVEL (from the Skill Check-up; this is the authoritative 'what level is she at' answer):",
     c.placementLevels,
+    "",
+    "IXL REAL-TIME DIAGNOSTIC LEVELS (adult-recorded from ixl.com; when present, these are the most authoritative grade-level read):",
+    c.ixlLevels,
     "",
     "SKILL MASTERY:",
     c.skillProgress,

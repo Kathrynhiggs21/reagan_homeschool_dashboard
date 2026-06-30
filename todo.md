@@ -1668,3 +1668,33 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 - [x] Fed into AI agenda answer-context (agendaAnswer.ts): added placementLevels block + system-prompt rule so "what level is she at in math?" answers from the diagnostic (or says to run the Check-up if not done). No fabrication on empty.
 - [x] Tests: server/placementLevel.test.ts (14 — all placement bands, strand rollup, confidence, no-fabrication) + server/placementLevelWiring.test.ts (7 — procedure/db/AI/UI wiring).
 - [x] Verified full suite: 568 files / 5139 passed (7 skipped). TypeScript + LSP clean. Checkpoint saved.
+
+
+---
+
+## 🐛 2026-07-01 — Worksheet links STILL broken → switch to self-hosted PDF downloads (Katy: "the links still do not work. what about pulling pdf from links pre create and adding them to download")
+- [ ] Audit every worksheet/practice "Open/Download" surface (subjectFallbackActivity.ts, practiceLibrary.ts, BlockResourcesPanel, Today.tsx, GeneratedBlockHint, PrintWorksheetButton) and the storage helpers
+- [ ] Decide pipeline: generate a real worksheet PDF per practice/fallback item (server-side, stored in app storage via storagePut) and serve a direct /manus-storage download
+- [ ] Build the PDF generator (subject-colored header, name/date/title, 0.5in margins, full-page answer space, no ads) + a tRPC procedure that returns/creates the stored PDF on demand (idempotent by content hash)
+- [ ] Replace external link buttons with "Download worksheet (PDF)" pointing at the stored file; keep a clearly-labeled optional external practice link only where it actually works
+- [ ] Tests: generator output is a valid PDF, idempotent storage key, procedure contract, no known-dead URL patterns remain as the primary action
+- [ ] Verify full suite + checkpoint
+
+
+---
+
+## ⭐ 2026-07-01 — URGENT: incorporate Reagan's real IXL Diagnostic levels (Katy: "I really need to incorporate ixl reagons levels skill diagnostics asap" + IXL Quick-Start screenshot)
+- [x] Audited: built on the existing placement model (added `ixl_diagnostic` to placementResults.sourceKind) rather than duplicating; mirrors placementLevel.ts vocabulary.
+- [x] Data model: new `ixlDiagnosticLevels` table (subjectSlug math/ela, strandKey, strandLabel, ixlScore ~0-1200, gradeEquivalent, measuredAt, recordedByUserId, note) — idempotent upsert on (subject, strand). Migration 0076 applied.
+- [x] Server: `server/_lib/ixlDiagnostic.ts` (pure: score→grade map, grade-equiv parse, strand slugify, report builder, verified link consts) + db helpers (upsert/list/report) + `ixl` tRPC router (diagnosticLink public; strandOptions/list/report/record/remove protected — login-gated, Reagan has no login).
+- [x] UI: on /placement — kid-facing calm "IXL adventure" card (link straight into the Diagnostic, no test framing) + adult-only IxlLevelsView to record overall + per-strand levels for Math & Language Arts and view the parent report with measuredAt.
+- [x] Fed into AI agenda answer-context (ixlLevels block, labeled the most authoritative grade-level read; no fabrication on empty).
+- [x] Tests: server/ixlDiagnostic.test.ts (22) + server/ixlDiagnosticWiring.test.ts (10).
+- [x] Verified: full suite 570 files / 5171 passed (7 skipped). TypeScript + LSP clean. Checkpoint saved.
+
+
+### 2026-07-01 — IXL refinements from Katy (same feature)
+- [x] Scoped to GRADE 5 throughout (report currentGrade=5; grade-5 strand groupings; all labels relative to grade 5).
+- [x] Link goes straight to https://www.ixl.com/diagnostic — when signed in (saved IXL web-password autofill) it opens the arena; signed out, IXL prompts sign-in as her own account. No creds in URL.
+- [x] ANTI-ANXIETY / NON-TESTING FRAMING: kid card shows NO timers/scores/grade numbers/right-wrong; calm "adventure / show what you can do / stop anytime" copy. All level detail is parent-only (login-gated). A test asserts the framing contains no test/score/fail vocabulary.
+- [x] Verified the deep link resolves (HTTP 200) before shipping; /diagnostic/snapshot was 404 so avoided.

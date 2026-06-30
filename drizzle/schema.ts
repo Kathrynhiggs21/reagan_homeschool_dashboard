@@ -1057,8 +1057,34 @@ export const placementResults = mysqlTable("placementResults", {
   gapsNote: text("gapsNote"),
   assessedAt: timestamp("assessedAt").defaultNow().notNull(),
   assessedByUserId: int("assessedByUserId"),
-  sourceKind: mysqlEnum("sourceKind", ["self_check", "tutor", "parent", "map", "acadience", "review_library"]).default("self_check").notNull(),
+  sourceKind: mysqlEnum("sourceKind", ["self_check", "tutor", "parent", "map", "acadience", "review_library", "ixl_diagnostic"]).default("self_check").notNull(),
 });
+
+/* -------------------------------------------------------------------------- */
+/*  IXL DIAGNOSTIC LEVELS                                                      */
+/*  Reagan's real IXL Real-Time Diagnostic levels, recorded by an adult from  */
+/*  ixl.com (Diagnostic → Levels). IXL reports an overall level per subject    */
+/*  (Math, Language Arts) plus a per-strand breakdown. Levels are stored on a  */
+/*  0–800-ish IXL scale AND/OR a grade-equivalent string (e.g. "4.5").         */
+/*  Idempotent: upsert on (subjectSlug, strandKey). Reagan never sees numbers; */
+/*  parent-only. Feeds the parent level report + AI agenda answer-context.     */
+/* -------------------------------------------------------------------------- */
+export const ixlDiagnosticLevels = mysqlTable("ixlDiagnosticLevels", {
+  id: int("id").autoincrement().primaryKey(),
+  subjectSlug: varchar("subjectSlug", { length: 32 }).notNull(),    // math | ela (IXL: Math, Language Arts)
+  // "overall" for the subject headline level, else the IXL strand key (slugified strand name)
+  strandKey: varchar("strandKey", { length: 80 }).notNull().default("overall"),
+  strandLabel: varchar("strandLabel", { length: 160 }).notNull(),   // human label, e.g. "Numbers and Operations"
+  ixlScore: int("ixlScore"),                                        // IXL diagnostic level number (0–800ish); null if only grade given
+  gradeEquivalent: varchar("gradeEquivalent", { length: 16 }),      // e.g. "4.5" (IXL maps level→grade)
+  measuredAt: timestamp("measuredAt").defaultNow().notNull(),       // when IXL showed this level
+  recordedByUserId: int("recordedByUserId"),                        // adult who entered it
+  note: text("note"),                                               // optional adult note
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (t) => ({
+  uniqSubjectStrand: uniqueIndex("ixl_diag_subject_strand_uniq").on(t.subjectSlug, t.strandKey),
+}));
 
 
 /**

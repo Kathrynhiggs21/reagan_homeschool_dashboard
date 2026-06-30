@@ -36,6 +36,14 @@ import {
 } from "./_lib/agendaEditor";
 import { normalizeDayStart } from "./_lib/dayStartSanity";
 import {
+  IXL_DIAGNOSTIC_URL,
+  IXL_SIGNIN_URL,
+  IXL_DIAGNOSTIC_INFO_URL,
+  IXL_SUBJECTS,
+  IXL_STRANDS,
+  ixlSubjectName,
+} from "./_lib/ixlDiagnostic";
+import {
   groupBySubject as practiceGroupBySubject,
   findDrill as findPracticeDrill,
   computePayout as computePracticePayout,
@@ -2431,6 +2439,68 @@ export const appRouter = router({
       .mutation(({ input }) => db.resetPlacement(input?.subjectSlug)),
     /** Adult-only working-grade-level result computed from the 4/5/6 probes. */
     levelReport: protectedProcedure.query(() => db.placementLevelReport()),
+  }),
+
+  /* ---- IXL Real-Time Diagnostic levels (adult-recorded) ---- */
+  ixl: router({
+    /**
+     * The link that drops Reagan into IXL's Diagnostic arena. Public so the
+     * kid-facing "start" button can use it. When she's signed in (saved IXL
+     * web password) /diagnostic opens the arena; otherwise IXL prompts sign-in.
+     * No credentials in the URL.
+     */
+    diagnosticLink: publicProcedure.query(() => ({
+      diagnosticUrl: IXL_DIAGNOSTIC_URL,
+      signInUrl: IXL_SIGNIN_URL,
+      infoUrl: IXL_DIAGNOSTIC_INFO_URL,
+    })),
+    /** The strand options an adult can fill in, per IXL subject. */
+    strandOptions: protectedProcedure.query(() => ({
+      subjects: IXL_SUBJECTS.map((slug) => ({
+        subjectSlug: slug,
+        subjectName: ixlSubjectName(slug),
+        strands: IXL_STRANDS[slug],
+      })),
+    })),
+    /** Raw recorded rows (adult-only; any logged-in adult, Reagan has no login). */
+    list: protectedProcedure.query(() => db.listIxlDiagnosticLevels()),
+    /** Parent-facing report: working grade level per IXL subject + strand. */
+    report: protectedProcedure.query(() => db.ixlDiagnosticReport(5)),
+    /**
+     * Record (upsert) one IXL level. Adult-only. Either ixlScore or
+     * gradeEquivalent (or both) may be provided; at least one is required.
+     */
+    record: protectedProcedure
+      .input(
+        z.object({
+          subjectSlug: z.enum(["math", "ela"]),
+          strandKey: z.string().min(1).max(80).default("overall"),
+          strandLabel: z.string().min(1).max(160),
+          ixlScore: z.number().int().min(0).max(1200).nullable().optional(),
+          gradeEquivalent: z.string().max(16).nullable().optional(),
+          measuredAt: z.number().nullable().optional(), // epoch ms
+          note: z.string().max(2000).nullable().optional(),
+        }).refine(
+          (v) => v.ixlScore != null || (v.gradeEquivalent != null && v.gradeEquivalent.trim() !== ""),
+          { message: "Provide an IXL level number or a grade equivalent." },
+        ),
+      )
+      .mutation(({ input, ctx }) =>
+        db.upsertIxlDiagnosticLevel({
+          subjectSlug: input.subjectSlug,
+          strandKey: input.strandKey,
+          strandLabel: input.strandLabel,
+          ixlScore: input.ixlScore ?? null,
+          gradeEquivalent: input.gradeEquivalent ?? null,
+          measuredAt: input.measuredAt ? new Date(input.measuredAt) : null,
+          recordedByUserId: ctx.user?.id ?? null,
+          note: input.note ?? null,
+        }),
+      ),
+    /** Delete one recorded level by id (adult correction). */
+    remove: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(({ input }) => db.deleteIxlDiagnosticLevel(input.id)),
   }),
 
   /* =================== WEEKLY TOPICS =================== */

@@ -42,6 +42,7 @@ const ENCOURAGEMENTS = [
 export default function Placement() {
   const [subject, setSubject] = useState<string | null>(null);
   const [showResults, setShowResults] = useState(false);
+  const [showIxlLevels, setShowIxlLevels] = useState(false);
 
   const status = trpc.placement.status.useQuery(undefined, { refetchOnWindowFocus: false });
   const utils = trpc.useUtils();
@@ -52,6 +53,10 @@ export default function Placement() {
     return <ResultsView onBack={() => setShowResults(false)} />;
   }
 
+  if (showIxlLevels && isAdult) {
+    return <IxlLevelsView onBack={() => setShowIxlLevels(false)} />;
+  }
+
   if (!subject) {
     return (
       <SubjectPicker
@@ -59,6 +64,7 @@ export default function Placement() {
         onPick={setSubject}
         isAdult={isAdult}
         onShowResults={() => setShowResults(true)}
+        onShowIxlLevels={() => setShowIxlLevels(true)}
       />
     );
   }
@@ -203,12 +209,16 @@ function SubjectPicker({
   onPick,
   isAdult,
   onShowResults,
+  onShowIxlLevels,
 }: {
   status: StatusShape | undefined;
   onPick: (slug: string) => void;
   isAdult?: boolean;
   onShowResults?: () => void;
+  onShowIxlLevels?: () => void;
 }) {
+  const ixlLink = trpc.ixl.diagnosticLink.useQuery(undefined, { refetchOnWindowFocus: false });
+  const diagnosticUrl = (ixlLink.data as any)?.diagnosticUrl ?? "https://www.ixl.com/diagnostic";
   return (
     <div className="container py-6 max-w-3xl space-y-4">
       <div className="space-y-1">
@@ -248,6 +258,33 @@ function SubjectPicker({
         })}
       </div>
 
+      {/* IXL adventure — calm, never framed as a test. Opens IXL's adaptive
+          Diagnostic; when Reagan is signed in (saved IXL password) it drops
+          straight into the arena. No timer, no score shown to her. */}
+      <Card className="classroom-card p-4 border border-[#22c1a4]/40 bg-[#0f2b27]/30">
+        <div className="flex items-center gap-3">
+          <span className="text-3xl" aria-hidden>🧭</span>
+          <div className="flex-1 min-w-0">
+            <div className="font-display text-base">Your IXL adventure</div>
+            <div className="text-xs text-neutral-300">
+              Hop into IXL and just explore at your own pace — no clock, no
+              grades. Answer a few and Kiwi learns what you already know.
+            </div>
+          </div>
+          <a
+            href={diagnosticUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 rounded-md bg-[#22c1a4] px-3 py-2 text-sm font-semibold text-black hover:bg-[#1eab92]"
+          >
+            Let's explore →
+          </a>
+        </div>
+        <div className="mt-2 text-[11px] text-neutral-500">
+          Sign in as <span className="font-semibold text-neutral-300">Reagan</span> if it asks — your password is saved.
+        </div>
+      </Card>
+
       {isAdult && onShowResults && (
         <Card
           className="classroom-card p-4 cursor-pointer hover:scale-[1.005] transition border border-[#a78bfa]/40"
@@ -258,6 +295,22 @@ function SubjectPicker({
             <div className="flex-1">
               <div className="font-display text-base">See Reagan's working grade level</div>
               <div className="text-xs text-neutral-400">Parent view — diagnostic results per subject</div>
+            </div>
+            <span className="text-neutral-500" aria-hidden>→</span>
+          </div>
+        </Card>
+      )}
+
+      {isAdult && onShowIxlLevels && (
+        <Card
+          className="classroom-card p-4 cursor-pointer hover:scale-[1.005] transition border border-[#22c1a4]/40"
+          onClick={onShowIxlLevels}
+        >
+          <div className="flex items-center gap-3">
+            <span className="text-2xl" aria-hidden>📈</span>
+            <div className="flex-1">
+              <div className="font-display text-base">Record / view IXL Diagnostic levels</div>
+              <div className="text-xs text-neutral-400">Parent view — enter the levels IXL reports, see the grade-level read</div>
             </div>
             <span className="text-neutral-500" aria-hidden>→</span>
           </div>
@@ -443,6 +496,252 @@ function SubjectFlow({ subjectSlug, onBack }: { subjectSlug: string; onBack: () 
           <div className="text-xs text-emerald-400 pt-1">{ENCOURAGEMENTS[encouragementIdx]}</div>
         )}
       </Card>
+    </div>
+  );
+}
+
+/* ----------------------------------------------------------------------- */
+/* Adult-only IXL Diagnostic levels: record + view                         */
+/* ----------------------------------------------------------------------- */
+
+function IxlLevelsView({ onBack }: { onBack: () => void }) {
+  const utils = trpc.useUtils();
+  const opts = trpc.ixl.strandOptions.useQuery(undefined, { refetchOnWindowFocus: false });
+  const report = trpc.ixl.report.useQuery(undefined, { refetchOnWindowFocus: false });
+  const list = trpc.ixl.list.useQuery(undefined, { refetchOnWindowFocus: false });
+  const link = trpc.ixl.diagnosticLink.useQuery(undefined, { refetchOnWindowFocus: false });
+
+  const record = trpc.ixl.record.useMutation({
+    onSuccess: () => {
+      utils.ixl.report.invalidate();
+      utils.ixl.list.invalidate();
+    },
+  });
+  const remove = trpc.ixl.remove.useMutation({
+    onSuccess: () => {
+      utils.ixl.report.invalidate();
+      utils.ixl.list.invalidate();
+    },
+  });
+
+  // Entry form state
+  const [subjectSlug, setSubjectSlug] = useState<"math" | "ela">("math");
+  const [strandKey, setStrandKey] = useState<string>("overall");
+  const [score, setScore] = useState<string>("");
+  const [gradeEq, setGradeEq] = useState<string>("");
+
+  const subjects = (opts.data as any)?.subjects ?? [];
+  const currentSubject = subjects.find((s: any) => s.subjectSlug === subjectSlug);
+  const strands: { key: string; label: string }[] = currentSubject?.strands ?? [];
+  const strandLabel =
+    strands.find((s) => s.key === strandKey)?.label ??
+    (strandKey === "overall" ? "Overall" : strandKey);
+
+  const reportData = report.data as any;
+  const rows = (list.data as any[]) ?? [];
+
+  const canSave =
+    (score.trim() !== "" && !Number.isNaN(Number(score))) || gradeEq.trim() !== "";
+
+  const handleSave = () => {
+    if (!canSave || record.isPending) return;
+    record.mutate(
+      {
+        subjectSlug,
+        strandKey,
+        strandLabel,
+        ixlScore: score.trim() === "" ? null : Math.round(Number(score)),
+        gradeEquivalent: gradeEq.trim() === "" ? null : gradeEq.trim(),
+      },
+      {
+        onSuccess: () => {
+          setScore("");
+          setGradeEq("");
+        },
+      },
+    );
+  };
+
+  return (
+    <div className="container py-6 max-w-3xl space-y-4">
+      <div className="flex items-center justify-between">
+        <button onClick={onBack} className="text-sm text-neutral-400 underline">
+          ← Back to Check-up
+        </button>
+        <span className="text-xs text-neutral-500">Parent view — Reagan doesn't see this</span>
+      </div>
+
+      <div className="space-y-1">
+        <h1 className="font-display text-2xl">IXL Diagnostic levels</h1>
+        <p className="text-sm text-neutral-300">
+          IXL's Real-Time Diagnostic pinpoints Reagan's levels in Math and Language Arts.
+          Record what it reports here and the dashboard turns it into a grade-level read and
+          feeds it to Kiwi. IXL uses a 0–1000+ level number; a grade equivalent works too.
+        </p>
+      </div>
+
+      {/* Quick-start guide */}
+      <Card className="classroom-card p-4 space-y-2 border border-[#22c1a4]/30">
+        <div className="font-display text-sm">How to get her levels</div>
+        <ol className="text-xs text-neutral-300 space-y-1 list-decimal list-inside">
+          <li>Have Reagan sign in at ixl.com (her password is saved for autofill).</li>
+          <li>Click <span className="font-semibold">Diagnostic</span>, then <span className="font-semibold">Step into the Arena</span>.</li>
+          <li>She answers questions at her own pace — no timer, it just adapts.</li>
+          <li>Her Diagnostic levels (overall + by strand) appear; type them in below.</li>
+        </ol>
+        {(link.data as any)?.diagnosticUrl && (
+          <a
+            href={(link.data as any).diagnosticUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block text-xs text-[#22c1a4] underline"
+          >
+            Open IXL Diagnostic →
+          </a>
+        )}
+      </Card>
+
+      {/* Entry form */}
+      <Card className="classroom-card p-4 space-y-3">
+        <div className="font-display text-sm">Record a level</div>
+        <div className="grid sm:grid-cols-2 gap-2">
+          <label className="text-xs text-neutral-400 space-y-1">
+            <span>Subject</span>
+            <select
+              value={subjectSlug}
+              onChange={(e) => {
+                setSubjectSlug(e.target.value as "math" | "ela");
+                setStrandKey("overall");
+              }}
+              className="w-full rounded-md bg-neutral-900/40 border border-neutral-700 p-2 text-sm text-neutral-100"
+            >
+              <option value="math">Math</option>
+              <option value="ela">Language Arts</option>
+            </select>
+          </label>
+          <label className="text-xs text-neutral-400 space-y-1">
+            <span>Strand</span>
+            <select
+              value={strandKey}
+              onChange={(e) => setStrandKey(e.target.value)}
+              className="w-full rounded-md bg-neutral-900/40 border border-neutral-700 p-2 text-sm text-neutral-100"
+            >
+              {strands.map((s) => (
+                <option key={s.key} value={s.key}>{s.label}</option>
+              ))}
+            </select>
+          </label>
+          <label className="text-xs text-neutral-400 space-y-1">
+            <span>IXL level number (0–1000+)</span>
+            <input
+              inputMode="numeric"
+              value={score}
+              onChange={(e) => setScore(e.target.value)}
+              placeholder="e.g. 480"
+              className="w-full rounded-md bg-neutral-900/40 border border-neutral-700 p-2 text-sm text-neutral-100"
+            />
+          </label>
+          <label className="text-xs text-neutral-400 space-y-1">
+            <span>or Grade equivalent</span>
+            <input
+              value={gradeEq}
+              onChange={(e) => setGradeEq(e.target.value)}
+              placeholder="e.g. 4.5"
+              className="w-full rounded-md bg-neutral-900/40 border border-neutral-700 p-2 text-sm text-neutral-100"
+            />
+          </label>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button
+            onClick={handleSave}
+            disabled={!canSave || record.isPending}
+            className="bg-[#22c1a4] text-black hover:bg-[#1eab92]"
+          >
+            {record.isPending ? "Saving…" : `Save ${strandLabel}`}
+          </Button>
+          {record.isSuccess && !record.isPending && (
+            <span className="text-xs text-emerald-400">Saved.</span>
+          )}
+          {record.isError && (
+            <span className="text-xs text-rose-400">Couldn't save — check the values.</span>
+          )}
+        </div>
+      </Card>
+
+      {/* Report */}
+      {report.isLoading && <div className="animate-pulse text-sm text-neutral-400">Loading…</div>}
+
+      {!report.isLoading && reportData && reportData.recordedCount === 0 && (
+        <Card className="classroom-card p-5">
+          <div className="text-sm text-neutral-300">
+            No IXL levels recorded yet. Add Reagan's overall Math and Language Arts levels above —
+            strands are optional but give a sharper read.
+          </div>
+        </Card>
+      )}
+
+      {!report.isLoading && reportData && (reportData.subjects ?? []).map((s: any) => {
+        const label = SUBJECT_LABEL[s.subjectSlug] ?? { name: s.subjectName, emoji: "✏️" };
+        const hasAny =
+          s.overallGrade != null ||
+          (Array.isArray(s.strands) && s.strands.some((st: any) => st.grade != null));
+        if (!hasAny) return null;
+        return (
+          <Card key={s.subjectSlug} className="classroom-card p-5 space-y-3">
+            <div className="flex items-start gap-3">
+              <span className="text-3xl" aria-hidden>{label.emoji}</span>
+              <div className="flex-1 min-w-0">
+                <div className="font-display text-lg">{s.subjectName}</div>
+                <div className="text-sm text-[#22c1a4]">{s.overallLabel}</div>
+              </div>
+            </div>
+            <p className="text-sm text-neutral-300">{s.summary}</p>
+            {Array.isArray(s.strands) && s.strands.filter((st: any) => st.grade != null).length > 0 && (
+              <div className="space-y-1">
+                <div className="text-xs uppercase tracking-wider text-neutral-500">By strand</div>
+                {s.strands.filter((st: any) => st.grade != null).map((st: any) => (
+                  <div key={st.strandKey} className="flex items-center justify-between text-sm">
+                    <span className="text-neutral-300">{st.strandLabel}</span>
+                    <span className="text-neutral-400">{st.label}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="rounded-md bg-[#22c1a4]/10 border border-[#22c1a4]/30 p-2 text-sm">
+              <span className="font-semibold text-[#7fe7d4]">Next step: </span>
+              {s.nextStep}
+            </div>
+          </Card>
+        );
+      })}
+
+      {/* Raw recorded rows (so a parent can correct/delete) */}
+      {rows.length > 0 && (
+        <Card className="classroom-card p-4 space-y-2">
+          <div className="text-xs uppercase tracking-wider text-neutral-500">Recorded entries</div>
+          {rows.map((r: any) => (
+            <div key={r.id} className="flex items-center justify-between text-sm border-b border-neutral-800/60 py-1 last:border-0">
+              <span className="text-neutral-300">
+                {(SUBJECT_LABEL[r.subjectSlug]?.name ?? r.subjectSlug)} · {r.strandLabel}
+              </span>
+              <span className="flex items-center gap-3">
+                <span className="text-neutral-400">
+                  {r.ixlScore != null ? `Level ${r.ixlScore}` : ""}
+                  {r.ixlScore != null && r.gradeEquivalent ? " · " : ""}
+                  {r.gradeEquivalent ? `Grade ${r.gradeEquivalent}` : ""}
+                </span>
+                <button
+                  onClick={() => remove.mutate({ id: r.id })}
+                  disabled={remove.isPending}
+                  className="text-xs text-rose-400 underline"
+                >
+                  remove
+                </button>
+              </span>
+            </div>
+          ))}
+        </Card>
+      )}
     </div>
   );
 }

@@ -3998,6 +3998,104 @@ export async function placementLevelReport() {
 }
 
 
+/* ============================== IXL DIAGNOSTIC LEVELS ============================== */
+import { ixlDiagnosticLevels } from "../drizzle/schema";
+import {
+  buildIxlDiagnosticReport,
+  type IxlLevelRow,
+} from "./_lib/ixlDiagnostic";
+
+/**
+ * Upsert one IXL diagnostic level row, keyed on (subjectSlug, strandKey).
+ * Re-recording the same strand updates the existing row (idempotent), so the
+ * weekday "answer 10–15 questions a week" cadence just overwrites the level.
+ */
+export async function upsertIxlDiagnosticLevel(input: {
+  subjectSlug: string;
+  strandKey: string;
+  strandLabel: string;
+  ixlScore: number | null;
+  gradeEquivalent: string | null;
+  measuredAt?: Date | null;
+  recordedByUserId?: number | null;
+  note?: string | null;
+}) {
+  const db = getDb();
+  const measuredAt = input.measuredAt ?? new Date();
+  const existing: any[] = await db
+    .select({ id: ixlDiagnosticLevels.id })
+    .from(ixlDiagnosticLevels)
+    .where(
+      and(
+        eq(ixlDiagnosticLevels.subjectSlug, input.subjectSlug),
+        eq(ixlDiagnosticLevels.strandKey, input.strandKey),
+      ),
+    )
+    .limit(1);
+
+  if (existing[0]) {
+    await db
+      .update(ixlDiagnosticLevels)
+      .set({
+        strandLabel: input.strandLabel,
+        ixlScore: input.ixlScore,
+        gradeEquivalent: input.gradeEquivalent,
+        measuredAt,
+        recordedByUserId: input.recordedByUserId ?? null,
+        note: input.note ?? null,
+      })
+      .where(eq(ixlDiagnosticLevels.id, existing[0].id));
+    return { id: existing[0].id as number, updated: true };
+  }
+
+  const res: any = await db.insert(ixlDiagnosticLevels).values({
+    subjectSlug: input.subjectSlug,
+    strandKey: input.strandKey,
+    strandLabel: input.strandLabel,
+    ixlScore: input.ixlScore,
+    gradeEquivalent: input.gradeEquivalent,
+    measuredAt,
+    recordedByUserId: input.recordedByUserId ?? null,
+    note: input.note ?? null,
+  });
+  const insertId = Array.isArray(res) ? res[0]?.insertId : res?.insertId;
+  return { id: Number(insertId ?? 0), updated: false };
+}
+
+/** Delete one IXL level row by id (adult correction). */
+export async function deleteIxlDiagnosticLevel(id: number) {
+  const db = getDb();
+  await db.delete(ixlDiagnosticLevels).where(eq(ixlDiagnosticLevels.id, id));
+  return { ok: true };
+}
+
+/** List all recorded IXL level rows (raw), newest measurement first. */
+export async function listIxlDiagnosticLevels(): Promise<any[]> {
+  const db = getDb();
+  return db
+    .select()
+    .from(ixlDiagnosticLevels)
+    .orderBy(desc(ixlDiagnosticLevels.measuredAt));
+}
+
+/**
+ * Build the parent-facing IXL diagnostic report. Never throws on an empty DB —
+ * subjects with no rows come back as "not recorded yet".
+ */
+export async function ixlDiagnosticReport(currentGrade = 5) {
+  const rows = await listIxlDiagnosticLevels();
+  const mapped: IxlLevelRow[] = rows.map((r) => ({
+    subjectSlug: r.subjectSlug,
+    strandKey: r.strandKey,
+    strandLabel: r.strandLabel,
+    ixlScore: r.ixlScore ?? null,
+    gradeEquivalent: r.gradeEquivalent ?? null,
+    measuredAt: r.measuredAt,
+  }));
+  return buildIxlDiagnosticReport(mapped, currentGrade);
+}
+
+
 /* ============================== GAME-AS-REWARD (Phase 5) ============================== */
 import { gamePrefs, moodSignals, gameBreakLog } from "../drizzle/schema";
 
