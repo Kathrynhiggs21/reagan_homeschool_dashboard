@@ -49,7 +49,12 @@ export default function GeneratedBlockHint({
       className={wrapClass}
     >
       <span className="font-semibold truncate">{gen.printable}</span>
-      {gen.operable?.url ? (
+      {/* 2026-06-30 (Katy) reliability audit: only VIDEO blocks keep the
+          external CTA (the video genuinely lives off-site). For worksheet/
+          printable kinds we no longer surface a fragile external link here —
+          tapping the block opens the in-app worksheet, which offers the
+          reliable self-hosted "Print a paper copy" PDF. */}
+      {isVideo && gen.operable?.url ? (
         <Button asChild size="sm" className={btnClass}>
           <a
             href={gen.operable.url}

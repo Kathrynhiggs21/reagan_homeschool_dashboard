@@ -1714,3 +1714,12 @@ Reused the EXISTING colorful renderer (server/_lib/worksheetPdf.ts "Summer Adven
 - [x] Duplicate theme picker: removed the embedded ThemePickerStrip from the Kiwi intro card (KiwiIntroStrip.tsx); theme switching now lives only in the sidebar (SidebarThemePicker).
 - [x] Root cause fixed: CozyShell sidebar is now a slide-in drawer below `lg` (fixed off-canvas + dimmed backdrop, hamburger in the top bar, X to close, auto-closes on route change, body-scroll lock while open). At `lg`+ it stays the persistent collapsible sidebar exactly as before. Responsive class logic extracted to shared/sidebarResponsive.ts.
 - [x] Verified: floating duplicate "🎨 Theme:" strip is gone (0 in live DOM); desktop has no hamburger + no horizontal overflow at 1600px. 7 unit tests in server/sidebarResponsive.test.ts. Full suite 572 files / 5191 passing; TS + LSP clean.
+
+
+## Worksheet/practice Open-link reliability audit (2026-06-30, Katy)
+The recurring "links don't work / go to home page / no longer exist" problem comes from kid-facing fallbacks pointing at EXTERNAL sites that keep dying. Fix: lead with the self-hosted "Print a paper copy" PDF for academic subjects; keep external links only where the activity IS the link.
+- [x] Removed the second floating ThemePickerStrip (Today.tsx + import) — the real source of the duplicate/overlapping "Theme:" panel on phones (sidebar SidebarThemePicker is the single owner now).
+- [x] shared/academicSubjects.ts: isAcademicSubject() classifier (math/ela/reading/writing/science/ss/spelling = academic; art/music/outdoors/pe/snack/break/wonder = activity). Pure, null-safe, case-insensitive.
+- [x] TodaySchoolWork fallback dialog: for academic subjects the PRIMARY action is now "Print a paper copy" (generateForSubject -> /manus-storage PDF, no external site/login); external site demoted to a small secondary "Or practice online ↗". Activity subjects keep the external link primary.
+- [x] GeneratedBlockHint: external "Open ↗" CTA now shows ONLY for video kind; worksheet/printable kinds no longer surface a fragile external link (tapping the block opens the in-app reliable path).
+- [x] Tests: server/academicSubjects.test.ts (22) + existing server/worksheetLinks.test.ts (20) green. Full suite 573 files / 5213 passing, 7 skipped; TS + LSP clean.

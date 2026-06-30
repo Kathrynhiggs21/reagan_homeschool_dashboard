@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { popConfettiFromElement } from "@/lib/confetti";
 import TopicLabel from "@/components/TopicLabel";
 import { DescriptionWithLinks } from "@/components/DescriptionWithLinks";
+import { Printer } from "lucide-react";
+import { isAcademicSubject } from "@shared/academicSubjects";
 
 type Bucket = "have_to_do" | "optional" | "extra";
 
@@ -75,6 +77,24 @@ const TodaySchoolWork = forwardRef<TodaySchoolWorkHandle, { onItemsChanged?: (it
     });
     const [open, setOpen] = useState<TodayPrintableItem | null>(null);
     const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
+    // Self-hosted printable for the open subject (reliable, no external site).
+    const subjectPdf = trpc.worksheets.generateForSubject.useMutation();
+    async function handlePrintPaper(it: TodayPrintableItem) {
+      const t = toast.loading("Getting your paper copy ready\u2026");
+      try {
+        const res = await subjectPdf.mutateAsync({
+          subject: it.subjectSlug ?? undefined,
+          topic: it.title ?? undefined,
+          date: new Date().toISOString().slice(0, 10),
+        });
+        toast.dismiss(t);
+        toast.success("Your paper copy is ready \u2014 opening it now.");
+        window.open(res.url, "_blank", "noopener");
+      } catch (e: any) {
+        toast.dismiss(t);
+        toast.error(e?.message ?? "Couldn't make the paper copy.");
+      }
+    }
     const [grading, setGrading] = useState(false);
     const [started, setStarted] = useState(false);
     const [notes, setNotes] = useState("");
@@ -302,7 +322,29 @@ const TodaySchoolWork = forwardRef<TodaySchoolWorkHandle, { onItemsChanged?: (it
 
               <div className="space-y-3 text-sm">
                 {open.description && <DescriptionWithLinks text={open.description} />}
-              {open.sourceUrl ? (
+              {isAcademicSubject(open.subjectSlug) ? (
+                <>
+                  {/* Reliable, self-hosted, no external site / no login. */}
+                  <Button
+                    onClick={() => handlePrintPaper(open)}
+                    disabled={subjectPdf.isPending}
+                    className="flex items-center justify-center gap-2 w-full px-4 py-3 h-auto bg-amber-400 hover:bg-amber-300 text-amber-950 rounded-xl font-extrabold text-base shadow-md"
+                  >
+                    <Printer className="h-4 w-4" />
+                    {subjectPdf.isPending ? "Getting it ready…" : "Print a paper copy"}
+                  </Button>
+                  {open.sourceUrl ? (
+                    <a
+                      href={open.sourceUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="block text-center text-xs underline opacity-70 hover:opacity-100"
+                    >
+                      Or practice online ↗
+                    </a>
+                  ) : null}
+                </>
+              ) : open.sourceUrl ? (
                 <a
                   href={open.sourceUrl}
                   target="_blank"

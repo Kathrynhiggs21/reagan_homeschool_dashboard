@@ -19,7 +19,6 @@ import AnswerKeyDialog from "@/components/AnswerKeyDialog";
 import TurnInDialog from "@/components/TurnInDialog";
 import { subjectTint, tintCardStyle, tintInkStyle, tintPillStyle, rainbowCardStyle, rainbowPillStyle, rainbowInkStyle, rainbowStop } from "@/lib/subjectColors";
 import { celebrateKiwi } from "@/components/KiwiPerch";
-import ThemePickerStrip from "@/components/ThemePickerStrip";
 import KiwiIntroStrip from "@/components/KiwiIntroStrip";
 import IntroTour from "@/components/IntroTour";
 import ConfidencePrinciplesStrip from "@/components/ConfidencePrinciplesStrip";
@@ -360,8 +359,9 @@ export default function Today() {
 
   return (
     <div className="space-y-4">
-      {/* Theme picker strip — 4 themes Reagan can pick from */}
-      <ThemePickerStrip />
+      {/* Theme switching lives in the sidebar (SidebarThemePicker); the
+          duplicate in-page strip was removed 2026-06-30 to stop it overlapping
+          the page content on phones. */}
       {/* v3.32 — Packet-audit status chip: at-a-glance "today's packet has
           work in every block" (green) vs "N blocks need content" (amber,
           with titles for unlocked adults). */}
