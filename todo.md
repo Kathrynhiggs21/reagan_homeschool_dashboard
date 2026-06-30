@@ -1708,3 +1708,9 @@ Reused the EXISTING colorful renderer (server/_lib/worksheetPdf.ts "Summer Adven
 - [x] WorksheetRunner.tsx: added a reliable "Print a paper copy" button (calls generateForSubject, opens the self-hosted colorful PDF in a new tab) alongside the existing Download PDF. Anxiety-safe copy; no external-site dependency.
 - [x] Tests: server/subjectWorksheetPdf.test.ts (13) — subject normalization, topic slugging, non-test titles, cache hit/miss, forceRefresh, friendly-title override, real PDF render smoke. Patched 3 db-mock test files (dayNotesAndFinder/personaSplit/tutorCoPilot) to expose the 2 new db exports.
 - [x] Full suite green (571 files / 5184 passed, 7 skipped); TypeScript + LSP clean.
+
+
+## BUG (2026-06-30) — Overlapping sidebar/content on phone
+- [x] Duplicate theme picker: removed the embedded ThemePickerStrip from the Kiwi intro card (KiwiIntroStrip.tsx); theme switching now lives only in the sidebar (SidebarThemePicker).
+- [x] Root cause fixed: CozyShell sidebar is now a slide-in drawer below `lg` (fixed off-canvas + dimmed backdrop, hamburger in the top bar, X to close, auto-closes on route change, body-scroll lock while open). At `lg`+ it stays the persistent collapsible sidebar exactly as before. Responsive class logic extracted to shared/sidebarResponsive.ts.
+- [x] Verified: floating duplicate "🎨 Theme:" strip is gone (0 in live DOM); desktop has no hamburger + no horizontal overflow at 1600px. 7 unit tests in server/sidebarResponsive.test.ts. Full suite 572 files / 5191 passing; TS + LSP clean.

@@ -4,13 +4,14 @@ import { useKiwi } from "@/contexts/KiwiContext";
 import { useAdultLock } from "@/contexts/AdultLockContext";
 import SummerQuickToggle from "@/components/SummerQuickToggle";
 import { Button } from "@/components/ui/button";
-import { Lock, Unlock, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Lock, Unlock, PanelLeftClose, PanelLeftOpen, Menu, X } from "lucide-react";
 import { daysUntilSummerBreak } from "@/lib/summerCountdown";
 import WeatherWidget from "./WeatherWidget";
 import NotificationBell from "./NotificationBell";
 import { useTutorMode } from "@/hooks/useTutorMode";
 import { GraduationCap } from "lucide-react";
 import SidebarThemePicker from "./SidebarThemePicker";
+import { asideResponsiveClass, showMobileBackdrop } from "@shared/sidebarResponsive";
 
 /**
  * Sidebar navigation.
@@ -73,6 +74,23 @@ export default function CozyShell({ children }: { children: ReactNode }) {
     try { localStorage.setItem(COLLAPSE_KEY, collapsed ? "1" : "0"); } catch { /* ok */ }
   }, [collapsed]);
 
+  // Mobile drawer (below `lg`). The sidebar is hidden off-canvas on phones and
+  // slides in over a dimmed backdrop when the hamburger is tapped. On desktop
+  // (`lg`+) the sidebar is always in-flow and this state is ignored.
+  // 2026-06-30 (Katy): fixes the sidebar overlapping the main content on phone.
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  // Close the drawer whenever the route changes (tapping a nav link navigates).
+  useEffect(() => { setDrawerOpen(false); }, [loc]);
+  // Lock body scroll while the mobile drawer is open.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (drawerOpen) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = prev; };
+    }
+  }, [drawerOpen]);
+
   const TUTOR_FOCUS_PATHS = new Set(["/curriculum", "/agenda-editor", "/notes"]);
   const adultNavFiltered = tutorModeOn
     ? ADULT_NAV.filter((n) => TUTOR_FOCUS_PATHS.has(n.to))
@@ -99,11 +117,29 @@ export default function CozyShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen flex">
-      <aside
-        className={`${collapsed ? "w-16" : "w-60"} shrink-0 bg-sidebar border-r border-sidebar-border flex flex-col h-screen sticky top-0 no-print transition-[width] duration-200`}
-      >
-        {/* Collapse toggle */}
-        <div className={`flex items-center ${collapsed ? "justify-center" : "justify-end"} px-2 pt-2`}>
+      {/* Mobile backdrop — only present below `lg` while the drawer is open. */}
+      {showMobileBackdrop(drawerOpen) && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden no-print"
+          aria-hidden
+          onClick={() => setDrawerOpen(false)}
+        />
+      )}
+      <aside className={asideResponsiveClass(collapsed, drawerOpen)}>
+        {/* Close button — mobile drawer only. */}
+        <div className="flex items-center justify-end px-2 pt-2 lg:hidden">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-sidebar-foreground"
+            onClick={() => setDrawerOpen(false)}
+            aria-label="Close menu"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+        {/* Collapse toggle — desktop only (mobile uses the drawer X above). */}
+        <div className={`hidden lg:flex items-center ${collapsed ? "justify-center" : "justify-end"} px-2 pt-2`}>
           <Button
             variant="ghost"
             size="icon"
@@ -233,9 +269,21 @@ export default function CozyShell({ children }: { children: ReactNode }) {
       </aside>
 
       <main className="flex-1 min-w-0 relative">
-        <div className="max-w-6xl mx-auto px-6 pt-4 pb-1 flex justify-end items-center gap-3 no-print">
-          {unlocked && <NotificationBell />}
-          <WeatherWidget />
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-1 flex justify-between items-center gap-3 no-print">
+          {/* Hamburger — opens the sidebar drawer on phones/tablets. */}
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-9 w-9 lg:hidden bg-sidebar text-sidebar-foreground border-sidebar-border shrink-0"
+            onClick={() => setDrawerOpen(true)}
+            aria-label="Open menu"
+          >
+            <Menu className="w-5 h-5" />
+          </Button>
+          <div className="flex items-center gap-3 ml-auto">
+            {unlocked && <NotificationBell />}
+            <WeatherWidget />
+          </div>
         </div>
         <div className="max-w-6xl mx-auto px-6 pb-6">{children}</div>
       </main>
