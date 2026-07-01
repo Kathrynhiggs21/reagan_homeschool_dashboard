@@ -1796,3 +1796,18 @@ Direction: ONE clear 3D liquid-glass theme over realistic nature photos with the
 - [x] Large animated transparent budgie present across the scene as a soft overlay (BudgieOverlay.tsx) — lower-left gutter, z-index:1 behind content, pointer-events:none, float animation, reduced-motion safe
 - [x] Blurred pop-up glass surfaces / overlapping depth on key pages; desktop-first (title bubbles + existing glass panes)
 - [x] Run full suite green (575 files / 5231 tests); checkpoint; deliver — guard test glassLayoutRefine.test.ts (9 scenarios)
+
+
+---
+
+## 🌊 Glass Welcome Landing (2026-07-01, matches reference mockup 1000410834.png)
+
+- [x] Generate soft watery bokeh background + flying two-budgie transparent cutout assets
+- [x] Rebuild /welcome as glass landing: welcome header ("Welcome to / Reagan School 💙" + "Ride the wave of learning to new adventures."), Parent Access glass pill (top-right), flying two-budgies (top-right), five glossy 3D glass orbs in a WAVE ARC (Today / Schedule / Kiwi Chat / Adventure / Rewards)
+- [x] NO hearts bar (explicitly removed per Katy)
+- [x] Kiwi = just the animated bird bottom-right, no surrounding UI clutter (suppress ResourceDock / MakeRequestPill / QuickAddFab / Notebook + OrbDock + top-right controls on /welcome)
+- [x] Pages sized per-page with vertical scroll where needed (welcome uses its own bokeh bg + min-h-screen, scrolls if short viewport)
+- [x] Adaptive scrim: background darkens gently behind text on glass for readability
+- [x] Glass surfaces rounded, soft-shadowed, animated (reuse .glass-orb / .glass-panel / .title-bubble; orbs pop-in + bob)
+- [x] /welcome routes to new landing; onboardingCompleted marked on entry so returning users land on Today (existing OnboardingGuard preserved)
+- [x] Guard with a landing contract test (server/welcomeLandingGlass.test.ts, 10 tests); full suite green (5242 passed / 5 skipped)

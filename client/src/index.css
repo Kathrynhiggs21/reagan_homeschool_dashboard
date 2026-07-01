@@ -1624,3 +1624,197 @@ html[data-rtheme="glass"] .glass-dialog,
   .budgie-overlay { animation: none; }
   [data-anim="pop"] { animation: none; }
 }
+
+
+/* ====================================================================== */
+/*  GLASS WELCOME LANDING (2026-07-01) — matches reference mockup.        */
+/*  Soft watery bokeh bg + adaptive scrim, flying budgies top-right,      */
+/*  welcome header, Parent Access pill, five glass orbs in a wave arc.    */
+/* ====================================================================== */
+
+/* Full-bleed wrapper: the welcome landing bypasses CozyShell's padded,     */
+/* max-width column so the bokeh reaches every edge and there is no dock    */
+/* safe-padding gap.                                                        */
+.welcome-shell-wrap { width: 100%; }
+.welcome-landing {
+  position: relative;
+  min-height: 100vh;               /* sized to viewport; scrolls if shorter */
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Full-bleed watery bokeh photo. */
+.welcome-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center 38%;
+  background-repeat: no-repeat;
+  z-index: 0;
+}
+/* Adaptive readability scrim — gently darkens the upper-left (behind the  */
+/* welcome text) and the orb band so white text on glass always reads,     */
+/* while the airy center stays bright and watery.                          */
+.welcome-scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 90% at 12% 12%, rgba(10,26,44,0.42) 0%, rgba(10,26,44,0.16) 40%, rgba(10,26,44,0) 68%),
+    linear-gradient(180deg, rgba(8,22,40,0.10) 0%, rgba(8,22,40,0) 46%, rgba(8,22,40,0.30) 100%);
+}
+
+/* Two budgies in flight, upper-right — transparent, softly shadowed. */
+.welcome-budgies {
+  position: absolute;
+  top: 4%;
+  right: 3%;
+  width: clamp(200px, 34vw, 460px);
+  height: auto;
+  z-index: 3;
+  pointer-events: none;
+  user-select: none;
+  filter: drop-shadow(0 18px 28px rgba(6, 16, 30, 0.34));
+  animation: welcome-budgies-drift 8.5s ease-in-out infinite;
+}
+@keyframes welcome-budgies-drift {
+  0%   { transform: translate(0, 0) rotate(-1deg); }
+  50%  { transform: translate(-10px, 12px) rotate(1.5deg); }
+  100% { transform: translate(0, 0) rotate(-1deg); }
+}
+
+/* Content layer above bg + scrim. */
+.welcome-inner {
+  position: relative;
+  z-index: 4;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(1.25rem, 3vw, 2.75rem);
+  gap: clamp(1rem, 4vh, 2.5rem);
+}
+
+.welcome-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.welcome-eyebrow {
+  font-size: clamp(1rem, 2.2vw, 1.4rem);
+  font-weight: 600;
+  color: #eaf4ff;
+  text-shadow: 0 1px 10px rgba(6, 16, 30, 0.45);
+  margin: 0;
+}
+.welcome-title {
+  font-size: clamp(2rem, 6vw, 3.6rem);
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.01em;
+  color: #ffffff !important;
+  text-shadow: 0 2px 18px rgba(6, 16, 30, 0.5) !important;
+  margin: 0.1rem 0 0.35rem;
+}
+.welcome-heart { font-size: 0.72em; vertical-align: baseline; }
+.welcome-subtitle {
+  font-size: clamp(0.95rem, 2vw, 1.2rem);
+  font-weight: 500;
+  color: rgba(238, 246, 255, 0.92);
+  text-shadow: 0 1px 10px rgba(6, 16, 30, 0.42);
+  max-width: 22ch;
+  margin: 0;
+}
+
+.welcome-parent { flex-shrink: 0; }
+
+/* Wave-arc row of orbs — centered in the remaining vertical space. */
+.welcome-orbs {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1.1rem, 3.6vw, 2.8rem);
+  flex-wrap: nowrap;
+  padding: 2rem 0 3rem;
+  /* let short viewports scroll rather than crop the arc */
+  min-height: min-content;
+}
+
+/* Each orb is a large glossy jewel with its label + icon inside. */
+.welcome-orb {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: clamp(88px, 15.5vw, 158px);
+  height: clamp(88px, 15.5vw, 158px);
+  flex-direction: column;
+  gap: 3px;
+  position: relative;
+}
+.welcome-orb-label {
+  font-size: clamp(0.74rem, 1.5vw, 1.02rem);
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 1px 4px rgba(6, 16, 30, 0.65);
+  line-height: 1.05;
+  text-align: center;
+  padding: 0 6px;
+  order: 2;
+}
+.welcome-orb-icon {
+  width: clamp(20px, 2.8vw, 30px);
+  height: clamp(20px, 2.8vw, 30px);
+  opacity: 0.95;
+  order: 1;
+}
+
+/* One-by-one pop-in for the orbs (respects reduced-motion below). */
+[data-anim="orb-pop"] {
+  animation: welcome-orb-pop 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes welcome-orb-pop {
+  0%   { opacity: 0; transform: translateY(16px) scale(0.82); filter: blur(6px); }
+  60%  { opacity: 1; transform: translateY(-3px) scale(1.04); filter: blur(0); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+/* Gentle continuous bob so the arc feels alive (layered under the wave dy). */
+.welcome-orb {
+  animation: welcome-orb-pop 620ms cubic-bezier(0.22,1,0.36,1) both,
+             welcome-orb-bob 5.5s ease-in-out infinite;
+}
+@keyframes welcome-orb-bob {
+  0%   { box-shadow:
+           0 2px 4px rgba(255,255,255,0.65) inset,
+           0 -8px 16px rgba(0,0,0,0.14) inset,
+           0 12px 24px rgba(4,10,24,0.34),
+           0 22px 38px rgba(4,10,24,0.26); }
+  50%  { box-shadow:
+           0 2px 4px rgba(255,255,255,0.7) inset,
+           0 -8px 16px rgba(0,0,0,0.14) inset,
+           0 18px 32px rgba(4,10,24,0.38),
+           0 30px 52px rgba(4,10,24,0.30); }
+  100% { box-shadow:
+           0 2px 4px rgba(255,255,255,0.65) inset,
+           0 -8px 16px rgba(0,0,0,0.14) inset,
+           0 12px 24px rgba(4,10,24,0.34),
+           0 22px 38px rgba(4,10,24,0.26); }
+}
+
+/* Stack the header on very narrow screens; let the orbs wrap + scroll. */
+@media (max-width: 560px) {
+  .welcome-header { flex-direction: column; }
+  .welcome-parent { align-self: flex-start; }
+  .welcome-orbs { flex-wrap: wrap; gap: 1rem 1.2rem; }
+  .welcome-orb { transform: none !important; }
+  .welcome-budgies { top: 1%; right: 0; width: clamp(150px, 46vw, 240px); opacity: 0.92; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-budgies { animation: none; }
+  .welcome-orb { animation: none; }
+  [data-anim="orb-pop"] { animation: none; }
+}

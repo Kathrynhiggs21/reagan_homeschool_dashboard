@@ -26,6 +26,7 @@ import Settings from "@/pages/Settings";
 import ReportCardFifth from "@/pages/ReportCardFifth";
 import ApprovalsPage from "@/pages/Approvals";
 import Onboarding from "./pages/Onboarding";
+import WelcomeLanding from "./pages/WelcomeLanding";
 import TakeNotes from "./pages/TakeNotes";
 import Schedule from "./pages/Schedule";
 import Kiwi from "./pages/Kiwi";
@@ -57,12 +58,17 @@ function OnboardingGuard() {
 
 function Router() {
   const ui = useKiwi();
+  const [loc] = useLocation();
+  // The welcome landing is a pristine glass surface: only Kiwi (bottom-right,
+  // rendered globally) stays. Suppress the floating tool docks / pills here.
+  const onWelcome = loc === "/welcome";
   return (
     <CozyShell>
       <OnboardingGuard />
       <Switch>
         {/* === KID ROUTES (always reachable) === */}
-        <Route path="/welcome" component={Onboarding} />
+        <Route path="/welcome" component={WelcomeLanding} />
+        <Route path="/setup" component={Onboarding} />
         <Route path="/" component={Today} />
         <Route path="/today" component={Today} />
         <Route path="/schedule" component={Schedule} />
@@ -141,16 +147,17 @@ function Router() {
         <Route path="/404" component={NotFound} />
         <Route component={NotFound} />
       </Switch>
-      <ResourceDock />
+      {!onWelcome && <ResourceDock />}
       {/* Single Kiwi mount — KiwiCompanion now renders the roaming bird and the
-          quiet listener internally (2026-06-17 merge). */}
+          quiet listener internally (2026-06-17 merge). Kiwi stays on every
+          page, including the welcome landing. */}
       <KiwiCompanion />
-      {ui.showQuickAddFab && <QuickAddFab />}
+      {!onWelcome && ui.showQuickAddFab && <QuickAddFab />}
       {/* Global Notebook drawer — only renders when adult lock is unlocked
           AND the per-object toggle in Settings is on. */}
-      {ui.showNotebookDrawer && <NotebookDrawer />}
+      {!onWelcome && ui.showNotebookDrawer && <NotebookDrawer />}
       {/* Push 54 — global Reagan request pill (kid-only; no mic, no voice). */}
-      <MakeRequestPill />
+      {!onWelcome && <MakeRequestPill />}
     </CozyShell>
   );
 }
