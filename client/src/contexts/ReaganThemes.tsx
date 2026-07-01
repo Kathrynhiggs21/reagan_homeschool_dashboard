@@ -22,7 +22,7 @@ export type ThemeId = "chalkboard" | "white" | "glass" | "sunshine" | "galaxy";
 export const THEMES: Record<ThemeId, { label: string; emoji: string; description: string; swatch: string }> = {
   chalkboard: { label: "Black Chalkboard", emoji: "🖤", description: "Black slate with bright chalk. Calm & classic.", swatch: "#1f2421" },
   white:      { label: "White Basic",      emoji: "🤍", description: "Clean white classroom, same subject colors.",  swatch: "#f7f7f4" },
-  glass:      { label: "Glassmorphism",    emoji: "🔮", description: "Frosted glass panels on a glowing night gradient.", swatch: "linear-gradient(135deg,#0b1020,#6366f1,#38bdf8)" },
+  glass:      { label: "Glassmorphism",    emoji: "🔮", description: "Clear 3D glass over a real forest with two budgies. Recommended.", swatch: "linear-gradient(135deg,#7dd3fc,#a5b4fc,#fcd34d)" },
   sunshine:   { label: "Bright & Colorful", emoji: "🌈", description: "Vivid candy cards with soft pop-out shadows.",  swatch: "linear-gradient(135deg,#60a5fa,#f472b6,#34d399)" },
   galaxy:     { label: "Galaxy Glow",      emoji: "🌌", description: "Deep space with soft neon aurora glow.",        swatch: "linear-gradient(135deg,#312e81,#7c3aed,#22d3ee)" },
 };
@@ -30,11 +30,18 @@ export const THEMES: Record<ThemeId, { label: string; emoji: string; description
 // Order shown in the picker.
 export const THEME_ORDER: ThemeId[] = ["chalkboard", "white", "glass", "sunshine", "galaxy"];
 
+// 2026-07-01 (Katy canonical direction): the redesigned "glass" theme (clear 3D
+// liquid glass over photorealistic nature) is the recommended, default look for
+// first-time visitors. A new device with no saved pref now boots into glass
+// instead of the older chalkboard slate. Anyone can still switch in the sidebar.
+export const DEFAULT_THEME: ThemeId = "glass";
+export const RECOMMENDED_THEME: ThemeId = "glass";
+
 // 2026-06-17 (Katy): "White Basic" is moved out of the main picker flow. The
 // primary themes show as pills up front; secondary themes (just White Basic
 // for now) live behind a small "More" side button so the plain white look
 // stays available without cluttering the main row.
-export const THEME_PRIMARY: ThemeId[] = ["chalkboard", "glass", "sunshine", "galaxy"];
+export const THEME_PRIMARY: ThemeId[] = ["glass", "chalkboard", "sunshine", "galaxy"];
 export const THEME_SECONDARY: ThemeId[] = ["white"];
 
 // Migrate legacy theme ids (pre-2026-06-17) to the new catalog so saved prefs
@@ -52,14 +59,14 @@ function normalize(v: string | null | undefined): ThemeId | null {
 }
 
 type Ctx = { themeId: ThemeId; setThemeId: (t: ThemeId) => void };
-const ThemeCtx = createContext<Ctx>({ themeId: "chalkboard", setThemeId: () => {} });
+const ThemeCtx = createContext<Ctx>({ themeId: DEFAULT_THEME, setThemeId: () => {} });
 
 const STORAGE_KEY = "reagan_theme_v1";
 
 export function ReaganThemeProvider({ children }: { children: ReactNode }) {
   const [themeId, setThemeIdState] = useState<ThemeId>(() => {
-    if (typeof window === "undefined") return "chalkboard";
-    return normalize(localStorage.getItem(STORAGE_KEY)) ?? "chalkboard";
+    if (typeof window === "undefined") return DEFAULT_THEME;
+    return normalize(localStorage.getItem(STORAGE_KEY)) ?? DEFAULT_THEME;
   });
 
   // Hydrate from server pref (cross-device). Local storage is the fast fallback.

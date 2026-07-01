@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { THEMES, THEME_PRIMARY, THEME_SECONDARY, useReaganTheme, type ThemeId } from "@/contexts/ReaganThemes";
+import { THEMES, THEME_PRIMARY, THEME_SECONDARY, RECOMMENDED_THEME, useReaganTheme, type ThemeId } from "@/contexts/ReaganThemes";
 
 /**
  * SidebarThemePicker — pinned at the bottom-left of the sidebar so Reagan can
@@ -35,7 +35,7 @@ export default function SidebarThemePicker({ collapsed = false }: { collapsed?: 
             onMouseLeave={() => setOpenFlyout(false)}
           >
             {[...THEME_PRIMARY, ...THEME_SECONDARY].map((id) => (
-              <ThemeRow key={id} id={id} active={id === themeId} onPick={() => { setThemeId(id); setOpenFlyout(false); }} />
+              <ThemeRow key={id} id={id} active={id === themeId} recommended={id === RECOMMENDED_THEME} onPick={() => { setThemeId(id); setOpenFlyout(false); }} />
             ))}
           </div>
         )}
@@ -50,14 +50,14 @@ export default function SidebarThemePicker({ collapsed = false }: { collapsed?: 
       </div>
       <div className="space-y-0.5">
         {THEME_PRIMARY.map((id) => (
-          <ThemeRow key={id} id={id} active={id === themeId} onPick={() => setThemeId(id)} />
+          <ThemeRow key={id} id={id} active={id === themeId} recommended={id === RECOMMENDED_THEME} onPick={() => setThemeId(id)} />
         ))}
       </div>
       {THEME_SECONDARY.length > 0 && (
         <div className="space-y-0.5 pt-0.5 mt-0.5 border-t border-sidebar-border/40">
           <div className="px-1 text-[9px] uppercase tracking-wider font-semibold text-muted-foreground">More</div>
           {THEME_SECONDARY.map((id) => (
-            <ThemeRow key={id} id={id} active={id === themeId} onPick={() => setThemeId(id)} />
+            <ThemeRow key={id} id={id} active={id === themeId} recommended={id === RECOMMENDED_THEME} onPick={() => setThemeId(id)} />
           ))}
         </div>
       )}
@@ -65,12 +65,13 @@ export default function SidebarThemePicker({ collapsed = false }: { collapsed?: 
   );
 }
 
-function ThemeRow({ id, active, onPick }: { id: ThemeId; active: boolean; onPick: () => void }) {
+function ThemeRow({ id, active, recommended = false, onPick }: { id: ThemeId; active: boolean; recommended?: boolean; onPick: () => void }) {
   const t = THEMES[id];
   return (
     <button
       type="button"
       aria-pressed={active}
+      title={recommended ? `${t.label} — recommended look` : t.label}
       onClick={onPick}
       className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] transition ${
         active ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold" : "hover:bg-sidebar-accent text-sidebar-foreground"
@@ -82,6 +83,14 @@ function ThemeRow({ id, active, onPick }: { id: ThemeId; active: boolean; onPick
         aria-hidden
       />
       <span className="flex-1 text-left truncate">{t.label}</span>
+      {recommended && (
+        <span
+          className="shrink-0 rounded-full px-1.5 py-[1px] text-[8px] font-bold uppercase tracking-wide bg-sky-400/25 text-sky-100 border border-sky-200/40"
+          aria-label="Recommended"
+        >
+          Rec
+        </span>
+      )}
       {active && <span className="text-[10px]">✓</span>}
     </button>
   );

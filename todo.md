@@ -1735,3 +1735,13 @@ The recurring "links don't work / go to home page / no longer exist" problem com
 - [x] Test: server/glassThemeDesign.test.ts (9) pins the design contract (bg asset, translucent fill+blur, beveled rim+specular, drop shadow, gem-pill active glow, slim top bar, heading legibility scrim, dark-text-utility override).
 - [x] Full suite green (574 files / 5222 passing, 7 skipped); TypeScript + LSP clean.
 - Note: could not visually verify in the sandbox browser (preview hit the Manus OAuth login wall). Verified via clean build + HMR apply + CSS contract test. Katy should confirm the look on her logged-in device.
+
+
+## Glass theme = default/recommended + full sweep (2026-07-01, "keep fixing everything")
+- [x] Made glass the DEFAULT theme for first-time visitors: DEFAULT_THEME/RECOMMENDED_THEME = "glass" in ReaganThemes; context default value, SSR branch, and localStorage-fallback all use it (removed the hardcoded chalkboard fallbacks). Server ui.theme is NULL, so unsaved devices now land on glass.
+- [x] Added an early theme bootstrap in main.tsx so the FIRST paint sets data-rtheme to the saved pref (or glass) before React mounts — no flash of the wrong theme; honors a valid saved non-glass pick and only falls back to glass when unsaved/invalid.
+- [x] Marked "Glassmorphism" as recommended in the sidebar picker (sky "Rec" badge + title tooltip, aria-label=Recommended), moved glass to the front of THEME_PRIMARY, and refreshed its label description + swatch to the new nature-glass palette.
+- [x] Verified the glass mobile background variant IS used below 640px (dedicated @media block references glass-bg-forest-mobile .webp; both desktop + mobile assets return HTTP 200; birds anchored lower-left with clear content space).
+- [x] Confirmed the mobile slide-in drawer reads as glass: the drawer is the same <aside> element, so the glass `aside` rule (translucent blur pane + light rim) applies on mobile; bg-sidebar is overridden by the theme fill; dimmed backdrop sits beneath.
+- [x] Added server/themeDefault.test.ts (7) pinning the glass-default/recommended contract; glassThemeDesign test still green.
+- [x] Full suite green (575 files / 5229 passing, 7 skipped); TS + LSP clean.
