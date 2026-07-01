@@ -9,20 +9,14 @@ import { getLoginUrl } from "./const";
 import { ReaganThemeProvider } from "./contexts/ReaganThemes";
 import "./index.css";
 
-// Early theme bootstrap (runs before React mounts) so the very first paint uses
-// the saved theme, or the glass default for first-time visitors — avoiding a
-// flash of the wrong theme. Mirrors normalize()/DEFAULT_THEME in ReaganThemes.
+// Early theme bootstrap (runs before React mounts). There is now ONE canonical
+// theme — clear 3D liquid glass — so the first paint always sets it, avoiding a
+// flash of unstyled content. (2026-07-01, Katy: all other themes removed.)
 try {
   if (typeof document !== "undefined") {
-    const LEGACY: Record<string, string> = { starry: "galaxy", cream: "white", notebook: "white" };
-    const VALID = new Set(["chalkboard", "white", "glass", "sunshine", "galaxy"]);
-    const raw = localStorage.getItem("reagan_theme_v1");
-    const resolved = raw && VALID.has(raw) ? raw : raw && LEGACY[raw] ? LEGACY[raw] : "glass";
     const root = document.documentElement;
-    root.setAttribute("data-rtheme", resolved);
-    if (resolved === "chalkboard" || resolved === "glass" || resolved === "galaxy") {
-      root.classList.add("dark");
-    }
+    root.setAttribute("data-rtheme", "glass");
+    root.classList.add("dark");
   }
 } catch {
   /* non-fatal: ReaganThemeProvider will set the attribute on mount */

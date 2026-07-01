@@ -10,7 +10,7 @@ import { resolve } from "node:path";
 const ROOT = resolve(__dirname, "..");
 const SCHEDULE = resolve(ROOT, "client/src/pages/Schedule.tsx");
 const APP = resolve(ROOT, "client/src/App.tsx");
-const COZY = resolve(ROOT, "client/src/components/CozyShell.tsx");
+const DOCK = resolve(ROOT, "client/src/components/OrbDock.tsx");
 
 function read(p: string) {
   return readFileSync(p, "utf-8");
@@ -64,9 +64,9 @@ describe("v2.42 — kid /schedule weekly view", () => {
     expect(src).toMatch(/path="\/schedule"/);
   });
 
-  it("KID_NAV in CozyShell still has a /schedule entry (sidebar reachability)", () => {
-    const src = read(COZY);
-    expect(src).toMatch(/KID_NAV[\s\S]{0,2000}\/schedule/);
+  it("OrbDock still has a /schedule orb (nav reachability)", () => {
+    const src = read(DOCK);
+    expect(src).toMatch(/KID_ORBS[\s\S]{0,2000}\/schedule/);
   });
 
   it("forward-plan card stays adult-only (gated by useAdultLock unlocked)", () => {

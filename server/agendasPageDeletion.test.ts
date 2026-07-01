@@ -16,7 +16,7 @@ import * as path from "node:path";
 
 const CLIENT_DIR = path.resolve(__dirname, "../client/src");
 const APP_PATH = path.join(CLIENT_DIR, "App.tsx");
-const COZY_SHELL_PATH = path.join(CLIENT_DIR, "components/CozyShell.tsx");
+const ORB_DOCK_PATH = path.join(CLIENT_DIR, "components/OrbDock.tsx");
 
 describe("v2.40 — /agendas page deletion + sidebar entry removal", () => {
   it("App.tsx redirects /agendas → /agenda-editor (legacy bookmarks land on the editor)", () => {
@@ -40,28 +40,28 @@ describe("v2.40 — /agendas page deletion + sidebar entry removal", () => {
     expect(src).not.toMatch(/import\s+.*DailyAgendasPage/);
   });
 
-  it("CozyShell ADULT_NAV contains zero /agendas entry", () => {
-    const src = fs.readFileSync(COZY_SHELL_PATH, "utf8");
+  it("OrbDock ADULT_ORBS contains zero /agendas entry", () => {
+    const src = fs.readFileSync(ORB_DOCK_PATH, "utf8");
     const adultNavMatch = src.match(
-      /const ADULT_NAV: NavItem\[\] = \[([\s\S]*?)\];/,
+      /const ADULT_ORBS: Orb\[\] = \[([\s\S]*?)\];/,
     );
     expect(adultNavMatch).toBeTruthy();
     const block = adultNavMatch![1];
     expect(block).not.toMatch(/to: ["']\/agendas["']/);
-    // Sanity: the four canonical adult entries are present.
+    // Sanity: the canonical adult entries are present.
     expect(block).toMatch(/to: ["']\/curriculum["']/);
     expect(block).toMatch(/to: ["']\/agenda-editor["']/);
     expect(block).toMatch(/to: ["']\/analytics["']/);
     expect(block).toMatch(/to: ["']\/settings["']/);
   });
 
-  it("CozyShell KID_NAV preserves /schedule (the kid-side calendar) — distinct from the deleted /agendas adult page", () => {
-    const src = fs.readFileSync(COZY_SHELL_PATH, "utf8");
-    const kidNavMatch = src.match(/const KID_NAV: NavItem\[\] = \[([\s\S]*?)\];/);
+  it("OrbDock KID_ORBS preserves /schedule (the kid-side calendar) — distinct from the deleted /agendas adult page", () => {
+    const src = fs.readFileSync(ORB_DOCK_PATH, "utf8");
+    const kidNavMatch = src.match(/const KID_ORBS: Orb\[\] = \[([\s\S]*?)\];/);
     expect(kidNavMatch).toBeTruthy();
     const block = kidNavMatch![1];
     expect(block).toMatch(/to: ["']\/schedule["']/);
-    // Kid sidebar must also not regress and add /agendas.
+    // Kid nav must also not regress and add /agendas.
     expect(block).not.toMatch(/to: ["']\/agendas["']/);
   });
 

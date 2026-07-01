@@ -1997,3 +1997,485 @@ html[data-rtheme="sunshine"] .inner-panel {
   background: rgba(255, 255, 255, 0.78) !important;
   border-color: rgba(31, 38, 64, 0.14) !important;
 }
+
+
+/* ====================================================================== */
+/*  CANONICAL LIQUID-GLASS  (2026-07-01, Katy)                            */
+/*  One theme only. Every surface is a floating 3D glass OBJECT that      */
+/*  casts a soft shadow onto the nature photo behind it — no flat boxes,  */
+/*  no flat logos, no solid fills. This block is appended LAST so it wins */
+/*  over every earlier per-theme rule. Accent tint is a CSS variable      */
+/*  (--scene-accent) that the app can retint to match the active scene.   */
+/* ====================================================================== */
+
+:root {
+  /* Scene accent — retinted at runtime by the background/weather engine.  */
+  --scene-accent: 56, 189, 248;      /* sky blue (default sunny/forest)    */
+  --scene-accent-2: 129, 140, 248;   /* periwinkle                          */
+  --scene-glass-tint: 255, 255, 255;
+}
+
+/* The whole app is glass. Force the deep readable text + kill any leftover
+   opaque theme background so the photo always shows through cleanly.      */
+html[data-rtheme="glass"] body {
+  color: #f4f7ff;
+}
+
+/* --- Floating 3D glass OBJECT: the canonical surface ------------------- */
+/* Applied to every card-like class so nothing is a flat box. Truly        */
+/* transparent, backdrop-blurred, beveled light rim, inner specular sheen, */
+/* and — the key ask — a soft realistic CAST SHADOW beneath the object.    */
+html[data-rtheme="glass"] .chalkboard,
+html[data-rtheme="glass"] .cozy-card,
+html[data-rtheme="glass"] .classroom-card,
+html[data-rtheme="glass"] .card,
+html[data-rtheme="glass"] .glass-object,
+html[data-rtheme="glass"] [data-slot="card"],
+html[data-rtheme="glass"] .bg-white,
+html[data-rtheme="glass"] [class*="bg-white/"] {
+  background:
+    radial-gradient(130% 100% at 50% -10%, rgba(var(--scene-glass-tint), 0.22) 0%, rgba(var(--scene-glass-tint), 0.06) 46%, rgba(10,16,28,0.10) 100%),
+    linear-gradient(155deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.05) 55%, rgba(255,255,255,0.10) 100%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(150%) brightness(1.05);
+  backdrop-filter: blur(24px) saturate(150%) brightness(1.05);
+  border: 1px solid rgba(255,255,255,0.30) !important;
+  border-top-color: rgba(255,255,255,0.62) !important;
+  border-radius: 1.6rem !important;
+  color: #f4f7ff !important;
+  /* Inner sheen + specular highlight, then TWO stacked drop shadows for a  */
+  /* believable object-casting-shadow feel (close contact + far soft).      */
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.55) inset,
+    0 -14px 30px rgba(255,255,255,0.06) inset,
+    0 2px 6px rgba(4,10,24,0.20),
+    0 18px 40px rgba(4,10,24,0.34),
+    0 34px 70px rgba(4,10,24,0.30) !important;
+}
+
+/* Gentle lift on hover so objects feel physically pickable. */
+html[data-rtheme="glass"] .cozy-card:hover,
+html[data-rtheme="glass"] .classroom-card:hover,
+html[data-rtheme="glass"] .card:hover,
+html[data-rtheme="glass"] .glass-object:hover {
+  transform: translateY(-2px);
+  transition: transform .18s ease, box-shadow .18s ease;
+}
+
+/* --- Glossy glass ORB: the jewel bubbles for the nav dock & accents ---- */
+/* A round, highly-reflective liquid-glass bead with a bright top sheen,   */
+/* a colored core glow, and a soft cast shadow beneath it.                 */
+.glass-orb {
+  position: relative;
+  border-radius: 9999px;
+  background:
+    radial-gradient(60% 45% at 32% 26%, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.28) 26%, rgba(255,255,255,0) 52%),
+    radial-gradient(120% 120% at 50% 120%, rgba(var(--orb-color, var(--scene-accent)), 0.85) 0%, rgba(var(--orb-color, var(--scene-accent)), 0.42) 46%, rgba(var(--orb-color, var(--scene-accent)), 0.16) 100%);
+  border: 1px solid rgba(255,255,255,0.55);
+  box-shadow:
+    0 2px 4px rgba(255,255,255,0.65) inset,
+    0 -8px 16px rgba(0,0,0,0.14) inset,
+    0 10px 22px rgba(4,10,24,0.34),
+    0 20px 34px rgba(4,10,24,0.26);
+  -webkit-backdrop-filter: blur(6px) saturate(160%);
+  backdrop-filter: blur(6px) saturate(160%);
+  transition: transform .2s cubic-bezier(.2,.8,.2,1), box-shadow .2s ease, filter .2s ease;
+}
+.glass-orb:hover {
+  transform: translateY(-3px) scale(1.04);
+  box-shadow:
+    0 2px 4px rgba(255,255,255,0.7) inset,
+    0 -8px 16px rgba(0,0,0,0.14) inset,
+    0 14px 28px rgba(4,10,24,0.38),
+    0 26px 44px rgba(4,10,24,0.30);
+}
+/* Active/selected orb: lifts higher and glows in its own color. */
+.glass-orb[data-active="true"] {
+  transform: translateY(-5px) scale(1.06);
+  box-shadow:
+    0 2px 4px rgba(255,255,255,0.75) inset,
+    0 -8px 16px rgba(0,0,0,0.12) inset,
+    0 0 26px 4px rgba(var(--orb-color, var(--scene-accent)), 0.55),
+    0 16px 30px rgba(4,10,24,0.40),
+    0 30px 50px rgba(4,10,24,0.30);
+}
+
+/* The floating dock rail itself — a long clear-glass lozenge with shadow. */
+.glass-dock {
+  background: linear-gradient(155deg, rgba(255,255,255,0.16), rgba(255,255,255,0.05) 60%, rgba(255,255,255,0.10));
+  -webkit-backdrop-filter: blur(26px) saturate(150%) brightness(1.05);
+  backdrop-filter: blur(26px) saturate(150%) brightness(1.05);
+  border: 1px solid rgba(255,255,255,0.30);
+  border-top-color: rgba(255,255,255,0.6);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.5) inset,
+    0 18px 44px rgba(4,10,24,0.36),
+    0 34px 66px rgba(4,10,24,0.28);
+}
+
+/* Small floating glass control (parent lock, weather, back, etc.) — never  */
+/* a flat button. Rounded clear-glass pill with a rim + soft cast shadow.   */
+html[data-rtheme="glass"] .glass-control,
+html[data-rtheme="glass"] button.glass-control {
+  background: linear-gradient(155deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06)) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid rgba(255,255,255,0.34) !important;
+  border-top-color: rgba(255,255,255,0.6) !important;
+  border-radius: 9999px !important;
+  color: #f2f6ff !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.5) inset,
+    0 8px 18px rgba(4,10,24,0.30) !important;
+}
+
+/* Schedule rows & chips as floating glass, with a cast shadow. */
+html[data-rtheme="glass"] .schedule-row,
+html[data-rtheme="glass"] .schedule-row-v2 {
+  background: linear-gradient(150deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05)) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid rgba(255,255,255,0.22) !important;
+  border-top-color: rgba(255,255,255,0.5) !important;
+  color: #eef2fb !important;
+  border-radius: 1.2rem !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.4) inset,
+    0 10px 24px rgba(4,10,24,0.26) !important;
+}
+html[data-rtheme="glass"] .time-chip {
+  background: rgba(var(--scene-accent), 0.34) !important;
+  color: #eaf6ff !important;
+  border: 1px solid rgba(255,255,255,0.30) !important;
+  box-shadow: 0 4px 10px rgba(4,10,24,0.24) !important;
+}
+
+/* Keep headings + text readable over any photo. */
+html[data-rtheme="glass"] h1,
+html[data-rtheme="glass"] h2,
+html[data-rtheme="glass"] h3 {
+  color: #f6f9ff !important;
+  text-shadow: 0 1px 14px rgba(0,0,0,0.42) !important;
+}
+html[data-rtheme="glass"] .text-muted-foreground {
+  color: rgba(233,239,250,0.82) !important;
+}
+
+/* ---- Real rain overlay (driven by live weather) ---------------------- */
+/* A fixed, non-interactive layer of falling streaks over the whole app.   */
+.rain-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 30;
+  overflow: hidden;
+}
+.rain-drop {
+  position: absolute;
+  top: -12%;
+  width: 1.5px;
+  height: 78px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0) 0%, rgba(210,232,255,0.55) 60%, rgba(255,255,255,0.85) 100%);
+  border-radius: 2px;
+  animation: rain-fall linear infinite;
+  will-change: transform;
+}
+@keyframes rain-fall {
+  0%   { transform: translate3d(0, -14vh, 0); opacity: 0; }
+  10%  { opacity: 1; }
+  100% { transform: translate3d(-6vw, 116vh, 0); opacity: 0.9; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rain-drop { animation: none; display: none; }
+}
+
+
+/* ---- OrbDock layout: floating dock, mobile bottom / desktop rail ------ */
+.orb-dock {
+  position: fixed;
+  z-index: 45;
+}
+.orb-dock-rail {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.6rem 0.9rem;
+  border-radius: 9999px;
+}
+/* Mobile (default): centered along the bottom, horizontally scrollable if needed. */
+.orb-dock {
+  left: 50%;
+  bottom: max(0.6rem, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  max-width: calc(100vw - 1rem);
+}
+.orb-dock-rail {
+  overflow-x: auto;
+  overflow-y: visible;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.orb-dock-rail::-webkit-scrollbar { display: none; }
+
+/* Parent tray floats just above the bottom dock on mobile. */
+.orb-parent-tray {
+  position: absolute;
+  bottom: calc(100% + 0.6rem);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.9rem;
+  border-radius: 1.4rem;
+  width: max-content;
+  max-width: calc(100vw - 1.5rem);
+}
+
+/* Desktop (lg+): dock becomes a vertical rail pinned to the right edge. */
+@media (min-width: 1024px) {
+  .orb-dock {
+    left: auto;
+    right: 1rem;
+    bottom: 50%;
+    transform: translateY(50%);
+    max-width: none;
+  }
+  .orb-dock-rail {
+    flex-direction: column;
+    gap: 0.9rem;
+    padding: 1rem 0.7rem;
+    border-radius: 2.5rem;
+    overflow: visible;
+  }
+  /* Parent tray opens to the LEFT of the right-side rail on desktop. */
+  .orb-parent-tray {
+    bottom: auto;
+    top: 50%;
+    left: auto;
+    right: calc(100% + 0.7rem);
+    transform: translateY(-50%);
+  }
+}
+
+/* Give page content room so the dock never covers it. */
+html[data-rtheme="glass"] body { }
+.orb-dock-safe-pad { padding-bottom: 7rem; }
+@media (min-width: 1024px) {
+  .orb-dock-safe-pad { padding-bottom: 0; padding-right: 6rem; }
+}
+
+
+/* ====================================================================== */
+/*  GLASS HELPER OBJECTS (2026-07-01) — panels, controls, dialogs,        */
+/*  progress, the real bookshelf, and Kiwi's slim chat. All dimensional.  */
+/* ====================================================================== */
+
+/* Generic floating glass panel (used where we don't want the .card class). */
+.glass-panel {
+  background:
+    radial-gradient(130% 100% at 50% -10%, rgba(var(--scene-glass-tint), 0.22) 0%, rgba(var(--scene-glass-tint), 0.06) 46%, rgba(10,16,28,0.10) 100%),
+    linear-gradient(155deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.05) 55%, rgba(255,255,255,0.10) 100%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%) brightness(1.05);
+  backdrop-filter: blur(24px) saturate(150%) brightness(1.05);
+  border: 1px solid rgba(255,255,255,0.30);
+  border-top-color: rgba(255,255,255,0.62);
+  border-radius: 1.6rem;
+  color: #f4f7ff;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.55) inset,
+    0 -14px 30px rgba(255,255,255,0.06) inset,
+    0 2px 6px rgba(4,10,24,0.20),
+    0 18px 40px rgba(4,10,24,0.34),
+    0 34px 70px rgba(4,10,24,0.30);
+}
+
+/* Interactive glass controls also work outside the glass theme guard. */
+.glass-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background: linear-gradient(155deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06));
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid rgba(255,255,255,0.34);
+  border-top-color: rgba(255,255,255,0.6);
+  border-radius: 9999px;
+  color: #f2f6ff;
+  cursor: pointer;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.5) inset,
+    0 8px 18px rgba(4,10,24,0.30);
+  transition: transform .16s ease, box-shadow .16s ease, background .16s ease;
+}
+.glass-control:hover { transform: translateY(-1px); }
+.glass-control:disabled { opacity: 0.5; cursor: default; transform: none; }
+/* Primary (accent-tinted) glass control — the confirm/CTA variant. */
+.glass-control--primary,
+html[data-rtheme="glass"] .glass-control--primary {
+  background:
+    radial-gradient(120% 120% at 30% 20%, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0) 45%),
+    linear-gradient(155deg, rgba(var(--scene-accent), 0.85), rgba(var(--scene-accent), 0.55)) !important;
+  border-color: rgba(255,255,255,0.5) !important;
+  color: #fff !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.6) inset,
+    0 8px 20px rgba(var(--scene-accent), 0.4),
+    0 10px 22px rgba(4,10,24,0.28) !important;
+}
+
+/* Dialogs become clear glass too (shadcn DialogContent gets .glass-dialog). */
+html[data-rtheme="glass"] .glass-dialog,
+.glass-dialog {
+  background:
+    radial-gradient(130% 90% at 50% -10%, rgba(var(--scene-glass-tint), 0.20) 0%, rgba(var(--scene-glass-tint), 0.05) 46%, rgba(10,16,28,0.14) 100%),
+    linear-gradient(155deg, rgba(30,41,59,0.55) 0%, rgba(15,23,42,0.5) 100%) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  backdrop-filter: blur(30px) saturate(150%);
+  border: 1px solid rgba(255,255,255,0.28) !important;
+  border-top-color: rgba(255,255,255,0.55) !important;
+  border-radius: 1.5rem !important;
+  color: #f4f7ff !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.4) inset,
+    0 30px 70px rgba(4,10,24,0.5) !important;
+}
+
+/* Glass progress bar (a thin clear track with an accent-lit fill). */
+.glass-progress {
+  position: relative;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: rgba(255,255,255,0.16);
+  border: 1px solid rgba(255,255,255,0.25);
+  overflow: hidden;
+}
+.glass-progress > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  display: block;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, rgba(var(--scene-accent), 0.95), rgba(var(--scene-accent-2), 0.9));
+  box-shadow: 0 0 12px rgba(var(--scene-accent), 0.6);
+}
+
+/* ---- Real bookshelf: covers standing on transparent glass planks ----- */
+.book-shelf { position: relative; }
+.book-shelf-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: flex-start;
+  gap: clamp(1rem, 4vw, 2.4rem);
+  padding: 0 0.5rem 0.35rem;
+}
+.book-shelf-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: clamp(96px, 20vw, 132px);
+}
+.book-shelf-caption {
+  margin-top: 0.5rem;
+  font-size: 0.72rem;
+  line-height: 1.15;
+  text-align: center;
+  color: rgba(244,247,255,0.9);
+  text-shadow: 0 1px 4px rgba(0,0,0,0.55);
+  max-width: 132px;
+}
+/* The glass shelf plank — a clear beveled slab with a soft shadow below. */
+.book-shelf-plank {
+  height: 16px;
+  margin-top: -2px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.14) 40%, rgba(180,210,255,0.10) 100%);
+  border: 1px solid rgba(255,255,255,0.4);
+  border-top-color: rgba(255,255,255,0.75);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.7) inset,
+    0 10px 20px rgba(4,10,24,0.32),
+    0 20px 34px rgba(4,10,24,0.22);
+}
+
+/* A single book cover as a floating object with its own cast shadow. */
+.book-cover-object {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 6px 10px 10px 6px;
+  transition: transform .2s cubic-bezier(.2,.8,.2,1), filter .2s ease;
+  filter: drop-shadow(0 14px 18px rgba(4,10,24,0.45)) drop-shadow(0 4px 6px rgba(4,10,24,0.3));
+}
+.book-cover-object:hover { transform: translateY(-6px) rotate(-1deg); }
+.book-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 6px 10px 10px 6px;
+  border: 1px solid rgba(255,255,255,0.25);
+  border-left: 3px solid rgba(255,255,255,0.35); /* spine highlight */
+}
+.book-cover-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.75rem;
+  text-align: center;
+  border-radius: 6px 10px 10px 6px;
+  background:
+    linear-gradient(155deg, rgba(var(--scene-accent), 0.6), rgba(var(--scene-accent-2), 0.45)),
+    linear-gradient(155deg, rgba(255,255,255,0.2), rgba(255,255,255,0.05));
+  border: 1px solid rgba(255,255,255,0.4);
+  border-left: 3px solid rgba(255,255,255,0.6);
+  color: #fff;
+}
+.book-cover-fallback-title { font-weight: 700; font-size: 0.85rem; line-height: 1.15; text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+.book-cover-fallback-author { font-size: 0.68rem; opacity: 0.85; }
+
+/* ---- Kiwi slim chat: glass panel, glass bubbles, glass input --------- */
+.kiwi-glass-panel {
+  background:
+    radial-gradient(130% 90% at 50% -10%, rgba(var(--scene-glass-tint), 0.20) 0%, rgba(var(--scene-glass-tint), 0.05) 46%, rgba(10,16,28,0.16) 100%),
+    linear-gradient(155deg, rgba(30,41,59,0.5) 0%, rgba(15,23,42,0.46) 100%);
+  -webkit-backdrop-filter: blur(30px) saturate(150%);
+  backdrop-filter: blur(30px) saturate(150%);
+  border: 1px solid rgba(255,255,255,0.28);
+  border-top-color: rgba(255,255,255,0.55);
+  border-radius: 1.5rem;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.4) inset,
+    0 24px 60px rgba(4,10,24,0.5);
+}
+.kiwi-bubble {
+  border-radius: 1.1rem;
+  border: 1px solid rgba(255,255,255,0.25);
+  box-shadow: 0 6px 14px rgba(4,10,24,0.28);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+.kiwi-bubble--kiwi {
+  background: linear-gradient(155deg, rgba(255,255,255,0.2), rgba(255,255,255,0.08));
+  color: #f4f7ff;
+}
+.kiwi-bubble--me {
+  background: linear-gradient(155deg, rgba(var(--scene-accent), 0.85), rgba(var(--scene-accent), 0.55));
+  color: #fff;
+  border-color: rgba(255,255,255,0.45);
+}
+.kiwi-input {
+  background: linear-gradient(155deg, rgba(255,255,255,0.16), rgba(255,255,255,0.06)) !important;
+  border: 1px solid rgba(255,255,255,0.3) !important;
+  border-radius: 0.9rem !important;
+  color: #f4f7ff !important;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+.kiwi-input::placeholder { color: rgba(244,247,255,0.6) !important; }

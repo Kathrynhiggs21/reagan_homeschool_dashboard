@@ -18,7 +18,7 @@ const APP_TSX = readFileSync(
   "utf8",
 );
 const SIDEBAR = readFileSync(
-  path.join(__dirname, "..", "client", "src", "components", "CozyShell.tsx"),
+  path.join(__dirname, "..", "client", "src", "components", "OrbDock.tsx"),
   "utf8",
 );
 
@@ -99,16 +99,16 @@ describe("deleted pages + dupe-route consolidation — contract (push 22)", () =
     expect(APP_TSX).toMatch(/path="\/practice"\s+component=\{(Kiwi|PracticeHub)\}/);
   });
 
-  it("kid sidebar does NOT include any deleted-page labels", () => {
-    const navBlock = SIDEBAR.split("KID_NAV: NavRow[] = [")[1]?.split("];")[0] ?? "";
+  it("kid nav does NOT include any deleted-page labels", () => {
+    const navBlock = SIDEBAR.split("KID_ORBS: Orb[] = [")[1]?.split("];")[0] ?? "";
     const forbidden = ["Proud Wall", "My Levels", "Adventures", "Journal", "Whiteboard", "Rewards", "Prize Shop"];
     for (const label of forbidden) {
       expect(navBlock).not.toContain(`label: "${label}"`);
     }
   });
 
-  it("adult sidebar does NOT include any deleted-page labels", () => {
-    const navBlock = SIDEBAR.split("ADULT_NAV: NavItem[] = [")[1]?.split("];")[0] ?? "";
+  it("adult nav does NOT include any deleted-page labels", () => {
+    const navBlock = SIDEBAR.split("ADULT_ORBS: Orb[] = [")[1]?.split("];")[0] ?? "";
     const forbidden = ["Tutor Handoff", "Family Feed", "Family Stream", "Upload-Sync", "Daily Agendas", "Daily Packet", "Parent Notes", "Whiteboard"];
     for (const label of forbidden) {
       expect(navBlock).not.toContain(`label: "${label}"`);

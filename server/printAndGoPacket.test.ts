@@ -9,7 +9,6 @@
  *  4. agendaPdf.ts AgendaPdfInput type includes devotionText.
  *  5. buildAgendaPdf renders a devotion page when devotionText is set.
  *  6. buildAgendaPdf renders per-block lesson pages for blocks with lesson content.
- *  7. CozyShell nameplate uses a larger photo (w-20 h-20).
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import path from "node:path";
@@ -181,16 +180,4 @@ describe("buildAgendaPdf v2.98 — full packet rendering", () => {
   });
 });
 
-// ── 7. CozyShell nameplate uses larger photo ─────────────────────────────────
-describe("CozyShell v2.98 — enlarged nameplate photo", () => {
-  const COZY_PATH = path.join(ROOT, "client/src/components/CozyShell.tsx");
-  const src = fs.readFileSync(COZY_PATH, "utf8");
 
-  it("uses w-20 h-20 for the profile photo (was w-12 h-12)", () => {
-    expect(src).toMatch(/w-20\s+h-20/);
-  });
-
-  it("uses flex-col layout to centre photo above text", () => {
-    expect(src).toMatch(/flex-col\s+items-center/);
-  });
-});

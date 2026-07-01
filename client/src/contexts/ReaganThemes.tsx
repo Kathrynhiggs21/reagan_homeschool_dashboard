@@ -1,117 +1,51 @@
-import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { trpc } from "@/lib/trpc";
+import { createContext, useContext, useEffect, type ReactNode } from "react";
 
 /**
- * Reagan's theme catalog — 5 themes (2026-06-17, Katy):
- *   1. chalkboard  — Black Chalkboard (kept; the original dark slate look)
- *   2. white       — White Basic (kept look: clean light version, same layout
- *                    + same per-subject colors)
- *   3. glass       — Glassmorphism — frosted translucent panels over a deep
- *                    cinematic gradient; thin light rims + soft pop-out.
- *   4. sunshine    — Bright & Colorful Card — clean light canvas with vivid
- *                    candy-colored cards and chunky pop-out shadows.
- *   5. galaxy      — NEW (AI pick that fits best): Galaxy Glow — deep indigo
- *                    space with neon aurora accents; calm but magical.
+ * Reagan's theme system — CANONICAL SINGLE THEME (2026-07-01, Katy).
  *
- * Each theme is applied via the `data-rtheme` attribute on <html>, with the
- * matching CSS living in index.css. `swatch` is the little color dot shown in
- * the sidebar picker.
+ * Katy's direction: remove ALL chalkboard / flat / multi-theme options and
+ * ship ONE canonical look — clear 3D liquid glass over photorealistic nature,
+ * with floating glass objects (never flat boxes), cast shadows, and the two
+ * budgies as a side accent. There is no theme picker anymore; the whole app
+ * always renders `data-rtheme="glass"`.
+ *
+ * The `useReaganTheme` hook is kept (returning the fixed glass theme) so the
+ * handful of components/pages that import it keep compiling without a large
+ * refactor. Switching is a no-op now.
  */
-export type ThemeId = "chalkboard" | "white" | "glass" | "sunshine" | "galaxy";
+export type ThemeId = "glass";
 
 export const THEMES: Record<ThemeId, { label: string; emoji: string; description: string; swatch: string }> = {
-  chalkboard: { label: "Black Chalkboard", emoji: "🖤", description: "Black slate with bright chalk. Calm & classic.", swatch: "#1f2421" },
-  white:      { label: "White Basic",      emoji: "🤍", description: "Clean white classroom, same subject colors.",  swatch: "#f7f7f4" },
-  glass:      { label: "Glassmorphism",    emoji: "🔮", description: "Clear 3D glass over a real forest with two budgies. Recommended.", swatch: "linear-gradient(135deg,#7dd3fc,#a5b4fc,#fcd34d)" },
-  sunshine:   { label: "Bright & Colorful", emoji: "🌈", description: "Vivid candy cards with soft pop-out shadows.",  swatch: "linear-gradient(135deg,#60a5fa,#f472b6,#34d399)" },
-  galaxy:     { label: "Galaxy Glow",      emoji: "🌌", description: "Deep space with soft neon aurora glow.",        swatch: "linear-gradient(135deg,#312e81,#7c3aed,#22d3ee)" },
+  glass: {
+    label: "Liquid Glass",
+    emoji: "🔮",
+    description: "Clear 3D liquid glass over real nature with two budgies.",
+    swatch: "linear-gradient(135deg,#7dd3fc,#a5b4fc,#fcd34d)",
+  },
 };
 
-// Order shown in the picker.
-export const THEME_ORDER: ThemeId[] = ["chalkboard", "white", "glass", "sunshine", "galaxy"];
-
-// 2026-07-01 (Katy canonical direction): the redesigned "glass" theme (clear 3D
-// liquid glass over photorealistic nature) is the recommended, default look for
-// first-time visitors. A new device with no saved pref now boots into glass
-// instead of the older chalkboard slate. Anyone can still switch in the sidebar.
+// Kept for any legacy imports; all collapse to the single glass theme.
+export const THEME_ORDER: ThemeId[] = ["glass"];
+export const THEME_PRIMARY: ThemeId[] = ["glass"];
+export const THEME_SECONDARY: ThemeId[] = [];
 export const DEFAULT_THEME: ThemeId = "glass";
 export const RECOMMENDED_THEME: ThemeId = "glass";
 
-// 2026-06-17 (Katy): "White Basic" is moved out of the main picker flow. The
-// primary themes show as pills up front; secondary themes (just White Basic
-// for now) live behind a small "More" side button so the plain white look
-// stays available without cluttering the main row.
-export const THEME_PRIMARY: ThemeId[] = ["glass", "chalkboard", "sunshine", "galaxy"];
-export const THEME_SECONDARY: ThemeId[] = ["white"];
-
-// Migrate legacy theme ids (pre-2026-06-17) to the new catalog so saved prefs
-// don't break. starry/notebook -> galaxy/white-ish closest matches.
-const LEGACY: Record<string, ThemeId> = {
-  starry: "galaxy",
-  cream: "white",
-  notebook: "white",
-};
-function normalize(v: string | null | undefined): ThemeId | null {
-  if (!v) return null;
-  if ((THEMES as any)[v]) return v as ThemeId;
-  if (LEGACY[v]) return LEGACY[v];
-  return null;
-}
-
 type Ctx = { themeId: ThemeId; setThemeId: (t: ThemeId) => void };
-const ThemeCtx = createContext<Ctx>({ themeId: DEFAULT_THEME, setThemeId: () => {} });
-
-const STORAGE_KEY = "reagan_theme_v1";
+const ThemeCtx = createContext<Ctx>({ themeId: "glass", setThemeId: () => {} });
 
 export function ReaganThemeProvider({ children }: { children: ReactNode }) {
-  const [themeId, setThemeIdState] = useState<ThemeId>(() => {
-    if (typeof window === "undefined") return DEFAULT_THEME;
-    return normalize(localStorage.getItem(STORAGE_KEY)) ?? DEFAULT_THEME;
-  });
-
-  // Hydrate from server pref (cross-device). Local storage is the fast fallback.
-  const serverPref = trpc.prefs.getPublic.useQuery({ key: "ui.theme" });
-  const hydratedRef = useRef(false);
-  useEffect(() => {
-    if (hydratedRef.current) return;
-    const v = normalize(serverPref.data as string | null | undefined);
-    if (v) {
-      setThemeIdState(v);
-      hydratedRef.current = true;
-    } else if (serverPref.isFetched) {
-      hydratedRef.current = true;
-    }
-  }, [serverPref.data, serverPref.isFetched]);
-
-  const writePref = trpc.prefs.set.useMutation();
-
   useEffect(() => {
     if (typeof document === "undefined") return;
     const root = document.documentElement;
-    root.setAttribute("data-rtheme", themeId);
-    localStorage.setItem(STORAGE_KEY, themeId);
-    // Keep the Tailwind `.dark` class in sync with the active theme so that
-    // every `dark:` utility variant actually engages on the dark themes
-    // (chalkboard / glass / galaxy / legacy starry). Without this the
-    // `dark:` variants stay dormant and light-mode fills (e.g. bg-amber-50)
-    // render on dark backgrounds -> invisible / glaring "white box" text.
-    // The :root CSS-variable defaults are already dark, so this only makes
-    // the dark: variants match what the base theme already implies.
-    const DARK_THEMES: ThemeId[] = ["chalkboard", "glass", "galaxy"];
-    if (DARK_THEMES.includes(themeId)) {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
-  }, [themeId]);
+    // One canonical theme, always. `.dark` stays on so every `dark:` utility
+    // variant engages against the deep translucent glass surfaces.
+    root.setAttribute("data-rtheme", "glass");
+    root.classList.add("dark");
+  }, []);
 
-  const setThemeId = (t: ThemeId) => {
-    if (!THEMES[t]) return;
-    setThemeIdState(t);
-    try { writePref.mutate({ key: "ui.theme", value: t }); } catch { /* ok */ }
-  };
-
-  return <ThemeCtx.Provider value={{ themeId, setThemeId }}>{children}</ThemeCtx.Provider>;
+  // setThemeId is intentionally a no-op — there is only one theme now.
+  return <ThemeCtx.Provider value={{ themeId: "glass", setThemeId: () => {} }}>{children}</ThemeCtx.Provider>;
 }
 
 export function useReaganTheme() {

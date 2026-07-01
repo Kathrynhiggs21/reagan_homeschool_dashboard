@@ -7,8 +7,8 @@ import { join } from "node:path";
  *
  * Mom's intent: a working switch to OPERATE summer mode, not a passive
  * badge. It must (a) be adult-gated so Reagan can't flip it, (b) write the
- * single canonical `summer.override` key (Auto/On/Off), and (c) be mounted
- * in the adult-only sidebar section.
+  *   single canonical `summer.override` key (Auto/On/Off), and (c) be mounted
+ *   in the adult-only tray of the OrbDock.
  */
 
 const root = join(__dirname, "..");
@@ -16,8 +16,8 @@ const toggle = readFileSync(
   join(root, "client/src/components/SummerQuickToggle.tsx"),
   "utf8",
 );
-const shell = readFileSync(
-  join(root, "client/src/components/CozyShell.tsx"),
+const dock = readFileSync(
+  join(root, "client/src/components/OrbDock.tsx"),
   "utf8",
 );
 
@@ -40,17 +40,14 @@ describe("SummerQuickToggle", () => {
     expect(toggle).toMatch(/next === "auto" \? null : next/);
   });
 
-  it("is mounted inside the adult-only sidebar section of CozyShell", () => {
-    expect(shell).toMatch(/import SummerQuickToggle from/);
-    expect(shell).toMatch(/<SummerQuickToggle\s*\/>/);
-    // The mount sits within the `unlocked && (...)` adult block.
-    const adultBlockStart = shell.indexOf("Adult section: only visible when unlocked");
-    const mountIdx = shell.indexOf("<SummerQuickToggle");
-    // Anchor to the adult Drive Hub <a> link (rendered after the toggle in JSX).
-    const drivehubLinkIdx = shell.indexOf("Opens Reagan's Drive folder in a new tab");
-    expect(adultBlockStart).toBeGreaterThan(-1);
-    expect(mountIdx).toBeGreaterThan(adultBlockStart);
-    // and before the adult Drive Hub link that closes the adult nav group.
-    expect(mountIdx).toBeLessThan(drivehubLinkIdx);
+  it("is mounted inside the adult-only tray of the OrbDock", () => {
+    expect(dock).toMatch(/import SummerQuickToggle from/);
+    expect(dock).toMatch(/<SummerQuickToggle\s*\/>/);
+    // The mount is adult-only: it renders after the adult orbs, alongside the
+    // tutor toggle, guarded by the adult unlock. Anchor to the adult orb map.
+    const adultOrbsIdx = dock.indexOf("adultOrbs.map");
+    const mountIdx = dock.indexOf("<SummerQuickToggle");
+    expect(adultOrbsIdx).toBeGreaterThan(-1);
+    expect(mountIdx).toBeGreaterThan(adultOrbsIdx);
   });
 });

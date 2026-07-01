@@ -19,7 +19,6 @@ import AnswerKeyDialog from "@/components/AnswerKeyDialog";
 import TurnInDialog from "@/components/TurnInDialog";
 import { subjectTint, tintCardStyle, tintInkStyle, tintPillStyle, rainbowCardStyle, rainbowPillStyle, rainbowInkStyle, rainbowStop } from "@/lib/subjectColors";
 import { celebrateKiwi } from "@/components/KiwiPerch";
-import KiwiIntroStrip from "@/components/KiwiIntroStrip";
 import IntroTour from "@/components/IntroTour";
 import ConfidencePrinciplesStrip from "@/components/ConfidencePrinciplesStrip";
 import PlacementInviteCard from "@/components/PlacementInviteCard";
@@ -359,9 +358,8 @@ export default function Today() {
 
   return (
     <div className="space-y-4">
-      {/* Theme switching lives in the sidebar (SidebarThemePicker); the
-          duplicate in-page strip was removed 2026-06-30 to stop it overlapping
-          the page content on phones. */}
+      {/* One canonical liquid-glass theme now (2026-07-01); no in-app theme
+          picker. Navigation is the floating glass OrbDock. */}
       {/* v3.32 — Packet-audit status chip: at-a-glance "today's packet has
           work in every block" (green) vs "N blocks need content" (amber,
           with titles for unlocked adults). */}

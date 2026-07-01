@@ -1,9 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useKiwi } from "@/contexts/KiwiContext";
 import { trpc } from "@/lib/trpc";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Send, Mic, MicOff, X, Volume2, VolumeX, MessageCircle, MessageSquareText, Shirt } from "lucide-react";
+import { Send, Mic, X, Shirt } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import KiwiSprite from "./KiwiSprite";
 import FlockSprite, { type FlockMember } from "./FlockSprite";
@@ -26,7 +24,7 @@ import { resolveKiwiDayCharacter } from "@shared/kiwiCharacter";
  * App.tsx mounts ONLY <KiwiCompanion/> now.
  */
 export default function KiwiCompanion() {
-  const { open, setOpen, enabled, mode, setMode, voiceMode, setVoiceMode, adultPresent, companionName, companionAvatar, setCompanionName, showKiwiPerch } = useKiwi();
+  const { open, setOpen, enabled, mode, setMode, voiceMode, setVoiceMode, adultPresent, companionName, setCompanionName, showKiwiPerch } = useKiwi();
   const [input, setInput] = useState("");
   const [muted, setMuted] = useState(false);
   const [showDressUp, setShowDressUp] = useState(false);
@@ -399,6 +397,11 @@ export default function KiwiCompanion() {
     try { r.start(); } catch {}
   }
 
+  // toggleWakeWord / makeRequest / createRequest are retained for behavior and
+  // future re-surfacing but are no longer wired to on-panel buttons (2026-07-01
+  // declutter). Reference them so lint stays quiet without deleting logic.
+  void toggleWakeWord; void makeRequest;
+
   if (!enabled) return null;
 
   return (
@@ -409,10 +412,13 @@ export default function KiwiCompanion() {
       {showKiwiPerch && <KiwiPerch />}
       <KiwiQuietListener />
 
-      {/* Panel */}
+      {/* Panel — decluttered glass card (2026-07-01, Katy). Just Kiwi's face,
+          the conversation, one input + send, a close button, and dress-up
+          tucked behind a single small button. The old mic/voice/mute/notebook
+          cluster and the "Ask Mom for…" chip strip were removed. */}
       {open && (
-        <Card data-kiwi-companion className="fixed bottom-6 right-6 z-40 w-[380px] max-w-[calc(100vw-2rem)] h-[560px] max-h-[80vh] flex flex-col shadow-2xl border-2 border-primary/20 no-print">
-          <div className="flex items-center justify-between p-4 border-b">
+        <div data-kiwi-companion className="kiwi-glass-panel fixed bottom-6 right-6 z-40 w-[360px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[78vh] flex flex-col no-print">
+          <div className="flex items-center justify-between p-3">
             <div className="flex items-center gap-2">
               <div className="w-10 h-10">
                 {activeCompanion === "kiwi" ? (
@@ -422,10 +428,10 @@ export default function KiwiCompanion() {
                 )}
               </div>
               <div>
-                <div className="font-display font-semibold text-base leading-tight">{companionName}</div>
-                <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                <div className="font-display font-semibold text-base leading-tight text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]">{companionName}</div>
+                <div className="text-[10px] text-white/80 flex items-center gap-1">
                   {activelyListening && !adultPresent && (
-                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
+                    <span className="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse" aria-hidden="true" />
                   )}
                   {adultPresent
                     ? "Resting — adult is here"
@@ -436,123 +442,69 @@ export default function KiwiCompanion() {
               </div>
             </div>
             <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setVoiceMode(voiceMode === "voice" ? "text" : "voice")}
-                title={voiceMode === "voice" ? "Voice mode ON — I talk back out loud. Tap for Text mode." : "Text mode — type and read. Tap for Voice mode (I talk back)."}
-                aria-pressed={voiceMode === "voice"}
-                data-testid="kiwi-voice-mode-toggle"
-                className={`gap-1 px-2 ${voiceMode === "voice" ? "text-sky-500" : "text-muted-foreground"}`}
-              >
-                {voiceMode === "voice" ? <Volume2 className="w-4 h-4"/> : <MessageSquareText className="w-4 h-4"/>}
-                <span className="text-[11px] font-medium">{voiceMode === "voice" ? "Voice" : "Text"}</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
+              <button
                 onClick={() => setShowDressUp((v) => !v)}
-                title="Dress up — switch Kiwi's flock companion"
+                title="Dress up Kiwi"
                 aria-pressed={showDressUp}
-                className={showDressUp ? "text-pink-500" : "text-muted-foreground"}
+                className={`glass-control w-8 h-8 flex items-center justify-center ${showDressUp ? "text-pink-200" : ""}`}
               >
                 <Shirt className="w-4 h-4"/>
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={toggleWakeWord}
-                title={wakeWordOn ? "Always listening ON — say ‘Hey Kiwi’ to talk; ‘bye Kiwi’ to stop" : "Listening OFF — tap to let me hear my name"}
-                className={wakeWordOn ? "text-emerald-500" : "text-muted-foreground"}
+              </button>
+              <button
+                onClick={() => { setOpen(false); utils.kiwi.history.invalidate(); }}
+                title="Close"
+                className="glass-control w-8 h-8 flex items-center justify-center"
               >
-                {wakeWordOn ? <Mic className="w-4 h-4"/> : <MicOff className="w-4 h-4"/>}
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => setMuted(m => !m)} title={muted ? "Unmute" : "Mute voice"}>
-                {muted ? <VolumeX className="w-4 h-4"/> : <Volume2 className="w-4 h-4"/>}
-              </Button>
-              {/* 2026-06-17 (Katy): Kiwi can open Reagan's notebook for her. */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => { try { window.dispatchEvent(new CustomEvent("kiwi:open-notebook")); } catch { /* ignore */ } }}
-                title="Open my notebook"
-                className="text-purple-500"
-              >
-                <span className="text-base leading-none">📝</span>
-              </Button>
-              <Button variant="ghost" size="icon" onClick={() => { setOpen(false); utils.kiwi.history.invalidate(); }}>
                 <X className="w-4 h-4"/>
-              </Button>
+              </button>
             </div>
           </div>
 
           {showDressUp && (
-            <div className="px-3 py-2 border-b bg-pink-50/50 dark:bg-pink-950/20">
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground mb-1">Dress up — pick your buddy</div>
+            <div className="px-3 py-2">
+              <div className="text-[10px] uppercase tracking-wide text-white/70 mb-1">Dress up — pick your buddy</div>
               <CompanionBelt size={34} />
             </div>
           )}
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             {messages.isLoading && <div className="text-center text-sm text-muted-foreground">Loading...</div>}
             {messages.data?.length === 0 && (
-              <div className="text-center text-sm text-muted-foreground p-6">
+              <div className="text-center text-sm text-white/85 p-6">
                 <div className="flex justify-center mb-2"><KiwiSprite pose="chirp" size={80} /></div>
-                <div className="font-hand text-lg">Ask me something.</div>
-                <div className="text-xs mt-2">Type a question or tap a request below. I won't talk back unless you do.</div>
+                <div className="font-hand text-lg text-white drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]">Ask me anything.</div>
+                <div className="text-xs mt-2 text-white/75">I won't talk back unless you do.</div>
               </div>
             )}
             {messages.data?.slice().reverse().map((m: any) => (
               <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm ${
-                  m.role === "user" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+                <div className={`kiwi-bubble max-w-[85%] px-3 py-2 text-sm ${
+                  m.role === "user" ? "kiwi-bubble--me" : "kiwi-bubble--kiwi"
                 }`}>
                   {m.content}
                 </div>
               </div>
             ))}
-            {sendMsg.isPending && <div className="text-xs text-muted-foreground italic">{companionName} is thinking...</div>}
+            {sendMsg.isPending && <div className="text-xs text-white/75 italic">{companionName} is thinking...</div>}
           </div>
 
-          {!adultPresent && (
-            <div className="px-3 pt-2 pb-1 flex flex-wrap gap-1.5 border-t bg-amber-50/40 dark:bg-amber-950/20">
-              <span className="text-[10px] uppercase tracking-wide text-muted-foreground self-center mr-1">Ask Mom for:</span>
-              {([
-                ["assignment", "📝 Assignment"],
-                ["adventure", "🏕️ Adventure"],
-                ["schedule", "⏰ Schedule change"],
-                ["snack", "🍪 Snack"],
-                ["supplies", "✏️ Supplies"],
-                ["help", "🆘 Help"],
-              ] as const).map(([kind, label]) => (
-                <button
-                  key={kind}
-                  type="button"
-                  onClick={() => makeRequest(kind as any)}
-                  className="text-[11px] px-2 py-1 rounded-full border border-amber-300 bg-white hover:bg-amber-100 text-amber-900 transition"
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          )}
-          <div className="p-3 border-t flex gap-2 items-end">
+          <div className="p-3 flex gap-2 items-end">
             <Textarea
               value={input}
               onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
               placeholder={adultPresent ? "Adult here — quiet mode" : "Talk to me..."}
-              className="resize-none min-h-[44px] max-h-[120px] rounded-xl"
+              className="kiwi-input resize-none min-h-[44px] max-h-[120px]"
               rows={1}
               disabled={adultPresent}
             />
-            <Button size="icon" variant="outline" onClick={startVoiceInput} disabled={adultPresent} className="bg-card">
+            <button onClick={startVoiceInput} disabled={adultPresent} title="Talk" className="glass-control w-11 h-11 flex items-center justify-center shrink-0">
               <Mic className="w-4 h-4"/>
-            </Button>
-            <Button size="icon" onClick={send} disabled={!input.trim() || adultPresent}>
+            </button>
+            <button onClick={send} disabled={!input.trim() || adultPresent} title="Send" className="glass-control glass-control--primary w-11 h-11 flex items-center justify-center shrink-0">
               <Send className="w-4 h-4"/>
-            </Button>
+            </button>
           </div>
-        </Card>
+        </div>
       )}
     </>
   );

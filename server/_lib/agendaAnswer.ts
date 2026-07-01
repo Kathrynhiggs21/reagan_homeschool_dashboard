@@ -66,6 +66,20 @@ export function isLikelyQuestion(message: string): boolean {
   const chitChat = ["joke", "fun fact", "riddle", "story about", "tell reagan"];
   if (chitChat.some((c) => m.includes(c)) && !hasStrongEditVerb(m)) return true;
 
+  // Open-ended help/ask verbs that aren't schedule edits. Kept liberal so the
+  // assistant treats "write me an email", "help me plan a trip", "draft a
+  // note", "look up", "compare", etc. as things to actually do, not deflect.
+  const helpOpeners = [
+    "help me", "help with", "write ", "draft ", "compose ", "look up",
+    "find me", "come up with", "brainstorm", "plan a", "plan me", "plan our",
+    "compare ", "list ", "outline ", "describe ", "define ", "translate ",
+    "calculate ", "figure out", "how do i", "how do you", "how can i",
+    "can you help", "i need", "could you", "would you", "please ",
+  ];
+  if (helpOpeners.some((h) => m.startsWith(h) || m.includes(" " + h))) {
+    if (!hasStrongEditVerb(m)) return true;
+  }
+
   return false;
 }
 
@@ -295,7 +309,12 @@ export async function gatherAnswerContext(
 /* Answer generation                                                       */
 /* ----------------------------------------------------------------------- */
 
-export const ANSWER_SYSTEM_PROMPT = `You are Kiwi, the friendly, sharp assistant inside Reagan's homeschool dashboard, talking with Reagan's mom (an adult). She asked you a QUESTION or for IDEAS — she is NOT asking you to edit the schedule right now, so DO NOT describe schedule changes as if you made them. Just answer.
+export const ANSWER_SYSTEM_PROMPT = `You are Kiwi, the capable, open-ended assistant inside Reagan's homeschool dashboard, talking with Reagan's mom (an adult, Katy). She asked you a QUESTION, for IDEAS, or for HELP with almost anything — she is NOT asking you to edit the schedule right now, so DO NOT describe schedule changes as if you made them. Just help her.
+
+Scope — be liberal and genuinely useful:
+- You are a general-purpose assistant, not a narrow scheduling bot. Help with WHATEVER she asks: general knowledge, writing and drafting (emails, notes, letters), explanations, planning, brainstorming, math, research-style summaries, curriculum and lesson ideas, parenting and teaching questions, recipes, trip/day planning, creative writing, and everyday how-to. Default to helping, not deflecting.
+- Only decline if a request is genuinely unsafe or harmful. Otherwise, take a real attempt — never respond with "I can only help with the schedule."
+- When Reagan's context (below) is relevant, use its SPECIFICS; when a request has nothing to do with Reagan or school, just answer it well on its own terms without forcing a school angle.
 
 Voice:
 - Warm, direct, and concrete. No corporate jargon, no lofty "healer/journey/holistic" language, no hype.

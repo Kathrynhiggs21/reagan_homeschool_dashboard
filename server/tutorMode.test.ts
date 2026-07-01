@@ -22,8 +22,8 @@ import * as path from "node:path";
 
 describe("Tutor focus mode — push 36", () => {
   const routersSrc = fs.readFileSync(path.join(__dirname, "routers.ts"), "utf-8");
-  const cozySrc = fs.readFileSync(
-    path.join(__dirname, "..", "client", "src", "components", "CozyShell.tsx"),
+  const dockSrc = fs.readFileSync(
+    path.join(__dirname, "..", "client", "src", "components", "OrbDock.tsx"),
     "utf-8",
   );
   const hookSrc = fs.readFileSync(
@@ -57,24 +57,24 @@ describe("Tutor focus mode — push 36", () => {
     expect(hookSrc).toMatch(/toggle: \(\) => void/);
   });
 
-  it("CozyShell filters ADULT_NAV to three focus pages when tutor mode is on", () => {
-    expect(cozySrc).toContain('TUTOR_FOCUS_PATHS = new Set(["/curriculum", "/agenda-editor", "/notes"])');
-    expect(cozySrc).toContain("adultNavFiltered = tutorModeOn");
-    expect(cozySrc).toContain("ADULT_NAV.filter((n) => TUTOR_FOCUS_PATHS.has(n.to))");
+  it("OrbDock filters ADULT_ORBS to the focus pages when tutor mode is on", () => {
+    expect(dockSrc).toContain('TUTOR_FOCUS_PATHS = new Set(["/curriculum", "/agenda-editor", "/notes"])');
+    expect(dockSrc).toContain("adultOrbs = tutorModeOn");
+    expect(dockSrc).toContain("ADULT_ORBS.filter((o) => TUTOR_FOCUS_PATHS.has(o.to))");
   });
 
-  it("CozyShell hides the Drive Hub link when tutor mode is on", () => {
-    expect(cozySrc).toContain("{!tutorModeOn && (");
+  it("OrbDock hides the Drive Hub link when tutor mode is on", () => {
+    expect(dockSrc).toContain("{!tutorModeOn && (");
     // The Drive Hub anchor is guarded by !tutorModeOn — search for both.
-    const idx = cozySrc.indexOf("{!tutorModeOn && (");
-    const slice = cozySrc.slice(idx, idx + 600);
+    const idx = dockSrc.indexOf("{!tutorModeOn && (");
+    const slice = dockSrc.slice(idx, idx + 600);
     expect(slice).toContain("DRIVE_HUB_URL");
   });
 
-  it("CozyShell renders a Tutor Mode toggle button when adult area is unlocked", () => {
-    expect(cozySrc).toContain("Tutor mode ON");
-    expect(cozySrc).toContain("Tutor mode");
-    expect(cozySrc).toContain("setTutorMode(!tutorModeOn)");
+  it("OrbDock renders a Tutor Mode toggle button when adult area is unlocked", () => {
+    expect(dockSrc).toContain("Tutor ON");
+    expect(dockSrc).toContain("Tutor mode");
+    expect(dockSrc).toContain("setTutorMode(!tutorModeOn)");
   });
 
   it("AgendaEditor shows a banner when tutor mode is on", () => {
