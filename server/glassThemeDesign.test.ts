@@ -75,4 +75,12 @@ describe("glass theme — canonical clear-3D-glass design contract", () => {
   it("keeps headings legible over the photo (text-shadow scrim)", () => {
     expect(glassRules).toMatch(/h1,[\s\S]{0,120}text-shadow/);
   });
+
+  it("forces hardcoded dark text utilities light so nothing sinks into the glass (NO GREY BOXES)", () => {
+    expect(glassRules).toContain(".text-gray-900");
+    expect(glassRules).toContain(".text-slate-800");
+    expect(glassRules).toContain(".text-foreground");
+    // they must resolve to a light color
+    expect(glassRules).toMatch(/\.text-foreground\s*\{\s*color:\s*#eef2fb/);
+  });
 });

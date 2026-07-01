@@ -1731,6 +1731,7 @@ The recurring "links don't work / go to home page / no longer exist" problem com
 - [x] glass theme body: full-bleed fixed photorealistic background + soft readability scrim (was a flat dark gradient).
 - [x] glass surfaces rebuilt as genuine clear 3D glass: lower fill opacity so the scene shows through, beveled top light-rim (border-top-color) + inner specular highlight (inset) + soft realistic drop shadow (rgba(4,10,24,...)). Sidebar made a clearer glass pane.
 - [x] glass shell: primary nav links styled as floating clear-glass "gem" pills that lift on hover and lift+glow when active; slim translucent glass top-bar treatment.
-- [x] Test: server/glassThemeDesign.test.ts (8) pins the design contract (bg asset, translucent fill+blur, beveled rim+specular, drop shadow, gem-pill active glow, slim top bar, heading legibility scrim).
-- [x] Full suite green (574 files / 5221 passing, 7 skipped); TypeScript + LSP clean.
+- [x] Legibility safety net: hardcoded dark-text utilities (text-gray/slate/zinc/neutral/stone-600..900, text-black, text-foreground) forced light on glass so nothing sinks into the translucent panes over the photo (upholds NO-GREY-BOXES / >=4.5:1). Always-dark study pages (Flashcards/Review) keep their own dark surface.
+- [x] Test: server/glassThemeDesign.test.ts (9) pins the design contract (bg asset, translucent fill+blur, beveled rim+specular, drop shadow, gem-pill active glow, slim top bar, heading legibility scrim, dark-text-utility override).
+- [x] Full suite green (574 files / 5222 passing, 7 skipped); TypeScript + LSP clean.
 - Note: could not visually verify in the sandbox browser (preview hit the Manus OAuth login wall). Verified via clean build + HMR apply + CSS contract test. Katy should confirm the look on her logged-in device.

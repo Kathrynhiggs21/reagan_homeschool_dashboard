@@ -1663,6 +1663,20 @@ html[data-rtheme="glass"] .chalk-yellow,
 html[data-rtheme="glass"] aside .chalk-yellow { color: #fcd34d !important; }
 html[data-rtheme="glass"] .text-muted-foreground { color: rgba(226,232,246,0.74) !important; }
 html[data-rtheme="glass"] h1, html[data-rtheme="glass"] h2 { color: #f3f6ff !important; text-shadow: 0 1px 12px rgba(0,0,0,0.35) !important; }
+/* Legibility safety net: dark-text utilities that some pages hardcode would  */
+/* sink into the translucent glass over the photo. Force them light so the    */
+/* NO-GREY-BOXES / >=4.5:1 contrast rule holds on the glass theme too. The    */
+/* always-dark study pages (Flashcards / Review) keep their own dark surface. */
+html[data-rtheme="glass"] .text-black,
+html[data-rtheme="glass"] .text-gray-600, html[data-rtheme="glass"] .text-gray-700,
+html[data-rtheme="glass"] .text-gray-800, html[data-rtheme="glass"] .text-gray-900,
+html[data-rtheme="glass"] .text-slate-600, html[data-rtheme="glass"] .text-slate-700,
+html[data-rtheme="glass"] .text-slate-800, html[data-rtheme="glass"] .text-slate-900,
+html[data-rtheme="glass"] .text-zinc-700, html[data-rtheme="glass"] .text-zinc-800,
+html[data-rtheme="glass"] .text-zinc-900, html[data-rtheme="glass"] .text-neutral-700,
+html[data-rtheme="glass"] .text-neutral-800, html[data-rtheme="glass"] .text-neutral-900,
+html[data-rtheme="glass"] .text-stone-700, html[data-rtheme="glass"] .text-stone-800,
+html[data-rtheme="glass"] .text-foreground { color: #eef2fb !important; }
 
 /* Genuine clear 3D glass panes — truly transparent, backdrop-blurred,     */
 /* beveled top light-rim + inner specular highlight + soft realistic drop  */
