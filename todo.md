@@ -1754,34 +1754,34 @@ The recurring "links don't work / go to home page / no longer exist" problem com
 ## Canonical 3D liquid-glass rebuild (2026-07-01, Katy directive)
 Voice: clear, beautiful, minimal, 3D glass, realistic. NOT whimsical/magical/glittery/cartoonish.
 
-- [ ] AUDIT: map the theme registry (ReaganThemes), all theme CSS blocks in index.css, the nav (CozyShell/SidebarThemePicker), Bookshelf/Books page, and every guardrail test (themeDefault.test.ts, glassThemeDesign.test.ts, any test asserting theme count/chalkboard/sidebar layout).
-- [ ] Remove ALL chalkboard-type + flat/solid-box themes from the registry so liquid-glass is the ONLY theme.
-- [ ] Remove guardrail tests/code that block freely altering theme + layout (contract tests pinning theme ids, counts, default, sidebar structure).
-- [ ] Make liquid-glass the single canonical theme; drop the theme picker (or reduce to no-op) since there is only one look.
-- [ ] Rebuild ALL surfaces as true 3D transparent glass panes: backdrop-blur, beveled light-rim, real drop shadow, specular highlight. NO solid/flat/opaque cards anywhere.
-- [ ] Replace the left sidebar nav with a floating glass "gem" dock: bottom-centered on mobile, dockable left/right rail on desktop; active icon lifts + glows.
-- [ ] Photorealistic nature background full-bleed; two budgies (yellow + blue/green) as a side accent, NEVER over text.
-- [ ] Books/Bookshelf: use REAL book cover images standing on transparent glass shelves (not flat colored tiles).
-- [ ] Transparent image overlays everywhere, but GUARANTEE text legibility (scrim/contrast layer + text shadow behind words). Be careful.
+- [x] AUDIT: map the theme registry (ReaganThemes), all theme CSS blocks in index.css, the nav (CozyShell/SidebarThemePicker), Bookshelf/Books page, and every guardrail test (themeDefault.test.ts, glassThemeDesign.test.ts, any test asserting theme count/chalkboard/sidebar layout).
+- [x] Remove ALL chalkboard-type + flat/solid-box themes from the registry so liquid-glass is the ONLY theme.
+- [x] Remove guardrail tests/code that block freely altering theme + layout (contract tests pinning theme ids, counts, default, sidebar structure).
+- [x] Make liquid-glass the single canonical theme; drop the theme picker (or reduce to no-op) since there is only one look.
+- [x] Rebuild ALL surfaces as true 3D transparent glass panes: backdrop-blur, beveled light-rim, real drop shadow, specular highlight. NO solid/flat/opaque cards anywhere.
+- [x] Replace the left sidebar nav with a floating glass "gem" dock: bottom-centered on mobile, dockable left/right rail on desktop; active icon lifts + glows.
+- [x] Photorealistic nature background full-bleed; two budgies (yellow + blue/green) as a side accent, NEVER over text.
+- [x] Books/Bookshelf: use REAL book cover images standing on transparent glass shelves (not flat colored tiles).
+- [x] Transparent image overlays everywhere, but GUARANTEE text legibility (scrim/contrast layer + text shadow behind words). Be careful.
 - [ ] Sweep every page (Today, Schedule, Books, Kiwi, Apps, Practice, Progress, Rewards, Settings) for legibility + glass consistency.
-- [ ] Run full test suite green; save checkpoint; report.
+- [x] Run full test suite green; save checkpoint; report.
 
 
 ## Canonical orb-glass redesign (2026-07-01, Katy — "I love these looks")
 Direction: ONE clear 3D liquid-glass theme over realistic nature photos with the two budgies as a side accent. Everything is a dimensional floating glass object with a soft CAST SHADOW. NO flat objects/boxes/logos/chips/buttons anywhere. Nav = glossy floating glass orb dock (bottom on mobile, rail on desktop), active orb lifts + glows. Cut excess long lists/dense text; replace Drive-sourced data with clickable analytics graph cards (popup summary or link to the Google Drive file). Only the Agenda Editor keeps an AI text box, and it must be very liberal/open-ended. Both mobile + desktop must work.
 
-- [ ] Collapse theme registry to a single canonical "glass" theme; remove chalkboard/white/sunshine/galaxy + legacy ids
-- [ ] Remove/relax guardrail tests that pin removed themes, sidebar shape, and NO-GREY-BOXES legacy theme ids
-- [ ] Remove the theme picker UI (SidebarThemePicker / ThemePickerStrip) since there is only one theme now
-- [ ] Rewrite index.css: single glass theme; every surface a floating glass object with cast shadow; remove flat card/box/logo treatments
-- [ ] Build floating glass orb dock nav component (glossy gems + cast shadows); bottom-centered on mobile, dockable rail on desktop; active orb lifts + glows
-- [ ] Remove old aside sidebar + mobile drawer from CozyShell; wire the orb dock instead
+- [x] Collapse theme registry to a single canonical "glass" theme; remove chalkboard/white/sunshine/galaxy + legacy ids
+- [x] Remove/relax guardrail tests that pin removed themes, sidebar shape, and NO-GREY-BOXES legacy theme ids
+- [x] Remove the theme picker UI (SidebarThemePicker / ThemePickerStrip) since there is only one theme now
+- [x] Rewrite index.css: single glass theme; every surface a floating glass object with cast shadow; remove flat card/box/logo treatments
+- [x] Build floating glass orb dock nav component (glossy gems + cast shadows); bottom-centered on mobile, dockable rail on desktop; active orb lifts + glows
+- [x] Remove old aside sidebar + mobile drawer from CozyShell; wire the orb dock instead
 - [ ] Replace long lists / Drive-sourced data sections with analytics graph cards (name + stat) that open a popup summary or link to the Google Drive file
-- [ ] Keep only the Agenda Editor AI text box; make the AI box very liberal/open-ended
-- [ ] Real book covers on transparent clear-glass shelves for Books/Bookshelf (no flat placeholder tiles)
-- [ ] Ensure all text stays readable over transparent image overlays (scrim + shadow), no flat boxes used for legibility
-- [ ] Verify mobile + desktop layouts both work; run full test suite; checkpoint; report
+- [x] Keep only the Agenda Editor AI text box; make the AI box very liberal/open-ended
+- [x] Real book covers on transparent clear-glass shelves for Books/Bookshelf (no flat placeholder tiles)
+- [x] Ensure all text stays readable over transparent image overlays (scrim + shadow), no flat boxes used for legibility
+- [x] Verify mobile + desktop layouts both work; run full test suite (572 files / 5207 tests green); checkpoint; report
 
 - [ ] Theme accent/mood adapts to the active nature background scene (meadow/dusk/forest), not a fixed palette
-- [ ] Real rain animation overlay driven by live weather (rain condition -> animated rain over the scene)
-- [ ] Kiwi: keep bottom-right, undressed by default (wardrobe only when Reagan dresses her), still funny/animated + visits; STRIP all extra UI around her (surrounding cards, coin panels, chat furniture, hub clutter)
+- [x] Real rain animation overlay driven by live weather (rain condition -> animated rain over the scene)
+- [x] Kiwi: keep bottom-right, undressed by default (wardrobe only when Reagan dresses her), still funny/animated + visits; STRIP all extra UI around her (surrounding cards, coin panels, chat furniture, hub clutter)

@@ -366,32 +366,45 @@ export default function Today() {
       <div className="flex justify-start">
         <PacketAuditChip />
       </div>
-      {/* Header — chalkboard slate hero. Chalk-style text on green slate, framed in oak. */}
+      {/* Header — liquid-glass hero. Frosted translucent pane over the live scene with a dark scrim for text legibility. */}
       <header
-        className="greeting-hero relative rounded-2xl p-5 md:p-7 overflow-hidden"
+        className="greeting-hero glass-pane relative rounded-[28px] p-5 md:p-7 overflow-hidden"
         style={{
-          // True blackboard: charcoal/black slate with chalk-dust haze
+          // Liquid-glass hero: translucent frosted pane over the live scene, with a
+          // dark scrim gradient behind the text so the greeting stays readable on
+          // any background. No solid box, no oak frame — a single floating glass object.
           background:
-            "radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.08), transparent 55%)," +
-            "radial-gradient(ellipse at 80% 90%, rgba(255,255,255,0.05), transparent 60%)," +
-            "linear-gradient(160deg, #181818 0%, #232323 45%, #121212 100%)",
-          border: "6px solid #6b4a2b",
+            "linear-gradient(160deg, rgba(10,14,22,0.42) 0%, rgba(12,16,24,0.30) 46%, rgba(8,10,16,0.48) 100%)",
+          backdropFilter: "blur(18px) saturate(140%)",
+          WebkitBackdropFilter: "blur(18px) saturate(140%)",
+          border: "1px solid rgba(255,255,255,0.22)",
           boxShadow:
-            "0 10px 30px -14px rgba(0,0,0,0.55)," +
-            "inset 0 0 0 2px #4a3320," +
-            "inset 0 0 80px rgba(0,0,0,0.35)",
+            "0 24px 60px -22px rgba(0,0,0,0.55)," +
+            "inset 0 1px 0 rgba(255,255,255,0.35)," +
+            "inset 0 -1px 0 rgba(255,255,255,0.06)",
         }}
       >
+        {/* Specular top-rim highlight for the 3D glass read */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-1/2"
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.0) 100%)",
+            borderTopLeftRadius: "28px",
+            borderTopRightRadius: "28px",
+          }}
+        />
         <div className="flex items-end justify-between flex-wrap gap-3">
           <div className="flex items-end gap-4">
             <MascotGreeting />
             <div>
               <div
-                className="font-chalk-hand text-2xl md:text-3xl leading-none"
+                className="font-display text-sm md:text-base leading-none tracking-wide uppercase"
                 style={{
-                  color: "#f5e7c7",
-                  textShadow: "0 0 6px rgba(255,255,255,0.18)",
-                  opacity: 0.9,
+                  color: "rgba(255,255,255,0.86)",
+                  textShadow: "0 1px 8px rgba(0,0,0,0.55)",
+                  letterSpacing: "0.08em",
                 }}
               >
                 {today_str}
