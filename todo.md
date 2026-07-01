@@ -1745,3 +1745,7 @@ The recurring "links don't work / go to home page / no longer exist" problem com
 - [x] Confirmed the mobile slide-in drawer reads as glass: the drawer is the same <aside> element, so the glass `aside` rule (translucent blur pane + light rim) applies on mobile; bg-sidebar is overridden by the theme fill; dimmed backdrop sits beneath.
 - [x] Added server/themeDefault.test.ts (7) pinning the glass-default/recommended contract; glassThemeDesign test still green.
 - [x] Full suite green (575 files / 5229 passing, 7 skipped); TS + LSP clean.
+
+## Glass legibility verification pass (2026-07-01)
+- [x] Rendered the shipped glass CSS against a Today mockup + a dense Schedule/Books mockup (headless chromium) since the live preview sits behind Manus OAuth. Confirmed: transparent blurred panes with bright top light-rim, glowing active nav pill, legible small table text + page numbers, color-coded Done/To-do chips, no grey boxes, no sunken text. No CSS changes needed.
+- [x] Re-ran full suite after verification: 575 files / 5229 passing, 7 skipped.
