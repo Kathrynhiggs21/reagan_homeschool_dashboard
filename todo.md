@@ -1673,12 +1673,12 @@ All older open lines above were accumulated planning sub-notes from earlier sess
 ---
 
 ## 🐛 2026-07-01 — Worksheet links STILL broken → switch to self-hosted PDF downloads (Katy: "the links still do not work. what about pulling pdf from links pre create and adding them to download")
-- [ ] Audit every worksheet/practice "Open/Download" surface (subjectFallbackActivity.ts, practiceLibrary.ts, BlockResourcesPanel, Today.tsx, GeneratedBlockHint, PrintWorksheetButton) and the storage helpers
-- [ ] Decide pipeline: generate a real worksheet PDF per practice/fallback item (server-side, stored in app storage via storagePut) and serve a direct /manus-storage download
-- [ ] Build the PDF generator (subject-colored header, name/date/title, 0.5in margins, full-page answer space, no ads) + a tRPC procedure that returns/creates the stored PDF on demand (idempotent by content hash)
-- [ ] Replace external link buttons with "Download worksheet (PDF)" pointing at the stored file; keep a clearly-labeled optional external practice link only where it actually works
-- [ ] Tests: generator output is a valid PDF, idempotent storage key, procedure contract, no known-dead URL patterns remain as the primary action
-- [ ] Verify full suite + checkpoint
+- [x] Audited all surfaces. Findings: PrintWorksheetButton already uses the self-hosted pipeline (forBlock -> makePdf -> signed /manus-storage URL, no external primary). BlockResourcesPanel is an ADULT authoring panel (Mom attaches/removes materials) — its "open" link is intentional, not a kid fallback. practiceLibrary external URLs are opt-in "practice online for coins" drills, already guarded by worksheetLinks.test.ts (https + no dead patterns). The fragile kid-facing surfaces were subjectFallbackActivity (Today fallback dialog) + GeneratedBlockHint.
+- [x] Pipeline: reused the existing generateForSubject service (cache-first, generates WorksheetContent via LLM-first/deterministic-fallback, renders the colorful student PDF + answer key, stores in S3, returns /manus-storage url). No new generator needed — the self-hosted PDF infra already existed and is idempotent via worksheetPdfCache (subjectSlug+topicKey+contentVersion).
+- [x] Generator + procedure already shipped earlier today (worksheets.generateForSubject + renderAndStoreWorksheetPdf): subject-themed colorful header, Name/Date box, full answer space, no ads, adult answer-key page.
+- [x] Replaced kid-facing external buttons: TodaySchoolWork fallback dialog now leads with "Print a paper copy" (hosted PDF) for academic subjects and demotes the external site to a small "Or practice online ↗"; GeneratedBlockHint shows an external CTA only for video blocks. Activity subjects (art/music/pe/outdoors/wonder) keep their external link because the activity IS the link.
+- [x] Tests: academicSubjects.test.ts (22) + worksheetLinks.test.ts (20) + earlier subjectWorksheetPdf.test.ts (13, valid-PDF render smoke + idempotent cache key + procedure contract). No known-dead URL is a primary action.
+- [x] Full suite green (573 files / 5213 passing, 7 skipped); checkpoint f57ba10b.
 
 
 ---
@@ -1723,3 +1723,14 @@ The recurring "links don't work / go to home page / no longer exist" problem com
 - [x] TodaySchoolWork fallback dialog: for academic subjects the PRIMARY action is now "Print a paper copy" (generateForSubject -> /manus-storage PDF, no external site/login); external site demoted to a small secondary "Or practice online ↗". Activity subjects keep the external link primary.
 - [x] GeneratedBlockHint: external "Open ↗" CTA now shows ONLY for video kind; worksheet/printable kinds no longer surface a fragile external link (tapping the block opens the in-app reliable path).
 - [x] Tests: server/academicSubjects.test.ts (22) + existing server/worksheetLinks.test.ts (20) green. Full suite 573 files / 5213 passing, 7 skipped; TS + LSP clean.
+
+
+## Glassmorphism redesign — clear · minimal · 3D liquid glass over real nature (2026-07-01, Katy canonical direction)
+- [x] Saved canonical design direction to references/DESIGN_DIRECTION.md (voice: clear/minimal/3D glass/realistic; NOT whimsical/glittery/cartoonish).
+- [x] Generated photorealistic nature + two-budgie backgrounds (desktop + mobile, birds off to the side leaving clear content space); uploaded to webdev static hosting (CloudFront .webp).
+- [x] glass theme body: full-bleed fixed photorealistic background + soft readability scrim (was a flat dark gradient).
+- [x] glass surfaces rebuilt as genuine clear 3D glass: lower fill opacity so the scene shows through, beveled top light-rim (border-top-color) + inner specular highlight (inset) + soft realistic drop shadow (rgba(4,10,24,...)). Sidebar made a clearer glass pane.
+- [x] glass shell: primary nav links styled as floating clear-glass "gem" pills that lift on hover and lift+glow when active; slim translucent glass top-bar treatment.
+- [x] Test: server/glassThemeDesign.test.ts (8) pins the design contract (bg asset, translucent fill+blur, beveled rim+specular, drop shadow, gem-pill active glow, slim top bar, heading legibility scrim).
+- [x] Full suite green (574 files / 5221 passing, 7 skipped); TypeScript + LSP clean.
+- Note: could not visually verify in the sandbox browser (preview hit the Manus OAuth login wall). Verified via clean build + HMR apply + CSS contract test. Katy should confirm the look on her logged-in device.
