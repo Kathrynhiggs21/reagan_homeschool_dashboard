@@ -1763,7 +1763,7 @@ Voice: clear, beautiful, minimal, 3D glass, realistic. NOT whimsical/magical/gli
 - [x] Photorealistic nature background full-bleed; two budgies (yellow + blue/green) as a side accent, NEVER over text.
 - [x] Books/Bookshelf: use REAL book cover images standing on transparent glass shelves (not flat colored tiles).
 - [x] Transparent image overlays everywhere, but GUARANTEE text legibility (scrim/contrast layer + text shadow behind words). Be careful.
-- [ ] Sweep every page (Today, Schedule, Books, Kiwi, Apps, Practice, Progress, Rewards, Settings) for legibility + glass consistency.
+- [x] Sweep every page (Today, Schedule, Books, Kiwi, Apps, Practice, Progress, Rewards, Settings) for legibility + glass consistency.
 - [x] Run full test suite green; save checkpoint; report.
 
 
@@ -1785,3 +1785,14 @@ Direction: ONE clear 3D liquid-glass theme over realistic nature photos with the
 - [x] Theme accent/mood adapts to the active nature background scene (forest/overcast/rain/dusk/night) driven by live Open-Meteo weather + golden-hour time-of-day; swaps both the full-bleed photo (data-rscene) and the glass --scene-accent. 10 vitest scenarios in sceneAdaptiveBackground.test.ts.
 - [x] Real rain animation overlay driven by live weather (rain condition -> animated rain over the scene)
 - [x] Kiwi: keep bottom-right, undressed by default (wardrobe only when Reagan dresses her), still funny/animated + visits; STRIP all extra UI around her (surrounding cards, coin panels, chat furniture, hub clutter)
+
+## Post-audit cleanup (2026-07-01)
+- [x] Remove unreachable legacy theme CSS blocks from index.css (chalkboard/galaxy/sunshine/white/cream/notebook/starry) leaving only glass — rule-level pruner dropped 464 dead selectors, 0 remain, glass selectors intact, 105KB→59KB, braces balanced 216/216
+- [x] Close the custom-background override so a saved color/image cannot flatten the glass scene photo under data-rtheme="glass" — both data-rbg=color/image body rules now carry :not([data-rtheme="glass"]) guard; scene photo always wins under the canonical theme
+- [x] Add guard test asserting index.css ships only the glass theme + custom-bg cannot override scene bg (glassThemeCleanup.test.ts, 6 scenarios); repointed stale noGreyBoxesCss dead-theme assertions to :root
+
+## Layout refinement toward glassmorphism design intent (2026-07-01)
+- [x] Liquid-glass page-title bubbles that appear one-by-one (PageTitle.tsx) — wired into Schedule, Analytics, Bookshelf; pop-in keyframes + staggered animationDelay
+- [x] Large animated transparent budgie present across the scene as a soft overlay (BudgieOverlay.tsx) — lower-left gutter, z-index:1 behind content, pointer-events:none, float animation, reduced-motion safe
+- [x] Blurred pop-up glass surfaces / overlapping depth on key pages; desktop-first (title bubbles + existing glass panes)
+- [x] Run full suite green (575 files / 5231 tests); checkpoint; deliver — guard test glassLayoutRefine.test.ts (9 scenarios)

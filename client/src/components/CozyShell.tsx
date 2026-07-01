@@ -4,6 +4,7 @@ import WeatherWidget from "./WeatherWidget";
 import NotificationBell from "./NotificationBell";
 import OrbDock from "./OrbDock";
 import RainOverlay from "./RainOverlay";
+import BudgieOverlay from "./BudgieOverlay";
 
 /**
  * CozyShell — the canonical liquid-glass app shell (2026-07-01, Katy).
@@ -26,6 +27,9 @@ export default function CozyShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen relative">
       {/* Real rain when the weather says so. */}
       <RainOverlay />
+
+      {/* Large transparent budgie, softly present behind all content. */}
+      <BudgieOverlay />
 
       {/* Floating glass controls, top-right. */}
       <div className="fixed top-3 right-3 z-40 flex items-center gap-2 no-print">

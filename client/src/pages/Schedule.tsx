@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useAdultLock } from "@/contexts/AdultLockContext";
 import TodayForwardPlanCard from "@/components/TodayForwardPlanCard";
+import PageTitle from "@/components/PageTitle";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -117,11 +118,8 @@ export default function Schedule() {
     <div className="container py-6 max-w-5xl space-y-6">
       <header className="flex flex-wrap items-end gap-3 justify-between">
         <div>
-          <div className="text-sm text-amber-700/80 font-display italic">Reagan&apos;s plan</div>
-          <h1 className="text-3xl font-display font-bold text-amber-950 dark:text-amber-100 flex items-center gap-2">
-            <Calendar className="w-7 h-7 text-amber-700" /> Schedule
-          </h1>
-          <p className="text-sm text-muted-foreground max-w-prose">
+          <PageTitle icon={<Calendar className="w-5 h-5" />} title="Schedule" subtitle="Reagan's plan" />
+          <p className="text-sm text-white/90 max-w-prose" style={{ textShadow: "0 1px 2px rgba(6,12,24,0.5)" }}>
             Tap any day to see what&apos;s on it. Off days from Indian Hill show up in pink.{" "}
             {daysToSummer > 0 && (
               <span className="font-semibold text-amber-800">{daysToSummer} day{daysToSummer === 1 ? "" : "s"} until summer break.</span>

@@ -5,16 +5,19 @@ import path from "path";
 /**
  * Push 18 (2026-05-12): "STANDING RULE — NO GREY BOXES, ANYWHERE" lock.
  *
- * The CSS sweep at index.css ~989-1056 must:
- *   1. Define the warm-surface CSS variables for both the dark
- *      (starry/chalkboard) and light (cream/notebook) themes.
+ * UPDATED 2026-07-01: the legacy multi-theme system was pruned to a single
+ * canonical glass theme. The warm-surface variables that used to be defined
+ * per-theme (starry/chalkboard/cream/notebook) now live on :root, so they
+ * apply universally regardless of theme. The overrides themselves are
+ * unchanged. This test still guards:
+ *   1. The warm-surface CSS variables are defined on :root (universal).
  *   2. Override every Tailwind grey-family surface (bg-muted, bg-slate-*,
  *      bg-gray-*, bg-zinc-*, bg-neutral-*) with the warm surface.
  *   3. Override grey text (text-slate-*, text-gray-*, etc.) with readable ink.
  *   4. Override grey borders (border-slate-200, etc.) with warm edge color.
  *
  * If any of these regress (eg. someone removes the !important or the
- * theme variable block), this test fails loudly so the sweep stays intact.
+ * variable block), this test fails loudly so the sweep stays intact.
  */
 
 const CSS = readFileSync(
@@ -23,16 +26,21 @@ const CSS = readFileSync(
 );
 
 describe("STANDING RULE — NO GREY BOXES (CSS sweep)", () => {
-  it("defines warm-surface variables on starry/chalkboard themes", () => {
-    expect(CSS).toMatch(/html\[data-rtheme="starry"\][^{]*,?\s*html\[data-rtheme="chalkboard"\][^{]*\{[^}]*--no-grey-surface/s);
+  it("defines the base warm-surface variable on :root (universal)", () => {
+    expect(CSS).toMatch(/:root\s*\{[^}]*--no-grey-surface:/s);
   });
 
-  it("defines warm-surface variables on cream/notebook themes", () => {
-    expect(CSS).toMatch(/html\[data-rtheme="cream"\][^{]*,?\s*html\[data-rtheme="notebook"\][^{]*\{[^}]*--no-grey-surface/s);
+  it("defines the strong warm-surface + ink + edge variables on :root", () => {
+    expect(CSS).toMatch(/:root\s*\{[^}]*--no-grey-surface-strong:/s);
+    expect(CSS).toMatch(/:root\s*\{[^}]*--no-grey-ink:/s);
+    expect(CSS).toMatch(/:root\s*\{[^}]*--no-grey-ink-soft:/s);
+    expect(CSS).toMatch(/:root\s*\{[^}]*--no-grey-edge:/s);
   });
 
-  it("provides a :root fallback so non-themed pages also get warmed", () => {
-    expect(CSS).toMatch(/:root\s*\{[^}]*--no-grey-surface/s);
+  it("no longer references any pruned legacy theme in the grey sweep", () => {
+    for (const dead of ["starry", "chalkboard", "cream", "notebook", "galaxy", "sunshine", "white"]) {
+      expect(CSS.includes(`data-rtheme="${dead}"`)).toBe(false);
+    }
   });
 
   it("overrides every bg-muted variant", () => {

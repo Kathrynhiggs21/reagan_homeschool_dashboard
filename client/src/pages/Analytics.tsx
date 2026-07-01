@@ -19,6 +19,7 @@ function OpenInDrive({ label }: { label?: string }) {
 }
 
 import PrintButton from "@/components/PrintButton";
+import PageTitle from "@/components/PageTitle";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import TrajectoryCard from "@/components/TrajectoryCard";
@@ -156,8 +157,8 @@ export default function Analytics() {
     <div className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-display font-semibold">Analytics 📊</h1>
-          <p className="text-muted-foreground text-sm mt-1">For adults — Reagan's growth, patterns, and where she needs support. Never shown to her.</p>
+          <PageTitle icon={<span>📊</span>} title="Analytics" subtitle="Adults only" />
+          <p className="text-white/90 text-sm mt-1" style={{ textShadow: "0 1px 2px rgba(6,12,24,0.5)" }}>For adults — Reagan's growth, patterns, and where she needs support. Never shown to her.</p>
           {/* v2.43 (2026-05-18) — root-level "Open in Drive" button so the
               long-term archive (Reagan School Hub → 05 Progress and Reports
               → Analytics) is one tap away from the Analytics page header. */}

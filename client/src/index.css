@@ -239,20 +239,6 @@
   details[open] > div {
     color: inherit;
   }
-  /* The tan/amber expanded block fix: force readable text in all light themes */
-  html[data-rtheme="cream"] details[open] > div,
-  html[data-rtheme="notebook"] details[open] > div {
-    color: #2d2317 !important;
-  }
-  html[data-rtheme="cream"] details[open] > div *,
-  html[data-rtheme="notebook"] details[open] > div * {
-    color: inherit;
-  }
-  /* Dark themes keep white text */
-  html[data-rtheme="chalkboard"] details[open] > div,
-  html[data-rtheme="chalkboard"] details[open] > div * {
-    color: #f0ebe0 !important;
-  }
 
   /* ===== Professional shadcn Card override — deeper 3D lift ===== */
   [data-slot="card"] {
@@ -261,14 +247,6 @@
       0 2px 0 oklch(0 0 0 / 0.22),
       0 8px 20px -6px oklch(0 0 0 / 0.32),
       0 20px 44px -14px oklch(0 0 0 / 0.22) !important;
-  }
-  html[data-rtheme="cream"] [data-slot="card"],
-  html[data-rtheme="notebook"] [data-slot="card"] {
-    box-shadow:
-      0 1px 0 rgba(255,255,255,0.9) inset,
-      0 2px 0 rgba(120,80,30,0.14),
-      0 8px 20px -6px rgba(120,80,30,0.12),
-      0 20px 44px -14px rgba(120,80,30,0.08) !important;
   }
 
   /* ===== Expanded chalk palette ===== */
@@ -454,11 +432,15 @@
 
 /* ---- Weather widget (glassy upper-left) ---- */
   /* === Reagan-pickable custom background ============================ */
-  html[data-rbg="color"] body {
+  /* Custom backgrounds are only honored OUTSIDE the canonical glass theme.
+     Under data-rtheme="glass" the live scene photo (data-rscene) must always
+     win, so a previously-saved color/image can never flatten the nature scene.
+     The :not([data-rtheme="glass"]) guard keeps these overrides dormant. */
+  html[data-rbg="color"]:not([data-rtheme="glass"]) body {
     background-color: var(--reagan-bg-color) !important;
     background-image: none !important;
   }
-  html[data-rbg="image"] body {
+  html[data-rbg="image"]:not([data-rtheme="glass"]) body {
     background-image: var(--reagan-bg-image) !important;
     background-size: cover !important;
     background-position: center !important;
@@ -480,13 +462,6 @@
   color: #2a2014;
   font-family: var(--font-display, system-ui), system-ui, sans-serif;
   user-select: none;
-}
-html[data-rtheme="chalkboard"] .weather-widget,
-html[data-rtheme="starry"] .weather-widget {
-  background: rgba(20, 28, 40, 0.55);
-  color: #f1ecdf;
-  border-color: rgba(255, 255, 255, 0.18);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 .weather-emoji { font-size: 1.4rem; line-height: 1; filter: drop-shadow(0 1px 1px rgba(0,0,0,0.15)); }
 .weather-text  { display: flex; align-items: baseline; gap: 0.4rem; }
@@ -543,165 +518,6 @@ html[data-rtheme="starry"] .weather-widget {
 .print-only { display: none; }
 
 
-/* ===== Reagan Theme system (Pass 3) ===== */
-
-/* Cream Homeschool (light paper) */
-html[data-rtheme="cream"] body {
-  background:
-    radial-gradient(circle at 12% 8%, rgba(255, 220, 160, 0.35) 0, transparent 40%),
-    radial-gradient(circle at 88% 18%, rgba(186, 223, 255, 0.3) 0, transparent 42%),
-    radial-gradient(circle at 50% 95%, rgba(255, 199, 211, 0.3) 0, transparent 50%),
-    #fbf4e6;
-  color: #2d2317;
-}
-html[data-rtheme="cream"] .chalk-white { color: #2d2317 !important; }
-html[data-rtheme="cream"] .chalk-yellow { color: #b88a1a !important; }
-html[data-rtheme="cream"] .text-muted-foreground { color: rgba(45, 35, 23, 0.6) !important; }
-
-/* Chalkboard Night (pure black) */
-html[data-rtheme="chalkboard"] body {
-  background: #0a0a0a;
-  background-image:
-    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.018) 0, transparent 60%);
-}
-
-/* Notebook Doodle (paper with ruled lines) */
-html[data-rtheme="notebook"] body {
-  background:
-    linear-gradient(to right, transparent 56px, rgba(220, 80, 80, 0.35) 56px, rgba(220, 80, 80, 0.35) 57px, transparent 57px),
-    repeating-linear-gradient(to bottom, #fdfbf3 0, #fdfbf3 31px, rgba(100, 140, 200, 0.22) 31px, rgba(100, 140, 200, 0.22) 32px),
-    #fdfbf3;
-  color: #1e2e52;
-}
-html[data-rtheme="notebook"] .chalk-white { color: #1e2e52 !important; }
-html[data-rtheme="notebook"] .chalk-yellow { color: #b88a1a !important; }
-html[data-rtheme="notebook"] .text-muted-foreground { color: rgba(30, 46, 82, 0.6) !important; }
-
-/* In the light themes, soften the strong drop-shadows on big titles to keep readability */
-html[data-rtheme="cream"] h1, html[data-rtheme="cream"] h2,
-html[data-rtheme="notebook"] h1, html[data-rtheme="notebook"] h2 {
-  text-shadow: none !important;
-}
-
-
-/* ===== Light-theme card overrides so panels are readable on cream/notebook bg ===== */
-html[data-rtheme="cream"] .chalkboard,
-html[data-rtheme="cream"] .cozy-card,
-html[data-rtheme="cream"] .classroom-card {
-  background: rgba(255, 250, 235, 0.92) !important;
-  border: 1px solid rgba(160, 120, 60, 0.28) !important;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.8) inset,
-    0 12px 28px rgba(120, 80, 30, 0.10),
-    0 2px 6px rgba(120, 80, 30, 0.08) !important;
-  color: #2d2317 !important;
-}
-html[data-rtheme="cream"] aside,
-html[data-rtheme="cream"] [aria-label="Sidebar"] {
-  background: rgba(255, 248, 230, 0.95) !important;
-  border-right: 1px solid rgba(160, 120, 60, 0.2) !important;
-  color: #2d2317 !important;
-}
-html[data-rtheme="cream"] .schedule-row,
-html[data-rtheme="cream"] .schedule-row-v2 {
-  background: rgba(255, 253, 245, 0.85) !important;
-  color: #2d2317 !important;
-  box-shadow: 0 6px 16px rgba(120, 80, 30, 0.08) !important;
-}
-html[data-rtheme="cream"] .time-chip {
-  background: rgba(255, 235, 180, 0.9) !important;
-  color: #5b3b10 !important;
-}
-html[data-rtheme="cream"] h1,
-html[data-rtheme="cream"] h2 { color: #2d2317 !important; }
-
-html[data-rtheme="notebook"] .chalkboard,
-html[data-rtheme="notebook"] .cozy-card,
-html[data-rtheme="notebook"] .classroom-card {
-  background: rgba(255, 253, 245, 0.94) !important;
-  border: 1px solid rgba(30, 46, 82, 0.25) !important;
-  box-shadow:
-    0 2px 0 rgba(30, 46, 82, 0.06) inset,
-    0 10px 24px rgba(30, 46, 82, 0.10) !important;
-  color: #1e2e52 !important;
-}
-html[data-rtheme="notebook"] aside,
-html[data-rtheme="notebook"] [aria-label="Sidebar"] {
-  background: rgba(250, 247, 230, 0.95) !important;
-  border-right: 2px dashed rgba(30, 46, 82, 0.18) !important;
-  color: #1e2e52 !important;
-}
-html[data-rtheme="notebook"] .schedule-row,
-html[data-rtheme="notebook"] .schedule-row-v2 {
-  background: rgba(255, 254, 246, 0.9) !important;
-  color: #1e2e52 !important;
-}
-html[data-rtheme="notebook"] .time-chip {
-  background: rgba(200, 220, 255, 0.6) !important;
-  color: #1e2e52 !important;
-}
-
-/* Chalkboard night: push cards very dark for max contrast */
-html[data-rtheme="chalkboard"] body { color: #f0ebe0; }
-html[data-rtheme="chalkboard"] .chalkboard,
-html[data-rtheme="chalkboard"] .cozy-card,
-html[data-rtheme="chalkboard"] .classroom-card {
-  background: rgba(15, 15, 15, 0.82) !important;
-  border: 1px solid rgba(255, 255, 255, 0.12) !important;
-  box-shadow: 0 18px 40px rgba(0,0,0,0.55) !important;
-}
-html[data-rtheme="chalkboard"] aside,
-html[data-rtheme="chalkboard"] [aria-label="Sidebar"] {
-  background: rgba(8, 8, 8, 0.96) !important;
-  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
-}
-
-
-/* Side panel profile card must match the theme too */
-html[data-rtheme="cream"] aside .chalkboard {
-  background: linear-gradient(180deg, #fff7e1 0%, #fde8c6 100%) !important;
-  border: 1px solid rgba(160, 120, 60, 0.3) !important;
-  color: #2d2317 !important;
-}
-html[data-rtheme="cream"] aside .chalk-white { color: #2d2317 !important; }
-html[data-rtheme="cream"] aside .chalk-yellow { color: #a76b12 !important; }
-
-html[data-rtheme="notebook"] aside .chalkboard {
-  background: #fffdf3 !important;
-  border: 2px dashed rgba(30, 46, 82, 0.3) !important;
-  color: #1e2e52 !important;
-}
-html[data-rtheme="notebook"] aside .chalk-white { color: #1e2e52 !important; }
-html[data-rtheme="notebook"] aside .chalk-yellow { color: #b15b16 !important; }
-
-html[data-rtheme="chalkboard"] aside .chalkboard {
-  background: #0a0a0a !important;
-  border: 1px solid rgba(255, 255, 255, 0.18) !important;
-}
-
-/* Sidebar nav active/hover colors re-tuned per light theme */
-html[data-rtheme="cream"] aside nav a:hover { background: rgba(255, 220, 160, 0.5) !important; }
-html[data-rtheme="cream"] aside nav a.bg-sidebar-primary,
-html[data-rtheme="cream"] aside nav [class*="bg-sidebar-primary"] {
-  background: #f0c07a !important;
-  color: #2d2317 !important;
-}
-html[data-rtheme="notebook"] aside nav a:hover { background: rgba(200, 220, 255, 0.55) !important; }
-html[data-rtheme="notebook"] aside nav a.bg-sidebar-primary,
-html[data-rtheme="notebook"] aside nav [class*="bg-sidebar-primary"] {
-  background: #c4d6ff !important;
-  color: #1e2e52 !important;
-}
-
-/* Bottom "Unlock adult area" button in sidebar recolor per theme */
-html[data-rtheme="cream"] aside button { color: #2d2317 !important; }
-html[data-rtheme="notebook"] aside button { color: #1e2e52 !important; }
-
-/* The "Kiwi / Tap button on any page to talk" footer section */
-html[data-rtheme="cream"] aside .border-t { border-top-color: rgba(160, 120, 60, 0.25) !important; }
-html[data-rtheme="notebook"] aside .border-t { border-top-color: rgba(30, 46, 82, 0.25) !important; }
-
-
 /* ===== Pass 4: Universal text-contrast rescue across themes ===== */
 /*
  * Reagan dashboard bug (Apr 29): several panels used text-white / text-white/70
@@ -710,269 +526,8 @@ html[data-rtheme="notebook"] aside .border-t { border-top-color: rgba(30, 46, 82
  * Below: force readable foregrounds + lift textarea/input readability.
  */
 
-/* --- LIGHT themes (cream, notebook) --- */
-html[data-rtheme="cream"] .text-white,
-html[data-rtheme="cream"] [class*="text-white"],
-html[data-rtheme="cream"] .text-gray-50,
-html[data-rtheme="cream"] .text-gray-100,
-html[data-rtheme="cream"] .text-gray-200,
-html[data-rtheme="cream"] .text-gray-300,
-html[data-rtheme="cream"] .text-slate-100,
-html[data-rtheme="cream"] .text-slate-200,
-html[data-rtheme="cream"] .text-slate-300,
-html[data-rtheme="cream"] .text-neutral-100,
-html[data-rtheme="cream"] .text-neutral-200,
-html[data-rtheme="cream"] .text-neutral-300,
-html[data-rtheme="cream"] .text-zinc-100,
-html[data-rtheme="cream"] .text-zinc-200,
-html[data-rtheme="cream"] .text-zinc-300 {
+/* --- LIGHT themes (cream{
   color: #2d2317 !important;
-}
-
-html[data-rtheme="notebook"] .text-white,
-html[data-rtheme="notebook"] [class*="text-white"],
-html[data-rtheme="notebook"] .text-gray-50,
-html[data-rtheme="notebook"] .text-gray-100,
-html[data-rtheme="notebook"] .text-gray-200,
-html[data-rtheme="notebook"] .text-gray-300,
-html[data-rtheme="notebook"] .text-slate-100,
-html[data-rtheme="notebook"] .text-slate-200,
-html[data-rtheme="notebook"] .text-slate-300,
-html[data-rtheme="notebook"] .text-neutral-100,
-html[data-rtheme="notebook"] .text-neutral-200,
-html[data-rtheme="notebook"] .text-neutral-300,
-html[data-rtheme="notebook"] .text-zinc-100,
-html[data-rtheme="notebook"] .text-zinc-200,
-html[data-rtheme="notebook"] .text-zinc-300 {
-  color: #1e2e52 !important;
-}
-
-/* Muted text (subtitles, helper copy) should remain readable on light bg */
-html[data-rtheme="cream"] .text-white\/60,
-html[data-rtheme="cream"] .text-white\/70,
-html[data-rtheme="cream"] .text-white\/80,
-html[data-rtheme="cream"] .text-white\/90 { color: rgba(45, 35, 23, 0.78) !important; }
-
-html[data-rtheme="notebook"] .text-white\/60,
-html[data-rtheme="notebook"] .text-white\/70,
-html[data-rtheme="notebook"] .text-white\/80,
-html[data-rtheme="notebook"] .text-white\/90 { color: rgba(30, 46, 82, 0.78) !important; }
-
-/* Chips / tag pills lose their dark-theme light text on light bg */
-html[data-rtheme="cream"] .bg-muted,
-html[data-rtheme="cream"] .bg-muted\/50 {
-  background: rgba(255, 234, 190, 0.55) !important;
-  color: #2d2317 !important;
-}
-html[data-rtheme="notebook"] .bg-muted,
-html[data-rtheme="notebook"] .bg-muted\/50 {
-  background: rgba(220, 232, 255, 0.6) !important;
-  color: #1e2e52 !important;
-}
-
-/* Textareas + inputs: readable across all themes */
-html[data-rtheme="cream"] textarea,
-html[data-rtheme="cream"] input[type="text"],
-html[data-rtheme="cream"] input[type="number"],
-html[data-rtheme="cream"] input[type="email"],
-html[data-rtheme="cream"] input[type="search"],
-html[data-rtheme="cream"] input:not([type]) {
-  background: #fffdf5 !important;
-  color: #2d2317 !important;
-  border: 1px solid rgba(160, 120, 60, 0.35) !important;
-}
-html[data-rtheme="cream"] textarea::placeholder,
-html[data-rtheme="cream"] input::placeholder { color: rgba(45, 35, 23, 0.45) !important; }
-
-html[data-rtheme="notebook"] textarea,
-html[data-rtheme="notebook"] input[type="text"],
-html[data-rtheme="notebook"] input[type="number"],
-html[data-rtheme="notebook"] input[type="email"],
-html[data-rtheme="notebook"] input[type="search"],
-html[data-rtheme="notebook"] input:not([type]) {
-  background: #fffef6 !important;
-  color: #1e2e52 !important;
-  border: 1px solid rgba(30, 46, 82, 0.35) !important;
-}
-html[data-rtheme="notebook"] textarea::placeholder,
-html[data-rtheme="notebook"] input::placeholder { color: rgba(30, 46, 82, 0.45) !important; }
-
-/* --- DARK themes (starry, chalkboard): lift muted/grey card text --- */
-html[data-rtheme="starry"] .text-gray-400,
-html[data-rtheme="starry"] .text-gray-500,
-html[data-rtheme="starry"] .text-slate-400,
-html[data-rtheme="starry"] .text-slate-500,
-html[data-rtheme="starry"] .text-neutral-400,
-html[data-rtheme="starry"] .text-zinc-400,
-html[data-rtheme="chalkboard"] .text-gray-400,
-html[data-rtheme="chalkboard"] .text-gray-500,
-html[data-rtheme="chalkboard"] .text-slate-400,
-html[data-rtheme="chalkboard"] .text-slate-500,
-html[data-rtheme="chalkboard"] .text-neutral-400,
-html[data-rtheme="chalkboard"] .text-zinc-400 {
-  color: rgba(240, 235, 224, 0.82) !important;
-}
-
-/* Grey card backgrounds on dark themes need lighter text */
-html[data-rtheme="starry"] .bg-muted,
-html[data-rtheme="starry"] .bg-muted\/50,
-html[data-rtheme="chalkboard"] .bg-muted,
-html[data-rtheme="chalkboard"] .bg-muted\/50 {
-  background: rgba(55, 55, 58, 0.75) !important;
-  color: #f5f1e6 !important;
-}
-
-/* Dark-theme textareas: ensure user text + placeholder are readable */
-html[data-rtheme="starry"] textarea,
-html[data-rtheme="starry"] input[type="text"],
-html[data-rtheme="starry"] input[type="number"],
-html[data-rtheme="starry"] input[type="email"],
-html[data-rtheme="starry"] input[type="search"],
-html[data-rtheme="starry"] input:not([type]),
-html[data-rtheme="chalkboard"] textarea,
-html[data-rtheme="chalkboard"] input[type="text"],
-html[data-rtheme="chalkboard"] input[type="number"],
-html[data-rtheme="chalkboard"] input[type="email"],
-html[data-rtheme="chalkboard"] input[type="search"],
-html[data-rtheme="chalkboard"] input[type="date"],
-html[data-rtheme="chalkboard"] input[type="time"],
-html[data-rtheme="chalkboard"] input[type="url"],
-html[data-rtheme="chalkboard"] input[type="password"],
-html[data-rtheme="chalkboard"] input:not([type]),
-html[data-rtheme="chalkboard"] select,
-html[data-rtheme="starry"] input[type="date"],
-html[data-rtheme="starry"] input[type="time"],
-html[data-rtheme="starry"] input[type="url"],
-html[data-rtheme="starry"] input[type="password"],
-html[data-rtheme="starry"] select {
-  background: rgba(25, 25, 28, 0.85) !important;
-  color: #f5f1e6 !important;
-  border: 1px solid rgba(255, 255, 255, 0.22) !important;
-}
-/* Native dropdown options need their own override or they’ll show as black-on-black */
-html[data-rtheme="chalkboard"] select option,
-html[data-rtheme="starry"] select option {
-  background: #1a1a1d !important;
-  color: #f5f1e6 !important;
-}
-html[data-rtheme="starry"] textarea::placeholder,
-html[data-rtheme="starry"] input::placeholder,
-html[data-rtheme="chalkboard"] textarea::placeholder,
-html[data-rtheme="chalkboard"] input::placeholder {
-  color: rgba(240, 235, 224, 0.55) !important;
-}
-
-
-/* ===== Pass 5 (Apr 29 bug): force dark body text on Cream + Notebook themes =====
- * Earlier passes fixed common classes, but many deep components still resolve to
- * the base `--foreground` token (which is white for the default dark palette).
- * The rules below re-declare the semantic tokens under the two light themes so
- * EVERY component — even ones we haven't enumerated — picks up dark ink.
- */
-html[data-rtheme="cream"] {
-  /* Cream theme: warm dark text on warm-cream sidebar */
-  --sidebar: oklch(0.96 0.03 85);
-  --sidebar-foreground: oklch(0.28 0.04 60);
-  --sidebar-primary: oklch(0.78 0.13 70);
-  --sidebar-primary-foreground: oklch(0.22 0.05 60);
-  --sidebar-accent: oklch(0.92 0.04 80);
-  --sidebar-accent-foreground: oklch(0.25 0.05 60);
-  --sidebar-border: oklch(0.45 0.04 60 / 25%);
-  --sidebar-ring: oklch(0.65 0.12 70);
-  --background: oklch(0.96 0.02 85);
-  --foreground: oklch(0.22 0.03 60);      /* dark espresso */
-  --card: oklch(0.985 0.02 85);
-  --card-foreground: oklch(0.22 0.03 60);
-  --popover: oklch(0.985 0.02 85);
-  --popover-foreground: oklch(0.22 0.03 60);
-  --muted: oklch(0.92 0.03 85);
-  --muted-foreground: oklch(0.38 0.04 60);
-  --primary: oklch(0.6 0.13 60);
-  --primary-foreground: oklch(0.98 0.01 85);
-  --secondary: oklch(0.88 0.06 85);
-  --secondary-foreground: oklch(0.22 0.03 60);
-  --accent: oklch(0.85 0.09 85);
-  --accent-foreground: oklch(0.22 0.03 60);
-  --border: oklch(0.82 0.04 70);
-  --input: oklch(0.88 0.04 70);
-  --ring: oklch(0.72 0.11 75);
-}
-html[data-rtheme="notebook"] {
-  /* Notebook theme: ink-blue dark text on paper-white sidebar */
-  --sidebar: oklch(0.97 0.02 95);
-  --sidebar-foreground: oklch(0.28 0.06 260);
-  --sidebar-primary: oklch(0.78 0.10 240);
-  --sidebar-primary-foreground: oklch(0.22 0.06 260);
-  --sidebar-accent: oklch(0.92 0.04 240);
-  --sidebar-accent-foreground: oklch(0.25 0.07 260);
-  --sidebar-border: oklch(0.40 0.05 260 / 25%);
-  --sidebar-ring: oklch(0.65 0.12 240);
-  --background: oklch(0.97 0.015 95);
-  --foreground: oklch(0.25 0.05 260);     /* ink-blue */
-  --card: oklch(0.99 0.01 95);
-  --card-foreground: oklch(0.25 0.05 260);
-  --popover: oklch(0.99 0.01 95);
-  --popover-foreground: oklch(0.25 0.05 260);
-  --muted: oklch(0.93 0.02 260);
-  --muted-foreground: oklch(0.42 0.05 260);
-  --primary: oklch(0.5 0.12 260);
-  --primary-foreground: oklch(0.99 0.005 90);
-  --secondary: oklch(0.9 0.03 260);
-  --secondary-foreground: oklch(0.25 0.05 260);
-  --accent: oklch(0.85 0.06 260);
-  --accent-foreground: oklch(0.25 0.05 260);
-  --border: oklch(0.82 0.04 260);
-  --input: oklch(0.88 0.03 260);
-  --ring: oklch(0.65 0.12 260);
-}
-
-/* Belt-and-braces: any descendant that inherits text-foreground via CSS
- * variables still picks the correct dark value, even on hard-coded white cards.
- */
-html[data-rtheme="cream"] .text-foreground,
-html[data-rtheme="cream"] .text-card-foreground,
-html[data-rtheme="cream"] .text-popover-foreground {
-  color: #2d2317 !important;
-}
-html[data-rtheme="notebook"] .text-foreground,
-html[data-rtheme="notebook"] .text-card-foreground,
-html[data-rtheme="notebook"] .text-popover-foreground {
-  color: #1e2e52 !important;
-}
-
-/* Cards using bg-white / bg-white/40 etc. must have dark text on cream/notebook */
-html[data-rtheme="cream"] .bg-white,
-html[data-rtheme="cream"] [class*="bg-white/"],
-html[data-rtheme="cream"] .bg-card,
-html[data-rtheme="cream"] .bg-popover {
-  color: #2d2317;
-}
-html[data-rtheme="notebook"] .bg-white,
-html[data-rtheme="notebook"] [class*="bg-white/"],
-html[data-rtheme="notebook"] .bg-card,
-html[data-rtheme="notebook"] .bg-popover {
-  color: #1e2e52;
-}
-
-/* Default paragraph / li / td / span color on light themes, in case a parent
- * was overridden to white elsewhere */
-html[data-rtheme="cream"] p,
-html[data-rtheme="cream"] li,
-html[data-rtheme="cream"] td,
-html[data-rtheme="cream"] th,
-html[data-rtheme="cream"] label,
-html[data-rtheme="cream"] dt,
-html[data-rtheme="cream"] dd {
-  color: #2d2317;
-}
-html[data-rtheme="notebook"] p,
-html[data-rtheme="notebook"] li,
-html[data-rtheme="notebook"] td,
-html[data-rtheme="notebook"] th,
-html[data-rtheme="notebook"] label,
-html[data-rtheme="notebook"] dt,
-html[data-rtheme="notebook"] dd {
-  color: #1e2e52;
 }
 
 
@@ -995,36 +550,8 @@ html[data-rtheme="notebook"] dd {
 .curriculum-page .curriculum-subtitle {
   color: oklch(0.82 0.025 80);
 }
-/* Cards on the curriculum page get a paper feel + readable warm border. */
-html[data-rtheme="starry"] .curriculum-page .cozy-card,
-html[data-rtheme="chalkboard"] .curriculum-page .cozy-card {
-  background: linear-gradient(180deg, rgba(35, 30, 22, 0.92), rgba(28, 24, 18, 0.92)) !important;
-  border: 1px solid rgba(220, 195, 130, 0.32) !important;
-  color: oklch(0.92 0.04 80) !important;
-}
-html[data-rtheme="cream"] .curriculum-page .cozy-card,
-html[data-rtheme="notebook"] .curriculum-page .cozy-card {
-  background: var(--curr-paper) !important;
-  border: 1px solid var(--curr-edge) !important;
-  color: var(--curr-ink) !important;
-}
 .curriculum-page h2 {
   font-family: "Bookman Old Style", "Georgia", "Iowan Old Style", serif;
-}
-
-/* ------------- Global grey-box (muted) contrast floor -------------------
-   Old defaults:
-     dark themes  --muted-foreground: oklch(0.78 0.01 95)   on  oklch(0.28 …)
-     light themes --muted-foreground: oklch(0.38 0.04 60)
-   Both were borderline against busy backgrounds. Bump them and add a
-   readable default for any .bg-muted / [data-grey-box] surface. */
-html[data-rtheme="starry"],
-html[data-rtheme="chalkboard"] {
-  --muted-foreground: oklch(0.92 0.02 90) !important;
-}
-html[data-rtheme="cream"],
-html[data-rtheme="notebook"] {
-  --muted-foreground: oklch(0.30 0.04 60) !important;
 }
 /* Belt-and-suspenders: even when text-muted-foreground is overridden by a
    per-theme rule, force a min contrast inside .bg-muted / muted chips. */
@@ -1037,32 +564,6 @@ html[data-rtheme="notebook"] {
 .bg-muted\/50 *:not(svg):not(path),
 [data-grey-box] *:not(svg):not(path) {
   color: inherit;
-}
-
-
-/* =========================================================================
-   2026-05-05 — STANDING RULE: NO GREY BOXES, ANYWHERE
-   -------------------------------------------------------------------------
-   Replace every Tailwind grey-family surface (bg-muted, bg-slate-*,
-   bg-gray-*, bg-zinc-*, bg-neutral-*) with a themed warm surface that
-   matches the active rtheme, and force inner text to a readable ink
-   color. Borders also get warmed up so dividers stop reading as grey.
-   ------------------------------------------------------------------------- */
-
-/* Warm tinted surfaces by theme */
-html[data-rtheme="starry"], html[data-rtheme="chalkboard"] {
-  --no-grey-surface: rgba(35, 30, 22, 0.78);
-  --no-grey-surface-strong: rgba(45, 38, 28, 0.92);
-  --no-grey-ink: oklch(0.95 0.03 85);
-  --no-grey-ink-soft: oklch(0.86 0.04 85);
-  --no-grey-edge: rgba(220, 195, 130, 0.32);
-}
-html[data-rtheme="cream"], html[data-rtheme="notebook"] {
-  --no-grey-surface: rgba(255, 245, 220, 0.7);
-  --no-grey-surface-strong: rgba(255, 240, 205, 0.92);
-  --no-grey-ink: #2a2010;
-  --no-grey-ink-soft: rgba(42, 32, 16, 0.75);
-  --no-grey-edge: rgba(160, 120, 60, 0.28);
 }
 :root {
   --no-grey-surface: rgba(35, 30, 22, 0.78);
@@ -1107,48 +608,6 @@ html[data-rtheme="cream"], html[data-rtheme="notebook"] {
 .border-slate-200, .border-gray-200, .border-zinc-200, .border-neutral-200,
 .border-slate-300, .border-gray-300, .border-zinc-300, .border-neutral-300 {
   border-color: var(--no-grey-edge) !important;
-}
-
-/* =========================================================================
-   Push 60 (2026-05-13) — STANDING RULE: no white-on-white, no dark-on-dark
-   -------------------------------------------------------------------------
-   The light-theme overrides above already flip "dark text on white card"
-   to readable dark ink, and "white text on cream bg" to readable dark ink.
-   This block adds the symmetric guards for the two DARK themes (starry +
-   chalkboard), where any component using Tailwind's classic dark inks
-   (text-slate-700/800/900, text-gray-700/800/900, text-neutral-700/800/900,
-   text-zinc-700/800/900) would otherwise render dark-on-dark and disappear.
-   We promote those to a readable warm chalk ink so kid + adult cards stay
-   legible across all four themes without per-component rewrites.
-   ------------------------------------------------------------------------- */
-
-html[data-rtheme="starry"]    .text-slate-700,
-html[data-rtheme="starry"]    .text-slate-800,
-html[data-rtheme="starry"]    .text-slate-900,
-html[data-rtheme="starry"]    .text-gray-700,
-html[data-rtheme="starry"]    .text-gray-800,
-html[data-rtheme="starry"]    .text-gray-900,
-html[data-rtheme="starry"]    .text-neutral-700,
-html[data-rtheme="starry"]    .text-neutral-800,
-html[data-rtheme="starry"]    .text-neutral-900,
-html[data-rtheme="starry"]    .text-zinc-700,
-html[data-rtheme="starry"]    .text-zinc-800,
-html[data-rtheme="starry"]    .text-zinc-900,
-html[data-rtheme="chalkboard"].text-slate-700,
-html[data-rtheme="chalkboard"] .text-slate-700,
-html[data-rtheme="chalkboard"] .text-slate-800,
-html[data-rtheme="chalkboard"] .text-slate-900,
-html[data-rtheme="chalkboard"] .text-gray-700,
-html[data-rtheme="chalkboard"] .text-gray-800,
-html[data-rtheme="chalkboard"] .text-gray-900,
-html[data-rtheme="chalkboard"] .text-neutral-700,
-html[data-rtheme="chalkboard"] .text-neutral-800,
-html[data-rtheme="chalkboard"] .text-neutral-900,
-html[data-rtheme="chalkboard"] .text-zinc-700,
-html[data-rtheme="chalkboard"] .text-zinc-800,
-html[data-rtheme="chalkboard"] .text-zinc-900 {
-  /* warm chalk ink on dark slate — high contrast, matches existing chalk-white */
-  color: oklch(0.94 0.04 85) !important;
 }
 
 /* KidHeaderStrips never wants its hard-coded warm ink overridden by the
@@ -1258,101 +717,6 @@ html[data-rtheme="chalkboard"] .text-zinc-900 {
     grid-template-columns: 1fr;
   }
 }
-
-/* === BEGIN auto-generated theme aliases (white<-cream, galaxy<-starry) === */
-/* White Basic reuses the cream light styling; Galaxy reuses starry. */
-/* The tan/amber expanded block fix: force readable text in all light themes */
-  html[data-rtheme="white"] details[open] > div,
-  html[data-rtheme="notebook"] details[open] > div {
-    color: #2d2317 !important;
-  }
-html[data-rtheme="white"] details[open] > div *,
-  html[data-rtheme="notebook"] details[open] > div * {
-    color: inherit;
-  }
-html[data-rtheme="white"] [data-slot="card"],
-  html[data-rtheme="notebook"] [data-slot="card"] {
-    box-shadow:
-      0 1px 0 rgba(255,255,255,0.9) inset,
-      0 2px 0 rgba(120,80,30,0.14),
-      0 8px 20px -6px rgba(120,80,30,0.12),
-      0 20px 44px -14px rgba(120,80,30,0.08) !important;
-  }
-html[data-rtheme="chalkboard"] .weather-widget,
-html[data-rtheme="galaxy"] .weather-widget {
-  background: rgba(20, 28, 40, 0.55);
-  color: #f1ecdf;
-  border-color: rgba(255, 255, 255, 0.18);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-}
-/* ===== Reagan Theme system (Pass 3) ===== */
-
-/* Cream Homeschool (light paper) */
-html[data-rtheme="white"] body {
-  background:
-    radial-gradient(circle at 12% 8%, rgba(255, 220, 160, 0.35) 0, transparent 40%),
-    radial-gradient(circle at 88% 18%, rgba(186, 223, 255, 0.3) 0, transparent 42%),
-    radial-gradient(circle at 50% 95%, rgba(255, 199, 211, 0.3) 0, transparent 50%),
-    #fbf4e6;
-  color: #2d2317;
-}
-html[data-rtheme="white"] .chalk-white { color: #2d2317 !important; }
-html[data-rtheme="white"] .chalk-yellow { color: #b88a1a !important; }
-html[data-rtheme="white"] .text-muted-foreground { color: rgba(45, 35, 23, 0.6) !important; }
-/* In the light themes, soften the strong drop-shadows on big titles to keep readability */
-html[data-rtheme="white"] h1, html[data-rtheme="white"] h2,
-html[data-rtheme="notebook"] h1, html[data-rtheme="notebook"] h2 {
-  text-shadow: none !important;
-}
-/* ===== Light-theme card overrides so panels are readable on cream/notebook bg ===== */
-html[data-rtheme="white"] .chalkboard,
-html[data-rtheme="white"] .cozy-card,
-html[data-rtheme="white"] .classroom-card {
-  background: rgba(255, 250, 235, 0.92) !important;
-  border: 1px solid rgba(160, 120, 60, 0.28) !important;
-  box-shadow:
-    0 1px 0 rgba(255,255,255,0.8) inset,
-    0 12px 28px rgba(120, 80, 30, 0.10),
-    0 2px 6px rgba(120, 80, 30, 0.08) !important;
-  color: #2d2317 !important;
-}
-html[data-rtheme="white"] aside,
-html[data-rtheme="white"] [aria-label="Sidebar"] {
-  background: rgba(255, 248, 230, 0.95) !important;
-  border-right: 1px solid rgba(160, 120, 60, 0.2) !important;
-  color: #2d2317 !important;
-}
-html[data-rtheme="white"] .schedule-row,
-html[data-rtheme="white"] .schedule-row-v2 {
-  background: rgba(255, 253, 245, 0.85) !important;
-  color: #2d2317 !important;
-  box-shadow: 0 6px 16px rgba(120, 80, 30, 0.08) !important;
-}
-html[data-rtheme="white"] .time-chip {
-  background: rgba(255, 235, 180, 0.9) !important;
-  color: #5b3b10 !important;
-}
-html[data-rtheme="white"] h1,
-html[data-rtheme="white"] h2 { color: #2d2317 !important; }
-/* Side panel profile card must match the theme too */
-html[data-rtheme="white"] aside .chalkboard {
-  background: linear-gradient(180deg, #fff7e1 0%, #fde8c6 100%) !important;
-  border: 1px solid rgba(160, 120, 60, 0.3) !important;
-  color: #2d2317 !important;
-}
-html[data-rtheme="white"] aside .chalk-white { color: #2d2317 !important; }
-html[data-rtheme="white"] aside .chalk-yellow { color: #a76b12 !important; }
-/* Sidebar nav active/hover colors re-tuned per light theme */
-html[data-rtheme="white"] aside nav a:hover { background: rgba(255, 220, 160, 0.5) !important; }
-html[data-rtheme="white"] aside nav a.bg-sidebar-primary,
-html[data-rtheme="white"] aside nav [class*="bg-sidebar-primary"] {
-  background: #f0c07a !important;
-  color: #2d2317 !important;
-}
-/* Bottom "Unlock adult area" button in sidebar recolor per theme */
-html[data-rtheme="white"] aside button { color: #2d2317 !important; }
-/* The "Kiwi / Tap button on any page to talk" footer section */
-html[data-rtheme="white"] aside .border-t { border-top-color: rgba(160, 120, 60, 0.25) !important; }
 /* ===== Pass 4: Universal text-contrast rescue across themes ===== */
 /*
  * Reagan dashboard bug (Apr 29): several panels used text-white / text-white/70
@@ -1361,267 +725,9 @@ html[data-rtheme="white"] aside .border-t { border-top-color: rgba(160, 120, 60,
  * Below: force readable foregrounds + lift textarea/input readability.
  */
 
-/* --- LIGHT themes (cream, notebook) --- */
-html[data-rtheme="white"] .text-white,
-html[data-rtheme="white"] [class*="text-white"],
-html[data-rtheme="white"] .text-gray-50,
-html[data-rtheme="white"] .text-gray-100,
-html[data-rtheme="white"] .text-gray-200,
-html[data-rtheme="white"] .text-gray-300,
-html[data-rtheme="white"] .text-slate-100,
-html[data-rtheme="white"] .text-slate-200,
-html[data-rtheme="white"] .text-slate-300,
-html[data-rtheme="white"] .text-neutral-100,
-html[data-rtheme="white"] .text-neutral-200,
-html[data-rtheme="white"] .text-neutral-300,
-html[data-rtheme="white"] .text-zinc-100,
-html[data-rtheme="white"] .text-zinc-200,
-html[data-rtheme="white"] .text-zinc-300 {
+/* --- LIGHT themes (cream{
   color: #2d2317 !important;
 }
-/* Muted text (subtitles, helper copy) should remain readable on light bg */
-html[data-rtheme="white"] .text-white\/60,
-html[data-rtheme="white"] .text-white\/70,
-html[data-rtheme="white"] .text-white\/80,
-html[data-rtheme="white"] .text-white\/90 { color: rgba(45, 35, 23, 0.78) !important; }
-/* Chips / tag pills lose their dark-theme light text on light bg */
-html[data-rtheme="white"] .bg-muted,
-html[data-rtheme="white"] .bg-muted\/50 {
-  background: rgba(255, 234, 190, 0.55) !important;
-  color: #2d2317 !important;
-}
-/* Textareas + inputs: readable across all themes */
-html[data-rtheme="white"] textarea,
-html[data-rtheme="white"] input[type="text"],
-html[data-rtheme="white"] input[type="number"],
-html[data-rtheme="white"] input[type="email"],
-html[data-rtheme="white"] input[type="search"],
-html[data-rtheme="white"] input:not([type]) {
-  background: #fffdf5 !important;
-  color: #2d2317 !important;
-  border: 1px solid rgba(160, 120, 60, 0.35) !important;
-}
-html[data-rtheme="white"] textarea::placeholder,
-html[data-rtheme="white"] input::placeholder { color: rgba(45, 35, 23, 0.45) !important; }
-/* --- DARK themes (starry, chalkboard): lift muted/grey card text --- */
-html[data-rtheme="galaxy"] .text-gray-400,
-html[data-rtheme="galaxy"] .text-gray-500,
-html[data-rtheme="galaxy"] .text-slate-400,
-html[data-rtheme="galaxy"] .text-slate-500,
-html[data-rtheme="galaxy"] .text-neutral-400,
-html[data-rtheme="galaxy"] .text-zinc-400,
-html[data-rtheme="chalkboard"] .text-gray-400,
-html[data-rtheme="chalkboard"] .text-gray-500,
-html[data-rtheme="chalkboard"] .text-slate-400,
-html[data-rtheme="chalkboard"] .text-slate-500,
-html[data-rtheme="chalkboard"] .text-neutral-400,
-html[data-rtheme="chalkboard"] .text-zinc-400 {
-  color: rgba(240, 235, 224, 0.82) !important;
-}
-/* Grey card backgrounds on dark themes need lighter text */
-html[data-rtheme="galaxy"] .bg-muted,
-html[data-rtheme="galaxy"] .bg-muted\/50,
-html[data-rtheme="chalkboard"] .bg-muted,
-html[data-rtheme="chalkboard"] .bg-muted\/50 {
-  background: rgba(55, 55, 58, 0.75) !important;
-  color: #f5f1e6 !important;
-}
-/* Dark-theme textareas: ensure user text + placeholder are readable */
-html[data-rtheme="galaxy"] textarea,
-html[data-rtheme="galaxy"] input[type="text"],
-html[data-rtheme="galaxy"] input[type="number"],
-html[data-rtheme="galaxy"] input[type="email"],
-html[data-rtheme="galaxy"] input[type="search"],
-html[data-rtheme="galaxy"] input:not([type]),
-html[data-rtheme="chalkboard"] textarea,
-html[data-rtheme="chalkboard"] input[type="text"],
-html[data-rtheme="chalkboard"] input[type="number"],
-html[data-rtheme="chalkboard"] input[type="email"],
-html[data-rtheme="chalkboard"] input[type="search"],
-html[data-rtheme="chalkboard"] input[type="date"],
-html[data-rtheme="chalkboard"] input[type="time"],
-html[data-rtheme="chalkboard"] input[type="url"],
-html[data-rtheme="chalkboard"] input[type="password"],
-html[data-rtheme="chalkboard"] input:not([type]),
-html[data-rtheme="chalkboard"] select,
-html[data-rtheme="galaxy"] input[type="date"],
-html[data-rtheme="galaxy"] input[type="time"],
-html[data-rtheme="galaxy"] input[type="url"],
-html[data-rtheme="galaxy"] input[type="password"],
-html[data-rtheme="galaxy"] select {
-  background: rgba(25, 25, 28, 0.85) !important;
-  color: #f5f1e6 !important;
-  border: 1px solid rgba(255, 255, 255, 0.22) !important;
-}
-/* Native dropdown options need their own override or they’ll show as black-on-black */
-html[data-rtheme="chalkboard"] select option,
-html[data-rtheme="galaxy"] select option {
-  background: #1a1a1d !important;
-  color: #f5f1e6 !important;
-}
-html[data-rtheme="galaxy"] textarea::placeholder,
-html[data-rtheme="galaxy"] input::placeholder,
-html[data-rtheme="chalkboard"] textarea::placeholder,
-html[data-rtheme="chalkboard"] input::placeholder {
-  color: rgba(240, 235, 224, 0.55) !important;
-}
-/* ===== Pass 5 (Apr 29 bug): force dark body text on Cream + Notebook themes =====
- * Earlier passes fixed common classes, but many deep components still resolve to
- * the base `--foreground` token (which is white for the default dark palette).
- * The rules below re-declare the semantic tokens under the two light themes so
- * EVERY component — even ones we haven't enumerated — picks up dark ink.
- */
-html[data-rtheme="white"] {
-  /* Cream theme: warm dark text on warm-cream sidebar */
-  --sidebar: oklch(0.96 0.03 85);
-  --sidebar-foreground: oklch(0.28 0.04 60);
-  --sidebar-primary: oklch(0.78 0.13 70);
-  --sidebar-primary-foreground: oklch(0.22 0.05 60);
-  --sidebar-accent: oklch(0.92 0.04 80);
-  --sidebar-accent-foreground: oklch(0.25 0.05 60);
-  --sidebar-border: oklch(0.45 0.04 60 / 25%);
-  --sidebar-ring: oklch(0.65 0.12 70);
-  --background: oklch(0.96 0.02 85);
-  --foreground: oklch(0.22 0.03 60);      /* dark espresso */
-  --card: oklch(0.985 0.02 85);
-  --card-foreground: oklch(0.22 0.03 60);
-  --popover: oklch(0.985 0.02 85);
-  --popover-foreground: oklch(0.22 0.03 60);
-  --muted: oklch(0.92 0.03 85);
-  --muted-foreground: oklch(0.38 0.04 60);
-  --primary: oklch(0.6 0.13 60);
-  --primary-foreground: oklch(0.98 0.01 85);
-  --secondary: oklch(0.88 0.06 85);
-  --secondary-foreground: oklch(0.22 0.03 60);
-  --accent: oklch(0.85 0.09 85);
-  --accent-foreground: oklch(0.22 0.03 60);
-  --border: oklch(0.82 0.04 70);
-  --input: oklch(0.88 0.04 70);
-  --ring: oklch(0.72 0.11 75);
-}
-/* Belt-and-braces: any descendant that inherits text-foreground via CSS
- * variables still picks the correct dark value, even on hard-coded white cards.
- */
-html[data-rtheme="white"] .text-foreground,
-html[data-rtheme="white"] .text-card-foreground,
-html[data-rtheme="white"] .text-popover-foreground {
-  color: #2d2317 !important;
-}
-/* Cards using bg-white / bg-white/40 etc. must have dark text on cream/notebook */
-html[data-rtheme="white"] .bg-white,
-html[data-rtheme="white"] [class*="bg-white/"],
-html[data-rtheme="white"] .bg-card,
-html[data-rtheme="white"] .bg-popover {
-  color: #2d2317;
-}
-/* Default paragraph / li / td / span color on light themes, in case a parent
- * was overridden to white elsewhere */
-html[data-rtheme="white"] p,
-html[data-rtheme="white"] li,
-html[data-rtheme="white"] td,
-html[data-rtheme="white"] th,
-html[data-rtheme="white"] label,
-html[data-rtheme="white"] dt,
-html[data-rtheme="white"] dd {
-  color: #2d2317;
-}
-/* Cards on the curriculum page get a paper feel + readable warm border. */
-html[data-rtheme="galaxy"] .curriculum-page .cozy-card,
-html[data-rtheme="chalkboard"] .curriculum-page .cozy-card {
-  background: linear-gradient(180deg, rgba(35, 30, 22, 0.92), rgba(28, 24, 18, 0.92)) !important;
-  border: 1px solid rgba(220, 195, 130, 0.32) !important;
-  color: oklch(0.92 0.04 80) !important;
-}
-html[data-rtheme="white"] .curriculum-page .cozy-card,
-html[data-rtheme="notebook"] .curriculum-page .cozy-card {
-  background: var(--curr-paper) !important;
-  border: 1px solid var(--curr-edge) !important;
-  color: var(--curr-ink) !important;
-}
-/* ------------- Global grey-box (muted) contrast floor -------------------
-   Old defaults:
-     dark themes  --muted-foreground: oklch(0.78 0.01 95)   on  oklch(0.28 …)
-     light themes --muted-foreground: oklch(0.38 0.04 60)
-   Both were borderline against busy backgrounds. Bump them and add a
-   readable default for any .bg-muted / [data-grey-box] surface. */
-html[data-rtheme="galaxy"],
-html[data-rtheme="chalkboard"] {
-  --muted-foreground: oklch(0.92 0.02 90) !important;
-}
-html[data-rtheme="white"],
-html[data-rtheme="notebook"] {
-  --muted-foreground: oklch(0.30 0.04 60) !important;
-}
-/* =========================================================================
-   2026-05-05 — STANDING RULE: NO GREY BOXES, ANYWHERE
-   -------------------------------------------------------------------------
-   Replace every Tailwind grey-family surface (bg-muted, bg-slate-*,
-   bg-gray-*, bg-zinc-*, bg-neutral-*) with a themed warm surface that
-   matches the active rtheme, and force inner text to a readable ink
-   color. Borders also get warmed up so dividers stop reading as grey.
-   ------------------------------------------------------------------------- */
-
-/* Warm tinted surfaces by theme */
-html[data-rtheme="galaxy"], html[data-rtheme="chalkboard"] {
-  --no-grey-surface: rgba(35, 30, 22, 0.78);
-  --no-grey-surface-strong: rgba(45, 38, 28, 0.92);
-  --no-grey-ink: oklch(0.95 0.03 85);
-  --no-grey-ink-soft: oklch(0.86 0.04 85);
-  --no-grey-edge: rgba(220, 195, 130, 0.32);
-}
-html[data-rtheme="white"], html[data-rtheme="notebook"] {
-  --no-grey-surface: rgba(255, 245, 220, 0.7);
-  --no-grey-surface-strong: rgba(255, 240, 205, 0.92);
-  --no-grey-ink: #2a2010;
-  --no-grey-ink-soft: rgba(42, 32, 16, 0.75);
-  --no-grey-edge: rgba(160, 120, 60, 0.28);
-}
-/* =========================================================================
-   Push 60 (2026-05-13) — STANDING RULE: no white-on-white, no dark-on-dark
-   -------------------------------------------------------------------------
-   The light-theme overrides above already flip "dark text on white card"
-   to readable dark ink, and "white text on cream bg" to readable dark ink.
-   This block adds the symmetric guards for the two DARK themes (starry +
-   chalkboard), where any component using Tailwind's classic dark inks
-   (text-slate-700/800/900, text-gray-700/800/900, text-neutral-700/800/900,
-   text-zinc-700/800/900) would otherwise render dark-on-dark and disappear.
-   We promote those to a readable warm chalk ink so kid + adult cards stay
-   legible across all four themes without per-component rewrites.
-   ------------------------------------------------------------------------- */
-
-html[data-rtheme="galaxy"]    .text-slate-700,
-html[data-rtheme="galaxy"]    .text-slate-800,
-html[data-rtheme="galaxy"]    .text-slate-900,
-html[data-rtheme="galaxy"]    .text-gray-700,
-html[data-rtheme="galaxy"]    .text-gray-800,
-html[data-rtheme="galaxy"]    .text-gray-900,
-html[data-rtheme="galaxy"]    .text-neutral-700,
-html[data-rtheme="galaxy"]    .text-neutral-800,
-html[data-rtheme="galaxy"]    .text-neutral-900,
-html[data-rtheme="galaxy"]    .text-zinc-700,
-html[data-rtheme="galaxy"]    .text-zinc-800,
-html[data-rtheme="galaxy"]    .text-zinc-900,
-html[data-rtheme="chalkboard"].text-slate-700,
-html[data-rtheme="chalkboard"] .text-slate-700,
-html[data-rtheme="chalkboard"] .text-slate-800,
-html[data-rtheme="chalkboard"] .text-slate-900,
-html[data-rtheme="chalkboard"] .text-gray-700,
-html[data-rtheme="chalkboard"] .text-gray-800,
-html[data-rtheme="chalkboard"] .text-gray-900,
-html[data-rtheme="chalkboard"] .text-neutral-700,
-html[data-rtheme="chalkboard"] .text-neutral-800,
-html[data-rtheme="chalkboard"] .text-neutral-900,
-html[data-rtheme="chalkboard"] .text-zinc-700,
-html[data-rtheme="chalkboard"] .text-zinc-800,
-html[data-rtheme="chalkboard"] .text-zinc-900 {
-  /* warm chalk ink on dark slate — high contrast, matches existing chalk-white */
-  color: oklch(0.94 0.04 85) !important;
-}
-html[data-rtheme="white"] body { background: #ffffff !important; background-image: radial-gradient(circle at 50% 0%, rgba(120,160,255,0.05) 0, transparent 45%) !important; color: #1f2937 !important; }
-html[data-rtheme="white"] .chalkboard, html[data-rtheme="white"] .cozy-card, html[data-rtheme="white"] .classroom-card { background: #ffffff !important; border: 1px solid rgba(15,23,42,0.10) !important; box-shadow: 0 1px 2px rgba(15,23,42,0.06), 0 8px 24px rgba(15,23,42,0.06) !important; color: #1f2937 !important; }
-html[data-rtheme="white"] aside, html[data-rtheme="white"] [aria-label="Sidebar"] { background: #f8fafc !important; border-right: 1px solid rgba(15,23,42,0.08) !important; color: #1f2937 !important; }
-html[data-rtheme="white"] .chalk-white, html[data-rtheme="white"] aside .chalk-white { color: #1f2937 !important; }
-html[data-rtheme="white"] aside .chalkboard { background: #eef2f7 !important; border: 1px solid rgba(15,23,42,0.12) !important; color: #1f2937 !important; }
 /* === END auto-generated theme aliases === */
 
 
@@ -1867,9 +973,7 @@ html[data-rtheme="glass"] header.sticky {
 /*  dashboard references (refs 338/340/361/363). Clean light canvas;     */
 /*  each card is a saturated solid color with a soft chunky pop-out      */
 /*  shadow (raised 3D feel) and rounded corners. Cards cycle through a    */
-/*  rainbow palette via :nth-of-type so the grid reads playful, not flat. */
-/* ===================================================================== */
-html[data-rtheme="sunshine"] body {
+/*  rainbow palette via :nth-of-type so the grid reads playful{
   background:
     radial-gradient(circle at 6% 4%, rgba(96,165,250,0.55) 0, transparent 40%),
     radial-gradient(circle at 94% 6%, rgba(244,114,182,0.55) 0, transparent 42%),
@@ -1879,130 +983,16 @@ html[data-rtheme="sunshine"] body {
   background-attachment: fixed;
   color: #1f2640;
 }
-html[data-rtheme="sunshine"] .chalk-white,
-html[data-rtheme="sunshine"] aside .chalk-white { color: #1f2640 !important; }
-html[data-rtheme="sunshine"] .chalk-yellow,
-html[data-rtheme="sunshine"] aside .chalk-yellow { color: #d97706 !important; }
-html[data-rtheme="sunshine"] .text-muted-foreground { color: rgba(31,38,64,0.62) !important; }
-html[data-rtheme="sunshine"] h1, html[data-rtheme="sunshine"] h2 { color: #161c30 !important; text-shadow: none !important; }
-
-/* Base card: bright tinted fill with a chunky colorful pop-out shadow.
-   (2026-06-17 v3, Katy: pushed way more colorful — no more plain white.) */
-html[data-rtheme="sunshine"] .chalkboard,
-html[data-rtheme="sunshine"] .cozy-card,
-html[data-rtheme="sunshine"] .classroom-card,
-html[data-rtheme="sunshine"] .card {
-  background: linear-gradient(160deg,#ffffff,#eaf2ff) !important;
-  border: 2px solid rgba(255,255,255,0.85) !important;
-  box-shadow:
-    0 12px 26px rgba(99,102,241,0.20),
-    0 2px 6px rgba(31,38,64,0.10) !important;
-  color: #1f2640 !important;
-  border-radius: 1.5rem !important;
-  transition: transform .15s ease, box-shadow .15s ease;
-}
-html[data-rtheme="sunshine"] .cozy-card:hover,
-html[data-rtheme="sunshine"] .classroom-card:hover,
-html[data-rtheme="sunshine"] .card:hover {
-  transform: translateY(-3px);
-  box-shadow:
-    0 16px 34px rgba(31,38,64,0.16),
-    0 4px 10px rgba(31,38,64,0.10) !important;
-}
-/* Rainbow card cycle — saturated candy fills with matching pop-out shadow.
-   Applied to the dashboard cozy-card grid so each tile is its own color. */
-html[data-rtheme="sunshine"] .cozy-card:nth-of-type(6n+1) {
-  background: linear-gradient(160deg,#93c5fd,#60a5fa) !important;
-  box-shadow: 0 14px 28px rgba(37,99,235,0.38) !important;
-  color: #0b1f4d !important;
-}
-html[data-rtheme="sunshine"] .cozy-card:nth-of-type(6n+2) {
-  background: linear-gradient(160deg,#f9a8d4,#f472b6) !important;
-  box-shadow: 0 14px 28px rgba(219,39,119,0.38) !important;
-  color: #4a0b2e !important;
-}
-html[data-rtheme="sunshine"] .cozy-card:nth-of-type(6n+3) {
-  background: linear-gradient(160deg,#6ee7b7,#34d399) !important;
-  box-shadow: 0 14px 28px rgba(16,163,127,0.38) !important;
-  color: #053826 !important;
-}
-html[data-rtheme="sunshine"] .cozy-card:nth-of-type(6n+4) {
-  background: linear-gradient(160deg,#fde047,#facc15) !important;
-  box-shadow: 0 14px 28px rgba(202,138,4,0.40) !important;
-  color: #4a3500 !important;
-}
-html[data-rtheme="sunshine"] .cozy-card:nth-of-type(6n+5) {
-  background: linear-gradient(160deg,#c4b5fd,#a78bfa) !important;
-  box-shadow: 0 14px 28px rgba(124,58,237,0.38) !important;
-  color: #2a0e57 !important;
-}
-html[data-rtheme="sunshine"] .cozy-card:nth-of-type(6n+6) {
-  background: linear-gradient(160deg,#fdba74,#fb923c) !important;
-  box-shadow: 0 14px 28px rgba(234,88,12,0.40) !important;
-  color: #4a1d00 !important;
-}
-/* Keep text/icons inside vivid cards legible against the saturated fills. */
-html[data-rtheme="sunshine"] .cozy-card[class*="nth"] .text-muted-foreground,
-html[data-rtheme="sunshine"] .cozy-card .chalk-white { color: inherit !important; }
-html[data-rtheme="sunshine"] aside,
-html[data-rtheme="sunshine"] [aria-label="Sidebar"] {
-  background: linear-gradient(180deg,#6366f1 0%,#8b5cf6 50%,#ec4899 100%) !important;
-  border-right: 0 !important;
-  box-shadow: 4px 0 22px rgba(99,102,241,0.35) !important;
-  color: #ffffff !important;
-}
-html[data-rtheme="sunshine"] aside .text-muted-foreground,
-html[data-rtheme="sunshine"] aside .text-sidebar-foreground,
-html[data-rtheme="sunshine"] aside nav a { color: rgba(255,255,255,0.92) !important; }
-html[data-rtheme="sunshine"] aside button { color: #ffffff !important; }
-html[data-rtheme="sunshine"] aside .chalkboard {
-  background: rgba(255,255,255,0.16) !important;
-  border: 1px solid rgba(255,255,255,0.30) !important;
-  color: #ffffff !important;
-  box-shadow: 0 10px 22px rgba(0,0,0,0.18) !important;
-}
-html[data-rtheme="sunshine"] aside .chalkboard .chalk-white { color: #ffffff !important; }
-html[data-rtheme="sunshine"] aside nav a:hover { background: rgba(255,255,255,0.18) !important; }
-html[data-rtheme="sunshine"] aside nav a.bg-sidebar-primary,
-html[data-rtheme="sunshine"] aside nav [class*="bg-sidebar-primary"] {
-  background: rgba(255,255,255,0.92) !important;
-  color: #5b21b6 !important;
-}
-html[data-rtheme="sunshine"] .schedule-row,
-html[data-rtheme="sunshine"] .schedule-row-v2 {
-  background: linear-gradient(120deg,#ffffff,#f0f6ff) !important;
-  border: 2px solid rgba(129,140,248,0.35) !important;
-  box-shadow: 0 10px 20px rgba(99,102,241,0.18) !important;
-  color: #1f2640 !important;
-  border-radius: 1.25rem !important;
-}
-html[data-rtheme="sunshine"] .time-chip {
-  background: linear-gradient(135deg,#60a5fa,#818cf8) !important;
-  color: #ffffff !important;
-}
 
 
 /* ===================================================================== */
 /*  LEGIBILITY RESCUE — all 5 themes (2026-06-17)                        */
 /*  Analytics / Screening History / Curriculum lean heavily on           */
-/*  text-muted-foreground at 10-11px, which washed out on the dark and   */
-/*  translucent themes. Lift muted + faint grey utilities to a readable  */
-/*  contrast on every theme. Light themes get a darker muted; dark/glass */
-/*  themes get a brighter muted.                                         */
-/* ===================================================================== */
-
-/* Dark + translucent themes: brighten muted/faint text. */
-html[data-rtheme="chalkboard"] .text-muted-foreground,
-html[data-rtheme="galaxy"] .text-muted-foreground,
+/*  text-muted-foreground at 10-11px,
 html[data-rtheme="glass"] .text-muted-foreground {
   color: rgba(235, 240, 248, 0.82) !important;
 }
-html[data-rtheme="chalkboard"] .text-gray-400,
-html[data-rtheme="chalkboard"] .text-gray-500,
-html[data-rtheme="chalkboard"] .text-slate-400,
-html[data-rtheme="chalkboard"] .text-slate-500,
-html[data-rtheme="galaxy"] .text-gray-400,
-html[data-rtheme="galaxy"] .text-slate-400,
+
 html[data-rtheme="glass"] .text-gray-400,
 html[data-rtheme="glass"] .text-slate-400,
 html[data-rtheme="glass"] .text-gray-500,
@@ -2010,26 +1000,9 @@ html[data-rtheme="glass"] .text-slate-500 {
   color: rgba(225, 232, 242, 0.78) !important;
 }
 /* Status chips that used pale slate-on-dark — make them readable. */
-html[data-rtheme="chalkboard"] .text-slate-300,
-html[data-rtheme="galaxy"] .text-slate-300,
+
 html[data-rtheme="glass"] .text-slate-300 {
   color: rgba(230, 236, 245, 0.9) !important;
-}
-
-/* Light themes: darken muted/faint text so 10-11px copy is solid. */
-html[data-rtheme="white"] .text-muted-foreground,
-html[data-rtheme="sunshine"] .text-muted-foreground {
-  color: rgba(30, 41, 59, 0.72) !important;
-}
-html[data-rtheme="white"] .text-gray-400,
-html[data-rtheme="white"] .text-slate-400,
-html[data-rtheme="white"] .text-gray-300,
-html[data-rtheme="white"] .text-slate-300,
-html[data-rtheme="sunshine"] .text-gray-400,
-html[data-rtheme="sunshine"] .text-slate-400,
-html[data-rtheme="sunshine"] .text-gray-300,
-html[data-rtheme="sunshine"] .text-slate-300 {
-  color: rgba(51, 65, 85, 0.78) !important;
 }
 
 /* Tiny labels (10-11px) get a small minimum weight bump everywhere so they
@@ -2042,9 +1015,7 @@ html[data-rtheme="sunshine"] .text-slate-300 {
 /*  hardcoded bg-white/40 that washed out on dark / glass / galaxy.         */
 /* ----------------------------------------------------------------------- */
 
-/* Dark slate themes: soft raised translucent panel, light text already set. */
-html[data-rtheme="chalkboard"] .inner-panel,
-html[data-rtheme="galaxy"] .inner-panel {
+/* Dark slate themes: soft raised translucent panel{
   background: rgba(255, 255, 255, 0.07) !important;
   border-color: rgba(255, 255, 255, 0.14) !important;
 }
@@ -2055,23 +1026,6 @@ html[data-rtheme="glass"] .inner-panel {
   border-color: rgba(255, 255, 255, 0.22) !important;
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
-}
-
-/* Light themes: soft solid panel with a subtle ink border for contrast. */
-html[data-rtheme="white"] .inner-panel {
-  background: rgba(255, 255, 255, 0.85) !important;
-  border-color: rgba(15, 23, 42, 0.12) !important;
-}
-html[data-rtheme="cream"] .inner-panel,
-html[data-rtheme="notebook"] .inner-panel {
-  background: rgba(255, 255, 255, 0.70) !important;
-  border-color: rgba(45, 35, 23, 0.14) !important;
-}
-
-/* Bright & Colorful: warm translucent panel that reads on the vivid canvas. */
-html[data-rtheme="sunshine"] .inner-panel {
-  background: rgba(255, 255, 255, 0.78) !important;
-  border-color: rgba(31, 38, 64, 0.14) !important;
 }
 
 
@@ -2555,3 +1509,118 @@ html[data-rtheme="glass"] .glass-dialog,
   backdrop-filter: blur(12px);
 }
 .kiwi-input::placeholder { color: rgba(244,247,255,0.6) !important; }
+
+/* ===================================================================== */
+/* Layout refinement toward the glassmorphism design intent (Katy,       */
+/* 2026-07-01): a large transparent budgie softly present behind content, */
+/* and liquid-glass page-title bubbles that pop in one-by-one.            */
+/* ===================================================================== */
+
+/* --- Large transparent animated budgie overlay ----------------------- */
+/* Anchored to the lower-LEFT gutter, behind all content, never over the  */
+/* centered column of text. pointer-events:none so it never blocks clicks.*/
+.budgie-overlay {
+  position: fixed;
+  left: -2.5vw;
+  bottom: 2vh;
+  z-index: 1;              /* behind content (content sits above body bg) */
+  pointer-events: none;
+  width: clamp(150px, 22vw, 340px);
+  filter: drop-shadow(0 24px 34px rgba(6, 12, 24, 0.42));
+  opacity: 0.9;
+  will-change: transform;
+  animation: budgie-float 9s ease-in-out infinite;
+}
+.budgie-overlay-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  user-select: none;
+}
+/* On narrower viewports the budgie shrinks and tucks further out of the  */
+/* way so it never crowds the (now full-width) content column.            */
+@media (max-width: 900px) {
+  .budgie-overlay {
+    width: clamp(110px, 26vw, 180px);
+    left: -4vw;
+    bottom: 8vh;
+    opacity: 0.8;
+  }
+}
+@keyframes budgie-float {
+  0%   { transform: translateY(0) rotate(-1.5deg); }
+  50%  { transform: translateY(-16px) rotate(1.5deg); }
+  100% { transform: translateY(0) rotate(-1.5deg); }
+}
+
+/* --- Liquid-glass page-title bubbles ---------------------------------- */
+.page-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1.1rem;
+}
+.title-bubble {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.6rem 1.15rem;
+  border-radius: 999px;
+  background:
+    radial-gradient(120% 100% at 50% -20%, rgba(255,255,255,0.34) 0%, rgba(255,255,255,0.10) 55%, rgba(10,16,28,0.12) 100%),
+    linear-gradient(150deg, rgba(255,255,255,0.20) 0%, rgba(255,255,255,0.06) 60%, rgba(255,255,255,0.14) 100%);
+  -webkit-backdrop-filter: blur(22px) saturate(155%) brightness(1.06);
+  backdrop-filter: blur(22px) saturate(155%) brightness(1.06);
+  border: 1px solid rgba(255,255,255,0.32);
+  border-top-color: rgba(255,255,255,0.66);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.55),
+    0 10px 22px rgba(6, 12, 24, 0.32),
+    0 2px 6px rgba(6, 12, 24, 0.24);
+}
+.title-bubble-icon {
+  display: inline-flex;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+.title-bubble-text {
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  font-size: clamp(1.15rem, 2.4vw, 1.6rem);
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(6,12,24,0.55), 0 0 18px rgba(6,12,24,0.30);
+}
+.title-subbubble,
+.title-trailing {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #eef4ff;
+  text-shadow: 0 1px 2px rgba(6,12,24,0.5);
+  background: linear-gradient(150deg, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.05) 100%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid rgba(255,255,255,0.26);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 8px 16px rgba(6,12,24,0.26);
+}
+.title-trailing { margin-left: auto; }
+
+/* One-by-one pop-in for the bubbles. */
+[data-anim="pop"] {
+  animation: title-pop 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes title-pop {
+  0%   { opacity: 0; transform: translateY(10px) scale(0.9); filter: blur(6px); }
+  60%  { opacity: 1; transform: translateY(-2px) scale(1.02); filter: blur(0); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Respect reduced-motion: keep the budgie perched still and drop pop-in. */
+@media (prefers-reduced-motion: reduce) {
+  .budgie-overlay { animation: none; }
+  [data-anim="pop"] { animation: none; }
+}

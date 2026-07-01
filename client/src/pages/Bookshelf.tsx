@@ -1,4 +1,5 @@
 import { trpc } from "@/lib/trpc";
+import PageTitle from "@/components/PageTitle";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useAdultLock } from "@/contexts/AdultLockContext";
@@ -220,10 +221,7 @@ export default function Bookshelf() {
     <div className="space-y-8">
       <header className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="font-display text-4xl md:text-5xl text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.55)]">My Books</h1>
-          <p className="text-sm text-white/85 mt-2 drop-shadow-[0_1px_4px_rgba(0,0,0,0.5)]">
-            Tap a cover to read, bookmark, or explore.
-          </p>
+          <PageTitle icon={<span>📚</span>} title="My Books" subtitle="Tap a cover to read, bookmark, or explore" />
         </div>
         {unlocked && (
           <button className="glass-control glass-control--primary h-9 px-4 text-sm" onClick={() => setAdding(true)}>+ Add book</button>
