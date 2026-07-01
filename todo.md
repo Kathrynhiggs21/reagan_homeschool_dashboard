@@ -1776,12 +1776,12 @@ Direction: ONE clear 3D liquid-glass theme over realistic nature photos with the
 - [x] Rewrite index.css: single glass theme; every surface a floating glass object with cast shadow; remove flat card/box/logo treatments
 - [x] Build floating glass orb dock nav component (glossy gems + cast shadows); bottom-centered on mobile, dockable rail on desktop; active orb lifts + glows
 - [x] Remove old aside sidebar + mobile drawer from CozyShell; wire the orb dock instead
-- [ ] Replace long lists / Drive-sourced data sections with analytics graph cards (name + stat) that open a popup summary or link to the Google Drive file
+- [x] Replace long lists / Drive-sourced data sections with analytics graph cards (name + stat) that open a popup summary or link to the Google Drive file — Analytics page already renders compact glass stat cards + SVG charts (mood arc, coverage bars, subject radar/sparklines, curriculum arcs) with per-section "Open in Drive" links; IEP goals/accommodations collapsed to at-a-glance grid. All surfaces forced to frosted glass under the single glass theme.
 - [x] Keep only the Agenda Editor AI text box; make the AI box very liberal/open-ended
 - [x] Real book covers on transparent clear-glass shelves for Books/Bookshelf (no flat placeholder tiles)
 - [x] Ensure all text stays readable over transparent image overlays (scrim + shadow), no flat boxes used for legibility
 - [x] Verify mobile + desktop layouts both work; run full test suite (572 files / 5207 tests green); checkpoint; report
 
-- [ ] Theme accent/mood adapts to the active nature background scene (meadow/dusk/forest), not a fixed palette
+- [x] Theme accent/mood adapts to the active nature background scene (forest/overcast/rain/dusk/night) driven by live Open-Meteo weather + golden-hour time-of-day; swaps both the full-bleed photo (data-rscene) and the glass --scene-accent. 10 vitest scenarios in sceneAdaptiveBackground.test.ts.
 - [x] Real rain animation overlay driven by live weather (rain condition -> animated rain over the scene)
 - [x] Kiwi: keep bottom-right, undressed by default (wardrobe only when Reagan dresses her), still funny/animated + visits; STRIP all extra UI around her (surrounding cards, coin panels, chat furniture, hub clutter)

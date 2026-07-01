@@ -22,7 +22,7 @@ type WeatherState = {
   windKph: number;
   label: string;
   emoji: string;
-  summary: "sunny" | "cloudy" | "rain" | "snow" | "storm" | "fog" | "night";
+  summary: "sunny" | "cloudy" | "rain" | "snow" | "storm" | "fog" | "night" | "dusk";
 };
 
 const DEFAULT_LAT = 39.18;
@@ -65,6 +65,14 @@ export default function WeatherWidget() {
         const code = Number(c.weather_code ?? 3);
         const isDay = c.is_day === 1 || c.is_day === true;
         const d = describe(code, isDay);
+        // Golden-hour override: on an otherwise clear/sunny evening (5-8pm local)
+        // shift the scene to the warm dusk photo for a cozy end-of-day feel.
+        const hr = new Date().getHours();
+        if (isDay && (d.summary === "sunny") && hr >= 17 && hr < 20) {
+          d.summary = "dusk";
+          d.label = "Golden hour";
+          d.emoji = "🌇";
+        }
         const next: WeatherState = {
           temp: Math.round(c.temperature_2m ?? 0),
           apparent: Math.round(c.apparent_temperature ?? 0),

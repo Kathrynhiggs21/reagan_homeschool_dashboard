@@ -14,7 +14,7 @@ import { useEffect, useMemo, useState } from "react";
  * Non-interactive, respects prefers-reduced-motion, renders nothing when dry.
  */
 
-type Summary = "sunny" | "cloudy" | "rain" | "snow" | "storm" | "fog" | "night";
+type Summary = "sunny" | "cloudy" | "rain" | "snow" | "storm" | "fog" | "night" | "dusk";
 
 // Scene accent (r,g,b) per weather mood — drives --scene-accent so the whole
 // glass UI subtly shifts tone with the sky.
@@ -26,6 +26,21 @@ const ACCENT_BY_SUMMARY: Record<Summary, { accent: string; accent2: string }> = 
   snow: { accent: "186,230,253", accent2: "148,180,220" },   // pale ice
   fog: { accent: "148,163,184", accent2: "130,150,175" },    // grey-blue
   night: { accent: "129,140,248", accent2: "88,100,210" },   // periwinkle dusk
+  dusk: { accent: "251,191,120", accent2: "236,140,120" },   // warm amber + rose
+};
+
+// Which full-bleed scene photo backs each weather mood. "forest" = the
+// default sunny daytime scene (no data-rscene attribute needed).
+type Scene = "forest" | "overcast" | "rain" | "dusk" | "night";
+const SCENE_BY_SUMMARY: Record<Summary, Scene> = {
+  sunny: "forest",
+  cloudy: "overcast",
+  fog: "overcast",
+  rain: "rain",
+  storm: "rain",
+  snow: "overcast",
+  night: "night",
+  dusk: "dusk",
 };
 
 export default function RainOverlay() {
@@ -50,7 +65,9 @@ export default function RainOverlay() {
     return () => window.removeEventListener("kiwi:weather", onWeather as EventListener);
   }, []);
 
-  // Retint the glass scene accent whenever the weather mood changes.
+  // Retint the glass scene accent AND swap the full-bleed background photo
+  // whenever the weather mood (or day/night) changes. `data-rscene` on <html>
+  // selects the matching scene image in index.css.
   useEffect(() => {
     if (!summary) return;
     const map = ACCENT_BY_SUMMARY[summary];
@@ -58,6 +75,11 @@ export default function RainOverlay() {
     const root = document.documentElement;
     root.style.setProperty("--scene-accent", map.accent);
     root.style.setProperty("--scene-accent-2", map.accent2);
+    // Collapse the 7 weather summaries into the 5 scene photos we ship
+    // (forest sunny default, overcast, rain, dusk, night).
+    const scene = SCENE_BY_SUMMARY[summary];
+    if (scene === "forest") root.removeAttribute("data-rscene");
+    else root.setAttribute("data-rscene", scene);
   }, [summary]);
 
   // Reduced-motion guard.

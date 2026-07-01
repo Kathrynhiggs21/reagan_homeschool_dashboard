@@ -1637,6 +1637,8 @@ html[data-rtheme="white"] aside .chalkboard { background: #eef2f7 !important; bo
 /* full-bleed photorealistic forest + two budgies behind a soft scrim so  */
 /* every glass surface reads as a real transparent pane floating above.   */
 html[data-rtheme="glass"] body {
+  /* Default (sunny/forest) full-bleed scene. The runtime scene engine swaps  */
+  /* the photo via `data-rscene` on <html> to match live weather + time-of-day.*/
   background:
     linear-gradient(180deg, rgba(12,20,32,0.34) 0%, rgba(12,20,32,0.20) 40%, rgba(12,20,32,0.46) 100%),
     url("https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/glass-bg-forest-desktop-AadMTqVu6cBCrbYFkGzcf6.webp");
@@ -1645,12 +1647,86 @@ html[data-rtheme="glass"] body {
   background-repeat: no-repeat, no-repeat;
   background-attachment: fixed, fixed;
   color: #f4f7ff;
+  transition: background-image 900ms ease;
+}
+/* --- Scene-adaptive backgrounds (desktop) driven by live weather/time --- */
+html[data-rtheme="glass"][data-rscene="overcast"] body {
+  background:
+    linear-gradient(180deg, rgba(20,28,40,0.40) 0%, rgba(20,28,40,0.24) 40%, rgba(20,28,40,0.50) 100%),
+    url("https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/glass-bg-overcast-desktop-n2LQ3rCtuBTr9gddT8fm9t.webp");
+  background-size: cover, cover;
+  background-position: center center, center center;
+  background-repeat: no-repeat, no-repeat;
+  background-attachment: fixed, fixed;
+}
+html[data-rtheme="glass"][data-rscene="rain"] body {
+  background:
+    linear-gradient(180deg, rgba(8,16,30,0.44) 0%, rgba(8,16,30,0.28) 40%, rgba(8,16,30,0.54) 100%),
+    url("https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/glass-bg-rain-desktop-ECrjjJq7SmyAGNVTTM3bRq.webp");
+  background-size: cover, cover;
+  background-position: center center, center center;
+  background-repeat: no-repeat, no-repeat;
+  background-attachment: fixed, fixed;
+}
+html[data-rtheme="glass"][data-rscene="dusk"] body {
+  background:
+    linear-gradient(180deg, rgba(30,18,20,0.34) 0%, rgba(30,18,20,0.18) 42%, rgba(20,14,26,0.50) 100%),
+    url("https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/glass-bg-dusk-desktop-7wRKgBmM66ML78BuacdPfj.webp");
+  background-size: cover, cover;
+  background-position: center center, center center;
+  background-repeat: no-repeat, no-repeat;
+  background-attachment: fixed, fixed;
+}
+html[data-rtheme="glass"][data-rscene="night"] body {
+  background:
+    linear-gradient(180deg, rgba(6,10,26,0.50) 0%, rgba(6,10,26,0.34) 40%, rgba(6,10,26,0.58) 100%),
+    url("https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/glass-bg-night-desktop-jGSLdqz49jCN8dhn4jSvTN.webp");
+  background-size: cover, cover;
+  background-position: center center, center center;
+  background-repeat: no-repeat, no-repeat;
+  background-attachment: fixed, fixed;
 }
 @media (max-width: 640px) {
   html[data-rtheme="glass"] body {
     background:
       linear-gradient(180deg, rgba(12,20,32,0.30) 0%, rgba(12,20,32,0.16) 38%, rgba(12,20,32,0.52) 100%),
       url("https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/glass-bg-forest-mobile-CpxdLmTn2ZySLjauQxuEWQ.webp");
+    background-size: cover, cover;
+    background-position: center center, center bottom;
+    background-repeat: no-repeat, no-repeat;
+    background-attachment: scroll, scroll;
+  }
+  html[data-rtheme="glass"][data-rscene="overcast"] body {
+    background:
+      linear-gradient(180deg, rgba(20,28,40,0.36) 0%, rgba(20,28,40,0.20) 38%, rgba(20,28,40,0.56) 100%),
+      url("https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/glass-bg-overcast-desktop-n2LQ3rCtuBTr9gddT8fm9t.webp");
+    background-size: cover, cover;
+    background-position: center center, center bottom;
+    background-repeat: no-repeat, no-repeat;
+    background-attachment: scroll, scroll;
+  }
+  html[data-rtheme="glass"][data-rscene="rain"] body {
+    background:
+      linear-gradient(180deg, rgba(8,16,30,0.40) 0%, rgba(8,16,30,0.24) 38%, rgba(8,16,30,0.58) 100%),
+      url("https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/glass-bg-rain-desktop-ECrjjJq7SmyAGNVTTM3bRq.webp");
+    background-size: cover, cover;
+    background-position: center center, center bottom;
+    background-repeat: no-repeat, no-repeat;
+    background-attachment: scroll, scroll;
+  }
+  html[data-rtheme="glass"][data-rscene="dusk"] body {
+    background:
+      linear-gradient(180deg, rgba(30,18,20,0.30) 0%, rgba(30,18,20,0.16) 40%, rgba(20,14,26,0.54) 100%),
+      url("https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/glass-bg-dusk-desktop-7wRKgBmM66ML78BuacdPfj.webp");
+    background-size: cover, cover;
+    background-position: center center, center bottom;
+    background-repeat: no-repeat, no-repeat;
+    background-attachment: scroll, scroll;
+  }
+  html[data-rtheme="glass"][data-rscene="night"] body {
+    background:
+      linear-gradient(180deg, rgba(6,10,26,0.46) 0%, rgba(6,10,26,0.30) 38%, rgba(6,10,26,0.62) 100%),
+      url("https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/glass-bg-night-desktop-jGSLdqz49jCN8dhn4jSvTN.webp");
     background-size: cover, cover;
     background-position: center center, center bottom;
     background-repeat: no-repeat, no-repeat;
