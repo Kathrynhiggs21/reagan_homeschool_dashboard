@@ -9,7 +9,6 @@ import { KiwiProvider } from "./contexts/KiwiContext";
 import { AdultLockProvider } from "./contexts/AdultLockContext";
 import { CustomBackgroundProvider } from "./contexts/CustomBackgroundContext";
 import AdultGate from "./components/AdultGate";
-import BootSplash from "./components/BootSplash";
 import AssignmentsLibrary from "./pages/AssignmentsLibrary";
 import CozyShell from "./components/CozyShell";
 import KiwiCompanion from "./components/KiwiCompanion";
@@ -38,6 +37,7 @@ import Analytics from "./pages/Analytics";
 import IdeaLibrary from "./pages/IdeaLibrary";
 import PrintIdeaBook from "./pages/PrintIdeaBook";
 import Placement from "./pages/Placement";
+import IxlDiagnostic from "./pages/IxlDiagnostic";
 import Classes from "./pages/Classes";
 import { trpc } from "@/lib/trpc";
 import { useEffect } from "react";
@@ -81,6 +81,9 @@ function Router() {
         <Route path="/notes" component={TakeNotes} />
         <Route path="/apps" component={Apps} />
         <Route path="/placement" component={Placement} />
+        <Route path="/ixl">
+          <AdultGate><IxlDiagnostic /></AdultGate>
+        </Route>
         <Route path="/classes" component={Classes} />
 
         {/* === ADULT PRINT ROUTE (familyAdmin gate at the procedure level) === */}
@@ -171,7 +174,6 @@ function App() {
             <AdultLockProvider>
               <CustomBackgroundProvider>
                 <Toaster />
-                <BootSplash />
                 <Router />
                 <PwaInstallPrompt />
               </CustomBackgroundProvider>

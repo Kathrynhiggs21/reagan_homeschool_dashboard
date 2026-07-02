@@ -85,7 +85,8 @@ describe("scene-adaptive background — index.css scene photos", () => {
   });
 
   it("uses a vibrant default photo and animates the mood swap", () => {
-    expect(indexCss).toContain("glass-bg-vibrant-desktop");
+    // 2026-07-02: the vibrant default scene is the layered enchanted-forest asset.
+    expect(indexCss).toContain("glass-bg-layered-desktop");
     expect(indexCss).toMatch(/transition:\s*background-image/);
     expect(indexCss).toMatch(/filter:\s*saturate\(/);
   });

@@ -43,21 +43,27 @@ describe("glass theme — canonical clear-3D-glass design contract", () => {
   });
 
   it("uses a full-bleed photorealistic nature background asset (not a flat gradient only)", () => {
-    // The scene layer must reference the generated vibrant nature photo (a
-    // fixed full-viewport layer, not a flat gradient). Renamed forest -> vibrant
-    // on 2026-07-01 when the background was made brighter + full-cover.
+    // The scene layer must reference the generated layered nature photo (a
+    // fixed full-viewport layer, not a flat gradient). 2026-07-02: the vibrant
+    // background was regenerated as the layered enchanted-forest scene.
     expect(css).toMatch(/data-rtheme="glass"\][\s\S]{0,400}url\(/);
-    expect(css).toContain("glass-bg-vibrant");
+    expect(css).toContain("glass-bg-layered");
   });
 
-  it("renders genuine clear glass: translucent fill + backdrop blur (not opaque cards)", () => {
+  it("renders light frosted-white panes: bright fill + backdrop blur (readable dark text)", () => {
+    // 2026-07-02, Katy: flip from dark-transparent glass (light text) to LIGHT
+    // frosted-white panes so DARK text sits on a bright, legible surface. The
+    // panes must still be genuinely backdrop-blurred (frosted), and the white
+    // fill opacity must be HIGH (>= 0.85) so content never sinks into the scene.
     expect(glassRules).toMatch(/backdrop-filter:\s*blur\(/);
-    // fill opacity should be low (<= 0.2) so the scene shows through
-    expect(glassRules).toMatch(/rgba\(255,255,255,0\.1[0-6]\)/);
+    expect(glassRules).toMatch(/rgba\(255,255,255,0\.(8[5-9]|9[0-9])\)/);
+    // dark readable body text on the light pane
+    expect(glassRules).toMatch(/color:\s*#1e293b/);
   });
 
   it("has a beveled top light-rim + inner specular highlight (3D glass, not flat)", () => {
-    expect(glassRules).toMatch(/border-top-color:\s*rgba\(255,255,255,0\.[45]/);
+    // Bright frosted panes use a strong top rim (0.9+) for the beveled edge.
+    expect(glassRules).toMatch(/border-top-color:\s*rgba\(255,255,255,0\.(9[0-9]|98)/);
     expect(glassRules).toMatch(/inset/); // inner specular / rim highlights
   });
 
@@ -78,11 +84,14 @@ describe("glass theme — canonical clear-3D-glass design contract", () => {
     expect(glassRules).toMatch(/h1,[\s\S]{0,120}text-shadow/);
   });
 
-  it("forces hardcoded dark text utilities light so nothing sinks into the glass (NO GREY BOXES)", () => {
+  it("keeps dark text utilities dark so they read on the light frosted panes (NO GREY BOXES)", () => {
+    // 2026-07-02, Katy: with LIGHT frosted-white panes, hardcoded dark text
+    // utilities now READ correctly, so they must resolve to a dark color
+    // (#1e293b) rather than being forced light. This upholds NO-GREY-BOXES /
+    // >=4.5:1 contrast on the bright surface.
     expect(glassRules).toContain(".text-gray-900");
     expect(glassRules).toContain(".text-slate-800");
     expect(glassRules).toContain(".text-foreground");
-    // they must resolve to a light color
-    expect(glassRules).toMatch(/\.text-foreground\s*\{\s*color:\s*#eef2fb/);
+    expect(glassRules).toMatch(/\.text-foreground\s*\{\s*color:\s*#1e293b/);
   });
 });

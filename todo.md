@@ -1834,3 +1834,44 @@ Direction: ONE clear 3D liquid-glass theme over realistic nature photos with the
 - [x] Hover is pointer-only (@media hover:hover and pointer:fine); keyboard focus-within gets the same lift+glow; reduced-motion neutralizes the transform
 - [x] Verified readability + full-bleed vibrant bg intact via offline render; confirmed 3 masonry columns + staggered top offsets programmatically
 - [x] Added server/staggerGridAndHover.test.ts (13 tests); moved PracticeHub empty-state out of the grid (removed col-span-3 pitfall); full suite green (5260 passed / 5 skipped); checkpoint
+
+---
+
+## 🎨 BOLD visual overhaul (2026-07-02, Katy: "be creative, no restrictions")
+
+- [ ] Remove the boot splash (grad-cap Kiwi loading screen) — app opens straight to content
+- [ ] Remove the readiness box on app tiles (Apps page)
+- [ ] Remove sparkle effects (floating sparkles/twinkles)
+- [ ] Switch text surfaces to LIGHT frosted-glass panels (white/blurred) with DARK readable text
+- [ ] Add more layered background elements (light rays, drifting leaves/bokeh, birds) so the scene feels alive
+- [ ] Redesign Today with a distinct layout (not the standard stacked rows)
+- [ ] Redesign Schedule with a distinct layout
+- [ ] Redesign Bookshelf with a distinct layout
+- [ ] Redesign Apps with a distinct layout (+ readiness box removed)
+- [ ] Redesign PracticeHub with a distinct layout
+- [ ] Redesign IdeaLibrary with a distinct layout
+- [ ] Redesign Rewards/Coins with a distinct layout
+- [ ] Redesign Curriculum with a distinct layout
+- [ ] Redesign Settings with a distinct layout
+- [ ] Verify readability + full-bleed bg; offline render checks; update/relax affected contract tests; run full suite; checkpoint
+
+---
+
+## 📄 Detailed printable master build-prompt (2026-07-02, Katy)
+
+- [x] Wrote an exhaustive, prompt-ready master spec (11 sections, each usable as a build prompt) — Reagan_Dashboard_Master_Build_Prompt.md
+- [x] Covered goal/audience, light-glass system, layered bg, sidebar + orb dock, per-page accents + distinct layouts, welcome landing, plain Kiwi, removed elements, per-page spec (all pages), behavior rules, tech stack/constraints
+- [x] Pulled exact accents/routes/tokens from the real codebase (index.css + App.tsx)
+- [x] Rendered print-ready PDF (Reagan_Dashboard_Master_Build_Prompt.pdf)
+
+---
+
+## 🎯 IXL Diagnostic (TOP PRIORITY, 2026-07-02, Katy)
+
+- [ ] Audit existing IXL wiring (IXL_QUICKSTART_URL secret, any Apps/curriculum links, existing diagnostic tables)
+- [ ] DB: table for Reagan's IXL diagnostic levels (overall + per subject: Math, Language Arts, Science, Social Studies; strand levels; SmartScore/grade-level; snapshot date)
+- [ ] tRPC: get latest diagnostic, upsert/enter levels (adult-gated), history
+- [ ] UI: IXL Diagnostic panel — clear per-subject grade-level display + progress + recommended next skills; adult can enter/paste levels
+- [ ] Deep-link into IXL Real-Time Diagnostic already-signed-in via IXL_QUICKSTART_URL (opens exact page)
+- [ ] Surface diagnostic on Analytics (adult) and a kid-friendly summary; feed recommended skills into agenda
+- [ ] Vitest contract test; verify; checkpoint

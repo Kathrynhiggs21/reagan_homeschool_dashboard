@@ -4,25 +4,22 @@ import { useAdultLock } from "@/contexts/AdultLockContext";
 import WeatherWidget from "./WeatherWidget";
 import NotificationBell from "./NotificationBell";
 import OrbDock from "./OrbDock";
+import SideNav from "./SideNav";
+import PageTheme from "./PageTheme";
 import RainOverlay from "./RainOverlay";
 // BudgieOverlay (the big grad-cap budgie in the margin) removed per Katy —
 // "just Kiwi." The only bird in the app is now the Kiwi perch, bottom-right.
 
 /**
- * CozyShell — the canonical liquid-glass app shell (2026-07-01, Katy).
+ * CozyShell — the liquid-glass app shell (2026-07-02, Katy redesign).
  *
- * There is no sidebar anymore. Navigation is a floating glass ORB DOCK
- * (bottom-centered on mobile, a vertical rail on the right on desktop). The
- * only chrome floating over the nature photo is a small set of glass controls
- * top-right (weather + notification) — everything is a dimensional glass
- * object, never a flat box.
- *
- * A live-weather RainOverlay renders real falling rain when it's raining.
+ * Navigation is a COLLAPSIBLE LEFT SIDEBAR on desktop (SideNav) plus the
+ * floating ORB DOCK on mobile. A PageTheme sets a per-route accent + data-page
+ * so every page reads as its own distinct space. The scene is a richly layered
+ * nature photo; text sits on LIGHT frosted-white glass so it stays readable.
  *
  * The WELCOME landing (/welcome) is a pristine glass surface with its own
- * bokeh background, its own wave-arc orbs, and only Kiwi bottom-right — so the
- * shell chrome (orb dock, top-right controls, big budgie overlay) is
- * suppressed there to match the reference mockup.
+ * bokeh background and wave-arc orbs, so all shell chrome is suppressed there.
  */
 export const DRIVE_HUB_URL =
   "https://drive.google.com/drive/folders/1r3bJacPLJN7VHI8y72rcx1-GRxspqo1r";
@@ -33,9 +30,15 @@ export default function CozyShell({ children }: { children: ReactNode }) {
   const onWelcome = loc === "/welcome";
 
   return (
-    <div className="min-h-screen relative">
+    <div className="min-h-screen relative app-shell" data-welcome={onWelcome ? "true" : "false"}>
+      {/* Per-route accent + data-page key. */}
+      <PageTheme />
+
       {/* Real rain when the weather says so. */}
       <RainOverlay />
+
+      {/* Collapsible left sidebar (desktop) — hidden on the welcome landing. */}
+      {!onWelcome && <SideNav />}
 
       {/* Floating glass controls, top-right. Hidden on the welcome landing. */}
       {!onWelcome && (
@@ -49,14 +52,15 @@ export default function CozyShell({ children }: { children: ReactNode }) {
         {onWelcome ? (
           <div className="welcome-shell-wrap">{children}</div>
         ) : (
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-6 orb-dock-safe-pad">
+          <div className="shell-content max-w-6xl mx-auto px-4 sm:px-6 pt-4 pb-6 orb-dock-safe-pad">
             {children}
           </div>
         )}
       </main>
 
-      {/* Primary navigation — suppressed on the welcome landing (its wave-arc
-          orbs are the nav there). */}
+      {/* Mobile navigation — the orb dock. Suppressed on the welcome landing
+          (its wave-arc orbs are the nav there) and hidden on desktop via CSS
+          where the sidebar takes over. */}
       {!onWelcome && <OrbDock />}
     </div>
   );

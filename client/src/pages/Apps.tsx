@@ -150,29 +150,6 @@ export default function Apps() {
   const list = (apps.data ?? []) as App[];
   const del = trpc.appLinks.delete.useMutation({ onSuccess: () => utils.appLinks.list.invalidate() });
 
-  // v3.32 — readiness badges. One batched query keyed on each app's URL/name;
-  // the server tagger resolves the sign-in method from the URL host so Reagan
-  // (or a grown-up) instantly sees "can open" vs "sign-in first" per tile.
-  const readinessRows = useMemo(
-    () =>
-      list.map((a) => ({
-        appKey: String(a.id),
-        name: a.name,
-        url: a.url,
-      })),
-    [list],
-  );
-  const readinessQuery = trpc.today.agendaLinkReadiness.useQuery(
-    { rows: readinessRows, isReaganView: !unlocked },
-    { enabled: readinessRows.length > 0 },
-  );
-  // appKey was set to String(a.id); map back to each app id for lookup.
-  type ReadinessRow = NonNullable<typeof readinessQuery.data>[number];
-  const readinessByAppKey = useMemo(() => {
-    const m = new Map<string, ReadinessRow>();
-    for (const r of readinessQuery.data ?? []) m.set(r.appKey, r);
-    return m;
-  }, [readinessQuery.data]);
   const [adding, setAdding] = useState(false);
   const [editing, setEditing] = useState<App | null>(null);
 
@@ -235,27 +212,6 @@ export default function Apps() {
                       <div className="text-[10px] text-neutral-500 truncate w-full">
                         {(() => { try { return new URL(a.url).hostname.replace(/^www\./, ""); } catch { return a.url; } })()}
                       </div>
-                      {(() => {
-                        const r = readinessByAppKey.get(String(a.id));
-                        if (!r) return null;
-                        const ready = r.canKidOpenNow;
-                        return (
-                          <span
-                            data-readiness-badge
-                            data-ready={ready ? "true" : "false"}
-                            title={r.kidBadge}
-                            className={
-                              "mt-0.5 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-semibold leading-none " +
-                              (ready
-                                ? "bg-emerald-100 text-emerald-800"
-                                : "bg-amber-100 text-amber-800")
-                            }
-                          >
-                            <span aria-hidden>{ready ? "\u2713" : "\u{1F510}"}</span>
-                            {r.readinessLabel}
-                          </span>
-                        );
-                      })()}
                     </Card>
                   </a>
                   {unlocked && (

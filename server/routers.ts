@@ -43,6 +43,7 @@ import {
   IXL_SUBJECTS,
   IXL_STRANDS,
   ixlSubjectName,
+  ixlSignedInDiagnosticUrl,
 } from "./_lib/ixlDiagnostic";
 import {
   groupBySubject as practiceGroupBySubject,
@@ -2450,11 +2451,22 @@ export const appRouter = router({
      * web password) /diagnostic opens the arena; otherwise IXL prompts sign-in.
      * No credentials in the URL.
      */
-    diagnosticLink: publicProcedure.query(() => ({
-      diagnosticUrl: IXL_DIAGNOSTIC_URL,
-      signInUrl: IXL_SIGNIN_URL,
-      infoUrl: IXL_DIAGNOSTIC_INFO_URL,
-    })),
+    diagnosticLink: publicProcedure.query(() => {
+      // Prefer the no-password QuickStart launcher (IXL_QUICKSTART_URL) so
+      // Reagan lands already signed in on the Diagnostic arena. Only use it
+      // when it's a real launcher (carries a {skill}/destination or points at
+      // a sign-in/quickstart path); otherwise fall back to the public URL that
+      // just prompts a one-time sign-in.
+      const signedIn = ixlSignedInDiagnosticUrl();
+      return {
+        diagnosticUrl: signedIn ?? IXL_DIAGNOSTIC_URL,
+        // The raw public arena URL is always available as a manual fallback.
+        publicDiagnosticUrl: IXL_DIAGNOSTIC_URL,
+        signedIn: signedIn != null,
+        signInUrl: IXL_SIGNIN_URL,
+        infoUrl: IXL_DIAGNOSTIC_INFO_URL,
+      };
+    }),
     /** The strand options an adult can fill in, per IXL subject. */
     strandOptions: protectedProcedure.query(() => ({
       subjects: IXL_SUBJECTS.map((slug) => ({

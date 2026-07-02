@@ -294,3 +294,48 @@ export function buildIxlDiagnosticReport(
 export const IXL_DIAGNOSTIC_URL = "https://www.ixl.com/diagnostic";
 export const IXL_SIGNIN_URL = "https://www.ixl.com/signin";
 export const IXL_DIAGNOSTIC_INFO_URL = "https://www.ixl.com/diagnostic/info";
+
+/**
+ * A QuickStart value only counts as a real no-password launcher when it points
+ * at a sign-in / quickstart / autologin PATH (or carries a `{skill}`/destination
+ * placeholder). A bare IXL homepage/marketing URL is NOT a launcher. Mirrors
+ * subjectAppLinks.isRealQuickStartLauncher so the diagnostic link behaves the
+ * same way as the per-skill launch buttons.
+ */
+export function isRealIxlQuickStart(raw: string | null | undefined): boolean {
+  if (!raw) return false;
+  if (raw.includes("{skill}")) return true;
+  let u: URL | null = null;
+  try {
+    u = new URL(raw);
+  } catch {
+    return false;
+  }
+  const path = u.pathname.toLowerCase();
+  const isBareRoot = path === "/" || path === "";
+  const hasLauncherPath = /\/(signin|sign-in|quickstart|qs|autologin|auto-login|login)\b/.test(path);
+  return hasLauncherPath && !isBareRoot;
+}
+
+/**
+ * Build a signed-in Diagnostic URL from the IXL_QUICKSTART_URL env secret when
+ * present and a real launcher, targeting the Diagnostic arena as the
+ * destination. Returns null when no usable QuickStart is configured (caller
+ * then falls back to the public IXL_DIAGNOSTIC_URL). PURE except for reading
+ * process.env, which is why it's a function rather than a constant.
+ */
+export function ixlSignedInDiagnosticUrl(
+  destination: string = IXL_DIAGNOSTIC_URL,
+): string | null {
+  const qs = (typeof process !== "undefined" && process.env && process.env.IXL_QUICKSTART_URL
+    ? String(process.env.IXL_QUICKSTART_URL)
+    : ""
+  ).trim();
+  if (!qs) return null;
+  if (!isRealIxlQuickStart(qs)) return null;
+  if (qs.includes("{skill}")) return qs.replace("{skill}", encodeURIComponent(destination));
+  if (!qs.includes("?") && !qs.includes("#")) {
+    return `${qs}?destination=${encodeURIComponent(destination)}`;
+  }
+  return qs;
+}

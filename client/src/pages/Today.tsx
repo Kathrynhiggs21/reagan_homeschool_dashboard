@@ -33,7 +33,6 @@ import MoodTimelineStrip from "@/components/MoodTimelineStrip";
 import { SlayChargeCard } from "@/components/SlayChargeCard";
 import SummerModeBadge from "@/components/SummerModeBadge";
 import PacketAuditChip from "@/components/PacketAuditChip";
-import ReadyFor6thBadge from "@/components/ReadyFor6thBadge";
 import CatchUpNextDayCard from "@/components/CatchUpNextDayCard";
 import { TomorrowChoiceCard } from "@/components/TomorrowChoiceCard";
 import TodayClassroomCard from "@/components/TodayClassroomCard";
@@ -507,8 +506,6 @@ export default function Today() {
       {/* Tutor of the day strip — "With Reagan today: <Name> · <arrival>–<departure>".
           Mom-only days quietly say "Mom-only day today" so Reagan still gets a clear cue. */}
        <TutorOfDayStrip />
-      {/* 6th Grade Readiness — self-hides when summer mode is not active */}
-      <ReadyFor6thBadge />
       {/* Daily tip strip + Fresh-start button — deterministic by date so the tip stays stable all day */}
       <DailyTipAndFreshStart />
 

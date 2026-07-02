@@ -73,3 +73,44 @@ describe("Placement UI: calm, non-testing IXL framing", () => {
     expect(page).toMatch(/ixl\.report/);
   });
 });
+
+describe("diagnosticLink prefers the signed-in QuickStart URL", () => {
+  const routers = read("server/routers.ts");
+  it("wires the signed-in helper with a public fallback + signedIn flag", () => {
+    expect(routers).toMatch(/ixlSignedInDiagnosticUrl\(\)/);
+    expect(routers).toMatch(/diagnosticUrl:\s*signedIn\s*\?\?\s*IXL_DIAGNOSTIC_URL/);
+    expect(routers).toMatch(/publicDiagnosticUrl:\s*IXL_DIAGNOSTIC_URL/);
+    expect(routers).toMatch(/signedIn:\s*signedIn\s*!=\s*null/);
+  });
+  it("the helper reads the QuickStart secret", () => {
+    const lib = read("server/_lib/ixlDiagnostic.ts");
+    expect(lib).toMatch(/export function ixlSignedInDiagnosticUrl/);
+    expect(lib).toMatch(/IXL_QUICKSTART_URL/);
+  });
+});
+
+describe("IXL Diagnostic is a first-class, discoverable adult destination", () => {
+  it("has a standalone light-glass page wired to the IXL procedures", () => {
+    const page = read("client/src/pages/IxlDiagnostic.tsx");
+    expect(page).toMatch(/ixl\.diagnosticLink/);
+    expect(page).toMatch(/ixl\.report/);
+    expect(page).toMatch(/ixl\.record/);
+    expect(page).toMatch(/glass-panel/);
+    expect(page).not.toMatch(/bg-neutral-900/);
+    expect(page).toMatch(/signedIn/);
+  });
+  it("registers a gated /ixl route in App.tsx", () => {
+    const app = read("client/src/App.tsx");
+    expect(app).toMatch(/import IxlDiagnostic from "\.\/pages\/IxlDiagnostic"/);
+    expect(app).toMatch(/path="\/ixl"[\s\S]{0,80}<AdultGate><IxlDiagnostic \/><\/AdultGate>/);
+  });
+  it("adds an IXL Diagnostic entry to the sidebar adult section", () => {
+    const nav = read("client/src/components/SideNav.tsx");
+    expect(nav).toMatch(/to:\s*"\/ixl"/);
+    expect(nav).toMatch(/label:\s*"IXL Diagnostic"/);
+  });
+  it("gives /ixl its own page accent", () => {
+    const theme = read("client/src/components/PageTheme.tsx");
+    expect(theme).toMatch(/"\/ixl":\s*\{\s*key:\s*"ixl"/);
+  });
+});
