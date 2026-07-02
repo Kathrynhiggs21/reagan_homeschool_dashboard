@@ -43,15 +43,18 @@ describe("PageTitle liquid-glass bubble", () => {
 });
 
 describe("BudgieOverlay large transparent budgie", () => {
-  it("is aria-hidden, non-interactive, and lives in the shell", () => {
+  // Removed from the shell per Katy (2026-07-01): the loose grad-cap budgie in
+  // the page margin read as stray clutter over "just Kiwi". The component +
+  // its CSS stay in the tree (still aria-hidden / transparent PNG) so it can be
+  // re-mounted later, but it must NOT be rendered by the shell anymore.
+  it("stays a well-formed, non-interactive transparent overlay component", () => {
     expect(budgie).toContain('aria-hidden="true"');
     expect(budgie).toContain("budgie-overlay");
-    expect(shell).toContain("<BudgieOverlay />");
-    expect(shell).toContain('from "./BudgieOverlay"');
+    expect(budgie).toMatch(/manus-storage\/.+\.png/);
   });
 
-  it("uses a transparent PNG source (not baked into the background photo)", () => {
-    expect(budgie).toMatch(/manus-storage\/.+\.png/);
+  it("is NOT mounted in the shell (removed per Katy — 'just Kiwi', no stray cap)", () => {
+    expect(shell).not.toContain("<BudgieOverlay />");
   });
 });
 

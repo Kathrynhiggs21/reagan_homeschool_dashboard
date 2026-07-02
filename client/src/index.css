@@ -742,109 +742,56 @@
 /* Canonical clear-3D-glass over realistic nature (Katy, 2026-07-01):     */
 /* full-bleed photorealistic forest + two budgies behind a soft scrim so  */
 /* every glass surface reads as a real transparent pane floating above.   */
+/* Full-page vibrant background via a FIXED ::before layer on <html> so it
+   ALWAYS covers the whole viewport no matter how tall/scrolled the page is
+   (fixes the wash-out-to-flat-gradient on long pages). The scene engine
+   swaps --scene-bg per weather/time; every scene is bright + saturated. */
+html[data-rtheme="glass"] {
+  --scene-bg: url("/manus-storage/glass-bg-vibrant-desktop_87db7d08.png");
+  --scene-scrim: linear-gradient(180deg, rgba(8,18,24,0.14) 0%, rgba(8,18,24,0.06) 45%, rgba(8,18,24,0.22) 100%);
+}
 html[data-rtheme="glass"] body {
-  /* Default (sunny/forest) full-bleed scene. The runtime scene engine swaps  */
-  /* the photo via `data-rscene` on <html> to match live weather + time-of-day.*/
-  background:
-    linear-gradient(180deg, rgba(12,20,32,0.34) 0%, rgba(12,20,32,0.20) 40%, rgba(12,20,32,0.46) 100%),
-    url("https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/glass-bg-forest-desktop-AadMTqVu6cBCrbYFkGzcf6.webp");
-  background-size: cover, cover;
-  background-position: center center, center center;
-  background-repeat: no-repeat, no-repeat;
-  background-attachment: fixed, fixed;
+  background: transparent;
   color: #f4f7ff;
-  transition: background-image 900ms ease;
 }
-/* --- Scene-adaptive backgrounds (desktop) driven by live weather/time --- */
-html[data-rtheme="glass"][data-rscene="overcast"] body {
-  background:
-    linear-gradient(180deg, rgba(20,28,40,0.40) 0%, rgba(20,28,40,0.24) 40%, rgba(20,28,40,0.50) 100%),
-    url("https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/glass-bg-overcast-desktop-n2LQ3rCtuBTr9gddT8fm9t.webp");
+html[data-rtheme="glass"]::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--scene-scrim), var(--scene-bg);
   background-size: cover, cover;
   background-position: center center, center center;
   background-repeat: no-repeat, no-repeat;
-  background-attachment: fixed, fixed;
+  background-attachment: scroll, scroll;
+  filter: saturate(1.25) brightness(1.05);
+  transition: background-image 900ms ease, filter 900ms ease;
+  pointer-events: none;
 }
-html[data-rtheme="glass"][data-rscene="rain"] body {
-  background:
-    linear-gradient(180deg, rgba(8,16,30,0.44) 0%, rgba(8,16,30,0.28) 40%, rgba(8,16,30,0.54) 100%),
-    url("https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/glass-bg-rain-desktop-ECrjjJq7SmyAGNVTTM3bRq.webp");
-  background-size: cover, cover;
-  background-position: center center, center center;
-  background-repeat: no-repeat, no-repeat;
-  background-attachment: fixed, fixed;
-}
-html[data-rtheme="glass"][data-rscene="dusk"] body {
-  background:
-    linear-gradient(180deg, rgba(30,18,20,0.34) 0%, rgba(30,18,20,0.18) 42%, rgba(20,14,26,0.50) 100%),
-    url("https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/glass-bg-dusk-desktop-7wRKgBmM66ML78BuacdPfj.webp");
-  background-size: cover, cover;
-  background-position: center center, center center;
-  background-repeat: no-repeat, no-repeat;
-  background-attachment: fixed, fixed;
-}
-html[data-rtheme="glass"][data-rscene="night"] body {
-  background:
-    linear-gradient(180deg, rgba(6,10,26,0.50) 0%, rgba(6,10,26,0.34) 40%, rgba(6,10,26,0.58) 100%),
-    url("https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/glass-bg-night-desktop-jGSLdqz49jCN8dhn4jSvTN.webp");
-  background-size: cover, cover;
-  background-position: center center, center center;
-  background-repeat: no-repeat, no-repeat;
-  background-attachment: fixed, fixed;
-}
+/* --- Scene-adaptive tint (all bright; same vibrant photo, weather-tinted scrim) --- */
+html[data-rtheme="glass"][data-rscene="overcast"] { --scene-scrim: linear-gradient(180deg, rgba(20,30,42,0.20) 0%, rgba(20,30,42,0.10) 45%, rgba(20,30,42,0.28) 100%); }
+html[data-rtheme="glass"][data-rscene="rain"] { --scene-scrim: linear-gradient(180deg, rgba(10,22,36,0.24) 0%, rgba(10,22,36,0.12) 45%, rgba(10,22,36,0.30) 100%); }
+html[data-rtheme="glass"][data-rscene="dusk"] { --scene-scrim: linear-gradient(180deg, rgba(28,20,30,0.18) 0%, rgba(24,18,32,0.10) 45%, rgba(20,14,30,0.30) 100%); }
+html[data-rtheme="glass"][data-rscene="night"] { --scene-scrim: linear-gradient(180deg, rgba(6,12,28,0.34) 0%, rgba(6,12,28,0.22) 45%, rgba(6,12,28,0.44) 100%); }
+html[data-rtheme="glass"][data-rscene="night"]::before { filter: saturate(1.1) brightness(0.9); }
 @media (max-width: 640px) {
-  html[data-rtheme="glass"] body {
-    background:
-      linear-gradient(180deg, rgba(12,20,32,0.30) 0%, rgba(12,20,32,0.16) 38%, rgba(12,20,32,0.52) 100%),
-      url("https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/glass-bg-forest-mobile-CpxdLmTn2ZySLjauQxuEWQ.webp");
-    background-size: cover, cover;
-    background-position: center center, center bottom;
-    background-repeat: no-repeat, no-repeat;
-    background-attachment: scroll, scroll;
-  }
-  html[data-rtheme="glass"][data-rscene="overcast"] body {
-    background:
-      linear-gradient(180deg, rgba(20,28,40,0.36) 0%, rgba(20,28,40,0.20) 38%, rgba(20,28,40,0.56) 100%),
-      url("https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/glass-bg-overcast-desktop-n2LQ3rCtuBTr9gddT8fm9t.webp");
-    background-size: cover, cover;
-    background-position: center center, center bottom;
-    background-repeat: no-repeat, no-repeat;
-    background-attachment: scroll, scroll;
-  }
-  html[data-rtheme="glass"][data-rscene="rain"] body {
-    background:
-      linear-gradient(180deg, rgba(8,16,30,0.40) 0%, rgba(8,16,30,0.24) 38%, rgba(8,16,30,0.58) 100%),
-      url("https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/glass-bg-rain-desktop-ECrjjJq7SmyAGNVTTM3bRq.webp");
-    background-size: cover, cover;
-    background-position: center center, center bottom;
-    background-repeat: no-repeat, no-repeat;
-    background-attachment: scroll, scroll;
-  }
-  html[data-rtheme="glass"][data-rscene="dusk"] body {
-    background:
-      linear-gradient(180deg, rgba(30,18,20,0.30) 0%, rgba(30,18,20,0.16) 40%, rgba(20,14,26,0.54) 100%),
-      url("https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/glass-bg-dusk-desktop-7wRKgBmM66ML78BuacdPfj.webp");
-    background-size: cover, cover;
-    background-position: center center, center bottom;
-    background-repeat: no-repeat, no-repeat;
-    background-attachment: scroll, scroll;
-  }
-  html[data-rtheme="glass"][data-rscene="night"] body {
-    background:
-      linear-gradient(180deg, rgba(6,10,26,0.46) 0%, rgba(6,10,26,0.30) 38%, rgba(6,10,26,0.62) 100%),
-      url("https://d2xsxph8kpxj0f.cloudfront.net/310519663309818529/mm3swGictQLHDWKPJCGiHp/glass-bg-night-desktop-jGSLdqz49jCN8dhn4jSvTN.webp");
-    background-size: cover, cover;
-    background-position: center center, center bottom;
-    background-repeat: no-repeat, no-repeat;
-    background-attachment: scroll, scroll;
-  }
+  html[data-rtheme="glass"] { --scene-bg: url("/manus-storage/glass-bg-vibrant-mobile_f99f966a.png"); }
+  html[data-rtheme="glass"]::before { background-position: center center, center center; }
 }
 html[data-rtheme="glass"] .chalk-white,
 html[data-rtheme="glass"] aside .chalk-white { color: #f3f6ff !important; }
 html[data-rtheme="glass"] .chalk-yellow,
 html[data-rtheme="glass"] aside .chalk-yellow { color: #fcd34d !important; }
-html[data-rtheme="glass"] .text-muted-foreground { color: rgba(226,232,246,0.74) !important; }
-html[data-rtheme="glass"] h1, html[data-rtheme="glass"] h2 { color: #f3f6ff !important; text-shadow: 0 1px 12px rgba(0,0,0,0.35) !important; }
+html[data-rtheme="glass"] .text-muted-foreground { color: rgba(233,239,252,0.92) !important; text-shadow: 0 1px 6px rgba(4,10,24,0.55) !important; }
+html[data-rtheme="glass"] h1, html[data-rtheme="glass"] h2 { color: #ffffff !important; text-shadow: 0 2px 16px rgba(0,0,0,0.55), 0 1px 4px rgba(0,0,0,0.45) !important; }
+/* Body/secondary text on glass gets a soft shadow so it never dissolves into  */
+/* the bright bokeh behind the pane (readability-first per Katy).              */
+html[data-rtheme="glass"] .cozy-card p, html[data-rtheme="glass"] .card p,
+html[data-rtheme="glass"] .chalkboard p, html[data-rtheme="glass"] .classroom-card p,
+html[data-rtheme="glass"] .cozy-card span, html[data-rtheme="glass"] .card span,
+html[data-rtheme="glass"] .cozy-card li, html[data-rtheme="glass"] .card li,
+html[data-rtheme="glass"] .cozy-card label, html[data-rtheme="glass"] .card label,
+html[data-rtheme="glass"] h3, html[data-rtheme="glass"] h4 { text-shadow: 0 1px 6px rgba(4,10,24,0.5); }
 /* Legibility safety net: dark-text utilities that some pages hardcode would  */
 /* sink into the translucent glass over the photo. Force them light so the    */
 /* NO-GREY-BOXES / >=4.5:1 contrast rule holds on the glass theme too. The    */
@@ -871,10 +818,10 @@ html[data-rtheme="glass"] .card {
   /* brightest, sunniest patches of the photo, keeping contrast >=4.5:1) over  */
   /* the clear-glass white sheen. Still transparent enough to read as glass.    */
   background:
-    radial-gradient(120% 90% at 50% 0%, rgba(10,16,28,0.28) 0%, rgba(10,16,28,0.12) 45%, rgba(10,16,28,0.04) 100%),
+    linear-gradient(180deg, rgba(9,15,27,0.52) 0%, rgba(9,15,27,0.42) 45%, rgba(9,15,27,0.52) 100%),
     linear-gradient(155deg, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0.05) 55%, rgba(255,255,255,0.08) 100%) !important;
-  backdrop-filter: blur(22px) saturate(140%) brightness(1.04);
-  -webkit-backdrop-filter: blur(22px) saturate(140%) brightness(1.04);
+  backdrop-filter: blur(22px) saturate(130%) brightness(0.98);
+  -webkit-backdrop-filter: blur(22px) saturate(130%) brightness(0.98);
   border: 1px solid rgba(255,255,255,0.28) !important;
   border-top-color: rgba(255,255,255,0.55) !important;
   box-shadow:

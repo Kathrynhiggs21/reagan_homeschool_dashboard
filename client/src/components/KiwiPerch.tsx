@@ -781,12 +781,15 @@ export default function KiwiPerch() {
 
         {popBurst > 0 && <PopBurst key={popBurst} size={size} />}
 
-        {/* Drifting feathers that peel off on takeoff. Visual-only. */}
-        {feathers.map((f, i) => (
+        {/* Drifting feathers removed per Katy — "just Kiwi." */}
+        {false && feathers.map((f, i) => (
           <Feather key={f.id} color={f.color} size={size} seed={f.id + i} />
         ))}
 
-        {activeProp && (
+        {/* Bird props (suitcase / pool / berry / huddle) removed per Katy —
+            "just Kiwi." The spawnProp machinery stays intact but nothing is
+            rendered so she never carries clutter. */}
+        {false && activeProp && (
           <BirdProp
             key={activeProp.id}
             kind={activeProp.kind}
@@ -795,7 +798,9 @@ export default function KiwiPerch() {
           />
         )}
 
-        {cameo && (() => {
+        {/* Flock cameos (Lychee / duck squad flying in) removed per Katy —
+            "just Kiwi." Guarded off so no other birds appear. */}
+        {false && cameo && (() => {
           // The duck trio is a 3-wide image, so render it bigger and tuck it
           // lower-left like a little waddling squad; single birds sit close.
           const isDucks = cameo === "ducks";
@@ -842,7 +847,10 @@ export default function KiwiPerch() {
           }}
           title="Drag Kiwi anywhere — tap to chat"
         >
-          <KiwiSprite pose={pose} size={size} animate costume={costume} wardrobeLayers={wardrobeLayers} ariaLabel={`Kiwi the parakeet — ${dayChar.costumeLabel}. Drag me or tap to chat`} />
+          {/* Plain animated Kiwi — no daily costume, no dress-up wardrobe
+              layers (per Katy: "just Kiwi, still animated"). The sprite still
+              breathes / blinks / changes pose on its own. */}
+          <KiwiSprite pose={pose} size={size} animate costume="none" wardrobeLayers={[]} ariaLabel="Kiwi the parakeet — drag me or tap to chat" />
         </div>
 
         <div
@@ -861,23 +869,15 @@ export default function KiwiPerch() {
             (see the dblclick/double-tap handler above) and the window.flyKiwi
             hook, so no functionality is lost. */}
 
-        {/* "Dress me up!" — opens Kiwi's Closet. Small sparkly tab tucked at
-            top-left of the perch so it never collides with the visit badge. */}
-        <button
-          type="button"
-          onClick={() => setCloset(true)}
-          aria-label="Open Kiwi's Closet to dress her up"
-          title="Dress me up!"
-          className="absolute -top-2 -left-2 z-40 rounded-full border-2 border-pink-300 bg-pink-50 px-1.5 py-0.5 text-[12px] shadow hover:brightness-105 focus:outline-none focus:ring-2 focus:ring-pink-400"
-          data-testid="kiwi-dressup-btn"
-        >
-          <span aria-hidden>🧥</span>
-        </button>
+        {/* Dress-up tab removed per Katy — "just Kiwi." (The KiwiWardrobe
+            dialog + machinery stay in the tree but there's no launcher on the
+            perch, so Kiwi stays plain.) */}
 
         {/* Per-day "who visited today" collectible badge. Only appears once a
             guest has actually stopped by (standing rule: don't show if no info).
             Tappable → popover listing today's visitors + times. */}
-        {visitSummary.total > 0 && (
+        {/* Visit badge removed per Katy — "just Kiwi" (no chips under the perch). */}
+        {false && visitSummary.total > 0 && (
           <VisitBadge
             summary={visitSummary}
             log={visitLog}

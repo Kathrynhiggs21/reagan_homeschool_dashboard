@@ -5,7 +5,8 @@ import WeatherWidget from "./WeatherWidget";
 import NotificationBell from "./NotificationBell";
 import OrbDock from "./OrbDock";
 import RainOverlay from "./RainOverlay";
-import BudgieOverlay from "./BudgieOverlay";
+// BudgieOverlay (the big grad-cap budgie in the margin) removed per Katy —
+// "just Kiwi." The only bird in the app is now the Kiwi perch, bottom-right.
 
 /**
  * CozyShell — the canonical liquid-glass app shell (2026-07-01, Katy).
@@ -35,10 +36,6 @@ export default function CozyShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen relative">
       {/* Real rain when the weather says so. */}
       <RainOverlay />
-
-      {/* Large transparent budgie, softly present behind all content —
-          hidden on the welcome landing, which has its own flying pair. */}
-      {!onWelcome && <BudgieOverlay />}
 
       {/* Floating glass controls, top-right. Hidden on the welcome landing. */}
       {!onWelcome && (

@@ -43,9 +43,11 @@ describe("glass theme — canonical clear-3D-glass design contract", () => {
   });
 
   it("uses a full-bleed photorealistic nature background asset (not a flat gradient only)", () => {
-    // The body background must reference the generated forest/budgie image.
-    expect(css).toMatch(/data-rtheme="glass"\][\s\S]{0,400}background[\s\S]{0,400}url\(/);
-    expect(css).toContain("glass-bg-forest");
+    // The scene layer must reference the generated vibrant nature photo (a
+    // fixed full-viewport layer, not a flat gradient). Renamed forest -> vibrant
+    // on 2026-07-01 when the background was made brighter + full-cover.
+    expect(css).toMatch(/data-rtheme="glass"\][\s\S]{0,400}url\(/);
+    expect(css).toContain("glass-bg-vibrant");
   });
 
   it("renders genuine clear glass: translucent fill + backdrop blur (not opaque cards)", () => {

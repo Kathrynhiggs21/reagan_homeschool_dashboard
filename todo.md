@@ -1811,3 +1811,15 @@ Direction: ONE clear 3D liquid-glass theme over realistic nature photos with the
 - [x] Glass surfaces rounded, soft-shadowed, animated (reuse .glass-orb / .glass-panel / .title-bubble; orbs pop-in + bob)
 - [x] /welcome routes to new landing; onboardingCompleted marked on entry so returning users land on Today (existing OnboardingGuard preserved)
 - [x] Guard with a landing contract test (server/welcomeLandingGlass.test.ts, 10 tests); full suite green (5242 passed / 5 skipped)
+
+---
+
+## 🎨 Visual overhaul (2026-07-01, from full-page screenshot review)
+
+- [x] Kiwi = plain animated budgie only (remove costume/wardrobe/props/closet/visit-badge/feathers/flock cameos) — KiwiPerch.tsx
+- [x] Remove stray grad-cap BudgieOverlay from shell — CozyShell.tsx
+- [x] Background: vibrant saturated scene (generated bright enchanted-forest stream asset, desktop + mobile)
+- [x] Background always covers full page height — fixed full-viewport ::before layer on <html> (no more fade-to-flat on tall/scrolled pages)
+- [x] Lighten darkening overlay + add saturate(1.25)/brightness(1.05) so colors pop; weather still retints via per-scene scrim
+- [x] Readability: strengthen card scrim + lift secondary/grey text to high-contrast light + text-shadow on glass
+- [x] Build clean (TS/LSP OK); verified visually via offline render (full-bleed vibrant top+bottom, readable text, plain Kiwi); full suite green (5247 passed / 5 skipped); updated 3 contract tests + added kiwiPlainDeclutter.test.ts (5 tests)

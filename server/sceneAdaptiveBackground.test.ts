@@ -65,23 +65,28 @@ describe("scene-adaptive background — WeatherWidget golden-hour dusk", () => {
 });
 
 describe("scene-adaptive background — index.css scene photos", () => {
-  it("defines a background block for each swapped scene", () => {
+  // Redesign (Katy, 2026-07-01): the background is now a SINGLE vibrant photo
+  // painted on a FIXED full-viewport ::before layer (so it always covers tall/
+  // scrolled pages instead of washing out to a flat gradient). The weather /
+  // time-of-day engine still swaps the mood by retinting a per-scene SCRIM.
+  it("paints the scene on a fixed full-viewport layer that always covers the page", () => {
+    expect(indexCss).toMatch(/html\[data-rtheme="glass"\]::before/);
+    expect(indexCss).toMatch(/position:\s*fixed/);
+    expect(indexCss).toMatch(/inset:\s*0/);
+    expect(indexCss).toContain("--scene-bg");
+  });
+
+  it("defines a per-scene mood (scrim tint) for each swapped scene", () => {
     for (const scene of SCENES) {
       expect(indexCss).toMatch(
-        new RegExp(`html\\[data-rtheme="glass"\\]\\[data-rscene="${scene}"\\] body`)
+        new RegExp(`html\\[data-rtheme="glass"\\]\\[data-rscene="${scene}"\\]`)
       );
     }
   });
 
-  it("keeps a forest default and animates the photo swap", () => {
-    expect(indexCss).toContain("glass-bg-forest-desktop");
+  it("uses a vibrant default photo and animates the mood swap", () => {
+    expect(indexCss).toContain("glass-bg-vibrant-desktop");
     expect(indexCss).toMatch(/transition:\s*background-image/);
-  });
-
-  it("references a distinct photo asset per scene", () => {
-    expect(indexCss).toContain("glass-bg-overcast-desktop");
-    expect(indexCss).toContain("glass-bg-rain-desktop");
-    expect(indexCss).toContain("glass-bg-dusk-desktop");
-    expect(indexCss).toContain("glass-bg-night-desktop");
+    expect(indexCss).toMatch(/filter:\s*saturate\(/);
   });
 });
