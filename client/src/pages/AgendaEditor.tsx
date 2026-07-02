@@ -306,7 +306,24 @@ export default function AgendaEditor() {
     const dur = opt.durationMin ? ` (about ${opt.durationMin} min)` : "";
     const desc = opt.description ? ` — ${opt.description}` : "";
     const msg = `Add this one to ${date}: "${opt.title}"${desc}${dur}.`;
-    setChatMessages(prev => [...prev, { role: "user", content: `Picked: ${opt.title}` }]);
+    setChatMessages(prev => [...prev, { role: "user", content: `Read / do this: ${opt.title}` }]);
+    chatM.mutate({ date, message: msg });
+  };
+
+  // "Create something new": instead of accepting the proposed option, ask the
+  // AI to invent a DIFFERENT activity for that same slot — same subject and
+  // roughly the same length, but a fresh idea. The AI answers with a new set of
+  // options (it does not edit the schedule), so Mom can keep browsing until she
+  // finds one worth adding. Mirrors Katy's "Accept (read/do this) OR create
+  // something new" per-option ask (2026-07-02).
+  const regenerateOption = (opt: ChatOption) => {
+    if (chatM.isPending) return;
+    const subj = opt.subjectSlug ? ` ${opt.subjectSlug.replace(/_/g, " ")}` : "";
+    const dur = opt.durationMin ? ` about ${opt.durationMin} minutes long` : "";
+    const msg =
+      `Don't add "${opt.title}". Instead, suggest a different${subj} activity` +
+      `${dur} for ${date} — a fresh idea, not that one. Give me a couple of new options to choose from. Don't change the schedule yet.`;
+    setChatMessages(prev => [...prev, { role: "user", content: `Create something new instead of: ${opt.title}` }]);
     chatM.mutate({ date, message: msg });
   };
 
@@ -532,12 +549,9 @@ export default function AgendaEditor() {
                               {grp.prompt && <div className="text-xs font-medium text-muted-foreground">{grp.prompt}</div>}
                               <div className="flex flex-col gap-1.5">
                                 {grp.options.map((opt, oi) => (
-                                  <button
+                                  <div
                                     key={oi}
-                                    type="button"
-                                    disabled={chatM.isPending}
-                                    onClick={() => pickOption(opt)}
-                                    className="text-left rounded-lg border border-primary/30 bg-primary/5 hover:bg-primary/10 disabled:opacity-50 px-3 py-2 transition-colors"
+                                    className="rounded-lg border border-primary/30 bg-primary/5 px-3 py-2"
                                     data-testid="agenda-option-chip"
                                   >
                                     <div className="flex items-center justify-between gap-2">
@@ -545,7 +559,29 @@ export default function AgendaEditor() {
                                       {opt.durationMin ? <span className="text-[11px] font-mono opacity-70 shrink-0">{opt.durationMin}m</span> : null}
                                     </div>
                                     {opt.description && <div className="mt-0.5 text-xs text-muted-foreground">{opt.description}</div>}
-                                  </button>
+                                    {/* Two per-option actions (Katy 2026-07-02): accept & add, or
+                                        ask the AI to invent a fresh alternative for this slot. */}
+                                    <div className="mt-2 flex flex-wrap gap-2">
+                                      <button
+                                        type="button"
+                                        disabled={chatM.isPending}
+                                        onClick={() => pickOption(opt)}
+                                        className="inline-flex items-center gap-1 rounded-md bg-primary text-primary-foreground hover:brightness-105 disabled:opacity-50 px-2.5 py-1 text-xs font-semibold transition"
+                                        data-testid="agenda-option-accept"
+                                      >
+                                        ✓ Read / do this
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={chatM.isPending}
+                                        onClick={() => regenerateOption(opt)}
+                                        className="inline-flex items-center gap-1 rounded-md border border-primary/40 bg-transparent hover:bg-primary/10 disabled:opacity-50 px-2.5 py-1 text-xs font-semibold text-foreground transition"
+                                        data-testid="agenda-option-regenerate"
+                                      >
+                                        <Sparkles className="w-3 h-3" /> Create something new
+                                      </button>
+                                    </div>
+                                  </div>
                                 ))}
                               </div>
                             </div>

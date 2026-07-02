@@ -2032,3 +2032,105 @@ html[data-rtheme="glass"][data-page] .title-bubble {
 html[data-rtheme="glass"][data-page] .title-bubble-icon {
   filter: drop-shadow(0 2px 5px rgba(var(--scene-accent, 56,189,248), 0.5));
 }
+
+
+/* ===================================================================== */
+/* PER-PAGE LAYOUT SIGNATURES (2026-07-02, Katy: "give each page a         */
+/* distinct layout"). Rather than rewrite nine large, tested pages, we     */
+/* vary the FRAME around each page's existing content, keyed on the        */
+/* data-page attribute PageTheme already sets on <html>. Each page gets a  */
+/* different accent hero band + content rhythm so it reads as its own      */
+/* space. Purely additive CSS — no component/logic changes, no regression  */
+/* risk to the tested behaviour. All effects are scoped to the glass theme */
+/* and gated behind data-page, so the default look is untouched.           */
+/* --------------------------------------------------------------------- */
+
+/* Shared: a soft accent hero band sitting behind the page title row, tinted
+   by the per-page --scene-accent. This alone visually separates pages. */
+html[data-rtheme="glass"][data-page] main .page-title-row::before {
+  content: "";
+  position: absolute;
+  inset: -0.75rem -1rem -0.6rem -1rem;
+  z-index: -1;
+  border-radius: 1.4rem;
+  background: linear-gradient(
+    115deg,
+    rgba(var(--scene-accent, 56,189,248), 0.16) 0%,
+    rgba(var(--scene-accent-2, 129,140,248), 0.08) 55%,
+    rgba(var(--scene-accent, 56,189,248), 0.02) 100%
+  );
+  border: 1px solid rgba(var(--scene-accent, 56,189,248), 0.18);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+  pointer-events: none;
+}
+
+/* TODAY — full-width, generous vertical rhythm (the daily "command center"). */
+html[data-rtheme="glass"][data-page="today"] main { --page-max: 100%; }
+html[data-rtheme="glass"][data-page="today"] main .page-title-row::before {
+  border-radius: 1.6rem 1.6rem 2.2rem 1.6rem; /* asymmetric = distinct */
+}
+
+/* SCHEDULE — tighter column, indigo band, left accent rail on cards. */
+html[data-rtheme="glass"][data-page="schedule"] main { --page-max: 62rem; }
+html[data-rtheme="glass"][data-page="schedule"] main > *:not(.page-title-row) {
+  max-width: var(--page-max);
+}
+html[data-rtheme="glass"][data-page="schedule"] .glass-panel,
+html[data-rtheme="glass"][data-page="schedule"] .classroom-card {
+  border-left: 3px solid rgba(var(--scene-accent, 129,140,248), 0.55);
+}
+
+/* BOOKSHELF — warm pink band + a subtle "shelf" underline under the title. */
+html[data-rtheme="glass"][data-page="books"] main .page-title-row::after {
+  content: "";
+  display: block;
+  position: absolute;
+  left: -1rem; right: -1rem; bottom: -1.1rem;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg,
+    rgba(var(--scene-accent, 244,114,182), 0.0) 0%,
+    rgba(var(--scene-accent, 244,114,182), 0.55) 15%,
+    rgba(var(--scene-accent, 244,114,182), 0.55) 85%,
+    rgba(var(--scene-accent, 244,114,182), 0.0) 100%);
+}
+
+/* APPS — amber band, and app tiles get a stronger 3D lift so the launcher
+   reads as a "gallery" rather than a list. */
+html[data-rtheme="glass"][data-page="apps"] .glass-panel:hover,
+html[data-rtheme="glass"][data-page="apps"] .classroom-card:hover {
+  transform: translateY(-3px);
+  transition: transform 160ms ease;
+}
+
+/* PRACTICE — green band + rounded, chunky "quiz" corners on panels. */
+html[data-rtheme="glass"][data-page="practice"] .glass-panel,
+html[data-rtheme="glass"][data-page="practice"] .classroom-card {
+  border-radius: 1.4rem;
+}
+
+/* IDEAS / ADVENTURES — orange band, playful slight tilt on the title bubble. */
+html[data-rtheme="glass"][data-page="ideas"] .title-bubble {
+  transform: rotate(-1.2deg);
+}
+
+/* REWARDS / COINS — gold band, coin-gold ring around the hero. */
+html[data-rtheme="glass"][data-page="rewards"] main .page-title-row::before {
+  border: 1.5px solid rgba(var(--scene-accent, 250,204,21), 0.4);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.7),
+              0 0 22px -8px rgba(var(--scene-accent, 250,204,21), 0.5);
+}
+
+/* CURRICULUM — sky band, centered narrower "document" column for readability. */
+html[data-rtheme="glass"][data-page="curriculum"] main { --page-max: 58rem; }
+html[data-rtheme="glass"][data-page="curriculum"] main > *:not(.page-title-row) {
+  max-width: var(--page-max);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* SETTINGS — muted slate band, calm and utilitarian (no hover lift, flatter). */
+html[data-rtheme="glass"][data-page="settings"] main .page-title-row::before {
+  background: linear-gradient(115deg,
+    rgba(148,163,184,0.14) 0%, rgba(129,140,248,0.06) 100%);
+}

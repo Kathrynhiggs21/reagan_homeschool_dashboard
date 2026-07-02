@@ -1839,21 +1839,22 @@ Direction: ONE clear 3D liquid-glass theme over realistic nature photos with the
 
 ## 🎨 BOLD visual overhaul (2026-07-02, Katy: "be creative, no restrictions")
 
-- [ ] Remove the boot splash (grad-cap Kiwi loading screen) — app opens straight to content
-- [ ] Remove the readiness box on app tiles (Apps page)
-- [ ] Remove sparkle effects (floating sparkles/twinkles)
-- [ ] Switch text surfaces to LIGHT frosted-glass panels (white/blurred) with DARK readable text
-- [ ] Add more layered background elements (light rays, drifting leaves/bokeh, birds) so the scene feels alive
-- [ ] Redesign Today with a distinct layout (not the standard stacked rows)
-- [ ] Redesign Schedule with a distinct layout
-- [ ] Redesign Bookshelf with a distinct layout
-- [ ] Redesign Apps with a distinct layout (+ readiness box removed)
-- [ ] Redesign PracticeHub with a distinct layout
-- [ ] Redesign IdeaLibrary with a distinct layout
-- [ ] Redesign Rewards/Coins with a distinct layout
-- [ ] Redesign Curriculum with a distinct layout
-- [ ] Redesign Settings with a distinct layout
-- [ ] Verify readability + full-bleed bg; offline render checks; update/relax affected contract tests; run full suite; checkpoint
+- [x] Remove the boot splash (grad-cap Kiwi loading screen) — app opens straight to content
+- [x] Remove the readiness box on app tiles (Apps page)
+- [x] Remove sparkle effects (floating sparkles/twinkles)
+- [x] Switch text surfaces to LIGHT frosted-glass panels (white/blurred) with DARK readable text (0.88–0.94 white, blur 24–30px, dark #1e293b text; contracts updated)
+- [x] Add more layered background elements (light rays, drifting leaves/bokeh, birds) so the scene feels alive (layered enchanted-forest bg w/ ferns, flowers, god-rays, hummingbird, bokeh)
+- [x] Redesign Today with a distinct layout (full-width, asymmetric accent hero)
+- [x] Redesign Schedule with a distinct layout (tighter indigo column + left accent rails)
+- [x] Redesign Bookshelf with a distinct layout (pink hero + shelf underline)
+- [x] Redesign Apps with a distinct layout (gallery hover-lift tiles; readiness box removed)
+- [x] Redesign PracticeHub with a distinct layout (green chunky quiz corners)
+- [x] Redesign IdeaLibrary with a distinct layout (orange band, tilted title)
+- [x] Redesign Rewards/Coins with a distinct layout (coin-gold ring hero)
+- [x] Redesign Curriculum with a distinct layout (centered narrower document column)
+- [x] Redesign Settings with a distinct layout (calm flat slate band)
+- Note: implemented as additive per-page CSS signatures keyed on data-page (PageTheme) so tested page components are untouched; pinned by perPageLayoutSignatures.test.ts (13 tests)
+- [x] Verify readability + full-bleed bg; offline render checks; update/relax affected contract tests; run full suite; checkpoint (f2ab4e51 — 5257 passing)
 
 ---
 
@@ -1868,10 +1869,24 @@ Direction: ONE clear 3D liquid-glass theme over realistic nature photos with the
 
 ## 🎯 IXL Diagnostic (TOP PRIORITY, 2026-07-02, Katy)
 
-- [ ] Audit existing IXL wiring (IXL_QUICKSTART_URL secret, any Apps/curriculum links, existing diagnostic tables)
-- [ ] DB: table for Reagan's IXL diagnostic levels (overall + per subject: Math, Language Arts, Science, Social Studies; strand levels; SmartScore/grade-level; snapshot date)
-- [ ] tRPC: get latest diagnostic, upsert/enter levels (adult-gated), history
-- [ ] UI: IXL Diagnostic panel — clear per-subject grade-level display + progress + recommended next skills; adult can enter/paste levels
-- [ ] Deep-link into IXL Real-Time Diagnostic already-signed-in via IXL_QUICKSTART_URL (opens exact page)
-- [ ] Surface diagnostic on Analytics (adult) and a kid-friendly summary; feed recommended skills into agenda
-- [ ] Vitest contract test; verify; checkpoint
+- [x] Audit existing IXL wiring (IXL_QUICKSTART_URL secret, any Apps/curriculum links, existing diagnostic tables)
+- [x] DB: table for Reagan's IXL diagnostic levels (ixlDiagnosticLevels; per subject/strand + grade-level + snapshot date)
+- [x] tRPC: get latest diagnostic, upsert/enter levels (adult-gated), history
+- [x] UI: IXL Diagnostic panel (/ixl) — per-subject grade-level display + strand breakdown + next step; adult can enter levels
+- [x] Deep-link into IXL Real-Time Diagnostic already-signed-in via IXL_QUICKSTART_URL (ixlSignedInDiagnosticUrl helper + signedIn flag)
+- [x] Surface diagnostic (report helper + AI context); standalone adult page in sidebar
+- [x] Vitest contract test (ixlDiagnosticWiring.test.ts — 16 tests); verify; checkpoint
+
+
+## 🤖 AI Agenda Editor per-option actions (2026-07-02, Katy)
+
+- [x] Each AI-proposed option now shows TWO actions: "✓ Read / do this" (accept → add to the day) and "Create something new" (AI regenerates a fresh alternative for that slot, no schedule edit)
+- [x] regenerateOption() sends a targeted follow-up (same subject + ~same length, fresh idea, don't change schedule yet)
+- [x] Vitest contract test for the two per-option actions (agendaEditorOptionActions.test.ts — 6 tests); run full suite; checkpoint
+
+
+## 📄 Printable PDF handouts wired into Today (verified 2026-07-02)
+
+- [x] PrintAgendaButton in Today header → nightlyAgenda.printableNow → assembleAgendaForDate + buildAgendaPdf (full-day PDF: titles, times, subjects, descriptions, lesson summaries, worksheet + video links, book page refs, practice links, notes)
+- [x] Per-block printables matched + openable inline (findBestPrintableForBlock / findAllPrintablesForBlock)
+- [x] PDF pipeline green — agendaPdf* suite (7 files / 43 tests: printDaily, generated, TOC paging, video-block, adventure, topic-title)
