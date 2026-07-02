@@ -596,13 +596,18 @@ export default function PracticeHub() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {filteredConcepts.length === 0 && (
+            <div className="text-center py-12 text-muted-foreground text-sm">
+              No concepts found for "{search}"
+            </div>
+          )}
+          <div className="stagger-grid stagger-offset">
             {filteredConcepts.map((c) => {
               const url = buildConceptUrl(selectedSubject, c.topic, c);
               return (
                 <Card
                   key={c.conceptHandle}
-                  className="p-4 flex flex-col gap-3 hover:shadow-md transition-shadow border-border"
+                  className="stagger-cell p-4 flex flex-col gap-3 border-border"
                 >
                   <div className="flex-1">
                     {search && (
@@ -628,11 +633,6 @@ export default function PracticeHub() {
               );
             })}
 
-            {filteredConcepts.length === 0 && (
-              <div className="col-span-3 text-center py-12 text-muted-foreground text-sm">
-                No concepts found for "{search}"
-              </div>
-            )}
           </div>
 
           {/* Browse full topic on CK-12 */}

@@ -1823,3 +1823,14 @@ Direction: ONE clear 3D liquid-glass theme over realistic nature photos with the
 - [x] Lighten darkening overlay + add saturate(1.25)/brightness(1.05) so colors pop; weather still retints via per-scene scrim
 - [x] Readability: strengthen card scrim + lift secondary/grey text to high-contrast light + text-shadow on glass
 - [x] Build clean (TS/LSP OK); verified visually via offline render (full-bleed vibrant top+bottom, readable text, plain Kiwi); full suite green (5247 passed / 5 skipped); updated 3 contract tests + added kiwiPlainDeclutter.test.ts (5 tests)
+
+---
+
+## 🧩 Staggered card layout + interactive hover (2026-07-02, Katy request)
+
+- [x] Targeted the variable-height content grids (IdeaLibrary, Bookshelf "Watch & Learn" videos, PracticeHub concepts) — left the app-launcher icon grid uniform on purpose
+- [x] Staggered via reusable `.stagger-grid` CSS multi-column masonry (1/2/3 cols responsive) + `.stagger-cell` break-inside:avoid + `.stagger-offset` alternating vertical offsets so top edges don't line up
+- [x] Interactive hover on glass cards: lift translateY(-6px) + scale(1.018) + brightened glass + deepened cast shadow + accent glow, smooth cubic-bezier transition
+- [x] Hover is pointer-only (@media hover:hover and pointer:fine); keyboard focus-within gets the same lift+glow; reduced-motion neutralizes the transform
+- [x] Verified readability + full-bleed vibrant bg intact via offline render; confirmed 3 masonry columns + staggered top offsets programmatically
+- [x] Added server/staggerGridAndHover.test.ts (13 tests); moved PracticeHub empty-state out of the grid (removed col-span-3 pitfall); full suite green (5260 passed / 5 skipped); checkpoint

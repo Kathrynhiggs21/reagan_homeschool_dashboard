@@ -178,10 +178,10 @@ export default function IdeaLibrary() {
           <p className="text-xs text-muted-foreground mb-3">
             {list.length} idea{list.length === 1 ? "" : "s"}
           </p>
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="stagger-grid stagger-offset">
             {list.map((a) => (
+              <div key={a.id} className="stagger-cell">
               <IdeaCard
-                key={a.id}
                 a={a}
                 onToggleFav={() => toggleFav.mutate({ id: a.id })}
                 onSetStatus={(s) => setStatusMut.mutate({ id: a.id, wishlistStatus: s })}
@@ -195,6 +195,7 @@ export default function IdeaLibrary() {
                   }
                 }}
               />
+              </div>
             ))}
           </div>
         </>

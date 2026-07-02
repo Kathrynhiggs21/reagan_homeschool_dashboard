@@ -255,9 +255,9 @@ export default function Bookshelf() {
       {Array.isArray(videos.data) && videos.data.length > 0 && (
         <section className="pt-2">
           <h2 className="font-display font-bold text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)] mb-3" style={{ fontSize: "clamp(1.5rem, 3vw, 2rem)" }}>Watch &amp; Learn</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="stagger-grid stagger-offset">
             {videos.data.map((v: any) => (
-              <a key={v.id} href={v.url} target="_blank" rel="noreferrer" className="glass-panel p-4 transition hover:-translate-y-1 block">
+              <a key={v.id} href={v.url} target="_blank" rel="noreferrer" className="stagger-cell glass-panel p-4 block">
                 <div className="flex items-start gap-3">
                   <span className="text-4xl drop-shadow-[0_3px_6px_rgba(0,0,0,0.45)]">📺</span>
                   <div className="flex-1 min-w-0">
